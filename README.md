@@ -248,8 +248,6 @@ Hidden state extraction (model forward passes) requires a GPU for any practical 
 | starcoder2-3b | ~6 GB | Needs dedicated GPU |
 | deepseek-coder-6.7b / starcoder2-7b / codellama-7b | ~14 GB | Needs A100 or equivalent |
 
-**Recommended workflow:** run extraction on a GPU cluster (e.g. Compute Canada), save activations to disk, pull locally for probe training and analysis.
-
 To use Apple Silicon MPS instead of CUDA for the 1.3b model:
 
 ```python

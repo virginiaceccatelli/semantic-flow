@@ -132,12 +132,13 @@ def run_phase1(
     all_lexical: list[LexicalExample] = []
     all_binding: list[BindingExample] = []
 
+    device = next(model.parameters()).device
     logger.info("Extracting hidden states for %d examples...", len(examples))
     for ex in examples:
         inputs = tokenizer(ex.source, return_tensors="pt", truncation=True, max_length=512)
         token_strings = [tokenizer.decode([t]) for t in inputs["input_ids"].squeeze().tolist()]
 
-        cache = extract_hidden_states(model, inputs["input_ids"], layer_indices=layers)
+        cache = extract_hidden_states(model, inputs["input_ids"].to(device), layer_indices=layers)
         hs = cache.all_hidden_states()   # (n_layers, seq_len, d_model)
 
         offsets = _compute_offsets(ex.source, tokenizer, inputs["input_ids"].squeeze().tolist())

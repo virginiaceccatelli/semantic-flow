@@ -97,11 +97,12 @@ def run_phase2(
 
     cfg = config or ProbeConfig()
     all_defuse: list[DefUseExample] = []
+    device = next(model.parameters()).device
 
     for ex in examples:
         inputs = tokenizer(ex.source, return_tensors="pt", truncation=True, max_length=512)
         token_strings = [tokenizer.decode([t]) for t in inputs["input_ids"].squeeze().tolist()]
-        cache = extract_hidden_states(model, inputs["input_ids"], layer_indices=layers)
+        cache = extract_hidden_states(model, inputs["input_ids"].to(device), layer_indices=layers)
         hs = cache.all_hidden_states()
         all_defuse.extend(build_defuse_examples(ex.source, hs, token_strings, layers))
 
