@@ -50,10 +50,10 @@ def build_defuse_examples(
             positive_set.add((def_tok, use_tok))
 
     examples = []
-    for layer in layers:
+    for layer_idx, layer in enumerate(sorted(layers)):
         for def_tok, use_tok in positive_set:
-            h_i = hidden_states[layer, def_tok].numpy()
-            h_j = hidden_states[layer, use_tok].numpy()
+            h_i = hidden_states[layer_idx, def_tok].numpy()
+            h_j = hidden_states[layer_idx, use_tok].numpy()
             examples.append(DefUseExample(
                 hidden_i=h_i, hidden_j=h_j,
                 has_edge=True,
@@ -67,8 +67,8 @@ def build_defuse_examples(
         for _ in range(n_neg):
             i, j = rng.randint(0, n_tokens - 1), rng.randint(0, n_tokens - 1)
             if i != j and (i, j) not in positive_set:
-                h_i = hidden_states[layer, i].numpy()
-                h_j = hidden_states[layer, j].numpy()
+                h_i = hidden_states[layer_idx, i].numpy()
+                h_j = hidden_states[layer_idx, j].numpy()
                 examples.append(DefUseExample(
                     hidden_i=h_i, hidden_j=h_j,
                     has_edge=False,

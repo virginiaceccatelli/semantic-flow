@@ -16,8 +16,8 @@ class ActivationCache:
         self._cache: dict[int, torch.Tensor] = {}
 
     def store(self, layer_idx: int, hidden: torch.Tensor):
-        # Detach from graph and move to CPU to avoid holding GPU memory.
-        self._cache[layer_idx] = hidden.detach().cpu()
+        # Detach, move to CPU, and drop the batch dim (we always run one example at a time).
+        self._cache[layer_idx] = hidden.detach().cpu().squeeze(0)
 
     def get(self, layer_idx: int) -> torch.Tensor:
         return self._cache[layer_idx]

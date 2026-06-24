@@ -32,9 +32,9 @@ def build_lexical_examples(
 ) -> list[LexicalExample]:
     """Build LexicalExample objects from hidden states and token strings."""
     examples = []
-    for layer in layers:
+    for layer_idx, layer in enumerate(sorted(layers)):
         for pos, tok_str in enumerate(token_strings):
-            hidden = hidden_states[layer, pos].numpy()
+            hidden = hidden_states[layer_idx, pos].numpy()
             token_type = _classify_token(tok_str)
             examples.append(LexicalExample(
                 hidden=hidden,
@@ -80,10 +80,10 @@ def build_binding_examples(
     all_ids = list(range(len(token_strings)))
 
     examples = []
-    for layer in layers:
+    for layer_idx, layer in enumerate(sorted(layers)):
         for def_idx, use_idx in positive_pairs:
-            h_a = hidden_states[layer, def_idx].numpy()
-            h_b = hidden_states[layer, use_idx].numpy()
+            h_a = hidden_states[layer_idx, def_idx].numpy()
+            h_b = hidden_states[layer_idx, use_idx].numpy()
             examples.append(BindingExample(
                 hidden_a=h_a, hidden_b=h_b,
                 token_str_a=token_strings[def_idx],
@@ -97,7 +97,7 @@ def build_binding_examples(
             for _ in range(n_negatives_per_positive):
                 neg_idx = rng.choice(all_ids)
                 if neg_idx != def_idx and neg_idx != use_idx:
-                    h_neg = hidden_states[layer, neg_idx].numpy()
+                    h_neg = hidden_states[layer_idx, neg_idx].numpy()
                     examples.append(BindingExample(
                         hidden_a=h_a, hidden_b=h_neg,
                         token_str_a=token_strings[def_idx],
