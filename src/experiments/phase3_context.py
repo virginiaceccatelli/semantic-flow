@@ -25,21 +25,39 @@ from src.probes.base import ProbeConfig
 
 logger = logging.getLogger(__name__)
 
-# Filler code templates to insert between relevant spans
+# Filler code templates to insert between relevant spans.
+# Five types matching the README Phase 3 specification:
+#   1. comment_prose      — comments / unrelated prose (no executable effect)
+#   2. dead_code          — syntactically valid code that never executes
+#   3. lexical_decoy      — code using the same variable names, different semantics
+#   4. competing_update   — semantically competing: reassigns the tracked variable
+#   5. scope_shadow       — introduces a local name that shadows the tracked variable
 FILLERS = {
-    "irrelevant": textwrap.dedent("""\
-        # padding block
-        for _i in range({n}):
-            _tmp = _i * 2
-        """),
-    "lexical_decoy": textwrap.dedent("""\
-        # decoy block with same variable names
-        {var} = None
-        _z = {var}
+    "comment_prose": textwrap.dedent("""\
+        # NOTE: the following section handles auxiliary bookkeeping.
+        # It does not affect the primary data flow described above.
+        # See documentation for further details.
         """),
     "dead_code": textwrap.dedent("""\
         if False:
             _never = 1
+            _also_never = _never + 2
+        """),
+    "lexical_decoy": textwrap.dedent("""\
+        # decoy block: same surface names, unrelated semantics
+        {var} = None
+        _z = {var}
+        {var} = _z
+        """),
+    "competing_update": textwrap.dedent("""\
+        # competing update: reassigns the tracked variable to an unrelated value
+        {var} = object()
+        """),
+    "scope_shadow": textwrap.dedent("""\
+        # scope-shadowing decoy: introduces a local binding that shadows {var}
+        def _inner():
+            {var} = -1
+            return {var}
         """),
 }
 
@@ -55,12 +73,28 @@ class ContextVariant:
     use_token_pos: int = 0    # approximate token index of the use
 
 
+def _render_filler(filler_type: str, size: int, var: str) -> str:
+    """Render a filler block of approximately `size` tokens for the given type."""
+    template = FILLERS.get(filler_type, "")
+    if filler_type in ("lexical_decoy", "competing_update", "scope_shadow"):
+        block = template.format(var=var)
+    elif filler_type == "comment_prose":
+        # Repeat the prose block to approximate the requested token count (~15 tokens/line)
+        reps = max(1, size // 15)
+        block = template * reps
+    elif filler_type == "dead_code":
+        block = template
+    else:
+        block = template
+    return block
+
+
 def expand_with_fillers(
     example: ProbeExample,
     def_line: int,
     use_line: int,
     filler_sizes: list[int] = [0, 50, 100, 200, 500],
-    filler_type: str = "irrelevant",
+    filler_type: str = "comment_prose",
     decoy_var: str = "x",
 ) -> list[ContextVariant]:
     """Create variants of `example` with increasing filler between def and use lines."""
@@ -70,16 +104,8 @@ def expand_with_fillers(
         if size == 0:
             padded_source = example.source
         else:
-            if filler_type == "lexical_decoy":
-                filler = FILLERS["lexical_decoy"].format(var=decoy_var)
-            elif filler_type == "irrelevant":
-                reps = max(1, size // 3)
-                filler = FILLERS["irrelevant"].format(n=reps)
-            else:
-                filler = FILLERS.get(filler_type, "")
-
-            filler_lines = filler.strip().splitlines()
-            # Insert filler between def_line and use_line
+            filler_text = _render_filler(filler_type, size, decoy_var)
+            filler_lines = filler_text.strip().splitlines()
             insert_at = min(use_line, len(lines))
             new_lines = (
                 lines[:insert_at]
@@ -104,7 +130,7 @@ def run_phase3(
     layers: list[int],
     output_dir: str | Path,
     filler_sizes: list[int] = [0, 50, 100, 200, 500],
-    filler_types: list[str] = ["irrelevant", "lexical_decoy"],
+    filler_types: list[str] = ["comment_prose", "dead_code", "lexical_decoy", "competing_update", "scope_shadow"],
     config: Optional[ProbeConfig] = None,
 ) -> dict:
     """Run degradation analysis across context lengths and filler types."""

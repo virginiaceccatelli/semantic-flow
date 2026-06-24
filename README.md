@@ -15,44 +15,126 @@ The core claim: modern code LLMs may preserve **lexical** surface structure well
 ## Research Questions
 
 1. **Representation Presence** — Do code LLMs internally represent semantic program relations (variable binding, def-use links, data dependencies, control dependencies, reachability)?
-
+    
+    - **RQ1a — Static structure:**  
+        Can the model encode binding, def-use, control-dependence, and reachability relations?
+        
+    - **RQ1b — Online state:**  
+        At each statement boundary, can the model’s current hidden state recover the concrete or abstract program state implied by the prefix?
+        
+    - RQ1a is largely confirmatory given the four papers. RQ1b is much closer to the actual gap.
+        
 2. **Layer and Position Dynamics** — Where do these representations emerge? Are they strongest in early, middle, or late layers? Do they persist across long contexts?
-
+    
+    - probe quality = f (layer, token position, program prefix time)
+        
 3. **Lexical vs Semantic Stability** — Are lexical features (identifier names, nearby tokens) more stable than semantic relations ("this value flows into this sink")?
-
+    
 4. **Failure Precedence** — Does degradation of latent semantic structure appear *before* observable prediction failure (incorrect vulnerability classification, wrong code completion)?
-
+    
+    - t_latent​: the first prefix at which the target state becomes incorrectly decoded or falls below a calibrated fidelity threshold;
+        
+    - t_decision​: the prefix at which the model must make the relevant semantic decision;
+        
+    - t_failure​: the first point at which that decision becomes incorrect.
+        
+    
+    Then evaluate:
+    
+    - lead time=t_failure - t_latent
+        
+    
 5. **Encoding vs Use** — When a semantic relation is decodable from hidden states, is the model actually *using* it? Or is it present but causally disconnected from the final answer?
-
----
+    
 
 ## Project Phases
 
 ### Phase 1 — Lexical and Local Semantic Probes
+
 Establish whether models track identifier identity, declaration-use links, and local def-use edges. Critical experimental contrast: examples where lexical cues are misleading (renamed variables, shadowed identifiers, semantically equivalent rewrites).
 
 **Output:** Baseline probe accuracy curves across layers and positions.
 
+- validate the extraction and probing pipeline;
+    
+- establish probe-capacity baselines;
+    
+- build lexical counterfactual controls;
+    
+- identify candidate layers and readout positions;
+    
+- ensure the selected model replicates previous broad findings.
+    
+
 ### Phase 2 — Graph-Like Semantic Structure Recovery
+
 Train low-capacity probes to recover graph primitives from hidden states: pairwise adjacency (is there a semantic edge between span A and B?), node role (source/sink/sanitizer/guard), reachability. Compare reconstructed latent graph against ground-truth program-analysis graphs (AST, def-use, CFG, control-dependence).
 
 **Output:** Per-layer semantic graph reconstruction quality.
 
 ### Phase 3 — Semantic Degradation Across Context
+
 Apply probes across increasing context lengths, with relevant semantic relations placed nearby, hundreds of tokens away, across functions, and after distracting decoys. Measure how recovered structure changes across layer, token position, distance between related spans, and semantic complexity.
 
 **Output:** Degradation maps; identification of which relation types fragment first.
 
+hold the target relation constant while inserting:
+
+1. comments or unrelated prose;
+    
+2. syntactically valid dead code;
+    
+3. lexically similar but semantically irrelevant code;
+    
+4. semantically competing updates;
+    
+5. scope-shadowing decoys.
+    
+
 ### Phase 4 — Internal Degradation → Behavioral Failure
+
 Pair internal measurements with model outputs on vulnerability detection, taint-flow judgment, and code completion tasks. Test whether probe-derived semantic instability predicts failure *earlier* than output-level uncertainty.
 
 **Output:** Early-warning signal evaluation; correlation between internal state quality and downstream accuracy.
 
+Example tests:
+
+- which of two variables should be used next;
+    
+- whether a value reaching a sink is tainted;
+    
+- which branch is reachable for a given concrete input;
+    
+- the exact return value of a short executable function;
+    
+- which definition reaches a use;
+    
+- whether a guard dominates a dangerous operation;
+    
+- a constrained API call whose correct argument follows from state.
+    
+
 ### Phase 5 — Causal Tests (Encoding vs Use)
+
 Identify hidden states associated with semantic edges; patch activations from correct examples into incorrect ones; test whether restoring latent data-flow relations improves answer correctness. Classify relations as: *encoded and used* / *encoded but unused* / *not encoded* / *encoded transiently*.
 
 **Output:** Causal attribution results; mechanistic interpretability contribution.
 
+Minimally different clean/corrupted pairs. For example:
+
+```
+# Clean
+x = source()
+x = sanitize(x)
+...
+sink(x)
+
+# Corrupted semantic counterpart
+x = source()
+y = sanitize(x)
+...
+sink(x)
+```
 ---
 
 ## Repository Structure
@@ -80,14 +162,16 @@ semantic-flow/
 │   │   └── control.py         # Control-dependency and branch probes
 │   ├── data/
 │   │   ├── dataset.py         # CodeProbeDataset, ProbeExample, save/load utilities
-│   │   └── generator.py       # Synthetic code with known semantic structure
+│   │   └── generator.py       # Synthetic code; MinimalPair and BehavioralTask generation
 │   ├── analysis/
 │   │   ├── metrics.py         # Probe metrics; degradation statistics
 │   │   └── visualization.py   # Layer curves, heatmaps, graph overlays
 │   └── experiments/
 │       ├── phase1_lexical.py
 │       ├── phase2_graph.py
-│       └── phase3_context.py
+│       ├── phase3_context.py
+│       ├── phase4_behavioral.py   # t_latent / t_failure / lead_time evaluation
+│       └── phase5_causal.py       # activation patching; encoding vs. use
 │
 ├── scripts/
 │   ├── extract_activations.py # CLI: run model, dump hidden states
@@ -114,7 +198,9 @@ semantic-flow/
 └── tests/
     ├── test_data.py
     ├── test_graphs.py
-    └── test_probes.py
+    ├── test_probes.py
+    ├── test_phase4.py
+    └── test_phase5.py
 ```
 
 ---
