@@ -45,6 +45,14 @@ The core claim: modern code LLMs may preserve **lexical** surface structure well
         
     
 5. **Encoding vs Use** — When a semantic relation is decodable from hidden states, is the model actually *using* it? Or is it present but causally disconnected from the final answer?
+
+6. **Governed Reasoning** — As a model generates an explanation or solution, how does semantic uncertainty evolve across the reasoning trajectory rather than only at the final answer token?
+
+    - Do semantic probes fail earlier on reasoning tokens than answer-level confidence measures?
+
+    - Can low-dimensional trajectory geometry distinguish reliable from unreliable code reasoning?
+
+    - Does the history of the reasoning trajectory matter independently of its endpoint?
     
 
 ## Project Phases
@@ -135,6 +143,27 @@ y = sanitize(x)
 ...
 sink(x)
 ```
+
+### Phase 6 — Reasoning Trajectories and Governed Code Reasoning
+
+Extend semantic-state monitoring from source-code tokens to generated reasoning traces. Prompt the model to solve code reasoning tasks step by step, then probe hidden states at each reasoning token, at fixed offsets from the final answer, and at normalized relative positions through the trace.
+
+**Output:** Trajectory-level reliability signals for selective code reasoning, validation, abstention, escalation, and trust decisions.
+
+Core measurements:
+
+1. semantic probe quality across reasoning-token position, layer, and task type;
+
+2. comparison between final-answer confidence and trajectory-level semantic stability;
+
+3. output-free projections that remove direct answer-token/logit directions before probing;
+
+4. low-dimensional geometric features of the hidden-state trajectory, such as movement size, convergence, curvature, oscillation, and consistency of direction;
+
+5. matched cases where final answer distributions are similar but reasoning quality or correctness differs.
+
+This phase reframes the project from only asking whether program semantics are represented to asking how semantic information flows through a reasoning process, when uncertainty becomes visible, and whether unreliable code reasoning can be detected before the final answer.
+
 ---
 
 ## Repository Structure
@@ -171,7 +200,8 @@ semantic-flow/
 │       ├── phase2_graph.py
 │       ├── phase3_context.py
 │       ├── phase4_behavioral.py   # t_latent / t_failure / lead_time evaluation
-│       └── phase5_causal.py       # activation patching; encoding vs. use
+│       ├── phase5_causal.py       # activation patching; encoding vs. use
+│       └── phase6_trajectory.py   # reasoning-token probes; trajectory reliability
 │
 ├── scripts/
 │   ├── extract_activations.py # CLI: run model, dump hidden states
@@ -200,7 +230,8 @@ semantic-flow/
     ├── test_graphs.py
     ├── test_probes.py
     ├── test_phase4.py
-    └── test_phase5.py
+    ├── test_phase5.py
+    └── test_phase6.py
 ```
 
 ---
@@ -391,6 +422,7 @@ A model's **semantic state** at layer `l`, position `p` is the set of program re
 3. Evidence distinguishing surface lexical retention from true semantic relation tracking.
 4. An early-warning signal for code reasoning failure based on internal semantic instability.
 5. Initial causal tests showing whether recovered semantic representations are actually used.
+6. A trajectory-level account of governed code reasoning: how semantic uncertainty evolves while the model reasons, and whether that process-level signal improves reliability decisions beyond final-answer confidence.
 
 ---
 
@@ -407,7 +439,9 @@ Phase 4: Does degradation predict model failure?
     ↓
 Phase 5: Are the recovered relations causally used?
     ↓
-Extension: Can semantic-state monitoring improve reliability or flag unsafe answers?
+Phase 6: How does semantic uncertainty evolve through reasoning trajectories?
+    ↓
+Extension: Can trajectory-level semantic monitoring support selective reasoning and trusted code agents?
 ```
 
 ---
