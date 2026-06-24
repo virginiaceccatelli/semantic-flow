@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "semantic-flow"
+version = "0.1.0"
+description = "Tracing Semantic State in Code LLMs: Latent Program-Graph Representations"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Virginia Ceccatelli", email = "virginia.ceccatelli@mail.mcgill.ca" }]
+
+dependencies = [
+    "torch>=2.1.0",
+    "transformers>=4.38.0",
+    "tokenizers>=0.15.0",
+    "accelerate>=0.27.0",
+    "datasets>=2.18.0",
+    "tree-sitter>=0.22.0",
+    "tree-sitter-python>=0.21.0",
+    "networkx>=3.2.0",
+    "scikit-learn>=1.4.0",
+    "numpy>=1.26.0",
+    "pandas>=2.1.0",
+    "matplotlib>=3.8.0",
+    "seaborn>=0.13.0",
+    "tqdm>=4.66.0",
+    "pyyaml>=6.0.1",
+    "einops>=0.7.0",
+    "rich>=13.7.0",
+    "typer>=0.12.0",
+    "jsonlines>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "ipykernel>=6.29.0",
+    "jupyter>=1.0.0",
+    "black>=24.0.0",
+    "isort>=5.13.0",
+    "mypy>=1.8.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true

@@ -1,0 +1,88 @@
+# Experiment configuration for each research phase.
+# Referenced by scripts/run_experiment.py
+
+# ──────────────────────────────────────────────
+# Phase 1: Lexical and local semantic probes
+# ──────────────────────────────────────────────
+phase1:
+  dataset: data/synthetic/phase1.jsonl
+  max_examples: 1000
+  max_seq_length: 512
+  tasks:
+    - lexical_token_type
+    - binding
+  # Ablation variants: run binding probe on same-name / different-name splits
+  ablations:
+    binding_by_surface_name: true
+  # Adversarial variants to generate in dataset
+  synthetic:
+    n_binding: 400
+    n_shadow: 200           # shadowed identifiers (same name, different binding)
+    n_taint: 200
+    n_renamed: 200          # semantically equivalent rewrites with renamed vars
+  notes: >
+    Key question: does probe accuracy on same-name-different-binding pairs
+    drop vs same-name-same-binding? If yes: model tracks true binding.
+    If no: model is tracking lexical identity, not semantics.
+
+# ──────────────────────────────────────────────
+# Phase 2: Graph-like semantic structure recovery
+# ──────────────────────────────────────────────
+phase2:
+  dataset: data/synthetic/phase2.jsonl
+  max_examples: 1000
+  max_seq_length: 512
+  tasks:
+    - defuse_edge
+    - node_role
+    - control_dep
+  neg_ratio: 3.0           # negatives per positive in pairwise tasks
+  max_pairs: 100000
+  notes: >
+    Report precision/recall over the recovered def-use graph, not just accuracy.
+    Log positive/negative ratio per task.
+
+# ──────────────────────────────────────────────
+# Phase 3: Semantic degradation across context
+# ──────────────────────────────────────────────
+phase3:
+  dataset: data/synthetic/phase3.jsonl
+  max_examples: 200        # fewer needed — each expands to multiple context variants
+  max_seq_length: 2048     # large context window needed
+  tasks:
+    - defuse_edge
+  filler_types:
+    - irrelevant           # padding with unrelated code
+    - lexical_decoy        # padding with code using the same variable names
+    - dead_code            # padding with unreachable code
+  filler_sizes: [0, 50, 100, 200, 500, 1000]
+  notes: >
+    For each base example, generate variants with increasing filler.
+    Measure how defuse_edge probe accuracy changes with filler size.
+    Compare irrelevant vs lexical_decoy filler — the gap shows
+    whether the model is confused by surface similarity.
+
+# ──────────────────────────────────────────────
+# Phase 4: Behavioral prediction (future)
+# ──────────────────────────────────────────────
+phase4:
+  dataset: data/raw/bigvul_python.jsonl    # or CodeSearchNet
+  tasks:
+    - defuse_edge
+    - binding
+  behavioral_tasks:
+    - vulnerability_detection
+    - taint_judgment
+  notes: >
+    Correlate probe selectivity degradation with model prediction errors.
+    For each example where the model is wrong, measure whether probe
+    accuracy at the relevant layer was already low.
+
+# ──────────────────────────────────────────────
+# Global settings
+# ──────────────────────────────────────────────
+global:
+  default_model: deepseek-coder-1.3b
+  random_seed: 42
+  results_root: results/
+  log_level: INFO
