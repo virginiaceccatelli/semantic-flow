@@ -65,16 +65,16 @@ def build_binding_examples(
     id_occurrences = ast_extractor.identifier_occurrences(source)
     dfg = dfg_extractor.extract(source)
 
-    # Build a set of same-binding pairs from def-use edges
+    # Build a set of same-binding pairs from def-use edges.
+    # Use all positions for each name so we don't always return the same token.
     positive_pairs: list[tuple[int, int]] = []
+    seen: set[tuple[int, int]] = set()
     for edge in dfg.edges:
-        def_char = edge.definition.line  # approximate: match by line
-        use_char = edge.use.line
-        # Find token indices closest to these positions
-        def_tok = _nearest_token(token_offsets, token_strings, edge.definition.name)
-        use_tok = _nearest_token(token_offsets, token_strings, edge.use.name)
-        if def_tok is not None and use_tok is not None and def_tok != use_tok:
-            positive_pairs.append((def_tok, use_tok))
+        for def_tok in _all_token_positions(token_strings, edge.definition.name):
+            for use_tok in _all_token_positions(token_strings, edge.use.name):
+                if def_tok != use_tok and (def_tok, use_tok) not in seen:
+                    positive_pairs.append((def_tok, use_tok))
+                    seen.add((def_tok, use_tok))
 
     rng = random.Random(rng_seed)
     all_ids = list(range(len(token_strings)))
@@ -217,11 +217,16 @@ def _nearest_token(
     token_strings: list[str],
     name: str,
 ) -> Optional[int]:
-    """Find token index whose string matches `name`."""
+    """Find token index whose string matches `name`. Returns the first match."""
     for i, tok in enumerate(token_strings):
         if tok.strip() == name:
             return i
     return None
+
+
+def _all_token_positions(token_strings: list[str], name: str) -> list[int]:
+    """Return all token indices whose stripped string matches `name`."""
+    return [i for i, tok in enumerate(token_strings) if tok.strip() == name]
 
 
 def _compute_offsets(

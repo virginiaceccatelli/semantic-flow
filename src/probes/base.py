@@ -201,6 +201,6 @@ def cross_validate_probe(
         auc=float(np.mean(aucs)) if aucs else 0.0,
         control_accuracy=control_acc,
         selectivity=mean_acc - control_acc,
-        n_train=len(X),
-        n_test=0,
+        n_train=int(np.mean([len(train_idx) for train_idx, _ in skf.split(X, y)])),
+        n_test=int(np.mean([len(test_idx) for _, test_idx in skf.split(X, y)])),
     )

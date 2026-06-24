@@ -93,7 +93,7 @@ class ModelLoader:
         device_map = "auto" if self.config.device == "cuda" else self.config.device
         model = AutoModelForCausalLM.from_pretrained(
             self.config.hf_id,
-            torch_dtype=self.config.dtype,
+            dtype=self.config.dtype,
             device_map=device_map,
             trust_remote_code=True,
         )
