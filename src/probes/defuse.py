@@ -73,6 +73,8 @@ class DefUseEdgeProbe:
         self, examples: list[DefUseExample], layer: int
     ) -> ProbeResult:
         X, y = self._features(examples, layer)
+        if len(np.unique(y)) < 2:
+            return ProbeResult(layer=layer, task="defuse_edge", notes="single class")
         return cross_validate_probe(
             LinearProbe, X, y, layer=layer, task="defuse_edge", config=self.config
         )
@@ -90,6 +92,8 @@ class DefUseEdgeProbe:
             if len(bucket) < 20:
                 continue
             X, y = self._features(bucket, layer)
+            if len(np.unique(y)) < 2:
+                continue
             label = f"defuse_edge_dist_{lo}_{hi}"
             results[label] = cross_validate_probe(
                 LinearProbe, X, y, layer=layer, task=label, config=self.config

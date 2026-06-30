@@ -129,6 +129,8 @@ class BindingProbe:
             if len(split) < 10:
                 continue
             X, y = self._features(split, layer)
+            if len(np.unique(y)) < 2:
+                continue
             results[split_name] = cross_validate_probe(
                 LinearProbe, X, y, layer=layer,
                 task=f"binding_{split_name}", config=self.config

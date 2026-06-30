@@ -24,6 +24,7 @@ class ProbeConfig:
     probe_type: str = "linear"          # "linear" or "mlp"
     max_iter: int = 1000
     C: float = 0.1                      # Regularization (smaller = stronger)
+    solver: str = "saga"                # saga scales better than lbfgs for n>10K
     cv_folds: int = 5
     random_seed: int = 42
     run_selectivity_control: bool = True
@@ -70,7 +71,7 @@ class LinearProbe:
             C=self.config.C,
             class_weight="balanced",
             random_state=self.config.random_seed,
-            solver="lbfgs",
+            solver=self.config.solver,
         )
         self._fitted = False
 

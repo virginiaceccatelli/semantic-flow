@@ -21,9 +21,7 @@ The core claim: modern code LLMs may preserve **lexical** surface structure well
         
     - **RQ1b — Online state:**  
         At each statement boundary, can the model’s current hidden state recover the concrete or abstract program state implied by the prefix?
-        
-    - RQ1a is largely confirmatory given the four papers. RQ1b is much closer to the actual gap.
-        
+                
 2. **Layer and Position Dynamics** — Where do these representations emerge? Are they strongest in early, middle, or late layers? Do they persist across long contexts?
     
     - probe quality = f (layer, token position, program prefix time)
@@ -446,9 +444,90 @@ Extension: Can trajectory-level semantic monitoring support selective reasoning 
 
 ---
 
+## Progress & Next Steps
+
+### What has been done
+
+- **Synthetic data generated** (`data/synthetic/phase1_binding.jsonl`): 250 examples — 100 binding, 100 taint, 50 shadow.
+- **Pipeline verified on MPS (Apple Silicon)**: `deepseek-coder-1.3b` loads from cache (~10s) and extracts hidden states for 250 examples in ~24s on MPS. No GPU/Colab needed for this model.
+- **Bugs fixed**:
+  - `src/probes/lexical.py` — added one-class guard in `run_lexical_decoy_split` (was crashing when the same-surface-name split had only one label class).
+  - `src/probes/defuse.py` — same one-class guard added to `DefUseEdgeProbe.run()` and `run_by_distance()`.
+  - `src/probes/base.py` — `ProbeConfig` solver changed from `"lbfgs"` to `"saga"`. SAGA is required for the dataset sizes here (18K × 6144 features); lbfgs ran for 5+ hours without converging.
+- **Run script created**: `scripts/run_phases12.py` — runs Phase 1 and Phase 2 end-to-end in the correct environment with logging to `results/run_phases12.log`.
+
+### Remaining work and order of execution
+
+**Step 1 — Run Phase 1 and Phase 2 (needs MPS or GPU, ~30–60 min)**
+
+```bash
+conda activate semflow
+nohup python scripts/run_phases12.py > results/run_phases12.log 2>&1 &
+tail -f results/run_phases12.log   # watch progress
+```
+
+This saves results to `results/phase1/` and `results/phase2/` (CSV per probe task, one PNG plot).
+
+**Step 2 — Review results**
+
+```bash
+# After the script finishes:
+python -c "
+import pandas as pd
+from pathlib import Path
+for p in ['results/phase1', 'results/phase2']:
+    for csv in sorted(Path(p).glob('*.csv')):
+        df = pd.read_csv(csv)
+        print(f'\\n=== {csv} ===')
+        print(df[['layer','accuracy','selectivity','auc']].to_string(index=False))
+"
+```
+
+Key things to check:
+- `lexical_token_type`: should be near-perfect (>0.95) — confirms hidden states encode surface tokens.
+- `variable_binding`: expect 0.80–0.92 accuracy, selectivity >0.3 in early layers.
+- `same_surface_name` split: selectivity should drop toward zero in mid layers — this is the lexical-vs-semantic control.
+- `defuse_edge`: expect 0.70–0.85 accuracy; selectivity tells you if def-use structure is genuinely encoded.
+
+**Step 3 — Generate Phase 3 data (CPU, ~1 min)**
+
+Phase 3 needs longer programs with semantic relations placed at varying distances from fillers:
+
+```python
+from src.data.generator import SyntheticCodeGenerator
+from src.data.dataset import save_jsonl
+
+gen = SyntheticCodeGenerator(seed=42)
+# generate_batch does not yet support filler injection — extend generator.py first
+# Target: examples at context distances [nearby, 50-tok, 200-tok, across-function]
+```
+
+The `SyntheticCodeGenerator` needs a new method (e.g., `generate_context_batch`) that wraps binding/def-use examples in filler blocks of increasing length and type (comments, dead code, decoys). Add this to `src/data/generator.py` before running Phase 3.
+
+**Step 4 — Run Phase 3** (needs Phase 1/2 probe CSVs + new context data)
+
+Once Phase 1/2 probes are trained and Phase 3 data is generated:
+
+```bash
+nohup python -c "
+from src.experiments.phase3_context import run_phase3
+# (requires Phase 3 data + trained probe weights — implement save/load in run_phase3 first)
+" > results/run_phase3.log 2>&1 &
+```
+
+**Step 5 — Phases 4–6** (blocked on Phases 1–3 + external datasets)
+
+- Phase 4 requires BigVul or CodeSearchNet — download and preprocess before running.
+- Phase 5 (causal patching) requires Phase 4 probe checkpoints.
+- Phase 6 (reasoning trajectories) requires a model that generates chain-of-thought; switch to an instruct-tuned variant.
+
+---
+
 ## Notes
 
 - Start with Python; expand to Java once the framework is stable.
 - Keep probes intentionally low-capacity (linear preferred over MLP where possible) to avoid probes memorizing surface features.
 - Always run a **selectivity control**: train probes on shuffled labels to confirm probes are not exploiting spurious statistical regularities.
 - Record exact random seeds and layer indices for reproducibility.
+- **Always run in the `semflow` conda env** (`conda activate semflow`). The base env has Python 3.13 and different package versions.
+- **For long jobs use nohup**, not background shells: `nohup python script.py > log.txt 2>&1 &`
