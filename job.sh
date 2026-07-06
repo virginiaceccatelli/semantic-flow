@@ -1,28 +1,24 @@
 #!/bin/bash
 #$ -S /bin/bash
-#$ -N my_experiment          # job name  
-#$ -l tmem=16G               # memory   
-#$ -l h_rt=24:00:00          # wall time 
-#$ -l gpu=true               # request a GPU 
-#$ -pe gpu 2                 # parallel environment with 2 GPUs (** multiple)
-#$ -R y                      # GPU reservation for multiple GPUs (** multiple
-#$ -j y                      # merge stdout/stderr
+#$ -N semflow-phases12       # job name
+#$ -l tmem=32G               # memory
+#$ -l h_rt=04:00:00          # wall time
+#$ -l gpu=true               # request a GPU
+#$ -pe gpu 1                 # 1 GPU
+#$ -j y                      # merge stdout/stderr into one log
 #$ -cwd                      # run from directory where you ran qsub
-#$ -N JOBNAME                # FILL: job name
 
-
-# activate environment 
 source /share/apps/source_files/anaconda/conda-2022-5.source
 conda activate semflow
 
-export HF_HOME=/scratch/youruser/hf_cache
-export TRANSFORMERS_CACHE=/scratch/youruser/hf_cache
+export HF_HOME=$HOME/Scratch/hf_cache
+export TRANSFORMERS_CACHE=$HOME/Scratch/hf_cache
+export PYTHONPATH=$HOME/semantic-flow
 
-python3 train.py
-
+cd $HOME/semantic-flow
+python scripts/run_phases12.py
 
 # COMMANDS
-# qsub job.sh     submit
+# qsub job.sh           submit
 # qstat                 check status (qw = queued, r = running)
-# qdel <job-ID>         kill it if needed
-
+# qdel <job-ID>         cancel job

@@ -31,7 +31,8 @@ from src.experiments.phase1_lexical import run_phase1
 from src.experiments.phase2_graph import run_phase2
 from src.probes.base import ProbeConfig
 
-config = ModelConfig.from_registry("deepseek-coder-1.3b", device="mps")
+device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+config = ModelConfig.from_registry("deepseek-coder-1.3b", device=device)
 loader = ModelLoader(config)
 model = loader.model
 tokenizer = loader.tokenizer
