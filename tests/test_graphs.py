@@ -100,9 +100,6 @@ class TestCFGExtractor:
         cfg = extractor.extract(SIMPLE_CODE)
         assert len(cfg) > 0
 
-    @pytest.mark.xfail(
-        reason="CFGExtractor treats FunctionDef as atomic; intra-function flow is Phase 2 scope"
-    )
     def test_if_creates_branches(self):
         code = "def f(x):\n    if x > 0:\n        y = 1\n    else:\n        y = 2\n    return y\n"
         extractor = CFGExtractor()
@@ -111,10 +108,21 @@ class TestCFGExtractor:
         node_types = [n.stmt_type for n in cfg.nodes]
         assert "If" in node_types
 
-    @pytest.mark.xfail(
-        reason="CFGExtractor treats FunctionDef as atomic; intra-function flow is Phase 2 scope"
-    )
     def test_control_dependencies(self):
+        code = "def f(x):\n    if x > 0:\n        y = x + 1\n    return y\n"
+        extractor = CFGExtractor()
+        cfg = extractor.extract(code)
+        cdg = extractor.control_dependencies(cfg)
+        assert cdg.number_of_edges() > 0
+        # The assignment inside the if-body is dependent on the If guard;
+        # the return after the join point is NOT.
+        if_node = next(n for n in cfg.nodes if n.stmt_type == "If")
+        assign = next(n for n in cfg.nodes if n.stmt_type == "Assign")
+        ret = next(n for n in cfg.nodes if n.stmt_type == "Return")
+        assert cdg.has_edge(if_node.node_id, assign.node_id)
+        assert not cdg.has_edge(if_node.node_id, ret.node_id)
+
+    def test_control_dependencies_edge_count(self):
         code = "def f(x):\n    if x > 0:\n        y = x + 1\n    return y\n"
         extractor = CFGExtractor()
         cfg = extractor.extract(code)

@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import random
 import string
-import textwrap
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -34,6 +33,7 @@ class MinimalPair:
     relation_type: str            # "taint" | "binding" | "guard"
     corruption_description: str   # human-readable description of what changed
     target_line: int              # line where the semantic decision is made (sink / use / op)
+    metadata: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -56,6 +56,38 @@ class BehavioralTask:
     correct_idx: int              # index into choices of the correct answer
     semantic_relation: str        # "taint" | "binding" | "def_use" | "control" | "guard"
     metadata: dict = field(default_factory=dict)
+
+
+def pair_to_dict(pair: "MinimalPair") -> dict:
+    return {
+        "pair_id": pair.pair_id,
+        "clean": pair.clean.to_dict(),
+        "corrupted": pair.corrupted.to_dict(),
+        "relation_type": pair.relation_type,
+        "corruption_description": pair.corruption_description,
+        "target_line": pair.target_line,
+        "metadata": pair.metadata,
+    }
+
+
+def pair_from_dict(d: dict) -> "MinimalPair":
+    def _ex(sub: dict) -> ProbeExample:
+        return ProbeExample(
+            example_id=sub["example_id"],
+            source=sub["source"],
+            language=sub.get("language", "python"),
+            label=sub.get("label"),
+            metadata=sub.get("metadata", {}),
+        )
+    return MinimalPair(
+        pair_id=d["pair_id"],
+        clean=_ex(d["clean"]),
+        corrupted=_ex(d["corrupted"]),
+        relation_type=d["relation_type"],
+        corruption_description=d.get("corruption_description", ""),
+        target_line=d.get("target_line", -1),
+        metadata=d.get("metadata", {}),
+    )
 
 
 BEHAVIORAL_TASK_TYPES = [
@@ -123,11 +155,16 @@ class SyntheticCodeGenerator:
             val = rng.randint(0, 100)
             lines.append(f"    {v} = {val}")
 
-        # Chain of uses
+        # Chain of uses, optionally inside a conditional branch
+        indent = "    "
+        if spec.has_branch:
+            guard_var = vars_[0]
+            lines.append(f"    if {guard_var} > 50:")
+            indent = "        "
         for i in range(spec.chain_length):
             v_src = vars_[i % len(vars_)]
             v_dst = vars_[(i + 1) % len(vars_)]
-            lines.append(f"    {v_dst} = {v_dst} + {v_src}")
+            lines.append(f"{indent}{v_dst} = {v_dst} + {v_src}")
 
         # Dead definition (if requested)
         if spec.has_dead_def:
@@ -165,20 +202,28 @@ class SyntheticCodeGenerator:
         sanitizer_tmpl = rng.choice(self.SANITIZERS)
 
         lines = ["def func():"]
+        # line_labels[i]: taint state of the live value after line i (1-based lines)
+        line_labels: list[dict] = [{"line": 1, "tainted": 0, "live_var": None}]
+
         lines.append(f"    x = {source_expr}")
+        line_labels.append({"line": len(lines), "tainted": 1, "live_var": "x"})
 
         # Propagation chain
         prev = "x"
         for i in range(chain_length):
             nxt = f"v{i}"
             lines.append(f"    {nxt} = {prev}")
+            line_labels.append({"line": len(lines), "tainted": 1, "live_var": nxt})
             prev = nxt
 
         if sanitized:
             lines.append(f"    safe = {sanitizer_tmpl.format(prev)}")
+            line_labels.append({"line": len(lines), "tainted": 0, "live_var": "safe"})
             lines.append(f"    {sink_tmpl.format('safe')}")
+            line_labels.append({"line": len(lines), "tainted": 0, "live_var": "safe"})
         else:
             lines.append(f"    {sink_tmpl.format(prev)}")
+            line_labels.append({"line": len(lines), "tainted": 1, "live_var": prev})
 
         source = "\n".join(lines)
         return ProbeExample(
@@ -191,27 +236,35 @@ class SyntheticCodeGenerator:
                 "chain_length": chain_length,
                 "source_expr": source_expr,
                 "sink": sink_tmpl,
+                "line_labels": line_labels,
             },
         )
 
-    def generate_shadow(self) -> ProbeExample:
+    def generate_shadow(self, seed: Optional[int] = None) -> ProbeExample:
         """Generate a function where two occurrences of the same name have different bindings.
 
         Key adversarial case: a probe relying on lexical identity will falsely predict
         same binding; a probe tracking semantic structure should distinguish them.
+        Programs are varied (names, constants, structure) so that grouped CV has
+        distinct groups and probes cannot memorize a single template.
         """
-        source = textwrap.dedent("""\
-            def func(x):
-                result = x * 2
-                if result > 10:
-                    x = result - 5   # shadows parameter x
-                    result = x + 1   # this 'x' refers to the reassigned x
-                return result
-        """)
+        rng = random.Random(seed) if seed is not None else self.rng
+        param = rng.choice(self.SAFE_NAMES)
+        result = self._fresh_name({param})
+        k1, k2, k3 = rng.randint(2, 9), rng.randint(2, 20), rng.randint(1, 9)
+        threshold = rng.randint(5, 50)
+        lines = [
+            f"def func({param}):",
+            f"    {result} = {param} * {k1}",
+            f"    if {result} > {threshold}:",
+            f"        {param} = {result} - {k2}",   # shadows parameter
+            f"        {result} = {param} + {k3}",   # uses the reassigned binding
+            f"    return {result}",
+        ]
         return ProbeExample(
-            example_id="synthetic_shadow_0",
-            source=source,
-            metadata={"type": "shadow", "shadowed_var": "x"},
+            example_id=f"synthetic_shadow_{rng.randint(0, 999999)}",
+            source="\n".join(lines) + "\n",
+            metadata={"type": "shadow", "shadowed_var": param},
         )
 
     def generate_renamed(self, original: ProbeExample, rename_map: dict[str, str]) -> ProbeExample:
@@ -243,6 +296,7 @@ class SyntheticCodeGenerator:
                 chain_length=self.rng.randint(1, 4),
                 has_dead_def=self.rng.random() < 0.3,
                 has_shadow=self.rng.random() < 0.2,
+                has_branch=self.rng.random() < 0.5,
                 seed=i,
             )
             examples.append(self.generate_binding(spec))
@@ -257,58 +311,83 @@ class SyntheticCodeGenerator:
         self.rng.shuffle(examples)
         return examples
 
+    SANITIZED_NAME_CANDIDATES = ["s0", "s1", "u0", "w0", "z0", "q0"]
+
     def generate_minimal_pair(
         self,
         pair_id: str = "pair_0",
         chain_length: int = 2,
         seed: Optional[int] = None,
-    ) -> "MinimalPair":
-        """Generate a clean/corrupted taint pair differing by a single sanitizer placement.
+        tokenizer=None,
+    ) -> Optional["MinimalPair"]:
+        """Generate a clean/corrupted taint pair differing ONLY at the sink argument.
 
-        Clean  : sanitizer applied to the tainted variable before the sink.
-        Corrupted: sanitizer applied to a different (irrelevant) variable;
-                   the tainted value still reaches the sink.
+        Clean    : ... s0 = sanitize(vk); sink(s0)   → sanitized value reaches sink
+        Corrupted: ... s0 = sanitize(vk); sink(vk)   → tainted value reaches sink
+
+        The two sources are identical except for the sink-argument tokens, so
+        activation patching can align positions one-to-one. When a tokenizer is
+        given, the pair is verified to tokenize to the SAME length with the
+        difference confined to the sink-argument span; candidate names for the
+        sanitized variable are tried until this holds. Returns None if no
+        candidate produces a length-matched pair.
         """
         rng = random.Random(seed) if seed is not None else self.rng
         source_expr = rng.choice(self.SOURCES)
         sink_tmpl = rng.choice(self.SINKS)
         sanitizer_tmpl = rng.choice(self.SANITIZERS)
 
-        # Propagation chain: x → v0 → v1 → ...
         chain_vars = ["x"] + [f"v{i}" for i in range(chain_length)]
         sink_var = chain_vars[-1]
 
-        def _chain_lines() -> list[str]:
-            lines = [f"    x = {source_expr}"]
+        def _sources(safe_name: str) -> tuple[str, str]:
+            base = ["def func():", f"    x = {source_expr}"]
             for i in range(chain_length):
-                lines.append(f"    {chain_vars[i + 1]} = {chain_vars[i]}")
-            return lines
+                base.append(f"    {chain_vars[i + 1]} = {chain_vars[i]}")
+            base.append(f"    {safe_name} = {sanitizer_tmpl.format(sink_var)}")
+            clean = base + [f"    {sink_tmpl.format(safe_name)}"]
+            corrupted = base + [f"    {sink_tmpl.format(sink_var)}"]
+            return "\n".join(clean), "\n".join(corrupted)
 
-        # Clean: sanitize the sink variable
-        clean_lines = ["def func():"] + _chain_lines()
-        clean_lines.append(f"    safe = {sanitizer_tmpl.format(sink_var)}")
-        clean_lines.append(f"    {sink_tmpl.format('safe')}")
-        clean_source = "\n".join(clean_lines)
+        chosen = None
+        diff_positions: list[int] = []
+        candidates = list(self.SANITIZED_NAME_CANDIDATES)
+        rng.shuffle(candidates)
+        for safe_name in candidates:
+            clean_src, corr_src = _sources(safe_name)
+            if tokenizer is None:
+                chosen = (safe_name, clean_src, corr_src)
+                break
+            ids_clean = tokenizer(clean_src, add_special_tokens=False)["input_ids"]
+            ids_corr = tokenizer(corr_src, add_special_tokens=False)["input_ids"]
+            if len(ids_clean) != len(ids_corr):
+                continue
+            diffs = [i for i, (a, b) in enumerate(zip(ids_clean, ids_corr)) if a != b]
+            # Difference must be confined to a short contiguous span (the sink arg)
+            if diffs and diffs[-1] - diffs[0] <= 3:
+                chosen = (safe_name, clean_src, corr_src)
+                diff_positions = diffs
+                break
+        if chosen is None:
+            return None
 
-        # Corrupted: sanitize a decoy variable instead
-        corrupted_lines = ["def func():"] + _chain_lines()
-        corrupted_lines.append(f"    _decoy = {sanitizer_tmpl.format('x')}")
-        corrupted_lines.append(f"    {sink_tmpl.format(sink_var)}")
-        corrupted_source = "\n".join(corrupted_lines)
-
-        target_line = len(clean_lines) - 1  # sink line index (0-based)
+        safe_name, clean_source, corrupted_source = chosen
+        n_lines = clean_source.count("\n") + 1
+        target_line = n_lines - 1  # 0-based sink line
 
         clean_ex = ProbeExample(
             example_id=f"{pair_id}_clean",
             source=clean_source,
             label=0,
-            metadata={"type": "taint", "sanitized": True, "pair_id": pair_id},
+            metadata={"type": "taint", "sanitized": True, "pair_id": pair_id,
+                      "line_labels": None},
         )
         corrupted_ex = ProbeExample(
             example_id=f"{pair_id}_corrupted",
             source=corrupted_source,
             label=1,
-            metadata={"type": "taint", "sanitized": False, "pair_id": pair_id},
+            metadata={"type": "taint", "sanitized": False, "pair_id": pair_id,
+                      "line_labels": None},
         )
         return MinimalPair(
             pair_id=pair_id,
@@ -316,11 +395,150 @@ class SyntheticCodeGenerator:
             corrupted=corrupted_ex,
             relation_type="taint",
             corruption_description=(
-                f"Sanitizer applied to decoy variable 'x' instead of sink variable "
-                f"'{sink_var}'; taint reaches sink unchanged."
+                f"Sink receives raw '{sink_var}' instead of sanitized "
+                f"'{safe_name}'; sources differ only at the sink argument."
             ),
             target_line=target_line,
+            metadata={
+                "sink_var": sink_var,
+                "safe_name": safe_name,
+                "length_matched": tokenizer is not None,
+                "diff_token_positions": diff_positions,
+                "sanitizer_line": target_line - 1,
+            },
         )
+
+    # ── Context-degradation variants (E5) ────────────────────────────────────
+
+    FILLER_TYPES = [
+        "comment_prose",      # comments / unrelated prose (no executable effect)
+        "dead_code",          # syntactically valid code that never executes
+        "lexical_decoy",      # lexically similar identifiers, no semantic interaction
+        "competing_update",   # genuinely reassigns the tracked variable
+        "scope_shadow",       # nested scope binds the same name locally
+    ]
+
+    def _filler_unit(self, filler_type: str, var: str, k: int) -> list[str]:
+        """One repeatable, self-contained filler block (function-body indented).
+
+        dead_code / lexical_decoy / scope_shadow use fresh names so the
+        tracked def-use edge's ground truth is unchanged; competing_update
+        deliberately redefines the tracked variable (ground truth is
+        recomputed on the variant source by the experiment harness).
+        """
+        if filler_type == "comment_prose":
+            return [
+                f"    # note {k}: auxiliary bookkeeping for the surrounding routine.",
+                f"    # it does not affect the primary data flow described above.",
+            ]
+        if filler_type == "dead_code":
+            return [
+                f"    if False:",
+                f"        _never_{k} = {k}",
+                f"        _also_{k} = _never_{k} + 1",
+            ]
+        if filler_type == "lexical_decoy":
+            return [
+                f"    {var}_tmp_{k} = {k}",
+                f"    {var}_aux_{k} = {var}_tmp_{k} + 1",
+            ]
+        if filler_type == "competing_update":
+            return [f"    {var} = {k}"]
+        if filler_type == "scope_shadow":
+            return [
+                f"    def _inner_{k}():",
+                f"        {var} = -{k}",
+                f"        return {var}",
+            ]
+        raise ValueError(f"Unknown filler type: {filler_type}")
+
+    def make_filler(
+        self,
+        filler_type: str,
+        var: str,
+        tokenizer,
+        target_tokens: int,
+    ) -> tuple[str, int]:
+        """Build a filler block measured with the REAL tokenizer.
+
+        Repeats unit blocks until the token count reaches `target_tokens`.
+        Returns (filler_text, actual_token_count)."""
+        if target_tokens <= 0:
+            return "", 0
+        lines: list[str] = []
+        count = 0
+        k = 0
+        while count < target_tokens and k < 1000:
+            lines.extend(self._filler_unit(filler_type, var, k))
+            k += 1
+            text = "\n".join(lines)
+            count = len(tokenizer(text, add_special_tokens=False)["input_ids"])
+        return "\n".join(lines), count
+
+    def generate_context_batch(
+        self,
+        tokenizer,
+        n_base: int = 50,
+        filler_types: Optional[list[str]] = None,
+        filler_sizes: list[int] = [0, 50, 100, 200, 500, 1000],
+        seed: int = 42,
+    ) -> list[ProbeExample]:
+        """Base binding programs wrapped with token-counted filler between the
+        first def-use edge's definition and use.
+
+        Each variant's metadata records: base_example_id, filler_type,
+        filler_tokens (actual, measured), filler_target, tracked_var.
+        """
+        from src.graphs.dfg_extractor import DefUseExtractor
+
+        filler_types = filler_types or list(self.FILLER_TYPES)
+        rng = random.Random(seed)
+        extractor = DefUseExtractor()
+        variants: list[ProbeExample] = []
+
+        n_made = 0
+        attempt = 0
+        while n_made < n_base and attempt < n_base * 5:
+            attempt += 1
+            spec = SyntheticSpec(
+                n_vars=rng.randint(2, 4),
+                chain_length=rng.randint(2, 4),
+                seed=rng.randint(0, 999999),
+            )
+            base = self.generate_binding(spec)
+            dfg = extractor.extract(base.source)
+            edge = next(
+                (e for e in dfg.edges if e.use.line > e.definition.line + 0), None
+            )
+            if edge is None:
+                continue
+            n_made += 1
+            var = edge.definition.name
+            lines = base.source.splitlines()
+            insert_at = edge.use.line - 1  # insert before the use's line (0-based)
+
+            for ftype in filler_types:
+                for size in filler_sizes:
+                    if size == 0:
+                        variant_source = base.source
+                        actual = 0
+                    else:
+                        filler_text, actual = self.make_filler(ftype, var, tokenizer, size)
+                        new_lines = lines[:insert_at] + filler_text.splitlines() + lines[insert_at:]
+                        variant_source = "\n".join(new_lines)
+                    variants.append(ProbeExample(
+                        example_id=f"{base.example_id}_{ftype}_{size}",
+                        source=variant_source,
+                        metadata={
+                            "type": "context_variant",
+                            "base_example_id": base.example_id,
+                            "filler_type": ftype,
+                            "filler_target": size,
+                            "filler_tokens": actual,
+                            "tracked_var": var,
+                        },
+                    ))
+        return variants
 
     def generate_behavioral_task(
         self,
@@ -450,14 +668,21 @@ class SyntheticCodeGenerator:
         self,
         n: int = 20,
         seed: int = 42,
+        tokenizer=None,
     ) -> list["MinimalPair"]:
-        """Generate a batch of minimal pairs for Phase 5."""
+        """Generate a batch of minimal pairs for the causal-patching experiment.
+
+        With a tokenizer, only length-matched pairs are returned (unmatchable
+        candidates are skipped), so the batch may be smaller than n."""
         rng = random.Random(seed)
-        return [
-            self.generate_minimal_pair(
+        pairs = []
+        for i in range(n):
+            pair = self.generate_minimal_pair(
                 pair_id=f"pair_{i}",
                 chain_length=rng.randint(1, 3),
                 seed=rng.randint(0, 999999),
+                tokenizer=tokenizer,
             )
-            for i in range(n)
-        ]
+            if pair is not None:
+                pairs.append(pair)
+        return pairs

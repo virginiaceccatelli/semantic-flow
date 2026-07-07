@@ -64,6 +64,43 @@ class ModelConfig:
         return cls(name=name, **info, **kwargs)
 
 
+_TOKENIZER_PROBE = "def func():\n    a = 17\n    return a"
+
+
+def load_tokenizer(hf_id: str) -> PreTrainedTokenizerBase:
+    """Load a tokenizer and VERIFY it round-trips code exactly.
+
+    On transformers 5.x, AutoTokenizer resolves deepseek-coder to the slow
+    sentencepiece LlamaTokenizer, which silently mis-tokenizes code
+    ('def func' → ['de','ff','unc'], whitespace lost). PreTrainedTokenizerFast
+    loads the repo's tokenizer.json directly and is correct, so try it first.
+    Any tokenizer that fails the round-trip check is rejected rather than
+    silently corrupting every downstream label and activation.
+    """
+    from transformers import PreTrainedTokenizerFast
+
+    last_error: Optional[Exception] = None
+    for loader_fn in (
+        lambda: PreTrainedTokenizerFast.from_pretrained(hf_id),
+        lambda: AutoTokenizer.from_pretrained(hf_id, trust_remote_code=True),
+    ):
+        try:
+            tok = loader_fn()
+        except Exception as e:  # try the next loading strategy
+            last_error = e
+            continue
+        ids = tok(_TOKENIZER_PROBE)["input_ids"]
+        if tok.decode(ids, skip_special_tokens=True) == _TOKENIZER_PROBE:
+            if tok.pad_token is None:
+                tok.pad_token = tok.eos_token
+            return tok
+    raise RuntimeError(
+        f"No tokenizer for {hf_id} round-trips code exactly "
+        f"(last load error: {last_error}). Refusing to continue with a "
+        "tokenizer that would corrupt inputs and labels."
+    )
+
+
 class ModelLoader:
     """Load a pretrained code LLM and its tokenizer."""
 
@@ -81,12 +118,7 @@ class ModelLoader:
     @property
     def tokenizer(self) -> PreTrainedTokenizerBase:
         if self._tokenizer is None:
-            self._tokenizer = AutoTokenizer.from_pretrained(
-                self.config.hf_id,
-                trust_remote_code=True,
-            )
-            if self._tokenizer.pad_token is None:
-                self._tokenizer.pad_token = self._tokenizer.eos_token
+            self._tokenizer = load_tokenizer(self.config.hf_id)
         return self._tokenizer
 
     def _load_model(self) -> PreTrainedModel:

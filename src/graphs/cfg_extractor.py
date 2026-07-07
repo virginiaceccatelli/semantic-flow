@@ -26,6 +26,7 @@ class CFGNode:
     end_line: int
     end_col: int
     label: str = ""         # short human-readable label
+    guard_ids: tuple[int, ...] = ()   # node_ids of enclosing branch guards (innermost last)
 
     def __hash__(self):
         return hash(self.node_id)
@@ -91,7 +92,15 @@ class ControlFlowGraph:
 
 
 class CFGExtractor:
-    """Build a statement-level CFG from Python source."""
+    """Build a statement-level CFG from Python source.
+
+    Descends into function bodies: a FunctionDef node is linked to its body
+    via a `function_body` edge, and the intra-function flow (branches, loops)
+    is part of the graph. Each node records the branch guards it is nested
+    under (`guard_ids`), which control_dependencies() reads directly — this
+    avoids the over-marking that a descendants()-based criterion produces
+    past branch join points.
+    """
 
     def extract(self, source: str) -> ControlFlowGraph:
         try:
@@ -100,7 +109,8 @@ class CFGExtractor:
             return ControlFlowGraph()
 
         cfg = ControlFlowGraph()
-        entry_exits = self._process_stmts(tree.body, cfg)
+        self._guard_stack: list[int] = []
+        self._process_stmts(tree.body, cfg)
         return cfg
 
     def _process_stmts(
@@ -127,16 +137,34 @@ class CFGExtractor:
 
         return first, prev_exits
 
+    def _new_tagged_node(self, stmt: ast.stmt, cfg: ControlFlowGraph) -> CFGNode:
+        node = cfg._new_node(stmt)
+        node.guard_ids = tuple(self._guard_stack)
+        return node
+
+    def _process_guarded(
+        self,
+        stmts: list[ast.stmt],
+        cfg: ControlFlowGraph,
+        guard: CFGNode,
+    ) -> tuple[Optional[CFGNode], list[CFGNode]]:
+        """Process a statement list nested under a branch guard."""
+        self._guard_stack.append(guard.node_id)
+        try:
+            return self._process_stmts(stmts, cfg)
+        finally:
+            self._guard_stack.pop()
+
     def _process_stmt(
         self,
         stmt: ast.stmt,
         cfg: ControlFlowGraph,
     ) -> tuple[Optional[CFGNode], list[CFGNode]]:
-        node = cfg._new_node(stmt)
+        node = self._new_tagged_node(stmt, cfg)
 
         if isinstance(stmt, (ast.If,)):
-            then_entry, then_exits = self._process_stmts(stmt.body, cfg)
-            else_entry, else_exits = self._process_stmts(stmt.orelse, cfg)
+            then_entry, then_exits = self._process_guarded(stmt.body, cfg, node)
+            else_entry, else_exits = self._process_guarded(stmt.orelse, cfg, node)
 
             if then_entry:
                 cfg.add_edge(node, then_entry, kind="true_branch")
@@ -151,8 +179,8 @@ class CFGExtractor:
             return node, exits
 
         elif isinstance(stmt, (ast.While, ast.For, ast.AsyncFor)):
-            body_entry, body_exits = self._process_stmts(stmt.body, cfg)
-            else_entry, else_exits = self._process_stmts(stmt.orelse, cfg)
+            body_entry, body_exits = self._process_guarded(stmt.body, cfg, node)
+            else_entry, else_exits = self._process_guarded(stmt.orelse, cfg, node)
 
             if body_entry:
                 cfg.add_edge(node, body_entry, kind="loop_body")
@@ -173,15 +201,31 @@ class CFGExtractor:
 
             handler_exits: list[CFGNode] = []
             for handler in getattr(stmt, "handlers", []):
-                h_entry, h_exits = self._process_stmts(handler.body, cfg)
+                h_entry, h_exits = self._process_guarded(handler.body, cfg, node)
                 if h_entry:
                     cfg.add_edge(node, h_entry, kind="except_branch")
                 handler_exits.extend(h_exits)
 
             return node, body_exits + handler_exits
 
-        elif isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            # Treat nested defs as atomic from the outer CFG's perspective.
+        elif isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            # Descend into the function body. The body's guard context restarts
+            # inside the function: statements there are not control-dependent
+            # on branches around the def.
+            outer_stack = self._guard_stack
+            self._guard_stack = []
+            try:
+                body_entry, _body_exits = self._process_stmts(stmt.body, cfg)
+            finally:
+                self._guard_stack = outer_stack
+            if body_entry:
+                cfg.add_edge(node, body_entry, kind="function_body")
+            return node, [node]
+
+        elif isinstance(stmt, ast.ClassDef):
+            body_entry, _ = self._process_stmts(stmt.body, cfg)
+            if body_entry:
+                cfg.add_edge(node, body_entry, kind="class_body")
             return node, [node]
 
         elif isinstance(stmt, ast.Return):
@@ -191,17 +235,15 @@ class CFGExtractor:
             return node, [node]
 
     def control_dependencies(self, cfg: ControlFlowGraph) -> nx.DiGraph:
-        """Approximate control-dependency graph.
+        """Control-dependency graph read off the guard nesting recorded at
+        construction time.
 
-        Node B is control-dependent on node A if A is a branch and
-        B is in exactly one branch of A (post-dominator criterion).
-        This is a simplified version: we mark all body nodes as
-        dependent on their enclosing branch node.
+        Node B is control-dependent on guard A iff A appears in B's
+        guard_ids — i.e. B is (transitively) inside a branch/loop/handler
+        body governed by A. Statements after the join point are not marked.
         """
         cdg = nx.DiGraph()
-        for u, v, data in cfg.graph.edges(data=True):
-            if data.get("kind") in ("true_branch", "false_branch", "loop_body", "loop_else"):
-                for descendant in nx.descendants(cfg.graph, v):
-                    cdg.add_edge(u, descendant, kind="control_dep")
-                cdg.add_edge(u, v, kind="control_dep")
+        for node in cfg.nodes:
+            for guard_id in node.guard_ids:
+                cdg.add_edge(guard_id, node.node_id, kind="control_dep")
         return cdg

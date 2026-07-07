@@ -121,50 +121,40 @@ def extract_hidden_states(
     return manager.cache
 
 
-def patch_activations(
+@torch.no_grad()
+def patch_positions(
     model: nn.Module,
     input_ids: torch.Tensor,
-    patches: dict[int, torch.Tensor],
+    patches: dict[int, dict[int, torch.Tensor]],
     attention_mask: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
-    """Run a forward pass with activation patches at specified layers.
+    """Run a forward pass with specific residual-stream POSITIONS replaced.
 
-    patches: {layer_idx: replacement_hidden_states (seq_len, d_model)}
+    patches: {layer_idx: {position: replacement_vector (d_model,)}}
 
-    Returns logits tensor. Used for Phase 5 causal intervention experiments.
+    Only the listed positions are overwritten at each layer's output; all other
+    positions flow through untouched. Returns the logits tensor.
     """
-    handles: list[torch.utils.hooks.RemovableHook] = []
+    manager = HookManager(model)  # reuse its decoder-layer discovery
+    all_layers = manager._get_decoder_layers()
+    handles: list = []
 
-    def _get_layers():
-        for attr in ("layers", "h", "blocks", "decoder_layers"):
-            layers = getattr(model, attr, None)
-            if layers is None:
-                inner = getattr(model, "model", None)
-                if inner is not None:
-                    layers = getattr(inner, attr, None)
-            if layers is not None:
-                return list(enumerate(layers))
-        raise RuntimeError("Could not locate decoder layers for patching.")
+    def make_patch_hook(pos_patches: dict[int, torch.Tensor]):
+        def hook(module, input, output):
+            hidden = output[0] if isinstance(output, tuple) else output
+            for pos, vec in pos_patches.items():
+                hidden[:, pos, :] = vec.to(device=hidden.device, dtype=hidden.dtype)
+            if isinstance(output, tuple):
+                return (hidden,) + output[1:]
+            return hidden
+        return hook
 
-    for layer_idx, layer in _get_layers():
-        if layer_idx not in patches:
-            continue
-        patch = patches[layer_idx]
-
-        def make_patch_hook(p):
-            def hook(module, input, output):
-                hidden = output[0] if isinstance(output, tuple) else output
-                # Replace with patch, keeping rest of output tuple intact
-                if isinstance(output, tuple):
-                    return (p.to(hidden.device),) + output[1:]
-                return p.to(hidden.device)
-            return hook
-
-        handles.append(layer.register_forward_hook(make_patch_hook(patch)))
+    for layer_idx, layer in all_layers:
+        if layer_idx in patches:
+            handles.append(layer.register_forward_hook(make_patch_hook(patches[layer_idx])))
 
     try:
-        with torch.no_grad():
-            out = model(input_ids=input_ids, attention_mask=attention_mask)
+        out = model(input_ids=input_ids, attention_mask=attention_mask)
         return out.logits
     finally:
         for h in handles:

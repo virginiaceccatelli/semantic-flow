@@ -1,5 +1,11 @@
-from .phase1_lexical import run_phase1
-from .phase2_graph import run_phase2
-from .phase3_context import run_phase3
+from .static_probes import run_static_probes
+from .context_degradation import run_context_degradation
+from .behavioral_leadtime import run_behavioral_leadtime
+from .causal_patching import run_causal_patching
 
-__all__ = ["run_phase1", "run_phase2", "run_phase3"]
+__all__ = [
+    "run_static_probes",
+    "run_context_degradation",
+    "run_behavioral_leadtime",
+    "run_causal_patching",
+]

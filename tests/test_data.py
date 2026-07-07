@@ -85,7 +85,12 @@ class TestSyntheticCodeGenerator:
     def test_generate_shadow(self):
         gen = SyntheticCodeGenerator(seed=0)
         ex = gen.generate_shadow()
-        assert "shadows" in ex.source
+        var = ex.metadata["shadowed_var"]
+        # the parameter is reassigned inside the branch (the shadowing write)
+        assert f"        {var} = " in ex.source
+        # programs are varied, not a fixed template
+        ex2 = gen.generate_shadow()
+        assert ex.source != ex2.source
 
     def test_generate_renamed(self):
         gen = SyntheticCodeGenerator(seed=0)

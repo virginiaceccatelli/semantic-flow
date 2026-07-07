@@ -1,0 +1,31 @@
+{
+  "stage": "10_extract_activations",
+  "timestamp": "20260707_183354",
+  "git_sha": "fe8242b",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/10_extract_activations.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--dataset",
+    "data/smoke/synthetic/context.jsonl",
+    "--output",
+    "results/smoke/act/context",
+    "--max-length",
+    "2048"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "dataset": "data/smoke/synthetic/context.jsonl",
+    "output": "results/smoke/act/context",
+    "layers": "[0, 3, 7, 11, 15, 19, 23]",
+    "max_length": "2048",
+    "device": "mps",
+    "dtype": "float16"
+  },
+  "wall_time_s": 296.7,
+  "extra": {
+    "n_saved": 90,
+    "n_skipped": 0
+  }
+}

@@ -1,154 +1,184 @@
-"""Tests for probe classes."""
+"""Tests for probe infrastructure: alignment, grouped CV, builders."""
+
+from __future__ import annotations
+
+import random
 
 import numpy as np
 import pytest
 
-from src.probes.base import LinearProbe, ProbeConfig, ProbeResult, cross_validate_probe
-from src.probes.lexical import BindingExample, BindingProbe, LexicalExample, LexicalProbe
-from src.probes.defuse import DefUseEdgeProbe, DefUseExample
+from src.data.alignment import TokenAligner, compute_offsets, line_col_to_char
+from src.probes.base import (
+    LinearProbe,
+    ProbeConfig,
+    _shuffle_within_groups,
+    cross_validate_probe,
+    subsample_grouped,
+)
+from src.probes.builders import (
+    assemble_pair_features,
+    build_binding_records,
+    build_control_dep_records,
+    build_defuse_records,
+    build_lexical_records,
+    build_taint_records,
+    classify_token,
+)
+from tests.fake_tokenizer import FakeCharTokenizer
+
+TOK = FakeCharTokenizer()
+
+SRC = "def func():\n    a = 1\n    b = a + 2\n    return b\n"
 
 
-RNG = np.random.default_rng(0)
-D = 64   # small hidden dim for tests
+class TestAlignment:
+    def test_offsets_cover_source_exactly(self):
+        offsets = compute_offsets(SRC, TOK)
+        assert len(offsets) == len(SRC)
+        assert offsets[0] == (0, 1)
+        assert offsets[-1] == (len(SRC) - 1, len(SRC))
+        reconstructed = "".join(SRC[a:b] for a, b in offsets)
+        assert reconstructed == SRC
+
+    def test_line_col_to_char(self):
+        # 'a' on line 2 col 4
+        pos = line_col_to_char(SRC, 2, 4)
+        assert SRC[pos] == "a"
+
+    def test_align_finds_exact_token(self):
+        aligner = TokenAligner.from_tokenizer(SRC, TOK)
+        ev = aligner.align("a", "def", 2, 4)
+        assert ev is not None
+        assert SRC[ev.anchor] == "a"          # char tokenizer: anchor is the char itself
+
+    def test_align_returns_none_outside_range(self):
+        aligner = TokenAligner(SRC, [(0, 1)])  # only one token covering char 0
+        assert aligner.align("b", "use", 3, 4) is None
 
 
-def _rand_hidden(n: int, d: int = D) -> np.ndarray:
-    return RNG.standard_normal((n, d)).astype(np.float32)
+class TestGroupedCV:
+    def _data(self, n_groups=8, per_group=30, d=16, seed=0):
+        rng = np.random.default_rng(seed)
+        X, y, groups = [], [], []
+        for g in range(n_groups):
+            offset = rng.normal(size=d)             # group-specific signature
+            labels = rng.integers(0, 2, size=per_group)
+            for lab in labels:
+                X.append(offset + lab * 2.0 + rng.normal(scale=0.1, size=d))
+                y.append(lab)
+                groups.append(f"g{g}")
+        return np.array(X), np.array(y), np.array(groups)
+
+    def test_result_fields(self):
+        X, y, groups = self._data()
+        cfg = ProbeConfig(cv_folds=3, max_iter=500)
+        res = cross_validate_probe(LinearProbe, X, y, groups, layer=0, task="t", config=cfg)
+        assert 0.9 < res.accuracy <= 1.0            # trivially separable
+        assert res.selectivity > 0.2
+        assert res.n_groups == 8
+        assert res.converged in (True, False)
+
+    def test_tags_reported(self):
+        X, y, groups = self._data()
+        tags = {"stratum": np.where(y == 1, "pos", "neg")}
+        cfg = ProbeConfig(cv_folds=3, max_iter=500, run_selectivity_control=False)
+        res = cross_validate_probe(LinearProbe, X, y, groups, layer=0, task="t",
+                                   config=cfg, tags=tags)
+        assert set(res.tag_accuracy["stratum"]) == {"pos", "neg"}
+
+    def test_subsample_never_splits_groups(self):
+        X, y, groups = self._data(n_groups=10, per_group=20)
+        Xs, ys, gs = subsample_grouped(X, y, groups, max_samples=100, seed=1)
+        # every kept group is fully kept
+        for g in np.unique(gs):
+            assert (gs == g).sum() == 20
+
+    def test_shuffle_within_groups_preserves_marginals(self):
+        _, y, groups = self._data()
+        y2 = _shuffle_within_groups(y, groups, seed=0)
+        for g in np.unique(groups):
+            assert y[groups == g].sum() == y2[groups == g].sum()
+
+    def test_shuffle_group_constant_labels_permutes_across_groups(self):
+        # example-level tasks: label constant within each group — a
+        # within-group shuffle would be a no-op and fake selectivity 0
+        groups = np.repeat([f"g{i}" for i in range(10)], 3)
+        y = np.repeat([0, 1] * 5, 3)
+        y2 = _shuffle_within_groups(y, groups, seed=0)
+        assert y2.sum() == y.sum()                       # marginals preserved
+        assert not np.array_equal(y, y2)                 # but assignment moved
+        for g in np.unique(groups):
+            assert len(np.unique(y2[groups == g])) == 1  # still group-constant
+
+    def test_too_few_groups_returns_note(self):
+        X = np.random.rand(10, 4)
+        y = np.array([0, 1] * 5)
+        groups = np.array(["only"] * 10)
+        res = cross_validate_probe(LinearProbe, X, y, groups, layer=0, task="t")
+        assert "too few groups" in res.notes
 
 
-class TestLinearProbe:
-    def test_fit_predict(self):
-        X = _rand_hidden(200)
-        y = (RNG.random(200) > 0.5).astype(int)
-        probe = LinearProbe()
-        probe.fit(X, y)
-        preds = probe.predict(X)
-        assert preds.shape == (200,)
+class TestBuilders:
+    def setup_method(self):
+        self.rng = random.Random(0)
 
-    def test_evaluate_returns_dict(self):
-        X = _rand_hidden(200)
-        y = (RNG.random(200) > 0.5).astype(int)
-        probe = LinearProbe()
-        probe.fit(X, y)
-        m = probe.evaluate(X, y)
-        assert "accuracy" in m
-        assert 0.0 <= m["accuracy"] <= 1.0
+    def _aligner(self, src):
+        return TokenAligner.from_tokenizer(src, TOK)
 
-    def test_cross_validate(self):
-        X = _rand_hidden(100)
-        y = (RNG.random(100) > 0.5).astype(int)
-        cfg = ProbeConfig(cv_folds=3, run_selectivity_control=True)
-        result = cross_validate_probe(LinearProbe, X, y, layer=0, task="test", config=cfg)
-        assert isinstance(result, ProbeResult)
-        assert result.layer == 0
-        assert 0.0 <= result.accuracy <= 1.0
-        assert result.control_accuracy >= 0.0
+    def test_lexical_records_classify(self):
+        assert classify_token("def") == "keyword"
+        assert classify_token("abc") == "identifier"
+        assert classify_token("42") == "numeric_literal"
+        recs = build_lexical_records(["def", " a", "="], "ex0")
+        assert len(recs) == 3
 
-    def test_selectivity_is_accuracy_minus_control(self):
-        X = _rand_hidden(100)
-        y = (RNG.random(100) > 0.5).astype(int)
-        cfg = ProbeConfig(cv_folds=3, run_selectivity_control=True)
-        result = cross_validate_probe(LinearProbe, X, y, layer=0, task="test", config=cfg)
-        assert abs(result.selectivity - (result.accuracy - result.control_accuracy)) < 1e-6
+    def test_binding_strata_present(self):
+        src = ("def func(t):\n"
+               "    a = t * 6\n"
+               "    if a > 6:\n"
+               "        t = a - 13\n"
+               "        a = t + 9\n"
+               "    return a\n")
+        recs = build_binding_records(src, self._aligner(src), "ex0", self.rng)
+        strata = {r.stratum for r in recs}
+        assert "positive" in strata
+        assert "same_name_diff_binding" in strata
+        labels_by_stratum = {r.stratum: r.label for r in recs}
+        assert labels_by_stratum["positive"] == 1
+        assert labels_by_stratum["same_name_diff_binding"] == 0
 
-    def test_probe_not_fitted_raises(self):
-        probe = LinearProbe()
-        with pytest.raises(AssertionError):
-            probe.predict(_rand_hidden(10))
+    def test_defuse_positive_pairs_are_def_then_use(self):
+        src = "def func():\n    a = 1\n    b = a + 2\n    return b\n"
+        recs = build_defuse_records(src, self._aligner(src), "ex0", self.rng)
+        pos = [r for r in recs if r.label == 1]
+        assert pos, "expected at least one def-use edge"
+        for r in pos:
+            assert SRC != ""  # sanity of test data
+            assert r.pos_i != r.pos_j
 
+    def test_control_dep_positive_and_negative(self):
+        src = ("def func(x):\n"
+               "    y = 1\n"
+               "    if x > 0:\n"
+               "        y = x + 1\n"
+               "    return y\n")
+        recs = build_control_dep_records(src, self._aligner(src), "ex0", self.rng)
+        labels = {r.label for r in recs}
+        assert labels == {0, 1}
 
-class TestLexicalProbe:
-    def _make_examples(self, n=100, n_layers=3):
-        from src.probes.lexical import TOKEN_TYPES
-        examples = []
-        for layer in range(n_layers):
-            for i in range(n):
-                examples.append(LexicalExample(
-                    hidden=RNG.standard_normal(D).astype(np.float32),
-                    token_str="x",
-                    token_type=TOKEN_TYPES[i % len(TOKEN_TYPES)],
-                    layer=layer,
-                    position=i,
-                ))
-        return examples
+    def test_taint_records_have_sink_arg(self):
+        src = ("def func():\n"
+               "    x = input()\n"
+               "    safe = html.escape(x)\n"
+               "    os.system(safe)\n")
+        recs = build_taint_records(src, self._aligner(src), "ex0", label=0)
+        names = {r.label_name for r in recs}
+        assert "sink_arg" in names and "last_token" in names
 
-    def test_run_returns_result(self):
-        examples = self._make_examples()
-        probe = LexicalProbe(config=ProbeConfig(cv_folds=3))
-        result = probe.run(examples, layer=0)
-        assert isinstance(result, ProbeResult)
-        assert result.task == "lexical_token_type"
-
-
-class TestBindingProbe:
-    def _make_examples(self, n=120, layer=0):
-        # Four cases so both name-splits contain both binding classes:
-        #   i%4==0: same name, same binding
-        #   i%4==1: same name, diff binding (shadowed variable)
-        #   i%4==2: diff name, same binding (alias)
-        #   i%4==3: diff name, diff binding
-        examples = []
-        for i in range(n):
-            case = i % 4
-            same = case in (0, 2)
-            h_a = RNG.standard_normal(D).astype(np.float32)
-            h_b = h_a + RNG.standard_normal(D).astype(np.float32) * (0.01 if same else 1.0)
-            token_b = "x" if case in (0, 1) else "y"
-            examples.append(BindingExample(
-                hidden_a=h_a, hidden_b=h_b,
-                token_str_a="x", token_str_b=token_b,
-                same_binding=same,
-                layer=layer, pos_a=i, pos_b=i + 1,
-            ))
-        return examples
-
-    def test_run_returns_result(self):
-        examples = self._make_examples()
-        probe = BindingProbe(config=ProbeConfig(cv_folds=3))
-        result = probe.run(examples, layer=0)
-        assert isinstance(result, ProbeResult)
-
-    def test_decoy_split(self):
-        examples = self._make_examples(n=100)
-        probe = BindingProbe(config=ProbeConfig(cv_folds=3))
-        results = probe.run_lexical_decoy_split(examples, layer=0)
-        assert isinstance(results, dict)
-
-
-class TestDefUseEdgeProbe:
-    def _make_examples(self, n=80, layer=0):
-        examples = []
-        for i in range(n):
-            has_edge = i % 3 == 0
-            h_i = RNG.standard_normal(D).astype(np.float32)
-            h_j = h_i * 0.9 + RNG.standard_normal(D).astype(np.float32) * (0.05 if has_edge else 1.0)
-            examples.append(DefUseExample(
-                hidden_i=h_i, hidden_j=h_j,
-                has_edge=has_edge,
-                layer=layer, pos_i=i, pos_j=i + 5,
-                distance=5,
-            ))
-        return examples
-
-    def test_run_returns_result(self):
-        examples = self._make_examples()
-        probe = DefUseEdgeProbe(config=ProbeConfig(cv_folds=3))
-        result = probe.run(examples, layer=0)
-        assert isinstance(result, ProbeResult)
-        assert result.task == "defuse_edge"
-
-    def test_run_by_distance(self):
-        examples = []
-        for dist in [5, 25, 100, 300]:
-            for _ in range(30):
-                h_i = RNG.standard_normal(D).astype(np.float32)
-                h_j = RNG.standard_normal(D).astype(np.float32)
-                examples.append(DefUseExample(
-                    hidden_i=h_i, hidden_j=h_j,
-                    has_edge=bool(RNG.integers(0, 2)),
-                    layer=0, pos_i=0, pos_j=dist, distance=dist,
-                ))
-
-        probe = DefUseEdgeProbe(config=ProbeConfig(cv_folds=3))
-        results = probe.run_by_distance(examples, layer=0)
-        assert isinstance(results, dict)
+    def test_assemble_pair_features_shape(self):
+        src = "def func():\n    a = 1\n    b = a + 2\n    return b\n"
+        recs = build_defuse_records(src, self._aligner(src), "ex0", self.rng)
+        hidden = np.random.rand(len(SRC) + 50, 8).astype(np.float32)
+        X, y, groups, kept = assemble_pair_features(hidden, recs)
+        assert X.shape == (len(kept), 8 * 4)
+        assert set(groups) == {"ex0"}
