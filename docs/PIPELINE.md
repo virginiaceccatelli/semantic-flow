@@ -29,6 +29,12 @@ python scripts/00_generate_data.py --model deepseek-coder-1.3b --real   # + Code
 | `data/synthetic/minimal_pairs.jsonl` | length-matched clean/corrupted taint pairs (verified token-identical except the sink argument) | E7 |
 | `data/real/csn_python_200.jsonl` | ast-parseable real functions, fixed-seed sample | E8 |
 
+core.jsonl — the primary training/test set for E1–E4 and E6. Contains binding programs, taint-tracking programs, and variable-shadowing programs. These are standard synthetic programs with their static-analysis ground truth (def-use edges, binding IDs, taint labels per line). The probes are trained on activations extracted from this dataset.
+
+context.jsonl — used only for E5 (context degradation). Takes a subset of base programs from core and generates variants of each by inserting filler code between the tracked definition and its use. Five filler types (prose comment, dead code, lexical decoy, scope shadow, competing update) × six sizes (0–1000 tokens, counted with the real tokenizer). The probes are frozen (trained on core) and just evaluated here — the question is whether probe accuracy drops as the filler grows.
+
+minimal_pairs.jsonl — used only for E7 (causal patching). Each entry is a pair of programs that are token-for-token identical except at the sink argument: one version sinks the sanitized variable (clean), the other sinks the raw tainted variable (corrupted). Length-matching is enforced so the two sequences have the same token count, meaning position indices are comparable across runs. This is required for activation patching — you patch the clean run's residual stream at position X into the corrupted run's forward pass and measure how much it shifts the model's answer.
+
 Needs the tokenizer only (no GPU). Generate the real set locally if the
 cluster has no internet, then rsync.
 

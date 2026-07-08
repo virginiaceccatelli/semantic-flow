@@ -136,7 +136,7 @@ def load_codesearchnet_sample(
 
     try:
         from datasets import load_dataset
-        ds = load_dataset("code_search_net", "python", split=split,
+        ds = load_dataset("code-search-net/code_search_net", "python", split=split,
                           trust_remote_code=True)
     except Exception as e:
         raise RuntimeError(
