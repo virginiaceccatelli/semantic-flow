@@ -8,236 +8,262 @@ shows up in its output?**
 
 ---
 
-## 1. The question, and why it matters
+## 1. The question
 
-A code LLM that merely tracks surface form can look competent on most code:
-identifiers usually keep their meaning, and nearby tokens usually predict the
-right continuation. The failures that matter — using a stale variable,
-trusting a value that was never sanitized, completing code under the wrong
-branch — are exactly the cases where surface form and semantics come apart:
-shadowed names, long distances between definition and use, distractor code
-between related statements.
+A code LLM that only tracks surface form can still look competent: identifiers
+usually keep their meaning and nearby tokens usually predict the right
+continuation. The failures that matter — using a stale variable, trusting a
+value that was never sanitized, completing code under the wrong branch — are
+exactly the cases where **surface form and semantics come apart**: shadowed
+names, long distances between definition and use, distractor code between
+related statements.
 
-Three questions structure the project:
+We attack this in three parts, and each experiment belongs to one of them:
 
-1. **Representation** — are semantic relations (binding, def-use edges,
-   control dependence, taint state) linearly decodable from hidden states,
-   *beyond* what surface form predicts? At which layers?
-2. **Stability** — how does that decodability degrade as context grows and
-   distractors intervene, and does *semantic* structure degrade before
-   *lexical* structure?
-3. **Consequence** — is the internal state real in the two senses that
-   matter: does its corruption *precede* behavioral failure (an early-warning
-   signal), and is it *causally used* by the model (patching it changes the
-   answer)?
-
-The gap this fills: classic probing shows information is *present*;
-mechanistic interpretability shows circuits are *used*; neither usually
-connects internal degradation to *when and how the model actually fails*.
-This pipeline measures all three on the same programs with the same ground
-truth.
-
-## 2. The approach in one paragraph
-
-Generate small Python programs whose semantic structure is **known exactly**
-(because we generate it), plus adversarial variants where surface form and
-semantics disagree. Extract ground-truth program graphs by static analysis,
-and map every def/use/guard/sink event to its exact token position. Run a
-frozen code LLM over the programs once, saving hidden states at selected
-layers. Train **low-capacity linear probes** to read semantic relations out
-of those states, with controls that rule out every shortcut we could think
-of. Then stress the representation (context filler), race it against behavior
-(lead time), and intervene on it (activation patching).
-
-## 3. What is constructed, and why that way
-
-### A synthetic corpus with exact ground truth (`src/data/generator.py`)
-
-Programs with variable-binding chains (optionally under branches), taint
-flows (source → propagation → optional sanitizer → sink) with **per-line
-taint labels**, and shadowing programs where the same name has two bindings.
-
-*Why synthetic:* probing needs per-token labels. On real code, static
-analysis is approximate and labels inherit its errors; on generated code the
-ground truth is exact by construction, and confounds (name reuse, distances,
-branch structure) are controllable rather than accidental. *Why not only
-synthetic:* probes could fit generator artifacts — so a fixed-seed sample of
-~200 real, `ast`-parseable CodeSearchNet functions (E8) checks that probe
-accuracy transfers.
-
-### Program graphs from the standard library `ast` (`src/graphs/`)
-
-Reaching-definition def-use chains (each use resolved to its most recent
-in-scope definition), a statement-level CFG that descends into function
-bodies, and control-dependence read off guard nesting (join-point exact: a
-statement after an `if` is *not* dependent on it).
-
-*Why `ast` and not tree-sitter/a full analyzer:* the corpus is
-single-function Python; Python's own parser is exact for it, dependency-free,
-and auditable. Precision of ground truth matters more than language coverage
-here.
-
-### Verified token alignment (`src/data/alignment.py`)
-
-Every AST event maps to token indices via character offsets that are
-**validated against the source** (the tokenizer's offset mapping is used only
-if it exactly tiles the string; otherwise offsets are rebuilt by incremental
-decoding). The probing position for a span is its last covering token — under
-causal attention, the first position that has seen the whole span.
-
-*Why so paranoid:* subword vocabularies mean "the token for variable `x`"
-is not well-defined by string matching — and we found that `AutoTokenizer`
-on transformers 5.x silently mis-tokenizes deepseek-coder entirely
-(`def func` → `['de','ff','unc']`). The loader therefore refuses any
-tokenizer that fails an exact code round-trip. Wrong alignment doesn't crash;
-it silently relabels every example — the worst failure mode for a paper.
-
-### An activation store (`src/data/activation_store.py`)
-
-One GPU pass per (model, dataset) saves per-example compressed arrays:
-hidden states at the probed layers, input ids, and the verified offsets.
-Everything downstream — probe training, stratified analyses, degradation
-evaluation — is CPU-only and re-runnable without touching the model.
-
-*Why decouple:* GPU time is the scarce resource (cluster queues); probe
-iteration is the frequent activity. Extract once, analyze forever, and the
-store is the single interface between them.
-
-### Linear probes with adversarial controls (`src/probes/`)
-
-Logistic regression only, on `h` (single-position tasks) or
-`[h_i; h_j; h_i−h_j; |h_i−h_j|]` (pairwise tasks).
-
-*Why linear:* the claim is about the *representation*, not about what a
-powerful decoder could compute from it. A linear readout is the standard
-operationalization of "explicitly represented."
-
-Every probe run carries three defenses, because each kills a known way to
-get a high number that means nothing:
-
-| Defense | Shortcut it kills |
-|---|---|
-| **Grouped CV** (folds split by source program, never within) | pairs from the same program share hidden vectors — random folds leak train data into test |
-| **Selectivity control** (identical probe retrained on labels shuffled within each program; across programs when labels are program-level) | accuracy from class priors and per-program regularities; we report `selectivity = accuracy − control` |
-| **Negative strata**, reported separately | `same_name_diff_binding` kills the lexical shortcut ("same string ⇒ same variable"); `distance_matched` kills the positional shortcut ("nearby ⇒ related") |
-
-### Context stress variants, evaluated with frozen probes (E5)
-
-Filler blocks inserted between a definition and its use, in five types —
-inert prose, dead code, lexically similar decoys, scope-shadowing nested
-functions, and *competing updates* that genuinely rebind the variable — at
-sizes 0→1000 tokens **counted with the actual tokenizer**.
-
-*Why frozen probes:* retraining per condition would measure each condition's
-learnability. Freezing the stage-2 probe and evaluating it under stress
-measures the stability of the representation the model actually maintains.
-*Why recompute ground truth per variant:* competing updates change the true
-reaching definition — the interesting question is whether the model's state
-updates with it.
-
-### Two independent failure signals (E6)
-
-For taint programs grown line by line: a **frozen taint-state probe** decodes
-"is the live value tainted?" from the hidden state at each prefix (threshold
-calibrated on a held-out split), while the **model itself** answers the same
-question as a yes/no forced choice via continuation log-probabilities.
-`t_latent` and `t_failure` are the first prefixes where each goes wrong;
-their difference is the lead time.
-
-*Why two mechanisms:* a linear readout of the residual stream vs the model's
-own output head. They can disagree, which is precisely what makes "the
-internal state degraded *before* the behavior failed" a falsifiable claim —
-deriving both from the same logits (a design this replaced) makes it
-tautological.
-
-### Length-matched minimal pairs and positional patching (E7)
-
-Clean/corrupted program pairs that tokenize to **identical sequences except
-the sink argument** (clean sinks the sanitized variable, corrupted the raw
-one — verified at generation). The corrupted run's residual stream is
-overwritten with the clean run's vector at one (layer, position) at a time.
-
-*Why length-matched:* patching requires positions to correspond; otherwise
-you are comparing states of different tokens. *Why a position sweep with the
-last token quarantined:* patching the readout position at a late layer
-trivially forces the answer and proves nothing about semantics — recovery at
-the *sink-argument* position at mid layers is the evidence that the encoded
-relation is causally used.
-
-## 4. What is computed, and why
-
-| Quantity | Definition | What it answers |
+| | Question | Experiments |
 |---|---|---|
-| **Selectivity** per task × layer | held-out accuracy − shuffled-label control | is the relation encoded beyond dataset regularities, and where in depth |
-| **Hard-stratum accuracy** | held-out accuracy on same-name-different-binding pairs | names vs meaning — the honest headline for binding |
-| **Distance-bucket accuracy** | def-use accuracy for token gaps 0–10 / 10–50 / 50–200 / 200+ | how relation decoding decays with span distance |
-| **Degradation curves** | frozen-probe accuracy vs filler size, per filler type × layer | which kinds of context break which relations, and how fast |
-| **t_latent, t_failure, lead time** (+ bootstrap CI) | first prefix where probe / model goes wrong; their difference | does internal corruption precede behavioral failure — is there an early-warning signal |
-| **Logit-diff recovery** per layer × position | `(ld_patched − ld_corr)/(ld_clean − ld_corr)`, `ld = logP(no) − logP(yes)` | is the encoded relation causally load-bearing for the answer |
-| **Causal classes** | encoded_and_used / encoded_but_unused / not_encoded | reconciles probing with causation per layer |
-| **Synthetic vs real gap** | same probe metrics on CodeSearchNet functions | do the findings survive contact with real code |
+| **Representation** | Are binding, data-flow, control-dependence, and taint relations *linearly decodable* from hidden states, beyond what the surface text predicts — and at which layers? | E1–E4, E8 |
+| **Stability** | How does that decodability decay as context grows and distractors intervene, and does *semantic* structure break before *lexical* structure? | E5 |
+| **Consequence** | Is the internal state real: does its corruption *precede* behavioral failure (early warning), and does the model *causally use* it (patching changes the answer)? | E6, E7 |
 
-Every number lands in a tidy CSV (`results/tables/`, the raw data of record);
-all figures and Markdown tables are regenerated from those CSVs alone.
+Classic probing shows information is *present*; mechanistic interpretability
+shows circuits are *used*; neither usually ties internal degradation to *when
+the model actually fails*. This pipeline measures all three on the same
+programs against the same ground truth.
 
-## 5. Experiments at a glance
+## 2. How it works
 
-| ID | Question | Key design element |
-|----|----------|--------------------|
-| E1 | token-type baseline (pipeline sanity) | must be ~ceiling, or something is broken |
-| E2 | binding: names vs meaning | same-name-different-binding hard negatives |
-| E3 | def-use edges | distance strata + distance-matched negatives |
-| E4 | control dependence | guard-expression anchors, join-point-exact truth |
-| E5 | degradation under context | frozen probes, token-counted fillers, 5 filler types |
-| E6 | latent vs behavioral failure | independent probe/behavior signals, calibrated threshold |
-| E7 | encoding vs use | length-matched pairs, layer × position patching |
-| E8 | real-code generalization | fixed-seed CodeSearchNet sample, unchanged pipeline |
+```
+generate programs        run the model once        read state back out       stress / race / intervene
+with exact ground   →    save hidden states    →   train linear probes   →   on the frozen probes
+truth (static AST)       at chosen layers          + honest controls         (E5 / E6 / E7)
+```
 
-Full specifications with hypotheses and decision rules: [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
+We generate small Python programs whose semantic structure is **known exactly
+by construction**, extract the ground-truth program graph by static analysis,
+and map every def/use/guard/sink event to its exact token position. A frozen
+code LLM reads each program once; we save the hidden states. Then we train
+**low-capacity linear probes** to decode the relations, with controls that rule
+out the obvious shortcuts — and finally we stress, race, and intervene on those
+representations.
 
-## 6. Models
+*Why synthetic programs, why linear probes, why one frozen pass:* per-token
+labels have to be exact (static analysis on real code is approximate and its
+errors become label noise); a linear readout is the standard operationalization
+of "explicitly represented" — a stronger probe would measure the probe, not the
+model; and one GPU pass decouples scarce GPU time from the frequent, CPU-only
+probing work. Full rationale in [docs/METHODS.md](docs/METHODS.md).
+
+## 3. The programs we study
+
+Four program families, all single functions, all with ground truth attached
+(`src/data/generator.py`). Every experiment draws its examples from these.
+
+**Binding** — def-use chains, ~half under a branch (E1–E4). Ground truth: which
+definition each occurrence binds to.
+
+```python
+def func():
+    a = 42
+    b = 17
+    if a > 50:
+        b = b + a      # which `b`, which `a`?
+    return b
+```
+
+**Taint** — `source → propagation → (optional sanitizer) → sink`, with a
+**per-line taint label** for the live value (E6). Ground truth: is the value
+reaching the sink tainted?
+
+```python
+def func():
+    x = input()        # tainted source
+    v0 = x             # propagates taint
+    safe = html.escape(v0)   # sanitizer — present only in the "safe" variant
+    eval(safe)         # sink
+```
+
+**Shadow** — the same name carries two different bindings (E2's hard case).
+Ground truth: the two `data` occurrences are *different* variables.
+
+```python
+def func(data):
+    r = data * 3
+    if r > 20:
+        data = r - 5   # shadows the parameter
+        r = data + 2   # uses the reassigned binding
+    return r
+```
+
+**Minimal pairs** — clean/corrupted taint programs that tokenize
+**identically except the sink argument** (E7), so activation patching can line
+up positions one-to-one:
+
+```python
+# clean      ... s0 = shlex.quote(v1); os.system(s0)   ← sanitized value sinks
+# corrupted  ... s0 = shlex.quote(v1); os.system(v1)   ← raw tainted value sinks
+```
+
+A fixed-seed sample of ~200 real, `ast`-parseable **CodeSearchNet** functions
+(E8) checks that nothing we find is a generator artifact.
+
+## 4. The pipeline
+
+Seven numbered stages, each one CLI in `scripts/`, each writing a run manifest
+(git sha, args, wall time) to `results/manifests/`. Extract on GPU once;
+everything else is CPU and re-runnable.
+
+```
+00 generate data       CPU   programs + context variants + minimal pairs + real sample
+10 extract activations GPU   one forward pass per (model, dataset) → activation store
+20 static probes       CPU   E1–E4 (+E8): grouped CV, controls, frozen probe checkpoints
+30 context degradation CPU   E5: frozen probes re-evaluated on filler variants
+40 behavioral leadtime GPU   E6: taint probe vs the model's own answer, per line-prefix
+50 causal patching     GPU   E7: patch clean→corrupted activations, layer × position
+90 paper assets        CPU   every table + figure, regenerated from CSVs alone
+```
+
+The activation store (stage 10) is the single interface between the model and
+all analysis: one compressed `.npz` per example holding hidden states at the
+probed layers, input ids, and verified token offsets. Stages 20/30/40/50 read
+it (or, for E6/E7, run the model directly) and never re-extract. Commands,
+outputs, and the SGE cluster workflow: [docs/PIPELINE.md](docs/PIPELINE.md).
+
+## 5. The experiments
+
+Each experiment isolates one relation and pairs it with a **control that kills
+the cheap way to score high**. Full specs, hypotheses, and decision rules:
+[docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
+
+### Representation — is it decodable, and where? (E1–E4)
+
+Probe hidden states for a relation; report **selectivity** (accuracy minus the
+same probe retrained on shuffled labels) so a high number can't come from class
+priors alone.
+
+- **E1 · token type** — multiclass probe on single positions (keyword /
+  identifier / literal / …). A sanity baseline: it must be near-ceiling at every
+  layer, or the extraction/alignment machinery is broken.
+
+- **E2 · binding — names vs meaning.** Pairwise probe: do two occurrences bind
+  to the same definition? The control is the whole point — a
+  `same_name_diff_binding` negative (the two `data`s in the shadow program)
+  looks identical to a lexical probe. **Measures:** accuracy on that hard
+  stratum vs on same-binding positives, per layer. The gap is the project's
+  central "does it track meaning?" figure.
+
+- **E3 · def-use edges — data flow, over distance.** Same pairwise setup for
+  (definition, use) edges, but negatives are **distance-matched** (equal token
+  gap, no real edge) so the probe can't win by "nearby ⇒ related." **Measures:**
+  accuracy bucketed by def-use token distance (0–10 / 10–50 / 50–200 / 200+) —
+  how far data-flow tracking reaches.
+
+- **E4 · control dependence.** Does a statement execute under a given guard?
+  Probe the (guard-expression state, statement state) pair; negatives are
+  statements in the *same* program that are **not** guarded (e.g. after the `if`
+  joins). Ground truth is join-point-exact from AST nesting. **Measures:**
+  selectivity for the guard→statement relation by layer.
+
+### Stability — does it survive context? (E5)
+
+- **E5 · context degradation.** Take the **frozen** E2/E3 probes and, without
+  retraining, evaluate them on variants where filler is inserted between a
+  definition and its use — five filler kinds at 0→1000 tokens, counted with the
+  real tokenizer:
+
+  | filler | what it tests |
+  |---|---|
+  | prose comment / dead code | pure distance (inert) |
+  | lexical decoy | similar-looking but irrelevant names |
+  | scope shadow | a nested scope reusing the name |
+  | competing update | genuinely rebinds the variable — truth *changes* |
+
+  **Measures:** frozen-probe accuracy vs filler size, per filler type × layer.
+  Freezing is deliberate: retraining per condition would measure each
+  condition's learnability, not the stability of the state the model actually
+  keeps. For `competing_update` the ground truth is recomputed per variant, so
+  it asks whether the model's state *updates*, not just whether it survives
+  distance.
+
+### Consequence — is the state real? (E6, E7)
+
+- **E6 · lead time — latent failure before behavioral failure.** Grow a taint
+  program one line at a time. At each prefix, **two independent signals** answer
+  "is the live value tainted?": (a) the frozen taint probe reads it off the
+  hidden state (threshold calibrated on a held-out split); (b) the *model
+  itself* answers as a yes/no forced choice from continuation log-probs.
+  `t_latent` and `t_failure` are the first prefixes where each goes wrong.
+  **Measures:** `lead_time = t_failure − t_latent` (with bootstrap CI). The two
+  signals come from different mechanisms — the residual stream vs the output
+  head — which is what makes "the state degraded *before* the output failed" a
+  falsifiable claim rather than a tautology.
+
+- **E7 · causal patching — encoded vs used.** On a minimal pair, run the
+  corrupted program but overwrite its residual stream with the *clean* run's
+  vector at one (layer, position) at a time, and see if the answer moves toward
+  clean. **Measures:** logit-diff recovery
+  `(ld_patched − ld_corr)/(ld_clean − ld_corr)` per layer × position, yielding a
+  causal class per site: `encoded_and_used` / `encoded_but_unused` /
+  `not_encoded`. The `last_token` readout position is **quarantined and reported
+  separately** — patching it at a late layer forces the answer trivially;
+  recovery at the *sink-argument* position at mid layers is the real evidence
+  that the encoded relation is load-bearing.
+
+### Generalization (E8)
+
+- **E8 · real code.** Run stages 10+20 unchanged on the ~200 CodeSearchNet
+  functions. **Measures:** synthetic-vs-real accuracy/selectivity side by side.
+  A large gap would mean the probes fit generator artifacts; a small one means
+  the findings transfer.
+
+## 6. What every experiment is really defending against
+
+Four rigor commitments run through all of them; they are why the numbers mean
+what they claim to (details in [docs/METHODS.md](docs/METHODS.md)):
+
+| Commitment | Shortcut it kills |
+|---|---|
+| **Grouped CV** — folds split by source program, never within | rows from one program share hidden vectors; random folds leak train into test |
+| **Selectivity control** — identical probe on shuffled labels | accuracy from class priors / per-program regularities |
+| **Negative strata**, reported separately | `same_name_diff_binding` kills "same string ⇒ same variable"; `distance_matched` kills "nearby ⇒ related" |
+| **Verified token alignment** — AST spans → offsets checked against the source | string-matching a variable name silently mislabels shadows — the exact thing E2 measures |
+
+> One non-obvious hazard worth flagging: `AutoTokenizer` on transformers 5.x
+> silently mis-tokenizes deepseek-coder (`def func` → `['de','ff','unc']`),
+> which relabels *every* example without crashing. The loader refuses any
+> tokenizer that fails an exact code round-trip. See
+> [docs/METHODS.md](docs/METHODS.md) § Tokenizer integrity.
+
+Every measurement lands in a tidy CSV in `results/tables/` (one row per
+measurement, the data of record); stage 90 regenerates all figures and Markdown
+tables from those CSVs alone, so `data → figure` is fully auditable.
+
+## 7. Models
 
 | Model | Role | Why |
 |---|---|---|
 | `deepseek-coder-1.3b-base` | development + smoke | runs on Apple-Silicon MPS; full pipeline in minutes |
-| `deepseek-coder-6.7b-base` | main results | strong open code model; fits one cluster GPU in fp16 |
+| `deepseek-coder-6.7b-base` | main results | strong open code model; one cluster GPU in fp16 |
 | `starcoder2-3b` | optional replication | different corpus/architecture family |
 
 Base (non-instruct) models on purpose: the object of study is the
-representation built during pretraining on code, not chat behavior. All
-stages take `--model`; probed layers per model live in `configs/models.yaml`.
-
-## 7. Pipeline
-
-```
-00 generate data      CPU   corpus + context variants + minimal pairs + real sample
-10 extract activations GPU  one pass per (model, dataset) → activation store
-20 static probes      CPU   E1–E4 (+E8), grouped CV, frozen checkpoints
-30 context degradation CPU  E5 over the context store
-40 behavioral lead time GPU E6
-50 causal patching    GPU   E7
-90 paper assets       CPU   all tables + figures from CSVs
-```
-
-Each stage is one CLI in `scripts/`, writes a run manifest (git sha, args,
-wall time) to `results/manifests/`, and is covered by `make` targets and SGE
-job scripts (`jobs/`). Commands, artifacts, and the cluster workflow:
-[docs/PIPELINE.md](docs/PIPELINE.md).
+representation built during code pretraining, not chat behavior. Every stage
+takes `--model`; probed layers per model live in `configs/models.yaml`.
 
 ## 8. Repository map
 
 ```
 src/
   data/        generator (programs + ground truth), alignment, activation store, loaders
-  graphs/      ast / def-use / CFG / PDG extraction (ground truth)
-  models/      model+tokenizer loading (with round-trip guard), forward hooks, patching
+  graphs/      ast / def-use / CFG / control-dependence extraction (ground truth)
+  models/      model + tokenizer loading (round-trip guard), forward hooks, patching
   probes/      linear probe, grouped CV + controls, dataset builders (single source of truth)
   experiments/ E1–E4 static probes, E5 degradation, E6 lead time, E7 patching
   analysis/    metrics, table rendering, figures
 scripts/       numbered stage CLIs (00–90)
 jobs/          SGE scripts per GPU stage
 configs/       model registry + canonical experiment settings
-docs/          PIPELINE / EXPERIMENTS / METHODS / RESULTS
+docs/          PIPELINE · EXPERIMENTS · METHODS · RESULTS
 tests/         60 CPU-only tests (alignment exactness, CV leakage, strata, pairs, …)
 ```
 
@@ -254,9 +280,11 @@ python scripts/00_generate_data.py --model deepseek-coder-1.3b --real
 make extract probes context leadtime patching assets MODEL=deepseek-coder-1.3b
 ```
 
-Setup details and known pitfalls (tokenizer!): [SETUP.md](SETUP.md).
-Methodological commitments, written for the paper's Methods section:
-[docs/METHODS.md](docs/METHODS.md). Results index: [docs/RESULTS.md](docs/RESULTS.md).
+Setup and known pitfalls (the tokenizer!): [SETUP.md](SETUP.md) ·
+Pipeline commands and cluster workflow: [docs/PIPELINE.md](docs/PIPELINE.md) ·
+Experiment specs: [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) ·
+Methodology for the paper: [docs/METHODS.md](docs/METHODS.md) ·
+Results index: [docs/RESULTS.md](docs/RESULTS.md).
 
 ## 10. Intended contributions
 
@@ -264,14 +292,13 @@ Methodological commitments, written for the paper's Methods section:
    taint relations are linearly decodable in code LLMs — with controls that
    separate semantic tracking from lexical shortcuts.
 2. A quantitative account of how that structure degrades with context, by
-   distractor type — distinguishing distance effects from genuine state
-   updates.
-3. A falsifiable test of latent-before-behavioral failure (lead time), i.e.
-   whether internal semantic state yields an early-warning signal.
+   distractor type — distinguishing distance effects from genuine state updates.
+3. A falsifiable test of latent-before-behavioral failure (lead time): whether
+   internal semantic state gives an early-warning signal.
 4. Causal evidence (activation patching on aligned minimal pairs) for which
-   of the decodable relations the model actually *uses*.
+   decodable relations the model actually *uses*.
 5. A fully scripted, manifest-tracked pipeline where every figure is
    regenerable from raw CSVs.
 
-Future work (out of scope here): reasoning-trajectory probing on instruct
+Out of scope here (future work): reasoning-trajectory probing on instruct
 models, multi-language extension via tree-sitter.
