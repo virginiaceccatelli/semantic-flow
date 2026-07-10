@@ -30,6 +30,21 @@ We do not match token strings: with subword vocabularies a variable name has
 no reliable single token, and string matching silently mislabels shadowed
 names — the exact phenomenon E2 measures.
 
+### Independent cross-validation of the ground truth
+
+Because every label downstream depends on the extractor, its def-use edges
+are differentially tested against **beniget**, a mature, independently
+implemented reaching-definitions analysis
+(`tests/test_ground_truth_crosscheck.py`) — the same validate-the-program-graph
+discipline that code-property-graph tooling (Joern/llvm2cpg) applies. Our
+extractor resolves each use to the single most-recent reaching definition
+while beniget returns all possibly-reaching definitions across branches, so
+the sound invariant is edge-set inclusion (ours ⊆ beniget's), with exact
+equality on straight-line programs. This check caught a real labeling bug:
+uses in self-referential updates (`b = b + a`) were linked to the same-line
+target definition instead of the prior one; the extractor now resolves
+reaching definitions in execution order (assignment RHS before target).
+
 ### Tokenizer integrity
 
 `AutoTokenizer` on transformers 5.x resolves deepseek-coder to a slow
@@ -64,13 +79,20 @@ Pairwise tasks report held-out accuracy per negative stratum:
 shortcuts). An honest headline number is the hard-stratum accuracy, not the
 pooled one.
 
-## Frozen-probe evaluation (E5)
+## Frozen-probe evaluation (E5, E9)
 
-Degradation is measured by *evaluating* stage-20 probes on context variants,
-never retraining them: retraining on each condition would measure the
-condition's learnability, not the stability of the representation the probe
-found. Ground truth is recomputed per variant so fillers that genuinely
-change the program (competing updates) are scored against the new truth.
+Degradation is measured by *evaluating* stage-20 probes on variants, never
+retraining them: retraining on each condition would measure the condition's
+learnability, not the stability of the representation the probe found.
+Ground truth is recomputed per variant so transformations that genuinely
+change the program graph (competing updates in E5; inserted opaque branches
+and flattened control flow in E9) are scored against the new truth.
+
+For E9 specifically, "same semantics" is never assumed: every obfuscated
+variant is executed and checked observationally equivalent to its base
+(the same I/O-equivalence standard Tigress uses), and all levels of a base
+are kept or dropped together so per-level comparisons hold the base-program
+set fixed.
 
 ## Calibration and independence of signals (E6)
 

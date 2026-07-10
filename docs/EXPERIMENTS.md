@@ -145,6 +145,37 @@ artifacts.
 functions (fixed-seed sample). Report synthetic vs real accuracy/selectivity
 side by side per task and layer.
 
+## E9 — obfuscation robustness
+
+**Hypothesis.** If the model represents program *semantics* rather than
+surface form, frozen E2/E3 probe accuracy should survive semantics-preserving
+obfuscation; probes riding lexical shortcuts should collapse already at pure
+renaming. The transformation-based counterpart to E5: E5 stresses the
+representations with *distance*, E9 with *surface form*.
+
+**Method.** Tigress-inspired (tigress.wtf) obfuscation ladder implemented
+natively for Python in `src/data/obfuscation.py` (Tigress itself is C-only).
+Cumulative levels of increasing difficulty, each variant **execution-verified**
+observationally equivalent to its base (`func()` output compared):
+
+| level | name | transformation |
+|---|---|---|
+| 0 | normalize | ast round-trip only — shared formatting baseline |
+| 1 | rename | consistent alpha-renaming of all locals (isolates lexical reliance, RQ3) |
+| 2 | opaque | + dead branches under opaque predicates (provably false for all ints, e.g. `v*v % 4 == 3`) with decoy assignments |
+| 3 | encode | + mixed boolean-arithmetic encoding (`a+b → (a^b)+((a&b)<<1)`, `c → (c^m)^m`) |
+| 4 | flatten | + control-flow flattening into a while/state-machine with shuffled state ids |
+
+**Frozen** E2/E3 probes from stage 20 — never retrained — are evaluated on the
+variants; ground truth is rebuilt from each variant's own source (same
+contract as E5). All levels of a base are kept or dropped together, so level
+curves compare identical base-program sets.
+
+**Metrics.** Frozen-probe accuracy per (task, layer, obf_level). Level 0 is
+the reference; per-level deltas attribute degradation to each transformation
+class. Output: `obfuscation_robustness_*.csv`, `obfuscation_levels_*.png`,
+`obfuscation_{task}_*.png`.
+
 ---
 
 ## Models & replication

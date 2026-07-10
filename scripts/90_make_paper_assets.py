@@ -133,6 +133,46 @@ def _context_assets(csv: Path):
         _save(fig, f"context_{task}_{tag}")
 
 
+def _obfuscation_assets(csv: Path):
+    from src.analysis.tables import df_to_markdown, obfuscation_summary
+
+    tag = csv.stem.replace("obfuscation_robustness_", "")
+    df = pd.read_csv(csv)
+    df_to_markdown(obfuscation_summary(df), MD / f"{csv.stem}_summary.md",
+                   title=f"Obfuscation robustness — {tag}")
+
+    level_names = (df[["obf_level", "obf_name"]].drop_duplicates()
+                     .sort_values("obf_level"))
+    ticks = [f"{int(r.obf_level)}:{r.obf_name}" for r in level_names.itertuples()]
+
+    # accuracy vs obfuscation level, one line per task (mean over layers)
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    for i, (task, sub) in enumerate(sorted(df.groupby("task"))):
+        m = sub.groupby("obf_level")["accuracy"].mean().reset_index()
+        ax.plot(m["obf_level"], m["accuracy"], marker="o", markersize=4,
+                linewidth=1.8, label=task, color=PALETTE[i % len(PALETTE)])
+    ax.axhline(0.5, color="gray", linewidth=0.8, linestyle="--")
+    ax.set_xticks(level_names["obf_level"].astype(int).tolist())
+    ax.set_xticklabels(ticks, fontsize=8)
+    ax.set_xlabel("Obfuscation level (cumulative)")
+    ax.set_ylabel("Frozen-probe accuracy")
+    ax.set_title(f"Robustness to semantics-preserving obfuscation — {tag}")
+    ax.legend(fontsize=8, framealpha=0.7)
+    sns.despine(ax=ax)
+    _save(fig, f"obfuscation_levels_{tag}")
+
+    # layer × level heatmap per task
+    for task, sub in df.groupby("task"):
+        pivot = sub.pivot_table(index="layer", columns="obf_level",
+                                values="accuracy")
+        fig, ax = plt.subplots(figsize=(7, 4))
+        sns.heatmap(pivot, ax=ax, annot=True, fmt=".2f", cmap="Blues",
+                    vmin=0.5, vmax=1.0, linewidths=0.5,
+                    cbar_kws={"label": "Accuracy"})
+        ax.set_title(f"{task}: layer × obfuscation level — {tag}")
+        _save(fig, f"obfuscation_{task}_{tag}")
+
+
 def _leadtime_assets(csv: Path):
     tag = csv.stem.replace("behavioral_leadtime_", "")
     df = pd.read_csv(csv)
@@ -184,6 +224,7 @@ def main():
     handlers = {
         "static_probes_": _static_probe_assets,
         "context_degradation_": _context_assets,
+        "obfuscation_robustness_": _obfuscation_assets,
         "behavioral_leadtime_summary": None,          # summary handled with main csv
         "behavioral_leadtime_": _leadtime_assets,
         "causal_patching_summary": None,

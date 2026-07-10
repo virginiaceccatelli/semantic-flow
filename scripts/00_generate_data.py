@@ -8,6 +8,7 @@ Outputs (jsonl):
     data/synthetic/core.jsonl           binding + taint + shadow programs (E1–E4, E6)
     data/synthetic/context.jsonl        filler variants, token-counted        (E5)
     data/synthetic/minimal_pairs.jsonl  length-matched clean/corrupted pairs  (E7)
+    data/synthetic/obfuscation.jsonl    verified obfuscation-ladder variants  (E9)
     data/real/csn_python_{n}.jsonl      real functions                        (E8, --real)
 
 Needs only the TOKENIZER (downloaded once, then cached) — no model, no GPU.
@@ -39,12 +40,14 @@ def main(
     n_shadow: int = typer.Option(100),
     n_context_bases: int = typer.Option(40, help="Base programs for E5 (×5 filler types ×6 sizes)"),
     n_pairs: int = typer.Option(40, help="Minimal pairs for E7"),
+    n_obf_bases: int = typer.Option(40, help="Base programs for E9 (×5 obfuscation levels)"),
     real: bool = typer.Option(False, help="Also sample CodeSearchNet (needs network)"),
     n_real: int = typer.Option(200),
     seed: int = typer.Option(42),
 ):
     from src.data.dataset import save_jsonl, load_codesearchnet_sample
     from src.data.generator import SyntheticCodeGenerator, pair_to_dict
+    from src.data.obfuscation import generate_obfuscation_batch
     from src.models.loader import MODEL_REGISTRY, load_tokenizer
     from src.utils import write_manifest
 
@@ -66,7 +69,13 @@ def main(
     console.print(f"minimal_pairs.jsonl: {len(pairs)} length-matched pairs "
                   f"(of {n_pairs} requested)")
 
-    outputs = {"core": len(core), "context": len(context), "pairs": len(pairs)}
+    obf = generate_obfuscation_batch(n_base=n_obf_bases, seed=seed)
+    save_jsonl(obf, synth / "obfuscation.jsonl")
+    console.print(f"obfuscation.jsonl: {len(obf)} verified variants "
+                  f"({n_obf_bases} bases × 5 levels)")
+
+    outputs = {"core": len(core), "context": len(context), "pairs": len(pairs),
+               "obfuscation": len(obf)}
 
     if real:
         ds = load_codesearchnet_sample(n=n_real, seed=seed)
@@ -77,7 +86,7 @@ def main(
     write_manifest("00_generate_data", {
         "model": model, "seed": seed, "n_binding": n_binding, "n_taint": n_taint,
         "n_shadow": n_shadow, "n_context_bases": n_context_bases,
-        "n_pairs": n_pairs, "real": real,
+        "n_pairs": n_pairs, "n_obf_bases": n_obf_bases, "real": real,
     }, t0, extra=outputs)
     console.print("[green]Stage 00 done.[/green]")
 

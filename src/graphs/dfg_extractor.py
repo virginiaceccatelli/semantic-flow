@@ -27,6 +27,7 @@ class VarEvent:
     end_line: int
     end_col: int
     scope: str = "global"   # function or class name, or "global"
+    order: int = 0          # execution-order index (RHS uses precede LHS defs)
 
     @property
     def loc(self) -> tuple[int, int]:
@@ -134,26 +135,42 @@ class _ScopeTracker(ast.NodeVisitor):
         self.generic_visit(node)
         self._scope_stack.pop()
 
+    # Assignment statements evaluate their value BEFORE binding the target, so
+    # the value is visited first and the target definition recorded after it.
+    # This keeps `b = b + a` correct: the RHS `b` refers to the PRIOR def of b,
+    # not the target being assigned on the same line (bug found by the beniget
+    # cross-validation test).
+
     def visit_Assign(self, node: ast.Assign):
+        self.visit(node.value)
         for target in node.targets:
             for name_node in _extract_names(target):
                 self.events.append(self._ev(name_node.id, "def", name_node))
-        self.generic_visit(node)
+            self.visit(target)      # loads inside subscript/attribute targets
 
     def visit_AnnAssign(self, node: ast.AnnAssign):
+        if node.value is not None:
+            self.visit(node.value)
+        if node.annotation is not None:
+            self.visit(node.annotation)
         if isinstance(node.target, ast.Name):
             self.events.append(self._ev(node.target.id, "def", node.target))
-        self.generic_visit(node)
+        else:
+            self.visit(node.target)
 
     def visit_AugAssign(self, node: ast.AugAssign):
+        self.visit(node.value)
         if isinstance(node.target, ast.Name):
             self.events.append(self._ev(node.target.id, "def", node.target))
-        self.generic_visit(node)
+        else:
+            self.visit(node.target)
 
     def visit_For(self, node: ast.For):
+        self.visit(node.iter)
         for name_node in _extract_names(node.target):
             self.events.append(self._ev(name_node.id, "def", name_node))
-        self.generic_visit(node)
+        for stmt in node.body + node.orelse:
+            self.visit(stmt)
 
     def visit_Import(self, node: ast.Import):
         for alias in node.names:
@@ -195,6 +212,11 @@ class DefUseExtractor:
 
         dfg = DataFlowGraph()
         events = tracker.events
+        # Tracker visit order is execution order (assignment values are
+        # visited before their targets), which is what reaching-definition
+        # resolution must compare — NOT source (line, col) order.
+        for i, ev in enumerate(events):
+            ev.order = i
 
         # Group definitions by (name, scope)
         defs_by_scope: dict[tuple[str, str], list[VarEvent]] = {}
@@ -211,9 +233,9 @@ class DefUseExtractor:
                 defs_by_scope.get((ev.name, ev.scope), [])
                 + defs_by_scope.get((ev.name, "global"), [])
             )
-            prior = [d for d in candidates if d.line < ev.line or (d.line == ev.line and d.col < ev.col)]
+            prior = [d for d in candidates if d.order < ev.order]
             if prior:
-                closest_def = max(prior, key=lambda d: (d.line, d.col))
+                closest_def = max(prior, key=lambda d: d.order)
                 dfg.add_edge(DefUseEdge(definition=closest_def, use=ev))
 
         return dfg

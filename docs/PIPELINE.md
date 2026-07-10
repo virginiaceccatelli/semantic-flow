@@ -1,12 +1,12 @@
 # Pipeline
 
-Seven numbered stages. Each stage is one CLI in `scripts/`, writes its outputs
+Eight numbered stages. Each stage is one CLI in `scripts/`, writes its outputs
 under `results/`, and records a manifest (git sha, args, wall time) in
 `results/manifests/`. GPU stages are marked; everything else runs anywhere.
 
 ```
-00 → 10 → 20 → { 30, 40, 50 } → 90
-CPU   GPU   CPU    CPU GPU GPU    CPU
+00 → 10 → 20 → { 30, 31, 40, 50 } → 90
+CPU   GPU   CPU    CPU CPU GPU GPU    CPU
 ```
 
 Model names come from `configs/models.yaml` (`deepseek-coder-1.3b` for
@@ -27,11 +27,14 @@ python scripts/00_generate_data.py --model deepseek-coder-1.3b --real   # + Code
 | `data/synthetic/core.jsonl` | binding (50% with branches) + taint (with per-line taint labels) + shadow programs | E1–E4, E6 |
 | `data/synthetic/context.jsonl` | filler variants: 5 filler types × sizes [0,50,100,200,500,1000], token counts measured with the real tokenizer | E5 |
 | `data/synthetic/minimal_pairs.jsonl` | length-matched clean/corrupted taint pairs (verified token-identical except the sink argument) | E7 |
+| `data/synthetic/obfuscation.jsonl` | obfuscation-ladder variants: 5 cumulative levels (normalize → rename → opaque → encode → flatten), each execution-verified equivalent to its base | E9 |
 | `data/real/csn_python_200.jsonl` | ast-parseable real functions, fixed-seed sample | E8 |
 
 core.jsonl — the primary training/test set for E1–E4 and E6. Contains binding programs, taint-tracking programs, and variable-shadowing programs. These are standard synthetic programs with their static-analysis ground truth (def-use edges, binding IDs, taint labels per line). The probes are trained on activations extracted from this dataset.
 
 context.jsonl — used only for E5 (context degradation). Takes a subset of base programs from core and generates variants of each by inserting filler code between the tracked definition and its use. Five filler types (prose comment, dead code, lexical decoy, scope shadow, competing update) × six sizes (0–1000 tokens, counted with the real tokenizer). The probes are frozen (trained on core) and just evaluated here — the question is whether probe accuracy drops as the filler grows.
+
+obfuscation.jsonl — used only for E9 (obfuscation robustness). Fresh binding programs, each emitted at all 5 obfuscation levels of `src/data/obfuscation.py` (Tigress-inspired, Python-native). Every variant is executed and verified observationally equivalent to its base before it is kept; all levels of a base are kept or dropped together so level curves compare identical base sets. Frozen probes (trained on core) are evaluated here — the question is whether probe accuracy survives changes of surface form that preserve semantics.
 
 minimal_pairs.jsonl — used only for E7 (causal patching). Each entry is a pair of programs that are token-for-token identical except at the sink argument: one version sinks the sanitized variable (clean), the other sinks the raw tainted variable (corrupted). Length-matching is enforced so the two sequences have the same token count, meaning position indices are comparable across runs. This is required for activation patching — you patch the clean run's residual stream at position X into the corrupted run's forward pass and measure how much it shifts the model's answer.
 
@@ -43,7 +46,8 @@ cluster has no internet, then rsync.
 ```bash
 python scripts/10_extract_activations.py --model deepseek-coder-1.3b --dataset data/synthetic/core.jsonl
 python scripts/10_extract_activations.py --model deepseek-coder-1.3b --dataset data/synthetic/context.jsonl --max-length 2048
-# cluster: qsub -v MODEL=deepseek-coder-6.7b jobs/extract_core.sh   (and extract_context.sh / extract_real.sh)
+python scripts/10_extract_activations.py --model deepseek-coder-1.3b --dataset data/synthetic/obfuscation.jsonl
+# cluster: qsub -v MODEL=deepseek-coder-6.7b jobs/extract_core.sh   (and extract_context.sh / extract_obfuscation.sh / extract_real.sh)
 ```
 
 Writes an **activation store** to `results/activations/{model}/{dataset stem}/`:
@@ -82,6 +86,19 @@ python scripts/30_context_degradation.py \
 Frozen binding/def-use probes evaluated (never retrained) on the filler
 variants; ground truth rebuilt from each variant's own source. Output:
 `results/tables/context_degradation_{model}.csv`.
+
+## Stage 31 — obfuscation robustness E9 (CPU)
+
+```bash
+python scripts/31_obfuscation.py \
+    --activations results/activations/deepseek-coder-1.3b/obfuscation \
+    --probes results/probes/deepseek-coder-1.3b/core
+```
+
+Same frozen-probe contract as stage 30, but the stressor is surface form
+instead of distance: the obfuscation ladder (rename → opaque dead code →
+expression encoding → control-flow flattening), all semantics-verified.
+Output: `results/tables/obfuscation_robustness_{model}.csv`.
 
 ## Stage 40 — behavioral lead time E6 (GPU)
 
@@ -126,7 +143,7 @@ at any point; missing inputs are skipped.
 
 ```bash
 make smoke                       # tiny end-to-end run on this machine (1.3b)
-make data / extract / probes / context / leadtime / patching / assets
+make data / extract / probes / context / obfuscation / leadtime / patching / assets
 make test
 # every target takes MODEL=... and PY=<python path>
 ```
@@ -134,8 +151,8 @@ make test
 ## Cluster workflow (SGE)
 
 1. Locally: `make data-real`, commit/rsync `data/` to `$HOME/semantic-flow`.
-2. `qsub -v MODEL=deepseek-coder-6.7b jobs/extract_core.sh` (+ context, real).
-3. On a login/CPU node: `make probes context MODEL=deepseek-coder-6.7b`.
+2. `qsub -v MODEL=deepseek-coder-6.7b jobs/extract_core.sh` (+ context, obfuscation, real).
+3. On a login/CPU node: `make probes context obfuscation MODEL=deepseek-coder-6.7b`.
 4. `qsub -v MODEL=deepseek-coder-6.7b jobs/leadtime.sh jobs/patching.sh`.
 5. Anywhere: `make assets`; rsync `results/tables results/figures` back.
 

@@ -6,6 +6,7 @@
 #   make extract MODEL=...    stage 10 over core + context (GPU/MPS)
 #   make probes MODEL=...     stage 20 (CPU)
 #   make context MODEL=...    stage 30 (CPU)
+#   make obfuscation MODEL=.. stage 31 (CPU)
 #   make leadtime MODEL=...   stage 40 (GPU/MPS)
 #   make patching MODEL=...   stage 50 (GPU/MPS)
 #   make assets               stage 90 tables + figures (CPU)
@@ -18,7 +19,7 @@ MODEL ?= deepseek-coder-1.3b
 ACT := results/activations/$(MODEL)
 PROBES := results/probes/$(MODEL)/core
 
-.PHONY: smoke data data-real extract probes context leadtime patching assets test
+.PHONY: smoke data data-real extract probes context obfuscation leadtime patching assets test
 
 data:
 	$(PY) scripts/00_generate_data.py --model $(MODEL)
@@ -29,12 +30,16 @@ data-real:
 extract:
 	$(PY) scripts/10_extract_activations.py --model $(MODEL) --dataset data/synthetic/core.jsonl
 	$(PY) scripts/10_extract_activations.py --model $(MODEL) --dataset data/synthetic/context.jsonl --max-length 2048
+	$(PY) scripts/10_extract_activations.py --model $(MODEL) --dataset data/synthetic/obfuscation.jsonl
 
 probes:
 	$(PY) scripts/20_run_probes.py --activations $(ACT)/core
 
 context:
 	$(PY) scripts/30_context_degradation.py --activations $(ACT)/context --probes $(PROBES)
+
+obfuscation:
+	$(PY) scripts/31_obfuscation.py --activations $(ACT)/obfuscation --probes $(PROBES)
 
 leadtime:
 	$(PY) scripts/40_behavioral_leadtime.py --model $(MODEL) --probes $(PROBES)
@@ -53,15 +58,19 @@ SMOKE_DATA := data/smoke
 
 smoke:
 	$(PY) scripts/00_generate_data.py --model $(MODEL) --out-dir $(SMOKE_DATA) \
-		--n-binding 12 --n-taint 12 --n-shadow 6 --n-context-bases 3 --n-pairs 5
+		--n-binding 12 --n-taint 12 --n-shadow 6 --n-context-bases 3 --n-pairs 5 --n-obf-bases 2
 	$(PY) scripts/10_extract_activations.py --model $(MODEL) \
 		--dataset $(SMOKE_DATA)/synthetic/core.jsonl --output results/smoke/act/core
 	$(PY) scripts/10_extract_activations.py --model $(MODEL) \
 		--dataset $(SMOKE_DATA)/synthetic/context.jsonl --output results/smoke/act/context --max-length 2048
+	$(PY) scripts/10_extract_activations.py --model $(MODEL) \
+		--dataset $(SMOKE_DATA)/synthetic/obfuscation.jsonl --output results/smoke/act/obfuscation
 	$(PY) scripts/20_run_probes.py --activations results/smoke/act/core \
 		--output results/smoke/probes --max-samples 4000 --cv-folds 3 --no-strict --no-tables
 	$(PY) scripts/30_context_degradation.py --activations results/smoke/act/context \
 		--probes results/smoke/probes --output results/smoke/context --no-tables
+	$(PY) scripts/31_obfuscation.py --activations results/smoke/act/obfuscation \
+		--probes results/smoke/probes --output results/smoke/obfuscation --no-tables
 	$(PY) scripts/40_behavioral_leadtime.py --model $(MODEL) \
 		--dataset $(SMOKE_DATA)/synthetic/core.jsonl --probes results/smoke/probes \
 		--output results/smoke/leadtime --n-examples 8 --no-tables
@@ -72,6 +81,7 @@ smoke:
 	@echo "--- smoke artifacts ---"
 	@test -f results/smoke/probes/static_probes.csv
 	@test -f results/smoke/context/context_degradation.csv
+	@test -f results/smoke/obfuscation/obfuscation_robustness.csv
 	@test -f results/smoke/leadtime/behavioral_leadtime.csv
 	@test -f results/smoke/patching/causal_patching.csv
 	@echo "SMOKE OK"

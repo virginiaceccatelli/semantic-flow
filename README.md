@@ -23,7 +23,7 @@ We attack this in three parts, and each experiment belongs to one of them:
 | | Question | Experiments |
 |---|---|---|
 | **Representation** | Are binding, data-flow, control-dependence, and taint relations *linearly decodable* from hidden states, beyond what the surface text predicts — and at which layers? | E1–E4, E8 |
-| **Stability** | How does that decodability decay as context grows and distractors intervene, and does *semantic* structure break before *lexical* structure? | E5 |
+| **Stability** | How does that decodability decay as context grows, distractors intervene, and the surface form is rewritten while semantics are held fixed — and does *semantic* structure break before *lexical* structure? | E5, E9 |
 | **Consequence** | Is the internal state real: does its corruption *precede* behavioral failure (early warning), and does the model *causally use* it (patching changes the answer)? | E6, E7 |
 
 Classic probing shows information is *present*; mechanistic interpretability
@@ -109,15 +109,16 @@ A fixed-seed sample of ~200 real, `ast`-parseable **CodeSearchNet** functions
 
 ## 4. The pipeline
 
-Seven numbered stages, each one CLI in `scripts/`, each writing a run manifest
+Eight numbered stages, each one CLI in `scripts/`, each writing a run manifest
 (git sha, args, wall time) to `results/manifests/`. Extract on GPU once;
 everything else is CPU and re-runnable.
 
 ```
-00 generate data       CPU   programs + context variants + minimal pairs + real sample
+00 generate data       CPU   programs + context variants + minimal pairs + obfuscation ladder + real sample
 10 extract activations GPU   one forward pass per (model, dataset) → activation store
 20 static probes       CPU   E1–E4 (+E8): grouped CV, controls, frozen probe checkpoints
 30 context degradation CPU   E5: frozen probes re-evaluated on filler variants
+31 obfuscation         CPU   E9: frozen probes re-evaluated on the semantics-verified obfuscation ladder
 40 behavioral leadtime GPU   E6: taint probe vs the model's own answer, per line-prefix
 50 causal patching     GPU   E7: patch clean→corrupted activations, layer × position
 90 paper assets        CPU   every table + figure, regenerated from CSVs alone
@@ -164,7 +165,7 @@ priors alone.
   joins). Ground truth is join-point-exact from AST nesting. **Measures:**
   selectivity for the guard→statement relation by layer.
 
-### Stability — does it survive context? (E5)
+### Stability — does it survive context and surface change? (E5, E9)
 
 - **E5 · context degradation.** Take the **frozen** E2/E3 probes and, without
   retraining, evaluate them on variants where filler is inserted between a
@@ -184,6 +185,29 @@ priors alone.
   keeps. For `competing_update` the ground truth is recomputed per variant, so
   it asks whether the model's state *updates*, not just whether it survives
   distance.
+
+- **E9 · obfuscation robustness — same semantics, harder surface.** The
+  transformation-based counterpart to E5: instead of pushing definition and use
+  apart, rewrite the *whole program* while provably preserving what it computes.
+  A Tigress-inspired ladder ([tigress.wtf](https://tigress.wtf) — C-only, so
+  re-implemented natively for Python in `src/data/obfuscation.py`) applies
+  cumulative levels of increasing difficulty:
+
+  | level | transformation |
+  |---|---|
+  | 0 | normalize (formatting baseline) |
+  | 1 | consistent renaming of every local — isolates lexical reliance |
+  | 2 | + dead branches under opaque predicates (provably false, e.g. `v*v % 4 == 3`) |
+  | 3 | + mixed boolean-arithmetic encoding (`a+b → (a^b)+((a&b)<<1)`) |
+  | 4 | + control-flow flattening into a shuffled while/state-machine |
+
+  Every variant is **executed and verified** observationally equivalent to its
+  base; all levels of a base are kept or dropped together, so level curves
+  compare identical program sets. The **frozen** E2/E3 probes are evaluated
+  with ground truth rebuilt per variant. **Measures:** accuracy vs level, per
+  task × layer. A collapse already at level 1 convicts the probe (and the
+  model's accessible state) of lexical shortcuts; graceful decay across levels
+  2–4 is evidence the relations are carried semantically.
 
 ### Consequence — is the state real? (E6, E7)
 
@@ -227,6 +251,7 @@ what they claim to (details in [docs/METHODS.md](docs/METHODS.md)):
 | **Selectivity control** — identical probe on shuffled labels | accuracy from class priors / per-program regularities |
 | **Negative strata**, reported separately | `same_name_diff_binding` kills "same string ⇒ same variable"; `distance_matched` kills "nearby ⇒ related" |
 | **Verified token alignment** — AST spans → offsets checked against the source | string-matching a variable name silently mislabels shadows — the exact thing E2 measures |
+| **Cross-validated ground truth** — def-use edges differentially tested against beniget (independent reaching-defs analysis); obfuscation variants execution-verified | labels that are wrong in the same way for train and test look like signal; this check already caught a real `b = b + a` mislabeling bug |
 
 > One non-obvious hazard worth flagging: `AutoTokenizer` on transformers 5.x
 > silently mis-tokenizes deepseek-coder (`def func` → `['de','ff','unc']`),
@@ -258,13 +283,13 @@ src/
   graphs/      ast / def-use / CFG / control-dependence extraction (ground truth)
   models/      model + tokenizer loading (round-trip guard), forward hooks, patching
   probes/      linear probe, grouped CV + controls, dataset builders (single source of truth)
-  experiments/ E1–E4 static probes, E5 degradation, E6 lead time, E7 patching
+  experiments/ E1–E4 static probes, E5 degradation, E6 lead time, E7 patching, E9 obfuscation
   analysis/    metrics, table rendering, figures
 scripts/       numbered stage CLIs (00–90)
 jobs/          SGE scripts per GPU stage
 configs/       model registry + canonical experiment settings
 docs/          PIPELINE · EXPERIMENTS · METHODS · RESULTS
-tests/         60 CPU-only tests (alignment exactness, CV leakage, strata, pairs, …)
+tests/         72 CPU-only tests (alignment exactness, CV leakage, strata, pairs, obfuscation semantics, ground-truth cross-check, …)
 ```
 
 ## 9. Quickstart
@@ -272,12 +297,12 @@ tests/         60 CPU-only tests (alignment exactness, CV leakage, strata, pairs
 ```bash
 conda create -n semflow python=3.11 -y && conda activate semflow
 pip install -e ".[dev]"
-make test                     # 60 CPU-only tests
+make test                     # 72 CPU-only tests
 make smoke                    # tiny end-to-end run on this machine (~15 min, MPS)
 
 # full run (development model)
 python scripts/00_generate_data.py --model deepseek-coder-1.3b --real
-make extract probes context leadtime patching assets MODEL=deepseek-coder-1.3b
+make extract probes context obfuscation leadtime patching assets MODEL=deepseek-coder-1.3b
 ```
 
 Setup and known pitfalls (the tokenizer!): [SETUP.md](SETUP.md) ·
@@ -292,7 +317,9 @@ Results index: [docs/RESULTS.md](docs/RESULTS.md).
    taint relations are linearly decodable in code LLMs — with controls that
    separate semantic tracking from lexical shortcuts.
 2. A quantitative account of how that structure degrades with context, by
-   distractor type — distinguishing distance effects from genuine state updates.
+   distractor type — distinguishing distance effects from genuine state updates —
+   and under semantics-preserving obfuscation of increasing difficulty,
+   separating lexical from semantic carriers of the same relations.
 3. A falsifiable test of latent-before-behavioral failure (lead time): whether
    internal semantic state gives an early-warning signal.
 4. Causal evidence (activation patching on aligned minimal pairs) for which

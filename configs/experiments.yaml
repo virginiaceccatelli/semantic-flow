@@ -14,6 +14,8 @@ stage00_data:
                     filler_types: [comment_prose, dead_code, lexical_decoy,
                                    competing_update, scope_shadow]}
   minimal_pairs:   {n: 40}             # only length-matched pairs are kept
+  obfuscation:     {n_bases: 40, levels: [normalize, rename, opaque, encode, flatten]}
+                                       # cumulative ladder; every variant execution-verified
   real:            {n: 200, source: code_search_net/python, split: validation}
 
 stage10_extract:
@@ -33,6 +35,10 @@ stage20_probes:                        # E1-E4 (+E8 on the real store)
   negative_strata: [same_name_diff_binding, diff_name, distance_matched]
 
 stage30_context:                       # E5
+  tasks: [binding, defuse_edge]
+  probes: frozen_from_stage20          # never retrained on variants
+
+stage31_obfuscation:                   # E9
   tasks: [binding, defuse_edge]
   probes: frozen_from_stage20          # never retrained on variants
 

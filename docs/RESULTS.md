@@ -17,6 +17,7 @@ Status legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b)
 | E6 lead time | `behavioral_leadtime{,_summary}_{model}.csv` | `leadtime_*` | ☐ | ☐ |
 | E7 causal patching | `causal_patching{,_summary}_{model}.csv` | `patching_recovery_*` | ☐ | ☐ |
 | E8 real code | `static_probes_{model}_csn_python_200.csv` | `layers_*_csn*` | ☐ | ☐ |
+| E9 obfuscation robustness | `obfuscation_robustness_{model}.csv` | `obfuscation_levels_*`, `obfuscation_{task}_*` | ☐ | ☐ |
 
 Update the status cells as runs land, and record headline numbers below.
 
@@ -29,3 +30,4 @@ _(fill in as results arrive)_
 - E5 steepest-degrading filler type: —
 - E6 fraction of examples with positive lead time: — (CI —)
 - E7 best non-readout recovery: — at (layer —, position —)
+- E9 accuracy drop, normalize → rename (lexical reliance) and → flatten (full ladder): — / —

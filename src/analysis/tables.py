@@ -65,6 +65,14 @@ def context_summary(df: pd.DataFrame) -> pd.DataFrame:
               .reset_index())
 
 
+def obfuscation_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Accuracy by (task, obf_level, obf_name), averaged over layers."""
+    return (df.groupby(["task", "obf_level", "obf_name"])
+              .agg(accuracy=("accuracy", "mean"), n=("n", "sum"))
+              .reset_index()
+              .sort_values(["task", "obf_level"]))
+
+
 def patching_summary(df: pd.DataFrame) -> pd.DataFrame:
     """Mean recovery and causal-class counts by (layer, position)."""
     rec = (df.groupby(["layer", "position"])["recovery"].mean()
