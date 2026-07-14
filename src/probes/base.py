@@ -11,18 +11,23 @@ Design principles:
 
 from __future__ import annotations
 
+import logging
 import pickle
+import time
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
+from joblib import Parallel, delayed
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.preprocessing import StandardScaler
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -35,6 +40,7 @@ class ProbeConfig:
     random_seed: int = 42
     run_selectivity_control: bool = True
     max_samples: int = 20_000           # cap per layer/task fit (subsampled by group)
+    n_jobs: int = 1                     # CV folds fitted in parallel (-1 = all cores)
 
 
 @dataclass
@@ -192,6 +198,22 @@ def _shuffle_within_groups(y: np.ndarray, groups: np.ndarray, seed: int) -> np.n
     return y_shuffled
 
 
+def _fit_one_fold(
+    probe_cls,
+    cfg: ProbeConfig,
+    X: np.ndarray,
+    labels: np.ndarray,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
+) -> tuple[dict[str, float], np.ndarray, bool]:
+    """Fit and evaluate a single CV fold (module-level for joblib workers)."""
+    probe = probe_cls(config=cfg)
+    probe.fit(X[train_idx], labels[train_idx])
+    metrics = probe.evaluate(X[test_idx], labels[test_idx])
+    preds = probe.predict(X[test_idx])
+    return metrics, preds, getattr(probe, "converged", True)
+
+
 def cross_validate_probe(
     probe_cls,
     X: np.ndarray,
@@ -231,26 +253,35 @@ def cross_validate_probe(
 
     tag_hits: dict[str, dict[str, list[int]]] = {k: {} for k in (tags or {})}
 
-    def _run_folds(labels: np.ndarray, collect_tags: bool = False) -> tuple[list, list, list, bool]:
+    def _run_folds(labels: np.ndarray, collect_tags: bool = False,
+                   phase: str = "real") -> tuple[list, list, list, bool]:
+        folds = [
+            (train_idx, test_idx)
+            for train_idx, test_idx in skf.split(X, labels, groups)
+            if len(np.unique(labels[train_idx])) >= 2
+        ]
+        t0 = time.time()
+        logger.info("    %s layer %d [%s]: %d folds × fit on %d×%d (n_jobs=%d)",
+                    task, layer, phase, len(folds), len(X), X.shape[1], cfg.n_jobs)
+        outputs = Parallel(n_jobs=cfg.n_jobs, verbose=10)(
+            delayed(_fit_one_fold)(probe_cls, cfg, X, labels, train_idx, test_idx)
+            for train_idx, test_idx in folds
+        )
         accs, f1s, aucs = [], [], []
         all_converged = True
-        for train_idx, test_idx in skf.split(X, labels, groups):
-            if len(np.unique(labels[train_idx])) < 2:
-                continue
-            probe = probe_cls(config=cfg)
-            probe.fit(X[train_idx], labels[train_idx])
-            all_converged = all_converged and getattr(probe, "converged", True)
-            metrics = probe.evaluate(X[test_idx], labels[test_idx])
+        for (metrics, preds, fold_converged), (_, test_idx) in zip(outputs, folds):
+            all_converged = all_converged and fold_converged
             accs.append(metrics["accuracy"])
             f1s.append(metrics.get("f1_macro", 0.0))
             if "auc" in metrics:
                 aucs.append(metrics["auc"])
             if collect_tags and tags:
-                preds = probe.predict(X[test_idx])
                 correct = (preds == labels[test_idx]).astype(int)
                 for tag_name, tag_values in tags.items():
                     for val, hit in zip(tag_values[test_idx], correct):
                         tag_hits[tag_name].setdefault(str(val), []).append(int(hit))
+        logger.info("    %s layer %d [%s]: done in %.1fs (converged=%s)",
+                    task, layer, phase, time.time() - t0, all_converged)
         return accs, f1s, aucs, all_converged
 
     accs, f1s, aucs, converged = _run_folds(y, collect_tags=True)
@@ -261,7 +292,7 @@ def cross_validate_probe(
     control_acc = 0.0
     if cfg.run_selectivity_control:
         y_ctrl = _shuffle_within_groups(y, groups, cfg.random_seed)
-        ctrl_accs, _, _, ctrl_conv = _run_folds(y_ctrl)
+        ctrl_accs, _, _, ctrl_conv = _run_folds(y_ctrl, phase="selectivity")
         control_acc = float(np.mean(ctrl_accs)) if ctrl_accs else 0.0
         converged = converged and ctrl_conv
 

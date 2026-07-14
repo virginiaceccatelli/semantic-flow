@@ -146,6 +146,7 @@ def run_static_probes(
     rows: list[dict] = []
 
     for layer_pos, layer in enumerate(layers):
+        logger.info("Layer %d (%d/%d): assembling features", layer, layer_pos + 1, len(layers))
         assembled = _assemble_layer(store, records, tasks, layer_pos)
         for task, (X, y, groups, kept) in assembled.items():
             if len(np.unique(y)) < 2:
@@ -175,6 +176,7 @@ def run_static_probes(
                         rows.append(r)
 
             # Frozen checkpoint for downstream experiments
+            logger.info("    %s layer %2d: fitting frozen checkpoint", task, layer)
             probe = fit_full_probe(X, y, groups, config=cfg)
             ckpt = output_dir / task / f"layer_{layer:02d}.pkl"
             probe.save(ckpt)

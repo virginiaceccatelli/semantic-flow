@@ -37,6 +37,7 @@ def main(
     tasks: Optional[str] = typer.Option(None, help="Comma-separated subset of tasks"),
     max_samples: int = typer.Option(20000, help="Row cap per (task, layer) fit"),
     max_iter: int = typer.Option(2000, help="Solver iteration cap (raise if convergence fails)"),
+    n_jobs: int = typer.Option(-1, help="Parallel CV-fold fits (-1 = all cores, 1 = sequential)"),
     cv_folds: int = typer.Option(5),
     seed: int = typer.Option(42),
     strict: bool = typer.Option(True, help="Fail on sanity-check violations"),
@@ -55,7 +56,7 @@ def main(
 
     task_list = [t.strip() for t in tasks.split(",")] if tasks else list(TASKS)
     cfg = ProbeConfig(cv_folds=cv_folds, random_seed=seed,
-                      max_samples=max_samples, max_iter=max_iter)
+                      max_samples=max_samples, max_iter=max_iter, n_jobs=n_jobs)
 
     df = run_static_probes(store, output, tasks=task_list, config=cfg, seed=seed)
 
@@ -85,6 +86,7 @@ def main(
     write_manifest("20_run_probes", {
         "activations": str(activations), "output": str(output),
         "tasks": task_list, "max_samples": max_samples,
+        "max_iter": max_iter, "n_jobs": n_jobs,
         "cv_folds": cv_folds, "seed": seed,
     }, t0, extra={"n_rows": len(df), "sanity_problems": problems})
     console.print("[green]Stage 20 done.[/green]")
