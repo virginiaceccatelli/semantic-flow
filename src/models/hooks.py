@@ -82,10 +82,16 @@ class HookManager:
         return hook
 
     def register(self):
-        """Attach hooks to the requested layers."""
+        """Attach hooks to the requested layers.
+
+        Index -1 hooks the input-embedding module: truly context-free token
+        features (decoder-layer index 0 has already mixed context once)."""
         all_layers = self._get_decoder_layers()
         indices = self.layer_indices if self.layer_indices is not None else [i for i, _ in all_layers]
         idx_set = set(indices)
+        if -1 in idx_set:
+            emb = self.model.get_input_embeddings()
+            self._handles.append(emb.register_forward_hook(self._make_hook(-1)))
         for i, layer in all_layers:
             if i in idx_set:
                 handle = layer.register_forward_hook(self._make_hook(i))

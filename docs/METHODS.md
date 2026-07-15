@@ -74,10 +74,25 @@ priors and per-program regularities alone.
 ## Negative-sampling strata
 
 Pairwise tasks report held-out accuracy per negative stratum:
-`same_name_diff_binding` (hard: defeats lexical shortcuts),
+`same_name_diff_binding` (same name, different binding),
 `diff_name` (capped 3× positives), `distance_matched` (defeats positional
-shortcuts). An honest headline number is the hard-stratum accuracy, not the
-pooled one.
+shortcuts), and `context_matched` (label flips between two token-identical-
+but-one-token programs; anchor windows and distance identical, pair shares a
+CV group — immune to every surface cue by construction). An honest headline
+number is the `context_matched` accuracy compared against the surface
+baseline, not the pooled accuracy.
+
+## Surface-shortcut baseline
+
+A probe over ±3-token-window token ids + bucketed anchor distance (no hidden
+states) is fit with the same grouped CV and reported per stratum
+(`features="surface"`). Motivation: the first 1.3b run scored ~0.98 on
+`same_name_diff_binding` at the earliest probed layer, and this baseline
+matched it — the templated corpus leaked labels through local context.
+Hidden-state claims are only meaningful above this floor. Relatedly, hooks
+index decoder-block *outputs*, so "layer 0" has already mixed context once;
+layer −1 (the embedding output) is extracted as the true context-free
+reference.
 
 ## Frozen-probe evaluation (E5, E9)
 

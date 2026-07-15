@@ -49,23 +49,40 @@ def _save(fig: plt.Figure, name: str):
 def _static_probe_assets(csv: Path):
     from src.analysis.tables import (
         df_to_markdown, distance_table, static_probe_summary, stratum_table,
+        surface_baseline_table,
     )
 
     tag = csv.stem.replace("static_probes_", "")
     df = pd.read_csv(csv)
     df["tag"] = df["tag"].fillna("")
-    agg = df[df["tag"] == ""]
+    if "features" in df.columns:
+        hidden = df[df["features"].fillna("hidden") == "hidden"]
+    else:
+        hidden = df
+    agg = hidden[hidden["tag"] == ""]
 
     df_to_markdown(static_probe_summary(df), MD / f"{csv.stem}_summary.md",
                    title=f"Static probes — {tag}")
 
-    # Layer curves: accuracy and selectivity per task (one axis, legend, thin lines)
+    surf = surface_baseline_table(df)
+    if not surf.empty:
+        df_to_markdown(surf, MD / f"{csv.stem}_surface_baseline.md",
+                       title=f"Surface-shortcut baseline (no hidden states) — {tag}")
+
+    # Layer curves: accuracy and selectivity per task (one axis, legend, thin
+    # lines). Dotted line = that task's surface baseline (the floor to beat).
     for metric in ("accuracy", "selectivity"):
         fig, ax = plt.subplots(figsize=(8, 4.5))
         for i, (task, sub) in enumerate(sorted(agg.groupby("task"))):
             sub = sub.sort_values("layer")
             ax.plot(sub["layer"], sub[metric], marker="o", markersize=4,
                     linewidth=1.8, label=task, color=PALETTE[i % len(PALETTE)])
+            if metric == "accuracy" and not surf.empty:
+                row = surf[surf["task"] == task]
+                if not row.empty:
+                    ax.axhline(float(row["overall"].iloc[0]),
+                               color=PALETTE[i % len(PALETTE)],
+                               linewidth=1.0, linestyle=":")
         ref = 0.0 if metric == "selectivity" else 0.5
         ax.axhline(ref, color="gray", linewidth=0.8, linestyle="--")
         ax.set_xlabel("Layer")

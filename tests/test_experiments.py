@@ -144,3 +144,74 @@ class TestTables:
         ])
         s = patching_summary(df)
         assert s.iloc[0]["mean_recovery"] == pytest.approx(0.6)
+
+
+class TestSurfaceBaselineAndMatchedStratum:
+    def test_surface_rows_and_matched_floor(self, tmp_path):
+        from src.data.activation_store import ActivationStore
+        from src.data.alignment import compute_offsets
+        from src.experiments.static_probes import run_static_probes
+        from src.probes.base import ProbeConfig
+
+        gen = SyntheticCodeGenerator(seed=1)
+        batch = gen.generate_matched_binding_batch(n_pairs=8, seed=1, tokenizer=TOK)
+        assert len(batch) == 16
+
+        store = ActivationStore(tmp_path / "store")
+        store.initialize({"model": "fake", "layers": [-1, 0], "d_model": 8,
+                          "dataset": "fake.jsonl", "max_length": 4096})
+        rng = np.random.default_rng(0)
+        for ex in batch:
+            ids = np.array(TOK(ex.source)["input_ids"])
+            offsets = np.array(compute_offsets(ex.source, TOK))
+            hidden = rng.normal(size=(2, len(ids), 8)).astype(np.float16)
+            store.add(ex, hidden, ids, offsets)
+        store.finalize()
+
+        cfg = ProbeConfig(cv_folds=3, max_iter=200)
+        df = run_static_probes(ActivationStore(tmp_path / "store"),
+                               tmp_path / "out", tasks=["binding"], config=cfg)
+
+        assert set(df["features"].unique()) == {"surface", "hidden"}
+        # hidden probes ran for both stored layers, incl. embeddings (-1)
+        hid = df[(df["features"] == "hidden") & (df["tag"].fillna("") == "")]
+        assert sorted(hid["layer"].unique()) == [-1, 0]
+        # the designed pairs have IDENTICAL surface features and opposite
+        # labels, and share a CV group → surface accuracy on the
+        # context_matched stratum is exactly chance
+        surf_cm = df[(df["features"] == "surface") & (df["tag"] == "stratum")
+                     & (df["tag_value"] == "context_matched")]
+        assert len(surf_cm) == 1
+        assert surf_cm["accuracy"].iloc[0] == pytest.approx(0.5, abs=1e-6)
+
+
+class TestEmbeddingHook:
+    def test_layer_minus_one_captures_embeddings(self):
+        import torch
+        import torch.nn as nn
+
+        from src.models.hooks import extract_hidden_states
+
+        class Tiny(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.emb = nn.Embedding(64, 8)
+                self.layers = nn.ModuleList([nn.Linear(8, 8) for _ in range(2)])
+
+            def get_input_embeddings(self):
+                return self.emb
+
+            def forward(self, input_ids, attention_mask=None):
+                h = self.emb(input_ids)
+                for lyr in self.layers:
+                    h = lyr(h)
+                return h
+
+        model = Tiny()
+        ids = torch.tensor([[1, 2, 3, 4]])
+        cache = extract_hidden_states(model, ids, layer_indices=[-1, 1])
+        assert cache.layers() == [-1, 1]
+        with torch.no_grad():
+            expected = model.emb(ids).squeeze(0)
+        assert torch.allclose(cache.get(-1), expected)
+        assert cache.all_hidden_states().shape == (2, 4, 8)

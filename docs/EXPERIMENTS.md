@@ -41,14 +41,20 @@ each reported separately:
 
 | stratum | what it isolates |
 |---|---|
-| `same_name_diff_binding` | **the** test: same surface name, different binding (shadowing). A lexical probe fails here. |
+| `same_name_diff_binding` | same surface name, different binding (shadowing). A purely lexical probe fails here — but local *context* can still leak (see `context_matched`). |
 | `diff_name` | easy negatives (capped at 3× positives) |
 | `distance_matched` | controls for token-distance shortcuts |
+| `context_matched` | **the** test: designed (def, use) pairs from program pairs that are token-identical except one rebinding token. Anchor windows and distance are identical across the pair while the label flips, so NO surface feature is informative; both programs share one CV group. |
 
-**Decision rule.** If held-out accuracy on `same_name_diff_binding` ≈ chance
-while overall accuracy is high, the model tracks *names*, not bindings. The
-gap between this stratum and `positive` accuracy, by layer, is the paper's
-central "lexical vs semantic" figure (`binding_strata_*.png`).
+**Surface-shortcut baseline.** Stage 20 additionally fits a probe on windowed
+token ids (±3 around each anchor) + bucketed anchor distance — no hidden
+states (`features="surface"`, `layer=-1` rows). This is the floor every
+hidden-state probe must beat; on `context_matched` it is ~0.5 by construction.
+
+**Decision rule.** If held-out accuracy on `context_matched` ≈ chance
+while overall accuracy is high, the model tracks surface form, not bindings.
+The gap between this stratum and the surface baseline, by layer, is the
+paper's central "lexical vs semantic" figure (`binding_strata_*.png`).
 
 ## E3 — def-use edges (data flow)
 

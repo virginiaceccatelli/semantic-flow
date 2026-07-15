@@ -49,9 +49,10 @@ class ModelConfig:
 
     def __post_init__(self):
         if not self.probe_layers:
-            # Default: every 4th layer plus first and last
+            # Default: embedding output (-1, context-free baseline), then
+            # every 4th decoder layer plus first and last
             self.probe_layers = (
-                [0]
+                [-1, 0]
                 + list(range(3, self.n_layers - 1, 4))
                 + [self.n_layers - 1]
             )

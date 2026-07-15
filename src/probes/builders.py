@@ -47,7 +47,8 @@ class PairRecord:
     pos_i: int
     pos_j: int
     label: int
-    stratum: str            # "positive" | "same_name_diff_binding" | "diff_name" | "distance_matched"
+    stratum: str            # "positive" | "same_name_diff_binding" | "diff_name"
+                            # | "distance_matched" | "context_matched"
     distance: int = 0
     name_i: str = ""
     name_j: str = ""
@@ -201,12 +202,35 @@ def resolve_events(source: str, aligner: TokenAligner) -> Optional[ResolvedEvent
 
 # ── E2: binding pairs with explicit negative strata ──────────────────────────
 
+def _matched_event_pair(ev, metadata: Optional[dict]) -> Optional[tuple[int, int]]:
+    """Locate the designed (def, use) event indices of a context-matched
+    program (generator.generate_matched_binding_pair) from its metadata."""
+    m = (metadata or {}).get("matched")
+    if not m:
+        return None
+    di = next((k for k, e in enumerate(ev)
+               if e.kind == "def" and e.name == m["var"] and e.line == m["def_line"]), None)
+    ui = next((k for k, e in enumerate(ev)
+               if e.kind == "use" and e.name == m["var"] and e.line == m["use_line"]), None)
+    if di is None or ui is None:
+        return None
+    return di, ui
+
+
+def _pair_group(example_id: str, metadata: Optional[dict]) -> str:
+    """CV group id: both programs of a context-matched pair share a group so
+    grouped CV never splits a pair across train/test."""
+    m = (metadata or {}).get("matched")
+    return m["pair_id"] if m else example_id
+
+
 def build_binding_records(
     source: str,
     aligner: TokenAligner,
     example_id: str,
     rng: random.Random,
     neg_per_pos: int = 3,
+    metadata: Optional[dict] = None,
 ) -> list[PairRecord]:
     """Same-binding pair classification.
 
@@ -215,6 +239,10 @@ def build_binding_records(
       same_name_diff_binding — same surface name, different binding (hard)
       diff_name              — different names, different bindings
       distance_matched       — random identifier pairs, distance-matched to positives
+      context_matched        — the designed pair of a matched program pair:
+                               windows and distance identical across the two
+                               programs, label flipped by one rebinding token
+                               (positives and negatives both carry this stratum)
     """
     resolved = resolve_events(source, aligner)
     if resolved is None or len(resolved.events) < 2:
@@ -224,10 +252,12 @@ def build_binding_records(
     anchors = resolved.anchors
     bid = resolved.binding_ids
     n = len(ev)
+    matched = _matched_event_pair(ev, metadata)
+    group = _pair_group(example_id, metadata)
 
     def _rec(i: int, j: int, label: int, stratum: str) -> PairRecord:
         return PairRecord(
-            example_id=example_id,
+            example_id=group,
             pos_i=anchors[i], pos_j=anchors[j],
             label=label, stratum=stratum,
             distance=abs(anchors[j] - anchors[i]),
@@ -240,9 +270,11 @@ def build_binding_records(
             if anchors[i] == anchors[j] or bid[i] == -1 or bid[j] == -1:
                 continue
             if bid[i] == bid[j]:
-                positives.append(_rec(i, j, 1, "positive"))
+                stratum = "context_matched" if (i, j) == matched else "positive"
+                positives.append(_rec(i, j, 1, stratum))
             elif ev[i].name == ev[j].name:
-                hard_negs.append(_rec(i, j, 0, "same_name_diff_binding"))
+                stratum = "context_matched" if (i, j) == matched else "same_name_diff_binding"
+                hard_negs.append(_rec(i, j, 0, stratum))
             else:
                 diff_negs.append(_rec(i, j, 0, "diff_name"))
 
@@ -284,6 +316,7 @@ def build_defuse_records(
     example_id: str,
     rng: random.Random,
     neg_per_pos: int = 3,
+    metadata: Optional[dict] = None,
 ) -> list[PairRecord]:
     """Directed def→use edge prediction.
 
@@ -292,6 +325,8 @@ def build_defuse_records(
       same_name_diff_binding — (def, use) same name but a different def reaches
       diff_name              — (def of x, use of y)
       distance_matched       — random (def, use) pairs, distance-matched
+      context_matched        — designed pair of a matched program pair
+                               (see build_binding_records)
     """
     resolved = resolve_events(source, aligner)
     if resolved is None or not resolved.edge_pairs:
@@ -302,10 +337,12 @@ def build_defuse_records(
     n = len(ev)
     def_idx = [i for i in range(n) if ev[i].kind == "def"]
     use_idx = [i for i in range(n) if ev[i].kind == "use"]
+    matched = _matched_event_pair(ev, metadata)
+    group = _pair_group(example_id, metadata)
 
     def _rec(i: int, j: int, label: int, stratum: str) -> PairRecord:
         return PairRecord(
-            example_id=example_id,
+            example_id=group,
             pos_i=anchors[i], pos_j=anchors[j],
             label=label, stratum=stratum,
             distance=abs(anchors[j] - anchors[i]),
@@ -318,9 +355,11 @@ def build_defuse_records(
             if anchors[d] == anchors[u]:
                 continue
             if (d, u) in resolved.edge_pairs:
-                positives.append(_rec(d, u, 1, "positive"))
+                stratum = "context_matched" if (d, u) == matched else "positive"
+                positives.append(_rec(d, u, 1, stratum))
             elif ev[d].name == ev[u].name:
-                hard_negs.append(_rec(d, u, 0, "same_name_diff_binding"))
+                stratum = "context_matched" if (d, u) == matched else "same_name_diff_binding"
+                hard_negs.append(_rec(d, u, 0, stratum))
             else:
                 diff_negs.append(_rec(d, u, 0, "diff_name"))
 

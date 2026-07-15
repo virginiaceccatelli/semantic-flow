@@ -49,7 +49,7 @@ def main(
     model: str = typer.Option(..., help="Model name from the registry"),
     dataset: Path = typer.Option(..., help=".jsonl dataset from stage 00"),
     output: Optional[Path] = typer.Option(None, help="Store dir (default results/activations/{model}/{stem})"),
-    layers: Optional[str] = typer.Option(None, help="Comma-separated layer indices; default = registry probe layers"),
+    layers: Optional[str] = typer.Option(None, help="Comma-separated layer indices (-1 = embedding output); default = registry probe layers"),
     max_length: int = typer.Option(1024, help="Max tokens per example"),
     max_examples: int = typer.Option(100000),
     device: str = typer.Option("auto", help="cuda | mps | cpu | auto"),

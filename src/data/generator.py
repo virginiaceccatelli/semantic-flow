@@ -311,6 +311,127 @@ class SyntheticCodeGenerator:
         self.rng.shuffle(examples)
         return examples
 
+    def generate_matched_binding_pair(
+        self,
+        pair_id: str,
+        seed: Optional[int] = None,
+        tokenizer=None,
+    ) -> Optional[tuple[ProbeExample, ProbeExample]]:
+        """Generate two programs identical except for ONE token, flipping the
+        binding of a fixed (def, use) pair.
+
+        base   : ... a = K1 ... u = a + K0 ... q = K2 ... <pad> ... r = a + K3
+        rebound: ... a = K1 ... u = a + K0 ... a = K2 ... <pad> ... r = a + K3
+
+        In `base` the final use of `a` binds to the first def (label 1); in
+        `rebound` the middle line rebinds `a`, so (first def, final use) is a
+        hard negative (label 0). The early use `u = a + K0` (identical in both
+        programs) keeps the first def alive in the DFG even when rebound.
+        Local token windows around both anchors and the anchor distance are
+        identical across the pair, so surface features carry zero information
+        about the label — probes must use nonlocal context.
+
+        With a tokenizer, the pair is verified to tokenize to the same length
+        with exactly one differing token. The differing token is separated from
+        both anchors by at least one full pad line (> 3 tokens), so it never
+        falls inside a small anchor window. Returns None if no fresh-name
+        candidate verifies.
+        """
+        rng = random.Random(seed) if seed is not None else self.rng
+        used: set[str] = set()
+
+        def _pick() -> str:
+            name = rng.choice([c for c in self.SAFE_NAMES if c not in used])
+            used.add(name)
+            return name
+
+        target = _pick()
+        pad_vars = [_pick() for _ in range(rng.randint(2, 3))]
+        early = _pick()
+        result = _pick()
+
+        def _pad_line(k: int) -> str:
+            v = pad_vars[k % len(pad_vars)]
+            src = pad_vars[(k + 1) % len(pad_vars)]
+            op = rng.choice(["+", "-", "*"])
+            return f"    {v} = {src} {op} {rng.randint(1, 9)}"
+
+        n_pre, n_post = rng.randint(1, 3), rng.randint(1, 3)
+        k0 = rng.randint(1, 9)
+        k1, k2, k3 = rng.randint(0, 100), rng.randint(0, 100), rng.randint(1, 9)
+
+        def _sources(mid_name: str) -> tuple[str, str, dict]:
+            lines = ["def func():", f"    {target} = {k1}"]
+            def_line = 2
+            for v in pad_vars:
+                lines.append(f"    {v} = {rng.randint(0, 100)}")
+            # early use of the target: keeps the first def in the DFG even
+            # when the mid line rebinds it (identical in both variants)
+            lines.append(f"    {early} = {target} + {k0}")
+            pre = [_pad_line(k) for k in range(n_pre)]
+            post = [_pad_line(k + n_pre) for k in range(n_post)]
+            lines += pre
+            mid_line = len(lines) + 1
+            lines_base = lines + [f"    {mid_name} = {k2}"] + post
+            lines_reb = lines + [f"    {target} = {k2}"] + post
+            use_line = len(lines_base) + 1
+            tail = [f"    {result} = {target} + {k3}", f"    return {result}"]
+            info = {"def_line": def_line, "mid_line": mid_line, "use_line": use_line}
+            return ("\n".join(lines_base + tail), "\n".join(lines_reb + tail), info)
+
+        # try fresh single-char names for the base's neutral middle line until
+        # the pair verifies as a single-token difference
+        candidates = [c for c in self.SAFE_NAMES if c not in used]
+        rng.shuffle(candidates)
+        for mid_name in candidates[:6]:
+            base_src, reb_src, info = _sources(mid_name)
+            if tokenizer is not None:
+                ids_b = tokenizer(base_src, add_special_tokens=False)["input_ids"]
+                ids_r = tokenizer(reb_src, add_special_tokens=False)["input_ids"]
+                if len(ids_b) != len(ids_r):
+                    continue
+                diffs = [i for i, (a, b) in enumerate(zip(ids_b, ids_r)) if a != b]
+                if len(diffs) != 1:
+                    continue
+            def _ex(src: str, rebound: bool) -> ProbeExample:
+                return ProbeExample(
+                    example_id=f"{pair_id}_{'rebound' if rebound else 'base'}",
+                    source=src,
+                    metadata={
+                        "type": "binding_matched",
+                        "matched": {
+                            "pair_id": pair_id, "var": target,
+                            "def_line": info["def_line"],
+                            "use_line": info["use_line"],
+                            "mid_line": info["mid_line"],
+                            "rebound": rebound,
+                        },
+                    },
+                )
+            return _ex(base_src, False), _ex(reb_src, True)
+        return None
+
+    def generate_matched_binding_batch(
+        self,
+        n_pairs: int = 60,
+        seed: int = 42,
+        tokenizer=None,
+    ) -> list[ProbeExample]:
+        """Flattened batch of context-matched binding pairs (2 programs each).
+
+        With a tokenizer, only verified single-token-difference pairs are kept,
+        so the batch may hold fewer than 2*n_pairs programs."""
+        rng = random.Random(seed)
+        out: list[ProbeExample] = []
+        for i in range(n_pairs):
+            pair = self.generate_matched_binding_pair(
+                pair_id=f"bindpair_{i:04d}", seed=rng.randint(0, 999999),
+                tokenizer=tokenizer,
+            )
+            if pair is not None:
+                out.extend(pair)
+        return out
+
     SANITIZED_NAME_CANDIDATES = ["s0", "s1", "u0", "w0", "z0", "q0"]
 
     def generate_minimal_pair(

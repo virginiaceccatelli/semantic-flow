@@ -21,8 +21,25 @@ def df_to_markdown(df: pd.DataFrame, path: str | Path, title: str = "",
     path.write_text(text)
 
 
+def _hidden_rows(df: pd.DataFrame) -> pd.DataFrame:
+    """Hidden-state probe rows only (drops surface-baseline rows).
+
+    CSVs written before the surface baseline existed have no 'features'
+    column; treat all their rows as hidden."""
+    if "features" in df.columns:
+        return df[df["features"].fillna("hidden") == "hidden"]
+    return df
+
+
+def _surface_rows(df: pd.DataFrame) -> pd.DataFrame:
+    if "features" not in df.columns:
+        return df.iloc[0:0]
+    return df[df["features"] == "surface"]
+
+
 def static_probe_summary(df: pd.DataFrame) -> pd.DataFrame:
     """Peak-layer summary per task from the stage-20 tidy CSV (aggregate rows)."""
+    df = _hidden_rows(df)
     agg = df[df["tag"].fillna("") == ""]
     rows = []
     for task, sub in agg.groupby("task"):
@@ -42,6 +59,7 @@ def static_probe_summary(df: pd.DataFrame) -> pd.DataFrame:
 
 def stratum_table(df: pd.DataFrame, task: str) -> pd.DataFrame:
     """Layer × stratum held-out accuracy for one pair task."""
+    df = _hidden_rows(df)
     sub = df[(df["task"] == task) & (df["tag"] == "stratum")]
     if sub.empty:
         return pd.DataFrame()
@@ -51,11 +69,27 @@ def stratum_table(df: pd.DataFrame, task: str) -> pd.DataFrame:
 
 def distance_table(df: pd.DataFrame, task: str = "defuse_edge") -> pd.DataFrame:
     """Layer × distance-bucket held-out accuracy."""
+    df = _hidden_rows(df)
     sub = df[(df["task"] == task) & (df["tag"] == "distance")]
     if sub.empty:
         return pd.DataFrame()
     return sub.pivot_table(index="layer", columns="tag_value",
                            values="accuracy").reset_index()
+
+
+def surface_baseline_table(df: pd.DataFrame) -> pd.DataFrame:
+    """Task × stratum accuracy of the no-hidden-state lexical-shortcut probe.
+
+    The floor every hidden-state probe must beat; ~0.5 on context_matched
+    means the stratum is clean of surface cues."""
+    sub = _surface_rows(df)
+    if sub.empty:
+        return pd.DataFrame()
+    agg = sub[sub["tag"].fillna("") == ""][["task", "accuracy"]]
+    agg = agg.rename(columns={"accuracy": "overall"})
+    strat = sub[sub["tag"] == "stratum"].pivot_table(
+        index="task", columns="tag_value", values="accuracy").reset_index()
+    return agg.merge(strat, on="task", how="left")
 
 
 def context_summary(df: pd.DataFrame) -> pd.DataFrame:

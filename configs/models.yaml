@@ -7,8 +7,8 @@ models:
     hf_id: deepseek-ai/deepseek-coder-1.3b-base
     n_layers: 24
     d_model: 2048
-    # Layers to probe: first, every 3rd, last
-    probe_layers: [0, 3, 6, 9, 12, 15, 18, 21, 23]
+    # Layers to probe: -1 = embedding output (context-free), then first, every 3rd, last
+    probe_layers: [-1, 0, 3, 6, 9, 12, 15, 18, 21, 23]
     recommended_dtype: float16
     notes: >
       Good starting point. Fits on a 12GB GPU with float16.
@@ -18,7 +18,7 @@ models:
     hf_id: deepseek-ai/deepseek-coder-6.7b-base
     n_layers: 32
     d_model: 4096
-    probe_layers: [0, 4, 8, 12, 16, 20, 24, 28, 31]
+    probe_layers: [-1, 0, 4, 8, 12, 16, 20, 24, 28, 31]
     recommended_dtype: float16
     notes: >
       Primary model for main results. Requires ~14GB VRAM.
@@ -27,7 +27,7 @@ models:
     hf_id: bigcode/starcoder2-3b
     n_layers: 30
     d_model: 3072
-    probe_layers: [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 29]
+    probe_layers: [-1, 0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 29]
     recommended_dtype: float16
     notes: >
       Good comparison point (different training corpus/architecture than DeepSeek).
@@ -36,14 +36,14 @@ models:
     hf_id: bigcode/starcoder2-7b
     n_layers: 32
     d_model: 4608
-    probe_layers: [0, 4, 8, 12, 16, 20, 24, 28, 31]
+    probe_layers: [-1, 0, 4, 8, 12, 16, 20, 24, 28, 31]
     recommended_dtype: float16
 
   codellama-7b:
     hf_id: codellama/CodeLlama-7b-hf
     n_layers: 32
     d_model: 4096
-    probe_layers: [0, 4, 8, 12, 16, 20, 24, 28, 31]
+    probe_layers: [-1, 0, 4, 8, 12, 16, 20, 24, 28, 31]
     recommended_dtype: float16
     notes: >
       Llama-architecture code model. Useful for architecture comparison.

@@ -56,7 +56,10 @@ class ProbeResult:
     n_test: int = 0
     n_groups: int = 0
     pos_frac: float = 0.0               # fraction of positive labels (binary tasks)
-    converged: bool = True
+    converged: bool = True              # real CV fits only
+    control_converged: bool = True      # shuffled-label fits routinely hit the
+                                        # iteration cap; tracked separately so
+                                        # they never fail the strict sanity gate
     notes: str = ""
     # Held-out accuracy per tag value, e.g. {"stratum": {"positive": 0.9, ...},
     # "distance": {"dist_0_10": 0.8, ...}}. Not flattened into to_dict().
@@ -76,6 +79,7 @@ class ProbeResult:
             "n_groups": self.n_groups,
             "pos_frac": self.pos_frac,
             "converged": self.converged,
+            "control_converged": self.control_converged,
             "notes": self.notes,
         }
 
@@ -290,11 +294,11 @@ def cross_validate_probe(
                            notes="no valid folds")
 
     control_acc = 0.0
+    control_converged = True
     if cfg.run_selectivity_control:
         y_ctrl = _shuffle_within_groups(y, groups, cfg.random_seed)
-        ctrl_accs, _, _, ctrl_conv = _run_folds(y_ctrl, phase="selectivity")
+        ctrl_accs, _, _, control_converged = _run_folds(y_ctrl, phase="selectivity")
         control_acc = float(np.mean(ctrl_accs)) if ctrl_accs else 0.0
-        converged = converged and ctrl_conv
 
     mean_acc = float(np.mean(accs))
     fold_sizes = [(len(tr), len(te)) for tr, te in skf.split(X, y, groups)]
@@ -312,6 +316,7 @@ def cross_validate_probe(
         n_groups=n_groups,
         pos_frac=float(np.mean(y)) if is_binary else 0.0,
         converged=converged,
+        control_converged=control_converged,
         tag_accuracy={
             tag_name: {val: float(np.mean(hits)) for val, hits in vals.items()}
             for tag_name, vals in tag_hits.items()

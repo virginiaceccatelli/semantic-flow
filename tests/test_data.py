@@ -107,3 +107,29 @@ class TestSyntheticCodeGenerator:
         for ex in batch:
             assert isinstance(ex, ProbeExample)
             assert len(ex.source) > 0
+
+    def test_generate_matched_binding_pair(self):
+        gen = SyntheticCodeGenerator(seed=0)
+        pair = gen.generate_matched_binding_pair("bp0", seed=11)
+        assert pair is not None
+        base, reb = pair
+        compile(base.source, "<base>", "exec")
+        compile(reb.source, "<rebound>", "exec")
+        # exactly one differing character (single-char variable names)
+        diffs = [i for i, (a, b) in enumerate(zip(base.source, reb.source)) if a != b]
+        assert len(base.source) == len(reb.source)
+        assert len(diffs) == 1
+        mb, mr = base.metadata["matched"], reb.metadata["matched"]
+        assert mb["pair_id"] == mr["pair_id"] == "bp0"
+        assert (mb["rebound"], mr["rebound"]) == (False, True)
+        assert mb["def_line"] == mr["def_line"] and mb["use_line"] == mr["use_line"]
+        # the differing char sits on the mid line, not on def/use lines
+        diff_line = base.source[:diffs[0]].count("\n") + 1
+        assert diff_line == mb["mid_line"]
+        assert diff_line not in (mb["def_line"], mb["use_line"])
+
+    def test_generate_matched_binding_batch(self):
+        gen = SyntheticCodeGenerator(seed=0)
+        batch = gen.generate_matched_binding_batch(n_pairs=5, seed=0)
+        assert len(batch) == 10
+        assert all(ex.metadata["type"] == "binding_matched" for ex in batch)

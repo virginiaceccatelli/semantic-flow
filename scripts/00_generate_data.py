@@ -38,6 +38,7 @@ def main(
     n_binding: int = typer.Option(200),
     n_taint: int = typer.Option(200),
     n_shadow: int = typer.Option(100),
+    n_matched_pairs: int = typer.Option(80, help="Context-matched binding pairs (2 programs each; E2/E3 hard stratum)"),
     n_context_bases: int = typer.Option(40, help="Base programs for E5 (×5 filler types ×6 sizes)"),
     n_pairs: int = typer.Option(40, help="Minimal pairs for E7"),
     n_obf_bases: int = typer.Option(40, help="Base programs for E9 (×5 obfuscation levels)"),
@@ -57,8 +58,13 @@ def main(
     synth = out_dir / "synthetic"
 
     core = gen.generate_batch(n_binding=n_binding, n_taint=n_taint, n_shadow=n_shadow)
+    matched = gen.generate_matched_binding_batch(
+        n_pairs=n_matched_pairs, seed=seed, tokenizer=tokenizer)
+    core += matched
     save_jsonl(core, synth / "core.jsonl")
-    console.print(f"core.jsonl: {len(core)} examples")
+    console.print(f"core.jsonl: {len(core)} examples "
+                  f"(incl. {len(matched)} context-matched programs of "
+                  f"{2 * n_matched_pairs} requested)")
 
     context = gen.generate_context_batch(tokenizer, n_base=n_context_bases, seed=seed)
     save_jsonl(context, synth / "context.jsonl")

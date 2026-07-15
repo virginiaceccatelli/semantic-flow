@@ -12,4 +12,5 @@ from .tables import (
     patching_summary,
     static_probe_summary,
     stratum_table,
+    surface_baseline_table,
 )

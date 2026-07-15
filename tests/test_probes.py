@@ -182,3 +182,47 @@ class TestBuilders:
         X, y, groups, kept = assemble_pair_features(hidden, recs)
         assert X.shape == (len(kept), 8 * 4)
         assert set(groups) == {"ex0"}
+
+
+class TestContextMatchedRecords:
+    """The designed pair of a matched program pair gets the context_matched
+    stratum, opposite labels across the pair, identical anchors, and a shared
+    CV group."""
+
+    def _aligner(self, src):
+        return TokenAligner.from_tokenizer(src, TOK)
+
+    def test_relabel_labels_group_and_anchors(self):
+        from src.data.generator import SyntheticCodeGenerator
+
+        gen = SyntheticCodeGenerator(seed=3)
+        pair = gen.generate_matched_binding_pair("bp0", seed=11, tokenizer=TOK)
+        assert pair is not None
+        base, reb = pair
+        for builder in (build_binding_records, build_defuse_records):
+            rb = builder(base.source, self._aligner(base.source),
+                         base.example_id, random.Random(0), metadata=base.metadata)
+            rr = builder(reb.source, self._aligner(reb.source),
+                         reb.example_id, random.Random(0), metadata=reb.metadata)
+            cb = [r for r in rb if r.stratum == "context_matched"]
+            cr = [r for r in rr if r.stratum == "context_matched"]
+            assert len(cb) == 1 and len(cr) == 1
+            b, r = cb[0], cr[0]
+            assert (b.label, r.label) == (1, 0)
+            assert b.example_id == r.example_id == "bp0"      # shared CV group
+            assert (b.pos_i, b.pos_j) == (r.pos_i, r.pos_j)
+            assert b.distance == r.distance
+            # every record of both programs carries the pair group
+            assert {x.example_id for x in rb + rr} == {"bp0"}
+
+    def test_without_metadata_no_context_matched(self):
+        from src.data.generator import SyntheticCodeGenerator
+
+        gen = SyntheticCodeGenerator(seed=3)
+        pair = gen.generate_matched_binding_pair("bp1", seed=5, tokenizer=TOK)
+        assert pair is not None
+        base, _ = pair
+        recs = build_binding_records(base.source, self._aligner(base.source),
+                                     base.example_id, random.Random(0))
+        assert all(r.stratum != "context_matched" for r in recs)
+        assert {r.example_id for r in recs} == {base.example_id}
