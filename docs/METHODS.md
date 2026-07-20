@@ -1,134 +1,274 @@
 # Methods
 
-The methodological commitments behind every number in `results/tables/`.
-This file is written to be lifted into the paper's Methods section.
+This file explains the methodology behind every number in `results/tables/`.
+Each section states **what** we do, **why** it is necessary, and **how** it
+works, so a reader can judge the claims without reading the code. It is written
+to be lifted into the paper's Methods section.
 
-## Probes
+The overall logic: we extract a model's internal hidden states while it reads a
+program, and train a simple linear classifier ("probe") to predict a semantic
+fact about that program (e.g. "are these two tokens the same variable?"). If a
+*simple* probe can recover the fact, the model must already represent it. The
+hard part is making sure the probe is reading the *model's computation* and not
+some shortcut in the text — most of this document is about closing those
+loopholes.
 
-Logistic regression only (`C=0.1`, class-balanced), on standardized features.
-Single-position tasks probe the raw hidden state; pairwise tasks probe
-`[h_i; h_j; h_i−h_j; |h_i−h_j|]`. No MLP probes: with high-capacity probes,
-"decodable" stops being evidence about the *representation* and starts being
-evidence about the probe.
+---
 
-Fits use saga with `max_iter=2000, tol=1e-3`; convergence is recorded per fit
-and surfaces in every results row (`converged`). Stage 20 fails its sanity
-check if any reported fit did not converge.
+## 1. The probes
 
-## Ground truth and token alignment
+**What.** Every result uses a single, deliberately weak classifier: **logistic
+regression** (`C=0.1`, class-balanced) on standardized features. No neural-net
+probes.
 
-Labels come from static analysis (`src/graphs/`): reaching-definition def-use
-chains, AST-derived control dependence (guard nesting, join-point exact), and
-generator-known taint state per line. Every source-level event is mapped to
-token positions through its **AST span** and a **verified offset table**:
-offsets are computed by incremental prefix decoding and checked to reproduce
-the source exactly (`src/data/alignment.py`). The probing position for a
-span is its last covering token (the first position whose state can integrate
-the whole span under causal attention).
+**Why weak on purpose.** A high-capacity probe (e.g. an MLP) can *learn* the
+semantic relation itself from raw activations. If that happens, "the fact is
+decodable" tells you about the probe's power, not the model's representation. A
+linear probe can only read features the model has already made linearly
+available — so "decodable" stays a statement about the model.
 
-We do not match token strings: with subword vocabularies a variable name has
-no reliable single token, and string matching silently mislabels shadowed
-names — the exact phenomenon E2 measures.
+**How the inputs are built.**
+- **Single-position tasks** (token type, taint state) probe one token's hidden
+  state directly, `h_i`.
+- **Pairwise tasks** (binding, def-use, control dependence) ask about a *relation
+  between two tokens*, so the probe sees a feature vector that captures both
+  tokens and their interaction:
+  `[h_i ; h_j ; h_i − h_j ; |h_i − h_j|]` (concatenation, difference, and
+  absolute difference).
 
-### Independent cross-validation of the ground truth
+**Convergence bookkeeping.** Fits use the `saga` solver with `max_iter=2000`,
+`tol=1e-3`. Whether each fit actually converged is recorded and appears in every
+results row (`converged`). Stage 20 fails its sanity check if any *reported*
+fit did not converge, so a non-converged probe can never quietly become a
+headline number. (The shuffled-label control fits — Section 5 — routinely hit
+the iteration cap by design and are tracked separately as `control_converged`.)
 
-Because every label downstream depends on the extractor, its def-use edges
-are differentially tested against **beniget**, a mature, independently
-implemented reaching-definitions analysis
-(`tests/test_ground_truth_crosscheck.py`) — the same validate-the-program-graph
-discipline that code-property-graph tooling (Joern/llvm2cpg) applies. Our
-extractor resolves each use to the single most-recent reaching definition
-while beniget returns all possibly-reaching definitions across branches, so
-the sound invariant is edge-set inclusion (ours ⊆ beniget's), with exact
-equality on straight-line programs. This check caught a real labeling bug:
-uses in self-referential updates (`b = b + a`) were linked to the same-line
-target definition instead of the prior one; the extractor now resolves
-reaching definitions in execution order (assignment RHS before target).
+---
 
-### Tokenizer integrity
+## 2. Where in the model we read (layers and positions)
 
-`AutoTokenizer` on transformers 5.x resolves deepseek-coder to a slow
-sentencepiece path that mis-tokenizes code (`def func` → `['de','ff','unc']`,
-whitespace dropped). `src/models/loader.py::load_tokenizer` therefore loads
-via `PreTrainedTokenizerFast` and **rejects any tokenizer that fails an exact
+**Layers.** Hidden states are captured at a fixed set of transformer blocks
+(spanning input to output) plus one special layer:
+
+- **Layer −1 = the embedding output.** This is the token representation *before
+  any attention or context mixing*. It encodes token identity only. We use it as
+  the **context-free reference**: anything decodable here is a property of the
+  token string, not of the model's reasoning.
+- **Layer 0 and up = decoder-block outputs.** Note that "layer 0" is the output
+  of the first transformer block, which has *already* mixed context once. This is
+  why we extract layer −1 separately — without it, there is no truly context-free
+  baseline in the layer sweep.
+
+**Position.** For a task about a source-code event (a variable use, a guard, a
+sink argument), we read the hidden state at the event's **last covering token**
+— the first position whose state can "see" the whole event under causal
+(left-to-right) attention. Reading earlier would miss part of the event; reading
+later would fold in unrelated downstream tokens.
+
+---
+
+## 3. Ground truth and token alignment
+
+**What.** The labels the probe is trained against come from **static analysis of
+the same program**, not from the model:
+- **Def-use chains** from reaching-definition analysis.
+- **Control dependence** from the AST (guard nesting, with join points resolved
+  exactly so control does not "leak" past where branches merge).
+- **Taint state per line**, known because the generator produced the program.
+
+**The alignment problem.** Static analysis speaks in source coordinates ("line
+5, column 8"); the model speaks in subword tokens. We have to translate one to
+the other exactly, or every label is attached to the wrong hidden state.
+
+**How.** Each source event is located by its **AST span** and mapped to token
+indices through a **verified offset table**. Offsets are computed by incremental
+prefix decoding — decode the first *n* tokens, see how many characters they
+cover, repeat — and the result is checked to **reproduce the source exactly**
+before it is used (`src/data/alignment.py`).
+
+**Why not just match token strings.** With a subword vocabulary a variable name
+may not be any single token, and string matching silently mislabels *shadowed*
+names (two different variables spelled the same) — which is precisely the
+phenomenon E2 is trying to measure. String matching would build the shortcut
+into the ground truth.
+
+### 3a. Independent cross-check of the ground truth
+
+Because every downstream label depends on our extractor, its def-use edges are
+**differentially tested against `beniget`**, a mature, independently written
+reaching-definitions analysis (`tests/test_ground_truth_crosscheck.py`). This is
+the same "validate the program graph against a second implementation" discipline
+that code-property-graph tools (Joern, llvm2cpg) use.
+
+The two analyses answer slightly different questions — ours resolves each use to
+the *single most-recent* reaching definition, while beniget returns *all*
+possibly-reaching definitions across branches — so the sound comparison is
+**set inclusion** (our edges ⊆ beniget's), with **exact equality on
+straight-line code**. This check caught a real bug: uses in self-referential
+updates like `b = b + a` were being linked to the *same-line* target definition
+instead of the prior one. The extractor now resolves reaching definitions in
+execution order (right-hand side before the assignment target).
+
+### 3b. Tokenizer integrity
+
+`AutoTokenizer` on transformers 5.x silently resolves deepseek-coder to a slow
+SentencePiece path that **mis-tokenizes code** — `def func` becomes
+`['de','ff','unc']` with whitespace dropped. Any activations or labels built with
+it are garbage. `src/models/loader.py::load_tokenizer` therefore loads via
+`PreTrainedTokenizerFast` and **rejects any tokenizer that fails an exact
 code round-trip**. All results predating this guard are invalid.
 
-## Cross-validation without leakage
+---
 
-Rows built from the same program share hidden-state vectors; random k-fold
-therefore leaks train information into test folds. All CV is
-`StratifiedGroupKFold` grouped by source example id, and dataset caps
-(`max_samples=20000` per task × layer) drop whole groups, never rows.
+## 4. Cross-validation without leakage
 
-## Selectivity control
+**The problem.** Many probe examples come from the *same program* and therefore
+share overlapping hidden-state vectors. Ordinary random k-fold cross-validation
+would put some rows of a program in training and others in test, letting the
+probe memorize program-specific quirks and inflate test accuracy — leakage.
 
-For every probe we retrain the identical architecture on shuffled labels and
-report `selectivity = accuracy − control_accuracy`. Labels are shuffled
-*within* each source example (preserving each program's label marginals);
-for example-level tasks where the label is constant within a program
-(taint_state), a within-group shuffle would be a no-op, so the group→label
-assignment is permuted *across* programs instead. Claims are made on
-selectivity, not raw accuracy: a probe can score high accuracy from class
-priors and per-program regularities alone.
+**How we prevent it.** All cross-validation is **`StratifiedGroupKFold` grouped
+by source-example id**: every row from one program stays entirely within one
+fold. When we cap dataset size for tractability (`max_samples=20000` per
+task × layer), we drop **whole groups (programs), never individual rows**, so a
+program is either fully in or fully out.
 
-## Negative-sampling strata
+---
 
-Pairwise tasks report held-out accuracy per negative stratum:
-`same_name_diff_binding` (same name, different binding),
-`diff_name` (capped 3× positives), `distance_matched` (defeats positional
-shortcuts), and `context_matched` (label flips between two token-identical-
-but-one-token programs; anchor windows and distance identical, pair shares a
-CV group — immune to every surface cue by construction). An honest headline
-number is the `context_matched` accuracy compared against the surface
-baseline, not the pooled accuracy.
+## 5. Selectivity control (guarding against "easy" accuracy)
 
-## Surface-shortcut baseline
+**The problem.** A probe can score high accuracy for boring reasons: class
+imbalance, or per-program regularities that correlate with the label. High
+accuracy alone is not evidence of a *semantic* representation.
 
-A probe over ±3-token-window token ids + bucketed anchor distance (no hidden
-states) is fit with the same grouped CV and reported per stratum
-(`features="surface"`). Motivation: the first 1.3b run scored ~0.98 on
-`same_name_diff_binding` at the earliest probed layer, and this baseline
-matched it — the templated corpus leaked labels through local context.
-Hidden-state claims are only meaningful above this floor. Relatedly, hooks
-index decoder-block *outputs*, so "layer 0" has already mixed context once;
-layer −1 (the embedding output) is extracted as the true context-free
-reference.
+**How.** For every probe we retrain the **identical** classifier on **shuffled
+labels** and report:
 
-## Frozen-probe evaluation (E5, E9)
+> `selectivity = accuracy − control_accuracy`
 
-Degradation is measured by *evaluating* stage-20 probes on variants, never
-retraining them: retraining on each condition would measure the condition's
-learnability, not the stability of the representation the probe found.
-Ground truth is recomputed per variant so transformations that genuinely
-change the program graph (competing updates in E5; inserted opaque branches
-and flattened control flow in E9) are scored against the new truth.
+If the real structure matters, the true-label probe should beat the shuffled one;
+if the "signal" was just priors and regularities, the shuffled probe matches it
+and selectivity ≈ 0. **Claims are made on selectivity, not raw accuracy.**
 
-For E9 specifically, "same semantics" is never assumed: every obfuscated
-variant is executed and checked observationally equivalent to its base
-(the same I/O-equivalence standard Tigress uses), and all levels of a base
-are kept or dropped together so per-level comparisons hold the base-program
-set fixed.
+The shuffle is done carefully:
+- For **pairwise/per-token tasks**, labels are shuffled *within* each program, so
+  each program's label mix is preserved and only the token→label pairing is
+  destroyed.
+- For **example-level tasks** where the label is constant across the whole
+  program (taint_state), a within-program shuffle would do nothing, so instead
+  the **program→label assignment is permuted across programs**.
 
-## Calibration and independence of signals (E6)
+---
 
-The taint-probe decision threshold is chosen on a held-out calibration split
-(balanced-accuracy-maximizing cutoff) and fixed before touching test
-examples. The latent signal (linear readout) and the behavioral signal
-(model's own forced-choice log-probs) come from different mechanisms; the
-former is never derived from the latter.
+## 6. Negative-sampling strata (the honest headline)
 
-## Causal claims (E7)
+**The problem.** For a relation like binding, most "negative" pairs are trivially
+separable from the text alone (two differently-named variables). A probe scoring
+well on those is not demonstrating semantic understanding. So we break the
+negatives into **strata** and report held-out accuracy for each, from easiest to
+hardest:
 
-Minimal pairs are verified token-length-matched with the difference confined
-to the sink argument, so patched positions correspond one-to-one. Recovery is
-reported per (layer, position); last-token patches are quarantined as the
-trivial case. "Used" means recovery of the answer logit-diff > 0.5 at a
-non-readout position while the frozen probe decodes the relation on both
-sides.
+| Stratum | What it is | What it controls for |
+|---|---|---|
+| `diff_name` | different variable names (capped at 3× positives) | trivial baseline |
+| `distance_matched` | negatives at the same token distance as positives | positional shortcuts |
+| `same_name_diff_binding` | same name, different actual binding | the name-identity shortcut |
+| **`context_matched`** | **two token-identical programs differing by one binding-flipping character** | **every surface cue at once** |
 
-## Reproducibility
+**Why `context_matched` is the one that matters.** Its two programs are identical
+token-for-token except the single character that flips the correct label; the
+anchor windows and token distance are identical, and the pair shares one CV
+group. By construction, *no* feature of the text can separate the labels — only
+something the model computed can. **The honest headline number is
+`context_matched` accuracy measured against the surface baseline (Section 7),
+not the pooled accuracy across strata.**
 
-Seed 42 everywhere by default (generator, CV splits, subsampling, bootstrap).
-Every stage writes a manifest (`results/manifests/`) with git sha, arguments,
-and wall time. Figures and tables are regenerable from the tidy CSVs alone
-(stage 90), so the full chain data → figure is auditable.
+---
+
+## 7. The surface-shortcut baseline
+
+**What.** A probe that sees **no hidden states at all** — only the ±3-token
+window of token ids around each anchor plus the bucketed distance between them —
+fit with the same grouped CV and reported per stratum (`features="surface"`).
+
+**Why it exists.** The first full 1.3b run scored ~0.98 on *every* task and layer,
+including the supposedly hard `same_name_diff_binding` stratum at the earliest
+layer. This no-model baseline reproduced that ~0.98 — proving the templated
+corpus was **leaking labels through local token context**, so the "semantic"
+result was a mirage. The baseline is now a permanent floor: **a hidden-state
+result only counts if it beats the surface baseline on the same stratum.** By
+construction the surface probe scores exactly 0.5 on `context_matched`, which is
+why that stratum is the clean one.
+
+---
+
+## 8. Frozen-probe evaluation (E5 context degradation, E9 obfuscation)
+
+**What.** For robustness experiments we take the probes trained in stage 20 and
+**evaluate them, unchanged, on transformed programs** — we never retrain per
+condition.
+
+**Why not retrain.** Retraining on each condition would measure how *learnable*
+the relation is under that condition, which is a different and easier question.
+Freezing the probe measures whether the **representation it already found still
+holds up** when the input is stressed — which is the actual research question.
+
+**How truth stays correct.** Some transformations genuinely change the program
+graph (competing updates in E5; inserted opaque branches and flattened control
+flow in E9). Ground truth is therefore **recomputed for every variant**, so the
+frozen probe is always scored against the transformed program's real labels.
+
+**E9's equivalence guarantee.** "Same semantics" is never assumed. Every
+obfuscated variant is **executed and checked to be observationally equivalent**
+to its base program (the same I/O-equivalence standard Tigress uses). All levels
+of a given base program are kept or dropped together, so per-level comparisons
+always hold the set of base programs fixed.
+
+---
+
+## 9. Calibration and signal independence (E6 lead time)
+
+E6 compares *when the model's internal taint state goes wrong* against *when its
+behavior goes wrong*, to ask whether the latent failure comes first.
+
+- **Threshold calibration.** The taint probe's decision threshold is chosen on a
+  held-out calibration split (the cutoff that maximizes balanced accuracy) and
+  **fixed before any test example is seen** — so the threshold cannot be tuned to
+  manufacture a lead time.
+- **Independent signals.** The **latent** signal (the probe's linear readout) and
+  the **behavioral** signal (the model's own forced-choice log-probabilities)
+  come from different mechanisms, and the latent signal is **never derived from
+  the behavioral one**. This independence is what makes a lead time meaningful
+  rather than circular.
+
+---
+
+## 10. Causal claims (E7 activation patching)
+
+Probes show a fact is *present*; they cannot show it is *used*. E7 tests use by
+**activation patching**: run the model on one program, swap in the hidden state
+from a minimally different program at a chosen (layer, position), and measure how
+much the output flips.
+
+- **Minimal pairs** are verified **token-length-matched with the only difference
+  confined to the sink argument**, so a patched position in one program
+  corresponds exactly to the same position in the other — no misalignment.
+- **Recovery** is the fraction of the output logit-difference restored by the
+  patch, reported per (layer, position).
+- The **last-token position** is quarantined as the trivial case (patching the
+  final position can force the answer mechanically), so it is never counted as
+  evidence of an internal mechanism.
+- A relation counts as **"used"** when recovery of the answer logit-diff exceeds
+  0.5 at a **non-readout** position *while the frozen probe still decodes the
+  relation on both sides* — i.e. the information is both present and causal.
+
+---
+
+## 11. Reproducibility
+
+- **Seed 42 everywhere** by default (generator, CV splits, subsampling,
+  bootstrap).
+- **Every stage writes a manifest** (`results/manifests/`) recording the git
+  SHA, the arguments, and wall-clock time.
+- **All figures and tables regenerate from the tidy CSVs alone** (stage 90), so
+  the entire chain from raw data to published figure is auditable end to end.
