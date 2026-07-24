@@ -1,0 +1,36 @@
+{
+  "stage": "20_run_probes",
+  "timestamp": "20260724_180956",
+  "git_sha": "20b54ca",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/20_run_probes.py",
+    "--activations",
+    "results/smoke/act/core",
+    "--output",
+    "results/smoke/probes",
+    "--max-samples",
+    "4000",
+    "--cv-folds",
+    "3",
+    "--no-strict",
+    "--no-tables"
+  ],
+  "args": {
+    "activations": "results/smoke/act/core",
+    "output": "results/smoke/probes",
+    "tasks": "['lexical_token_type', 'binding', 'defuse_edge', 'control_dep', 'taint_state']",
+    "max_samples": "4000",
+    "max_iter": "2000",
+    "n_jobs": "-1",
+    "cv_folds": "3",
+    "seed": "42"
+  },
+  "wall_time_s": 5240.9,
+  "extra": {
+    "n_rows": 241,
+    "sanity_problems": [
+      "1 probe fits did not converge"
+    ]
+  }
+}

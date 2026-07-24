@@ -39,6 +39,7 @@ def main(
     n_taint: int = typer.Option(200),
     n_shadow: int = typer.Option(100),
     n_matched_pairs: int = typer.Option(80, help="Context-matched binding pairs (2 programs each; E2/E3 hard stratum)"),
+    n_control: int = typer.Option(80, help="Sibling-guard control-dependence programs (E4 indent_matched stratum)"),
     n_context_bases: int = typer.Option(40, help="Base programs for E5 (×5 filler types ×6 sizes)"),
     n_pairs: int = typer.Option(40, help="Minimal pairs for E7"),
     n_obf_bases: int = typer.Option(40, help="Base programs for E9 (×5 obfuscation levels)"),
@@ -60,11 +61,13 @@ def main(
     core = gen.generate_batch(n_binding=n_binding, n_taint=n_taint, n_shadow=n_shadow)
     matched = gen.generate_matched_binding_batch(
         n_pairs=n_matched_pairs, seed=seed, tokenizer=tokenizer)
-    core += matched
+    control = gen.generate_control_batch(n=n_control, seed=seed)
+    core += matched + control
     save_jsonl(core, synth / "core.jsonl")
     console.print(f"core.jsonl: {len(core)} examples "
                   f"(incl. {len(matched)} context-matched programs of "
-                  f"{2 * n_matched_pairs} requested)")
+                  f"{2 * n_matched_pairs} requested, {len(control)} "
+                  f"sibling-guard control programs)")
 
     context = gen.generate_context_batch(tokenizer, n_base=n_context_bases, seed=seed)
     save_jsonl(context, synth / "context.jsonl")
@@ -91,7 +94,8 @@ def main(
 
     write_manifest("00_generate_data", {
         "model": model, "seed": seed, "n_binding": n_binding, "n_taint": n_taint,
-        "n_shadow": n_shadow, "n_context_bases": n_context_bases,
+        "n_shadow": n_shadow, "n_matched_pairs": n_matched_pairs,
+        "n_control": n_control, "n_context_bases": n_context_bases,
         "n_pairs": n_pairs, "n_obf_bases": n_obf_bases, "real": real,
     }, t0, extra=outputs)
     console.print("[green]Stage 00 done.[/green]")

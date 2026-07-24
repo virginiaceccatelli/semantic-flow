@@ -458,7 +458,13 @@ def build_control_dep_records(
     """(guard expression, statement) control-dependence classification.
 
     Positives: statement inside the guard's body (or orelse).
-    Negatives: statements from the same program outside that guard's bodies.
+    Negative strata:
+      indent_matched — non-dependent statement at the SAME nesting depth as the
+                       guard's body (i.e. inside a sibling guard's body): the
+                       hard control that removes the indentation/local-syntax
+                       shortcut, so a surface probe can only lean on distance.
+                       Hold the `distance` tag fixed to read the matched floor.
+      non_dependent  — any other same-program statement outside the guard.
     """
     try:
         tree = ast.parse(source)
@@ -480,22 +486,36 @@ def build_control_dep_records(
         if g_anchor is None:
             continue
         dependent = set(guard["body"]) | set(guard["orelse"])
-        positives, negatives = [], []
+        # indentation depth of this guard's body (col_offset of body statements)
+        body_cols = {sp[1] for sp in dependent}
+        positives, hard_negs, easy_negs = [], [], []
         for span in collector.all_stmts:
             s_anchor = _anchor(span)
             if s_anchor is None or s_anchor == g_anchor:
                 continue
-            label = 1 if span in dependent else 0
+            if span in dependent:
+                stratum, label = "positive", 1
+            elif span[1] in body_cols:
+                stratum, label = "indent_matched", 0
+            else:
+                stratum, label = "non_dependent", 0
             rec = PairRecord(
                 example_id=example_id,
                 pos_i=g_anchor, pos_j=s_anchor,
-                label=label,
-                stratum="positive" if label else "non_dependent",
+                label=label, stratum=stratum,
                 distance=abs(s_anchor - g_anchor),
             )
-            (positives if label else negatives).append(rec)
-        rng.shuffle(negatives)
-        records += positives + negatives[: max(1, neg_per_pos * max(1, len(positives)))]
+            if label:
+                positives.append(rec)
+            elif stratum == "indent_matched":
+                hard_negs.append(rec)      # keep ALL — the point of E4
+            else:
+                easy_negs.append(rec)
+        if not positives:
+            continue
+        rng.shuffle(easy_negs)
+        n_easy = max(1, neg_per_pos * len(positives))
+        records += positives + hard_negs + easy_negs[:n_easy]
     return records
 
 

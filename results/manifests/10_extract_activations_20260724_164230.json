@@ -1,0 +1,29 @@
+{
+  "stage": "10_extract_activations",
+  "timestamp": "20260724_164230",
+  "git_sha": "20b54ca",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/10_extract_activations.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--dataset",
+    "data/smoke/synthetic/obfuscation.jsonl",
+    "--output",
+    "results/smoke/act/obfuscation"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "dataset": "data/smoke/synthetic/obfuscation.jsonl",
+    "output": "results/smoke/act/obfuscation",
+    "layers": "[-1, 0, 3, 7, 11, 15, 19, 23]",
+    "max_length": "1024",
+    "device": "mps",
+    "dtype": "float16"
+  },
+  "wall_time_s": 9.3,
+  "extra": {
+    "n_saved": 10,
+    "n_skipped": 0
+  }
+}

@@ -185,6 +185,72 @@ class SyntheticCodeGenerator:
             metadata={"type": "binding", "vars": vars_, "spec": vars(spec)},
         )
 
+    def generate_control(
+        self,
+        seed: Optional[int] = None,
+        n_guards: int = 2,
+        body_len: int = 2,
+    ) -> ProbeExample:
+        """Program with sibling guards at equal nesting depth (E4 data).
+
+        Each `if` body holds `body_len` simple statements whose RHS uses a
+        NEUTRAL shared variable and whose LHS is a fresh (dead) name — never the
+        guard variable. So for a fixed guard, a statement in its own body
+        (control-dependent, positive) and a statement in a *sibling* guard's
+        body (not dependent, negative) sit at the same indentation, use the same
+        surface template, and reference no def-use cue tying them to the guard.
+        The only thing that flips the label is which `if` encloses the
+        statement — a nonlocal structural fact. This is the `indent_matched`
+        hard-negative stratum for control dependence (see
+        `build_control_dep_records`).
+        """
+        rng = random.Random(seed) if seed is not None else self.rng
+        used: set[str] = set()
+
+        def _pick() -> str:
+            name = rng.choice([c for c in self.SAFE_NAMES if c not in used])
+            used.add(name)
+            return name
+
+        guard_vars = [_pick() for _ in range(n_guards)]
+        neutral = [_pick() for _ in range(max(1, body_len))]
+
+        lines = ["def func():"]
+        for gv in guard_vars:
+            lines.append(f"    {gv} = {rng.randint(0, 100)}")
+        for v in neutral:
+            lines.append(f"    {v} = {rng.randint(0, 100)}")
+        for gv in guard_vars:
+            lines.append(f"    if {gv} > 50:")
+            for k in range(body_len):
+                tgt = _pick()
+                src = neutral[k % len(neutral)]
+                lines.append(f"        {tgt} = {src} + {rng.randint(1, 9)}")
+        lines.append(f"    return {neutral[0]}")
+        source = "\n".join(lines)
+
+        return ProbeExample(
+            example_id=f"synthetic_control_{rng.randint(0, 999999)}",
+            source=source,
+            metadata={"type": "control", "n_guards": n_guards, "body_len": body_len},
+        )
+
+    def generate_control_batch(
+        self,
+        n: int = 80,
+        seed: int = 42,
+    ) -> list[ProbeExample]:
+        """Batch of sibling-guard control-dependence programs (E4)."""
+        rng = random.Random(seed)
+        return [
+            self.generate_control(
+                seed=rng.randint(0, 999999),
+                n_guards=rng.randint(2, 3),
+                body_len=rng.randint(1, 3),
+            )
+            for _ in range(n)
+        ]
+
     def generate_taint(
         self,
         sanitized: bool = False,

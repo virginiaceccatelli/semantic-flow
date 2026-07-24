@@ -1,0 +1,32 @@
+{
+  "stage": "50_causal_patching",
+  "timestamp": "20260724_181131",
+  "git_sha": "20b54ca",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/50_causal_patching.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--pairs",
+    "data/smoke/synthetic/minimal_pairs.jsonl",
+    "--probes",
+    "results/smoke/probes",
+    "--output",
+    "results/smoke/patching",
+    "--max-pairs",
+    "3",
+    "--no-tables"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "pairs": "data/smoke/synthetic/minimal_pairs.jsonl",
+    "probes": "results/smoke/probes",
+    "layers": "[-1, 0, 3, 7, 11, 15, 19, 23]",
+    "max_pairs": "3",
+    "device": "mps"
+  },
+  "wall_time_s": 29.4,
+  "extra": {
+    "n_rows": 72
+  }
+}

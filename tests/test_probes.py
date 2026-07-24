@@ -166,6 +166,27 @@ class TestBuilders:
         labels = {r.label for r in recs}
         assert labels == {0, 1}
 
+    def test_control_dep_indent_matched_stratum(self):
+        # sibling guards at the same depth: a statement in guard-a's body is
+        # control-dependent (positive); the same-depth statement in guard-b's
+        # body is a hard `indent_matched` negative for guard-a.
+        src = ("def func():\n"
+               "    a = 10\n"
+               "    b = 20\n"
+               "    g = 1\n"
+               "    if a > 50:\n"
+               "        p = g + 1\n"
+               "    if b > 50:\n"
+               "        q = g + 2\n"
+               "    return g\n")
+        recs = build_control_dep_records(src, self._aligner(src), "ex0", self.rng)
+        strata = {r.stratum for r in recs}
+        assert "positive" in strata
+        assert "indent_matched" in strata
+        for r in recs:
+            if r.stratum == "indent_matched":
+                assert r.label == 0
+
     def test_taint_records_have_sink_arg(self):
         src = ("def func():\n"
                "    x = input()\n"
