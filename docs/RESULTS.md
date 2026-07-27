@@ -29,11 +29,7 @@ Status legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b)
 Two experiments are still open: **E8** (real-code transfer) has not been run,
 and **E6** produced a degenerate result in *both* models that should be re-run
 with a layer sweep before it is trusted (see below). **E4 is now valid and
-replicates across scale** (its hard-negative control was rebuilt). One
-housekeeping gap: **1.3b E9 (obfuscation) has not been re-run** in the latest
-batch — its table predates the corpus regeneration (numbers should be unchanged
-since E9 uses the seed-stable binding/def-use probes, but re-run stage 31 to
-make it current).
+replicates across scale** (its hard-negative control was rebuilt).
 
 ---
 
