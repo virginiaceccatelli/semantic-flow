@@ -19,16 +19,21 @@ Status legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b)
 | E1 token type | lexical baseline | ● | ● | Decodable from embeddings alone (as expected) |
 | E2 binding + strata | variable binding | ● | ● | **Positive** — decodable, surface-cue-proof |
 | E3 def-use + distance | def→use edges | ● | ● | **Positive** — decodable, mild distance decay |
-| E4 control dep | guard→statement | ● | ● | **Invalid** — surface baseline = 1.000 |
+| E4 control dep | guard→statement | ● | ● | **Positive but surface-heavy** — hidden beats the hard stratum (0.92 vs 0.68), but control dep is largely locally decodable; replicates across scale |
 | E5 context degradation | robustness to filler | ● | ● | Survives length; collapses under interference |
-| E6 lead time | latent vs behavioral failure | ☐ | ● | Degenerate (zero lead) — needs a layer sweep |
-| E7 causal patching | is it *used*? | ☐ | ● | **Positive** — information routes across layers |
+| E6 lead time | latent vs behavioral failure | ◐ | ● | Degenerate (no positive lead in either model) — needs a layer sweep |
+| E7 causal patching | is it *used*? | ● | ● | **Positive** — information routes across layers; sanitizer site is causally inert |
 | E8 real code | CodeSearchNet transfer | ☐ | ☐ | Not run |
-| E9 obfuscation | semantics-preserving edits | ● | ● | Robust to renaming mid-layer; breaks on flatten |
+| E9 obfuscation | semantics-preserving edits | ◐ | ● | Robust to renaming mid-layer; breaks on flatten (1.3b table is pre-fix — re-run stage 31) |
 
 Two experiments are still open: **E8** (real-code transfer) has not been run,
-and **E6** produced a degenerate result that should be re-run before it is
-trusted (see below). **E4 is not a valid semantic claim** in its current form.
+and **E6** produced a degenerate result in *both* models that should be re-run
+with a layer sweep before it is trusted (see below). **E4 is now valid and
+replicates across scale** (its hard-negative control was rebuilt). One
+housekeeping gap: **1.3b E9 (obfuscation) has not been re-run** in the latest
+batch — its table predates the corpus regeneration (numbers should be unchanged
+since E9 uses the seed-stable binding/def-use probes, but re-run stage 31 to
+make it current).
 
 ---
 
@@ -106,7 +111,7 @@ scaling story would predict:
 
 ---
 
-## E1 lexical baseline & E4 control dependence: read with care
+## E1 lexical baseline: read with care
 
 **E1 (token type)** peaks at **1.000 accuracy at the embedding layer (−1)** with
 high selectivity (~0.88–0.90) in both models. This is the *expected* control,
@@ -114,14 +119,68 @@ not a finding: token type is a pure lexical property, so it is best decoded
 before any context is added. It confirms the machinery works and gives the
 contrast for E3's thesis (RQ3) — **lexical features are readable from the
 embeddings; semantic relations are not, and only appear after computation.**
-
-**E4 (control dependence) cannot currently support a semantic claim.** The
-surface baseline scores **1.000** on it — the guard→statement pairs are
-separable from token context alone, so the probe's perfect accuracy proves
-nothing about the model. E4 needs its own `context_matched` pairs (token-
-identical programs with the control relation flipped) before it can be reported.
 `taint_state` is likewise at ceiling with ~0.5 selectivity; it is fine as the
 *input* to E6/E7 but is not a standalone result.
+
+---
+
+## E4: control dependence is encoded — but it is also largely local syntax
+
+The first E4 attempt was invalid: its surface baseline scored **1.000**, because
+control-dependent statements were the only ones indented under an `if`, so token
+windows plus distance separated them trivially. The corpus was rebuilt with
+**sibling-guard programs** and a hard **`indent_matched`** negative stratum — a
+statement sitting inside a *different* guard's body at the *same* nesting depth,
+using neutral variables unrelated to the guard. Pooled across the sibling guards,
+positives and these hard negatives overlap in both indentation and distance, so
+the indentation shortcut is neutralized.
+
+With that control in place, the honest picture is **more mixed than
+binding/def-use**, and it is **the same at both scales**. The clean, threshold-
+proof comparison holds *both* class recalls at once — the hidden probe must catch
+the control-dependent pairs **and** reject the same-depth hard negatives:
+
+| control_dep, best layer | positive recall | hard-neg (`indent_matched`) recall |
+|---|---:|---:|
+| Surface baseline (no model) | 0.959 | 0.676 |
+| Hidden — 1.3b (L11) | 0.981 | 0.873 |
+| Hidden — 6.7b (L15) | **0.995** | **0.923** |
+
+The hidden state dominates surface on **both** classes simultaneously, so the gap
+is not a decision-threshold artifact (a biased probe would trade one recall for
+the other — which is exactly what the layer −1 = 1.000 figure is). Aggregate:
+AUC 0.990 (surface) → 0.997 (1.3b) / **0.999** (6.7b). The surface baseline is
+**numerically identical across the two models** (positive 0.959, hard-neg 0.676)
+— it is model-free, so this doubles as a corpus-integrity check confirming both
+runs share the same fixed ground truth.
+
+Reading it two ways:
+
+- **Hidden state carries genuine control-dependence structure.** By layer it is a
+  clean, balanced separation: aggregate **AUC climbs 0.74 (embeddings) → 0.999
+  (L15)**, positive recall **0.48 → 0.99**, selectivity **0.14 → 0.39**, on the
+  same rise-then-plateau depth profile as binding. On the hard `indent_matched`
+  stratum the hidden probe recovers **0.923** of the non-dependent statements
+  versus **0.676** for surface — a real **+0.25** margin that no local cue
+  supplies.
+- **But control dependence is substantially surface-decodable.** Unlike binding
+  and def-use, whose surface floor sits at *exactly 0.500* on token-identical
+  pairs, the E4 surface baseline is already at **0.927 / AUC 0.990**. Control
+  dependence is a largely *local, syntactic* relation — a statement's guard is
+  usually its nearest enclosing `if` — so token windows plus distance get most of
+  the way there. This is the RQ3 contrast made concrete: **the more syntactic the
+  relation, the less the model needs a deep representation of it.**
+
+Caveat for the write-up: with these templates the probing anchors fall on each
+span's last token (the documented "last token integrates the span" convention),
+which here are integer literals (`… > 50`, `… + K`); their mid-layer hidden
+states still integrate the full guard/statement (AUC 0.999), but a future pass
+could anchor on the guard variable and statement target for a cleaner readout.
+The **layer −1 = 1.000** figure on `indent_matched` is *not* a leak — it is a
+single-class-recall artifact of a threshold-biased embedding-layer probe
+(AUC there is only 0.743, identical in both models). Both scales trace the same
+rise-then-plateau curve (1.3b peaks L11, 6.7b L15 — the same relative depth),
+so E4 now replicates across scale.
 
 ---
 
@@ -230,6 +289,11 @@ The crossover (~layer 15) matches where the E2 binding curve is at its plateau:
 the model has finished *computing* the relation and is now *moving it into place*
 for the readout.
 
+**1.3b shows the same routing** — `sink_arg` dominates early (≈1.0 at layers
+0–3) and `last_token` takes over late (0.90 at L19, **1.00 at L23**), with
+`sanitizer_def` at **0.000 at every layer**. The causal picture replicates
+across scale.
+
 The third column is the quiet bombshell: patching **`sanitizer_def` recovers
 nothing at any layer (0.000 throughout)**. Overwriting the sanitizer's
 definition never changes the output. The model's taint decision does not route
@@ -240,8 +304,9 @@ through the sanitization site at all — which sets up, and is confirmed by, E6.
 ## E6: latent and behavioral failure are perfectly coupled — the model ignores sanitization
 
 E6 asks whether the taint probe's internal state degrades *before* the model's
-answer goes wrong (RQ4). On 6.7b it produced a **degenerate, zero-lead-time
-result**, and the degeneracy is itself informative.
+answer goes wrong (RQ4). Both models produced a **degenerate result with no
+positive lead**, and the degeneracy is itself informative. The 6.7b case is the
+cleanest to read:
 
 Of 70 test programs: the **38 unsanitized** ones are handled perfectly by both
 probe and model (no failure to lead). On **all 32 sanitized** ones, both the
@@ -256,11 +321,19 @@ signal because there is no disagreement to detect — latent and behavior fail
 together. This is the same fact E7 found causally (patching the sanitizer does
 nothing) seen from the behavioral side.
 
+**1.3b tells the same story with a twist.** Again **no case has positive lead**
+(`frac_positive_lead = 0.0`), but the mean lead is **−2.83** (CI [−3.3, −2.4]),
+i.e. the layer-0 taint probe tends to "fail" a couple of steps *after* the model
+does — the opposite of an early warning. So neither model gives the leading
+signal RQ4 asks for; the sign difference between them is exactly the kind of
+artifact a single-layer, single-threshold readout produces.
+
 **Caveat — do not report this as the final RQ4 answer yet.** E6 was run at
-**layer 0 only** with a **0.999 threshold**, and E7 shows taint information
-migrates through the layers. A probe at a mid or late layer might diverge from
-behavior where a layer-0 probe cannot. **This should be re-run with a layer
-sweep** before the null is trusted.
+**layer 0 only** with a **~0.999 threshold** in both models, and E7 shows taint
+information migrates through the layers. A probe at a mid or late layer might
+diverge from behavior where a layer-0 probe cannot. **This should be re-run with
+a layer sweep** before the null is trusted — the divergent 1.3b/6.7b lead values
+(−2.83 vs 0.0) make the under-powering concrete.
 
 ---
 
@@ -282,13 +355,26 @@ effect.
 
 ## Open items before the paper
 
-1. **E4** — invalid as reported (surface baseline 1.000); build `context_matched`
-   control-dependence pairs.
-2. **E6** — re-run with a **layer sweep**; the current layer-0 null is
-   under-powered given E7's layer migration.
-3. **E8** — real-code (CodeSearchNet) transfer not yet run.
-4. **E1 lexical fits** did not converge (`converged = False`, AUC logged as 0.000,
+1. **E4** — done: fixed and **replicated across both scales** (sibling-guard
+   `indent_matched` control; hidden 0.92 vs surface 0.68 on the hard stratum;
+   surface baseline numerically identical across models). Optional polish:
+   re-anchor on the guard variable / statement target instead of the span's
+   trailing literal (a CPU-only stage-20 re-run).
+2. **E9 (1.3b)** — **re-run stage 31**; the 1.3b obfuscation table predates the
+   corpus regeneration. Activations already exist, so it is a CPU-only run.
+   Numbers should be unchanged (E9 uses the seed-stable binding/def-use probes),
+   but the file should be made current.
+3. **E6** — re-run with a **layer sweep**; the layer-0 null is under-powered in
+   both models (leads of 0.0 at 6.7b vs −2.83 at 1.3b), given E7's layer
+   migration.
+4. **E8** — real-code (CodeSearchNet) transfer not yet run.
+5. **E1 lexical fits** did not converge (`converged = False`, AUC logged as 0.000,
    a multi-class reporting artifact); re-run with `--max-iter 2000` so stage 20
    writes its manifest cleanly.
-5. Report E5/E9 at **peak/per-layer** rather than layer-averaged — the averages
+6. Report E5/E9 at **peak/per-layer** rather than layer-averaged — the averages
    hide the strongest findings (e.g. rename fools layer 0 but not layer 11).
+7. **Housekeeping:** the 6.7b `behavioral_leadtime` / `causal_patching` table CSVs
+   carry an old (Jul-19) timestamp though their stages re-ran later; content is
+   valid (the taint corpus is seed-stable and untouched by the E4 edit), but
+   re-running stage 40/50 for 6.7b will refresh them so every asset traces to one
+   generation.
