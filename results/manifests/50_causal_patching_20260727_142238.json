@@ -1,0 +1,25 @@
+{
+  "stage": "50_causal_patching",
+  "timestamp": "20260727_142238",
+  "git_sha": "739bc7a",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/50_causal_patching.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--probes",
+    "results/probes/deepseek-coder-1.3b/core"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "pairs": "data/synthetic/minimal_pairs.jsonl",
+    "probes": "results/probes/deepseek-coder-1.3b/core",
+    "layers": "[-1, 0, 3, 7, 11, 15, 19, 23]",
+    "max_pairs": "100",
+    "device": "cuda"
+  },
+  "wall_time_s": 27.5,
+  "extra": {
+    "n_rows": 960
+  }
+}

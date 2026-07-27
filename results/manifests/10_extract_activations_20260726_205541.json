@@ -1,0 +1,29 @@
+{
+  "stage": "10_extract_activations",
+  "timestamp": "20260726_205541",
+  "git_sha": "739bc7a",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/10_extract_activations.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--dataset",
+    "data/synthetic/context.jsonl",
+    "--max-length",
+    "2048"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "dataset": "data/synthetic/context.jsonl",
+    "output": "results/activations/deepseek-coder-1.3b/context",
+    "layers": "[-1, 0, 3, 7, 11, 15, 19, 23]",
+    "max_length": "2048",
+    "device": "cuda",
+    "dtype": "float16"
+  },
+  "wall_time_s": 721.3,
+  "extra": {
+    "n_saved": 1200,
+    "n_skipped": 0
+  }
+}
