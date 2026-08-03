@@ -53,15 +53,17 @@ There is no `qsub`/SGE on this host. Job scripts are **csh** and the env is
 `screen` session so it survives disconnects:
 
 ```csh
-# once:
+# once — call micromamba/python by absolute path, skip `shell hook`/`activate`
+# (the hook only recognizes "tcsh", not "csh", and is unnecessary anyway since
+# every path below is explicit):
 setenv MAMBA_ROOT_PREFIX /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/micromamba-root
 setenv MAMBA_EXE /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/micromamba/bin/micromamba
-eval `$MAMBA_EXE shell hook --shell csh`
-micromamba create -n uq python=3.11 -y && micromamba activate uq
-pip install -r requirements-cluster.txt
+$MAMBA_EXE create -n uq python=3.11 -y
+setenv PYTHON /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/envs/uq/bin/python
+$PYTHON -m pip install -r requirements-cluster.txt
 setenv HF_HOME /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/hf-cache
 setenv HF_DATASETS_CACHE $HF_HOME/datasets
-python -c "from src.models.loader import load_tokenizer; load_tokenizer('deepseek-ai/deepseek-coder-6.7b-base')"
+$PYTHON -c "from src.models.loader import load_tokenizer; load_tokenizer('deepseek-ai/deepseek-coder-6.7b-base')"
 
 # per run — one screen session per job:
 cd /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/semantic-flow
