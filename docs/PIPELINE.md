@@ -47,7 +47,7 @@ cluster has no internet, then rsync.
 python scripts/10_extract_activations.py --model deepseek-coder-1.3b --dataset data/synthetic/core.jsonl
 python scripts/10_extract_activations.py --model deepseek-coder-1.3b --dataset data/synthetic/context.jsonl --max-length 2048
 python scripts/10_extract_activations.py --model deepseek-coder-1.3b --dataset data/synthetic/obfuscation.jsonl
-# cluster: qsub -v MODEL=deepseek-coder-6.7b jobs/extract_core.sh   (and extract_context.sh / extract_obfuscation.sh / extract_real.sh)
+# GPU host: screen -dmS extract-core-6.7b env MODEL=deepseek-coder-6.7b jobs/extract_core.csh   (and extract_context.csh / extract_obfuscation.csh / extract_real.csh)
 ```
 
 Writes an **activation store** to `results/activations/{model}/{dataset stem}/`:
@@ -105,7 +105,8 @@ Output: `results/tables/obfuscation_robustness_{model}.csv`.
 ```bash
 python scripts/40_behavioral_leadtime.py --model deepseek-coder-1.3b \
     --probes results/probes/deepseek-coder-1.3b/core
-# cluster: qsub -v MODEL=deepseek-coder-6.7b jobs/leadtime.sh
+# GPU host: screen -dmS leadtime-6.7b env MODEL=deepseek-coder-6.7b jobs/leadtime.csh
+# layer sweep: screen -dmS e6-6.7b-L15 env MODEL=deepseek-coder-6.7b LAYER=15 jobs/leadtime.csh
 ```
 
 Grows taint programs line by line; the frozen taint-state probe decodes the
@@ -119,7 +120,7 @@ bootstrap CI).
 ```bash
 python scripts/50_causal_patching.py --model deepseek-coder-1.3b \
     --probes results/probes/deepseek-coder-1.3b/core
-# cluster: qsub -v MODEL=deepseek-coder-6.7b jobs/patching.sh
+# GPU host: screen -dmS patching-6.7b env MODEL=deepseek-coder-6.7b jobs/patching.csh
 ```
 
 Layer × position activation patching (positions: differing sink-arg tokens,
@@ -148,13 +149,25 @@ make test
 # every target takes MODEL=... and PY=<python path>
 ```
 
-## Cluster workflow (SGE)
+## GPU host workflow (no scheduler — screen)
 
-1. Locally: `make data-real`, commit/rsync `data/` to `$HOME/semantic-flow`.
-2. `qsub -v MODEL=deepseek-coder-6.7b jobs/extract_core.sh` (+ context, obfuscation, real).
-3. On a login/CPU node: `make probes context obfuscation MODEL=deepseek-coder-6.7b`.
-4. `qsub -v MODEL=deepseek-coder-6.7b jobs/leadtime.sh jobs/patching.sh`.
+There is no `qsub`/SGE here. Each GPU stage runs in its own detached `screen`
+session so it survives disconnects.
+
+1. Locally: `make data-real`, commit/rsync `data/` to
+   `/scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/semantic-flow`.
+2. `cd` there, then one screen session per extraction job:
+   `screen -dmS extract-core-6.7b env MODEL=deepseek-coder-6.7b jobs/extract_core.csh`
+   (+ `extract_context.csh` / `extract_obfuscation.csh` / `extract_real.csh`).
+3. Once extraction finishes (`screen -ls` to check none are still running):
+   `make probes context obfuscation MODEL=deepseek-coder-6.7b`.
+4. `screen -dmS leadtime-6.7b env MODEL=deepseek-coder-6.7b jobs/leadtime.csh` and
+   `screen -dmS patching-6.7b env MODEL=deepseek-coder-6.7b jobs/patching.csh`.
 5. Anywhere: `make assets`; rsync `results/tables results/figures` back.
 
-`jobs/common.sh` holds the shared env (conda source line, `HF_HOME` in
-Scratch). Pre-download model weights once on a network-enabled node.
+`jobs/common.csh` holds the shared env: `$PYTHON` (micromamba `uq` env),
+`HF_HOME`/`HF_DATASETS_CACHE` (Scratch, `NOT_BACKED_UP`), `MAMBA_ROOT_PREFIX`/
+`MAMBA_EXE`, and `PYTHONPATH`/`cd` into the repo. Job scripts invoke `$PYTHON`
+directly rather than a bare `python`; `env VAR=... jobs/foo.csh` sets a
+variable the script reads without needing `setenv` first. Pre-download model
+weights once on a network-enabled node.

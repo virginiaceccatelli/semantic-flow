@@ -12,7 +12,8 @@
 #   make assets               stage 90 tables + figures (CPU)
 #   make test                 pytest
 #
-# Cluster: submit jobs/*.sh with qsub instead of the GPU targets.
+# GPU host (no scheduler): run jobs/*.csh in a screen session instead of the
+# GPU targets, e.g. `screen -dmS extract-core-6.7b env MODEL=deepseek-coder-6.7b jobs/extract_core.csh`.
 
 PY ?= python
 MODEL ?= deepseek-coder-1.3b

@@ -1,7 +1,9 @@
 # Setup
 
-Local Mac (development, MPS) and SGE cluster (main runs). Always work inside
-the `semflow` conda env — the base env has a different Python and packages.
+Local Mac (development, MPS) and a shared GPU host (main runs, no scheduler —
+jobs run in `screen`). Always work inside the `semflow` conda env locally / the
+`uq` micromamba env on the GPU host — the base env has a different Python and
+packages.
 
 ## 1. Environment
 
@@ -44,22 +46,37 @@ make extract probes context leadtime patching assets   # full 1.3b pipeline
 
 Stage-by-stage details, artifacts, and the cluster workflow: `docs/PIPELINE.md`.
 
-## 5. Cluster (SGE)
+## 5. GPU host (no scheduler — screen)
 
-```bash
-# once, on a network-enabled node:
-conda create -n semflow python=3.11 -y && conda activate semflow
+There is no `qsub`/SGE on this host. Job scripts are **csh** and the env is
+**micromamba**, not conda. Every long-running stage goes in its own detached
+`screen` session so it survives disconnects:
+
+```csh
+# once:
+setenv MAMBA_ROOT_PREFIX /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/micromamba-root
+setenv MAMBA_EXE /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/micromamba/bin/micromamba
+eval `$MAMBA_EXE shell hook --shell csh`
+micromamba create -n uq python=3.11 -y && micromamba activate uq
 pip install -r requirements-cluster.txt
-export HF_HOME=$HOME/Scratch/hf_cache
+setenv HF_HOME /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/hf-cache
+setenv HF_DATASETS_CACHE $HF_HOME/datasets
 python -c "from src.models.loader import load_tokenizer; load_tokenizer('deepseek-ai/deepseek-coder-6.7b-base')"
 
-# per run:
-qsub -v MODEL=deepseek-coder-6.7b jobs/extract_core.sh
-qstat                      # qw = queued, r = running
+# per run — one screen session per job:
+cd /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/semantic-flow
+screen -dmS extract-core-6.7b env MODEL=deepseek-coder-6.7b jobs/extract_core.csh
+screen -ls                       # list running sessions
+screen -r extract-core-6.7b      # attach; Ctrl-A D to detach again
 ```
 
-`jobs/common.sh` centralizes the conda source line, `HF_HOME`, and
-`PYTHONPATH` — edit paths there if your cluster layout differs.
+`jobs/common.csh` centralizes `$PYTHON` (the `uq` env's interpreter,
+`/scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/envs/uq/bin/python`), `HF_HOME`/
+`HF_DATASETS_CACHE`, `MAMBA_ROOT_PREFIX`/`MAMBA_EXE`, and `PYTHONPATH`/`cd` into
+the repo at `/scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/semantic-flow` — edit
+paths there if the layout changes. Job scripts invoke `$PYTHON` directly rather
+than a bare `python`; `env MODEL=... jobs/foo.csh` sets the variable the script
+reads without needing `setenv` in the parent shell first.
 
 If the cluster has no internet: run `make data-real` locally and rsync
 `data/` (and the HF cache) up.
