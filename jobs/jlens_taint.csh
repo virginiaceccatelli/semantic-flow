@@ -7,9 +7,10 @@
 #          Same sklearn-version caveat as jobs/leadtime.csh applies.
 #   setenv MODEL deepseek-coder-6.7b; jobs/jlens_taint.csh
 source jobs/common.csh
+if (! $?RUN) setenv RUN "$MAMBA_EXE run -n semflow python"
 if (! $?PROBES) setenv PROBES "results/probes/$MODEL/core"
 if (! $?DTYPE) setenv DTYPE float16
-$PYTHON scripts/61_jlens_taint.py --model "$MODEL" \
+$RUN scripts/61_jlens_taint.py --model "$MODEL" \
     --dataset data/synthetic/core.jsonl \
     --probes "$PROBES" \
     --dtype "$DTYPE" \

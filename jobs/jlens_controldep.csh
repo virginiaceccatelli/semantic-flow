@@ -4,8 +4,9 @@
 #
 #   setenv MODEL deepseek-coder-6.7b; jobs/jlens_controldep.csh
 source jobs/common.csh
+if (! $?RUN) setenv RUN "$MAMBA_EXE run -n semflow python"
 if (! $?DTYPE) setenv DTYPE float16
-$PYTHON scripts/62_jlens_controldep.py --model "$MODEL" \
+$RUN scripts/62_jlens_controldep.py --model "$MODEL" \
     --dataset data/synthetic/core.jsonl \
     --dtype "$DTYPE" \
     --lens-out "results/jlens/$MODEL/lenses"
