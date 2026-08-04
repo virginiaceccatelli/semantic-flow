@@ -1,0 +1,41 @@
+{
+  "stage": "60_jlens_validate",
+  "timestamp": "20260804_171545",
+  "git_sha": "9e2730e",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/60_jlens_validate.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--layers",
+    "0,11",
+    "--n-build",
+    "20",
+    "--n-eval",
+    "40",
+    "--n-sources",
+    "40",
+    "--n-taint",
+    "20",
+    "--output",
+    "results/jlens/smoke60",
+    "--no-tables",
+    "--no-strict"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "dataset": "data/synthetic/core.jsonl",
+    "layers": "[0, 11]",
+    "n_build": "20",
+    "n_eval": "40",
+    "dtype": "float16",
+    "grad_scale": "1024.0",
+    "device": "cuda",
+    "seed": "42"
+  },
+  "wall_time_s": 11.7,
+  "extra": {
+    "n_rows": 18,
+    "failed_checks": []
+  }
+}
