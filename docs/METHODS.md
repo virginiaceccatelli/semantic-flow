@@ -264,7 +264,71 @@ much the output flips.
 
 ---
 
-## 11. Reproducibility
+## 11. The J-lens: decodable vs verbalizable (E10)
+
+**What.** Sections 1–10 all measure whether a *supervised probe* can recover
+a relation from the hidden state. E10 adds an **unsupervised** readout built
+from the model's own output head — the Jacobian lens — and asks a stronger
+question: is the relation in a form the model is *disposed to act on*, not
+merely one a classifier can extract?
+
+**Why it is a different question.** A linear probe can read any direction
+that happens to correlate with the label, including one the model never
+uses. The lens direction is a *causal derivative of the model's own output*,
+so a high score means "this state pushes the model toward saying `w`". A
+relation can therefore be decodable but not verbalizable — and that gap is
+the finding E10 looks for.
+
+**How.** For a candidate token `w` the lens vector is
+
+> `v_w = J_l^T (g * W_U[w])`, where `J_l = E[d h_final,t' / d h_l,t]`
+
+computed as one vector-Jacobian product per candidate — backpropagate the
+scalar `(g * W_U[w]) . h_final,t'` to `h_l,t` — and averaged over a corpus.
+The `d_model x d_model` Jacobian is never materialized; only the handful of
+lens vectors we actually score against.
+
+**Why a small candidate vocabulary is legitimate here.** The paper scores
+against a ~32k vocabulary. We do not have to: the generator draws every
+identifier from a fixed 26-letter pool (`SAFE_NAMES`), and the taint readout
+needs exactly two tokens (`" yes"`, `" no"`). This is a property of the
+corpus, not an approximation of the method — and it is what makes E10 cost
+about as much as one existing GPU stage rather than a cluster-scale run.
+
+**Identifiers are read space-prefixed.** Under byte-BPE, `    x = 5`
+tokenizes as `['   ', ' x', ' = ', '5']`, so the token the model actually
+emits for that variable is `' x'`. Candidates are therefore built from the
+leading-space variant; a lens on the bare `'x'` row would describe a token
+that essentially never occurs in Python source.
+
+**The scale caveat.** `norm(x) = g * x / rms(x)`, and `rms(x) > 0` does not
+depend on `w`, so dropping it leaves rankings, argmax, and the *sign* of a
+score difference exact while making raw magnitudes incomparable across
+positions. Every E10 statistic is rank- or sign-based for this reason.
+
+**How we know the implementation is right.** At the last decoder layer `J`
+is the identity, so the J-lens must equal the logit lens exactly. Stage 60
+asserts this (V1) and measures cosine 1.0000 — a closed-form check of the
+entire gradient path, not a plausibility argument.
+
+**Numerical care.** The lens is the only stage in the pipeline that runs a
+*backward* pass, so it is the only one exposed to fp16 gradient
+overflow/underflow. Each sample is retried down a ladder of loss scales, and
+any sample still non-finite is dropped and counted rather than averaged in.
+A high drop count is the signal to re-run with `--dtype float32`.
+
+**Controls (same discipline as Sections 5–7).**
+
+| Control | What it rules out |
+|---|---|
+| **logit lens** (`v_w = g * W_U[w]`, no Jacobian) | that the unembedding matrix alone explains the result — the decisive control, since the J-lens's only claimed value-add is the causal correction |
+| **random lens** (norm-matched directions) | that any direction of that magnitude would rank things similarly |
+| **frozen build/eval split** | that the lens was fit to the states it is scored on — lenses are built on a calibration split and frozen, exactly as Section 8 freezes probes |
+| **paired layer comparison** | that a noisy floor won by taking its own maximum over ~10 layers; controls are read at the J-lens's best layer, not at their own |
+
+---
+
+## 12. Reproducibility
 
 - **Seed 42 everywhere** by default (generator, CV splits, subsampling,
   bootstrap).

@@ -9,6 +9,10 @@
 #   make obfuscation MODEL=.. stage 31 (CPU)
 #   make leadtime MODEL=...   stage 40 (GPU/MPS)
 #   make patching MODEL=...   stage 50 (GPU/MPS)
+#   make jlens-validate MODEL=...   stage 60 — E10 gate, must pass first (GPU/MPS)
+#   make jlens-taint MODEL=...      stage 61 — E10-2 (GPU/MPS)
+#   make jlens-controldep MODEL=... stage 62 — E10-3 (GPU/MPS)
+#   make jlens MODEL=...            stages 60→62 in order (60 gates the rest)
 #   make assets               stage 90 tables + figures (CPU)
 #   make test                 pytest
 #
@@ -20,7 +24,8 @@ MODEL ?= deepseek-coder-1.3b
 ACT := results/activations/$(MODEL)
 PROBES := results/probes/$(MODEL)/core
 
-.PHONY: smoke data data-real extract probes context obfuscation leadtime patching assets test
+.PHONY: smoke data data-real extract probes context obfuscation leadtime patching \
+        jlens jlens-validate jlens-taint jlens-controldep assets test
 
 data:
 	$(PY) scripts/00_generate_data.py --model $(MODEL)
@@ -47,6 +52,18 @@ leadtime:
 
 patching:
 	$(PY) scripts/50_causal_patching.py --model $(MODEL) --probes $(PROBES)
+
+# ── E10 J-lens (stage 60 gates 61/62 — it exits non-zero if a check fails) ───
+jlens-validate:
+	$(PY) scripts/60_jlens_validate.py --model $(MODEL)
+
+jlens-taint:
+	$(PY) scripts/61_jlens_taint.py --model $(MODEL) --probes $(PROBES)
+
+jlens-controldep:
+	$(PY) scripts/62_jlens_controldep.py --model $(MODEL)
+
+jlens: jlens-validate jlens-taint jlens-controldep
 
 assets:
 	$(PY) scripts/90_make_paper_assets.py
@@ -78,6 +95,17 @@ smoke:
 	$(PY) scripts/50_causal_patching.py --model $(MODEL) \
 		--pairs $(SMOKE_DATA)/synthetic/minimal_pairs.jsonl --probes results/smoke/probes \
 		--output results/smoke/patching --max-pairs 3 --no-tables
+	$(PY) scripts/60_jlens_validate.py --model $(MODEL) \
+		--dataset $(SMOKE_DATA)/synthetic/core.jsonl --output results/smoke/jlens/validate \
+		--layers 0,11 --n-build 4 --n-eval 4 --n-sources 4 --n-taint 3 \
+		--no-strict --no-tables
+	$(PY) scripts/61_jlens_taint.py --model $(MODEL) \
+		--dataset $(SMOKE_DATA)/synthetic/core.jsonl --probes results/smoke/probes \
+		--output results/smoke/jlens/taint --layers 0,11 --n-examples 6 --no-tables
+	$(PY) scripts/62_jlens_controldep.py --model $(MODEL) \
+		--dataset $(SMOKE_DATA)/synthetic/core.jsonl \
+		--output results/smoke/jlens/controldep --layers 0,11 \
+		--n-examples 8 --n-build 3 --no-tables
 	$(PY) scripts/90_make_paper_assets.py
 	@echo "--- smoke artifacts ---"
 	@test -f results/smoke/probes/static_probes.csv
@@ -85,4 +113,7 @@ smoke:
 	@test -f results/smoke/obfuscation/obfuscation_robustness.csv
 	@test -f results/smoke/leadtime/behavioral_leadtime.csv
 	@test -f results/smoke/patching/causal_patching.csv
+	@test -f results/smoke/jlens/validate/jlens_validation_checks.csv
+	@test -f results/smoke/jlens/taint/jlens_taint_summary.csv
+	@test -f results/smoke/jlens/controldep/jlens_controldep_summary.csv
 	@echo "SMOKE OK"

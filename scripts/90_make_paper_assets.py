@@ -228,6 +228,98 @@ def _patching_assets(csv: Path):
     _save(fig, f"patching_recovery_{tag}")
 
 
+# ── E10: J-lens ──────────────────────────────────────────────────────────────
+# The three lens variants get fixed colours everywhere so the control lines
+# are recognisable at a glance across figures.
+LENS_COLORS = {"jlens": PALETTE[0], "logit": PALETTE[1],
+               "random": PALETTE[7], "probe": PALETTE[2]}
+LENS_STYLES = {"jlens": "-", "logit": "--", "random": ":", "probe": "-."}
+
+
+def _lens_plot(ax, df: pd.DataFrame, ycol: str, chance: float | None):
+    for kind, sub in df.groupby("lens" if "lens" in df.columns else "readout"):
+        sub = sub.sort_values("layer")
+        ax.plot(sub["layer"], sub[ycol], marker="o", markersize=4, linewidth=1.8,
+                label=kind, color=LENS_COLORS.get(kind, PALETTE[4]),
+                linestyle=LENS_STYLES.get(kind, "-"))
+    if chance is not None:
+        ax.axhline(chance, color="gray", linewidth=0.8, linestyle="--")
+    ax.set_xlabel("Layer")
+    ax.legend(fontsize=8, framealpha=0.7)
+    sns.despine(ax=ax)
+
+
+def _jlens_validation_assets(csv: Path):
+    from src.analysis.tables import df_to_markdown
+
+    tag = csv.stem.replace("jlens_validation_", "")
+    df = pd.read_csv(csv)
+    df_to_markdown(df, MD / f"{csv.stem}.md", title=f"J-lens validation — {tag}")
+
+    # V2: next-token recovery. Chance is 1/n_candidates; the honest reference
+    # is the random floor already plotted, so no chance line is drawn.
+    v2 = df[df["check"] == "V2_next_token"]
+    if not v2.empty:
+        fig, ax = plt.subplots(figsize=(8, 4.5))
+        _lens_plot(ax, v2, "top1", None)
+        ax.set_ylabel("Top-1 accuracy (true next token)")
+        ax.set_title(f"V2 next-token recovery by layer — {tag}")
+        _save(fig, f"jlens_validation_nexttoken_{tag}")
+
+    # V3: does the yes/no readout agree with the model's own answer?
+    v3 = df[df["check"] == "V3_taint_disposition"]
+    if not v3.empty:
+        fig, ax = plt.subplots(figsize=(8, 4.5))
+        _lens_plot(ax, v3, "agree_model", 0.5)
+        ax.set_ylabel("Agreement with model's forced choice")
+        ax.set_title(f"V3 taint disposition by layer — {tag}")
+        _save(fig, f"jlens_validation_disposition_{tag}")
+
+
+def _jlens_taint_assets(csv: Path):
+    """E10-2. The headline is the early-warning rate, not mean lead."""
+    from src.analysis.tables import df_to_markdown
+
+    tag = csv.stem.replace("jlens_taint_summary_", "")
+    summary = pd.read_csv(csv)
+    df_to_markdown(summary, MD / f"{csv.stem}.md",
+                   title=f"J-lens taint lead time — {tag}")
+    if summary.empty:
+        return
+
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    _lens_plot(ax, summary, "early_warning_rate", None)
+    ax.set_ylabel("P(readout wrong first | model wrong)")
+    ax.set_title(f"E10-2 early warning by layer and readout — {tag}")
+    _save(fig, f"jlens_taint_earlywarning_{tag}")
+
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    _lens_plot(ax, summary, "mean_lead", 0.0)
+    ax.set_ylabel("Mean lead (prefixes)")
+    ax.set_title(f"E10-2 mean lead by layer and readout — {tag}\n"
+                 "(denominator moves across layers — read the rate plot first)")
+    _save(fig, f"jlens_taint_meanlead_{tag}")
+
+
+def _jlens_controldep_assets(csv: Path):
+    """E10-3. Chance is exactly 0.5: the two targets are interchangeable."""
+    from src.analysis.tables import df_to_markdown
+
+    tag = csv.stem.replace("jlens_controldep_summary_", "")
+    summary = pd.read_csv(csv)
+    df_to_markdown(summary, MD / f"{csv.stem}.md",
+                   title=f"J-lens control dependence — {tag}")
+    if summary.empty:
+        return
+
+    for stratum, sub in summary.groupby("stratum"):
+        fig, ax = plt.subplots(figsize=(8, 4.5))
+        _lens_plot(ax, sub, "accuracy", 0.5)
+        ax.set_ylabel("P(dependent target ranked above non-dependent)")
+        ax.set_title(f"E10-3 control dependence, {stratum} — {tag}")
+        _save(fig, f"jlens_controldep_{stratum}_{tag}")
+
+
 @app.command()
 def main():
     from src.utils import write_manifest
@@ -246,6 +338,14 @@ def main():
         "behavioral_leadtime_": _leadtime_assets,
         "causal_patching_summary": None,
         "causal_patching_": _patching_assets,
+        # E10 — order matters: the more specific prefix must come first, since
+        # the first matching handler wins.
+        "jlens_validation_checks": None,              # gate verdicts, no figure
+        "jlens_validation_": _jlens_validation_assets,
+        "jlens_taint_summary_": _jlens_taint_assets,
+        "jlens_taint_": None,                         # per-example rows
+        "jlens_controldep_summary_": _jlens_controldep_assets,
+        "jlens_controldep_": None,                    # per-case rows
     }
 
     n_done = 0

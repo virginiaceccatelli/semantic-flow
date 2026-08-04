@@ -51,3 +51,32 @@ stage50_patching:                      # E7
   max_pairs: 100
   positions: [sink_arg, sanitizer_def, last_token]
   recovery_threshold: 0.5              # encoded_and_used cutoff on logit-diff recovery
+
+# ── E10: J-lens (see docs/JLENS_PLAN.md) ─────────────────────────────────────
+# Stage 60 is a GATE: it exits non-zero on a failed required check, and
+# stages 61/62 are not interpretable until it passes.
+
+stage60_jlens_validate:                # E10 Phase 0 + Phase 1
+  n_build: 60                          # positions used to build each lens
+  n_eval: 60                           # held-out positions used to score it
+  n_sources: 60                        # programs for the next-token check (V2)
+  n_taint: 40                          # taint programs for the disposition check (V3)
+  candidates: SAFE_NAMES               # single-token identifiers only, space-prefixed
+  grad_scale: 1024.0                   # loss scaling so fp16 backward passes survive
+  dtype: float16                       # float32 if check 0.3 reports non-finite grads
+  required_checks: [0.1, 0.2, 0.3, 0.4, V1, V2_beats_random_floor,
+                    V3_disposition_beats_random, V3_last_layer_matches_model]
+
+stage61_jlens_taint:                   # E10-2 — priority experiment (explains E6)
+  n_examples: 100
+  calib_frac: 0.3                      # split used to BUILD lenses and calibrate
+  candidates: [" yes", " no"]          # forced-choice answer tokens, as in E6/E7
+  readouts: [jlens, logit, random, probe]
+  probes: frozen_from_stage20          # optional; enables the probe comparison
+
+stage62_jlens_controldep:              # E10-3 — probes E4's surface-heaviness
+  n_examples: 120
+  n_build: 30                          # programs used to build the lens
+  n_tprime: 2                          # readout positions sampled after each guard
+  candidates: SAFE_NAMES
+  strata: [indent_matched, non_dependent]   # indent_matched is the hard control

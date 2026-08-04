@@ -182,6 +182,99 @@ the reference; per-level deltas attribute degradation to each transformation
 class. Output: `obfuscation_robustness_*.csv`, `obfuscation_levels_*.png`,
 `obfuscation_{task}_*.png`.
 
+## E10 — J-lens: is it verbalizable, not just decodable?
+
+E1–E9 all ask whether a relation can be *read out* of the hidden state by a
+supervised probe. E10 asks a different question with an unsupervised,
+gradient-based readout — the **Jacobian lens** of Gurnee, Lindsey et al.
+(2026) — built from the model's own output head rather than fit against
+static-analysis labels:
+
+```
+J_l     = E[ d h_final,t' / d h_l,t ]           (averaged over a corpus)
+v_w     = J_l^T (g * W_U[w])                    (one lens vector per token)
+score_w = v_w . h                               (up to a positive scale)
+```
+
+Because `v_w` is a causal derivative of the model's own output, a high score
+means the state is *disposed to make the model say* `w` — "verbalizable" —
+which is a strictly stronger property than being linearly decodable. Full
+rationale, cost analysis, and expected results: `docs/JLENS_PLAN.md`.
+Implementation: `src/models/lens.py`, `src/experiments/jlens_*.py`.
+
+**Scale caveat.** Scores drop a shared positive factor (`1/rms(J h)`), so
+only *within-position* comparisons are claimed — rankings, argmax, and the
+sign of a score difference. Every E10 metric below is rank- or sign-based.
+
+### E10-0 — validation gate (stage 60)
+
+**Hypothesis.** None — this is a gate, not a result. Stages 61/62 are not
+interpretable unless it passes, so it exits non-zero on failure.
+
+**Checks.** Phase 0 (applicability): candidate identifiers are single tokens;
+the unembedding and final-norm accessors resolve; autograd reaches an
+intermediate activation with finite gradients; the Jacobian correction is
+not a no-op. Phase 1 (methodology): **V1** at the last decoder layer `J` is
+the identity, so the J-lens must reproduce the logit lens *exactly* — this
+exercises the whole VJP path against a closed-form answer; **V2** next-token
+recovery beats a norm-matched random floor; **V3** the yes/no taint readout
+(the one E10-2 depends on) beats that floor and matches the model's own
+answer at the last layer.
+
+Controls are compared **at the J-lens's own best layer**, not
+max-against-max, so a noisy floor does not get a free maximum over ~10 draws.
+Gates additionally require a minimum n and report `[UNDERPOWERED]` otherwise.
+
+Output: `jlens_validation_{model}.csv`, `jlens_validation_checks_{model}.csv`;
+figures `jlens_validation_{nexttoken,disposition}_{model}.png`.
+
+### E10-2 — taint workspace membership (stage 61) — the priority experiment
+
+**Hypothesis.** E6 found early warning in 6.7b but not 1.3b, and
+`docs/RESULTS.md` attributes that to 1.3b's taint state being accurate but
+"never diverging from what its output head does". If so, the *verbalizable*
+readout should show a lead in 6.7b and none in 1.3b — explaining a finding
+E6 could only describe, since E6 compares a probe against behaviour and
+never against an independent third signal.
+
+**Method.** E6's line-prefix stepping, unchanged. Three signals per prefix:
+`t_latent_probe` (frozen stage-20 probe), `t_latent_jlens` (lens yes/no
+margin), `t_failure` (forced choice). Lenses are built on the calibration
+split **only** and frozen before any test prefix is scored; every readout —
+including the lens — gets a threshold calibrated on that same split, so
+neither side has a handicap.
+
+**Controls.** The **logit-lens** variant is decisive: if it shows the same
+lead, the effect is the unembedding matrix rather than the causal
+correction, and the finding does not stand. A norm-matched **random** lens
+is the floor.
+
+**Metric.** `early_warning_rate` = P(readout wrong first | model wrong) —
+the fixed denominator `docs/RESULTS.md` open item 4 asks for, unlike E6's
+shipped `frac_positive_lead`, whose denominator moves across layers.
+
+Output: `jlens_taint{,_summary}_{model}.csv`; figures
+`jlens_taint_earlywarning_{model}.png`, `jlens_taint_meanlead_{model}.png`.
+
+### E10-3 — control dependence: verbalizable or automatic? (stage 62)
+
+**Hypothesis.** E4 showed control dependence is decodable (AUC 0.999 by mid
+layers) but "largely local syntax" (surface baseline already 0.927). If it
+is genuinely automatic, the lens ranking should stay near its floor at
+*every* layer even where E4's probe is at ceiling — a probe/lens
+dissociation absent for binding and def-use.
+
+**Method.** At the guard-expression anchor (E4's `pos_i`), compare the lens
+score of a control-dependent statement's target variable against that of an
+`indent_matched` statement's target — E4's hard negative, a statement in a
+*sibling* guard's body at the same nesting depth. Chance is exactly 0.5: the
+two targets are interchangeable neutral variables. Readout positions `t'`
+are sampled generically from positions after the guard, never at the
+labelled statements, so the lens never sees the labels it is scored against.
+
+Output: `jlens_controldep{,_summary}_{model}.csv`; figures
+`jlens_controldep_{stratum}_{model}.png`.
+
 ---
 
 ## Models & replication

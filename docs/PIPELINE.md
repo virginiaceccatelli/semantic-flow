@@ -1,13 +1,20 @@
 # Pipeline
 
-Eight numbered stages. Each stage is one CLI in `scripts/`, writes its outputs
+Eleven numbered stages. Each stage is one CLI in `scripts/`, writes its outputs
 under `results/`, and records a manifest (git sha, args, wall time) in
 `results/manifests/`. GPU stages are marked; everything else runs anywhere.
 
 ```
-00 → 10 → 20 → { 30, 31, 40, 50 } → 90
-CPU   GPU   CPU    CPU CPU GPU GPU    CPU
+00 → 10 → 20 → { 30, 31, 40, 50 } ─────────────→ 90
+CPU   GPU   CPU    CPU CPU GPU GPU               CPU
+                │                                 ↑
+                └→ 60 → { 61, 62 } ───────────────┘
+                   GPU    GPU GPU
 ```
+
+Stage 60 is a **gate**: it exits non-zero on a failed check, and 61/62 are
+not interpretable until it passes. 61 optionally reads stage-20 probes for
+its side-by-side comparison; 62 needs no probes.
 
 Model names come from `configs/models.yaml` (`deepseek-coder-1.3b` for
 development/MPS, `deepseek-coder-6.7b` for main results). Canonical settings:
@@ -127,6 +134,65 @@ Layer × position activation patching (positions: differing sink-arg tokens,
 sanitizer definition, last token — the last reported separately as the trivial
 case). Outputs `causal_patching{,_summary}_{model}.csv` with logit-diff
 recovery and causal classes.
+
+## Stage 60 — J-lens validation gate E10-0 (GPU; MPS ok for 1.3b)
+
+```bash
+python scripts/60_jlens_validate.py --model deepseek-coder-1.3b
+# GPU host: screen -dmS jlens-val-6.7b env MODEL=deepseek-coder-6.7b jobs/jlens_validate.csh
+```
+
+**Run this before 61/62 and check it passed.** It is the gate for the whole
+J-lens track and exits non-zero when a required check fails (`--no-strict`
+to report without failing). Needs no probes. Phase 0 checks applicability
+(tokenization, accessors, autograd); Phase 1 validates the construction —
+including V1, which asserts the J-lens equals the logit lens at the last
+layer, where the Jacobian is provably the identity.
+
+Outputs `jlens_validation{,_checks}_{model}.csv`.
+
+**Cost and numerics.** Stages 60–62 are the only ones that run a *backward*
+pass, so they are the only ones exposed to fp16 gradient over/underflow.
+Each sample is retried down a ladder of loss scales; the log reports
+`N/M samples needed a reduced grad scale` (fine) and warns on any sample
+dropped as non-finite at every scale (not fine). **If drops appear, or many
+samples need rescaling, re-run with `--dtype float32`.**
+
+Measured on MPS / 1.3b: a mid-layer VJP costs ~2.5 s per sample at 26
+candidates and ~0.2 s at the last layer (no blocks to traverse), so the
+default settings put each of stages 60/61/62 in the 30–60 min range on this
+machine. Cost scales with `candidates x samples x layers` — cut `--n-build`
+or `--layers` first if that is too slow.
+
+## Stage 61 — J-lens taint / lead time E10-2 (GPU)
+
+```bash
+python scripts/61_jlens_taint.py --model deepseek-coder-1.3b \
+    --probes results/probes/deepseek-coder-1.3b/core
+# GPU host: screen -dmS jlens-taint-6.7b env MODEL=deepseek-coder-6.7b jobs/jlens_taint.csh
+```
+
+The priority experiment: tests whether the taint state is verbalizable, the
+standing hypothesis for E6's 6.7b-only early warning. `--probes` is optional
+but recommended — it recomputes the frozen probe's lead time on the *same*
+split, so probe / lens / behaviour are directly comparable rather than
+joined across CSVs. Lenses are built on the calibration split only and
+frozen before any test prefix is scored.
+
+Outputs `jlens_taint{,_summary}_{model}.csv`.
+
+## Stage 62 — J-lens control dependence E10-3 (GPU)
+
+```bash
+python scripts/62_jlens_controldep.py --model deepseek-coder-1.3b
+# GPU host: screen -dmS jlens-cd-6.7b env MODEL=deepseek-coder-6.7b jobs/jlens_controldep.csh
+```
+
+Asks whether control dependence is ever promoted into the verbalizable
+workspace or stays automatic, at E4's guard anchors against E4's
+`indent_matched` hard negatives. Chance is exactly 0.5.
+
+Outputs `jlens_controldep{,_summary}_{model}.csv`.
 
 ## Stage 90 — paper assets (CPU, seconds)
 

@@ -25,6 +25,7 @@ Status legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b)
 | E7 causal patching | is it *used*? | ● | ● | **Positive** — information routes across layers; sanitizer site is causally inert |
 | E8 real code | CodeSearchNet transfer | ● | ● | **Transfers** — ~0.90 acc / 0.98 AUC vs 0.67 surface, same mid-early layer peak; but real code can't isolate the semantic component |
 | E9 obfuscation | semantics-preserving edits | ◐ | ● | Robust to renaming mid-layer; breaks on flatten |
+| E10 J-lens | verbalizable vs decodable | ☐ | ☐ | Implemented, not yet run at scale. Machinery validated: the closed-form V1 check (J-lens = logit lens at the last layer, where J is the identity) measures cosine 1.00000 on 1.3b |
 
 All nine experiments have now run at both scales. **E6**'s previously reported
 "no lead time" null turned out to be an artifact of probing only layer 0: the
