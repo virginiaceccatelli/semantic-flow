@@ -128,7 +128,7 @@ The activation store (stage 10) is the single interface between the model and
 all analysis: one compressed `.npz` per example holding hidden states at the
 probed layers, input ids, and verified token offsets. Stages 20/30/40/50 read
 it (or, for E6/E7, run the model directly) and never re-extract. Commands,
-outputs, and the SGE cluster workflow: [docs/PIPELINE.md](docs/PIPELINE.md).
+outputs, and the GPU-host workflow: [docs/PIPELINE.md](docs/PIPELINE.md).
 
 ## 5. The experiments
 
@@ -286,10 +286,10 @@ src/
   experiments/ E1–E4 static probes, E5 degradation, E6 lead time, E7 patching, E9 obfuscation
   analysis/    metrics, table rendering, figures
 scripts/       numbered stage CLIs (00–90)
-jobs/          SGE scripts per GPU stage
+jobs/          csh scripts per GPU stage (run under screen; no scheduler)
 configs/       model registry + canonical experiment settings
 docs/          PIPELINE · EXPERIMENTS · METHODS · RESULTS
-tests/         72 CPU-only tests (alignment exactness, CV leakage, strata, pairs, obfuscation semantics, ground-truth cross-check, …)
+tests/         79 CPU-only tests (alignment exactness, CV leakage, strata, pairs, obfuscation semantics, ground-truth cross-check, …)
 ```
 
 ## 9. Quickstart
@@ -297,7 +297,7 @@ tests/         72 CPU-only tests (alignment exactness, CV leakage, strata, pairs
 ```bash
 conda create -n semflow python=3.11 -y && conda activate semflow
 pip install -e ".[dev]"
-make test                     # 72 CPU-only tests
+make test                     # 79 CPU-only tests
 make smoke                    # tiny end-to-end run on this machine (~15 min, MPS)
 
 # full run (development model)

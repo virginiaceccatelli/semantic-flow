@@ -21,15 +21,18 @@ Status legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b)
 | E3 def-use + distance | def→use edges | ● | ● | **Positive** — decodable, mild distance decay |
 | E4 control dep | guard→statement | ● | ● | **Positive but surface-heavy** — hidden beats the hard stratum (0.92 vs 0.68), but control dep is largely locally decodable; replicates across scale |
 | E5 context degradation | robustness to filler | ● | ● | Survives length; collapses under interference |
-| E6 lead time | latent vs behavioral failure | ◐ | ● | Degenerate (no positive lead in either model) — needs a layer sweep |
+| E6 lead time | latent vs behavioral failure | ◐ | ● | **Split** — 6.7b shows real early warning at mid layers (66% of failures, ~2.3 steps); 1.3b shows none at any layer |
 | E7 causal patching | is it *used*? | ● | ● | **Positive** — information routes across layers; sanitizer site is causally inert |
-| E8 real code | CodeSearchNet transfer | ☐ | ☐ | Not run |
-| E9 obfuscation | semantics-preserving edits | ◐ | ● | Robust to renaming mid-layer; breaks on flatten (1.3b table is pre-fix — re-run stage 31) |
+| E8 real code | CodeSearchNet transfer | ● | ● | **Transfers** — ~0.90 acc / 0.98 AUC vs 0.67 surface, same mid-early layer peak; but real code can't isolate the semantic component |
+| E9 obfuscation | semantics-preserving edits | ◐ | ● | Robust to renaming mid-layer; breaks on flatten |
 
-Two experiments are still open: **E8** (real-code transfer) has not been run,
-and **E6** produced a degenerate result in *both* models that should be re-run
-with a layer sweep before it is trusted (see below). **E4 is now valid and
-replicates across scale** (its hard-negative control was rebuilt).
+All nine experiments have now run at both scales. **E6**'s previously reported
+"no lead time" null turned out to be an artifact of probing only layer 0: the
+6.7b model does show early warning at mid layers. **E8** confirms the probes
+transfer to real Python with the same layer signature, while making clear what
+a naturalistic corpus can and cannot establish. Both are written up below.
+**E4 is valid and replicates across scale** (its hard-negative control was
+rebuilt).
 
 ---
 
@@ -297,80 +300,227 @@ through the sanitization site at all — which sets up, and is confirmed by, E6.
 
 ---
 
-## E6: latent and behavioral failure are perfectly coupled — the model ignores sanitization
+## E6: early warning is real — in the 6.7b model, at mid layers only
 
 E6 asks whether the taint probe's internal state degrades *before* the model's
-answer goes wrong (RQ4). Both models produced a **degenerate result with no
-positive lead**, and the degeneracy is itself informative. The 6.7b case is the
-cleanest to read:
+answer goes wrong (RQ4). The earlier null — "latent and behavioral failure are
+perfectly coupled" — was **an artifact of probing layer 0 only**. Sweeping all
+probed layers changes the answer for the main-results model.
 
-Of 70 test programs: the **38 unsanitized** ones are handled perfectly by both
-probe and model (no failure to lead). On **all 32 sanitized** ones, both the
-probe and the model go wrong at *exactly the same step* — the sanitization line
-itself. Mean lead time **0.0**, bootstrap CI **[0.0, 0.0]**, fraction with
-positive lead **0.0**. *(Figure: `leadtime_{model}.png` — a single spike at 0.)*
+**How to read the numbers.** `t_failure` is the first prefix where the model's
+own forced choice goes wrong; it depends only on the model, so it is **identical
+across every layer** of a given model — only `t_latent` (the probe) moves. The
+right early-warning statistic is therefore: *of the examples where the model
+eventually fails, on how many did the probe fail first?* The shipped
+`mean_lead` / `frac_positive_lead` columns condition on `n_both_fail` (both
+signals failing), so they silently change denominator across layers; the tables
+below break that out.
 
-**Plain reading:** the model **never registers the sanitizer**. After the
-sanitizing call it continues to treat the value as tainted, and the internal
-taint state (read at layer 0) agrees completely. There is no early-warning
-signal because there is no disagreement to detect — latent and behavior fail
-together. This is the same fact E7 found causally (patching the sanitizer does
-nothing) seen from the behavioral side.
+**6.7b — the model answers wrong on 32 of 70 test programs.** Of those 32:
 
-**1.3b tells the same story with a twist.** Again **no case has positive lead**
-(`frac_positive_lead = 0.0`), but the mean lead is **−2.83** (CI [−3.3, −2.4]),
-i.e. the layer-0 taint probe tends to "fail" a couple of steps *after* the model
-does — the opposite of an early warning. So neither model gives the leading
-signal RQ4 asks for; the sign difference between them is exactly the kind of
-artifact a single-layer, single-threshold readout produces.
+| Layer | Probe acc | Latent **first** | Simultaneous | Latent later | Probe never wrong | Mean lead |
+|---:|---:|---:|---:|---:|---:|---:|
+| −1 | 0.75 | 32 | 0 | 0 | 0 | +3.53 |
+| 0 | 1.00 | 0 | **32** | 0 | 0 | 0.00 |
+| 3 | 1.00 | 4 | 0 | 0 | 28 | +1.00 |
+| **7** | 1.00 | **21** | 0 | 5 | 6 | **+2.31** |
+| 11 | 1.00 | 7 | 12 | 0 | 13 | +0.58 |
+| 15 | 1.00 | 16 | 6 | 0 | 10 | +2.59 |
+| 19 | 1.00 | 16 | 0 | 0 | 16 | +3.56 |
+| 23 | 1.00 | 9 | 4 | 0 | 19 | +2.15 |
+| 31 | 1.00 | 9 | 0 | 0 | 23 | +3.11 |
 
-**Caveat — do not report this as the final RQ4 answer yet.** E6 was run at
-**layer 0 only** with a **~0.999 threshold** in both models, and E7 shows taint
-information migrates through the layers. A probe at a mid or late layer might
-diverge from behavior where a layer-0 probe cannot. **This should be re-run with
-a layer sweep** before the null is trusted — the divergent 1.3b/6.7b lead values
-(−2.83 vs 0.0) make the under-powering concrete.
+At **layer 7 the latent state fails first on 21 of 32 behavioral failures (66%),
+a mean of 2.3 prefixes early**. That is a genuine early-warning signal, and it is
+invisible at layer 0, where all 32 failures are *exactly* simultaneous. The old
+"the model never registers the sanitizer" reading was measuring the wrong depth:
+taint information has barely been built at block 0, so the probe there can only
+mirror the output.
+
+**1.3b — no early warning at any layer.** The 1.3b model answers wrong on **all
+70** test programs (vs 32 for 6.7b — it is far weaker behaviorally). The
+`latent first` column is **0 at every single layer**; when both fail, the probe
+fails at the same step or later (mean lead −1.5 to −4.3).
+
+| Layer | −1 | 0 | 3 | 7 | 11 | 15 | 19 | 23 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Latent first (of 70) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Mean lead | −3.53 | −2.83 | −2.13 | −1.54 | −2.02 | −3.35 | −1.48 | −4.33 |
+
+**So RQ4 gets a scale-dependent answer: early warning appears in the 6.7b model
+and not in the 1.3b one.** It does *not* replicate across scale, which is the
+honest headline. A plausible reading — consistent with E7's layer migration — is
+that the signal requires a taint representation that is both accurate *and*
+distinct from the output computation; 1.3b's is accurate (probe at ceiling) but
+apparently never diverges from what its output head does.
+
+**Two artifacts to exclude when reporting this.**
+
+- **Layer −1 is not evidence.** It shows a perfect 32/32 early rate in 6.7b —
+  and an exact mirror image (32/32 *late*, mean −3.53) in 1.3b. The taint probe
+  at the embedding layer is only **0.75 accurate (AUC 0.875)** versus 1.00 at
+  every layer ≥0. A probe that is simply wrong a lot goes wrong early on
+  everything; this is a false positive for early warning, not a finding. The
+  identical ±3.53 magnitude across two different models confirms it is driven by
+  the lexical content both embeddings share, not by either model's computation.
+- **The denominator shrinks with depth.** `Probe never wrong` climbs from 0 to
+  23 across 6.7b's layers: at deep layers the probe is *right* on most examples
+  where the model fails. That is not early warning either — it means the latent
+  state stayed correct while behavior broke. Counting it as "no lead" (as the
+  table above does) is the conservative choice; the `mean_lead` column, which
+  drops those examples entirely, is why late layers look deceptively strong
+  (layer 31's +3.11 rests on 9 examples).
+
+Read together, **layer 7 is the defensible result**: probe at ceiling, the
+largest early-warning count (21), and the smallest set of discarded examples (6).
+
+---
+
+## E8: the probes transfer to real code, with the same layer signature
+
+E8 re-runs stages 10+20 unchanged on ~200 `ast`-parseable CodeSearchNet
+functions. **The probes transfer.** Binding and def-use are decodable from real
+function bodies at ~0.90 accuracy, far above the model-free surface baseline,
+and the *shape* of the layer curve matches the synthetic result.
+
+**Use AUC, not accuracy, to read this.** Accuracy is threshold-dependent and
+peaks at the embedding layer here; AUC is not, and it tells a different and more
+informative story:
+
+| 6.7b, aggregate AUC | Surface | Embedding (−1) | **Peak** | Last layer |
+|---|---:|---:|---:|---:|
+| binding | 0.673 | 0.962 | **0.978** (L7) | 0.913 (L31) |
+| def-use | 0.590 | 0.958 | **0.979** (L3) | 0.907 (L31) |
+
+| 1.3b, aggregate AUC | Surface | Embedding (−1) | **Peak** | Last layer |
+|---|---:|---:|---:|---:|
+| binding | 0.673 | 0.962 | **0.980** (L3) | 0.907 (L23) |
+| def-use | 0.590 | 0.959 | **0.975** (L3) | 0.908 (L23) |
+
+Three things replicate from the synthetic corpus: hidden states beat the surface
+baseline by a wide margin (**+0.31 / +0.39 AUC**); AUC **rises above the
+embedding layer to an early-middle peak** (L3–L7, the same relative depth as
+synthetic); and it **declines toward the output** (−0.07). The rise-then-shed
+profile — information built in the early blocks, held, then reorganized for
+next-token prediction — is present in real code too, just compressed, because
+the embedding layer already starts at 0.96 instead of 0.500.
+
+**Why the embedding layer starts so high — and why that is expected.** In real
+code, identifiers are genuinely informative: `self._cache` and `result` are
+different variables and *look* different, so token identity alone predicts most
+binding pairs. The synthetic `context_matched` design deliberately annihilates
+that cue (both floors sit at exactly 0.500) in order to isolate the part the
+model must *compute*. Real code cannot do that by construction, so the two
+experiments measure different things: **E2 isolates the semantic component; E8
+tests whether the whole decoder transfers to naturalistic inputs.** A high
+embedding baseline on real code is a property of real code, not a failure of
+the model.
+
+**The one stratum that looks bad, and how much weight it carries.**
+`same_name_diff_binding` — identically spelled occurrences binding to different
+definitions — sits below chance at every layer (6.7b 0.095→0.494; 1.3b
+0.082→0.516), while the surface probe scores 0.767. That is worth reporting, but
+it is **weaker evidence than it appears**, for the reason already documented for
+E4's layer −1 = 1.000: these per-stratum figures are **class-conditional recall
+on the negatives, and no per-stratum AUC is recorded**. A probe whose threshold
+leans toward "same binding" whenever the spelling is identical will score low
+here regardless of what its hidden states encode — which is exactly what the
+aggregate AUC of 0.978 says is happening. Distinguishing "the representation is
+absent" from "the threshold is placed against this stratum" needs a
+context-matched control, which this run does not have.
+
+**What E8 does and does not license.**
+
+- **Supported:** binding and def-use structure is linearly decodable from real
+  Python at ~0.90 accuracy / ~0.98 AUC, hugely above surface features, with the
+  same layer profile as the synthetic corpus. The findings are not a generator
+  artifact. Both scales agree closely, and the model-free surface baseline is
+  numerically identical across them (the usual corpus-integrity check).
+- **Not supported:** that the *semantic* component specifically transfers. On
+  real code the lexical and semantic contributions cannot be separated, because
+  no stratum here pins the surface floor to chance. E2's isolation result still
+  rests on synthetic programs.
+- **The fix is available** (open item 1): context-matched pairs can be built from
+  real functions by mutating them — 150 candidate sites already exist in this
+  corpus. That would turn E8 into a like-for-like test of E2 rather than a
+  transfer check, and is the single highest-value addition to this experiment.
 
 ---
 
 ## What the results say, in one paragraph
 
-Both `deepseek-coder` models linearly encode **variable binding** and **def-use
-structure** in a way no surface cue can explain: on token-identical
-program pairs the probe rises from a hard 0.500 floor to a ~0.98 mid-layer peak,
-replicated at both scales at the same relative depth. That representation is
-**built in the first few blocks, held through the middle, and shed near the
-output**; it is **robust to inert length and formatting** but **collapses under
-scope-shadowing interference and control-flow flattening**, i.e. exactly when the
-underlying semantic task gets harder. Causal patching shows the information is
-**really used** and physically **routes from the sink-argument token (layers
-0–11) to the last token (layers 19–31)**. In the taint setting the model
-**demonstrably never incorporates sanitization** — behavior and latent state fail
-together with zero lead time, and patching the sanitizer site has zero causal
-effect.
+On **synthetic** programs, both `deepseek-coder` models linearly encode
+**variable binding** and **def-use structure** in a way no surface cue can
+explain: on token-identical program pairs the probe rises from a hard 0.500
+floor to a ~0.98 mid-layer peak, replicated at both scales at the same relative
+depth. That representation is **built in the first few blocks, held through the
+middle, and shed near the output**; it is **robust to inert length and
+formatting** but **collapses under scope-shadowing interference and control-flow
+flattening**, i.e. exactly when the underlying semantic task gets harder. Causal
+patching shows the information is **really used** and physically **routes from
+the sink-argument token (layers 0–11) to the last token (layers 19–31)**. The
+probes **transfer to real Python (E8)** — ~0.90 accuracy / 0.98 AUC on
+CodeSearchNet functions against a 0.67 surface baseline, with the same
+rise-to-an-early-middle-peak-then-decline layer profile — so none of this is a
+generator artifact; what real code cannot do is *isolate* the semantic component,
+since natural identifiers are themselves predictive and no stratum there pins the
+surface floor to chance. Finally, **early warning is scale-dependent (E6)**: the
+6.7b model's taint state fails before its output on 66% of behavioral failures
+(~2.3 prefixes early, layer 7), while the 1.3b model shows no lead at any layer
+— the previously reported "zero lead in both models" was an artifact of probing
+layer 0, where taint has not yet been computed.
 
 ## Open items before the paper
 
-1. **E4** — done: fixed and **replicated across both scales** (sibling-guard
-   `indent_matched` control; hidden 0.92 vs surface 0.68 on the hard stratum;
-   surface baseline numerically identical across models). Optional polish:
-   re-anchor on the guard variable / statement target instead of the span's
-   trailing literal (a CPU-only stage-20 re-run).
-2. **E9 (1.3b)** — **re-run stage 31**; the 1.3b obfuscation table predates the
-   corpus regeneration. Activations already exist, so it is a CPU-only run.
-   Numbers should be unchanged (E9 uses the seed-stable binding/def-use probes),
-   but the file should be made current.
-3. **E6** — re-run with a **layer sweep**; the layer-0 null is under-powered in
-   both models (leads of 0.0 at 6.7b vs −2.83 at 1.3b), given E7's layer
-   migration.
-4. **E8** — real-code (CodeSearchNet) transfer not yet run.
-5. **E1 lexical fits** did not converge (`converged = False`, AUC logged as 0.000,
-   a multi-class reporting artifact); re-run with `--max-iter 2000` so stage 20
-   writes its manifest cleanly.
-6. Report E5/E9 at **peak/per-layer** rather than layer-averaged — the averages
+All nine experiments have run at both scales; nothing is blocked. What remains
+is analysis and reporting work, not compute.
+
+1. **Context-matched pairs on real code** — the highest-value follow-up: it would
+   upgrade E8 from a transfer check to a like-for-like replication of E2's
+   isolation result, and would settle whether the low `same_name_diff_binding`
+   recall is a threshold artifact or a real gap. Build them by *mutating* real
+   functions
+   rather than generating programs: given a def of `v` at line *i* and a later
+   use at line *k*, rename the target of an interposed assignment at *j*
+   (*i*<*j*<*k*) from `w` to `v`. The two sources are token-identical except that
+   one token, the anchors and their distance are unchanged, and the (def *i*,
+   use *k*) label flips — so the surface baseline is pinned to 0.500 exactly as
+   in E2. Requirements: `w` and `v` must tokenize to the same length (single
+   token is cleanest); the mutated token must sit outside the ±3-token anchor
+   windows; and `v` must be used somewhere in (*i*, *j*] so def *i* stays live in
+   the DFG in both variants (the synthetic generator's "early use" line does this
+   job). Ground truth is rebuilt per variant, exactly as E5/E9 already do.
+   **Measured yield on the current corpus: 150 candidate sites across 61 of the
+   200 functions (30%)** before the tokenizer length constraint — comparable to
+   the 80 synthetic pairs. `_Renamer` in `src/data/obfuscation.py` is the
+   transform to reuse. Caveat: this produces *mutated* real code (the rename can
+   break runtime behavior, which is irrelevant for static ground truth but means
+   the corpus is no longer pristine CodeSearchNet), and if identifiers have to be
+   normalized to single tokens to lift yield, real identifier distribution is
+   traded for real structure — worth reporting both arms.
+2. **E8 stratum sizes** — `static_probes.csv` records per-stratum *accuracy* but
+   not per-stratum *n*. The `same_name_diff_binding` count on real code must be
+   measured before the E8 negative result goes in a paper: if that stratum is
+   only a handful of pairs, the claim weakens from "fails" to "underpowered".
+   A builder-side count on `csn_python_200.jsonl`, no GPU needed.
+3. **E6 layer-7 robustness** — the headline (21/32 early, +2.3 steps) rests on a
+   single calibration split (`calib_frac=0.3`, seed 42) and one threshold per
+   layer. Re-run across a few seeds to get a CI on the early-warning *rate*, not
+   just on `mean_lead`.
+4. **E6 reporting** — prefer the `latent first / model wrong` rate over the
+   shipped `frac_positive_lead`+`mean_lead` columns, which condition on
+   `n_both_fail` and so change denominator across layers. Consider adding that
+   ratio to the summary CSV in `src/experiments/behavioral_leadtime.py`.
+5. Report E5/E9 at **peak/per-layer** rather than layer-averaged — the averages
    hide the strongest findings (e.g. rename fools layer 0 but not layer 11).
-7. **Housekeeping:** the 6.7b `behavioral_leadtime` / `causal_patching` table CSVs
-   carry an old (Jul-19) timestamp though their stages re-ran later; content is
-   valid (the taint corpus is seed-stable and untouched by the E4 edit), but
-   re-running stage 40/50 for 6.7b will refresh them so every asset traces to one
-   generation.
+6. **E4 optional polish** — re-anchor on the guard variable / statement target
+   instead of the span's trailing literal (a CPU-only stage-20 re-run).
+7. **E1 lexical AUC is logged as 0.000** — a multi-class reporting artifact, not
+   a fit failure (all lexical fits now report `converged = True`). Worth emitting
+   `NaN` instead so the column isn't misread.
+8. **Provenance note for E6:** the layer sweep ran under the `uq` env
+   (Python 3.10 / sklearn 1.7.2) against probe checkpoints pickled by the older
+   `semflow` env (Python 3.11 / sklearn 1.9.0), via `micromamba run -n semflow`.
+   E7's patching numbers predate that move. Same data, same seeds, but if a
+   reviewer asks for exact reproducibility both stages should be re-run in one
+   environment.
