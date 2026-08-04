@@ -1,0 +1,33 @@
+{
+  "stage": "20_run_probes",
+  "timestamp": "20260804_091939",
+  "git_sha": "541d86f",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/20_run_probes.py",
+    "--activations",
+    "results/activations/deepseek-coder-6.7b/core",
+    "--tasks",
+    "taint_state",
+    "--output",
+    "results/probes/deepseek-coder-6.7b/core_taint",
+    "--no-tables",
+    "--max-iter",
+    "2000"
+  ],
+  "args": {
+    "activations": "results/activations/deepseek-coder-6.7b/core",
+    "output": "results/probes/deepseek-coder-6.7b/core_taint",
+    "tasks": "['taint_state']",
+    "max_samples": "20000",
+    "max_iter": "2000",
+    "n_jobs": "-1",
+    "cv_folds": "5",
+    "seed": "42"
+  },
+  "wall_time_s": 343.6,
+  "extra": {
+    "n_rows": 10,
+    "sanity_problems": []
+  }
+}
