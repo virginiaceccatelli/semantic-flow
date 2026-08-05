@@ -312,12 +312,39 @@ def _jlens_controldep_assets(csv: Path):
     if summary.empty:
         return
 
-    for stratum, sub in summary.groupby("stratum"):
+    if "comparison" not in summary.columns:          # pre-control runs
+        summary = summary.assign(comparison="control_dep")
+
+    for stratum, sub in summary[summary.comparison == "control_dep"].groupby("stratum"):
         fig, ax = plt.subplots(figsize=(8, 4.5))
         _lens_plot(ax, sub, "accuracy", 0.5)
         ax.set_ylabel("P(dependent target ranked above non-dependent)")
         ax.set_title(f"E10-3 control dependence, {stratum} — {tag}")
         _save(fig, f"jlens_controldep_{stratum}_{tag}")
+
+    # The dissociation figure: the test next to its positive controls, same
+    # anchors and same readout. A flat test line is only informative if the
+    # control lines rise above chance.
+    pooled = summary[summary.stratum == "all"]
+    if pooled["comparison"].nunique() > 1:
+        jl = pooled[pooled.lens == "jlens"]
+        fig, ax = plt.subplots(figsize=(8, 4.5))
+        styles = {"control_dep": ("-", PALETTE[3]), "guard_var": ("--", PALETTE[2]),
+                  "next_ident": (":", PALETTE[8])}
+        for comparison, sub in jl.groupby("comparison"):
+            ls, color = styles.get(comparison, ("-", PALETTE[4]))
+            sub = sub.sort_values("layer")
+            label = ("control dependence (THE TEST)" if comparison == "control_dep"
+                     else f"{comparison} (positive control)")
+            ax.plot(sub["layer"], sub["accuracy"], marker="o", markersize=4,
+                    linewidth=1.8, label=label, color=color, linestyle=ls)
+        ax.axhline(0.5, color="gray", linewidth=0.8, linestyle="--")
+        ax.set_xlabel("Layer")
+        ax.set_ylabel("P(correct candidate ranked first)")
+        ax.set_title(f"E10-3: is the null a dissociation or a dead readout? — {tag}")
+        ax.legend(fontsize=8, framealpha=0.7)
+        sns.despine(ax=ax)
+        _save(fig, f"jlens_controldep_dissociation_{tag}")
 
 
 @app.command()

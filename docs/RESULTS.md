@@ -21,7 +21,7 @@ Status legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b)
 | E3 def-use + distance | def→use edges | ● | ● | **Positive** — decodable, mild distance decay |
 | E4 control dep | guard→statement | ● | ● | **Positive but surface-heavy** — hidden beats the hard stratum (0.92 vs 0.68), but control dep is largely locally decodable; replicates across scale |
 | E5 context degradation | robustness to filler | ● | ● | Survives length; collapses under interference |
-| E6 lead time | latent vs behavioral failure | ◐ | ● | ⚠️ **Not established** — E10-2 shows the metric tracks readout *unreliability* (r = −0.905) and a random readout beats the probe; 1.3b's "no lead" is arithmetically forced. See open item 0 |
+| E6 lead time | latent vs behavioral failure | ● | ● | **Negative, and diagnosed.** No early warning: probe excess −0.010 / −0.023 vs a *no-model position baseline* at +0.113 / +0.080. The original positive was measured on a constant responder (balanced acc 0.500) |
 | E7 causal patching | is it *used*? | ● | ● | **Positive** — information routes across layers; sanitizer site is causally inert |
 | E8 real code | CodeSearchNet transfer | ● | ● | **Transfers** — ~0.90 acc / 0.98 AUC vs 0.67 surface, same mid-early layer peak; but real code can't isolate the semantic component |
 | E9 obfuscation | semantics-preserving edits | ◐ | ● | Robust to renaming mid-layer; breaks on flatten |
@@ -31,14 +31,18 @@ All ten experiments have now run at both scales. **E8** confirms the probes
 transfer to real Python with the same layer signature, and **E4 is valid and
 replicates across scale** (its hard-negative control was rebuilt).
 
-Two headline changes came out of **E10 (J-lens)**, the newest track. First, a
-positive one: the Jacobian-lens method *transfers to code models* — it passes
-its closed-form correctness check exactly and recovers next-token content the
-logit lens cannot. Second, a corrective one: running it against E6's data
-supplied the random-readout floor E6 never had, and **E6's early-warning claim
-does not survive it**. E10's own two experiments are both null: neither taint
-state nor control dependence shows a verbalizable signature. Read E6 and E10
-together.
+**E10 (J-lens)** produced two changes. A positive one: the Jacobian-lens method
+*transfers to code models* — it passes its closed-form correctness check exactly
+and recovers next-token content the logit lens cannot. And a corrective one: it
+supplied the floors E6 never had, which dissolved E6's early-warning claim
+entirely. E6 has since been re-run with a working behavioural signal and three
+floors; **there is no early warning in either model, and a baseline using no
+model at all scores higher on the metric than a 99%-accurate probe.**
+
+Read together, E6, E7 and E10 converge on one picture: **the model computes
+program semantics, causally uses some of them, and reports none of them.** The
+taint state is decoded correctly at the exact moment the output is wrong (E6),
+the sanitizer site is causally inert (E7), and nothing is verbalizable (E10).
 
 ---
 
@@ -306,93 +310,95 @@ through the sanitization site at all — which sets up, and is confirmed by, E6.
 
 ---
 
-## E6: early warning — superseded by E10-2, do not cite as it stands
-
-> ⚠️ **Read this section together with E10-2 below.** Everything reported here
-> is reproducible and was reproduced exactly (the layer-7 probe again fails
-> first on 21/32). But E10-2 added the control this experiment never had — a
-> norm-matched **random** readout — and that floor scores **0.812** at layer 7
-> against the probe's 0.656, while across 40 (layer, readout) cells the
-> early-warning rate correlates **−0.905** with how often the readout errs.
-> Separately, the 1.3b arm's "no lead at any layer" is arithmetically forced:
-> that model answers wrongly at the **first** evaluated prefix on 100% of test
-> programs, so no readout can precede it. **The scale-split claim below is not
-> currently supported**; see open item 0 for what would rebuild it. The section
-> is kept as the record of what was measured.
+## E6: there is no early warning — and a no-model baseline "detects" more of it
 
 E6 asks whether the taint probe's internal state degrades *before* the model's
-answer goes wrong (RQ4). The earlier null — "latent and behavioral failure are
-perfectly coupled" — was **an artifact of probing layer 0 only**. Sweeping all
-probed layers changes the answer for the main-results model.
+answer goes wrong (RQ4). The answer, once the experiment is given a working
+behavioural signal and three floors, is **no** — and the way the original
+positive result arose is the more useful finding.
 
-**How to read the numbers.** `t_failure` is the first prefix where the model's
-own forced choice goes wrong; it depends only on the model, so it is **identical
-across every layer** of a given model — only `t_latent` (the probe) moves. The
-right early-warning statistic is therefore: *of the examples where the model
-eventually fails, on how many did the probe fail first?* The shipped
-`mean_lead` / `frac_positive_lead` columns condition on `n_both_fail` (both
-signals failing), so they silently change denominator across layers; the tables
-below break that out.
+### The original result was measured on a constant responder
 
-**6.7b — the model answers wrong on 32 of 70 test programs.** Of those 32:
+Under the bare prompt (`is the current value tainted?`) **both models answered
+the same token to every prefix of every program**:
 
-| Layer | Probe acc | Latent **first** | Simultaneous | Latent later | Probe never wrong | Mean lead |
-|---:|---:|---:|---:|---:|---:|---:|
-| −1 | 0.75 | 32 | 0 | 0 | 0 | +3.53 |
-| 0 | 1.00 | 0 | **32** | 0 | 0 | 0.00 |
-| 3 | 1.00 | 4 | 0 | 0 | 28 | +1.00 |
-| **7** | 1.00 | **21** | 0 | 5 | 6 | **+2.31** |
-| 11 | 1.00 | 7 | 12 | 0 | 13 | +0.58 |
-| 15 | 1.00 | 16 | 6 | 0 | 10 | +2.59 |
-| 19 | 1.00 | 16 | 0 | 0 | 16 | +3.56 |
-| 23 | 1.00 | 9 | 4 | 0 | 19 | +2.15 |
-| 31 | 1.00 | 9 | 0 | 0 | 23 | +3.11 |
+| Model | answer | raw accuracy | **balanced accuracy** |
+|---|---|---:|---:|
+| 1.3b | always "no" | 0.220 | **0.500** |
+| 6.7b | always "yes" | **0.780** | **0.500** |
 
-At **layer 7 the latent state fails first on 21 of 32 behavioral failures (66%),
-a mean of 2.3 prefixes early**. That is a genuine early-warning signal, and it is
-invisible at layer 0, where all 32 failures are *exactly* simultaneous. The old
-"the model never registers the sanitizer" reading was measuring the wrong depth:
-taint information has barely been built at block 0, so the probe there can only
-mirror the output.
+6.7b's 0.780 is the trap: it is exactly the base rate of `tainted=1`, so the
+signal looks healthy under the check anyone would actually run. Balanced
+accuracy — the floor that catches it — is 0.500 for both.
 
-**1.3b — no early warning at any layer.** The 1.3b model answers wrong on **all
-70** test programs (vs 32 for 6.7b — it is far weaker behaviorally). The
-`latent first` column is **0 at every single layer**; when both fail, the probe
-fails at the same step or later (mean lead −1.5 to −4.3).
+**The two opposite biases produce E6's entire "scale split" mechanically.**
+The generator always emits the taint source on line 2, so `tainted=1` at the
+first evaluable prefix for every program. Therefore:
 
-| Layer | −1 | 0 | 3 | 7 | 11 | 15 | 19 | 23 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Latent first (of 70) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| Mean lead | −3.53 | −2.83 | −2.13 | −1.54 | −2.02 | −3.35 | −1.48 | −4.33 |
+- **1.3b always says "no"** → wrong at the first prefix → `t_failure = 2` on
+  100% of programs → a positive lead is *arithmetically impossible* → the
+  reported "no early warning at any layer".
+- **6.7b always says "yes"** → wrong only where `tainted=0`, i.e. at and after
+  the sanitizer → `t_failure` lands mid-program on exactly the sanitized
+  programs (32 of 70) → any probe erring before the sanitizer scores a "lead"
+  → the reported "66% of failures, +2.3 prefixes".
 
-**So RQ4 gets a scale-dependent answer: early warning appears in the 6.7b model
-and not in the 1.3b one.** It does *not* replicate across scale, which is the
-honest headline. A plausible reading — consistent with E7's layer migration — is
-that the signal requires a taint representation that is both accurate *and*
-distinct from the output computation; 1.3b's is accurate (probe at ceiling) but
-apparently never diverges from what its output head does.
+No model computation entered the behavioural side of either number.
 
-**Two artifacts to exclude when reporting this.**
+### Fixing the prompt: only one variant works, and only on 6.7b
 
-- **Layer −1 is not evidence.** It shows a perfect 32/32 early rate in 6.7b —
-  and an exact mirror image (32/32 *late*, mean −3.53) in 1.3b. The taint probe
-  at the embedding layer is only **0.75 accurate (AUC 0.875)** versus 1.00 at
-  every layer ≥0. A probe that is simply wrong a lot goes wrong early on
-  everything; this is a false positive for early warning, not a finding. The
-  identical ±3.53 magnitude across two different models confirms it is driven by
-  the lexical content both embeddings share, not by either model's computation.
-- **The denominator shrinks with depth.** `Probe never wrong` climbs from 0 to
-  23 across 6.7b's layers: at deep layers the probe is *right* on most examples
-  where the model fails. That is not early warning either — it means the latent
-  state stayed correct while behavior broke. Counting it as "no lead" (as the
-  table above does) is the conservative choice; the `mean_lead` column, which
-  drops those examples entirely, is why late layers look deceptively strong
-  (layer 31's +3.11 rests on 9 examples).
+`scripts/diagnose_taint_prompt.py` sweeps four prompts. Only **few-shot
+demonstrations *and* naming the variable** (`is the value of \`v2\` tainted?`)
+lifts 6.7b out of degeneracy — balanced accuracy **0.857**. Neither ingredient
+alone does anything. **1.3b cannot do the task under any prompt** (best
+balanced accuracy 0.581), so lead time is simply unmeasurable there; that is a
+capability result, not a representational one.
 
-Read together, **layer 7 is the defensible result**: probe at ceiling, the
-largest early-warning count (21), and the smallest set of discarded examples (6).
+### With a working signal and three floors: no early warning
 
----
+Stage 40 now reports every readout against an **analytic null** — for a
+readout with per-prefix error rate ε whose errors are independent of the
+model's state, the chance of erring before step *k* is 1−(1−ε)^(k−1). Only
+`early_warning_excess` (observed − null) can support a claim.
+
+| Readout | 6.7b excess | 1.3b excess |
+|---|---:|---:|
+| **`position`** — no model at all, "tainted iff step ≤ 3" | **+0.113** | **+0.080** |
+| `random` — norm-matched random direction | +0.005 … +0.067 | +0.011 |
+| **`probe`** — trained, ~99% accurate | **−0.010** | **−0.023** |
+
+**A baseline that knows nothing but how many lines into the program it is
+scores higher on early warning than a 99%-accurate probe.** The trained probe
+averages *negative* excess in both models; not one of its positive cells
+survives Bonferroni correction (best: 6.7b L15, 4/19 vs null 0.062, p=0.027
+against α=0.0019; 6.7b L31 is a *degraded* probe whose error 0.1718 is within
+0.3% of a constant predictor's 0.1741).
+
+The metric rewards unreliability, not anticipation — which is why the
+uninformative readouts win it.
+
+**The probe is nonetheless reading taint, not depth.** Its per-prefix error is
+0.005–0.027 against the position floor's 0.233 — beating it by 10–50×. The
+position confound (r = −0.57 between depth and label) explains the *random*
+readout's apparent competence, not the probe's.
+
+### What the experiment does show
+
+At most layers `readout_never_wrong` is **19/19 (6.7b)** and **49/49 (1.3b)**:
+on every example where the model answers wrongly, the probe decoded the taint
+state **correctly at every prefix**. The latent state is right while the output
+is wrong.
+
+That converges with **E7**, where patching `sanitizer_def` recovered nothing at
+any layer. Two independent methods — a linear probe and activation patching —
+agree: **the model represents the sanitization and does not route it to the
+answer.** Read together with E10, the pattern across this project is a model
+that computes program semantics, uses some of them, and reports none of them.
+
+*(Figures: `leadtime_{model}.png`. Raw: `behavioral_leadtime{,_summary,_prefixes}_{model}.csv`,
+`behavioral_sanity_{model}.csv`. `scripts/41_leadtime_floors.py` re-applies the
+floors to any stage-40 run without a GPU.)*
+
 
 ## E8: the probes transfer to real code, with the same layer signature
 
@@ -613,11 +619,12 @@ yet finds **no** workspace signature for either taint or control dependence,
 with control dependence flat at chance (0.39–0.52, n=808/cell) at every layer
 where the trained probe reaches AUC 0.999. The picture that emerges is a model
 that **computes and uses** program semantics without holding them in a
-reportable form. Finally, **RQ4 is now open rather than answered**: E10-2 shows
-the early-warning statistic is driven by readout unreliability (r = −0.905), a
-random direction outscores every real readout, and 1.3b's "no lead" is
-arithmetically forced because that model fails at the first evaluated prefix —
-so E6's scale-dependent early-warning claim does not currently stand.
+reportable form. Finally, **RQ4 gets a clear negative**: with a working behavioural signal and
+three floors, the taint probe shows *no* early warning in either model
+(excess −0.010 / −0.023), while a no-model position baseline scores +0.113 /
++0.080 on the same metric. What the probe does show is that the taint state is
+decoded **correctly** on every prefix of every example where the model answers
+wrongly — the representation is right while the output is wrong.
 
 ## Open items before the paper
 
@@ -625,19 +632,17 @@ All ten experiments have run at both scales; nothing is blocked on compute.
 **Item 0 is new and supersedes the old E6 items** — it is a correctness problem,
 not a reporting one.
 
-0. **E6's early-warning claim needs to be withdrawn or rebuilt (highest
-   priority).** E10-2 established that `latent_first` rate is ~fully explained
-   by how often the readout errs (r = −0.905 across 40 cells), that a
-   norm-matched **random** readout scores 0.634 mean vs the probe's 0.354, and
-   that 1.3b's zero-lead is structural (t_failure = 2 on 100% of programs, the
-   first evaluable prefix). Concretely: (a) add the random-readout floor to
-   stage 40 and report every lead against it; (b) condition on readout accuracy
-   — compare only readouts matched on per-prefix error rate, or report lead
-   *given* the readout was right up to t−1; (c) re-generate taint programs so
-   the behavioural failure point is not pinned to the first prefix, otherwise
-   1.3b can never show a lead regardless of its representations. Until then
-   `RESULTS.md`'s RQ4 verdict should read "not established", and E6's
-   layer-7 number should not go in a paper.
+0. ~~**E6's early-warning claim needs to be withdrawn or rebuilt**~~ **DONE.**
+   The prompt was fixed (few-shot + named variable; `scripts/diagnose_taint_prompt.py`
+   documents why both are needed), and stage 40 now ships three floors:
+   balanced-accuracy sanity on the behavioural signal, a norm-matched random
+   readout, a no-model `position` baseline, and an analytic null. Verdict: no
+   early warning in either model. `scripts/41_leadtime_floors.py` re-applies the
+   floors to any stage-40 run without a GPU. **Remaining (optional):** the taint
+   corpus still has depth→label correlation r = −0.57, which is why the *random*
+   readout looks competent; the probe beats the position floor by 10–50× so its
+   result is unaffected, but a re-generated corpus with randomized initial taint
+   state and re-taint transitions would remove the objection entirely.
 
 1. **Context-matched pairs on real code** — the highest-value follow-up: it would
    upgrade E8 from a transfer check to a like-for-like replication of E2's

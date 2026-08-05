@@ -272,8 +272,25 @@ two targets are interchangeable neutral variables. Readout positions `t'`
 are sampled generically from positions after the guard, never at the
 labelled statements, so the lens never sees the labels it is scored against.
 
-Output: `jlens_controldep{,_summary}_{model}.csv`; figures
-`jlens_controldep_{stratum}_{model}.png`.
+**Positive controls (required to read the null).** A flat `control_dep` curve
+alone is only absence of evidence — it cannot separate "control dependence is
+not verbalizable" from "this readout reads nothing at these positions". Two
+controls therefore run at the *same anchors* with the *same* two-alternative
+readout, scored against another variable present in the program:
+
+| `comparison` | ranks | why it should succeed |
+|---|---|---|
+| `guard_var` | the variable the guard tests, vs another present variable | the model has just read it |
+| `next_ident` | the next identifier occurring after the anchor, vs another present variable | pure local continuation, which V2 shows the lens does well |
+
+`next_ident` is the sharp one: its positive is usually the *same* token as
+`control_dep`'s, and only the negative differs (a distant variable rather than
+the sibling guard's target). If `next_ident` succeeds where `control_dep`
+fails, the gap isolates the guard→statement binding rather than the readout.
+
+Output: `jlens_controldep{,_summary}_{model}.csv` (with a `comparison` column);
+figures `jlens_controldep_{stratum}_{model}.png` and
+`jlens_controldep_dissociation_{model}.png`.
 
 ---
 

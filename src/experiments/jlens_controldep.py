@@ -54,7 +54,24 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class GuardCase:
-    """One (guard, dependent target, non-dependent target) comparison."""
+    """One two-alternative ranking read from the lens at a guard anchor.
+
+    `comparison` says what is being tested at that anchor:
+
+      control_dep — THE TEST: dependent statement's target vs an
+                    `indent_matched` one's. Chance 0.5 by construction.
+      guard_var   — POSITIVE CONTROL: the variable the guard actually tests
+                    vs another variable present in the program. The model has
+                    just read this variable, so a working readout must rank it
+                    first. Same anchor, same candidate type, same two-way form.
+      next_ident  — POSITIVE CONTROL: the next identifier that literally
+                    occurs after the anchor vs another present variable.
+
+    The controls exist because a null on `control_dep` alone is only absence of
+    evidence: it cannot distinguish "control dependence is not verbalizable"
+    from "this readout reads nothing at these positions". If the controls
+    succeed where `control_dep` fails, the null becomes a dissociation.
+    """
 
     example_id: str
     guard_anchor: int
@@ -63,6 +80,33 @@ class GuardCase:
     negative_stratum: str          # "indent_matched" (hard) | "non_dependent"
     positive_distance: int
     negative_distance: int
+    comparison: str = "control_dep"
+
+
+def _name_occurrences(tree: ast.AST) -> list[tuple[int, int, str]]:
+    """Every `Name` load/store in source order — (line, col, name)."""
+    return sorted(
+        (n.lineno, n.col_offset, n.id)
+        for n in ast.walk(tree) if isinstance(n, ast.Name)
+    )
+
+
+def _guard_test_var(occurrences, guard_span, candidates: set[str]) -> Optional[str]:
+    """The variable the guard expression tests, if it is a scoreable candidate."""
+    l0, c0, l1, c1 = guard_span
+    for line, col, name in occurrences:
+        if (line, col) >= (l0, c0) and (line, col) <= (l1, c1) and name in candidates:
+            return name
+    return None
+
+
+def _next_identifier(occurrences, guard_span, candidates: set[str]) -> Optional[str]:
+    """The first identifier occurring after the guard expression ends."""
+    _, _, l1, c1 = guard_span
+    for line, col, name in occurrences:
+        if (line, col) > (l1, c1) and name in candidates:
+            return name
+    return None
 
 
 def _stmt_target_names(tree: ast.AST) -> dict[tuple, str]:
@@ -110,6 +154,11 @@ def build_guard_cases(
     if not collector.guards:
         return []
     targets = _stmt_target_names(tree)
+    occurrences = _name_occurrences(tree)
+    # Negatives for the positive controls are drawn from names actually present
+    # in the program, matching how both control_dep candidates are present —
+    # otherwise the controls would be easier for an irrelevant reason.
+    present = sorted({n for _, _, n in occurrences if n in candidate_names})
 
     def anchor_of(span: tuple) -> Optional[int]:
         aligned = aligner.align("", "stmt", span[0], span[1], span[2], span[3])
@@ -152,7 +201,26 @@ def build_guard_cases(
                     positive_name=pos_name, negative_name=neg_name,
                     negative_stratum=stratum,
                     positive_distance=pos_dist, negative_distance=neg_dist,
+                    comparison="control_dep",
                 ))
+
+        # ── positive controls at the SAME anchor ─────────────────────────────
+        for comparison, pos_of in (
+            ("guard_var", _guard_test_var(occurrences, guard["expr"], candidate_names)),
+            ("next_ident", _next_identifier(occurrences, guard["expr"], candidate_names)),
+        ):
+            if pos_of is None:
+                continue
+            alternatives = [n for n in present if n != pos_of]
+            if not alternatives:
+                continue
+            cases.append(GuardCase(
+                example_id=example_id, guard_anchor=g_anchor,
+                positive_name=pos_of, negative_name=rng.choice(alternatives),
+                negative_stratum="present_in_program",
+                positive_distance=0, negative_distance=0,
+                comparison=comparison,
+            ))
     return cases
 
 
@@ -269,6 +337,7 @@ def run_jlens_controldep(
                         "example_id": case.example_id,
                         "layer": layer,
                         "lens": kind,
+                        "comparison": case.comparison,
                         "stratum": case.negative_stratum,
                         "positive_name": case.positive_name,
                         "negative_name": case.negative_name,
@@ -286,20 +355,30 @@ def run_jlens_controldep(
 
 
 def summarize(df: pd.DataFrame) -> pd.DataFrame:
-    """Per (layer, lens, stratum) accuracy — chance is 0.5 by construction."""
+    """Per (layer, lens, comparison, stratum) accuracy — chance is 0.5 throughout.
+
+    Read `comparison="control_dep"` against `comparison="guard_var"` /
+    `"next_ident"`: those are the positive controls, measured at the same
+    anchors with the same readout. A `control_dep` null is only informative if
+    the controls clear chance — otherwise the readout reads nothing anywhere
+    and the experiment is uninformative rather than negative.
+    """
     if df.empty:
         return pd.DataFrame()
-    grouped = (df.groupby(["layer", "lens", "stratum"])
+    if "comparison" not in df.columns:          # pre-control runs
+        df = df.assign(comparison="control_dep")
+    keys = ["layer", "lens", "comparison"]
+    grouped = (df.groupby(keys + ["stratum"])
                  .agg(accuracy=("correct", "mean"),
                       mean_margin=("margin", "mean"),
                       n=("correct", "size"))
                  .reset_index())
-    pooled = (df.groupby(["layer", "lens"])
+    pooled = (df.groupby(keys)
                 .agg(accuracy=("correct", "mean"),
                      mean_margin=("margin", "mean"),
                      n=("correct", "size"))
                 .reset_index())
     pooled["stratum"] = "all"
     return pd.concat([grouped, pooled], ignore_index=True).sort_values(
-        ["layer", "lens", "stratum"]
+        keys + ["stratum"]
     )

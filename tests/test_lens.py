@@ -185,8 +185,9 @@ def _aligner(source: str) -> TokenAligner:
 
 
 def test_guard_cases_pair_dependent_against_indent_matched():
-    cases = build_guard_cases(SIBLING_GUARDS, _aligner(SIBLING_GUARDS),
-                              "ex1", candidate_names={"a", "b"})
+    cases = [c for c in build_guard_cases(SIBLING_GUARDS, _aligner(SIBLING_GUARDS),
+                                          "ex1", candidate_names={"a", "b"})
+             if c.comparison == "control_dep"]
     assert cases, "sibling-guard program should yield comparisons"
     assert all(c.positive_name != c.negative_name for c in cases)
     # the two guard bodies sit at equal depth, so negatives are the hard kind
@@ -197,8 +198,9 @@ def test_guard_cases_pair_dependent_against_indent_matched():
 
 def test_guard_cases_respect_candidate_vocabulary():
     """Targets with no single-token lens vector cannot be scored."""
-    cases = build_guard_cases(SIBLING_GUARDS, _aligner(SIBLING_GUARDS),
-                              "ex1", candidate_names={"a"})
+    cases = [c for c in build_guard_cases(SIBLING_GUARDS, _aligner(SIBLING_GUARDS),
+                                          "ex1", candidate_names={"a"})
+             if c.comparison == "control_dep"]
     assert cases == []          # 'b' excluded, so no valid pair remains
 
 
@@ -207,16 +209,46 @@ def test_guard_cases_empty_without_guards():
     assert build_guard_cases(src, _aligner(src), "ex", {"a"}) == []
 
 
-def test_controldep_summary_reports_pooled_and_per_stratum():
+def test_positive_controls_are_emitted_at_the_same_anchor():
+    """A control_dep null is only a dissociation if these clear chance."""
+    cases = build_guard_cases(SIBLING_GUARDS, _aligner(SIBLING_GUARDS),
+                              "ex1", candidate_names={"a", "b", "n"})
+    by = {c.comparison for c in cases}
+    assert {"control_dep", "guard_var", "next_ident"} <= by
+    guard_anchors = {c.guard_anchor for c in cases if c.comparison == "control_dep"}
+    for c in cases:
+        if c.comparison != "control_dep":
+            assert c.guard_anchor in guard_anchors      # same read position
+            assert c.positive_name != c.negative_name
+            assert c.negative_stratum == "present_in_program"
+    # the guard tests `n`, so that is the variable the readout must rank first
+    assert {c.positive_name for c in cases if c.comparison == "guard_var"} == {"n"}
+
+
+def test_controldep_summary_separates_test_from_positive_controls():
+    df = pd.DataFrame([
+        {"layer": 3, "lens": "jlens", "comparison": "control_dep",
+         "stratum": "indent_matched", "margin": 1.0, "correct": True},
+        {"layer": 3, "lens": "jlens", "comparison": "control_dep",
+         "stratum": "indent_matched", "margin": -1.0, "correct": False},
+        {"layer": 3, "lens": "jlens", "comparison": "guard_var",
+         "stratum": "present_in_program", "margin": 2.0, "correct": True},
+    ])
+    out = cd_summarize(df)
+    test = out[(out.comparison == "control_dep") & (out.stratum == "all")]
+    ctrl = out[(out.comparison == "guard_var") & (out.stratum == "all")]
+    assert test["accuracy"].iloc[0] == pytest.approx(0.5)   # at chance
+    assert ctrl["accuracy"].iloc[0] == pytest.approx(1.0)   # control succeeds
+
+
+def test_controldep_summary_tolerates_pre_control_runs():
+    """Older CSVs have no `comparison` column and must still summarize."""
     df = pd.DataFrame([
         {"layer": 3, "lens": "jlens", "stratum": "indent_matched",
          "margin": 1.0, "correct": True},
-        {"layer": 3, "lens": "jlens", "stratum": "indent_matched",
-         "margin": -1.0, "correct": False},
     ])
     out = cd_summarize(df)
-    assert set(out["stratum"]) == {"indent_matched", "all"}
-    assert out[out["stratum"] == "all"]["accuracy"].iloc[0] == pytest.approx(0.5)
+    assert set(out["comparison"]) == {"control_dep"}
 
 
 # ── E6 floors: constant-responder detection + analytic null ──────────────────
