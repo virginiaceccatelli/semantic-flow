@@ -132,6 +132,38 @@ class RandomReadout:
         return np.asarray(H, dtype=np.float32) @ self.w
 
 
+class PositionReadout:
+    """No-model floor: predict taint from *depth into the program* alone.
+
+    The generator's taint state decays with depth (a value is tainted until it
+    is sanitized, and sanitizers sit near the end), so `step_index` alone
+    predicts the label well — measured r = -0.57, and "tainted iff step <= 3"
+    reaches balanced accuracy 0.795 on the synthetic corpus. A hidden-state
+    readout that does not beat this is reading position, not taint.
+
+    This is the taint-task analogue of the surface-shortcut baseline that E2/E3
+    use (`METHODS.md` §7): same decision-rule shape, no model in the loop.
+    """
+
+    def __init__(self):
+        self.k = 3
+
+    def fit(self, step_indices: np.ndarray, labels: np.ndarray) -> "PositionReadout":
+        best_bacc = -1.0
+        for k in range(1, int(step_indices.max(initial=1)) + 1):
+            preds = (step_indices <= k).astype(int)
+            pos, neg = labels == 1, labels == 0
+            if not pos.any() or not neg.any():
+                continue
+            bacc = 0.5 * (preds[pos].mean() + (1 - preds[neg]).mean())
+            if bacc > best_bacc:
+                best_bacc, self.k = bacc, k
+        return self
+
+    def predict(self, step_indices: np.ndarray) -> np.ndarray:
+        return (np.asarray(step_indices) <= self.k).astype(int)
+
+
 def _prefix_records(example, model, tokenizer, layers, device, max_length=2048) -> list[dict]:
     """Per line-prefix: hidden state at every layer, truth, and the model's answer."""
     line_labels = {d["line"]: d for d in example.metadata["line_labels"]}
@@ -146,6 +178,7 @@ def _prefix_records(example, model, tokenizer, layers, device, max_length=2048) 
         cache = extract_hidden_states(model, ids, layer_indices=list(layers))
         steps.append({
             "t": t,
+            "step_index": len(steps) + 1,      # 1-based depth, for PositionReadout
             "truth": int(line_labels[t]["tainted"]),
             "hidden": {L: cache.get(L)[-1].float().numpy() for L in layers},
             "model_says": int(_model_says_tainted(model, tokenizer, ids, device)),
@@ -204,6 +237,10 @@ def run_behavioral_leadtime(
     y_calib = np.array([s["truth"] for s in calib_steps])
     d_model = len(calib_steps[0]["hidden"][layers[0]])
     randoms = {L: RandomReadout(d_model, seed=seed + L) for L in layers}
+    position = PositionReadout().fit(
+        np.array([s["step_index"] for s in calib_steps]), y_calib)
+    logger.info("Position-only floor calibrated: predict tainted iff step_index <= %d",
+                position.k)
 
     thresholds: dict[tuple[int, str], float] = {}
     for L in layers:
@@ -226,6 +263,7 @@ def run_behavioral_leadtime(
         t_failure = int(steps[int(np.argmax(model_wrong))]["t"]) if model_wrong.any() else None
         failure_index = int(np.argmax(model_wrong)) + 1 if model_wrong.any() else None
 
+        step_idx = np.array([s["step_index"] for s in steps])
         for L in layers:
             H = np.stack([s["hidden"][L] for s in steps])
             preds = {}
@@ -234,6 +272,9 @@ def run_behavioral_leadtime(
                                   >= thresholds[(L, "probe")]).astype(int)
             preds["random"] = (randoms[L].score(H)
                                >= thresholds[(L, "random")]).astype(int)
+            # No-model floor; identical at every layer by construction, which
+            # is itself the tell that it uses nothing from the model.
+            preds["position"] = position.predict(step_idx)
 
             row = {
                 "example_id": ex.example_id, "layer": L, "n_steps": len(steps),
@@ -278,7 +319,7 @@ def run_behavioral_leadtime(
             "not interpretable. Fix the prompt before using these numbers.",
             behaviour["says_tainted_rate"].iloc[0], behaviour["balanced_accuracy"].iloc[0])
 
-    summary = summarize(df)
+    summary = summarize(df, prefix_df)
     summary.to_csv(output_dir / "behavioral_leadtime_summary.csv", index=False)
     logger.info("E6 summary:\n%s", summary.to_string(index=False))
     return df
@@ -307,23 +348,44 @@ def behavioural_sanity(prefix_df: pd.DataFrame) -> pd.DataFrame:
     }])
 
 
-def summarize(df: pd.DataFrame) -> pd.DataFrame:
+def summarize(df: pd.DataFrame, prefix_df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
     """Early-warning rate per (layer, readout), against the analytic null.
 
     Denominator is fixed: of the examples where the model eventually fails, on
     how many did the readout fail first. `early_warning_excess` is the only
     column that can support a claim — the raw rate cannot, because it rises
     with the readout's error rate whether or not it carries information.
+
+    Two columns exist to stop a row being read as a result when it is not:
+
+    `constant_readout` — the readout predicted a single class everywhere, so
+        its error rate is just the base rate and its early-warning number is
+        arithmetic, not measurement. Degenerate rows are identical across
+        layers and readouts, which is the giveaway. **Drop these rows.**
+    `beats_position_floor` — whether the readout is more accurate than the
+        no-model `position` baseline. A readout that is not has shown only
+        that hidden states encode depth into the program.
     """
     if df.empty:
         return pd.DataFrame()
     kinds = [c[len("t_latent_"):] for c in df.columns if c.startswith("t_latent_")]
+
+    constant: dict[tuple, bool] = {}
+    if prefix_df is not None and not prefix_df.empty:
+        for (layer, ), sub in prefix_df.groupby(["layer"]):
+            for kind in kinds:
+                col = f"{kind}_says"
+                if col in sub.columns:
+                    constant[(layer, kind)] = sub[col].nunique(dropna=True) <= 1
+
     rows = []
     for layer, sub in df.groupby("layer"):
         failed = sub[sub["model_ever_wrong"]]
+        if failed.empty:
+            continue
+        pos_err = (float(sub["error_rate_position"].mean())
+                   if "error_rate_position" in sub.columns else np.nan)
         for kind in kinds:
-            if failed.empty:
-                continue
             eps = float(sub[f"error_rate_{kind}"].mean())
             null = float(np.mean([
                 analytic_null_rate(eps, k) for k in failed["failure_index"]
@@ -337,6 +399,9 @@ def summarize(df: pd.DataFrame) -> pd.DataFrame:
                 "early_warning_rate": observed,
                 "analytic_null": null,
                 "early_warning_excess": observed - null,
+                "constant_readout": bool(constant.get((layer, kind), False)),
+                "beats_position_floor": (bool(eps < pos_err)
+                                         if np.isfinite(pos_err) else None),
                 "readout_never_wrong": int(failed[f"t_latent_{kind}"].isna().sum()),
                 "mean_lead": float(both[f"lead_{kind}"].mean()) if len(both) else np.nan,
             })

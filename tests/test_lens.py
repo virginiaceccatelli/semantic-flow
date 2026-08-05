@@ -288,3 +288,46 @@ def test_random_readout_is_deterministic_and_unit_norm():
     np.testing.assert_allclose(a.w, b.w)
     assert np.linalg.norm(a.w) == pytest.approx(1.0, rel=1e-5)
     assert a.score(np.ones((3, 64))).shape == (3,)
+
+
+def test_position_readout_is_the_no_model_floor():
+    """Taint decays with depth, so step index alone predicts the label well."""
+    from src.experiments.behavioral_leadtime import PositionReadout
+    steps = np.array([1, 2, 3, 4, 5] * 20)
+    labels = (steps <= 3).astype(int)          # exactly the confound's shape
+    pos = PositionReadout().fit(steps, labels)
+    assert pos.k == 3
+    assert (pos.predict(steps) == labels).all()
+
+
+def test_summary_flags_constant_readouts():
+    """A collapsed readout has base-rate error and a meaningless EW number."""
+    df = pd.DataFrame([{
+        "layer": 7, "model_ever_wrong": True, "failure_index": 3, "t_failure": 4,
+        "t_latent_probe": 2, "error_rate_probe": 0.2,
+        "lead_probe": 2, "latent_first_probe": True,
+        "error_rate_position": 0.3,
+    }])
+    prefix = pd.DataFrame([
+        {"layer": 7, "probe_says": 1, "truth": 1},
+        {"layer": 7, "probe_says": 1, "truth": 0},   # never predicts 0
+    ])
+    row = e6_summarize(df, prefix).iloc[0]
+    assert bool(row["constant_readout"])
+    assert bool(row["beats_position_floor"])        # 0.2 < 0.3
+
+
+def test_summary_marks_varying_readout_as_non_constant():
+    df = pd.DataFrame([{
+        "layer": 7, "model_ever_wrong": True, "failure_index": 3, "t_failure": 4,
+        "t_latent_probe": 2, "error_rate_probe": 0.4,
+        "lead_probe": 2, "latent_first_probe": True,
+        "error_rate_position": 0.3,
+    }])
+    prefix = pd.DataFrame([
+        {"layer": 7, "probe_says": 1, "truth": 1},
+        {"layer": 7, "probe_says": 0, "truth": 0},
+    ])
+    row = e6_summarize(df, prefix).iloc[0]
+    assert not bool(row["constant_readout"])
+    assert not bool(row["beats_position_floor"])    # 0.4 > 0.3, reads position
