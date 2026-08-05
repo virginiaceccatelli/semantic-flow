@@ -21,19 +21,24 @@ Status legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b)
 | E3 def-use + distance | def→use edges | ● | ● | **Positive** — decodable, mild distance decay |
 | E4 control dep | guard→statement | ● | ● | **Positive but surface-heavy** — hidden beats the hard stratum (0.92 vs 0.68), but control dep is largely locally decodable; replicates across scale |
 | E5 context degradation | robustness to filler | ● | ● | Survives length; collapses under interference |
-| E6 lead time | latent vs behavioral failure | ◐ | ● | **Split** — 6.7b shows real early warning at mid layers (66% of failures, ~2.3 steps); 1.3b shows none at any layer |
+| E6 lead time | latent vs behavioral failure | ◐ | ● | ⚠️ **Not established** — E10-2 shows the metric tracks readout *unreliability* (r = −0.905) and a random readout beats the probe; 1.3b's "no lead" is arithmetically forced. See open item 0 |
 | E7 causal patching | is it *used*? | ● | ● | **Positive** — information routes across layers; sanitizer site is causally inert |
 | E8 real code | CodeSearchNet transfer | ● | ● | **Transfers** — ~0.90 acc / 0.98 AUC vs 0.67 surface, same mid-early layer peak; but real code can't isolate the semantic component |
 | E9 obfuscation | semantics-preserving edits | ◐ | ● | Robust to renaming mid-layer; breaks on flatten |
-| E10 J-lens | verbalizable vs decodable | ☐ | ☐ | Implemented, not yet run at scale. Machinery validated: the closed-form V1 check (J-lens = logit lens at the last layer, where J is the identity) measures cosine 1.00000 on 1.3b |
+| E10 J-lens | verbalizable vs decodable | ● | ● | **Method transfers; both experiments null.** Lens validated (V1 exact, next-token top-1 0.65 vs 0.05 random) — but taint shows no verbalizable lead beyond a random floor, control dependence sits at chance at every layer. **E10-2 also invalidates E6's early-warning metric** (see below) |
 
-All nine experiments have now run at both scales. **E6**'s previously reported
-"no lead time" null turned out to be an artifact of probing only layer 0: the
-6.7b model does show early warning at mid layers. **E8** confirms the probes
-transfer to real Python with the same layer signature, while making clear what
-a naturalistic corpus can and cannot establish. Both are written up below.
-**E4 is valid and replicates across scale** (its hard-negative control was
-rebuilt).
+All ten experiments have now run at both scales. **E8** confirms the probes
+transfer to real Python with the same layer signature, and **E4 is valid and
+replicates across scale** (its hard-negative control was rebuilt).
+
+Two headline changes came out of **E10 (J-lens)**, the newest track. First, a
+positive one: the Jacobian-lens method *transfers to code models* — it passes
+its closed-form correctness check exactly and recovers next-token content the
+logit lens cannot. Second, a corrective one: running it against E6's data
+supplied the random-readout floor E6 never had, and **E6's early-warning claim
+does not survive it**. E10's own two experiments are both null: neither taint
+state nor control dependence shows a verbalizable signature. Read E6 and E10
+together.
 
 ---
 
@@ -301,7 +306,19 @@ through the sanitization site at all — which sets up, and is confirmed by, E6.
 
 ---
 
-## E6: early warning is real — in the 6.7b model, at mid layers only
+## E6: early warning — superseded by E10-2, do not cite as it stands
+
+> ⚠️ **Read this section together with E10-2 below.** Everything reported here
+> is reproducible and was reproduced exactly (the layer-7 probe again fails
+> first on 21/32). But E10-2 added the control this experiment never had — a
+> norm-matched **random** readout — and that floor scores **0.812** at layer 7
+> against the probe's 0.656, while across 40 (layer, readout) cells the
+> early-warning rate correlates **−0.905** with how often the readout errs.
+> Separately, the 1.3b arm's "no lead at any layer" is arithmetically forced:
+> that model answers wrongly at the **first** evaluated prefix on 100% of test
+> programs, so no readout can precede it. **The scale-split claim below is not
+> currently supported**; see open item 0 for what would rebuild it. The section
+> is kept as the record of what was measured.
 
 E6 asks whether the taint probe's internal state degrades *before* the model's
 answer goes wrong (RQ4). The earlier null — "latent and behavioral failure are
@@ -448,6 +465,130 @@ context-matched control, which this run does not have.
 
 ---
 
+## E10: the J-lens transfers to code models — and both experiments come back null
+
+E1–E9 ask whether a relation can be *read out* of the hidden state by a trained
+probe. E10 asks the stronger question with an **unsupervised** readout built
+from the model's own output head — the Jacobian lens
+([Gurnee, Lindsey et al. 2026](https://transformer-circuits.pub/2026/workspace/index.html)),
+`v_w = J^T(g·W_U[w])` where `J = E[∂h_final/∂h_ℓ]`. A high score means the state
+*disposes the model to say* `w`, which is strictly stronger than being
+decodable. Method: `docs/METHODS.md` §11. Design: `docs/JLENS_PLAN.md`.
+
+### The machinery works, and the method transfers (stage 60)
+
+All required gates passed on both models. Two results matter:
+
+| Validation | 1.3b | 6.7b | Reading |
+|---|---:|---:|---|
+| **V1** J-lens vs logit lens at the last layer | **1.0000** | **1.0000** | `J` is provably the identity there, so this *must* be 1.0 — a closed-form check of the entire gradient path |
+| **V2** next-token top-1 (chance 0.038) | 0.633 (L19) | 0.650 (L27) | the lens reads real content |
+| V2 random floor | 0.000–0.133 | 0.000–0.050 | |
+| **V2 J-lens advantage over logit lens, pre-final layer** | **+0.150** (L−1) | **+0.183** (L19) | the paper's central claim, reproduced in a code model |
+
+The last row is a genuine positive finding: **the Jacobian correction recovers
+content the logit lens cannot, in a code LLM** — the first replication of that
+claim outside natural-language models that this project is aware of. It also
+means the nulls below are *not* "the method doesn't work here".
+
+*(Figures: `jlens_validation_nexttoken_{model}.png`.)*
+
+**One caveat on the gate.** V3 (taint disposition) passed at n=10, which is too
+small to carry weight — its cells are all 0.0 or 1.0. The load-bearing
+validation is V1 (exact) and V2 (n=60, huge margins), not V3.
+
+### E10-2 (taint): null — and it breaks the early-warning metric itself
+
+This was the priority experiment: E6 found early warning in 6.7b and not 1.3b,
+and hypothesized 6.7b's taint state is "distinct from what its output head
+does". Running the J-lens, logit-lens, frozen probe, and a **norm-matched
+random lens** through E6's own stepping gives:
+
+**6.7b — early-warning rate, P(readout wrong first | model wrong), n=32:**
+
+| Layer | J-lens | logit | probe | **random** |
+|---:|---:|---:|---:|---:|
+| 0 | 0.906 | 0.000 | 0.000 | **0.000** |
+| 3 | 0.594 | 0.000 | 0.125 | **0.812** |
+| 7 | 0.000 | 0.000 | 0.656 | **0.812** |
+| 11 | 0.188 | 0.000 | 0.219 | **0.719** |
+| 15 | 0.781 | 0.812 | 0.500 | **1.000** |
+| 19 | 0.000 | 1.000 | 0.500 | **0.906** |
+| 23 | 1.000 | 0.188 | 0.281 | **0.719** |
+| 31 | 0.562 | 0.562 | 0.281 | **0.750** |
+| **mean** | **0.481** | 0.373 | 0.354 | **0.634** |
+
+**A random direction carrying no information produces *more* apparent early
+warning than any real readout.** The J-lens beats its own random floor at only
+3 of 10 layers. There is no verbalizable-taint signal here.
+
+**Why**, and this is the substantive finding: across all 40 (layer, readout)
+cells, early-warning rate is almost perfectly predicted by how *unreliable* the
+readout is —
+
+> **Pearson r = −0.905 (p = 1.1×10⁻¹⁵)**, Spearman −0.907, between
+> "fraction of examples the readout never got wrong" and early-warning rate.
+
+A readout that is wrong often is wrong *early*, mechanically. The statistic
+rewards inaccuracy, not anticipation. `docs/RESULTS.md` already flagged this for
+E6's layer −1; the random control shows it is not a layer −1 quirk but the
+metric's general behaviour.
+
+**This forces a re-reading of E6 (RQ4).** Two problems, both now measurable:
+
+1. **6.7b.** This run reproduces E6's headline exactly — the probe at layer 7
+   fails first on 21/32 (0.656). But the random floor at that same layer is
+   **0.812**. E6's number does not clear a control it was never tested against.
+2. **1.3b.** E6 reports "no early warning at any layer" as evidence for a
+   scale-dependent effect. In fact **the 1.3b model answers wrongly at the very
+   first evaluated prefix (t=2) on 100% of test programs**, so a positive lead
+   is *arithmetically impossible* for any readout — which is why J-lens, logit,
+   probe and random all score exactly 0.000 at every layer. The 1.3b "null" is a
+   floor artifact, not a fact about its representations.
+
+So the E6 scale split is not established: one arm is uncontrolled, the other is
+structurally forced. This is the most consequential thing E10 produced.
+
+*(Figures: `jlens_taint_earlywarning_{model}.png`.)*
+
+### E10-3 (control dependence): a clean, well-powered null
+
+At each guard-expression anchor, does the lens rank a control-dependent
+statement's target variable above an `indent_matched` one's — E4's hard
+negative, a statement in a *sibling* guard's body at the same depth? Chance is
+exactly 0.5, since the two targets are interchangeable neutral variables.
+n = 808 comparisons per cell (SE = 0.018).
+
+| Model | J-lens range across layers | best J-lens cell | logit | random |
+|---|---|---|---|---|
+| 1.3b | 0.457 – 0.517 | 0.517 (L7) | 0.457–0.507 | 0.479–0.509 |
+| 6.7b | 0.387 – 0.510 | 0.510 (L0) | 0.387–0.500 | 0.465–0.511 |
+
+**Not one cell exceeds chance** at Bonferroni-corrected significance in either
+model. The best J-lens result in either model (0.517) is inside the 95% CI of
+chance (±0.034). Meanwhile E4's *trained probe* reaches AUC 0.999 on this same
+relation at mid layers.
+
+That contrast is the point: **control dependence is decodable but shows no
+verbalizable signature** — consistent with the E4 reading that it is largely
+local syntax the model reconstructs on demand rather than a fact it holds in a
+reportable form. The three cells that *are* significant (6.7b L27 logit 0.415,
+L31 J-lens and logit 0.387) sit **below** chance, i.e. the deepest layers
+systematically prefer the *non*-dependent target — a next-token surface bias at
+the readout layers, not evidence of the relation.
+
+*(Figures: `jlens_controldep_indent_matched_{model}.png`.)*
+
+**Honest limit on this null.** It rules out one operationalization, not the
+concept: the lens asks "is the model disposed to *name* this variable", and a
+model could represent control dependence in a reportable form without being
+disposed to emit the dependent statement's target identifier at the guard. E10-2
+is less exposed to this objection — there the candidate tokens are the yes/no
+answer the model actually emits — which is why E10-2's metric finding is the
+more portable result.
+
+---
+
 ## What the results say, in one paragraph
 
 On **synthetic** programs, both `deepseek-coder` models linearly encode
@@ -465,16 +606,38 @@ CodeSearchNet functions against a 0.67 surface baseline, with the same
 rise-to-an-early-middle-peak-then-decline layer profile — so none of this is a
 generator artifact; what real code cannot do is *isolate* the semantic component,
 since natural identifiers are themselves predictive and no stratum there pins the
-surface floor to chance. Finally, **early warning is scale-dependent (E6)**: the
-6.7b model's taint state fails before its output on 66% of behavioral failures
-(~2.3 prefixes early, layer 7), while the 1.3b model shows no lead at any layer
-— the previously reported "zero lead in both models" was an artifact of probing
-layer 0, where taint has not yet been computed.
+surface floor to chance. What these representations are **not** is
+*verbalizable*: the J-lens (E10) reproduces its own validation benchmarks in
+this setting — including recovering next-token content the logit lens cannot —
+yet finds **no** workspace signature for either taint or control dependence,
+with control dependence flat at chance (0.39–0.52, n=808/cell) at every layer
+where the trained probe reaches AUC 0.999. The picture that emerges is a model
+that **computes and uses** program semantics without holding them in a
+reportable form. Finally, **RQ4 is now open rather than answered**: E10-2 shows
+the early-warning statistic is driven by readout unreliability (r = −0.905), a
+random direction outscores every real readout, and 1.3b's "no lead" is
+arithmetically forced because that model fails at the first evaluated prefix —
+so E6's scale-dependent early-warning claim does not currently stand.
 
 ## Open items before the paper
 
-All nine experiments have run at both scales; nothing is blocked. What remains
-is analysis and reporting work, not compute.
+All ten experiments have run at both scales; nothing is blocked on compute.
+**Item 0 is new and supersedes the old E6 items** — it is a correctness problem,
+not a reporting one.
+
+0. **E6's early-warning claim needs to be withdrawn or rebuilt (highest
+   priority).** E10-2 established that `latent_first` rate is ~fully explained
+   by how often the readout errs (r = −0.905 across 40 cells), that a
+   norm-matched **random** readout scores 0.634 mean vs the probe's 0.354, and
+   that 1.3b's zero-lead is structural (t_failure = 2 on 100% of programs, the
+   first evaluable prefix). Concretely: (a) add the random-readout floor to
+   stage 40 and report every lead against it; (b) condition on readout accuracy
+   — compare only readouts matched on per-prefix error rate, or report lead
+   *given* the readout was right up to t−1; (c) re-generate taint programs so
+   the behavioural failure point is not pinned to the first prefix, otherwise
+   1.3b can never show a lead regardless of its representations. Until then
+   `RESULTS.md`'s RQ4 verdict should read "not established", and E6's
+   layer-7 number should not go in a paper.
 
 1. **Context-matched pairs on real code** — the highest-value follow-up: it would
    upgrade E8 from a transfer check to a like-for-like replication of E2's
