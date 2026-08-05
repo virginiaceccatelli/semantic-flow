@@ -217,3 +217,74 @@ def test_controldep_summary_reports_pooled_and_per_stratum():
     out = cd_summarize(df)
     assert set(out["stratum"]) == {"indent_matched", "all"}
     assert out[out["stratum"] == "all"]["accuracy"].iloc[0] == pytest.approx(0.5)
+
+
+# ── E6 floors: constant-responder detection + analytic null ──────────────────
+
+from src.experiments.behavioral_leadtime import (  # noqa: E402
+    RandomReadout, analytic_null_rate, behavioural_sanity, taint_prompt,
+)
+from src.experiments.behavioral_leadtime import summarize as e6_summarize  # noqa: E402
+
+
+def test_taint_prompt_names_the_variable_and_is_fewshot():
+    """Both ingredients are required; neither alone stopped the constant answer."""
+    p = taint_prompt(["def f():", "    x = input()"], 2, "x")
+    assert "`x`" in p                      # named variable
+    assert p.count("Answer:") == 3         # two demonstrations + the query
+    assert p.rstrip().endswith("Answer:")  # model completes with yes/no
+
+
+def test_taint_prompt_falls_back_when_live_var_missing():
+    assert "the current value" in taint_prompt(["def f():", "    pass"], 2, None)
+
+
+def test_constant_responder_is_flagged_despite_high_accuracy():
+    """The 6.7b failure mode: always 'yes', accuracy 0.78 = base rate, bacc 0.5."""
+    df = pd.DataFrame([
+        {"layer": 0, "model_says": 1, "truth": 1} for _ in range(78)
+    ] + [
+        {"layer": 0, "model_says": 1, "truth": 0} for _ in range(22)
+    ])
+    row = behavioural_sanity(df).iloc[0]
+    assert row["accuracy"] == pytest.approx(0.78)      # looks fine
+    assert row["balanced_accuracy"] == pytest.approx(0.5)   # is not
+    assert row["constant_responder"] and not row["usable"]
+
+
+def test_informative_responder_is_not_flagged():
+    df = pd.DataFrame(
+        [{"layer": 0, "model_says": 1, "truth": 1} for _ in range(40)]
+        + [{"layer": 0, "model_says": 0, "truth": 0} for _ in range(40)]
+        + [{"layer": 0, "model_says": 1, "truth": 0} for _ in range(10)]
+    )
+    row = behavioural_sanity(df).iloc[0]
+    assert not row["constant_responder"] and row["usable"]
+
+
+def test_analytic_null_grows_with_error_rate_and_depth():
+    assert analytic_null_rate(0.0, 5) == 0.0            # perfect readout never early
+    assert analytic_null_rate(0.5, 1) == 0.0            # no room before the first step
+    # a readout that errs half the time looks "early" most of the time by step 5
+    assert analytic_null_rate(0.5, 5) == pytest.approx(1 - 0.5 ** 4)
+    assert analytic_null_rate(0.9, 4) > analytic_null_rate(0.1, 4)
+
+
+def test_summary_reports_excess_over_the_null():
+    """A readout that errs constantly must not look like an early warner."""
+    df = pd.DataFrame([{
+        "layer": 7, "model_ever_wrong": True, "failure_index": 4, "t_failure": 5,
+        "t_latent_random": 2, "error_rate_random": 1.0,
+        "lead_random": 3, "latent_first_random": True,
+    }])
+    row = e6_summarize(df).iloc[0]
+    assert row["early_warning_rate"] == 1.0     # raw statistic is maximal
+    assert row["analytic_null"] == 1.0          # but so is the null
+    assert row["early_warning_excess"] == pytest.approx(0.0)
+
+
+def test_random_readout_is_deterministic_and_unit_norm():
+    a, b = RandomReadout(64, seed=7), RandomReadout(64, seed=7)
+    np.testing.assert_allclose(a.w, b.w)
+    assert np.linalg.norm(a.w) == pytest.approx(1.0, rel=1e-5)
+    assert a.score(np.ones((3, 64))).shape == (3,)

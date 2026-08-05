@@ -42,9 +42,9 @@ import pandas as pd
 import torch
 
 from src.experiments.behavioral_leadtime import (
-    QUESTION_SUFFIX,
     _model_says_tainted,
     calibrate_threshold,
+    taint_prompt,
 )
 from src.experiments.jlens_validate import choice_token_ids
 from src.models.hooks import extract_hidden_states
@@ -66,9 +66,11 @@ YES_I, NO_I = 0, 1        # index order fixed by choice_token_ids / TAINT_CHOICE
 def _prefix_specs(example, tokenizer, max_length: int = 2048) -> list[dict]:
     """Tokenized line-prefixes with ground truth — E6's stepping, no forward pass.
 
-    Kept structurally identical to `behavioral_leadtime._prefix_states` (same
-    line range, same question suffix) so the two experiments step through the
-    same programs in the same way and their `t` indices are comparable.
+    Uses `behavioral_leadtime.taint_prompt` — the same few-shot, named-variable
+    prompt stage 40 uses — so the two experiments step through the same
+    programs identically and their `t` indices are comparable. (The bare
+    prompt this once used made both models constant responders; see that
+    module's docstring.)
     """
     line_labels = {d["line"]: d for d in example.metadata.get("line_labels", [])}
     lines = example.source.splitlines()
@@ -76,7 +78,7 @@ def _prefix_specs(example, tokenizer, max_length: int = 2048) -> list[dict]:
     for t in range(2, len(lines) + 1):
         if t not in line_labels:
             continue
-        prefix_src = "\n".join(lines[:t]) + QUESTION_SUFFIX
+        prefix_src = taint_prompt(lines, t, line_labels[t].get("live_var"))
         enc = tokenizer(prefix_src, return_tensors="pt", truncation=True, max_length=max_length)
         specs.append({
             "t": t,
