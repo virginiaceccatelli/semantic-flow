@@ -621,7 +621,18 @@ out, and the below-chance tail is fully accounted for rather than hand-waved.
 A per-cell ±1.96 SE band is *not* the right yardstick here and an earlier
 version of this analysis used one: across ten layers the largest deviation
 exceeds it roughly 40% of the time under the null, which flagged two cells
-spuriously. `scripts/63_controldep_temporal.py` applies the split and the
+spuriously.
+
+**The one cell that came close, and why it is not reported as a finding.**
+1.3b layer 7 reaches 0.576 on the matched subset (binomial p = 0.0023, below
+its Bonferroni α = 0.0063). It is nonetheless not significant: the cluster
+bootstrap over source programs gives 95% CI **[0.495, 0.644]**, which contains
+chance. Outcomes clustered by program at that cell (SE inflation ≈ 1.6×), so
+the binomial — which assumes independent cases — is anti-conservative there and
+the CI is the trustworthy interval. It is also one isolated cell of 18 across
+the two models, and **it does not replicate**: 6.7b sits at 0.472 at the same
+layer, on the other side of chance. Reported here for completeness, claimed
+nowhere. `scripts/63_controldep_temporal.py` applies the split and the
 corrected tests retrospectively to any stage-62 run, no GPU required; stage 62
 now records `negative_after` directly.
 

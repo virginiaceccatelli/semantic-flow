@@ -189,10 +189,16 @@ def _significance(df, console):
         boot = [np.concatenate([by[e] for e in rng.choice(ids, len(ids))]).mean()
                 for _ in range(400)]
         lo, hi = np.percentile(boot, [2.5, 97.5])
+        # A cell counts only if BOTH agree. The binomial assumes independent
+        # cases; where outcomes cluster by program its SE is too small, so a
+        # bootstrap CI containing 0.5 overrides a small p-value.
+        ci_excludes_chance = lo > 0.5 or hi < 0.5
         flag = ""
-        if p < alpha:
+        if p < alpha and ci_excludes_chance:
             flag = "  <-- survives correction"
             survivors.append((L, acc, p))
+        elif p < alpha:
+            flag = "  (small p, but cluster CI includes 0.5 -> not significant)"
         console.print(f"   L{L:>3}  acc={acc:.3f}  n={n}  p={p:.4f}  "
                       f"cluster-boot 95% CI [{lo:.3f}, {hi:.3f}]{flag}")
 
