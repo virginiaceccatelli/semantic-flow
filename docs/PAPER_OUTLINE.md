@@ -1,5 +1,362 @@
 # Paper drafting map: Tracing Semantic State in Code LLMs
 
+> **ACTIVE PLAN: the 5-page NeurIPS InterpScience workshop paper (below).**
+> Everything from "SOURCE POOL" onward is the full-length (~20pp) map. It is
+> kept as the reservoir to draw prose and numbers from — not as the plan. The
+> disposition table says exactly what to take from it.
+
+---
+
+# PART I — The 5-page workshop paper
+
+## Why this spine and not the full-length one
+
+The long outline weights six results sections roughly equally and states the
+thesis as a list of five findings. That is the wrong shape for 5 pages, and it
+buries the lede: the most transferable result in the project currently sits as
+§8 of 14, framed as a "corrective negative result".
+
+The sharpest available argument is methodological, and it is carried by an
+object-level finding no reviewer will have seen before:
+
+> **A readout that uses no model at all outscores a 99%-accurate trained probe
+> on the standard early-warning metric — and the original positive result was
+> measured on a model that answered the same token to every input.**
+
+That reframes the project from "here are our probing results" to "here is what
+probing claims are worth once you construct the floor", which is exactly the
+InterpScience remit. It also lets two *surviving* claims do real work: they
+prove the floors are not indiscriminately destructive, which is what separates
+this from a nihilism paper.
+
+## Title and thesis
+
+- **Primary title:** *Pin the Floor: Constructed Baselines Decide What Probing Can Claim*
+- Alt (leads with the number): *A No-Model Baseline Beats a 99%-Accurate Probe: Auditing Latent Failure Prediction in Code LLMs*
+- Alt (object-level): *Code Models Compute Semantics They Neither Report Nor Anticipate*
+
+**One-sentence thesis.** Claims about internal representations are decided by
+the floor they are measured against; in code LLMs — the one setting where a
+floor can be pinned to *exactly* chance by construction — we build four kinds
+of floor for four standard claim types, and two claims survive while two
+collapse.
+
+**Why code is the right testbed (state this explicitly; it is the
+direction-level argument).** Static analysis gives decidable ground truth, and
+token-identical program pairs differing by one character let a baseline be
+pinned to exactly 0.500 rather than estimated. Natural language rarely permits
+either. Code is therefore not merely an application area for interpretability —
+it is where interpretability methodology can be *validated*.
+
+## Abstract skeleton (~180 words)
+
+1. Probing claims rest on baselines that are usually informal or absent.
+2. Code LLMs allow constructed floors: exact ground truth, token-identical counterfactuals.
+3. We audit four standard claim types against four floor constructions.
+4. **Survives:** binding/def-use decodable (0.500 floor to 0.98 mid-layer, both scales); causally used (patching recovery routes sink-arg to final position).
+5. **Collapses:** "internal state predicts behavioural failure" — a no-model position baseline scores +0.113 early-warning excess against the trained probe's −0.010, the metric correlates r = −0.96 with readout *unreliability*, and the original positive was measured on constant responders whose two opposite biases manufactured an apparent scale effect.
+6. **Collapses:** "representations are verbalizable" — a validated Jacobian lens reads the guard variable at 0.813 but control dependence at chance, at the same positions, where a trained probe reaches AUC 0.999.
+7. Closing: code models compute program semantics, causally use some of it, and neither report nor anticipate it — and half of what we thought we knew about that survived only until a floor was built.
+
+## Section plan and page budget
+
+| § | Title | Pages | Carries |
+|---|---|---:|---|
+| 1 | Introduction | 0.75 | hook, gap, why code, contributions |
+| 2 | Testbed and four floor constructions | 0.60 | Table 1 |
+| 3 | Two claims that survive | 0.90 | Figure 1 |
+| 4 | **Collapse I: internal state predicts failure** | **1.60** | **Figure 2** |
+| 5 | Collapse II: representations are verbalizable | 1.00 | Figure 3 |
+| 6 | Discussion and limitations | 0.55 | the checklist |
+| | **body total** | **5.40** | trim §4 to 1.5 and §5 to 0.9 if the limit is hard |
+
+Related work is **one compressed paragraph in §1**, not a section. Cite
+structural-probing-for-code, control tasks / probe validity, activation
+patching, logit/tuned lens, and the verbalizable-workspace paper. The
+full-length §2.1–2.9 material is appendix or future long version.
+
+---
+
+## §1 Introduction (0.75p)
+
+**Must contain, in this order:**
+
+1. **Hook with the number.** An internal taint probe appears to anticipate
+   behavioural failure on 66% of failures, ~2.3 steps early, in the larger of
+   two models and not the smaller — a clean scale story. Both halves of it
+   dissolve under a floor.
+2. **The gap.** Probing results are reported against baselines that are
+   assumed, estimated, or omitted. "Above chance" is doing enormous work and is
+   rarely constructed.
+3. **Why code.** Decidable ground truth from static analysis; token-identical
+   counterfactuals; floors pinned to exactly 0.500. One sentence on why NL
+   cannot do this.
+4. **Related work paragraph** (compressed, see above).
+5. **Contributions** — four bullets:
+   - A taxonomy of four *constructed* floors and an audit of four standard claim types against them.
+   - A falsification with a mechanism: the standard early-warning metric is monotone in readout error rate (r = −0.96 within readout families), so a no-model baseline outscores a trained probe; and the original positive rested on constant responders.
+   - A probe/lens dissociation with a working positive control at the same positions: control dependence is decodable (AUC 0.999) but not verbalizable (chance at every layer).
+   - Two claims that *do* survive their floors, showing the method discriminates rather than destroys.
+6. **Preview sentence** naming which two survive and which two collapse.
+
+**Do not** open with "we study whether code models represent semantics." That
+is the long paper's opening and it wastes the hook.
+
+---
+
+## §2 Testbed and four floor constructions (0.6p)
+
+**Content.**
+- Models: DeepSeek-Coder 6.7B (main; blocks −1,0,3,…,31), 1.3B (cross-scale).
+  StarCoder2 is *not* claimed — no artifact.
+- Corpus: synthetic Python with construction-known semantic graphs; exact
+  AST-span→token alignment (one sentence, cite appendix).
+- Probes: grouped-CV linear probes; shuffled-label selectivity. Compress
+  hard — methodology detail goes to appendix.
+
+**Table 1 — the four floors.** This table is the paper's organising device.
+
+| Floor | Construction | Answers |
+|---|---|---|
+| Construction-pinned | token-identical inputs whose label flips on one character | "could *any* surface feature do this?" |
+| No-model | a readout using only the input's surface or position (surface-window probe; `position` readout) | "does this need the model at all?" |
+| Uninformative-readout | norm-matched random direction, same decision-rule shape, same calibration | "would any direction of this magnitude score similarly?" |
+| Closed-form | a case where the correct answer is known analytically (at the last layer the Jacobian is the identity, so the J-lens must equal the logit lens) | "is the instrument itself correct?" |
+
+Say explicitly: a floor is **constructed**, not assumed; and each floor answers
+a *different* question, so they are not interchangeable.
+
+---
+
+## §3 Two claims that survive (0.9p)
+
+Purpose: establish that the floors discriminate. Keep it tight — this is
+setup for §4/§5, not the contribution.
+
+**3.1 "The model represents X" — survives.**
+- E2 `context_matched`: surface baseline **0.500**, embedding layer **0.500**
+  (both exact by construction and confirmed), block 0 ≈0.53–0.57, layer 3
+  ≈0.91–0.96, mid-layer peak **0.984** both scales, declining to ≈0.91–0.93 at
+  the last layer.
+- One clause: def-use behaves identically, decaying mildly with distance.
+- **The cautionary half:** E4's first version had a surface baseline of
+  **1.000** — control-dependent statements were the only indented ones. The
+  floor killed it; the corpus was rebuilt with sibling guards and an
+  `indent_matched` stratum. Report this; it is evidence the floors bite.
+
+**3.2 "The representation is causally used" — survives.**
+- E7 patching: recovery moves from the sink-argument token (6.7B L0 ≈0.99) to
+  the final position (L31 = 1.00) across depth.
+- **`sanitizer_def` recovery is 0.000 at every layer.** Flag this now; §4
+  returns to it.
+
+**Figure 1.** Binding accuracy by layer, `context_matched` stratum, both
+models, with the surface baseline and embedding layer drawn as flat lines at
+0.500. Source: `static_probes_{model}_core.csv`.
+
+---
+
+## §4 Collapse I — "internal state predicts failure" (1.6p) — THE CORE
+
+Give this the most space and the best figure. Structure it as a post-mortem
+with a mechanism, not as a list of negative numbers.
+
+**4.1 The claim as originally measured.** Frozen taint probe vs the model's
+forced choice, per line-prefix; `t_latent` vs `t_failure`. Result: 6.7B fails
+first internally on 21/32 (0.656), mean +2.3 prefixes, at layer 7; 1.3B shows
+no lead at any layer. Reads as a scale-dependent early-warning effect.
+
+**4.2 Floor 1 — is the behavioural signal informative at all?**
+- Under the bare prompt, **both models answer the same token to every prefix of
+  every program**: 1.3B always "no", 6.7B always "yes".
+- 6.7B's raw accuracy is **0.780** — which is exactly the base rate of
+  `tainted=1`, so the signal looks healthy under the check anyone would run.
+  **Balanced accuracy is 0.500 for both.**
+- **The mechanism of the apparent scale effect** (walk the reader through it;
+  this is the most persuasive paragraph in the paper):
+  the generator always places the taint source on line 2, so `tainted=1` at
+  the first evaluable prefix. A model that always says "no" is therefore wrong
+  at the first prefix on 100% of programs → `t_failure = 2` → a positive lead
+  is *arithmetically impossible*. A model that always says "yes" is wrong only
+  at and after the sanitizer → `t_failure` lands mid-program on exactly the
+  sanitized programs → any probe erring before the sanitizer scores a "lead".
+  **Two opposite constant biases produce both reported halves. No model
+  computation entered the behavioural signal.**
+
+**4.3 The repair.** Few-shot demonstrations *and* naming the variable are both
+required; neither alone lifts either model out of degeneracy. 6.7B reaches
+balanced accuracy ≈0.84 (run of record). **1.3B cannot do the task under any
+prompt (0.471)** — so its lead time is *undefined*, not zero. State this
+distinction explicitly; it is a capability result, not a representational one.
+
+**4.4 Floors 2–4, and the finding.** With a working signal, add: an **analytic
+null** (for per-prefix error rate ε with errors independent of the model's
+state, P(err before step k) = 1−(1−ε)^(k−1)); a **norm-matched random**
+readout; and a **no-model `position`** readout ("tainted iff step ≤ k").
+
+| Readout | early-warning excess (6.7B) |
+|---|---:|
+| `position` — no model at all | **+0.113** |
+| `random` — norm-matched direction | +0.005 … +0.067 |
+| **`probe`** — trained, ~99% per-prefix accuracy | **−0.010** |
+
+And the mechanism: across (layer, readout) cells the early-warning rate
+correlates **r = −0.96 within each readout family** (−0.905 pooled) with how
+*unreliable* the readout is. A readout that errs often errs *early*. The metric
+rewards inaccuracy, not anticipation — which is why the uninformative readouts
+win it.
+
+**4.5 What does survive, and it is the interesting part.** At most layers the
+probe is **never wrong at all** (19/19 6.7B) on examples where the model
+answers wrongly: the latent state is correct while the output is wrong. Pair
+this with §3.2's `sanitizer_def` = 0.000. **Two independent methods — a linear
+probe and activation patching — agree that the model represents the
+sanitization and does not route it to the answer.** This is the object-level
+payoff of the section and should not be buried under the negative result.
+
+**Figure 2 (two panels, the paper's centrepiece).**
+(a) Early-warning rate vs readout reliability across all (layer, readout)
+cells, r = −0.96, with `probe`/`random`/`position` distinguished — this single
+panel *is* the argument.
+(b) Early-warning excess by layer: `position` above zero, `probe` below.
+Source: `behavioral_leadtime{,_summary}_{model}.csv`.
+
+---
+
+## §5 Collapse II — "representations are verbalizable" (1.0p)
+
+**5.1 The instrument, and its closed-form floor.** J-lens in one short
+paragraph: `v_w = J^T(g·W_U[w])` with `J = E[∂h_final/∂h_ℓ]`, one VJP per
+candidate, never materialising the Jacobian; scores are rank/sign-valid within
+a position (state the dropped-scale caveat in one clause).
+- **V1 (closed-form floor):** at the last layer `J` is the identity, so the
+  J-lens must equal the logit lens — measured cosine **1.0000** on both models.
+- **V2:** next-token top-1 **0.650** (6.7B L27) against a random floor ≤0.050,
+  and the J-lens beats the logit lens pre-final-layer by **+0.183** —
+  reproducing the method's central claim in a code model. State plainly: the
+  nulls below are therefore *not* "the method does not work here."
+
+**5.2 The dissociation.** At guard-expression anchors, rank two single-token
+identifiers; chance is exactly 0.500 by construction.
+- **Positive control** (`guard_var`, the variable the guard tests): rises with
+  depth to **0.813** (z ≈ +7.7). The readout is alive at these positions.
+- **The test** (`control_dep`, dependent statement's target vs an
+  `indent_matched` sibling's): **at chance at every layer**, while E4's trained
+  probe reaches AUC 0.999 on the same relation. Same anchors, same readout,
+  opposite outcomes.
+
+**5.3 A confound found and removed** (include — it is evidence of care, and it
+strengthened the result). Positives are 100% *after* the guard anchor;
+`indent_matched` negatives only 50%. For the other half the model has already
+seen the negative token and not the positive, so recency favours the wrong
+answer — which produced a spurious below-chance tail (0.398 at L31).
+Conditioning on the matched subset (n≈417/cell) removes it entirely; per-layer
+binomial tests with Bonferroni over 10 layers plus a cluster bootstrap over
+programs put 0.500 inside every interval.
+
+**Limitation, stated in-section:** `guard_var` establishes the readout is
+functional and identifier-sensitive at those positions; it is a
+recency/identity control, not a relational one. The defensible claim is the
+token-level one — "the model is not disposed to *name* the dependent target" —
+not "control dependence is unrepresentable in reportable form."
+
+**Figure 3.** `guard_var` vs `control_dep` by layer with the 0.500 line.
+Source: `jlens_controldep_summary_{model}.csv`.
+
+---
+
+## §6 Discussion and limitations (0.55p)
+
+**The checklist** (the transferable deliverable — four questions to ask of any
+probing claim):
+1. Could a construction-pinned input pair make the surface floor exactly chance?
+2. Does a no-model readout on the same decision-rule shape score comparably?
+3. Does a norm-matched random readout score comparably?
+4. Is there a case where the instrument's correct output is known in closed form?
+
+**What this says about code LLMs.** They construct binding and def-use
+structure that no surface cue explains, causally route some of it across
+depth, and then neither report it (§5) nor anticipate failure with it (§4). The
+sanitizer result is the sharpest instance: represented, not routed.
+
+**Limitations** — be direct:
+- Synthetic corpus. Say why that is the *instrument*, not a weakness: real code
+  cannot pin a floor to chance. Note E8 (probes transfer to real Python at
+  ≈0.90 accuracy) in one sentence, with the caveat that transfer does not
+  isolate the semantic component.
+- Two models, one family, one language.
+- §5's null is one token-level operationalization.
+- E10-2 (taint verbalizability) is pending; the paper does not depend on it. If
+  it lands before submission it is one added row in §5.1, not a new section.
+
+**Close on the self-correction**, briefly and without drama: the result this
+paper falsifies is one we previously reported ourselves, and it was caught by
+building the floor rather than by finding a bug.
+
+---
+
+## Figure and table budget
+
+| Asset | Section | Source |
+|---|---|---|
+| Table 1 — four floor constructions | §2 | conceptual |
+| Figure 1 — binding by layer, floors at 0.500 | §3 | `static_probes_*_core.csv` |
+| **Figure 2 — (a) EW vs reliability r=−0.96; (b) excess by layer** | §4 | `behavioral_leadtime*_*.csv` |
+| Figure 3 — guard_var vs control_dep by layer | §5 | `jlens_controldep_summary_*.csv` |
+
+Three figures and one table is the right density for 5 pages. Panel (a) of
+Figure 2 should be the largest single element in the paper.
+
+## Disposition of the full-length material
+
+| Long-outline section | Verdict for the workshop paper |
+|---|---|
+| §1 Introduction | **Rewrite** around the hook; do not reuse the "we study whether…" opening |
+| §2.1–2.9 Related work | **Compress to one paragraph** in §1; rest to appendix/long version |
+| §3 Setup, §4 Probing methodology | **Compress to §2**; probe/CV/alignment detail to appendix |
+| §5.1 E1 lexical | **Cut** (one clause at most) |
+| §5.2 E2 binding, §5.3 E3 def-use | **Keep, compressed** → §3.1 |
+| §5.4 E4 control dependence | **Keep only the surface-baseline-1.000 failure** → §3.1; the full E4 result is §5's foil (AUC 0.999) |
+| §6.1 E5 context degradation | **Cut** → appendix |
+| §6.2 E9 obfuscation | **Cut** → appendix |
+| §7 E7 causal patching | **Compress to one paragraph** → §3.2; keep `sanitizer_def` = 0.000 |
+| §8 E6 lead time | **Promote to §4, the core.** Expand: mechanism of the constant-responder artifact, the four floors, r = −0.96 |
+| §9 E8 real code | **Cut** → one sentence in §6 limitations |
+| §10.1 E10 validation | **Keep, compressed** → §5.1 |
+| §10.2 E10-2 taint | **Hold** — pending; do not structure around it |
+| §10.3 E10-3 control dep | **Keep, expanded** → §5.2–5.3 with controls and the temporal fix |
+| §11 Discussion | **Compress to §6**; lead with the checklist |
+| §12 Limitations | **Compress**; keep synthetic-corpus-as-instrument framing |
+| §13 Conclusion | **Fold into §6**; no separate conclusion at 5 pages |
+| §14 Reproducibility | **One sentence** + artifact link |
+| Appendices A–I | **Keep as appendix**, unchanged in spirit |
+
+## Numbers that must appear in the body
+
+Verify each against `results/tables/` before submission; conflict rule is CSV
+over prose.
+
+- E2 `context_matched`: 0.500 / 0.500 / 0.984 (peak) / ≈0.92 (last layer)
+- E4 original surface baseline: 1.000
+- E7: `sink_arg` ≈0.99 at L0; `last_token` 1.00 at L31; `sanitizer_def` 0.000 all layers
+- E6 sanity: says-tainted 1.000 (6.7B) / 0.000 (1.3B); raw acc 0.780; **balanced acc 0.500 both**
+- E6 repaired: 6.7B balanced acc ≈0.84; 1.3B 0.471 (undefined)
+- E6 excess: probe −0.010; position **+0.113**; random +0.005…+0.067
+- E6 mechanism: r = **−0.96** within readout families (−0.905 pooled)
+- E6 residual: probe never wrong 19/19 on model-wrong examples
+- E10 V1 cosine: **1.0000** both models
+- E10 V2: 0.650 top-1 (6.7B L27) vs random ≤0.050; J−logit **+0.183** pre-final
+- E10-3: `guard_var` **0.813** (z ≈ +7.7); `control_dep` at chance, n≈417/cell
+- E10-3 confound: positives 100% after anchor; negatives 50% before
+
+---
+---
+
+# PART II — SOURCE POOL (full-length ~20pp map)
+
+The material below is the long-version plan. Draw prose and numbers from it
+per the disposition table above. **It is not the plan for the workshop paper.**
+
 ## Evidence policy for drafting
 
 - Data of record: `results/tables/*.csv`
