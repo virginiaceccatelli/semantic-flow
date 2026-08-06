@@ -611,12 +611,19 @@ removes it completely:
 | pooled (confounded) | 0.405 – 0.523 | 0.387 |
 | **temporally matched** | **0.453 – 0.537** | **0.506** |
 
-The matched subset is within the ±0.048 chance band at **every** layer (max
-deviation +0.047). So the null is not merely "flat on average" — it is flat
-everywhere once a known artifact is conditioned out, and the below-chance tail
-is fully accounted for rather than hand-waved. `scripts/63_controldep_temporal.py`
-applies this split retrospectively to any stage-62 run, no GPU required; stage
-62 now records `negative_after` directly.
+**No layer differs from chance after correction.** Per-layer binomial tests on
+the matched subset (n=417 per cell, Bonferroni over 10 layers, α=0.005) return
+p = 0.06–0.92; a cluster bootstrap over source programs — which the data
+supports, ICC ≈ 0 — puts 0.5 inside every 95% CI. So the null is not merely
+"flat on average": it is flat everywhere once a known artifact is conditioned
+out, and the below-chance tail is fully accounted for rather than hand-waved.
+
+A per-cell ±1.96 SE band is *not* the right yardstick here and an earlier
+version of this analysis used one: across ten layers the largest deviation
+exceeds it roughly 40% of the time under the null, which flagged two cells
+spuriously. `scripts/63_controldep_temporal.py` applies the split and the
+corrected tests retrospectively to any stage-62 run, no GPU required; stage 62
+now records `negative_after` directly.
 
 **`next_ident` failed as a control, for the same family of reason.** It was meant to be "pure local continuation", but the guard anchor
 is the *last* token of the guard expression (`50` in `if t > 50:`), so the next

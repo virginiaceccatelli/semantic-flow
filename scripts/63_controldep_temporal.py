@@ -148,13 +148,7 @@ def main(
             f"\n  pooled (confounded):    {pivot['all'].min():.3f} – {pivot['all'].max():.3f}"
             f"\n  temporally matched:     {pivot['temporally_matched'].min():.3f} – "
             f"{pivot['temporally_matched'].max():.3f}")
-        n = int(jl[jl.stratum == "temporally_matched"]["n"].max())
-        se = 0.5 / (n ** 0.5)
-        console.print(f"  matched n={n} per cell, SE={se:.4f}, chance band ±{1.96*se:.3f}")
-        worst = pivot["temporally_matched"].sub(0.5).abs().max()
-        console.print(
-            f"  max deviation from chance in the matched subset: {worst:+.3f} "
-            f"({'within' if worst < 1.96*se else 'OUTSIDE'} the chance band)")
+        _significance(df, console)
 
     if tables:
         out = Path("results/tables")
@@ -162,6 +156,56 @@ def main(
         df.to_csv(out / f"jlens_controldep_{model}.csv", index=False)
         summary.to_csv(out / f"jlens_controldep_summary_{model}.csv", index=False)
         console.print(f"\nrewrote results/tables/jlens_controldep{{,_summary}}_{model}.csv")
+
+
+def _significance(df, console):
+    """Per-layer binomial tests on the matched subset, Bonferroni-corrected.
+
+    A per-cell ±1.96 SE band is the wrong yardstick across ~10 layers: under
+    the null the largest of 10 deviations exceeds it about 40% of the time.
+    Cases cluster by program, so the SE is also checked by a cluster bootstrap
+    over `example_id` rather than assumed independent.
+    """
+    import numpy as np
+    from scipy.stats import binomtest
+
+    matched = df[(df.lens == "jlens") & (df.comparison == "control_dep")
+                 & (df["negative_after"].astype(bool))]
+    layers = sorted(matched["layer"].unique())
+    alpha = 0.05 / max(len(layers), 1)
+    console.print(f"\n[bold]Per-layer test vs chance[/bold] "
+                  f"(Bonferroni over {len(layers)} layers, alpha={alpha:.4f})")
+
+    rng = np.random.default_rng(42)
+    survivors = []
+    for L in layers:
+        sub = matched[matched.layer == L]
+        n, k = len(sub), int(sub["correct"].sum())
+        acc = k / n
+        p = binomtest(k, n, 0.5).pvalue
+        # cluster bootstrap over programs
+        ids = sub["example_id"].unique()
+        by = {e: sub[sub.example_id == e]["correct"].to_numpy() for e in ids}
+        boot = [np.concatenate([by[e] for e in rng.choice(ids, len(ids))]).mean()
+                for _ in range(400)]
+        lo, hi = np.percentile(boot, [2.5, 97.5])
+        flag = ""
+        if p < alpha:
+            flag = "  <-- survives correction"
+            survivors.append((L, acc, p))
+        console.print(f"   L{L:>3}  acc={acc:.3f}  n={n}  p={p:.4f}  "
+                      f"cluster-boot 95% CI [{lo:.3f}, {hi:.3f}]{flag}")
+
+    if not survivors:
+        console.print("\n  [green]No layer differs from chance after correction — "
+                      "a clean null.[/green]")
+    else:
+        console.print(
+            f"\n  [yellow]{len(survivors)} cell(s) survive correction: "
+            f"{[(L, round(a,3)) for L, a, _ in survivors]}.[/yellow]\n"
+            "  Before reporting one as a finding, check it replicates in the other\n"
+            "  model and is not an isolated cell — an effect at a single layer that\n"
+            "  flips sign across scale is noise-consistent.")
 
 
 if __name__ == "__main__":
