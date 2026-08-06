@@ -81,6 +81,16 @@ class GuardCase:
     positive_distance: int
     negative_distance: int
     comparison: str = "control_dep"
+    negative_after: bool = True
+    """Does the negative's statement come AFTER the guard anchor?
+
+    A control-dependent statement is always *after* its guard, but a sibling
+    guard's body can be on either side. When the negative is BEFORE the anchor
+    the model has already seen that token and not the positive one, so recency
+    favours the wrong answer — measured 50% of `indent_matched` negatives sit
+    before. Comparisons are therefore reported split on this flag, and the
+    temporally-matched (`negative_after=True`) subset is the headline.
+    """
 
 
 def _name_occurrences(tree: ast.AST) -> list[tuple[int, int, str]]:
@@ -180,7 +190,7 @@ def build_guard_cases(
             s_anchor = anchor_of(span)
             if s_anchor is None or s_anchor == g_anchor:
                 continue
-            entry = (name, abs(s_anchor - g_anchor))
+            entry = (name, abs(s_anchor - g_anchor), s_anchor > g_anchor)
             if span in dependent:
                 positives.append(entry)
             elif span[1] in body_cols:
@@ -188,20 +198,20 @@ def build_guard_cases(
             else:
                 easy_negs.append(entry)
 
-        for pos_name, pos_dist in positives:
-            pool = [("indent_matched", n, d) for n, d in hard_negs if n != pos_name]
+        for pos_name, pos_dist, _ in positives:
+            pool = [("indent_matched", n, d, a) for n, d, a in hard_negs if n != pos_name]
             if not pool:
-                pool = [("non_dependent", n, d) for n, d in easy_negs if n != pos_name]
+                pool = [("non_dependent", n, d, a) for n, d, a in easy_negs if n != pos_name]
             if not pool:
                 continue
             rng.shuffle(pool)
-            for stratum, neg_name, neg_dist in pool[:max_per_guard]:
+            for stratum, neg_name, neg_dist, neg_after in pool[:max_per_guard]:
                 cases.append(GuardCase(
                     example_id=example_id, guard_anchor=g_anchor,
                     positive_name=pos_name, negative_name=neg_name,
                     negative_stratum=stratum,
                     positive_distance=pos_dist, negative_distance=neg_dist,
-                    comparison="control_dep",
+                    comparison="control_dep", negative_after=neg_after,
                 ))
 
         # ── positive controls at the SAME anchor ─────────────────────────────
@@ -342,6 +352,7 @@ def run_jlens_controldep(
                         "positive_name": case.positive_name,
                         "negative_name": case.negative_name,
                         "distance_gap": case.positive_distance - case.negative_distance,
+                        "negative_after": case.negative_after,
                         "margin": margin,
                         "correct": bool(margin > 0),
                     })
@@ -368,6 +379,22 @@ def summarize(df: pd.DataFrame) -> pd.DataFrame:
     if "comparison" not in df.columns:          # pre-control runs
         df = df.assign(comparison="control_dep")
     keys = ["layer", "lens", "comparison"]
+    if "negative_after" in df.columns:
+        # Temporally-matched subset only: when the negative token precedes the
+        # anchor the model has already seen it and not the positive, so recency
+        # favours the wrong answer. Reported as its own stratum.
+        matched = df[df["negative_after"].fillna(True).astype(bool)]
+        if not matched.empty:
+            extra = (matched.groupby(keys)
+                            .agg(accuracy=("correct", "mean"),
+                                 mean_margin=("margin", "mean"),
+                                 n=("correct", "size"))
+                            .reset_index())
+            extra["stratum"] = "temporally_matched"
+        else:
+            extra = None
+    else:
+        extra = None
     grouped = (df.groupby(keys + ["stratum"])
                  .agg(accuracy=("correct", "mean"),
                       mean_margin=("margin", "mean"),
@@ -379,6 +406,5 @@ def summarize(df: pd.DataFrame) -> pd.DataFrame:
                      n=("correct", "size"))
                 .reset_index())
     pooled["stratum"] = "all"
-    return pd.concat([grouped, pooled], ignore_index=True).sort_values(
-        keys + ["stratum"]
-    )
+    parts = [grouped, pooled] + ([extra] if extra is not None else [])
+    return pd.concat(parts, ignore_index=True).sort_values(keys + ["stratum"])

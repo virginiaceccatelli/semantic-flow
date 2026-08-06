@@ -597,19 +597,34 @@ in supervision.
 must equal the logit lens exactly — measured 0.398/0.398, 0.813/0.813,
 0.273/0.273. V1 holding at experiment level, not just in the gate.
 
-**The below-chance tail is a frequency effect, not evidence.** At the deepest
-layers both `control_dep` (0.398) and `next_ident` (0.273) invert. Their
-positives are *dead assignment targets* (`k`, `h` — written once, never read),
-while their negatives are variables that recur throughout the program. Near the
-output the lens favours what the model is about to actually use. That is a
-statement about next-token disposition, not about control dependence.
+**The below-chance tail was a temporal confound — identified, and removed.** A
+control-dependent statement is always *after* its guard, but the
+`indent_matched` negative sits after the anchor only half the time (measured:
+positives 290 after / 0 before; negatives 223 after / 223 before). For that
+half the model has already seen the negative token under causal attention and
+has *not* seen the positive one, so recency favours the wrong answer.
+Conditioning on the matched subset (`negative_after=True`, n=417 per cell)
+removes it completely:
 
-**`next_ident` failed as a control, and the reason is a design miss worth
-recording.** It was meant to be "pure local continuation", but the guard anchor
+| J-lens, `control_dep` | range across layers | L31 |
+|---|---|---:|
+| pooled (confounded) | 0.405 – 0.523 | 0.387 |
+| **temporally matched** | **0.453 – 0.537** | **0.506** |
+
+The matched subset is within the ±0.048 chance band at **every** layer (max
+deviation +0.047). So the null is not merely "flat on average" — it is flat
+everywhere once a known artifact is conditioned out, and the below-chance tail
+is fully accounted for rather than hand-waved. `scripts/63_controldep_temporal.py`
+applies this split retrospectively to any stage-62 run, no GPU required; stage
+62 now records `negative_after` directly.
+
+**`next_ident` failed as a control, for the same family of reason.** It was meant to be "pure local continuation", but the guard anchor
 is the *last* token of the guard expression (`50` in `if t > 50:`), so the next
 identifier is several tokens downstream past `:` and the indent — not the next
 token at all. Combined with the frequency effect above, it sits at or below
-chance. `guard_var` is the control that carries the argument.
+chance, and its positives are additionally *dead assignment targets* competing
+against variables that recur throughout the program. `guard_var` is the control
+that carries the argument.
 
 **Limitation.** `guard_var` establishes that the readout is functional and
 identifier-sensitive at guard anchors. It does not establish that a *relational*

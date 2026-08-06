@@ -439,3 +439,30 @@ def test_stage90_registers_every_stage40_output():
     for prefix in ("behavioral_leadtime_summary", "behavioral_leadtime_prefixes",
                    "behavioral_leadtime_", "behavioral_sanity"):
         assert f'"{prefix}"' in src, f"stage 40 writes {prefix}* but stage 90 ignores it"
+
+
+def test_temporal_split_reported_as_its_own_stratum():
+    """Negatives before the anchor are already in context; recency favours them."""
+    df = pd.DataFrame([
+        {"layer": 7, "lens": "jlens", "comparison": "control_dep",
+         "stratum": "indent_matched", "margin": 1.0, "correct": True,
+         "negative_after": True},
+        {"layer": 7, "lens": "jlens", "comparison": "control_dep",
+         "stratum": "indent_matched", "margin": -1.0, "correct": False,
+         "negative_after": False},
+    ])
+    out = cd_summarize(df)
+    pooled = out[(out.stratum == "all")]["accuracy"].iloc[0]
+    matched = out[(out.stratum == "temporally_matched")]["accuracy"].iloc[0]
+    assert pooled == pytest.approx(0.5)     # the confounded row drags it down
+    assert matched == pytest.approx(1.0)    # matched subset is clean
+
+
+def test_guard_cases_record_whether_negative_precedes_anchor():
+    cases = [c for c in build_guard_cases(SIBLING_GUARDS, _aligner(SIBLING_GUARDS),
+                                          "ex1", candidate_names={"a", "b"})
+             if c.comparison == "control_dep"]
+    assert cases
+    # guard 2's body target `b` is after guard 1's anchor, but guard 1's `a`
+    # comes BEFORE guard 2's anchor — so both values must occur.
+    assert {c.negative_after for c in cases} == {True, False}
