@@ -25,7 +25,7 @@ Status legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b) · �
 | E7 causal patching | is it *used*? | ● | ● | **Positive** — information routes across layers; sanitizer site is causally inert |
 | E8 real code | CodeSearchNet transfer | ● | ● | **Transfers** — ~0.90 acc / 0.98 AUC vs 0.67 surface, same mid-early layer peak; but real code can't isolate the semantic component |
 | E9 obfuscation | semantics-preserving edits | ◐ | ● | Robust to renaming mid-layer; breaks on flatten |
-| E10 J-lens | verbalizable vs decodable | ● | ● | **Method transfers; both experiments null.** Lens validated (V1 exact, next-token top-1 0.65 vs 0.05 random) — but taint shows no verbalizable lead beyond a random floor, control dependence sits at chance at every layer. **E10-2 also invalidates E6's early-warning metric** (see below) |
+| E10 J-lens | verbalizable vs decodable | ● | ● | **Dissociation.** Lens validated (V1 exact, next-token top-1 0.65 vs 0.05 random). At guard anchors it reads the guard's own variable at **0.813** but control dependence at **chance** — decodable (E4 AUC 0.999) yet not verbalizable. E10-2 also supplied the floors that dissolved E6 |
 
 All ten experiments have now run at both scales. **E8** confirms the probes
 transfer to real Python with the same layer signature, and **E4 is valid and
@@ -564,41 +564,63 @@ structurally forced. This is the most consequential thing E10 produced.
 
 *(Figures: `jlens_taint_earlywarning_{model}.png`.)*
 
-### E10-3 (control dependence): a clean, well-powered null
+### E10-3 (control dependence): decodable, but not verbalizable
 
-At each guard-expression anchor, does the lens rank a control-dependent
-statement's target variable above an `indent_matched` one's — E4's hard
-negative, a statement in a *sibling* guard's body at the same depth? Chance is
-exactly 0.5, since the two targets are interchangeable neutral variables.
-n = 808 comparisons per cell (SE = 0.018).
+At each guard-expression anchor the lens ranks two single-token identifiers.
+Chance is exactly 0.500 by construction. Three comparisons run at the **same
+anchors** with the **same** readout, so a flat test line can be told apart from
+a dead readout:
 
-| Model | J-lens range across layers | best J-lens cell | logit | random |
-|---|---|---|---|---|
-| 1.3b | 0.457 – 0.517 | 0.517 (L7) | 0.457–0.507 | 0.479–0.509 |
-| 6.7b | 0.387 – 0.510 | 0.510 (L0) | 0.387–0.500 | 0.465–0.511 |
+| 6.7b, J-lens, layer | `guard_var` *(control)* | **`control_dep` (TEST)** | `next_ident` *(control)* |
+|---:|---:|---:|---:|
+| −1 | 0.507 | 0.503 | 0.547 |
+| 7 | 0.600 | 0.506 | 0.487 |
+| 15 | 0.613 | 0.505 | 0.480 |
+| 23 | 0.660 | 0.489 | 0.493 |
+| 27 | 0.733 | 0.456 | 0.407 |
+| **31** | **0.813** | **0.398** | 0.273 |
 
-**Not one cell exceeds chance** at Bonferroni-corrected significance in either
-model. The best J-lens result in either model (0.517) is inside the 95% CI of
-chance (±0.034). Meanwhile E4's *trained probe* reaches AUC 0.999 on this same
-relation at mid layers.
+**The readout is alive at these positions.** `guard_var` — rank the variable
+the guard actually tests above another variable present in the program — climbs
+from chance to **0.813**, broadly rising with depth. So lens vectors at guard
+anchors do carry identifier information, and a null on the test cannot be
+blamed on reading nothing there.
 
-That contrast is the point: **control dependence is decodable but shows no
-verbalizable signature** — consistent with the E4 reading that it is largely
-local syntax the model reconstructs on demand rather than a fact it holds in a
-reportable form. The three cells that *are* significant (6.7b L27 logit 0.415,
-L31 J-lens and logit 0.387) sit **below** chance, i.e. the deepest layers
-systematically prefer the *non*-dependent target — a next-token surface bias at
-the readout layers, not evidence of the relation.
+**Control dependence is not among what they carry.** `control_dep` sits within
+±0.02 of chance at every layer up to 23, then goes *below* chance (0.398 at
+L31). Meanwhile E4's trained probe reaches AUC 0.999 on this same relation at
+mid layers. **Decodable, not verbalizable** — and the two properties are
+measured at the same anchors, in the same model, by readouts that differ only
+in supervision.
 
-*(Figures: `jlens_controldep_indent_matched_{model}.png`.)*
+*Internal consistency:* at the last layer `J` is the identity, so the J-lens
+must equal the logit lens exactly — measured 0.398/0.398, 0.813/0.813,
+0.273/0.273. V1 holding at experiment level, not just in the gate.
 
-**Honest limit on this null.** It rules out one operationalization, not the
-concept: the lens asks "is the model disposed to *name* this variable", and a
-model could represent control dependence in a reportable form without being
-disposed to emit the dependent statement's target identifier at the guard. E10-2
-is less exposed to this objection — there the candidate tokens are the yes/no
-answer the model actually emits — which is why E10-2's metric finding is the
-more portable result.
+**The below-chance tail is a frequency effect, not evidence.** At the deepest
+layers both `control_dep` (0.398) and `next_ident` (0.273) invert. Their
+positives are *dead assignment targets* (`k`, `h` — written once, never read),
+while their negatives are variables that recur throughout the program. Near the
+output the lens favours what the model is about to actually use. That is a
+statement about next-token disposition, not about control dependence.
+
+**`next_ident` failed as a control, and the reason is a design miss worth
+recording.** It was meant to be "pure local continuation", but the guard anchor
+is the *last* token of the guard expression (`50` in `if t > 50:`), so the next
+identifier is several tokens downstream past `:` and the indent — not the next
+token at all. Combined with the frequency effect above, it sits at or below
+chance. `guard_var` is the control that carries the argument.
+
+**Limitation.** `guard_var` establishes that the readout is functional and
+identifier-sensitive at guard anchors. It does not establish that a *relational*
+fact would be readable there if present — it is a recency/identity control, not
+a relational one. The honest claim is therefore: under a token-level
+operationalization ("is the model disposed to name the dependent target"),
+control dependence shows no verbalizable signature, while an identity fact at
+the same position shows a large one.
+
+*(Figures: `jlens_controldep_dissociation_{model}.png` — the test against both
+controls; `jlens_controldep_indent_matched_{model}.png`.)*
 
 ---
 
@@ -620,11 +642,11 @@ rise-to-an-early-middle-peak-then-decline layer profile — so none of this is a
 generator artifact; what real code cannot do is *isolate* the semantic component,
 since natural identifiers are themselves predictive and no stratum there pins the
 surface floor to chance. What these representations are **not** is
-*verbalizable*: the J-lens (E10) reproduces its own validation benchmarks in
-this setting — including recovering next-token content the logit lens cannot —
-yet finds **no** workspace signature for either taint or control dependence,
-with control dependence flat at chance (0.39–0.52, n=808/cell) at every layer
-where the trained probe reaches AUC 0.999. The picture that emerges is a model
+*verbalizable*: the J-lens (E10) reproduces its own validation benchmarks here —
+including recovering next-token content the logit lens cannot — and at guard
+anchors it reads the guard's own variable at 0.813, yet control dependence
+stays at chance (0.46–0.52) at every layer where the trained probe reaches AUC
+0.999. Same anchors, same readout, opposite outcomes. The picture that emerges is a model
 that **computes and uses** program semantics without holding them in a
 reportable form. Finally, **RQ4 gets a clear negative on the only model that can do the task**:
 with a working behavioural signal and three floors, 6.7b's taint probe shows
