@@ -249,12 +249,23 @@ lead, the effect is the unembedding matrix rather than the causal
 correction, and the finding does not stand. A norm-matched **random** lens
 is the floor.
 
-**Metric.** `early_warning_rate` = P(readout wrong first | model wrong) —
-the fixed denominator `docs/RESULTS.md` open item 4 asks for, unlike E6's
-shipped `frac_positive_lead`, whose denominator moves across layers.
+**Floors — identical to stage 40's, and it delegates to the same summary
+function so the two experiments mean the same thing.** A behavioural-signal
+sanity check (balanced accuracy; a constant responder posts a healthy-looking
+raw accuracy equal to the base rate), a no-model `position` readout, a
+norm-matched `random` readout, a `constant_readout` flag, and an **analytic
+null** — for a readout with per-prefix error rate ε whose errors are
+independent of the model's state, P(errs before step k) = 1−(1−ε)^(k−1).
 
-Output: `jlens_taint{,_summary}_{model}.csv`; figures
-`jlens_taint_earlywarning_{model}.png`, `jlens_taint_meanlead_{model}.png`.
+**Metric.** `early_warning_excess` = observed − analytic null. The raw rate
+cannot support a claim: it rises with a readout's error rate whether or not it
+carries information (E6 measured r = −0.96 between the two within readout
+families), which is why a no-model baseline outscores a 99%-accurate probe
+there.
+
+Output: `jlens_taint{,_summary,_prefixes,_sanity}_{model}.csv`; figures
+`jlens_taint_excess_{model}.png` (the claim-bearing one) and
+`jlens_taint_earlywarning_{model}.png` (raw rate, for contrast).
 
 ### E10-3 — control dependence: verbalizable or automatic? (stage 62)
 

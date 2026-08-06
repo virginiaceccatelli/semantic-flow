@@ -42,10 +42,13 @@ import pandas as pd
 import torch
 
 from src.experiments.behavioral_leadtime import (
+    PositionReadout,
     _model_says_tainted,
+    behavioural_sanity,
     calibrate_threshold,
     taint_prompt,
 )
+from src.experiments.behavioral_leadtime import summarize as leadtime_summarize
 from src.experiments.jlens_validate import choice_token_ids
 from src.models.hooks import extract_hidden_states
 from src.models.lens import (
@@ -193,6 +196,13 @@ def run_jlens_taint(
                 calib_hidden[layer].append(cache.get(layer)[-1].float().numpy())
             calib_labels.append(spec["truth_tainted"])
     y_calib = np.array(calib_labels)
+    # No-model floor: taint decays with depth into the program, so step index
+    # alone predicts the label well (measured r = -0.57 on this corpus). Any
+    # readout that does not beat it is reading position, not taint.
+    calib_steps = np.concatenate(
+        [np.arange(1, len(specs) + 1) for specs in calib_specs if specs])
+    position = PositionReadout().fit(calib_steps, y_calib)
+    logger.info("Position-only floor: predict tainted iff step_index <= %d", position.k)
 
     thresholds: dict[tuple[int, str], float] = {}
     for layer in layers:
@@ -206,6 +216,7 @@ def run_jlens_taint(
 
     # ── evaluate on the test split ───────────────────────────────────────────
     rows: list[dict] = []
+    prefix_rows: list[dict] = []
     for ex in test:
         specs = _prefix_specs(ex, tokenizer, max_length)
         if not specs:
@@ -221,27 +232,39 @@ def run_jlens_taint(
             behaviour.append(_model_says_tainted(model, tokenizer, ids, device))
 
         steps = [s["t"] for s in specs]
-        t_failure = _first_wrong([
-            (t, int(says) != truth) for t, says, truth in zip(steps, behaviour, truths)
-        ])
+        truths_arr = np.array(truths)
+        model_wrong = np.array(behaviour) != truths_arr
+        t_failure = int(steps[int(np.argmax(model_wrong))]) if model_wrong.any() else None
+        failure_index = int(np.argmax(model_wrong)) + 1 if model_wrong.any() else None
+        step_idx = np.arange(1, len(steps) + 1)
 
         for layer in layers:
             H = per_layer_hidden[layer]
+            preds: dict[str, np.ndarray] = {}
+            for kind, lens in lenses[layer].items():
+                thr = thresholds[(layer, kind)]
+                preds[kind] = np.array(
+                    [int(lens.margin(h, YES_I, NO_I) >= thr) for h in H])
+            if layer in probes:
+                probas = probes[layer].predict_proba(np.stack(H))[:, 1]
+                preds["probe"] = (probas >= thresholds[(layer, "probe")]).astype(int)
+            # No-model floor, identical at every layer by construction.
+            preds["position"] = position.predict(step_idx)
+
             row = {
                 "example_id": ex.example_id,
                 "layer": layer,
                 "n_steps": len(steps),
                 "sanitized": bool(ex.metadata.get("sanitized")),
                 "t_failure": t_failure,
+                "failure_index": failure_index,
                 "model_ever_wrong": t_failure is not None,
             }
-            for kind, lens in lenses[layer].items():
-                thr = thresholds[(layer, kind)]
-                t_latent = _first_wrong([
-                    (t, int(lens.margin(h, YES_I, NO_I) >= thr) != truth)
-                    for t, h, truth in zip(steps, H, truths)
-                ])
+            for kind, pred in preds.items():
+                wrong = pred != truths_arr
+                t_latent = int(steps[int(np.argmax(wrong))]) if wrong.any() else None
                 row[f"t_latent_{kind}"] = t_latent
+                row[f"error_rate_{kind}"] = float(wrong.mean())
                 row[f"lead_{kind}"] = (
                     t_failure - t_latent
                     if (t_latent is not None and t_failure is not None) else None
@@ -249,61 +272,52 @@ def run_jlens_taint(
                 row[f"latent_first_{kind}"] = bool(
                     t_failure is not None and t_latent is not None and t_latent < t_failure
                 )
-            if layer in probes:
-                thr = thresholds[(layer, "probe")]
-                probas = probes[layer].predict_proba(np.stack(H))[:, 1]
-                t_latent = _first_wrong([
-                    (t, int(p >= thr) != truth) for t, p, truth in zip(steps, probas, truths)
-                ])
-                row["t_latent_probe"] = t_latent
-                row["lead_probe"] = (
-                    t_failure - t_latent
-                    if (t_latent is not None and t_failure is not None) else None
-                )
-                row["latent_first_probe"] = bool(
-                    t_failure is not None and t_latent is not None and t_latent < t_failure
-                )
             rows.append(row)
+
+            for i, t_step in enumerate(steps):
+                rec = {"example_id": ex.example_id, "layer": layer, "t": t_step,
+                       "step_index": i + 1, "truth": int(truths_arr[i]),
+                       "model_says": int(behaviour[i]),
+                       "model_correct": bool(behaviour[i] == truths_arr[i])}
+                for kind, pred in preds.items():
+                    rec[f"{kind}_says"] = int(pred[i])
+                    rec[f"{kind}_correct"] = bool(pred[i] == truths_arr[i])
+                prefix_rows.append(rec)
         logger.info("E10-2 example %s done (t_failure=%s)", ex.example_id, t_failure)
 
     df = pd.DataFrame(rows)
+    prefix_df = pd.DataFrame(prefix_rows)
     df.to_csv(output_dir / "jlens_taint.csv", index=False)
-    summary = summarize(df)
+    prefix_df.to_csv(output_dir / "jlens_taint_prefixes.csv", index=False)
+
+    # Floor 1: is the behavioural signal informative at all? Under the bare
+    # prompt both models were constant responders; without this check every
+    # number below would describe the label sequence rather than the model.
+    behaviour_df = behavioural_sanity(prefix_df)
+    behaviour_df.to_csv(output_dir / "jlens_taint_sanity.csv", index=False)
+    logger.info("Behavioural signal sanity:\n%s", behaviour_df.to_string(index=False))
+    if not behaviour_df.empty and not bool(behaviour_df["usable"].iloc[0]):
+        logger.error(
+            "Behavioural signal NOT usable (says_tainted=%.3f, balanced_acc=%.3f) — "
+            "t_failure does not reflect the model, so no lead time here is "
+            "interpretable.",
+            behaviour_df["says_tainted_rate"].iloc[0],
+            behaviour_df["balanced_accuracy"].iloc[0])
+
+    # Same summary as stage 40, so the two experiments are directly comparable
+    # and `early_warning_excess` means the same thing in both.
+    summary = summarize(df, prefix_df)
     summary.to_csv(output_dir / "jlens_taint_summary.csv", index=False)
     logger.info("E10-2 summary:\n%s", summary.to_string(index=False))
     return df
 
 
-def summarize(df: pd.DataFrame) -> pd.DataFrame:
-    """Per (layer, readout) early-warning rates.
+def summarize(df: pd.DataFrame, prefix_df=None) -> pd.DataFrame:
+    """Delegates to stage 40's summary so both experiments report identically.
 
-    Uses the denominator `docs/RESULTS.md` open item 4 asks for — *of the
-    examples where the model eventually fails, on how many did the readout
-    fail first* — which stays fixed across layers, rather than E6's shipped
-    `frac_positive_lead`, whose denominator (both signals failing) moves.
+    That means `early_warning_excess` (observed minus the analytic null for a
+    readout with the same error rate) is the only column that can support a
+    claim here too — the raw rate rises with unreliability regardless of
+    whether the readout carries information.
     """
-    if df.empty:
-        return pd.DataFrame()
-    kinds = [c[len("t_latent_"):] for c in df.columns if c.startswith("t_latent_")]
-    rows = []
-    for layer, sub in df.groupby("layer"):
-        failed = sub[sub["model_ever_wrong"]]
-        for kind in kinds:
-            t_lat, t_fail = sub[f"t_latent_{kind}"], sub["t_failure"]
-            both = sub[t_lat.notna() & t_fail.notna()]
-            rows.append({
-                "layer": layer,
-                "readout": kind,
-                "n_test": len(sub),
-                "n_model_wrong": len(failed),
-                "latent_first": int(failed[f"latent_first_{kind}"].sum()) if len(failed) else 0,
-                "early_warning_rate": (
-                    float(failed[f"latent_first_{kind}"].mean()) if len(failed) else np.nan
-                ),
-                "readout_never_wrong": (
-                    int(failed[f"t_latent_{kind}"].isna().sum()) if len(failed) else 0
-                ),
-                "n_both_fail": len(both),
-                "mean_lead": float(both[f"lead_{kind}"].mean()) if len(both) else np.nan,
-            })
-    return pd.DataFrame(rows).sort_values(["layer", "readout"])
+    return leadtime_summarize(df, prefix_df)

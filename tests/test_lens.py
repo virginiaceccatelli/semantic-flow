@@ -146,24 +146,59 @@ def test_calibrate_margin_handles_single_class():
     assert _calibrate_margin(np.array([1.0, 2.0]), np.array([1, 1])) == 0.0
 
 
-def test_taint_summary_uses_fixed_denominator():
-    """Early-warning rate is over 'model was wrong', not 'both signals fired'."""
+def test_taint_summary_matches_stage40_schema():
+    """Stage 61 delegates to stage 40's summary so both mean the same thing."""
     df = pd.DataFrame([
-        # model wrong, lens wrong earlier -> counts as early warning
-        {"layer": 7, "model_ever_wrong": True, "t_failure": 5,
-         "t_latent_jlens": 3, "lead_jlens": 2, "latent_first_jlens": True},
+        # model wrong, lens wrong earlier -> early warning
+        {"layer": 7, "model_ever_wrong": True, "t_failure": 5, "failure_index": 4,
+         "t_latent_jlens": 3, "error_rate_jlens": 0.2,
+         "lead_jlens": 2, "latent_first_jlens": True,
+         "error_rate_position": 0.3},
         # model wrong, lens never wrong -> counts against the rate, not dropped
-        {"layer": 7, "model_ever_wrong": True, "t_failure": 4,
-         "t_latent_jlens": None, "lead_jlens": None, "latent_first_jlens": False},
+        {"layer": 7, "model_ever_wrong": True, "t_failure": 4, "failure_index": 3,
+         "t_latent_jlens": None, "error_rate_jlens": 0.2,
+         "lead_jlens": None, "latent_first_jlens": False,
+         "error_rate_position": 0.3},
         # model right -> outside the denominator entirely
         {"layer": 7, "model_ever_wrong": False, "t_failure": None,
-         "t_latent_jlens": 2, "lead_jlens": None, "latent_first_jlens": False},
+         "failure_index": None, "t_latent_jlens": 2, "error_rate_jlens": 0.2,
+         "lead_jlens": None, "latent_first_jlens": False,
+         "error_rate_position": 0.3},
     ])
     row = taint_summarize(df).iloc[0]
     assert row["n_model_wrong"] == 2
-    assert row["latent_first"] == 1
     assert row["early_warning_rate"] == pytest.approx(0.5)
     assert row["readout_never_wrong"] == 1
+    # the columns that make the number interpretable must be present
+    for col in ("analytic_null", "early_warning_excess",
+                "per_prefix_error_rate", "beats_position_floor"):
+        assert col in row.index, col
+    assert row["early_warning_excess"] == pytest.approx(
+        row["early_warning_rate"] - row["analytic_null"])
+
+
+def test_taint_summary_flags_constant_readouts():
+    """A collapsed lens must not be read as an early-warning result."""
+    df = pd.DataFrame([{
+        "layer": 7, "model_ever_wrong": True, "t_failure": 4, "failure_index": 3,
+        "t_latent_jlens": 2, "error_rate_jlens": 0.2,
+        "lead_jlens": 2, "latent_first_jlens": True, "error_rate_position": 0.3,
+    }])
+    prefix = pd.DataFrame([
+        {"layer": 7, "jlens_says": 1, "truth": 1},
+        {"layer": 7, "jlens_says": 1, "truth": 0},      # never predicts 0
+    ])
+    assert bool(taint_summarize(df, prefix).iloc[0]["constant_readout"])
+
+
+def test_stage61_records_position_floor_and_failure_index():
+    """Regression: the analytic null needs failure_index, the floor needs position."""
+    import inspect
+    from src.experiments import jlens_taint
+    src = inspect.getsource(jlens_taint.run_jlens_taint)
+    for needed in ('"failure_index"', 'preds["position"]', "behavioural_sanity",
+                   "jlens_taint_prefixes.csv"):
+        assert needed in src, needed
 
 
 # ── control dependence ───────────────────────────────────────────────────────
@@ -466,3 +501,33 @@ def test_guard_cases_record_whether_negative_precedes_anchor():
     # guard 2's body target `b` is after guard 1's anchor, but guard 1's `a`
     # comes BEFORE guard 2's anchor — so both values must occur.
     assert {c.negative_after for c in cases} == {True, False}
+
+
+def test_stage90_renders_stage61_summary_schema(tmp_path):
+    """Stage 61's summary is stage 40's; stage 90 must render it (this broke once)."""
+    mod = _stage90(tmp_path)
+    csv = tmp_path / "jlens_taint_summary_M.csv"
+    pd.DataFrame([
+        {"layer": L, "readout": r, "n_model_wrong": 3,
+         "per_prefix_error_rate": 0.1, "early_warning_rate": 0.5,
+         "analytic_null": 0.4, "early_warning_excess": 0.1,
+         "constant_readout": r == "dead", "beats_position_floor": True,
+         "readout_never_wrong": 1, "mean_lead": 1.0}
+        for L in (0, 7) for r in ("jlens", "logit", "random", "probe", "dead")
+    ]).to_csv(csv, index=False)
+    mod._jlens_taint_assets(csv)
+    assert (tmp_path / "jlens_taint_excess_M.png").exists()
+    assert (tmp_path / "jlens_taint_earlywarning_M.png").exists()
+
+
+def test_stage90_registers_every_stage61_output():
+    import inspect
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "s90", Path(__file__).parent.parent / "scripts" / "90_make_paper_assets.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    src = inspect.getsource(mod.main)
+    for prefix in ("jlens_taint_summary_", "jlens_taint_sanity",
+                   "jlens_taint_prefixes", "jlens_taint_"):
+        assert f'"{prefix}"' in src, f"stage 61 writes {prefix}* but stage 90 ignores it"

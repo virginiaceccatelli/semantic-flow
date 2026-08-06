@@ -161,70 +161,244 @@
 
 ## 2. Related work
 
-### 2.1 Probing representations in language and code models
+### 2.1 Structural probing of source-code models
 
-- Linear probes as operationalization of explicitly accessible information
-- Probe-capacity concern:
-  - low-capacity logistic readout
-  - selectivity against shuffled labels
-  - focus on comparative curves and hard strata rather than raw peak alone
-- Code-model probing context:
-  - syntax and token roles easier than program relations
-  - need exact semantic labels and leakage-resistant evaluation
-- Positioning of contribution:
-  - multiple program relations within unified pipeline
-  - controls specifically designed to remove spelling, distance, indentation shortcuts
+- [Wan et al., *What Do They Capture?—A Structural Analysis of Pre-Trained Language Models for Source Code* (ICSE 2022)](https://arxiv.org/abs/2202.06840)
+  - CodeBERT and GraphCodeBERT analyzed through attention, embedding probes, and syntax-tree induction
+  - attention strongly aligned with code syntax
+  - syntax preserved in intermediate transformer representations
+  - pretrained models capable of inducing code syntax trees
+  - main relevance:
+    - early evidence for layerwise structural organization in code encoders
+    - precedent for AST/tree structure as interpretability target
+  - distinction from present work:
+    - syntax rather than binding/def-use/control/taint semantics
+    - attention alignment and syntax recovery rather than counterfactual surface controls or causal use
+- [Hernández López et al., *AST-Probe: Recovering Abstract Syntax Trees from Hidden Representations of Pre-Trained Language Models* (2022)](https://arxiv.org/abs/2206.11719)
+  - probe designed to recover an entire AST rather than isolated node labels
+  - syntactic subspace found across five pretrained code models
+  - middle layers carry most AST information
+  - estimated syntactic subspace substantially lower-dimensional than full representation
+  - direct connection to present layer results:
+    - middle-layer structural peak consistent with E2–E4 rise/plateau
+    - both reject final-layer-only accounts of structural knowledge
+  - present extension:
+    - relations defined by program analysis rather than grammar alone
+    - exact-chance token-identical controls determining whether information must be contextually constructed
+    - stability and intervention tests beyond recoverability
+- Synthesis for paragraph:
+  - prior syntax-probing literature establishes that code models preserve grammatical trees, commonly most strongly in middle layers
+  - present question shifts from “can syntax be reconstructed?” to “are execution-relevant relations built beyond surface form, robustly maintained, causally used, and output-aligned?”
 
-### 2.2 Program analysis and code representation
+### 2.2 Broad probing suites for code syntax and semantics
 
-- AST, data-flow graph, control-dependence graph, program-dependence graph
-- Binding identity and reaching definitions as core semantic objects
-- Synthetic generation advantage:
-  - exact labels
-  - controlled counterfactual pairs
-- Natural-code limitation:
-  - static analysis approximations and lexical-semantic entanglement
+- [Troshin and Chirkova, *Probing Pretrained Models of Source Code* (2022)](https://arxiv.org/abs/2202.08975)
+  - diagnostic tasks covering syntactic structure/correctness, identifiers, data flow, namespaces, and natural-language naming
+  - comparisons across code-specific pretraining objectives, model sizes, and fine-tuning
+  - evidence that pretrained code models expose multiple code properties to probes
+  - nearest overlap:
+    - identifier, namespace, and data-flow information
+    - model-size and layerwise comparisons
+  - present differentiation:
+    - hard negative strata targeted at exact shortcuts
+    - grouped source-level cross-validation
+    - within-program shuffled-label selectivity
+    - frozen readouts tested under controlled distribution shifts
+- [Ma et al., *Unveiling Code Pre-Trained Models: Investigating Syntax and Semantics Capacities* (2024 version)](https://arxiv.org/abs/2212.10017)
+  - seven code models: CodeBERT, GraphCodeBERT, CodeT5, UniXcoder, StarCoder, CodeLlama, CodeT5+
+  - probing targets spanning AST, CFG, control-dependence graph, and data-dependence graph
+  - additional attention analysis for semantic structures and long-range token dependencies
+  - broad finding:
+    - syntax consistently captured
+    - semantic encoding more variable across models and relations
+  - closest prior work to E3/E4:
+    - DDG and CDG reconstruction
+    - syntax-versus-semantics comparison
+  - present differentiation:
+    - binding identity and taint added to DDG/CDG family
+    - token-identical binding counterfactuals pin model-free and embedding baselines to chance
+    - indentation-matched sibling guards expose high surface decodability of control dependence
+    - accuracy supplemented by AUC, selectivity, strata, real-code transfer, robustness, and causal tests
+- Recommended comparative sentence:
+  - these probing suites show that code-model states correlate with structural labels; present experiments target whether those correlations survive when surface cues are explicitly held constant or adversarially transformed
 
-### 2.3 Robustness and obfuscation
+### 2.3 Formal program semantics in next-token models
 
-- Semantics-preserving program transformations as representation stress tests
-- Distinction:
-  - context degradation: distance/interference inserted between related sites
-  - obfuscation: whole-program surface/control transformation with behavior preserved
-- Tigress-inspired ladder adapted to Python:
-  - normalization
-  - alpha-renaming
-  - opaque dead branches
-  - mixed Boolean-arithmetic encoding
-  - control-flow flattening
+- [Jin and Rinard, *Emergent Representations of Program Semantics in Language Models Trained on Programs* (ICML 2024)](https://arxiv.org/abs/2305.11169)
+  - transformer trained from scratch on synthetic grid-world programs plus partial input/output specifications
+  - hidden-state probes recover unobserved intermediate execution states
+  - semantic representations become increasingly accurate over training
+  - interventional baseline separates information already represented by LM from computation learned by probe
+  - strongest conceptual predecessor:
+    - formal semantics emerging under next-token training without explicit semantic supervision
+    - synthetic environment enabling exact latent-state labels
+  - important differences:
+    - custom-trained domain-specific language versus off-the-shelf pretrained Python code LMs
+    - dynamic grid-world execution state versus binding, reaching definitions, control dependence, and taint
+    - training-time emergence versus layerwise construction within a forward pass
+    - present work adds natural-code transfer, semantics-preserving obfuscation, activation patching, and verbalizability
+- [Guo et al., *GraphCodeBERT: Pre-training Code Representations with Data Flow* (ICLR 2021)](https://arxiv.org/abs/2009.08366)
+  - explicit data-flow graph supplied during pretraining
+  - graph-guided attention plus edge-prediction and node-alignment objectives
+  - data flow defined as “where the value comes from” between variables
+  - improvements on code search, clone detection, translation, and refinement
+  - relevance:
+    - demonstrates usefulness of directly injecting data-flow structure
+    - motivates def-use as a compact semantic relation distinct from full AST hierarchy
+  - contrast:
+    - present models receive only token sequence at inference and were not instrumented with explicit program graphs
+    - question is spontaneous internal recovery, not benefit from graph-supervised architecture/pretraining
+- Positioning claim:
+  - present results bridge pretrained code-model probing and exact formal-state studies
+  - realistic pretrained models and Python syntax, but synthetic counterfactuals retain causal control over semantic ground truth
 
-### 2.4 Causal interpretability
+### 2.4 Probe validity, control tasks, and shortcut removal
 
-- Activation patching:
-  - clean/corrupted minimal pairs
-  - causal effect through logit-difference recovery
-- Distinction from probing:
-  - probe detects available information
-  - patching tests effect of a representation site on behavior
-- Last-token quarantine:
-  - late last-token patch potentially direct/trivial forcing
-  - sink-argument, middle-layer recovery as stronger evidence
+- [Hewitt and Liang, *Designing and Interpreting Probes with Control Tasks* (2019)](https://arxiv.org/abs/1909.03368)
+  - high probing accuracy insufficient when probe can memorize task independently of representation
+  - selectivity = linguistic-task accuracy minus control-task accuracy
+  - control tasks assign random labels learnable only through probe capacity/type identity
+  - regularization and low capacity preferable to assuming linear/MLP accuracy is self-interpreting
+  - direct methodological inheritance:
+    - linear probes
+    - shuffled-label control accuracy
+    - selectivity reported alongside task accuracy
+- Additional risks specific to source code:
+  - token identity approximating variable identity
+  - token distance approximating data flow
+  - indentation approximating control dependence
+  - program-specific rows leaking through random splits
+- Present controls as code-specific extension of probe-validity literature:
+  - context-matched binding pairs:
+    - same anchor tokens/context except binding-flipping intervention
+    - exact 0.500 model-free and embedding floors
+  - same-name/different-binding negatives:
+    - lexical identity predicts wrong label
+  - distance-matched def-use negatives:
+    - adjacency neutralized
+  - indent-matched sibling guards:
+    - nesting-depth cue neutralized
+  - grouped CV by source program:
+    - no shared program across folds
+  - frozen-probe robustness evaluation:
+    - prevents per-condition retraining from converting robustness question into learnability question
+- Core positioning language:
+  - stronger probe accuracy not treated as stronger semantic evidence unless a corresponding shortcut floor is unavailable or held at chance
+  - headline hierarchy based on identification strength: context-matched binding above uncontrolled aggregate accuracy
 
-### 2.5 Logit lens, tuned/Jacobian lens, and verbalizable workspace
+### 2.5 Long context and “knows but does not tell” failures
 
-- Logit lens:
-  - residual state projected through output head
-  - no correction for remaining-network transformation
-- J-lens:
-  - candidate direction transformed by expected Jacobian from layer to final state
-  - unsupervised/output-aligned readout
-- Conceptual distinction:
-  - linearly decodable relation
-  - causally used relation
-  - state disposing model toward a corresponding verbal/token output
-- Novel code-model angle:
-  - method validation on code next-token content
-  - relational test for control dependence
+- [Lu et al., *Insights into LLM Long-Context Failures: When Transformers Know but Don’t Tell* (2024)](https://arxiv.org/abs/2406.14673)
+  - long-context positional bias studied through hidden-state probing
+  - target position/information encoded internally even when final answer incorrect
+  - retrieval/utilization disconnect framed as “know but don’t tell”
+  - relationship examined between extraction time and final answer accuracy
+  - direct connection:
+    - E6 observation that taint probe can remain correct on every prefix where model answer fails
+    - distinction between internal availability and output use
+  - present extension:
+    - semantic program state rather than document retrieval position
+    - filler types separate raw length from lexical and scope interference
+    - causal patching tests use rather than inferring utilization solely from probe/output disagreement
+  - present corrective result:
+    - no support for “latent failure precedes behavioral failure”
+    - early-warning statistic shown to reward unreliable readouts
+    - internal-state correctness during output error compatible with representational/behavioral dissociation, but not with anticipatory degradation
+- Suggested framing:
+  - replicate the broad “available internally, absent from answer” phenomenon
+  - diverge on temporal interpretation: correct internal decoding at failure, not an earlier detectable breakdown
+
+### 2.6 Robustness under semantic-preserving transformations
+
+- Existing code probing usually evaluates held-out examples from same representation regime
+- Present robustness question:
+  - whether a fixed decoder continues to read the same relation after controlled changes
+- Two orthogonal stress families:
+  - inserted context:
+    - inert comments/dead code
+    - lexical decoys
+    - competing updates
+    - scope shadowing
+  - whole-program transformation:
+    - normalization
+    - consistent renaming
+    - opaque predicates
+    - mixed Boolean-arithmetic encoding
+    - control-flow flattening
+- Relation to code-obfuscation literature:
+  - obfuscation used as controlled distribution shift rather than malware detection or attack objective
+  - execution verification preserves observable behavior
+  - cumulative ladder identifies first transformation causing decoder failure
+- Specific novelty relative to cited probing papers:
+  - layerwise frozen-readout transfer under semantics-preserving transformations
+  - comparison of lexical collapse in early layers with structural resilience in middle layers
+  - separation of context length from semantic interference
+
+### 2.7 Causal interpretability and activation patching
+
+- [Zhang and Nanda, *Towards Best Practices of Activation Patching in Language Models: Metrics and Methods* (2023)](https://arxiv.org/abs/2309.16042)
+  - activation patching/causal tracing outcomes sensitive to corruption design and effect metric
+  - methodological choices can produce substantially different localization conclusions
+  - recommendations for explicit metric and corruption justification
+- Present implementation:
+  - token-aligned clean/corrupted programs
+  - one semantic difference at sink argument
+  - normalized logit-difference recovery
+  - layer × position sweep
+  - last-token effects quarantined as potentially direct
+- Why E7 strengthens probing evidence:
+  - probe: information readable
+  - patch: intervention at information-bearing location changes output
+  - layerwise migration from sink token to output position consistent with information routing
+- Remaining causal limitation:
+  - whole-vector patching transports all differing information, not an isolated semantic subspace
+  - recovery localizes a sufficient mediator under this corruption; not complete circuit or unique mechanism
+
+### 2.8 Logit lens, Jacobian lens, and verbalizable representations
+
+- Logit-lens family:
+  - intermediate residual stream projected through fixed output unembedding
+  - assumes shared coordinates between intermediate and final layers
+- Tuned-lens family:
+  - learned layer-specific mappings correct representational drift
+  - supervised calibration introduces learned decoder
+- [Gurnee et al., *Verbalizable Representations Form a Global Workspace in Language Models* (2026)](https://transformer-circuits.pub/2026/workspace/index.html)
+  - Jacobian lens uses corpus-averaged derivative from intermediate residual state to final state
+  - layer-specific output-token directions identify states disposed to affect future verbal report
+  - positioned as mechanistically grounded refinement of logit lens without task-specific probe supervision
+  - reports verbal report, directed modulation, internal reasoning, and flexible-generalization properties of J-space
+  - acknowledged single-token limitation:
+    - concepts without one-token vocabulary names may be distributed or missed
+- Present adaptation:
+  - first validate on code next-token prediction
+  - exact final-layer J-lens/logit-lens identity check
+  - random-direction and plain-logit controls
+  - small, tokenizer-verified candidate identifier sets
+  - same-anchor test of control-dependence target naming
+- Present contribution:
+  - code-domain replication of J-lens advantage over logit lens on next-token content
+  - relational dissociation: supervised probe decodes control dependence; unsupervised output-aligned lens does not
+  - operational claim restricted to token-level verbalizability, not general accessibility or consciousness
+
+### 2.9 Related-work synthesis and novelty paragraph
+
+- What prior code-probing work establishes:
+  - syntax and several semantic graphs recoverable from pretrained representations
+  - middle layers frequently most structurally informative
+  - data-flow supervision useful when injected explicitly
+- What formal-semantic probing adds:
+  - next-token training can induce latent execution state
+  - interventions required to distinguish LM representation from probe learning
+- What long-context work adds:
+  - internal availability can diverge from output utilization
+- What probe-control and causal-method work requires:
+  - accuracy contextualized by memorization/shortcut floors
+  - causal results contextualized by corruption and metric
+- Present paper’s combined gap:
+  - no cited work jointly tests exact surface-controlled semantic decoding, layerwise robustness, natural-code transfer, behavioral timing, causal routing, and output-aligned verbalizability on the same code-model pipeline
+- Recommended final novelty statement:
+  - not the first demonstration that code models contain syntax or semantic information
+  - contribution = evidential separation of surface availability, contextual semantic construction, robustness, causal use, and verbalizability
 
 ## 3. Experimental setup
 

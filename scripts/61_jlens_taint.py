@@ -87,8 +87,11 @@ def main(
     if tables and not df.empty:
         tables_dir = Path("results/tables")
         tables_dir.mkdir(parents=True, exist_ok=True)
-        for name in ("jlens_taint.csv", "jlens_taint_summary.csv"):
-            shutil.copy(output / name, tables_dir / f"{Path(name).stem}_{model}.csv")
+        for name in ("jlens_taint.csv", "jlens_taint_summary.csv",
+                     "jlens_taint_prefixes.csv", "jlens_taint_sanity.csv"):
+            src = output / name
+            if src.exists():
+                shutil.copy(src, tables_dir / f"{Path(name).stem}_{model}.csv")
 
     write_manifest("61_jlens_taint", {
         "model": model, "dataset": str(dataset), "probes": str(probes),

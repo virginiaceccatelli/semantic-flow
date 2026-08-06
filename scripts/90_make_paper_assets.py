@@ -356,7 +356,9 @@ def _jlens_validation_assets(csv: Path):
 
 
 def _jlens_taint_assets(csv: Path):
-    """E10-2. The headline is the early-warning rate, not mean lead."""
+    """E10-2. Shares stage 40's summary schema, so it gets the same treatment:
+    the claim-bearing quantity is excess over the analytic null, and readouts
+    that collapsed to a constant are dropped rather than plotted."""
     from src.analysis.tables import df_to_markdown
 
     tag = csv.stem.replace("jlens_taint_summary_", "")
@@ -366,18 +368,26 @@ def _jlens_taint_assets(csv: Path):
     if summary.empty:
         return
 
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    _lens_plot(ax, summary, "early_warning_rate", None)
-    ax.set_ylabel("P(readout wrong first | model wrong)")
-    ax.set_title(f"E10-2 early warning by layer and readout — {tag}")
-    _save(fig, f"jlens_taint_earlywarning_{tag}")
+    usable = summary
+    if "constant_readout" in summary.columns:
+        usable = summary[~summary["constant_readout"].fillna(False).astype(bool)]
+    if usable.empty:
+        console.print(f"  [yellow]{csv.name}: every readout collapsed[/yellow]")
+        return
+
+    if "early_warning_excess" in usable.columns:
+        fig, ax = plt.subplots(figsize=(8, 4.5))
+        _lens_plot(ax, usable, "early_warning_excess", 0.0)
+        ax.set_ylabel("Early-warning excess over analytic null")
+        ax.set_title(f"E10-2: early warning above what unreliability predicts — {tag}")
+        _save(fig, f"jlens_taint_excess_{tag}")
 
     fig, ax = plt.subplots(figsize=(8, 4.5))
-    _lens_plot(ax, summary, "mean_lead", 0.0)
-    ax.set_ylabel("Mean lead (prefixes)")
-    ax.set_title(f"E10-2 mean lead by layer and readout — {tag}\n"
-                 "(denominator moves across layers — read the rate plot first)")
-    _save(fig, f"jlens_taint_meanlead_{tag}")
+    _lens_plot(ax, usable, "early_warning_rate", None)
+    ax.set_ylabel("P(readout wrong first | model wrong)")
+    ax.set_title(f"E10-2 raw early-warning rate — {tag}\n"
+                 "(rises with readout error rate; read the excess plot first)")
+    _save(fig, f"jlens_taint_earlywarning_{tag}")
 
 
 def _jlens_controldep_assets(csv: Path):
@@ -452,6 +462,8 @@ def main():
         "jlens_validation_checks": None,              # gate verdicts, no figure
         "jlens_validation_": _jlens_validation_assets,
         "jlens_taint_summary_": _jlens_taint_assets,
+        "jlens_taint_sanity": _behavioural_sanity_assets,
+        "jlens_taint_prefixes": None,                 # per-prefix log
         "jlens_taint_": None,                         # per-example rows
         "jlens_controldep_summary_": _jlens_controldep_assets,
         "jlens_controldep_": None,                    # per-case rows

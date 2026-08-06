@@ -1,0 +1,36 @@
+{
+  "stage": "61_jlens_taint",
+  "timestamp": "20260806_092916",
+  "git_sha": "7027071",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/61_jlens_taint.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--layers",
+    "11,23",
+    "--n-examples",
+    "10",
+    "--probes",
+    "results/smoke/probes",
+    "--output",
+    "results/scratch/e102",
+    "--no-tables"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "dataset": "data/synthetic/core.jsonl",
+    "probes": "results/smoke/probes",
+    "layers": "[11, 23]",
+    "n_examples": "10",
+    "calib_frac": "0.3",
+    "dtype": "float16",
+    "grad_scale": "1024.0",
+    "device": "mps",
+    "seed": "42"
+  },
+  "wall_time_s": 1132.1,
+  "extra": {
+    "n_rows": 14
+  }
+}
