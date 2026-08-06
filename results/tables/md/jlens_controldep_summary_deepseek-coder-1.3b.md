@@ -1,76 +1,244 @@
 # J-lens control dependence — deepseek-coder-1.3b
 
-|   layer | lens   | stratum        |   accuracy |   mean_margin |   n |
-|--------:|:-------|:---------------|-----------:|--------------:|----:|
-|      -1 | jlens  | all            |      0.492 |        -0.002 | 917 |
-|      -1 | jlens  | indent_matched |      0.496 |        -0.000 | 808 |
-|      -1 | jlens  | non_dependent  |      0.459 |        -0.013 | 109 |
-|      -1 | logit  | all            |      0.485 |        -0.020 | 917 |
-|      -1 | logit  | indent_matched |      0.501 |        -0.001 | 808 |
-|      -1 | logit  | non_dependent  |      0.367 |        -0.159 | 109 |
-|      -1 | random | all            |      0.508 |         0.021 | 917 |
-|      -1 | random | indent_matched |      0.500 |         0.014 | 808 |
-|      -1 | random | non_dependent  |      0.569 |         0.077 | 109 |
-|       0 | jlens  | all            |      0.502 |        -0.002 | 917 |
-|       0 | jlens  | indent_matched |      0.507 |        -0.000 | 808 |
-|       0 | jlens  | non_dependent  |      0.459 |        -0.015 | 109 |
-|       0 | logit  | all            |      0.482 |        -0.015 | 917 |
-|       0 | logit  | indent_matched |      0.498 |        -0.001 | 808 |
-|       0 | logit  | non_dependent  |      0.367 |        -0.122 | 109 |
-|       0 | random | all            |      0.507 |         0.010 | 917 |
-|       0 | random | indent_matched |      0.504 |         0.015 | 808 |
-|       0 | random | non_dependent  |      0.532 |        -0.028 | 109 |
-|       3 | jlens  | all            |      0.474 |        -0.002 | 917 |
-|       3 | jlens  | indent_matched |      0.484 |        -0.001 | 808 |
-|       3 | jlens  | non_dependent  |      0.404 |        -0.010 | 109 |
-|       3 | logit  | all            |      0.478 |        -0.016 | 917 |
-|       3 | logit  | indent_matched |      0.470 |        -0.031 | 808 |
-|       3 | logit  | non_dependent  |      0.532 |         0.095 | 109 |
-|       3 | random | all            |      0.519 |         0.159 | 917 |
-|       3 | random | indent_matched |      0.505 |         0.065 | 808 |
-|       3 | random | non_dependent  |      0.624 |         0.856 | 109 |
-|       7 | jlens  | all            |      0.519 |        -0.000 | 917 |
-|       7 | jlens  | indent_matched |      0.517 |        -0.001 | 808 |
-|       7 | jlens  | non_dependent  |      0.532 |         0.007 | 109 |
-|       7 | logit  | all            |      0.522 |         0.036 | 917 |
-|       7 | logit  | indent_matched |      0.507 |         0.016 | 808 |
-|       7 | logit  | non_dependent  |      0.633 |         0.184 | 109 |
-|       7 | random | all            |      0.501 |         0.065 | 917 |
-|       7 | random | indent_matched |      0.486 |        -0.027 | 808 |
-|       7 | random | non_dependent  |      0.606 |         0.745 | 109 |
-|      11 | jlens  | all            |      0.470 |        -0.004 | 917 |
-|      11 | jlens  | indent_matched |      0.474 |        -0.003 | 808 |
-|      11 | jlens  | non_dependent  |      0.440 |        -0.011 | 109 |
-|      11 | logit  | all            |      0.498 |         0.014 | 917 |
-|      11 | logit  | indent_matched |      0.476 |        -0.045 | 808 |
-|      11 | logit  | non_dependent  |      0.661 |         0.457 | 109 |
-|      11 | random | all            |      0.481 |        -0.063 | 917 |
-|      11 | random | indent_matched |      0.479 |        -0.125 | 808 |
-|      11 | random | non_dependent  |      0.495 |         0.393 | 109 |
-|      15 | jlens  | all            |      0.482 |        -0.002 | 917 |
-|      15 | jlens  | indent_matched |      0.472 |        -0.003 | 808 |
-|      15 | jlens  | non_dependent  |      0.560 |         0.009 | 109 |
-|      15 | logit  | all            |      0.519 |         0.058 | 917 |
-|      15 | logit  | indent_matched |      0.505 |        -0.029 | 808 |
-|      15 | logit  | non_dependent  |      0.624 |         0.702 | 109 |
-|      15 | random | all            |      0.483 |        -0.068 | 917 |
-|      15 | random | indent_matched |      0.484 |        -0.107 | 808 |
-|      15 | random | non_dependent  |      0.477 |         0.223 | 109 |
-|      19 | jlens  | all            |      0.465 |        -0.016 | 917 |
-|      19 | jlens  | indent_matched |      0.458 |        -0.016 | 808 |
-|      19 | jlens  | non_dependent  |      0.514 |        -0.018 | 109 |
-|      19 | logit  | all            |      0.462 |        -0.280 | 917 |
-|      19 | logit  | indent_matched |      0.459 |        -0.317 | 808 |
-|      19 | logit  | non_dependent  |      0.486 |        -0.006 | 109 |
-|      19 | random | all            |      0.498 |        -0.106 | 917 |
-|      19 | random | indent_matched |      0.491 |        -0.132 | 808 |
-|      19 | random | non_dependent  |      0.550 |         0.087 | 109 |
-|      23 | jlens  | all            |      0.450 |        -0.042 | 917 |
-|      23 | jlens  | indent_matched |      0.457 |        -0.037 | 808 |
-|      23 | jlens  | non_dependent  |      0.404 |        -0.073 | 109 |
-|      23 | logit  | all            |      0.450 |        -1.828 | 917 |
-|      23 | logit  | indent_matched |      0.457 |        -1.642 | 808 |
-|      23 | logit  | non_dependent  |      0.404 |        -3.204 | 109 |
-|      23 | random | all            |      0.503 |        -0.012 | 917 |
-|      23 | random | indent_matched |      0.509 |        -0.009 | 808 |
-|      23 | random | non_dependent  |      0.459 |        -0.032 | 109 |
+|   layer | lens   | comparison   | stratum            |   accuracy |   mean_margin |   n |
+|--------:|:-------|:-------------|:-------------------|-----------:|--------------:|----:|
+|      -1 | jlens  | control_dep  | all                |      0.496 |        -0.002 | 917 |
+|      -1 | jlens  | control_dep  | indent_matched     |      0.502 |        -0.000 | 808 |
+|      -1 | jlens  | control_dep  | non_dependent      |      0.450 |        -0.015 | 109 |
+|      -1 | jlens  | control_dep  | temporally_matched |      0.496 |         0.000 | 415 |
+|      -1 | jlens  | guard_var    | all                |      0.500 |         0.002 | 150 |
+|      -1 | jlens  | guard_var    | present_in_program |      0.500 |         0.002 | 150 |
+|      -1 | jlens  | guard_var    | temporally_matched |      0.503 |         0.001 | 145 |
+|      -1 | jlens  | next_ident   | all                |      0.533 |         0.011 | 150 |
+|      -1 | jlens  | next_ident   | present_in_program |      0.533 |         0.011 | 150 |
+|      -1 | jlens  | next_ident   | temporally_matched |      0.514 |        -0.001 |  35 |
+|      -1 | logit  | control_dep  | all                |      0.485 |        -0.022 | 917 |
+|      -1 | logit  | control_dep  | indent_matched     |      0.501 |        -0.001 | 808 |
+|      -1 | logit  | control_dep  | non_dependent      |      0.367 |        -0.179 | 109 |
+|      -1 | logit  | control_dep  | temporally_matched |      0.492 |        -0.011 | 415 |
+|      -1 | logit  | guard_var    | all                |      0.573 |         0.102 | 150 |
+|      -1 | logit  | guard_var    | present_in_program |      0.573 |         0.102 | 150 |
+|      -1 | logit  | guard_var    | temporally_matched |      0.559 |         0.086 | 145 |
+|      -1 | logit  | next_ident   | all                |      0.440 |        -0.054 | 150 |
+|      -1 | logit  | next_ident   | present_in_program |      0.440 |        -0.054 | 150 |
+|      -1 | logit  | next_ident   | temporally_matched |      0.600 |         0.048 |  35 |
+|      -1 | random | control_dep  | all                |      0.516 |         0.027 | 917 |
+|      -1 | random | control_dep  | indent_matched     |      0.509 |         0.021 | 808 |
+|      -1 | random | control_dep  | non_dependent      |      0.569 |         0.072 | 109 |
+|      -1 | random | control_dep  | temporally_matched |      0.581 |         0.216 | 415 |
+|      -1 | random | guard_var    | all                |      0.460 |        -0.040 | 150 |
+|      -1 | random | guard_var    | present_in_program |      0.460 |        -0.040 | 150 |
+|      -1 | random | guard_var    | temporally_matched |      0.462 |        -0.035 | 145 |
+|      -1 | random | next_ident   | all                |      0.567 |         0.157 | 150 |
+|      -1 | random | next_ident   | present_in_program |      0.567 |         0.157 | 150 |
+|      -1 | random | next_ident   | temporally_matched |      0.429 |        -0.041 |  35 |
+|       0 | jlens  | control_dep  | all                |      0.502 |        -0.001 | 917 |
+|       0 | jlens  | control_dep  | indent_matched     |      0.509 |         0.001 | 808 |
+|       0 | jlens  | control_dep  | non_dependent      |      0.450 |        -0.017 | 109 |
+|       0 | jlens  | control_dep  | temporally_matched |      0.492 |        -0.003 | 415 |
+|       0 | jlens  | guard_var    | all                |      0.527 |         0.003 | 150 |
+|       0 | jlens  | guard_var    | present_in_program |      0.527 |         0.003 | 150 |
+|       0 | jlens  | guard_var    | temporally_matched |      0.531 |         0.002 | 145 |
+|       0 | jlens  | next_ident   | all                |      0.587 |         0.012 | 150 |
+|       0 | jlens  | next_ident   | present_in_program |      0.587 |         0.012 | 150 |
+|       0 | jlens  | next_ident   | temporally_matched |      0.543 |         0.001 |  35 |
+|       0 | logit  | control_dep  | all                |      0.481 |        -0.015 | 917 |
+|       0 | logit  | control_dep  | indent_matched     |      0.496 |         0.002 | 808 |
+|       0 | logit  | control_dep  | non_dependent      |      0.367 |        -0.137 | 109 |
+|       0 | logit  | control_dep  | temporally_matched |      0.523 |         0.030 | 415 |
+|       0 | logit  | guard_var    | all                |      0.520 |         0.070 | 150 |
+|       0 | logit  | guard_var    | present_in_program |      0.520 |         0.070 | 150 |
+|       0 | logit  | guard_var    | temporally_matched |      0.503 |         0.054 | 145 |
+|       0 | logit  | next_ident   | all                |      0.407 |        -0.059 | 150 |
+|       0 | logit  | next_ident   | present_in_program |      0.407 |        -0.059 | 150 |
+|       0 | logit  | next_ident   | temporally_matched |      0.629 |         0.108 |  35 |
+|       0 | random | control_dep  | all                |      0.506 |         0.000 | 917 |
+|       0 | random | control_dep  | indent_matched     |      0.504 |         0.005 | 808 |
+|       0 | random | control_dep  | non_dependent      |      0.523 |        -0.036 | 109 |
+|       0 | random | control_dep  | temporally_matched |      0.542 |         0.194 | 415 |
+|       0 | random | guard_var    | all                |      0.593 |         0.140 | 150 |
+|       0 | random | guard_var    | present_in_program |      0.593 |         0.140 | 150 |
+|       0 | random | guard_var    | temporally_matched |      0.579 |         0.117 | 145 |
+|       0 | random | next_ident   | all                |      0.487 |        -0.118 | 150 |
+|       0 | random | next_ident   | present_in_program |      0.487 |        -0.118 | 150 |
+|       0 | random | next_ident   | temporally_matched |      0.429 |        -0.256 |  35 |
+|       3 | jlens  | control_dep  | all                |      0.472 |        -0.003 | 917 |
+|       3 | jlens  | control_dep  | indent_matched     |      0.483 |        -0.001 | 808 |
+|       3 | jlens  | control_dep  | non_dependent      |      0.394 |        -0.012 | 109 |
+|       3 | jlens  | control_dep  | temporally_matched |      0.501 |         0.002 | 415 |
+|       3 | jlens  | guard_var    | all                |      0.487 |        -0.001 | 150 |
+|       3 | jlens  | guard_var    | present_in_program |      0.487 |        -0.001 | 150 |
+|       3 | jlens  | guard_var    | temporally_matched |      0.476 |        -0.002 | 145 |
+|       3 | jlens  | next_ident   | all                |      0.467 |         0.001 | 150 |
+|       3 | jlens  | next_ident   | present_in_program |      0.467 |         0.001 | 150 |
+|       3 | jlens  | next_ident   | temporally_matched |      0.429 |        -0.016 |  35 |
+|       3 | logit  | control_dep  | all                |      0.484 |        -0.011 | 917 |
+|       3 | logit  | control_dep  | indent_matched     |      0.478 |        -0.024 | 808 |
+|       3 | logit  | control_dep  | non_dependent      |      0.532 |         0.085 | 109 |
+|       3 | logit  | control_dep  | temporally_matched |      0.465 |        -0.043 | 415 |
+|       3 | logit  | guard_var    | all                |      0.460 |        -0.007 | 150 |
+|       3 | logit  | guard_var    | present_in_program |      0.460 |        -0.007 | 150 |
+|       3 | logit  | guard_var    | temporally_matched |      0.476 |         0.004 | 145 |
+|       3 | logit  | next_ident   | all                |      0.440 |        -0.066 | 150 |
+|       3 | logit  | next_ident   | present_in_program |      0.440 |        -0.066 | 150 |
+|       3 | logit  | next_ident   | temporally_matched |      0.514 |         0.071 |  35 |
+|       3 | random | control_dep  | all                |      0.522 |         0.176 | 917 |
+|       3 | random | control_dep  | indent_matched     |      0.507 |         0.079 | 808 |
+|       3 | random | control_dep  | non_dependent      |      0.633 |         0.897 | 109 |
+|       3 | random | control_dep  | temporally_matched |      0.516 |         0.276 | 415 |
+|       3 | random | guard_var    | all                |      0.487 |         0.181 | 150 |
+|       3 | random | guard_var    | present_in_program |      0.487 |         0.181 | 150 |
+|       3 | random | guard_var    | temporally_matched |      0.503 |         0.232 | 145 |
+|       3 | random | next_ident   | all                |      0.520 |         0.050 | 150 |
+|       3 | random | next_ident   | present_in_program |      0.520 |         0.050 | 150 |
+|       3 | random | next_ident   | temporally_matched |      0.400 |        -0.236 |  35 |
+|       7 | jlens  | control_dep  | all                |      0.528 |         0.001 | 917 |
+|       7 | jlens  | control_dep  | indent_matched     |      0.526 |        -0.000 | 808 |
+|       7 | jlens  | control_dep  | non_dependent      |      0.541 |         0.007 | 109 |
+|       7 | jlens  | control_dep  | temporally_matched |      0.576 |         0.011 | 415 |
+|       7 | jlens  | guard_var    | all                |      0.513 |        -0.004 | 150 |
+|       7 | jlens  | guard_var    | present_in_program |      0.513 |        -0.004 | 150 |
+|       7 | jlens  | guard_var    | temporally_matched |      0.531 |        -0.002 | 145 |
+|       7 | jlens  | next_ident   | all                |      0.547 |        -0.000 | 150 |
+|       7 | jlens  | next_ident   | present_in_program |      0.547 |        -0.000 | 150 |
+|       7 | jlens  | next_ident   | temporally_matched |      0.629 |         0.004 |  35 |
+|       7 | logit  | control_dep  | all                |      0.519 |         0.027 | 917 |
+|       7 | logit  | control_dep  | indent_matched     |      0.504 |         0.006 | 808 |
+|       7 | logit  | control_dep  | non_dependent      |      0.633 |         0.188 | 109 |
+|       7 | logit  | control_dep  | temporally_matched |      0.508 |        -0.002 | 415 |
+|       7 | logit  | guard_var    | all                |      0.620 |         0.235 | 150 |
+|       7 | logit  | guard_var    | present_in_program |      0.620 |         0.235 | 150 |
+|       7 | logit  | guard_var    | temporally_matched |      0.641 |         0.258 | 145 |
+|       7 | logit  | next_ident   | all                |      0.520 |        -0.016 | 150 |
+|       7 | logit  | next_ident   | present_in_program |      0.520 |        -0.016 | 150 |
+|       7 | logit  | next_ident   | temporally_matched |      0.657 |         0.323 |  35 |
+|       7 | random | control_dep  | all                |      0.506 |         0.049 | 917 |
+|       7 | random | control_dep  | indent_matched     |      0.493 |        -0.052 | 808 |
+|       7 | random | control_dep  | non_dependent      |      0.606 |         0.799 | 109 |
+|       7 | random | control_dep  | temporally_matched |      0.542 |         0.228 | 415 |
+|       7 | random | guard_var    | all                |      0.507 |        -0.120 | 150 |
+|       7 | random | guard_var    | present_in_program |      0.507 |        -0.120 | 150 |
+|       7 | random | guard_var    | temporally_matched |      0.517 |        -0.068 | 145 |
+|       7 | random | next_ident   | all                |      0.453 |        -0.382 | 150 |
+|       7 | random | next_ident   | present_in_program |      0.453 |        -0.382 | 150 |
+|       7 | random | next_ident   | temporally_matched |      0.514 |         0.171 |  35 |
+|      11 | jlens  | control_dep  | all                |      0.477 |        -0.003 | 917 |
+|      11 | jlens  | control_dep  | indent_matched     |      0.483 |        -0.002 | 808 |
+|      11 | jlens  | control_dep  | non_dependent      |      0.431 |        -0.012 | 109 |
+|      11 | jlens  | control_dep  | temporally_matched |      0.508 |         0.002 | 415 |
+|      11 | jlens  | guard_var    | all                |      0.600 |         0.025 | 150 |
+|      11 | jlens  | guard_var    | present_in_program |      0.600 |         0.025 | 150 |
+|      11 | jlens  | guard_var    | temporally_matched |      0.607 |         0.026 | 145 |
+|      11 | jlens  | next_ident   | all                |      0.480 |        -0.007 | 150 |
+|      11 | jlens  | next_ident   | present_in_program |      0.480 |        -0.007 | 150 |
+|      11 | jlens  | next_ident   | temporally_matched |      0.400 |        -0.019 |  35 |
+|      11 | logit  | control_dep  | all                |      0.511 |         0.052 | 917 |
+|      11 | logit  | control_dep  | indent_matched     |      0.491 |        -0.005 | 808 |
+|      11 | logit  | control_dep  | non_dependent      |      0.661 |         0.480 | 109 |
+|      11 | logit  | control_dep  | temporally_matched |      0.489 |        -0.029 | 415 |
+|      11 | logit  | guard_var    | all                |      0.713 |         0.686 | 150 |
+|      11 | logit  | guard_var    | present_in_program |      0.713 |         0.686 | 150 |
+|      11 | logit  | guard_var    | temporally_matched |      0.724 |         0.720 | 145 |
+|      11 | logit  | next_ident   | all                |      0.480 |        -0.016 | 150 |
+|      11 | logit  | next_ident   | present_in_program |      0.480 |        -0.016 | 150 |
+|      11 | logit  | next_ident   | temporally_matched |      0.543 |         0.165 |  35 |
+|      11 | random | control_dep  | all                |      0.481 |        -0.052 | 917 |
+|      11 | random | control_dep  | indent_matched     |      0.478 |        -0.122 | 808 |
+|      11 | random | control_dep  | non_dependent      |      0.505 |         0.467 | 109 |
+|      11 | random | control_dep  | temporally_matched |      0.477 |        -0.120 | 415 |
+|      11 | random | guard_var    | all                |      0.533 |        -0.007 | 150 |
+|      11 | random | guard_var    | present_in_program |      0.533 |        -0.007 | 150 |
+|      11 | random | guard_var    | temporally_matched |      0.531 |         0.021 | 145 |
+|      11 | random | next_ident   | all                |      0.407 |        -0.561 | 150 |
+|      11 | random | next_ident   | present_in_program |      0.407 |        -0.561 | 150 |
+|      11 | random | next_ident   | temporally_matched |      0.429 |        -0.039 |  35 |
+|      15 | jlens  | control_dep  | all                |      0.485 |         0.000 | 917 |
+|      15 | jlens  | control_dep  | indent_matched     |      0.476 |        -0.001 | 808 |
+|      15 | jlens  | control_dep  | non_dependent      |      0.550 |         0.008 | 109 |
+|      15 | jlens  | control_dep  | temporally_matched |      0.465 |        -0.001 | 415 |
+|      15 | jlens  | guard_var    | all                |      0.607 |         0.035 | 150 |
+|      15 | jlens  | guard_var    | present_in_program |      0.607 |         0.035 | 150 |
+|      15 | jlens  | guard_var    | temporally_matched |      0.593 |         0.035 | 145 |
+|      15 | jlens  | next_ident   | all                |      0.447 |        -0.011 | 150 |
+|      15 | jlens  | next_ident   | present_in_program |      0.447 |        -0.011 | 150 |
+|      15 | jlens  | next_ident   | temporally_matched |      0.600 |         0.012 |  35 |
+|      15 | logit  | control_dep  | all                |      0.518 |         0.087 | 917 |
+|      15 | logit  | control_dep  | indent_matched     |      0.504 |         0.001 | 808 |
+|      15 | logit  | control_dep  | non_dependent      |      0.624 |         0.725 | 109 |
+|      15 | logit  | control_dep  | temporally_matched |      0.467 |        -0.180 | 415 |
+|      15 | logit  | guard_var    | all                |      0.620 |         0.709 | 150 |
+|      15 | logit  | guard_var    | present_in_program |      0.620 |         0.709 | 150 |
+|      15 | logit  | guard_var    | temporally_matched |      0.628 |         0.736 | 145 |
+|      15 | logit  | next_ident   | all                |      0.500 |        -0.186 | 150 |
+|      15 | logit  | next_ident   | present_in_program |      0.500 |        -0.186 | 150 |
+|      15 | logit  | next_ident   | temporally_matched |      0.571 |         0.150 |  35 |
+|      15 | random | control_dep  | all                |      0.491 |        -0.075 | 917 |
+|      15 | random | control_dep  | indent_matched     |      0.493 |        -0.125 | 808 |
+|      15 | random | control_dep  | non_dependent      |      0.477 |         0.299 | 109 |
+|      15 | random | control_dep  | temporally_matched |      0.516 |         0.123 | 415 |
+|      15 | random | guard_var    | all                |      0.467 |        -0.248 | 150 |
+|      15 | random | guard_var    | present_in_program |      0.467 |        -0.248 | 150 |
+|      15 | random | guard_var    | temporally_matched |      0.476 |        -0.162 | 145 |
+|      15 | random | next_ident   | all                |      0.433 |        -0.459 | 150 |
+|      15 | random | next_ident   | present_in_program |      0.433 |        -0.459 | 150 |
+|      15 | random | next_ident   | temporally_matched |      0.457 |         0.006 |  35 |
+|      19 | jlens  | control_dep  | all                |      0.462 |        -0.015 | 917 |
+|      19 | jlens  | control_dep  | indent_matched     |      0.457 |        -0.014 | 808 |
+|      19 | jlens  | control_dep  | non_dependent      |      0.505 |        -0.020 | 109 |
+|      19 | jlens  | control_dep  | temporally_matched |      0.480 |        -0.007 | 415 |
+|      19 | jlens  | guard_var    | all                |      0.713 |         0.069 | 150 |
+|      19 | jlens  | guard_var    | present_in_program |      0.713 |         0.069 | 150 |
+|      19 | jlens  | guard_var    | temporally_matched |      0.703 |         0.067 | 145 |
+|      19 | jlens  | next_ident   | all                |      0.367 |        -0.057 | 150 |
+|      19 | jlens  | next_ident   | present_in_program |      0.367 |        -0.057 | 150 |
+|      19 | jlens  | next_ident   | temporally_matched |      0.457 |        -0.018 |  35 |
+|      19 | logit  | control_dep  | all                |      0.465 |        -0.266 | 917 |
+|      19 | logit  | control_dep  | indent_matched     |      0.463 |        -0.292 | 808 |
+|      19 | logit  | control_dep  | non_dependent      |      0.477 |        -0.070 | 109 |
+|      19 | logit  | control_dep  | temporally_matched |      0.448 |        -0.197 | 415 |
+|      19 | logit  | guard_var    | all                |      0.693 |         1.734 | 150 |
+|      19 | logit  | guard_var    | present_in_program |      0.693 |         1.734 | 150 |
+|      19 | logit  | guard_var    | temporally_matched |      0.703 |         1.771 | 145 |
+|      19 | logit  | next_ident   | all                |      0.413 |        -0.899 | 150 |
+|      19 | logit  | next_ident   | present_in_program |      0.413 |        -0.899 | 150 |
+|      19 | logit  | next_ident   | temporally_matched |      0.486 |         0.258 |  35 |
+|      19 | random | control_dep  | all                |      0.491 |        -0.179 | 917 |
+|      19 | random | control_dep  | indent_matched     |      0.483 |        -0.218 | 808 |
+|      19 | random | control_dep  | non_dependent      |      0.550 |         0.117 | 109 |
+|      19 | random | control_dep  | temporally_matched |      0.530 |         0.057 | 415 |
+|      19 | random | guard_var    | all                |      0.487 |        -0.427 | 150 |
+|      19 | random | guard_var    | present_in_program |      0.487 |        -0.427 | 150 |
+|      19 | random | guard_var    | temporally_matched |      0.503 |        -0.347 | 145 |
+|      19 | random | next_ident   | all                |      0.460 |        -0.424 | 150 |
+|      19 | random | next_ident   | present_in_program |      0.460 |        -0.424 | 150 |
+|      19 | random | next_ident   | temporally_matched |      0.486 |        -0.372 |  35 |
+|      23 | jlens  | control_dep  | all                |      0.450 |        -0.042 | 917 |
+|      23 | jlens  | control_dep  | indent_matched     |      0.458 |        -0.037 | 808 |
+|      23 | jlens  | control_dep  | non_dependent      |      0.394 |        -0.081 | 109 |
+|      23 | jlens  | control_dep  | temporally_matched |      0.513 |        -0.013 | 415 |
+|      23 | jlens  | guard_var    | all                |      0.593 |         0.093 | 150 |
+|      23 | jlens  | guard_var    | present_in_program |      0.593 |         0.093 | 150 |
+|      23 | jlens  | guard_var    | temporally_matched |      0.579 |         0.081 | 145 |
+|      23 | jlens  | next_ident   | all                |      0.347 |        -0.111 | 150 |
+|      23 | jlens  | next_ident   | present_in_program |      0.347 |        -0.111 | 150 |
+|      23 | jlens  | next_ident   | temporally_matched |      0.514 |        -0.046 |  35 |
+|      23 | logit  | control_dep  | all                |      0.451 |        -1.846 | 917 |
+|      23 | logit  | control_dep  | indent_matched     |      0.459 |        -1.615 | 808 |
+|      23 | logit  | control_dep  | non_dependent      |      0.394 |        -3.555 | 109 |
+|      23 | logit  | control_dep  | temporally_matched |      0.513 |        -0.579 | 415 |
+|      23 | logit  | guard_var    | all                |      0.593 |         4.108 | 150 |
+|      23 | logit  | guard_var    | present_in_program |      0.593 |         4.108 | 150 |
+|      23 | logit  | guard_var    | temporally_matched |      0.579 |         3.564 | 145 |
+|      23 | logit  | next_ident   | all                |      0.347 |        -4.893 | 150 |
+|      23 | logit  | next_ident   | present_in_program |      0.347 |        -4.893 | 150 |
+|      23 | logit  | next_ident   | temporally_matched |      0.514 |        -2.023 |  35 |
+|      23 | random | control_dep  | all                |      0.494 |        -0.018 | 917 |
+|      23 | random | control_dep  | indent_matched     |      0.499 |        -0.015 | 808 |
+|      23 | random | control_dep  | non_dependent      |      0.459 |        -0.035 | 109 |
+|      23 | random | control_dep  | temporally_matched |      0.501 |        -0.003 | 415 |
+|      23 | random | guard_var    | all                |      0.547 |         0.043 | 150 |
+|      23 | random | guard_var    | present_in_program |      0.547 |         0.043 | 150 |
+|      23 | random | guard_var    | temporally_matched |      0.538 |         0.031 | 145 |
+|      23 | random | next_ident   | all                |      0.513 |        -0.055 | 150 |
+|      23 | random | next_ident   | present_in_program |      0.513 |        -0.055 | 150 |
+|      23 | random | next_ident   | temporally_matched |      0.429 |        -0.060 |  35 |

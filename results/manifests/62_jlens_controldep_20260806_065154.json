@@ -1,0 +1,33 @@
+{
+  "stage": "62_jlens_controldep",
+  "timestamp": "20260806_065154",
+  "git_sha": "c149eea",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/62_jlens_controldep.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--dataset",
+    "data/synthetic/core.jsonl",
+    "--dtype",
+    "float16",
+    "--lens-out",
+    "results/jlens/deepseek-coder-6.7b/lenses"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "dataset": "data/synthetic/core.jsonl",
+    "layers": "[-1, 0, 3, 7, 11, 15, 19, 23, 27, 31]",
+    "n_examples": "120",
+    "n_build": "30",
+    "n_tprime": "2",
+    "dtype": "float16",
+    "grad_scale": "1024.0",
+    "device": "cuda",
+    "seed": "42"
+  },
+  "wall_time_s": 209.0,
+  "extra": {
+    "n_rows": 36510
+  }
+}
