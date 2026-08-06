@@ -42,6 +42,10 @@ def main(
     max_pairs: Optional[int] = typer.Option(None, help="Cap for a quick run"),
     n_boot: int = typer.Option(2000, help="Cluster-bootstrap resamples (grouped by base program)"),
     probe: bool = typer.Option(True, help="Also fit the calibration-trained probe readout"),
+    select_metric: str = typer.Option(
+        "reversal_rate",
+        help="Calibration metric for layer choice. Scale-free by default; "
+             "`paired_gap` reproduces the original pre-registered selection."),
     dtype: str = typer.Option("float16"),
     device: str = typer.Option("auto"),
     seed: int = typer.Option(42),
@@ -89,8 +93,10 @@ def main(
 
     # The layer is chosen on CALIBRATION rows only and recorded here, so the
     # test number quoted anywhere downstream is read at a pre-committed layer.
-    chosen = select_layer(summary, metric="paired_gap", position="use", lens="jlens")
-    console.print(f"\ncalibration-selected layer for the `use` position: {chosen}")
+    chosen = select_layer(summary, metric=select_metric, position="use", lens="jlens")
+    alternative = select_layer(summary, metric="paired_gap", position="use", lens="jlens")
+    console.print(f"\ncalibration-selected layer for the `use` position: {chosen} "
+                  f"(by {select_metric}; `paired_gap` would give {alternative})")
     test_rows = summary[(summary.split == "test") & (summary.subset == "all")
                         & (summary.position == "use") & (summary.layer == chosen)]
     if not test_rows.empty:
@@ -111,7 +117,9 @@ def main(
         "model": model, "pairs": str(pairs_path), "lenses": str(lens_dir),
         "layers": layer_list, "positions": positions, "dtype": dtype,
         "device": device, "seed": seed, "n_boot": n_boot,
+        "select_metric": select_metric,
     }, t0, extra={"n_pairs": len(all_pairs), "selected_layer": chosen,
+                  "selected_layer_by_paired_gap": alternative,
                   "n_rows": len(df)})
     console.print("[green]Stage 72 done.[/green]")
 

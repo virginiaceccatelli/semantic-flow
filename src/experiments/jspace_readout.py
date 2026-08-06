@@ -137,15 +137,26 @@ def _fit_probes(
     calib_hidden: dict[tuple[int, str], tuple[np.ndarray, np.ndarray]],
     seed: int = 42,
 ) -> dict[tuple[int, str], object]:
-    """One binary probe per (layer, position), trained on calibration pairs only.
+    """One MULTICLASS probe per (layer, position): which *value* is bound?
 
-    Label 1 means "the marked use binds the inner (target) definition". The
-    probe therefore decodes *which definition was selected*, which is the
-    supervised analogue of what the lens is asked for — not the value itself,
-    since values differ across pairs and a value decoder would need a different
-    label space. Its margin is a decision function, so only its accuracy and
-    reversal rate are comparable to the lens columns; the candidate-rank column
-    is left empty for it.
+    The label is the bound value itself, not which program variant this is.
+    That distinction is the whole usefulness of this control, and the first
+    version of it got the distinction wrong:
+
+    A variant classifier ("does the use bind the inner definition?") can score
+    1.000 by reading the identity of the one mutated token, since that token is
+    what distinguishes the two programs. Measured on 6.7b it did exactly that —
+    perfect at every layer, at every position inside the mutated token's causal
+    cone, *including the mutation position itself at layer 8*, where nothing
+    has been resolved yet. As a positive control that is worthless: it shows
+    the surface difference is visible, not that the binding was computed.
+
+    Predicting the value cannot be won that way. Knowing which definition wins
+    does not tell you what it holds — the values differ across pairs, so the
+    probe has to combine "which def reaches here" with "what that def assigned",
+    which is the computation under test. Its output is then directly comparable
+    to the lens: `P(v_source) - P(v_target)` is the same signed quantity as the
+    lens margin, and feeds the same paired-reversal definition.
     """
     from src.probes.base import LinearProbe, ProbeConfig
 
@@ -157,6 +168,32 @@ def _fit_probes(
         probe.fit(X.astype(np.float32), y)
         probes[key] = probe
     return probes
+
+
+def _probe_row(probe, hidden: np.ndarray, pair: BindingCounterfactual,
+               variant: str) -> Optional[dict]:
+    """The probe's readout for one state, in the lens's own units.
+
+    Returns None when either of the pair's values never appeared in the
+    calibration split, since the probe then has no column for it — scored as
+    missing rather than as a failure.
+    """
+    proba = probe.predict_proba(hidden.reshape(1, -1))[0]
+    classes = list(probe.clf.classes_)
+    try:
+        i_source, i_target = classes.index(pair.v_source), classes.index(pair.v_target)
+    except ValueError:
+        return None
+    bound, other = ((i_source, i_target) if variant == "source"
+                    else (i_target, i_source))
+    return {
+        "margin_source_minus_target": float(proba[i_source] - proba[i_target]),
+        "margin_bound_minus_other": float(proba[bound] - proba[other]),
+        # Now meaningful, unlike the variant probe's: the rank of the bound
+        # value among all values the probe knows about.
+        "bound_rank": int((proba > proba[bound]).sum()),
+        "correct": bool(proba[bound] > proba[other]),
+    }
 
 
 # ── main runner ──────────────────────────────────────────────────────────────
@@ -229,7 +266,7 @@ def run_jspace_readout(
                         key = (layer, position)
                         X, y = calib_data.setdefault(key, ([], []))
                         X.append(states[(pair.pair_id, variant)][layer][p_i])
-                        y.append(1 if variant == "target" else 0)
+                        y.append(pair.bound_value(variant))
         probes = _fit_probes(
             {k: (np.asarray(v[0]), np.asarray(v[1])) for k, v in calib_data.items()},
             seed=seed,
@@ -280,18 +317,9 @@ def run_jspace_readout(
                         })
                     probe = probes.get((layer, position))
                     if probe is not None:
-                        score = float(probe.clf.decision_function(
-                            probe.scaler.transform(h.reshape(1, -1)))[0])
-                        # decision_function is oriented toward label 1 ("binds
-                        # the inner definition"), i.e. toward v_target, so the
-                        # source-minus-target margin is its negation.
-                        rows.append({
-                            **base, "lens": "probe",
-                            "margin_source_minus_target": -score,
-                            "margin_bound_minus_other": score if variant == "target" else -score,
-                            "bound_rank": np.nan,
-                            "correct": bool((score > 0) == (variant == "target")),
-                        })
+                        scored = _probe_row(probe, h, pair, variant)
+                        if scored is not None:
+                            rows.append({**base, "lens": "probe", **scored})
 
     df = pd.DataFrame(rows)
     df.to_csv(output_dir / "jspace_readout.csv", index=False)
@@ -430,14 +458,28 @@ def readout_contrasts(
     return pd.DataFrame(out)
 
 
+SELECT_METRIC = "reversal_rate"
+
+
 def select_layer(
     summary: pd.DataFrame,
-    metric: str = "paired_gap",
+    metric: str = SELECT_METRIC,
     position: str = "use",
     lens: str = "jlens",
     subset: str = "all",
 ) -> Optional[int]:
     """The layer with the best CALIBRATION score — never selected on test.
+
+    The metric must be **scale-free**, which is why the default is a rate and
+    not `paired_gap`. Margins are dot products with lens vectors whose norms
+    grow with depth, against hidden states whose norms also grow with depth,
+    and `src.models.lens` is explicit that score magnitudes are comparable only
+    within a position. Selecting on `paired_gap` therefore drifts toward the
+    last layer regardless of readout quality — measured on both pilots, it
+    chose the final layer both times, which is also the one layer where the
+    J-lens is the logit lens by construction and the Jacobian correction
+    contributes nothing. `paired_gap` remains available so the earlier,
+    pre-registered selection stays reproducible.
 
     Returned as an explicit value so the stage can record it in its manifest;
     the test-split number is then read at that one layer.

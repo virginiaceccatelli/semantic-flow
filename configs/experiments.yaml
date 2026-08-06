@@ -121,6 +121,20 @@ stage72_jspace_readout:                # is the bound value legible?
   headline_metric: paired counterfactual margin reversal
   n_boot: 2000                         # cluster bootstrap, grouped by base program
   probe_trained_on: calibration split only
+  probe_label: bound value (multiclass)
+  # Two settings changed on 2026-08-06, after the first two pilots, because
+  # both were wrong rather than merely suboptimal. Recorded here so the earlier
+  # runs stay interpretable; both old behaviours are still reachable.
+  #   probe_label was `variant` (binds inner definition, yes/no). A variant
+  #     classifier scores 1.000 by reading the one mutated token, which 6.7b
+  #     confirmed — perfect at every layer, including at the mutation position
+  #     where nothing is resolved. It measured the surface cue, not the binding.
+  #   select_metric was `paired_gap`, a raw margin difference. Margins are not
+  #     comparable across layers (see the scale caveat in src/models/lens.py),
+  #     so it drifted to the last layer on both pilots — the one layer where the
+  #     J-lens equals the logit lens by construction.
+  select_metric: reversal_rate         # scale-free; --select-metric paired_gap restores the old choice
+  reversal_floor: measured             # the gram_random cell, never the nominal 0.25
 
 stage73_jspace_swap:                   # are those coordinates causally reused?
   positions: [use, pre_def]            # pre_def is the irrelevant-position control

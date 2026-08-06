@@ -46,6 +46,10 @@ def main(
     results: Optional[Path] = typer.Option(None, help="Default results/jspace/{model}"),
     position: str = typer.Option("use", help="Position the criteria are read at"),
     subset: str = typer.Option("all", help="all | both_correct"),
+    select_metric: str = typer.Option(
+        "reversal_rate",
+        help="Calibration metric for layer choice. Scale-free by default; "
+             "`paired_gap` reproduces the original pre-registered selection."),
     n_boot: int = typer.Option(2000),
     seed: int = typer.Option(42),
     strict: bool = typer.Option(False, help="Exit non-zero on NO-GO"),
@@ -110,9 +114,16 @@ def main(
         behaviour.groupby("pair_id")["correct"].all().mean())
 
     # ── 2. readout beats the random controls ─────────────────────────────────
-    chosen_layer = select_layer(readout_summary, metric="paired_gap",
+    # Both selections are recorded, always: the metric was changed from
+    # `paired_gap` to a scale-free one after the first pilots, so a reader has
+    # to be able to see what the original choice would have given.
+    chosen_layer = select_layer(readout_summary, metric=select_metric,
                                 position=position, lens="jlens", subset=subset)
+    report["select_metric"] = select_metric
     report["calibration_selected_layer"] = chosen_layer
+    report["calibration_selected_layer_by_paired_gap"] = select_layer(
+        readout_summary, metric="paired_gap", position=position,
+        lens="jlens", subset=subset)
     if chosen_layer is None:
         criteria.append(_criterion("readout_beats_random_control", False,
                                    "no calibration rows to select a layer from"))

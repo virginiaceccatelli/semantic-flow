@@ -607,7 +607,10 @@ def test_readout_never_selects_its_layer_on_test_rows(toy_setup, tokenizer, tmp_
         best_calib = calib_only[(calib_only.lens == "jlens")
                                 & (calib_only.subset == "all")
                                 & (calib_only.position == "use")]
-        assert chosen == int(best_calib.loc[best_calib["paired_gap"].idxmax(), "layer"])
+        # the selection must be reproducible from calibration rows alone, on
+        # the same (scale-free) metric the selector defaults to
+        assert chosen == int(best_calib.loc[best_calib["reversal_rate"].idxmax(),
+                                            "layer"])
 
 
 def test_swap_stage_runs_every_control_and_the_no_op_is_inert(toy_setup, tokenizer, tmp_path):
@@ -682,6 +685,72 @@ def _stage90(tmp_path):
     mod.MD = tmp_path / "md"
     (tmp_path / "md").mkdir(exist_ok=True)
     return mod
+
+
+def test_probe_readout_decodes_the_VALUE_not_the_program_variant():
+    """The control must not be winnable by reading the mutated token.
+
+    A variant probe ("does the use bind the inner definition?") scores 1.000 by
+    reading the one token that differs, which is what the 6.7b pilot caught it
+    doing — perfect at every layer including at the mutation position itself,
+    where nothing is resolved yet. Predicting the bound *value* cannot be won
+    that way, because the values differ across pairs.
+    """
+    from src.experiments.jspace_readout import _fit_probes, _probe_row
+
+    rng = np.random.default_rng(0)
+    values = [2, 3, 5, 7]
+    direction = rng.normal(size=(16,))
+    X = np.stack([direction * v + 0.05 * rng.normal(size=16)
+                  for v in values for _ in range(12)])
+    y = np.array([v for v in values for _ in range(12)])
+    probes = _fit_probes({(0, "use"): (X, y)}, seed=0)
+    probe = probes[(0, "use")]
+
+    # the label space is values, so {0, 1} could never be it
+    assert set(probe.clf.classes_) == set(values)
+
+    pair = types.SimpleNamespace(v_source=3, v_target=7)
+    for variant, value in (("source", 3), ("target", 7)):
+        row = _probe_row(probe, direction * value, pair, variant)
+        assert row is not None
+        assert row["correct"] is True
+        assert row["bound_rank"] == 0
+        assert -1.0 <= row["margin_source_minus_target"] <= 1.0
+    # the signed margin is oriented the same way in both programs, so a pair
+    # that flips its binding flips the sign — the reversal definition
+    m_source = _probe_row(probe, direction * 3, pair, "source")["margin_source_minus_target"]
+    m_target = _probe_row(probe, direction * 7, pair, "target")["margin_source_minus_target"]
+    assert m_source > 0 > m_target
+
+
+def test_probe_readout_is_missing_rather_than_wrong_for_unseen_values():
+    """A value absent from calibration has no probe column; score it as missing."""
+    from src.experiments.jspace_readout import _fit_probes, _probe_row
+
+    rng = np.random.default_rng(1)
+    X = np.concatenate([rng.normal(size=(10, 8)), rng.normal(size=(10, 8)) + 3])
+    y = np.array([2] * 10 + [3] * 10)
+    probe = _fit_probes({(0, "use"): (X, y)}, seed=0)[(0, "use")]
+    assert _probe_row(probe, rng.normal(size=8),
+                      types.SimpleNamespace(v_source=2, v_target=9), "source") is None
+
+
+def test_layer_selection_defaults_to_a_scale_free_metric():
+    """`paired_gap` drifts to the last layer with the norms; a rate does not."""
+    import pandas as pd
+
+    from src.experiments.jspace_readout import SELECT_METRIC, select_layer
+
+    assert SELECT_METRIC == "reversal_rate"
+    summary = pd.DataFrame([
+        {"split": "calib", "subset": "all", "position": "use", "lens": "jlens",
+         "layer": 4, "reversal_rate": 0.40, "paired_gap": 0.01},
+        {"split": "calib", "subset": "all", "position": "use", "lens": "jlens",
+         "layer": 31, "reversal_rate": 0.10, "paired_gap": 0.90},
+    ])
+    assert select_layer(summary) == 4
+    assert select_layer(summary, metric="paired_gap") == 31
 
 
 def test_stage90_registers_every_e11_output():
