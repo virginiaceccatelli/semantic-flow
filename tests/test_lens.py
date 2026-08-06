@@ -363,3 +363,79 @@ def test_summary_marks_varying_readout_as_non_constant():
     row = e6_summarize(df, prefix).iloc[0]
     assert not bool(row["constant_readout"])
     assert not bool(row["beats_position_floor"])    # 0.4 > 0.3, reads position
+
+
+# ── stage 90 must track stage 40's schema (this broke once) ──────────────────
+
+def _stage90(tmp_path):
+    """Load the stage-90 script with its output dirs redirected."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "s90", Path(__file__).parent.parent / "scripts" / "90_make_paper_assets.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.FIGURES = tmp_path
+    mod.MD = tmp_path / "md"
+    return mod
+
+
+def _leadtime_frame():
+    """Minimal frame in the CURRENT stage-40 schema (per-readout lead columns)."""
+    return pd.DataFrame([{
+        "example_id": "e1", "layer": 7, "n_steps": 5, "sanitized": True,
+        "t_failure": 4, "failure_index": 3, "model_ever_wrong": True,
+        "t_latent_probe": None, "error_rate_probe": 0.01,
+        "lead_probe": None, "latent_first_probe": False,
+        "t_latent_random": 2, "error_rate_random": 0.2,
+        "lead_random": 2.0, "latent_first_random": True,
+        "t_latent_position": 2, "error_rate_position": 0.23,
+        "lead_position": 2.0, "latent_first_position": True,
+    }])
+
+
+def test_stage90_renders_current_leadtime_schema(tmp_path):
+    mod = _stage90(tmp_path)
+    csv = tmp_path / "behavioral_leadtime_M.csv"
+    _leadtime_frame().to_csv(csv, index=False)
+    mod._leadtime_assets(csv)                      # must not raise
+    assert (tmp_path / "leadtime_M.png").exists()
+
+
+def test_stage90_still_renders_legacy_leadtime_schema(tmp_path):
+    """Runs predating the floors have a single `lead_time` column."""
+    mod = _stage90(tmp_path)
+    csv = tmp_path / "behavioral_leadtime_OLD.csv"
+    pd.DataFrame([{"example_id": "e1", "layer": 7, "lead_time": 2.0}]).to_csv(
+        csv, index=False)
+    mod._leadtime_assets(csv)
+    assert (tmp_path / "leadtime_OLD.png").exists()
+
+
+def test_stage90_excess_plot_drops_constant_readouts(tmp_path):
+    mod = _stage90(tmp_path)
+    csv = tmp_path / "behavioral_leadtime_summary_M.csv"
+    pd.DataFrame([
+        {"layer": L, "readout": r, "n_model_wrong": 3,
+         "per_prefix_error_rate": 0.1, "early_warning_rate": 0.5,
+         "analytic_null": 0.4, "early_warning_excess": 0.1,
+         "constant_readout": r == "dead", "beats_position_floor": True,
+         "readout_never_wrong": 1, "mean_lead": 1.0}
+        for L in (0, 7) for r in ("probe", "random", "position", "dead")
+    ]).to_csv(csv, index=False)
+    mod._leadtime_summary_assets(csv)
+    assert (tmp_path / "leadtime_excess_M.png").exists()
+    assert (tmp_path / "md" / "behavioral_leadtime_summary_M.md").exists()
+
+
+def test_stage90_registers_every_stage40_output():
+    """Guards against a new stage-40 CSV silently hitting the 'unrecognized' path."""
+    import inspect
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "s90", Path(__file__).parent.parent / "scripts" / "90_make_paper_assets.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    src = inspect.getsource(mod.main)
+    for prefix in ("behavioral_leadtime_summary", "behavioral_leadtime_prefixes",
+                   "behavioral_leadtime_", "behavioral_sanity"):
+        assert f'"{prefix}"' in src, f"stage 40 writes {prefix}* but stage 90 ignores it"

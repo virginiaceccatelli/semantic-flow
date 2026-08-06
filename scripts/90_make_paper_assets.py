@@ -191,20 +191,99 @@ def _obfuscation_assets(csv: Path):
 
 
 def _leadtime_assets(csv: Path):
+    """E6. Multi-readout since the floors were added; old single-column CSVs
+    (one `lead_time`) still render as the probe-only histogram."""
     tag = csv.stem.replace("behavioral_leadtime_", "")
     df = pd.read_csv(csv)
-    valid = df.dropna(subset=["lead_time"])
-    if valid.empty:
+
+    lead_cols = {c[len("lead_"):]: c for c in df.columns if c.startswith("lead_")}
+    if not lead_cols and "lead_time" in df.columns:
+        lead_cols = {"probe": "lead_time"}
+    if not lead_cols:
+        console.print(f"  [yellow]{csv.name}: no lead columns[/yellow]")
+        return
+
+    fig, ax = plt.subplots(figsize=(7, 4))
+    plotted = False
+    for kind, col in sorted(lead_cols.items()):
+        vals = df[col].dropna()
+        if vals.empty:
+            continue
+        ax.hist(vals, bins=21, histtype="step", linewidth=1.8,
+                label=f"{kind} (n={len(vals)})",
+                color=LENS_COLORS.get(kind, PALETTE[4]))
+        plotted = True
+    if not plotted:
+        plt.close(fig)
         console.print(f"  [yellow]{csv.name}: no complete lead-time rows[/yellow]")
         return
-    fig, ax = plt.subplots(figsize=(7, 4))
-    ax.hist(valid["lead_time"], bins=21, color=PALETTE[0], edgecolor="white")
     ax.axvline(0, color="gray", linewidth=1.0, linestyle="--")
     ax.set_xlabel("Lead time (prefix lines, t_failure − t_latent)")
     ax.set_ylabel("Examples")
     ax.set_title(f"Latent-vs-behavioral failure lead time — {tag}")
+    ax.legend(fontsize=8, framealpha=0.7)
     sns.despine(ax=ax)
     _save(fig, f"leadtime_{tag}")
+
+
+def _leadtime_summary_assets(csv: Path):
+    """The figure that carries E6's finding: excess over the analytic null.
+
+    Raw early-warning rate is not plotted on its own anywhere — it rises with
+    a readout's error rate whether or not it carries information, which is the
+    experiment's whole point.
+    """
+    from src.analysis.tables import df_to_markdown
+
+    tag = csv.stem.replace("behavioral_leadtime_summary_", "")
+    df = pd.read_csv(csv)
+    if df.empty or "early_warning_excess" not in df.columns:
+        return
+    df_to_markdown(df, MD / f"{csv.stem}.md", title=f"E6 lead time — {tag}")
+
+    usable = df[~df.get("constant_readout", pd.Series(False, index=df.index)).fillna(False)]
+    if usable.empty:
+        console.print(f"  [yellow]{csv.name}: every readout collapsed[/yellow]")
+        return
+
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    for kind, sub in usable.groupby("readout"):
+        sub = sub.sort_values("layer")
+        ax.plot(sub["layer"], sub["early_warning_excess"], marker="o", markersize=4,
+                linewidth=1.8, label=kind, color=LENS_COLORS.get(kind, PALETTE[4]),
+                linestyle=LENS_STYLES.get(kind, "-"))
+    ax.axhline(0.0, color="gray", linewidth=0.8, linestyle="--")
+    ax.set_xlabel("Layer")
+    ax.set_ylabel("Early-warning excess over analytic null")
+    ax.set_title(f"E6: early warning above what unreliability alone predicts — {tag}")
+    ax.legend(fontsize=8, framealpha=0.7)
+    sns.despine(ax=ax)
+    _save(fig, f"leadtime_excess_{tag}")
+
+
+def _behavioural_sanity_assets(csv: Path):
+    """Floor 1 for E6: was the model's forced choice informative at all?
+
+    Rendered as a table, not a figure — the point is a pass/fail on two
+    numbers. A constant responder can post a healthy-looking `accuracy` (it
+    equals the base rate) while `balanced_accuracy` sits at exactly 0.5.
+    """
+    from src.analysis.tables import df_to_markdown
+
+    tag = csv.stem.replace("behavioral_sanity_", "")
+    df = pd.read_csv(csv)
+    if df.empty:
+        return
+    df_to_markdown(df, MD / f"{csv.stem}.md",
+                   title=f"E6 behavioural-signal sanity — {tag}")
+    row = df.iloc[0]
+    if not bool(row.get("usable", False)):
+        console.print(
+            f"  [red]{tag}: behavioural signal NOT usable "
+            f"(says_tainted={row['says_tainted_rate']:.3f}, "
+            f"balanced_acc={row['balanced_accuracy']:.3f}) — "
+            f"lead times for this model are not interpretable[/red]"
+        )
 
 
 def _patching_assets(csv: Path):
@@ -361,8 +440,11 @@ def main():
         "static_probes_": _static_probe_assets,
         "context_degradation_": _context_assets,
         "obfuscation_robustness_": _obfuscation_assets,
-        "behavioral_leadtime_summary": None,          # summary handled with main csv
+        # E6 — most specific prefixes first; the first match wins.
+        "behavioral_leadtime_summary": _leadtime_summary_assets,
+        "behavioral_leadtime_prefixes": None,         # per-prefix log, no figure
         "behavioral_leadtime_": _leadtime_assets,
+        "behavioral_sanity": _behavioural_sanity_assets,
         "causal_patching_summary": None,
         "causal_patching_": _patching_assets,
         # E10 — order matters: the more specific prefix must come first, since
