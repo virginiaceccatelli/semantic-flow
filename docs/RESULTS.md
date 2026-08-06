@@ -12,7 +12,7 @@ summaries: `results/tables/md/*.md`. Figures: `results/figures/` (`png` to view,
 `pdf` for the paper). Regenerate everything with
 `python scripts/90_make_paper_assets.py`.
 
-Status legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b)
+Status legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b) · ✗ ran but not interpretable
 
 | Exp | What it tests | 1.3b | 6.7b | Verdict |
 |-----|---------------|:----:|:----:|---------|
@@ -21,7 +21,7 @@ Status legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b)
 | E3 def-use + distance | def→use edges | ● | ● | **Positive** — decodable, mild distance decay |
 | E4 control dep | guard→statement | ● | ● | **Positive but surface-heavy** — hidden beats the hard stratum (0.92 vs 0.68), but control dep is largely locally decodable; replicates across scale |
 | E5 context degradation | robustness to filler | ● | ● | Survives length; collapses under interference |
-| E6 lead time | latent vs behavioral failure | ● | ● | **Negative, and diagnosed.** No early warning: probe excess −0.010 / −0.023 vs a *no-model position baseline* at +0.113 / +0.080. The original positive was measured on a constant responder (balanced acc 0.500) |
+| E6 lead time | latent vs behavioral failure | ✗ | ● | **Negative (6.7b), undefined (1.3b).** 6.7b: no early warning — probe excess −0.010 vs a *no-model position baseline* at +0.113. 1.3b: behavioural signal at chance (balanced acc 0.471), so lead time is undefined there. The original positive was measured on a constant responder |
 | E7 causal patching | is it *used*? | ● | ● | **Positive** — information routes across layers; sanitizer site is causally inert |
 | E8 real code | CodeSearchNet transfer | ● | ● | **Transfers** — ~0.90 acc / 0.98 AUC vs 0.67 surface, same mid-early layer peak; but real code can't isolate the semantic component |
 | E9 obfuscation | semantics-preserving edits | ◐ | ● | Robust to renaming mid-layer; breaks on flatten |
@@ -350,9 +350,13 @@ No model computation entered the behavioural side of either number.
 `scripts/diagnose_taint_prompt.py` sweeps four prompts. Only **few-shot
 demonstrations *and* naming the variable** (`is the value of \`v2\` tainted?`)
 lifts 6.7b out of degeneracy — balanced accuracy **0.857**. Neither ingredient
-alone does anything. **1.3b cannot do the task under any prompt** (best
-balanced accuracy 0.581), so lead time is simply unmeasurable there; that is a
-capability result, not a representational one.
+alone does anything. **1.3b cannot do the task under any prompt**: the
+stage-40 run of record measures balanced accuracy **0.471** (says-tainted rate
+0.734 — no longer constant, but no better than chance), and stage 40 flags the
+signal `usable=False`. Lead time is therefore **undefined** for 1.3b, not
+"zero": `t_failure` is noise, so nothing can be early or late relative to it.
+That is a capability result, not a representational one, and the 1.3b rows in
+the tables below should be read as unmeasurable rather than negative.
 
 ### With a working signal and three floors: no early warning
 
@@ -361,11 +365,14 @@ readout with per-prefix error rate ε whose errors are independent of the
 model's state, the chance of erring before step *k* is 1−(1−ε)^(k−1). Only
 `early_warning_excess` (observed − null) can support a claim.
 
-| Readout | 6.7b excess | 1.3b excess |
+Only 6.7b has a usable behavioural signal, so only its column is a
+measurement; 1.3b's is shown for completeness and is undefined (see above).
+
+| Readout | **6.7b excess** | 1.3b (undefined) |
 |---|---:|---:|
-| **`position`** — no model at all, "tainted iff step ≤ 3" | **+0.113** | **+0.080** |
+| **`position`** — no model at all, "tainted iff step ≤ 3" | **+0.113** | +0.080 |
 | `random` — norm-matched random direction | +0.005 … +0.067 | +0.011 |
-| **`probe`** — trained, ~99% accurate | **−0.010** | **−0.023** |
+| **`probe`** — trained, ~99% accurate | **−0.010** | −0.023 |
 
 **A baseline that knows nothing but how many lines into the program it is
 scores higher on early warning than a 99%-accurate probe.** The trained probe
@@ -619,10 +626,11 @@ yet finds **no** workspace signature for either taint or control dependence,
 with control dependence flat at chance (0.39–0.52, n=808/cell) at every layer
 where the trained probe reaches AUC 0.999. The picture that emerges is a model
 that **computes and uses** program semantics without holding them in a
-reportable form. Finally, **RQ4 gets a clear negative**: with a working behavioural signal and
-three floors, the taint probe shows *no* early warning in either model
-(excess −0.010 / −0.023), while a no-model position baseline scores +0.113 /
-+0.080 on the same metric. What the probe does show is that the taint state is
+reportable form. Finally, **RQ4 gets a clear negative on the only model that can do the task**:
+with a working behavioural signal and three floors, 6.7b's taint probe shows
+*no* early warning (excess −0.010) while a no-model position baseline scores
++0.113 on the same metric. 1.3b's forced choice is at chance (balanced accuracy
+0.471), so its lead time is undefined rather than negative. What the probe does show is that the taint state is
 decoded **correctly** on every prefix of every example where the model answers
 wrongly — the representation is right while the output is wrong.
 
