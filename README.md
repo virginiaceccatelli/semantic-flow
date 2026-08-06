@@ -109,7 +109,7 @@ A fixed-seed sample of ~200 real, `ast`-parseable **CodeSearchNet** functions
 
 ## 4. The pipeline
 
-Eight numbered stages, each one CLI in `scripts/`, each writing a run manifest
+Numbered stages, each one CLI in `scripts/`, each writing a run manifest
 (git sha, args, wall time) to `results/manifests/`. Extract on GPU once;
 everything else is CPU and re-runnable.
 
@@ -119,10 +119,21 @@ everything else is CPU and re-runnable.
 20 static probes       CPU   E1–E4 (+E8): grouped CV, controls, frozen probe checkpoints
 30 context degradation CPU   E5: frozen probes re-evaluated on filler variants
 31 obfuscation         CPU   E9: frozen probes re-evaluated on the semantics-verified obfuscation ladder
-40 behavioral leadtime GPU   E6: taint probe vs the model's own answer, per line-prefix
+40 behavioral leadtime GPU   E6  — ARCHIVED (docs/LEGACY_RESULTS.md)
 50 causal patching     GPU   E7: patch clean→corrupted activations, layer × position
+60 J-lens validation   GPU   E10-0: the instrument check E11 reuses — a GATE
+61/62 J-lens taint/cd  GPU   E10-2 / E10-3 — ARCHIVED
+70 jspace pairs        CPU   E11: token-aligned binding counterfactuals, execution-verified
+71 jspace lens         GPU   E11: frozen per-layer J-lens from a held-out corpus — a GATE
+72 jspace readout      GPU   E11: paired counterfactual margin reversals
+73 jspace swap         GPU   E11: the coordinate swap and its six controls
+74 jspace report       CPU   E11: pre-registered go/no-go
 90 paper assets        CPU   every table + figure, regenerated from CSVs alone
 ```
+
+Stage status lives in `results/STATUS.yaml`; stage 90 reads it and skips
+archived experiments unless run with `--include-archived`. Their raw CSVs,
+figures and manifests are all preserved.
 
 The activation store (stage 10) is the single interface between the model and
 all analysis: one compressed `.npz` per example holding hidden states at the
@@ -209,29 +220,38 @@ priors alone.
   model's accessible state) of lexical shortcuts; graceful decay across levels
   2–4 is evidence the relations are carried semantically.
 
-### Consequence — is the state real? (E6, E7)
+### Consequence — is the state causally reusable? (E11; E7 preliminary)
 
-- **E6 · lead time — latent failure before behavioral failure.** Grow a taint
-  program one line at a time. At each prefix, **two independent signals** answer
-  "is the live value tainted?": (a) the frozen taint probe reads it off the
-  hidden state (threshold calibrated on a held-out split); (b) the *model
-  itself* answers as a yes/no forced choice from continuation log-probs.
-  `t_latent` and `t_failure` are the first prefixes where each goes wrong.
-  **Measures:** `lead_time = t_failure − t_latent` (with bootstrap CI). The two
-  signals come from different mechanisms — the residual stream vs the output
-  head — which is what makes "the state degraded *before* the output failed" a
-  falsifiable claim rather than a tautology.
+- **E11 · J-space binding routing — the active direction.** Token-aligned
+  counterfactual pairs where a one-token mutation of an inner definition's
+  *name* flips which value a marked use selects, with both values present in
+  both programs and the answer computed by five different downstream operations
+  (affine, multiply/subtract, threshold, modulus, list indexing). Two questions,
+  in order. **Readout:** does a frozen J-lens — built from a held-out generic
+  corpus, never from these programs — rank the *bound* value above the
+  distractor, and does that ranking *flip* with the counterfactual?
+  **Intervention:** exchanging just the two value coordinates,
+  `h ← h + V(swap(c) − c)`, leaves everything else in the state untouched; does
+  the output then move toward the answer implied by the swapped-in value? The
+  falsification test is that one edit must produce a *different* correct answer
+  in each operation family — answer steering cannot do that. Six controls,
+  including a Gram-matched random subspace and a provably-inert same-value
+  no-op. Design and pre-registered go/no-go: [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) §2.
 
-- **E7 · causal patching — encoded vs used.** On a minimal pair, run the
-  corrupted program but overwrite its residual stream with the *clean* run's
-  vector at one (layer, position) at a time, and see if the answer moves toward
-  clean. **Measures:** logit-diff recovery
-  `(ld_patched − ld_corr)/(ld_clean − ld_corr)` per layer × position, yielding a
-  causal class per site: `encoded_and_used` / `encoded_but_unused` /
-  `not_encoded`. The `last_token` readout position is **quarantined and reported
-  separately** — patching it at a late layer forces the answer trivially;
-  recovery at the *sink-argument* position at mid layers is the real evidence
-  that the encoded relation is load-bearing.
+- **E7 · causal patching — preliminary.** On a minimal pair, run the corrupted
+  program but overwrite its residual stream with the *clean* run's vector at one
+  (layer, position) at a time. **Measures:** logit-diff recovery
+  `(ld_patched − ld_corr)/(ld_clean − ld_corr)` per layer × position. It shows
+  the causal locus of the decision migrating from the sink-argument token to the
+  last token across the middle of the network. It does **not** isolate semantic
+  use — the sink-argument position is the only place the two programs differ, so
+  patching there transports the surface difference too. That gap is what E11's
+  coordinate swap is built to close.
+
+- **E6 · lead time — archived.** The original positive was measured on a
+  constant responder, and the early-warning metric rewards unreliable readouts
+  rather than anticipation. Data preserved;
+  see [docs/LEGACY_RESULTS.md](docs/LEGACY_RESULTS.md).
 
 ### Generalization (E8)
 
@@ -279,17 +299,19 @@ takes `--model`; probed layers per model live in `configs/models.yaml`.
 
 ```
 src/
-  data/        generator (programs + ground truth), alignment, activation store, loaders
+  data/        generator (programs + ground truth), E11 counterfactual pairs, alignment, activation store
   graphs/      ast / def-use / CFG / control-dependence extraction (ground truth)
-  models/      model + tokenizer loading (round-trip guard), forward hooks, patching
+  models/      model + tokenizer loading (round-trip guard), hooks, patching, J-lens, J-space swap
   probes/      linear probe, grouped CV + controls, dataset builders (single source of truth)
-  experiments/ E1–E4 static probes, E5 degradation, E6 lead time, E7 patching, E9 obfuscation
-  analysis/    metrics, table rendering, figures
+  experiments/ E1–E4 static probes, E5 degradation, E7 patching, E9 obfuscation, E10 J-lens, E11 jspace_*
+  analysis/    metrics, table rendering, figures, cluster bootstrap
 scripts/       numbered stage CLIs (00–90)
 jobs/          csh scripts per GPU stage (run under screen; no scheduler)
 configs/       model registry + canonical experiment settings
-docs/          PIPELINE · EXPERIMENTS · METHODS · RESULTS
-tests/         79 CPU-only tests (alignment exactness, CV leakage, strata, pairs, obfuscation semantics, ground-truth cross-check, …)
+results/       STATUS.yaml (what each experiment currently claims) + tables, figures, manifests
+docs/          PIPELINE · EXPERIMENTS · METHODS · RESULTS · LEGACY_RESULTS
+tests/         165 CPU-only tests (alignment exactness, CV leakage, strata, pairs, obfuscation semantics,
+               ground-truth cross-check, swap invariants, build/test separation, …)
 ```
 
 ## 9. Quickstart
@@ -297,19 +319,23 @@ tests/         79 CPU-only tests (alignment exactness, CV leakage, strata, pairs
 ```bash
 conda create -n semflow python=3.11 -y && conda activate semflow
 pip install -e ".[dev]"
-make test                     # 79 CPU-only tests
+make test                     # 165 CPU-only tests
 make smoke                    # tiny end-to-end run on this machine (~15 min, MPS)
 
 # full run (development model)
 python scripts/00_generate_data.py --model deepseek-coder-1.3b --real
-make extract probes context obfuscation leadtime patching assets MODEL=deepseek-coder-1.3b
+make extract probes context obfuscation patching assets MODEL=deepseek-coder-1.3b
+
+# the active direction: E11 pilot (200 pairs, two operations, four layers)
+make jspace-pilot             # then read results/jspace/deepseek-coder-1.3b/go_no_go.md
 ```
 
 Setup and known pitfalls (the tokenizer!): [SETUP.md](SETUP.md) ·
 Pipeline commands and cluster workflow: [docs/PIPELINE.md](docs/PIPELINE.md) ·
 Experiment specs: [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) ·
 Methodology for the paper: [docs/METHODS.md](docs/METHODS.md) ·
-Results index: [docs/RESULTS.md](docs/RESULTS.md).
+Supported findings: [docs/RESULTS.md](docs/RESULTS.md) ·
+Retired claims and why: [docs/LEGACY_RESULTS.md](docs/LEGACY_RESULTS.md).
 
 ## 10. Intended contributions
 

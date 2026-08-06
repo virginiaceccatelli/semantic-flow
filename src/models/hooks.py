@@ -128,6 +128,77 @@ def extract_hidden_states(
 
 
 @torch.no_grad()
+def extract_hidden_states_and_logits(
+    model: nn.Module,
+    input_ids: torch.Tensor,
+    layer_indices: Optional[list[int]] = None,
+    attention_mask: Optional[torch.Tensor] = None,
+) -> tuple[ActivationCache, torch.Tensor]:
+    """`extract_hidden_states`, but the forward pass's logits are kept too.
+
+    Experiments that need both (read a state *and* score the answer it leads
+    to) would otherwise run the same forward pass twice.
+    """
+    manager = HookManager(model, layer_indices=layer_indices)
+    with manager.active():
+        out = model(input_ids=input_ids, attention_mask=attention_mask)
+    return manager.cache, out.logits
+
+
+@torch.no_grad()
+def transform_positions(
+    model: nn.Module,
+    input_ids: torch.Tensor,
+    transforms: dict[int, dict[int, Callable[[torch.Tensor], torch.Tensor]]],
+    attention_mask: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """Like `patch_positions`, but each entry EDITS the live vector.
+
+    transforms: {layer_idx: {position: fn(vec: (d,)) -> (d,)}}
+
+    The distinction matters for interventions defined relative to the state
+    they act on (`h + V (swap(c) - c)`): a replacement patch would need the
+    patched value computed ahead of time, which is impossible when an earlier
+    layer's edit has already changed what arrives here. Listing several layers
+    therefore applies the edits in forward order, each seeing the previous
+    one's effect — which is what a layer *band* means.
+
+    Index -1 edits the input-embedding output, matching `HookManager`'s
+    convention, so the context-free layer can be intervened on like any other.
+
+    Returns the logits tensor.
+    """
+    manager = HookManager(model)  # reuse its decoder-layer discovery
+    all_layers = manager._get_decoder_layers()
+    handles: list = []
+
+    def make_transform_hook(pos_transforms: dict[int, Callable]):
+        def hook(module, input, output):
+            hidden = output[0] if isinstance(output, tuple) else output
+            for pos, fn in pos_transforms.items():
+                edited = fn(hidden[0, pos, :])
+                hidden[0, pos, :] = edited.to(device=hidden.device, dtype=hidden.dtype)
+            if isinstance(output, tuple):
+                return (hidden,) + output[1:]
+            return hidden
+        return hook
+
+    if -1 in transforms:
+        embeddings = model.get_input_embeddings()
+        handles.append(embeddings.register_forward_hook(make_transform_hook(transforms[-1])))
+    for layer_idx, layer in all_layers:
+        if layer_idx in transforms:
+            handles.append(layer.register_forward_hook(make_transform_hook(transforms[layer_idx])))
+
+    try:
+        out = model(input_ids=input_ids, attention_mask=attention_mask)
+        return out.logits
+    finally:
+        for h in handles:
+            h.remove()
+
+
+@torch.no_grad()
 def patch_positions(
     model: nn.Module,
     input_ids: torch.Tensor,

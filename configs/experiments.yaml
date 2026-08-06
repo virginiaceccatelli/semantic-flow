@@ -80,3 +80,63 @@ stage62_jlens_controldep:              # E10-3 — probes E4's surface-heaviness
   n_tprime: 2                          # readout positions sampled after each guard
   candidates: SAFE_NAMES
   strata: [indent_matched, non_dependent]   # indent_matched is the hard control
+
+# ── E11: J-space binding routing (the active direction) ──────────────────────
+# Question: when the model resolves variable binding, does it route the
+# SELECTED value into J-lens coordinates that downstream computation can
+# causally reuse? Stage 71 is a GATE for 72/73.
+#
+# Separation contract, enforced in code (`counterfactual_pairs.assert_disjoint`):
+#   lens-building corpus  real third-party Python, no generated program
+#   calibration split     whole base programs, assigned in stage 70
+#   test split            the rest; layer and site are chosen on calibration
+
+stage70_jspace_pairs:
+  n_bases: 120                         # each base yields one pair per family
+  families: [affine, mul_sub, threshold, modulus, index]
+  templates: [global_shadow, call_frame, padded_shadow]
+  min_families: 2                      # a base must support the cross-op test
+  calib_frac: 0.3                      # stratified by template, whole bases move
+  answer_format: "assert f() =="       # answers are single tokens, verified
+  invariants: [one_token_mutation, same_token_length, shared_positions,
+               both_values_in_both_programs, answers_disjoint_from_values,
+               execution_verified]
+
+stage71_jspace_lens:                   # frozen instrument — GATE
+  corpus: data/real/csn_python_200.jsonl     # generic Python, never the pairs
+  n_corpus: 120
+  n_build: 200                         # (program, t, t') triples per seed
+  n_tprime: 3                          # future readout positions per source
+  n_seeds: 3                           # independent builds for the stability check
+  n_eval: 120                          # held-out positions for V2
+  candidates: digits + values/answers in the pair file
+  required_checks: [V1_last_layer_equals_logit_lens,
+                    V2_beats_gram_matched_floor,
+                    lens_stable_across_seeds]
+  min_sign_agreement: 0.90             # margin-sign agreement across seeds
+
+stage72_jspace_readout:                # is the bound value legible?
+  positions: [pre_def, def_source, def_target, mutation, use, answer]
+  readouts: [jlens, logit, gram_random, probe]
+  headline_metric: paired counterfactual margin reversal
+  n_boot: 2000                         # cluster bootstrap, grouped by base program
+  probe_trained_on: calibration split only
+
+stage73_jspace_swap:                   # are those coordinates causally reused?
+  positions: [use, pre_def]            # pre_def is the irrelevant-position control
+  variants: [jlens_value, logit_value, gram_random, noop_same_value,
+             jlens_answer, whole_state]
+  band_width: 3                        # consecutive PROBED layers, not decoder layers
+  metric: delta logP(other answer) - logP(bound answer), paired with the clean run
+  key_test: same value swap must move each operation family to ITS own answer
+
+stage74_jspace_report:                 # pilot go/no-go
+  min_balanced_accuracy: 0.75
+  min_readout_advantage: 0.0           # paired CI lower bound over gram_random
+  min_swap_shift: 0.0                  # paired CI lower bound on the logit shift
+
+pilot:                                 # the pre-registered 1.3b pilot
+  model: deepseek-coder-1.3b
+  n_bases: 100
+  families: [affine, threshold]        # 200 pairs
+  layers: [6, 12, 18, 23]

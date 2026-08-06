@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
-"""Stage 90 (CPU): regenerate ALL paper tables and figures from raw CSVs.
+"""Stage 90 (CPU): regenerate paper tables and figures from raw CSVs.
 
-    python scripts/90_make_paper_assets.py
+    python scripts/90_make_paper_assets.py                  # active + supporting
+    python scripts/90_make_paper_assets.py --include-archived
 
 Reads results/tables/*.csv only — no model, no activations — so figures can be
 iterated on any machine. Writes:
     results/figures/*.png (+ .pdf)      paper figures
     results/tables/md/*.md              rendered summary tables
 Missing inputs are skipped with a note, so this can run at any pipeline stage.
+
+Experiments marked `archived` in results/STATUS.yaml are **skipped by
+default**: their raw CSVs stay exactly where they are, but they no longer
+regenerate into the figure directory the paper draws from, so a retired claim
+cannot quietly reappear in a figure. `--include-archived` reproduces them in
+full — the data is preserved, only the default output set changed.
 """
 
 from __future__ import annotations
@@ -34,8 +41,30 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 TABLES = Path("results/tables")
 FIGURES = Path("results/figures")
 MD = TABLES / "md"
+STATUS = Path("results/STATUS.yaml")
 
 PALETTE = sns.color_palette("colorblind")   # CVD-safe, fixed assignment order
+
+
+def archived_prefixes(status_path: Path = STATUS) -> tuple[set[str], dict[str, str]]:
+    """Table-name prefixes belonging to archived experiments, and their owners.
+
+    Driven by results/STATUS.yaml rather than a list here, so retiring an
+    experiment is one edit in one place and the figures follow.
+    """
+    if not status_path.exists():
+        return set(), {}
+    import yaml
+
+    registry = yaml.safe_load(status_path.read_text()) or {}
+    prefixes: set[str] = set()
+    owners: dict[str, str] = {}
+    for name, entry in (registry.get("experiments") or {}).items():
+        for prefix in entry.get("tables") or []:
+            owners[prefix] = name
+            if entry.get("status") == "archived":
+                prefixes.add(prefix)
+    return prefixes, owners
 
 
 def _save(fig: plt.Figure, name: str):
@@ -311,8 +340,18 @@ def _patching_assets(csv: Path):
 # The three lens variants get fixed colours everywhere so the control lines
 # are recognisable at a glance across figures.
 LENS_COLORS = {"jlens": PALETTE[0], "logit": PALETTE[1],
-               "random": PALETTE[7], "probe": PALETTE[2]}
-LENS_STYLES = {"jlens": "-", "logit": "--", "random": ":", "probe": "-."}
+               "random": PALETTE[7], "gram_random": PALETTE[7],
+               "probe": PALETTE[2]}
+LENS_STYLES = {"jlens": "-", "logit": "--", "random": ":", "gram_random": ":",
+               "probe": "-."}
+
+# E11 intervention variants. The test is one colour; every control is muted, so
+# a figure cannot be read as "the effect" without the controls being visible.
+SWAP_COLORS = {"jlens_value": PALETTE[0], "logit_value": PALETTE[1],
+               "gram_random": PALETTE[7], "noop_same_value": PALETTE[8],
+               "jlens_answer": PALETTE[3], "whole_state": PALETTE[2]}
+SWAP_STYLES = {"jlens_value": "-", "logit_value": "--", "gram_random": ":",
+               "noop_same_value": ":", "jlens_answer": "-.", "whole_state": "--"}
 
 
 def _lens_plot(ax, df: pd.DataFrame, ycol: str, chance: float | None):
@@ -436,8 +475,210 @@ def _jlens_controldep_assets(csv: Path):
         _save(fig, f"jlens_controldep_dissociation_{tag}")
 
 
+# ── E11: J-space binding routing ─────────────────────────────────────────────
+
+def _jspace_lens_assets(csv: Path):
+    """Stage 71. Is the instrument stable enough to carry a per-layer claim?"""
+    from src.analysis.tables import df_to_markdown
+
+    tag = csv.stem.replace("jspace_lens_stability_", "")
+    df = pd.read_csv(csv)
+    if df.empty:
+        return
+    df_to_markdown(df, MD / f"{csv.stem}.md", title=f"E11 lens stability — {tag}")
+
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    ax.plot(df["layer"], df["margin_sign_agreement"], marker="o", markersize=4,
+            linewidth=1.8, color=PALETTE[0],
+            label="margin-sign agreement (decisions)")
+    ax.plot(df["layer"], df["cosine_mean"], marker="s", markersize=4,
+            linewidth=1.4, color=PALETTE[1], linestyle="--",
+            label="rowwise cosine (directions)")
+    ax.axhline(0.90, color="gray", linewidth=0.8, linestyle=":")
+    ax.set_xlabel("Layer")
+    ax.set_ylabel("Agreement across independent build samples")
+    ax.set_title(f"E11: lens stability across seeds — {tag}\n"
+                 "(dotted line = the 0.90 usability threshold)")
+    ax.legend(fontsize=8, framealpha=0.7)
+    sns.despine(ax=ax)
+    _save(fig, f"jspace_lens_stability_{tag}")
+
+
+def _jspace_lens_validation_assets(csv: Path):
+    from src.analysis.tables import df_to_markdown
+
+    tag = csv.stem.replace("jspace_lens_validation_", "")
+    df = pd.read_csv(csv)
+    df_to_markdown(df, MD / f"{csv.stem}.md", title=f"E11 lens validation — {tag}")
+    v2 = df[df["check"] == "V2_next_token"]
+    if v2.empty:
+        return
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    _lens_plot(ax, v2, "top1", None)
+    ax.set_ylabel("Top-1 accuracy (true next token)")
+    ax.set_title(f"E11 V2: next-token recovery by layer — {tag}")
+    _save(fig, f"jspace_lens_nexttoken_{tag}")
+
+
+def _jspace_readout_assets(csv: Path):
+    """Stage 72. The reversal rate is the claim-bearing quantity, not accuracy.
+
+    Chance for a paired reversal is 0.25 under an uninformative readout that
+    still gets each program's sign right half the time, so the reference line
+    is drawn there and not at 0.5.
+    """
+    from src.analysis.tables import df_to_markdown
+
+    tag = csv.stem.replace("jspace_readout_summary_", "")
+    df = pd.read_csv(csv)
+    df_to_markdown(df, MD / f"{csv.stem}.md", title=f"E11 readout — {tag}")
+    if df.empty or "reversal_rate" not in df.columns:
+        return
+
+    test = df[(df.split == "test") & (df.subset == "all") & (df.position == "use")]
+    if not test.empty:
+        fig, ax = plt.subplots(figsize=(8, 4.5))
+        for kind, sub in test.groupby("lens"):
+            sub = sub.sort_values("layer")
+            ax.plot(sub["layer"], sub["reversal_rate"], marker="o", markersize=4,
+                    linewidth=1.8, label=kind,
+                    color=LENS_COLORS.get(kind, PALETTE[4]),
+                    linestyle=LENS_STYLES.get(kind, "-"))
+            if {"reversal_ci_lo", "reversal_ci_hi"} <= set(sub.columns):
+                ax.fill_between(sub["layer"], sub["reversal_ci_lo"],
+                                sub["reversal_ci_hi"], alpha=0.12,
+                                color=LENS_COLORS.get(kind, PALETTE[4]))
+        ax.axhline(0.25, color="gray", linewidth=0.8, linestyle="--")
+        ax.set_xlabel("Layer")
+        ax.set_ylabel("Paired counterfactual reversal rate")
+        ax.set_title(f"E11: does the readout flip with the binding? — {tag}\n"
+                     "(at the marked use, test split; band = cluster-bootstrap CI)")
+        ax.legend(fontsize=8, framealpha=0.7)
+        sns.despine(ax=ax)
+        _save(fig, f"jspace_readout_reversal_{tag}")
+
+    # Position x layer: where in the program the bound value becomes legible.
+    jl = df[(df.split == "test") & (df.subset == "all") & (df.lens == "jlens")]
+    if not jl.empty:
+        pivot = jl.pivot_table(index="position", columns="layer", values="reversal_rate")
+        fig, ax = plt.subplots(figsize=(8, 3.6))
+        sns.heatmap(pivot, ax=ax, annot=True, fmt=".2f", cmap="Blues",
+                    vmin=0.0, vmax=1.0, linewidths=0.5,
+                    cbar_kws={"label": "Reversal rate"})
+        ax.set_title(f"E11 J-lens reversal: position × layer — {tag}")
+        _save(fig, f"jspace_readout_positions_{tag}")
+
+
+def _jspace_behaviour_assets(csv: Path):
+    """Stage 72's behavioural table: can the model do the task at all?"""
+    from src.analysis.tables import df_to_markdown
+
+    tag = csv.stem.replace("jspace_behaviour_", "")
+    df = pd.read_csv(csv)
+    if df.empty:
+        return
+    summary = (df.groupby(["split", "variant", "op_family"])
+                 .agg(accuracy=("correct", "mean"),
+                      argmax_accuracy=("argmax_is_bound_answer", "mean"),
+                      n=("correct", "size"))
+                 .reset_index())
+    df_to_markdown(summary, MD / f"{csv.stem}.md",
+                   title=f"E11 behavioural accuracy — {tag}")
+    balanced = df.groupby("variant")["correct"].mean().mean()
+    if balanced < 0.75:
+        console.print(f"  [yellow]{tag}: behavioural balanced accuracy "
+                      f"{balanced:.3f} < 0.75 — the pilot's first go/no-go "
+                      "criterion fails, so readout and swap numbers describe a "
+                      "model that is not doing the task.[/yellow]")
+
+
+def _jspace_swap_assets(csv: Path):
+    """Stage 73. Every control on the same axes as the test, by intervention site."""
+    from src.analysis.tables import df_to_markdown
+
+    tag = csv.stem.replace("jspace_swap_summary_", "")
+    df = pd.read_csv(csv)
+    df_to_markdown(df, MD / f"{csv.stem}.md", title=f"E11 coordinate swap — {tag}")
+    if df.empty:
+        return
+
+    for position in sorted(df["position"].unique()):
+        sub = df[(df.split == "test") & (df.position == position)
+                 & (df.site_kind == "single")]
+        if sub.empty:
+            continue
+        fig, ax = plt.subplots(figsize=(8, 4.5))
+        for variant, rows in sub.groupby("variant"):
+            rows = rows.sort_values("layer")
+            ax.plot(rows["layer"], rows["delta_ld"], marker="o", markersize=4,
+                    linewidth=1.8, label=variant,
+                    color=SWAP_COLORS.get(variant, PALETTE[4]),
+                    linestyle=SWAP_STYLES.get(variant, "-"))
+            if {"ci_lo", "ci_hi"} <= set(rows.columns) and variant == "jlens_value":
+                ax.fill_between(rows["layer"], rows["ci_lo"], rows["ci_hi"],
+                                alpha=0.12, color=SWAP_COLORS["jlens_value"])
+        ax.axhline(0.0, color="gray", linewidth=0.8, linestyle="--")
+        ax.set_xlabel("Layer")
+        ax.set_ylabel("Δ logit-diff toward the swapped-in value's answer")
+        note = ("marked use" if position == "use"
+                else f"{position} (control position)")
+        ax.set_title(f"E11: J-space coordinate swap at the {note} — {tag}")
+        ax.legend(fontsize=8, framealpha=0.7)
+        sns.despine(ax=ax)
+        _save(fig, f"jspace_swap_{position}_{tag}")
+
+
+def _jspace_by_operation_assets(csv: Path):
+    """The falsification figure: the same swap, one bar per operation family.
+
+    If the intervention changed an intermediate value, every family moves
+    toward its own answer. If it steered the answer token, the families come
+    apart — which is why this is plotted per family rather than pooled.
+    """
+    from src.analysis.tables import df_to_markdown
+
+    tag = csv.stem.replace("jspace_swap_by_operation_", "")
+    df = pd.read_csv(csv)
+    df_to_markdown(df, MD / f"{csv.stem}.md",
+                   title=f"E11 swap by operation family — {tag}")
+    if df.empty:
+        return
+
+    sub = df[(df.split == "test") & (df.position == "use")
+             & (df.variant == "jlens_value")]
+    if sub.empty:
+        return
+    families = sorted(c[len("delta_"):] for c in sub.columns
+                      if c.startswith("delta_") and sub[c].notna().any())
+    if not families:
+        return
+    # the site with the largest pooled effect gets the bar chart
+    best = sub.loc[sub[[f"delta_{f}" for f in families]].mean(axis=1).idxmax()]
+    values = [best[f"delta_{f}"] for f in families]
+    lows = [best.get(f"ci_lo_{f}", float("nan")) for f in families]
+
+    fig, ax = plt.subplots(figsize=(7, 4))
+    colors = [PALETTE[0] if v > 0 else PALETTE[3] for v in values]
+    ax.bar(families, values, color=colors)
+    for i, (v, lo) in enumerate(zip(values, lows)):
+        if pd.notna(lo):
+            ax.plot([i, i], [lo, v], color="black", linewidth=1.0)
+    ax.axhline(0.0, color="gray", linewidth=0.8, linestyle="--")
+    ax.set_ylabel("Δ logit-diff toward the swapped-in value's answer")
+    ax.set_title(f"E11: one value swap, {len(families)} downstream operations "
+                 f"— {tag}\n(site {best['site']}, test split; bars below zero "
+                 "falsify the routing claim)")
+    sns.despine(ax=ax)
+    _save(fig, f"jspace_swap_by_operation_{tag}")
+
+
 @app.command()
-def main():
+def main(
+    include_archived: bool = typer.Option(
+        False, "--include-archived",
+        help="Also regenerate assets for experiments marked archived in "
+             "results/STATUS.yaml (their raw CSVs are always preserved)"),
+):
     from src.utils import write_manifest
 
     t0 = time.time()
@@ -445,6 +686,7 @@ def main():
     if not TABLES.exists():
         console.print("[red]results/tables/ does not exist — run earlier stages first[/red]")
         raise typer.Exit(1)
+    archived, owners = archived_prefixes()
 
     handlers = {
         "static_probes_": _static_probe_assets,
@@ -467,13 +709,32 @@ def main():
         "jlens_taint_": None,                         # per-example rows
         "jlens_controldep_summary_": _jlens_controldep_assets,
         "jlens_controldep_": None,                    # per-case rows
+        # E11 — same rule: the more specific prefix must come first.
+        "jspace_lens_stability_": _jspace_lens_assets,
+        "jspace_lens_validation_": _jspace_lens_validation_assets,
+        "jspace_lens_checks": None,                   # gate verdicts, no figure
+        "jspace_readout_summary_": _jspace_readout_assets,
+        "jspace_readout_contrasts": None,             # paired control contrasts
+        "jspace_readout_": None,                      # per-example rows
+        "jspace_behaviour_": _jspace_behaviour_assets,
+        "jspace_swap_summary_": _jspace_swap_assets,
+        "jspace_swap_by_operation_": _jspace_by_operation_assets,
+        "jspace_swap_contrasts": None,                # paired control contrasts
+        "jspace_swap_": None,                         # per-example rows
     }
 
-    n_done = 0
+    n_done, n_skipped = 0, 0
     for csv in sorted(TABLES.glob("*.csv")):
         for prefix, fn in handlers.items():
             if csv.stem.startswith(prefix):
-                if fn is not None:
+                is_archived = any(csv.stem.startswith(p) for p in archived)
+                if is_archived and not include_archived:
+                    owner = next((owners[p] for p in archived
+                                  if csv.stem.startswith(p)), "?")
+                    console.print(f"  [dim]archived ({owner}): {csv.name} — "
+                                  "rerun with --include-archived[/dim]")
+                    n_skipped += 1
+                elif fn is not None:
                     console.print(f"[bold]{csv.name}[/bold]")
                     fn(csv)
                     n_done += 1
@@ -481,8 +742,10 @@ def main():
         else:
             console.print(f"  [dim]skipping unrecognized {csv.name}[/dim]")
 
-    write_manifest("90_make_paper_assets", {}, t0, extra={"n_inputs": n_done})
-    console.print(f"[green]Stage 90 done — {n_done} inputs processed.[/green]")
+    write_manifest("90_make_paper_assets", {"include_archived": include_archived},
+                   t0, extra={"n_inputs": n_done, "n_archived_skipped": n_skipped})
+    console.print(f"[green]Stage 90 done — {n_done} inputs processed, "
+                  f"{n_skipped} archived inputs skipped.[/green]")
 
 
 if __name__ == "__main__":

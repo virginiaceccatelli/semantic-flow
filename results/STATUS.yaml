@@ -1,0 +1,197 @@
+# Experiment status registry — the single source of truth for what each
+# experiment is currently claimed to show.
+#
+# This file is read by `scripts/90_make_paper_assets.py`, which skips
+# `archived` experiments unless it is run with `--include-archived`. Archived
+# experiments keep every raw CSV, figure and manifest they produced; what is
+# retired is the *claim*, not the data, and every one of them is still
+# reproducible from its stage command.
+#
+# status values
+#   validated_foundation  a result the paper stands on; controls hold, the
+#                         effect is above every floor, replicated across scale
+#   supporting            real and reported, but it constrains rather than
+#                         carries the argument (or it is instrument validation)
+#   active                the current direction; being run now, not yet claimed
+#   archived              the claim has been retired; data preserved, and the
+#                         reason for retirement is recorded here
+#
+# See docs/RESULTS.md for what is currently supported and docs/LEGACY_RESULTS.md
+# for the retired interpretation and why each piece of it was retired.
+
+version: 2
+updated: 2026-08-06
+
+experiments:
+
+  E1:
+    name: lexical token type
+    status: supporting
+    stage: "20"
+    tables: [static_probes_]
+    claim: >
+      Token-type identity is near-perfectly decodable at every layer. This is a
+      machinery check: failure here means a pipeline bug, not a finding.
+
+  E2:
+    name: variable binding (lexical vs semantic identity)
+    status: validated_foundation
+    stage: "20"
+    tables: [static_probes_]
+    claim: >
+      Which definition an identifier occurrence refers to is linearly decodable
+      from mid-layer states, above a surface-shortcut floor pinned to 0.5 by
+      construction on the context-matched stratum.
+    why_foundation: >
+      The context_matched stratum makes every surface feature uninformative by
+      design (token-identical programs, one rebinding token, identical anchor
+      windows and distances), and the effect survives it.
+
+  E3:
+    name: def-use edges (data flow)
+    status: validated_foundation
+    stage: "20"
+    tables: [static_probes_]
+    claim: >
+      Directed def->use edges are linearly decodable, degrading with token
+      distance, over the same surface floor as E2.
+
+  E4:
+    name: control dependence
+    status: supporting
+    central: false
+    stage: "20"
+    tables: [static_probes_]
+    claim: >
+      Control dependence is decodable at ceiling by mid layers — but its
+      surface baseline is already 0.927, so the result mostly says the relation
+      is locally syntactic. Reported as a contrast to E2/E3, not as a finding
+      about representation.
+
+  E5:
+    name: context degradation
+    status: supporting
+    stage: "30"
+    tables: [context_degradation_]
+    claim: >
+      Frozen E2/E3 probes survive long inert fillers and degrade under
+      interference (competing updates, shadowing scopes) — distance alone is
+      not what breaks the representation.
+
+  E7:
+    name: causal patching (raw)
+    status: supporting
+    central: false
+    stage: "50"
+    tables: [causal_patching_]
+    claim: >
+      Patching the clean run's residual state into the corrupted run moves the
+      answer toward the clean answer at some (layer, position) cells.
+      PRELIMINARY CAUSAL EVIDENCE ONLY.
+    retired_claims:
+      - >
+        That it isolates *semantic use* of the taint relation. The sink_arg
+        position is where the two programs' tokens differ, so patching it
+        transports the surface difference as well as any semantic state; the
+        design cannot separate the two. E11's coordinate swap exists to make
+        that separation possible.
+
+  E8:
+    name: real-code generalization
+    status: supporting
+    stage: "10,20"
+    tables: [static_probes_]
+    claim: >
+      E2/E3 probe accuracy transfers from synthetic programs to CodeSearchNet
+      Python with the same layer signature.
+    limitation: >
+      Ground truth on real code comes from the same static analysis, and real
+      functions have no context-matched stratum, so the surface floor there is
+      not pinned to 0.5. The transfer number is therefore an upper bound on
+      what transfers *semantically*.
+
+  E9:
+    name: obfuscation robustness
+    status: supporting
+    stage: "31"
+    tables: [obfuscation_robustness_]
+    claim: >
+      Frozen probes survive alpha-renaming and opaque predicates in the middle
+      layers and collapse under control-flow flattening.
+
+  E10-0:
+    name: J-lens implementation validation
+    status: supporting
+    stage: "60"
+    tables: [jlens_validation_]
+    claim: >
+      The J-lens machinery is correct and transfers to code models: at the last
+      decoder layer it reproduces the logit lens exactly (V1), and next-token
+      recovery beats a norm-matched floor (V2).
+    note: >
+      This is instrument validation, and it is what E11 reuses. It is the only
+      part of the E10 track that survives.
+
+  E6:
+    name: behavioral lead time
+    status: archived
+    stage: "40"
+    tables: [behavioral_leadtime_, behavioral_sanity]
+    retired_claims:
+      - >
+        That latent state corruption precedes behavioural failure. With a
+        working behavioural signal and the analytic null in place, the excess
+        early-warning rate is not distinguishable from what a readout's own
+        error rate predicts, and a no-model position baseline scores higher
+        than a 99%-accurate probe.
+    reason: >
+      The metric rewards unreliable readouts (r = -0.96 between early-warning
+      rate and accuracy within readout families), so the raw rate cannot
+      support a claim and the corrected version shows nothing.
+
+  E10-2:
+    name: taint workspace membership (J-lens)
+    status: archived
+    stage: "61"
+    tables: [jlens_taint_]
+    retired_claims:
+      - >
+        That the taint state is "verbalizable" and that its workspace
+        membership explains E6's scale difference.
+    reason: >
+      Inherits E6's broken early-warning metric, and the underlying E6 effect
+      it was built to explain did not survive its own floors. Null either way.
+
+  E10-3:
+    name: control dependence (J-lens)
+    status: archived
+    stage: "62,63"
+    tables: [jlens_controldep_]
+    retired_claims:
+      - >
+        That control dependence is decodable but "not verbalizable", i.e. a
+        probe/lens dissociation.
+    reason: >
+      The positive controls at the same anchors were too weak to license
+      reading the flat control_dep curve as a dissociation rather than a dead
+      readout, and E4 — the result it was interrogating — is itself mostly a
+      statement about local syntax.
+
+  E11:
+    name: J-space binding routing
+    status: active
+    stage: "70,71,72,73,74"
+    tables: [jspace_lens_, jspace_readout_, jspace_behaviour_, jspace_swap_]
+    question: >
+      When a code model resolves variable binding, does it route the SELECTED
+      value into J-lens coordinates that are causally reusable by downstream
+      computation?
+    parts:
+      - stage 70: token-aligned counterfactual pairs, five operation families
+      - stage 71: frozen per-layer J-lens from a held-out generic corpus (GATE)
+      - stage 72: readout — paired counterfactual margin reversals
+      - stage 73: causal coordinate swap with six controls
+      - stage 74: pre-registered go/no-go for the full run
+    status_note: >
+      No claim is recorded here yet. The pilot's verdict lands in
+      results/jspace/{model}/go_no_go.yaml.

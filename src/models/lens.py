@@ -494,3 +494,49 @@ def random_lens(reference: JLens, seed: int = 42) -> JLens:
         layer=reference.layer, kind="random", n_samples=0,
         metadata={"seed": seed},
     )
+
+
+def gram_matched_random(vectors: np.ndarray, seed: int = 42) -> np.ndarray:
+    """Random rows with the SAME Gram matrix as `vectors`: `W W^T = V V^T`.
+
+    Norm matching (`random_lens`) is not a sufficient control once the
+    readout involves more than one candidate at a time. A margin between two
+    candidates, and even more so the two-dimensional subspace the coordinate
+    swap edits, depends on the *angle* between the two vectors as well as
+    their lengths: two nearly-parallel directions span a badly conditioned
+    subspace, and `pinv` behaves very differently there. Matching the whole
+    Gram matrix fixes every length and every angle, so the only thing left
+    that differs from the real lens is *which* directions in the residual
+    stream they point at — which is precisely the thing under test.
+
+    Construction: with `G = V V^T = L L^T` and `Q` a random orthonormal set of
+    columns, `W = L Q^T` satisfies `W W^T = L Q^T Q L^T = L L^T = G`.
+    An eigendecomposition is used instead of Cholesky because `G` is only
+    positive *semi*-definite when rows are linearly dependent (which is
+    exactly the same-value no-op case).
+    """
+    V = np.asarray(vectors, dtype=np.float64)
+    if V.ndim != 2:
+        raise ValueError(f"expected a (rows, d) matrix, got shape {V.shape}")
+    n_rows, d_model = V.shape
+    if n_rows > d_model:
+        raise ValueError("cannot Gram-match more rows than dimensions")
+
+    gram = V @ V.T
+    evals, evecs = np.linalg.eigh(gram)
+    L = evecs * np.sqrt(np.clip(evals, 0.0, None))     # (rows, rows), G = L L^T
+
+    rng = np.random.default_rng(seed)
+    basis, _ = np.linalg.qr(rng.normal(size=(d_model, n_rows)))   # (d, rows)
+    return (L @ basis.T).astype(np.float32)
+
+
+def gram_matched_random_lens(reference: JLens, seed: int = 42) -> JLens:
+    """`gram_matched_random` applied to a whole lens; kind='gram_random'."""
+    return JLens(
+        vectors=gram_matched_random(reference.vectors, seed=seed),
+        token_ids=list(reference.token_ids),
+        token_strings=list(reference.token_strings),
+        layer=reference.layer, kind="gram_random", n_samples=0,
+        metadata={"seed": seed},
+    )

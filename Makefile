@@ -10,10 +10,21 @@
 #   make leadtime MODEL=...   stage 40 (GPU/MPS)
 #   make patching MODEL=...   stage 50 (GPU/MPS)
 #   make jlens-validate MODEL=...   stage 60 — E10 gate, must pass first (GPU/MPS)
-#   make jlens-taint MODEL=...      stage 61 — E10-2 (GPU/MPS)
-#   make jlens-controldep MODEL=... stage 62 — E10-3 (GPU/MPS)
+#   make jlens-taint MODEL=...      stage 61 — E10-2, ARCHIVED (GPU/MPS)
+#   make jlens-controldep MODEL=... stage 62 — E10-3, ARCHIVED (GPU/MPS)
 #   make jlens MODEL=...            stages 60→62 in order (60 gates the rest)
-#   make assets               stage 90 tables + figures (CPU)
+#
+#   ── E11, the active direction: J-space binding routing ──
+#   make jspace-pairs MODEL=...     stage 70 counterfactual pairs (CPU)
+#   make jspace-lens MODEL=...      stage 71 frozen lenses — GATE (GPU/MPS)
+#   make jspace-readout MODEL=...   stage 72 readout (GPU/MPS)
+#   make jspace-swap MODEL=...      stage 73 coordinate swap (GPU/MPS)
+#   make jspace-report MODEL=...    stage 74 go/no-go (CPU)
+#   make jspace MODEL=...           stages 70→74 in order
+#   make jspace-pilot               the 1.3b pilot exactly as pre-registered
+#
+#   make assets               stage 90 tables + figures, archived excluded (CPU)
+#   make assets-all           stage 90 including archived experiments (CPU)
 #   make test                 pytest
 #
 # GPU host (no scheduler): run jobs/*.csh in a screen session instead of the
@@ -25,7 +36,11 @@ ACT := results/activations/$(MODEL)
 PROBES := results/probes/$(MODEL)/core
 
 .PHONY: smoke data data-real extract probes context obfuscation leadtime patching \
-        jlens jlens-validate jlens-taint jlens-controldep assets test
+        jlens jlens-validate jlens-taint jlens-controldep \
+        jspace jspace-pairs jspace-lens jspace-readout jspace-swap jspace-report \
+        jspace-pilot assets assets-all test
+
+JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
 
 data:
 	$(PY) scripts/00_generate_data.py --model $(MODEL)
@@ -65,8 +80,44 @@ jlens-controldep:
 
 jlens: jlens-validate jlens-taint jlens-controldep
 
+# ── E11 J-space binding routing (stage 71 gates 72/73) ──────────────────────
+jspace-pairs:
+	$(PY) scripts/70_jspace_pairs.py --model $(MODEL)
+
+jspace-lens:
+	$(PY) scripts/71_jspace_lens.py --model $(MODEL) --pairs $(JSPACE_PAIRS)
+
+jspace-readout:
+	$(PY) scripts/72_jspace_readout.py --model $(MODEL) --pairs $(JSPACE_PAIRS)
+
+jspace-swap:
+	$(PY) scripts/73_jspace_swap.py --model $(MODEL) --pairs $(JSPACE_PAIRS)
+
+jspace-report:
+	$(PY) scripts/74_jspace_report.py --model $(MODEL)
+
+jspace: jspace-pairs jspace-lens jspace-readout jspace-swap jspace-report
+
+# The pre-registered pilot: 200 pairs, two operation families, four layers.
+jspace-pilot:
+	$(PY) scripts/70_jspace_pairs.py --model deepseek-coder-1.3b \
+		--n-bases 100 --families affine,threshold
+	$(PY) scripts/71_jspace_lens.py --model deepseek-coder-1.3b \
+		--pairs data/synthetic/jspace_pairs_deepseek-coder-1.3b.jsonl \
+		--layers 6,12,18,23 --n-build 150
+	$(PY) scripts/72_jspace_readout.py --model deepseek-coder-1.3b \
+		--pairs data/synthetic/jspace_pairs_deepseek-coder-1.3b.jsonl \
+		--layers 6,12,18,23
+	$(PY) scripts/73_jspace_swap.py --model deepseek-coder-1.3b \
+		--pairs data/synthetic/jspace_pairs_deepseek-coder-1.3b.jsonl \
+		--layers 6,12,18,23 --band-width 3
+	$(PY) scripts/74_jspace_report.py --model deepseek-coder-1.3b
+
 assets:
 	$(PY) scripts/90_make_paper_assets.py
+
+assets-all:
+	$(PY) scripts/90_make_paper_assets.py --include-archived
 
 test:
 	$(PY) -m pytest tests/ -q
@@ -106,6 +157,24 @@ smoke:
 		--dataset $(SMOKE_DATA)/synthetic/core.jsonl \
 		--output results/smoke/jlens/controldep --layers 0,11 \
 		--n-examples 8 --n-build 3 --no-tables
+	$(PY) scripts/70_jspace_pairs.py --model $(MODEL) \
+		--output $(SMOKE_DATA)/synthetic/jspace_pairs.jsonl \
+		--n-bases 4 --families affine,threshold
+	$(PY) scripts/71_jspace_lens.py --model $(MODEL) \
+		--pairs $(SMOKE_DATA)/synthetic/jspace_pairs.jsonl \
+		--output results/smoke/jspace/lens --lens-out results/smoke/jspace/lenses \
+		--layers 0,11 --n-corpus 8 --n-build 6 --n-seeds 2 --n-eval 8 \
+		--no-strict --no-tables
+	$(PY) scripts/72_jspace_readout.py --model $(MODEL) \
+		--pairs $(SMOKE_DATA)/synthetic/jspace_pairs.jsonl \
+		--lenses results/smoke/jspace/lenses --output results/smoke/jspace/readout \
+		--layers 0,11 --positions use,answer --n-boot 100 --no-tables
+	$(PY) scripts/73_jspace_swap.py --model $(MODEL) \
+		--pairs $(SMOKE_DATA)/synthetic/jspace_pairs.jsonl \
+		--lenses results/smoke/jspace/lenses --output results/smoke/jspace/swap \
+		--behaviour results/smoke/jspace/readout/jspace_behaviour.csv \
+		--layers 0,11 --band-width 0 --n-boot 100 --no-tables
+	$(PY) scripts/74_jspace_report.py --model $(MODEL) --results results/smoke/jspace
 	$(PY) scripts/90_make_paper_assets.py
 	@echo "--- smoke artifacts ---"
 	@test -f results/smoke/probes/static_probes.csv
@@ -116,4 +185,8 @@ smoke:
 	@test -f results/smoke/jlens/validate/jlens_validation_checks.csv
 	@test -f results/smoke/jlens/taint/jlens_taint_summary.csv
 	@test -f results/smoke/jlens/controldep/jlens_controldep_summary.csv
+	@test -f results/smoke/jspace/lens/jspace_lens_stability.csv
+	@test -f results/smoke/jspace/readout/jspace_readout_summary.csv
+	@test -f results/smoke/jspace/swap/jspace_swap_summary.csv
+	@test -f results/smoke/jspace/go_no_go.yaml
 	@echo "SMOKE OK"

@@ -1,63 +1,56 @@
 # Results
 
-**Do code LLMs internally represent program semantics, and does that
-representation behave like a real computation rather than a surface trick?**
-Across two models — `deepseek-coder-1.3b` (24 blocks) and the main-results
-`deepseek-coder-6.7b` (32 blocks) — the answer is **yes for variable binding
-and def-use structure**, with the causal and robustness experiments telling a
-consistent story about *where* that information lives and *when* it breaks.
+**Do code LLMs build a representation of program semantics that behaves like a
+computation rather than a surface trick?** For **variable binding and def-use
+structure** the answer is yes, at both scales, against floors that are pinned
+to chance by construction. That is the foundation, and it is the only thing
+here claimed as established.
+
+Everything else in this file is either **supporting** — real, reported, and
+constraining rather than carrying the argument — or **active**: the current
+direction, designed but not yet run.
+
+Two rules for reading this document:
+
+- The status of every experiment is recorded in `results/STATUS.yaml`, which is
+  also what `scripts/90_make_paper_assets.py` reads to decide which figures to
+  regenerate.
+- Claims this project used to make and has withdrawn are in
+  `docs/LEGACY_RESULTS.md`, each with the reason. The data behind them is
+  preserved; only the interpretation is retired.
 
 Raw data of record: `results/tables/*.csv` (one row per measurement). Rendered
-summaries: `results/tables/md/*.md`. Figures: `results/figures/` (`png` to view,
-`pdf` for the paper). Regenerate everything with
-`python scripts/90_make_paper_assets.py`.
+summaries: `results/tables/md/*.md`. Figures: `results/figures/`. Regenerate
+with `python scripts/90_make_paper_assets.py` (add `--include-archived` to
+rebuild the retired ones too).
 
-Status legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b) · ✗ ran but not interpretable
+| Exp | What it tests | 1.3b | 6.7b | Status | Verdict |
+|-----|---------------|:----:|:----:|---|---|
+| E2 binding | variable binding, surface-proof | ● | ● | **foundation** | Decodable from mid layers over a 0.500 floor |
+| E3 def-use | def→use edges | ● | ● | **foundation** | Decodable, mild distance decay |
+| E1 token type | lexical baseline | ● | ● | supporting | Ceiling at the embeddings, as designed |
+| E4 control dep | guard→statement | ● | ● | supporting (not central) | Decodable, but the surface floor is already 0.927 |
+| E5 context | robustness to filler | ● | ● | supporting | Survives length; collapses under interference |
+| E7 patching | causal, raw | ● | ● | supporting | **Preliminary** causal evidence; see the retired claim |
+| E8 real code | CodeSearchNet transfer | ● | ● | supporting | Transfers, with a stated limitation |
+| E9 obfuscation | semantics-preserving edits | ◐ | ● | supporting | Robust to renaming mid-layer; breaks on flatten |
+| E10-0 J-lens | instrument validation | ● | ● | supporting | V1 exact; the Jacobian correction is real |
+| **E11 J-space** | **is the bound value causally reusable?** | ☐ | ☐ | **active** | Not yet run |
+| E6, E10-2, E10-3 | — | — | — | archived | See `docs/LEGACY_RESULTS.md` |
 
-| Exp | What it tests | 1.3b | 6.7b | Verdict |
-|-----|---------------|:----:|:----:|---------|
-| E1 token type | lexical baseline | ● | ● | Decodable from embeddings alone (as expected) |
-| E2 binding + strata | variable binding | ● | ● | **Positive** — decodable, surface-cue-proof |
-| E3 def-use + distance | def→use edges | ● | ● | **Positive** — decodable, mild distance decay |
-| E4 control dep | guard→statement | ● | ● | **Positive but surface-heavy** — hidden beats the hard stratum (0.92 vs 0.68), but control dep is largely locally decodable; replicates across scale |
-| E5 context degradation | robustness to filler | ● | ● | Survives length; collapses under interference |
-| E6 lead time | latent vs behavioral failure | ✗ | ● | **Negative (6.7b), undefined (1.3b).** 6.7b: no early warning — probe excess −0.010 vs a *no-model position baseline* at +0.113. 1.3b: behavioural signal at chance (balanced acc 0.471), so lead time is undefined there. The original positive was measured on a constant responder |
-| E7 causal patching | is it *used*? | ● | ● | **Positive** — information routes across layers; sanitizer site is causally inert |
-| E8 real code | CodeSearchNet transfer | ● | ● | **Transfers** — ~0.90 acc / 0.98 AUC vs 0.67 surface, same mid-early layer peak; but real code can't isolate the semantic component |
-| E9 obfuscation | semantics-preserving edits | ◐ | ● | Robust to renaming mid-layer; breaks on flatten |
-| E10 J-lens | verbalizable vs decodable | ● | ● | **Dissociation.** Lens validated (V1 exact, next-token top-1 0.65 vs 0.05 random). At guard anchors it reads the guard's own variable at **0.813** but control dependence at **chance** — decodable (E4 AUC 0.999) yet not verbalizable. E10-2 also supplied the floors that dissolved E6 |
-
-All ten experiments have now run at both scales. **E8** confirms the probes
-transfer to real Python with the same layer signature, and **E4 is valid and
-replicates across scale** (its hard-negative control was rebuilt).
-
-**E10 (J-lens)** produced two changes. A positive one: the Jacobian-lens method
-*transfers to code models* — it passes its closed-form correctness check exactly
-and recovers next-token content the logit lens cannot. And a corrective one: it
-supplied the floors E6 never had, which dissolved E6's early-warning claim
-entirely. E6 has since been re-run with a working behavioural signal and three
-floors; **there is no early warning in either model, and a baseline using no
-model at all scores higher on the metric than a 99%-accurate probe.**
-
-Read together, E6, E7 and E10 converge on one picture: **the model computes
-program semantics, causally uses some of them, and reports none of them.** The
-taint state is decoded correctly at the exact moment the output is wrong (E6),
-the sanitizer site is causally inert (E7), and nothing is verbalizable (E10).
+Legend: ☐ not run · ◐ dev model (1.3b) · ● main model (6.7b)
 
 ---
 
-## The core result: binding and def-use are genuinely encoded (E2, E3)
+# 1. Validated foundation
 
-The central claim of the project rests on one control. A probe can hit 100%
-accuracy on "are these two tokens the same variable?" simply by reading the
-token strings — same name, same variable. To rule that out, every binding pair
-has a **`context_matched`** partner: a second program that is *token-identical*
-except for the single character that flips the binding, so the correct label
-flips while every surface cue stays put. If the probe still separates them, it
-must be reading something the model computed, not the text.
+## E2 — variable binding is genuinely encoded
 
-**It does.** Two independent floors confirm no shortcut is available, and the
-hidden states clear both by a wide margin:
+The claim rests on one control. A probe can score 100% on "are these two tokens
+the same variable?" by reading the token strings. To rule that out, every
+binding pair has a **`context_matched`** partner: a second program that is
+*token-identical* except for the single character that flips the binding, so
+the correct label flips while every surface cue stays put.
 
 | `context_matched` binding accuracy | 1.3b | 6.7b |
 |---|---:|---:|
@@ -70,689 +63,377 @@ hidden states clear both by a wide margin:
 
 *Figures: `binding_strata_{model}_core.png`, `layers_accuracy_{model}_core.png`.*
 
-**How to read this curve.** Three things happen, in order:
+Three things happen, in order:
 
-1. **Nothing is there at the input.** The surface baseline and the embedding
-   layer both sit at *exactly* 0.5 — chance. This is not an approximation; it is
-   guaranteed by construction and confirmed in the data. The binding information
-   simply does not exist in the tokens; it has to be *built*.
-2. **The model builds it in the first few blocks.** Accuracy jumps from ~0.53 at
-   block 0 to ~0.91–0.96 by layer 3 and plateaus near 0.98 through the middle of
-   the network. Binding is computed early and cheaply, then held.
-3. **It is partially discarded near the output.** Both models decline in the
-   last third (to ~0.91–0.93). This is expected and meaningful: the final layers
-   reorganize the representation toward next-token prediction, so an abstract
-   fact like "these are the same variable" is no longer the priority once it has
-   been used.
+1. **Nothing is there at the input.** Both floors sit at *exactly* 0.500 — not
+   approximately, but by construction, and confirmed in the data. The binding
+   information does not exist in the tokens; it has to be built.
+2. **The model builds it in the first few blocks**, reaching ~0.91–0.96 by
+   layer 3 and plateauing near 0.98 through the middle.
+3. **It is partially shed near the output** (~0.91–0.93), consistent with the
+   final layers reorganizing toward next-token prediction.
 
-**Def-use edges (E3) behave identically** — peak ~0.99 at layers 7–11, with a
-mild, honest decay by distance. Even the hardest bucket (def and use 50–200
-tokens apart) stays at **0.96–0.99**, versus ~0.99 for nearby pairs. The model
-tracks def-use links across real distance, not just adjacency.
+**Only `context_matched` is a clean headline number.** The other strata
+(`diff_name`, `distance_matched`) sit at ~0.99 from block 0 because the token
+strings already separate them — the surface baseline scores 0.78–0.94 on them
+too. The `same_name_diff_binding` stratum is a diagnostic rather than a result:
+at the embedding layer it scores 0.001 (the probe sees identical names and
+confidently guesses "same binding"), and by layer 3 it is at 0.99.
+
+**Cross-scale.** The two models agree on shape and differ only where a scaling
+story predicts: 6.7b does slightly less work in block 0 (0.53 vs 0.57) and
+holds its peak longer (L11–19 vs L7–11) — the same relative depth stretched
+over a deeper network. The surface-baseline and embedding rows are numerically
+identical across models, which doubles as a corpus-integrity check.
+
+## E3 — def-use edges
+
+Same design, same floors, and the same profile: peak ~0.99 at layers 7–11 with
+an honest decay by distance. The hardest bucket (def and use 50–200 tokens
+apart) stays at **0.96–0.99** against ~0.99 for nearby pairs, so the model
+tracks def-use links across real distance rather than adjacency.
 *(Figure: `defuse_distance_{model}_core.png`.)*
 
-### Why the other strata are less interesting (and one is a trap)
+---
 
-The per-stratum table shows most negatives are easy — `diff_name` and
-`distance_matched` sit at ~0.99 from block 0 onward — because the token strings
-already separate them. Those are *not* evidence of semantic encoding; the
-surface baseline scores 0.78–0.94 on them too. **Only `context_matched` is a
-clean headline number**, and it is the one quoted above.
+# 2. Active: E11 — J-space binding routing
 
-The `same_name_diff_binding` stratum is a useful diagnostic: at the embedding
-layer it scores **0.001** — the probe, seeing only identical names, confidently
-guesses "same binding" and is always wrong. By layer 3 it is at 0.99. That
-transition is the clearest single illustration that context, not spelling, is
-doing the work.
+> **When a code model resolves variable binding, does it route the selected
+> value into J-lens coordinates that are causally reusable by downstream
+> computation?**
 
-### Cross-scale replication
+E2 and E3 establish that binding is *decodable*. Decodable is compatible with
+the representation being a faithful shadow of a computation that happens
+somewhere else entirely. E11 asks the next question with an intervention, and
+treats the J-lens strictly as what it is: a **causal, output-aligned coordinate
+system**, `v_w = J_ℓ^T (g·W_U[w])`, the direction at layer ℓ whose component
+pushes the model's own output head toward token `w`. No claim about
+reportability, verbalizability, or a workspace is made or needed — see
+`docs/LEGACY_RESULTS.md` for why that framing was dropped.
 
-The two models agree on the *shape* and disagree only in the details that a
-scaling story would predict:
+**Status: designed, tested on CPU, not yet run on a model.** There are no E11
+numbers in this repository. What follows is the design and the pre-registered
+criteria, so that the pilot's outcome is interpretable either way.
 
-- 6.7b does slightly **less** binding work in block 0 (0.53 vs 0.57) but holds
-  its peak **longer** (plateau L11–19 vs L7–11) — the same relative depth,
-  stretched across a deeper network.
-- The surface-baseline and embedding rows are **numerically identical** across
-  the two models (same corpus, same tokenizer, no model in the loop). This is a
-  built-in integrity check: it confirms the two runs share ground truth and that
-  layer −1 really is context-free.
+## The data (stage 70)
+
+Token-aligned counterfactual pairs. A one-token mutation of the inner
+definition's *name* flips which value the marked use selects, while both values
+occur in both programs:
+
+```python
+# case 0007                      # case 0007
+x = 3                            x = 3
+def f():                         def f():
+    y = 7                            x = 7
+    return x * 2 + 1                 return x * 2 + 1
+assert f() ==   → 7              assert f() ==   → 15
+```
+
+Enforced at generation and re-checked in `tests/test_jspace.py`: one differing
+token; equal token length so every probed position is the same index in both;
+the mutation is never the marked use and never adjacent to it; both answers are
+single tokens, distinct, and **disjoint from both values** (otherwise an answer
+token and a distractor value token would be the same lens row and every
+downstream number would be circular); ground truth from *executing* the
+program, cross-checked against the operation's own Python function.
+
+Three templates (`global_shadow`, `call_frame` — where the operation lives in a
+callee, so routing must cross a call boundary — and `padded_shadow`) and five
+operation families (affine, multiply/subtract, threshold, modulus, list
+indexing). Each *base* carries several families over the same two values, which
+is what makes the causal test falsifiable.
+
+## The instrument (stage 71, a gate)
+
+One frozen J-lens per layer, built from a **held-out generic Python corpus**
+(CodeSearchNet), never from the evaluation programs, with broad source
+positions and randomly sampled future readout positions. Three independent
+build samples per layer measure stability, on directions (rowwise cosine) and
+on decisions (margin-sign agreement on held-out states) — a layer whose lens is
+unstable cannot carry a claim about that layer however large its effect looks.
+V1 (last-layer identity with the logit lens) and V2 (next-token recovery) are
+E10-0's checks, reused unchanged.
+
+## The readout (stage 72)
+
+At each probed position — before the definitions, at each definition, at the
+mutation, at the marked use, at the answer — rank the bound value's lens row
+against the distractor's. The claim-bearing metric is the **paired
+counterfactual margin reversal**: the margin must be positive in one program
+*and* negative in its one-token mutation. A readout that prefers small numbers,
+or the first-mentioned literal, or the token it just saw, gives the same margin
+in both and scores zero reversals. Four readouts on identical hidden states:
+J-lens, logit lens, a **Gram-matched** random control (same norms *and* same
+angles, so only the directions are arbitrary), and a probe trained on the
+calibration split — the incumbent, not a floor.
+
+## The intervention (stage 73)
+
+At the marked use, with `V = [v_source, v_target]` and `c = V⁺h`:
+
+```
+h_patched = h + V (swap(c) − c)
+```
+
+Only the two value coordinates change; the orthogonal complement is untouched;
+the operator is an involution; and identical directions give *exactly* the zero
+edit, so the same-value control is provably inert rather than approximately so.
+Applied in both directions, at individual layers and short layer bands, and
+scored as a paired shift in `logP(answer implied by the other value) −
+logP(answer bound here)` against the same program's clean run.
+
+**The falsification test.** The same value swap must move each operation family
+toward *its own* answer — `x=3` implies 7 under `2x+1`, 1 under `x>4`, 0 under
+`x%2`, something else under `tbl[x]`. An intervention that steers the answer
+token cannot do that, so the summary reports the per-family minimum, not the
+pooled mean. Controls: logit-lens subspace, Gram-matched random subspace,
+same-value no-op, irrelevant position (`pre_def`), whole-state counterfactual
+patch (the ceiling, not a control), and a direct answer-token swap.
+
+## Method rules, enforced in code
+
+- Lens-building corpus, calibration split and test split are disjoint;
+  `counterfactual_pairs.assert_disjoint` is called by every stage and is unit
+  tested against a deliberate leak.
+- The calibration/test split is assigned in the data file, grouped by base
+  program and stratified by template, so all stages agree by construction.
+- The layer and the intervention site are selected on **calibration only** and
+  recorded in the manifest before the test number is read.
+- No example is dropped for being answered wrongly. Every example is reported;
+  the "both counterfactuals correct" subset is labelled and summarized
+  *alongside*, never instead.
+- All intervals are cluster bootstraps grouped by base program, and all control
+  comparisons are paired on the same rows.
+- Complete per-example data, including clean and patched logits, is saved.
+
+## Pre-registered go/no-go (stage 74)
+
+Recommend the full 6.7b run only if all three hold on the 1.3b pilot (200
+pairs, two operation families, four layers):
+
+1. behavioural balanced accuracy ≥ 0.75;
+2. the bound-value J-lens readout beats the Gram-matched random control
+   (paired CI lower bound above zero, at the calibration-selected layer);
+3. the coordinate swap produces a positive paired logit shift (CI lower bound
+   above zero, at the calibration-selected site).
+
+The verdict lands in `results/jspace/{model}/go_no_go.{yaml,md}`.
 
 ---
 
-## E1 lexical baseline: read with care
+# 3. Supporting results
 
-**E1 (token type)** peaks at **1.000 accuracy at the embedding layer (−1)** with
-high selectivity (~0.88–0.90) in both models. This is the *expected* control,
-not a finding: token type is a pure lexical property, so it is best decoded
-before any context is added. It confirms the machinery works and gives the
-contrast for E3's thesis (RQ3) — **lexical features are readable from the
-embeddings; semantic relations are not, and only appear after computation.**
-`taint_state` is likewise at ceiling with ~0.5 selectivity; it is fine as the
-*input* to E6/E7 but is not a standalone result.
+These are reported and constrain the picture; none of them carries the
+argument.
 
----
+## E1 — lexical token type (machinery check)
 
-## E4: control dependence is encoded — but it is also largely local syntax
+Peaks at **1.000 accuracy at the embedding layer** with selectivity ~0.88–0.90
+in both models. Expected, not a finding: token type is a pure lexical property,
+best decoded before context is added. It confirms the extraction and probing
+machinery, and gives the contrast for E2 — lexical features are readable from
+the embeddings, semantic relations are not and only appear after computation.
 
-The first E4 attempt was invalid: its surface baseline scored **1.000**, because
-control-dependent statements were the only ones indented under an `if`, so token
-windows plus distance separated them trivially. The corpus was rebuilt with
-**sibling-guard programs** and a hard **`indent_matched`** negative stratum — a
-statement sitting inside a *different* guard's body at the *same* nesting depth,
-using neutral variables unrelated to the guard. Pooled across the sibling guards,
-positives and these hard negatives overlap in both indentation and distance, so
-the indentation shortcut is neutralized.
+## E4 — control dependence: encoded, but largely local syntax
 
-With that control in place, the honest picture is **more mixed than
-binding/def-use**, and it is **the same at both scales**. The clean, threshold-
-proof comparison holds *both* class recalls at once — the hidden probe must catch
-the control-dependent pairs **and** reject the same-depth hard negatives:
+The first attempt was invalid (surface baseline 1.000: control-dependent
+statements were the only ones indented under an `if`). Rebuilt with
+sibling-guard programs and an `indent_matched` hard negative — a statement in a
+*different* guard's body at the same nesting depth — the honest picture is
+mixed, and identical at both scales:
 
-| control_dep, best layer | positive recall | hard-neg (`indent_matched`) recall |
+| control_dep, best layer | positive recall | hard-neg recall |
 |---|---:|---:|
 | Surface baseline (no model) | 0.959 | 0.676 |
 | Hidden — 1.3b (L11) | 0.981 | 0.873 |
 | Hidden — 6.7b (L15) | **0.995** | **0.923** |
 
-The hidden state dominates surface on **both** classes simultaneously, so the gap
-is not a decision-threshold artifact (a biased probe would trade one recall for
-the other — which is exactly what the layer −1 = 1.000 figure is). Aggregate:
-AUC 0.990 (surface) → 0.997 (1.3b) / **0.999** (6.7b). The surface baseline is
-**numerically identical across the two models** (positive 0.959, hard-neg 0.676)
-— it is model-free, so this doubles as a corpus-integrity check confirming both
-runs share the same fixed ground truth.
+The hidden state dominates on both classes at once, so the gap is not a
+threshold artifact. Aggregate AUC 0.990 (surface) → 0.999 (6.7b).
 
-Reading it two ways:
+**But the surface floor is already 0.927**, unlike binding and def-use whose
+floor is pinned to exactly 0.500. A statement's guard is usually its nearest
+enclosing `if`, so token windows plus distance get most of the way there.
+Control dependence is a largely local, syntactic relation, and this result is
+best read as the contrast that makes E2's isolation meaningful — not as a
+finding about representation. That is why it is classified supporting but
+**not central**.
 
-- **Hidden state carries genuine control-dependence structure.** By layer it is a
-  clean, balanced separation: aggregate **AUC climbs 0.74 (embeddings) → 0.999
-  (L15)**, positive recall **0.48 → 0.99**, selectivity **0.14 → 0.39**, on the
-  same rise-then-plateau depth profile as binding. On the hard `indent_matched`
-  stratum the hidden probe recovers **0.923** of the non-dependent statements
-  versus **0.676** for surface — a real **+0.25** margin that no local cue
-  supplies.
-- **But control dependence is substantially surface-decodable.** Unlike binding
-  and def-use, whose surface floor sits at *exactly 0.500* on token-identical
-  pairs, the E4 surface baseline is already at **0.927 / AUC 0.990**. Control
-  dependence is a largely *local, syntactic* relation — a statement's guard is
-  usually its nearest enclosing `if` — so token windows plus distance get most of
-  the way there. This is the RQ3 contrast made concrete: **the more syntactic the
-  relation, the less the model needs a deep representation of it.**
+*Caveat:* probing anchors fall on each span's last token, which here are
+integer literals. Re-anchoring on the guard variable and statement target is a
+CPU-only stage-20 re-run and remains open.
 
-Caveat for the write-up: with these templates the probing anchors fall on each
-span's last token (the documented "last token integrates the span" convention),
-which here are integer literals (`… > 50`, `… + K`); their mid-layer hidden
-states still integrate the full guard/statement (AUC 0.999), but a future pass
-could anchor on the guard variable and statement target for a cleaner readout.
-The **layer −1 = 1.000** figure on `indent_matched` is *not* a leak — it is a
-single-class-recall artifact of a threshold-biased embedding-layer probe
-(AUC there is only 0.743, identical in both models). Both scales trace the same
-rise-then-plateau curve (1.3b peaks L11, 6.7b L15 — the same relative depth),
-so E4 now replicates across scale.
+## E5 — survives length, collapses under interference
 
----
+Frozen E2/E3 probes on programs padded with five filler types, sized by real
+tokenizer counts (0 → 1000 tokens).
 
-## E5: representations survive length but collapse under interference
+**6.7b binding accuracy at 500 filler tokens:**
 
-Frozen E2/E3 probes were evaluated on programs padded with five kinds of filler,
-sized by **real tokenizer counts** (0 → 1000 tokens). The question is whether
-long context per se erodes the representation, or whether only *semantically
-relevant* interference does. The answer is unambiguous — it is interference.
-
-**6.7b binding accuracy at 500 filler tokens, by filler type:**
-
-| Filler type | What it adds | Acc @500 tok | Interpretation |
+| Filler type | What it adds | Acc @500 | Reading |
 |---|---|---:|---|
-| `comment_prose` | inert English text | **0.921** | Length is almost free |
-| `dead_code` | unreachable statements, fresh names | 0.794 | Mild — extra code costs a little |
-| `lexical_decoy` | similar-looking fresh names | 0.795 | Mild — surface distractors |
-| `competing_update` | code that rebinds other vars | 0.859 | Moderate |
-| `scope_shadow` | code that reuses the tracked names | **0.570** | **Severe** |
+| `comment_prose` | inert English | **0.921** | Length is almost free |
+| `dead_code` | unreachable statements | 0.794 | Mild |
+| `lexical_decoy` | similar-looking fresh names | 0.795 | Mild |
+| `competing_update` | rebinds other variables | 0.859 | Moderate |
+| `scope_shadow` | reuses the tracked names | **0.570** | **Severe** |
 
-At 1000 tokens `scope_shadow` drives 6.7b binding to **0.498 — pure chance**,
-and def-use to 0.59. Every other filler type is still well above 0.70.
-*(Figures: `context_binding_{model}.png`, `context_defuse_edge_{model}.png`.)*
+At 1000 tokens `scope_shadow` drives binding to 0.498 — chance — while every
+other filler stays above 0.70. The representation degrades exactly when the
+*semantic task* gets harder, not when the context gets longer. A per-layer
+detail sharpens it: under `scope_shadow`, block 0 is the most stable (flat
+~0.75) while the mid layers — the ones doing the binding work — collapse. Both
+scales show the same ranking.
 
-**The interpretation (RQ2/RQ3).** A thousand tokens of comments barely dent the
-probe, so the representation is not fragile to distance or context length. What
-destroys it is `scope_shadow` — filler that forces genuine scope resolution by
-reusing the very names being tracked. In other words, the representation degrades
-exactly when the *semantic task itself* gets harder, which is what you would want
-from a real binding computation rather than a positional heuristic. A per-layer
-detail sharpens this: under `scope_shadow`, block 0 is the *most* stable
-(flat ~0.75) while the mid layers — the ones doing the real binding work — are
-the ones that collapse. The interference lands on the computation, not the
-lookup. Both model sizes show the same ranking.
+## E7 — causal patching (preliminary)
 
----
+Activation patching on length-matched minimal pairs, measuring logit-diff
+recovery.
 
-## E9: robust to renaming in the middle layers, broken by control-flow flattening
-
-Frozen E2/E3 probes were evaluated on a five-level, cumulative,
-**execution-verified** obfuscation ladder (each level provably preserves program
-behavior). The layer-averaged summary is blunt; the per-layer picture is the real
-finding.
-
-**6.7b binding, best-layer accuracy per level:**
-
-| Level | Transform | Layer-avg | **Best layer** | Reading |
-|---:|---|---:|---:|---|
-| 0 | normalize (reformat) | 0.974 | ~1.000 | Formatting is irrelevant |
-| 1 | + rename identifiers | 0.704 | **0.897** (L11) | The big cliff — and where it lands matters |
-| 2 | + opaque predicates | 0.712 | 0.857 | Adds almost nothing over rename |
-| 3 | + MBA encoding | 0.728 | 0.846 | Adds almost nothing |
-| 4 | + control-flow flatten | 0.572 | **0.750** | The second, harder break |
-
-*(Figures: `obfuscation_levels_{model}.png`, `obfuscation_{task}_{model}.png`.)*
-
-**Two breaks, two lessons.**
-
-- **Renaming is the first cliff, but the layer breakdown rescues the story.**
-  The *average* fall to ~0.70 hides a split: at the embedding/block-0 layers,
-  renaming pushes the probe **below chance (0.29–0.33)** — those early layers
-  keyed on the identifier strings and are actively fooled — while the **mid
-  layers (7–15) hold ~0.85–0.90**. So early layers carry name-based features and
-  mid layers carry something closer to structural binding. This is the same
-  early-lexical / mid-semantic division E1 and E5 point to.
-- **Opaque predicates and MBA arithmetic barely register** (0.71–0.73): junk
-  branches and rewritten expressions don't disturb binding, because they don't
-  change *which definition reaches which use*.
-- **Control-flow flattening is the true limit.** Once the control structure is
-  dissolved into a dispatch loop, even the best layer only reaches ~0.75 and the
-  average sits at 0.57. The frozen probes encode binding *relative to the
-  surrounding control structure*; remove that scaffold and transfer largely
-  fails. This is the honest boundary of how abstract the representation is.
-
-Both models trace nearly identical ladders — the finding replicates across scale.
-
----
-
-## E7: the information is causally used, and it moves across the network
-
-Activation patching on **length-matched minimal pairs** (identical except the
-sink argument) measures logit-diff recovery: how much of the model's output
-flips when a single position's activations are swapped. This is the causal
-counterpart (RQ5) to the correlational probes above.
-
-**6.7b, mean recovery (fraction of output flip explained):**
+**6.7b, mean recovery:**
 
 | Layer | `sink_arg` | `last_token` | `sanitizer_def` |
 |---:|---:|---:|---:|
 | 0 | **0.99** | −0.01 | 0.00 |
-| 3 | 0.91 | 0.01 | 0.00 |
 | 7 | 0.71 | 0.07 | 0.00 |
-| 11 | 0.50 | 0.15 | 0.00 |
 | 15 | 0.24 | 0.31 | 0.00 |
-| 19 | 0.04 | 0.65 | 0.00 |
 | 23 | 0.05 | 0.76 | 0.00 |
 | 31 | 0.00 | **1.00** | 0.00 |
 
-*(Figure: `patching_recovery_{model}.png`.)*
+1.3b replicates the pattern (`sink_arg` ≈ 1.0 at layers 0–3, `last_token` 1.00
+at L23).
 
-**This is textbook information routing.** Early on, the taint identity lives at
-the **sink-argument token** — patching it there recovers ~all of the behavior
-(0.99 at layer 0). Across the middle of the network the causal locus **migrates
-to the last-token position**, which fully controls the decision by layer 31.
-The crossover (~layer 15) matches where the E2 binding curve is at its plateau:
-the model has finished *computing* the relation and is now *moving it into place*
-for the readout.
+**What this supports:** the causal locus of the decision migrates from the
+sink-argument token to the last-token position across the middle of the
+network, crossing over near where the E2 binding curve plateaus. That is a
+reproducible description of where the decision becomes committed.
 
-**1.3b shows the same routing** — `sink_arg` dominates early (≈1.0 at layers
-0–3) and `last_token` takes over late (0.90 at L19, **1.00 at L23**), with
-`sanitizer_def` at **0.000 at every layer**. The causal picture replicates
-across scale.
+**What it does not support**, and what was retired: that it isolates *semantic
+use*. `sink_arg` is the only place the two programs differ, so patching there
+transports the surface difference along with any semantic state; the
+`sanitizer_def` null has no positive control at that position; and late-layer
+`last_token` recovery forces the answer trivially. Full reasoning:
+`docs/LEGACY_RESULTS.md`. E11's coordinate swap exists to close exactly this
+gap.
 
-The third column is the quiet bombshell: patching **`sanitizer_def` recovers
-nothing at any layer (0.000 throughout)**. Overwriting the sanitizer's
-definition never changes the output. The model's taint decision does not route
-through the sanitization site at all — which sets up, and is confirmed by, E6.
+## E8 — transfers to real code, with a limitation
 
----
-
-## E6: there is no early warning — and a no-model baseline "detects" more of it
-
-E6 asks whether the taint probe's internal state degrades *before* the model's
-answer goes wrong (RQ4). The answer, once the experiment is given a working
-behavioural signal and three floors, is **no** — and the way the original
-positive result arose is the more useful finding.
-
-### The original result was measured on a constant responder
-
-Under the bare prompt (`is the current value tainted?`) **both models answered
-the same token to every prefix of every program**:
-
-| Model | answer | raw accuracy | **balanced accuracy** |
-|---|---|---:|---:|
-| 1.3b | always "no" | 0.220 | **0.500** |
-| 6.7b | always "yes" | **0.780** | **0.500** |
-
-6.7b's 0.780 is the trap: it is exactly the base rate of `tainted=1`, so the
-signal looks healthy under the check anyone would actually run. Balanced
-accuracy — the floor that catches it — is 0.500 for both.
-
-**The two opposite biases produce E6's entire "scale split" mechanically.**
-The generator always emits the taint source on line 2, so `tainted=1` at the
-first evaluable prefix for every program. Therefore:
-
-- **1.3b always says "no"** → wrong at the first prefix → `t_failure = 2` on
-  100% of programs → a positive lead is *arithmetically impossible* → the
-  reported "no early warning at any layer".
-- **6.7b always says "yes"** → wrong only where `tainted=0`, i.e. at and after
-  the sanitizer → `t_failure` lands mid-program on exactly the sanitized
-  programs (32 of 70) → any probe erring before the sanitizer scores a "lead"
-  → the reported "66% of failures, +2.3 prefixes".
-
-No model computation entered the behavioural side of either number.
-
-### Fixing the prompt: only one variant works, and only on 6.7b
-
-`scripts/diagnose_taint_prompt.py` sweeps four prompts. Only **few-shot
-demonstrations *and* naming the variable** (`is the value of \`v2\` tainted?`)
-lifts 6.7b out of degeneracy — balanced accuracy **0.857**. Neither ingredient
-alone does anything. **1.3b cannot do the task under any prompt**: the
-stage-40 run of record measures balanced accuracy **0.471** (says-tainted rate
-0.734 — no longer constant, but no better than chance), and stage 40 flags the
-signal `usable=False`. Lead time is therefore **undefined** for 1.3b, not
-"zero": `t_failure` is noise, so nothing can be early or late relative to it.
-That is a capability result, not a representational one, and the 1.3b rows in
-the tables below should be read as unmeasurable rather than negative.
-
-### With a working signal and three floors: no early warning
-
-Stage 40 now reports every readout against an **analytic null** — for a
-readout with per-prefix error rate ε whose errors are independent of the
-model's state, the chance of erring before step *k* is 1−(1−ε)^(k−1). Only
-`early_warning_excess` (observed − null) can support a claim.
-
-Only 6.7b has a usable behavioural signal, so only its column is a
-measurement; 1.3b's is shown for completeness and is undefined (see above).
-
-| Readout | **6.7b excess** | 1.3b (undefined) |
-|---|---:|---:|
-| **`position`** — no model at all, "tainted iff step ≤ 3" | **+0.113** | +0.080 |
-| `random` — norm-matched random direction | +0.005 … +0.067 | +0.011 |
-| **`probe`** — trained, ~99% accurate | **−0.010** | −0.023 |
-
-**A baseline that knows nothing but how many lines into the program it is
-scores higher on early warning than a 99%-accurate probe.** The trained probe
-averages *negative* excess in both models; not one of its positive cells
-survives Bonferroni correction (best: 6.7b L15, 4/19 vs null 0.062, p=0.027
-against α=0.0019; 6.7b L31 is a *degraded* probe whose error 0.1718 is within
-0.3% of a constant predictor's 0.1741).
-
-The metric rewards unreliability, not anticipation — which is why the
-uninformative readouts win it.
-
-**The probe is nonetheless reading taint, not depth.** Its per-prefix error is
-0.005–0.027 against the position floor's 0.233 — beating it by 10–50×. The
-position confound (r = −0.57 between depth and label) explains the *random*
-readout's apparent competence, not the probe's.
-
-### What the experiment does show
-
-At most layers `readout_never_wrong` is **19/19 (6.7b)** and **49/49 (1.3b)**:
-on every example where the model answers wrongly, the probe decoded the taint
-state **correctly at every prefix**. The latent state is right while the output
-is wrong.
-
-That converges with **E7**, where patching `sanitizer_def` recovered nothing at
-any layer. Two independent methods — a linear probe and activation patching —
-agree: **the model represents the sanitization and does not route it to the
-answer.** Read together with E10, the pattern across this project is a model
-that computes program semantics, uses some of them, and reports none of them.
-
-*(Figures: `leadtime_{model}.png`. Raw: `behavioral_leadtime{,_summary,_prefixes}_{model}.csv`,
-`behavioral_sanity_{model}.csv`. `scripts/41_leadtime_floors.py` re-applies the
-floors to any stage-40 run without a GPU.)*
-
-
-## E8: the probes transfer to real code, with the same layer signature
-
-E8 re-runs stages 10+20 unchanged on ~200 `ast`-parseable CodeSearchNet
-functions. **The probes transfer.** Binding and def-use are decodable from real
-function bodies at ~0.90 accuracy, far above the model-free surface baseline,
-and the *shape* of the layer curve matches the synthetic result.
-
-**Use AUC, not accuracy, to read this.** Accuracy is threshold-dependent and
-peaks at the embedding layer here; AUC is not, and it tells a different and more
-informative story:
+Stages 10+20 re-run unchanged on ~200 `ast`-parseable CodeSearchNet functions.
+Read AUC, not accuracy (accuracy is threshold-dependent and peaks at the
+embedding layer here):
 
 | 6.7b, aggregate AUC | Surface | Embedding (−1) | **Peak** | Last layer |
 |---|---:|---:|---:|---:|
 | binding | 0.673 | 0.962 | **0.978** (L7) | 0.913 (L31) |
 | def-use | 0.590 | 0.958 | **0.979** (L3) | 0.907 (L31) |
 
-| 1.3b, aggregate AUC | Surface | Embedding (−1) | **Peak** | Last layer |
-|---|---:|---:|---:|---:|
-| binding | 0.673 | 0.962 | **0.980** (L3) | 0.907 (L23) |
-| def-use | 0.590 | 0.959 | **0.975** (L3) | 0.908 (L23) |
+1.3b matches closely (binding 0.980 at L3, def-use 0.975 at L3). Hidden states
+beat the surface baseline by +0.31/+0.39 AUC, AUC rises above the embedding
+layer to an early-middle peak at the same relative depth as synthetic, and
+declines toward the output.
 
-Three things replicate from the synthetic corpus: hidden states beat the surface
-baseline by a wide margin (**+0.31 / +0.39 AUC**); AUC **rises above the
-embedding layer to an early-middle peak** (L3–L7, the same relative depth as
-synthetic); and it **declines toward the output** (−0.07). The rise-then-shed
-profile — information built in the early blocks, held, then reorganized for
-next-token prediction — is present in real code too, just compressed, because
-the embedding layer already starts at 0.96 instead of 0.500.
+**The limitation, stated plainly.** In real code identifiers are genuinely
+informative — `self._cache` and `result` look different — so the embedding
+layer starts at 0.96 rather than 0.500 and no stratum pins the surface floor to
+chance. E8 therefore shows that *the whole decoder transfers to naturalistic
+inputs*; it does **not** show that the semantic component specifically
+transfers. E2's isolation still rests on synthetic programs. The
+`same_name_diff_binding` stratum looks bad on real code (0.095→0.494) but is
+class-conditional recall with no per-stratum AUC recorded, so it is weaker
+evidence than it appears.
 
-**Why the embedding layer starts so high — and why that is expected.** In real
-code, identifiers are genuinely informative: `self._cache` and `result` are
-different variables and *look* different, so token identity alone predicts most
-binding pairs. The synthetic `context_matched` design deliberately annihilates
-that cue (both floors sit at exactly 0.500) in order to isolate the part the
-model must *compute*. Real code cannot do that by construction, so the two
-experiments measure different things: **E2 isolates the semantic component; E8
-tests whether the whole decoder transfers to naturalistic inputs.** A high
-embedding baseline on real code is a property of real code, not a failure of
-the model.
+The fix — context-matched pairs built by *mutating* real functions — is open
+item 1 below, and 150 candidate sites already exist in this corpus.
 
-**The one stratum that looks bad, and how much weight it carries.**
-`same_name_diff_binding` — identically spelled occurrences binding to different
-definitions — sits below chance at every layer (6.7b 0.095→0.494; 1.3b
-0.082→0.516), while the surface probe scores 0.767. That is worth reporting, but
-it is **weaker evidence than it appears**, for the reason already documented for
-E4's layer −1 = 1.000: these per-stratum figures are **class-conditional recall
-on the negatives, and no per-stratum AUC is recorded**. A probe whose threshold
-leans toward "same binding" whenever the spelling is identical will score low
-here regardless of what its hidden states encode — which is exactly what the
-aggregate AUC of 0.978 says is happening. Distinguishing "the representation is
-absent" from "the threshold is placed against this stratum" needs a
-context-matched control, which this run does not have.
+## E9 — robust to renaming mid-layer, broken by flattening
 
-**What E8 does and does not license.**
+Frozen E2/E3 probes on a five-level, cumulative, **execution-verified**
+obfuscation ladder.
 
-- **Supported:** binding and def-use structure is linearly decodable from real
-  Python at ~0.90 accuracy / ~0.98 AUC, hugely above surface features, with the
-  same layer profile as the synthetic corpus. The findings are not a generator
-  artifact. Both scales agree closely, and the model-free surface baseline is
-  numerically identical across them (the usual corpus-integrity check).
-- **Not supported:** that the *semantic* component specifically transfers. On
-  real code the lexical and semantic contributions cannot be separated, because
-  no stratum here pins the surface floor to chance. E2's isolation result still
-  rests on synthetic programs.
-- **The fix is available** (open item 1): context-matched pairs can be built from
-  real functions by mutating them — 150 candidate sites already exist in this
-  corpus. That would turn E8 into a like-for-like test of E2 rather than a
-  transfer check, and is the single highest-value addition to this experiment.
+**6.7b binding, best-layer accuracy per level:**
 
----
+| Level | Transform | Layer-avg | **Best layer** |
+|---:|---|---:|---:|
+| 0 | normalize | 0.974 | ~1.000 |
+| 1 | + rename identifiers | 0.704 | **0.897** (L11) |
+| 2 | + opaque predicates | 0.712 | 0.857 |
+| 3 | + MBA encoding | 0.728 | 0.846 |
+| 4 | + control-flow flatten | 0.572 | **0.750** |
 
-## E10: the J-lens transfers to code models — and both experiments come back null
+The layer breakdown is the finding: renaming pushes the *embedding and block-0*
+probes below chance (0.29–0.33) — those layers keyed on identifier strings and
+are actively fooled — while mid layers 7–15 hold ~0.85–0.90. Opaque predicates
+and MBA arithmetic barely register, because they do not change which definition
+reaches which use. Control-flow flattening is the true limit: the frozen probes
+encode binding relative to the surrounding control structure, and removing that
+scaffold breaks transfer. Both models trace nearly identical ladders.
 
-E1–E9 ask whether a relation can be *read out* of the hidden state by a trained
-probe. E10 asks the stronger question with an **unsupervised** readout built
-from the model's own output head — the Jacobian lens
-([Gurnee, Lindsey et al. 2026](https://transformer-circuits.pub/2026/workspace/index.html)),
-`v_w = J^T(g·W_U[w])` where `J = E[∂h_final/∂h_ℓ]`. A high score means the state
-*disposes the model to say* `w`, which is strictly stronger than being
-decodable. Method: `docs/METHODS.md` §11. Design: `docs/JLENS_PLAN.md`.
-
-### The machinery works, and the method transfers (stage 60)
-
-All required gates passed on both models. Two results matter:
+## E10-0 — the J-lens implementation is correct, and the correction is real
 
 | Validation | 1.3b | 6.7b | Reading |
 |---|---:|---:|---|
-| **V1** J-lens vs logit lens at the last layer | **1.0000** | **1.0000** | `J` is provably the identity there, so this *must* be 1.0 — a closed-form check of the entire gradient path |
+| **V1** J-lens vs logit lens at the last layer | **1.0000** | **1.0000** | `J` is provably the identity there, so this must be 1.0 — a closed-form check of the whole gradient path |
 | **V2** next-token top-1 (chance 0.038) | 0.633 (L19) | 0.650 (L27) | the lens reads real content |
 | V2 random floor | 0.000–0.133 | 0.000–0.050 | |
-| **V2 J-lens advantage over logit lens, pre-final layer** | **+0.150** (L−1) | **+0.183** (L19) | the paper's central claim, reproduced in a code model |
+| **V2 advantage over the logit lens, pre-final** | **+0.150** | **+0.183** | the Jacobian correction recovers content the logit lens cannot |
 
-The last row is a genuine positive finding: **the Jacobian correction recovers
-content the logit lens cannot, in a code LLM** — the first replication of that
-claim outside natural-language models that this project is aware of. It also
-means the nulls below are *not* "the method doesn't work here".
-
-*(Figures: `jlens_validation_nexttoken_{model}.png`.)*
-
-**One caveat on the gate.** V3 (taint disposition) passed at n=10, which is too
-small to carry weight — its cells are all 0.0 or 1.0. The load-bearing
-validation is V1 (exact) and V2 (n=60, huge margins), not V3.
-
-### E10-2 (taint): null — and it breaks the early-warning metric itself
-
-This was the priority experiment: E6 found early warning in 6.7b and not 1.3b,
-and hypothesized 6.7b's taint state is "distinct from what its output head
-does". Running the J-lens, logit-lens, frozen probe, and a **norm-matched
-random lens** through E6's own stepping gives:
-
-**6.7b — early-warning rate, P(readout wrong first | model wrong), n=32:**
-
-| Layer | J-lens | logit | probe | **random** |
-|---:|---:|---:|---:|---:|
-| 0 | 0.906 | 0.000 | 0.000 | **0.000** |
-| 3 | 0.594 | 0.000 | 0.125 | **0.812** |
-| 7 | 0.000 | 0.000 | 0.656 | **0.812** |
-| 11 | 0.188 | 0.000 | 0.219 | **0.719** |
-| 15 | 0.781 | 0.812 | 0.500 | **1.000** |
-| 19 | 0.000 | 1.000 | 0.500 | **0.906** |
-| 23 | 1.000 | 0.188 | 0.281 | **0.719** |
-| 31 | 0.562 | 0.562 | 0.281 | **0.750** |
-| **mean** | **0.481** | 0.373 | 0.354 | **0.634** |
-
-**A random direction carrying no information produces *more* apparent early
-warning than any real readout.** The J-lens beats its own random floor at only
-3 of 10 layers. There is no verbalizable-taint signal here.
-
-**Why**, and this is the substantive finding: across all 40 (layer, readout)
-cells, early-warning rate is almost perfectly predicted by how *unreliable* the
-readout is —
-
-> **Pearson r = −0.905 (p = 1.1×10⁻¹⁵)**, Spearman −0.907, between
-> "fraction of examples the readout never got wrong" and early-warning rate.
-
-A readout that is wrong often is wrong *early*, mechanically. The statistic
-rewards inaccuracy, not anticipation. `docs/RESULTS.md` already flagged this for
-E6's layer −1; the random control shows it is not a layer −1 quirk but the
-metric's general behaviour.
-
-**This forces a re-reading of E6 (RQ4).** Two problems, both now measurable:
-
-1. **6.7b.** This run reproduces E6's headline exactly — the probe at layer 7
-   fails first on 21/32 (0.656). But the random floor at that same layer is
-   **0.812**. E6's number does not clear a control it was never tested against.
-2. **1.3b.** E6 reports "no early warning at any layer" as evidence for a
-   scale-dependent effect. In fact **the 1.3b model answers wrongly at the very
-   first evaluated prefix (t=2) on 100% of test programs**, so a positive lead
-   is *arithmetically impossible* for any readout — which is why J-lens, logit,
-   probe and random all score exactly 0.000 at every layer. The 1.3b "null" is a
-   floor artifact, not a fact about its representations.
-
-So the E6 scale split is not established: one arm is uncontrolled, the other is
-structurally forced. This is the most consequential thing E10 produced.
-
-*(Figures: `jlens_taint_earlywarning_{model}.png`.)*
-
-### E10-3 (control dependence): decodable, but not verbalizable
-
-At each guard-expression anchor the lens ranks two single-token identifiers.
-Chance is exactly 0.500 by construction. Three comparisons run at the **same
-anchors** with the **same** readout, so a flat test line can be told apart from
-a dead readout:
-
-| 6.7b, J-lens, layer | `guard_var` *(control)* | **`control_dep` (TEST)** | `next_ident` *(control)* |
-|---:|---:|---:|---:|
-| −1 | 0.507 | 0.503 | 0.547 |
-| 7 | 0.600 | 0.506 | 0.487 |
-| 15 | 0.613 | 0.505 | 0.480 |
-| 23 | 0.660 | 0.489 | 0.493 |
-| 27 | 0.733 | 0.456 | 0.407 |
-| **31** | **0.813** | **0.398** | 0.273 |
-
-**The readout is alive at these positions.** `guard_var` — rank the variable
-the guard actually tests above another variable present in the program — climbs
-from chance to **0.813**, broadly rising with depth. So lens vectors at guard
-anchors do carry identifier information, and a null on the test cannot be
-blamed on reading nothing there.
-
-**Control dependence is not among what they carry.** `control_dep` sits within
-±0.02 of chance at every layer up to 23, then goes *below* chance (0.398 at
-L31). Meanwhile E4's trained probe reaches AUC 0.999 on this same relation at
-mid layers. **Decodable, not verbalizable** — and the two properties are
-measured at the same anchors, in the same model, by readouts that differ only
-in supervision.
-
-*Internal consistency:* at the last layer `J` is the identity, so the J-lens
-must equal the logit lens exactly — measured 0.398/0.398, 0.813/0.813,
-0.273/0.273. V1 holding at experiment level, not just in the gate.
-
-**The below-chance tail was a temporal confound — identified, and removed.** A
-control-dependent statement is always *after* its guard, but the
-`indent_matched` negative sits after the anchor only half the time (measured:
-positives 290 after / 0 before; negatives 223 after / 223 before). For that
-half the model has already seen the negative token under causal attention and
-has *not* seen the positive one, so recency favours the wrong answer.
-Conditioning on the matched subset (`negative_after=True`, n=417 per cell)
-removes it completely:
-
-| J-lens, `control_dep` | range across layers | L31 |
-|---|---|---:|
-| pooled (confounded) | 0.405 – 0.523 | 0.387 |
-| **temporally matched** | **0.453 – 0.537** | **0.506** |
-
-**No layer differs from chance after correction.** Per-layer binomial tests on
-the matched subset (n=417 per cell, Bonferroni over 10 layers, α=0.005) return
-p = 0.06–0.92; a cluster bootstrap over source programs — which the data
-supports, ICC ≈ 0 — puts 0.5 inside every 95% CI. So the null is not merely
-"flat on average": it is flat everywhere once a known artifact is conditioned
-out, and the below-chance tail is fully accounted for rather than hand-waved.
-
-A per-cell ±1.96 SE band is *not* the right yardstick here and an earlier
-version of this analysis used one: across ten layers the largest deviation
-exceeds it roughly 40% of the time under the null, which flagged two cells
-spuriously.
-
-**The one cell that came close, and why it is not reported as a finding.**
-1.3b layer 7 reaches 0.576 on the matched subset (binomial p = 0.0023, below
-its Bonferroni α = 0.0063). It is nonetheless not significant: the cluster
-bootstrap over source programs gives 95% CI **[0.495, 0.644]**, which contains
-chance. Outcomes clustered by program at that cell (SE inflation ≈ 1.6×), so
-the binomial — which assumes independent cases — is anti-conservative there and
-the CI is the trustworthy interval. It is also one isolated cell of 18 across
-the two models, and **it does not replicate**: 6.7b sits at 0.472 at the same
-layer, on the other side of chance. Reported here for completeness, claimed
-nowhere. `scripts/63_controldep_temporal.py` applies the split and the
-corrected tests retrospectively to any stage-62 run, no GPU required; stage 62
-now records `negative_after` directly.
-
-**`next_ident` failed as a control, for the same family of reason.** It was meant to be "pure local continuation", but the guard anchor
-is the *last* token of the guard expression (`50` in `if t > 50:`), so the next
-identifier is several tokens downstream past `:` and the indent — not the next
-token at all. Combined with the frequency effect above, it sits at or below
-chance, and its positives are additionally *dead assignment targets* competing
-against variables that recur throughout the program. `guard_var` is the control
-that carries the argument.
-
-**Limitation.** `guard_var` establishes that the readout is functional and
-identifier-sensitive at guard anchors. It does not establish that a *relational*
-fact would be readable there if present — it is a recency/identity control, not
-a relational one. The honest claim is therefore: under a token-level
-operationalization ("is the model disposed to name the dependent target"),
-control dependence shows no verbalizable signature, while an identity fact at
-the same position shows a large one.
-
-*(Figures: `jlens_controldep_dissociation_{model}.png` — the test against both
-controls; `jlens_controldep_indent_matched_{model}.png`.)*
+This is instrument validation and it is what E11 reuses. The last row is a
+genuine positive: the Jacobian correction works in a code LLM, so an E11 null
+would not be "the method doesn't work here". *Caveat:* V3 (taint disposition)
+passed at n=10, too small to carry weight; V1 and V2 are the load-bearing
+checks.
 
 ---
 
-## What the results say, in one paragraph
+# 4. What this project no longer claims
 
-On **synthetic** programs, both `deepseek-coder` models linearly encode
-**variable binding** and **def-use structure** in a way no surface cue can
-explain: on token-identical program pairs the probe rises from a hard 0.500
-floor to a ~0.98 mid-layer peak, replicated at both scales at the same relative
-depth. That representation is **built in the first few blocks, held through the
-middle, and shed near the output**; it is **robust to inert length and
-formatting** but **collapses under scope-shadowing interference and control-flow
-flattening**, i.e. exactly when the underlying semantic task gets harder. Causal
-patching shows the information is **really used** and physically **routes from
-the sink-argument token (layers 0–11) to the last token (layers 19–31)**. The
-probes **transfer to real Python (E8)** — ~0.90 accuracy / 0.98 AUC on
-CodeSearchNet functions against a 0.67 surface baseline, with the same
-rise-to-an-early-middle-peak-then-decline layer profile — so none of this is a
-generator artifact; what real code cannot do is *isolate* the semantic component,
-since natural identifiers are themselves predictive and no stratum there pins the
-surface floor to chance. What these representations are **not** is
-*verbalizable*: the J-lens (E10) reproduces its own validation benchmarks here —
-including recovering next-token content the logit lens cannot — and at guard
-anchors it reads the guard's own variable at 0.813, yet control dependence
-stays at chance (0.46–0.52) at every layer where the trained probe reaches AUC
-0.999. Same anchors, same readout, opposite outcomes. The picture that emerges is a model
-that **computes and uses** program semantics without holding them in a
-reportable form. Finally, **RQ4 gets a clear negative on the only model that can do the task**:
-with a working behavioural signal and three floors, 6.7b's taint probe shows
-*no* early warning (excess −0.010) while a no-model position baseline scores
-+0.113 on the same metric. 1.3b's forced choice is at chance (balanced accuracy
-0.471), so its lead time is undefined rather than negative. What the probe does show is that the taint state is
-decoded **correctly** on every prefix of every example where the model answers
-wrongly — the representation is right while the output is wrong.
+Withdrawn, with reasons, in `docs/LEGACY_RESULTS.md`:
 
-## Open items before the paper
+- **"Computes, uses, but does not report."** Two of its three legs rested on
+  absence-of-evidence results whose positive controls could not license reading
+  the absence.
+- **E6 behavioural lead time.** The original positive was measured on a
+  constant responder; with a working signal and an analytic null, a no-model
+  position baseline outscores a 99%-accurate probe, because the metric rewards
+  unreliability. The negative is not a finding either.
+- **E10-2 taint verbalizability.** Inherits E6's metric, and the effect it was
+  built to explain did not survive.
+- **E10-3 "decodable but not verbalizable".** A well-defended null, but with no
+  *relational* positive control it cannot be told apart from a readout that
+  cannot express relations at those positions.
+- **E7 "isolates semantic use".** The design conflates transported surface
+  difference with semantic state; the experiment is kept as preliminary causal
+  evidence.
 
-All ten experiments have run at both scales; nothing is blocked on compute.
-**Item 0 is new and supersedes the old E6 items** — it is a correctness problem,
-not a reporting one.
+---
 
-0. ~~**E6's early-warning claim needs to be withdrawn or rebuilt**~~ **DONE.**
-   The prompt was fixed (few-shot + named variable; `scripts/diagnose_taint_prompt.py`
-   documents why both are needed), and stage 40 now ships three floors:
-   balanced-accuracy sanity on the behavioural signal, a norm-matched random
-   readout, a no-model `position` baseline, and an analytic null. Verdict: no
-   early warning in either model. `scripts/41_leadtime_floors.py` re-applies the
-   floors to any stage-40 run without a GPU. **Remaining (optional):** the taint
-   corpus still has depth→label correlation r = −0.57, which is why the *random*
-   readout looks competent; the probe beats the position floor by 10–50× so its
-   result is unaffected, but a re-generated corpus with randomized initial taint
-   state and re-taint transitions would remove the objection entirely.
+# 5. Open items
 
-1. **Context-matched pairs on real code** — the highest-value follow-up: it would
-   upgrade E8 from a transfer check to a like-for-like replication of E2's
-   isolation result, and would settle whether the low `same_name_diff_binding`
-   recall is a threshold artifact or a real gap. Build them by *mutating* real
-   functions
-   rather than generating programs: given a def of `v` at line *i* and a later
-   use at line *k*, rename the target of an interposed assignment at *j*
-   (*i*<*j*<*k*) from `w` to `v`. The two sources are token-identical except that
-   one token, the anchors and their distance are unchanged, and the (def *i*,
-   use *k*) label flips — so the surface baseline is pinned to 0.500 exactly as
-   in E2. Requirements: `w` and `v` must tokenize to the same length (single
-   token is cleanest); the mutated token must sit outside the ±3-token anchor
-   windows; and `v` must be used somewhere in (*i*, *j*] so def *i* stays live in
-   the DFG in both variants (the synthetic generator's "early use" line does this
-   job). Ground truth is rebuilt per variant, exactly as E5/E9 already do.
-   **Measured yield on the current corpus: 150 candidate sites across 61 of the
-   200 functions (30%)** before the tokenizer length constraint — comparable to
-   the 80 synthetic pairs. `_Renamer` in `src/data/obfuscation.py` is the
-   transform to reuse. Caveat: this produces *mutated* real code (the rename can
-   break runtime behavior, which is irrelevant for static ground truth but means
-   the corpus is no longer pristine CodeSearchNet), and if identifiers have to be
-   normalized to single tokens to lift yield, real identifier distribution is
-   traded for real structure — worth reporting both arms.
-2. **E8 stratum sizes** — `static_probes.csv` records per-stratum *accuracy* but
+1. **Context-matched pairs on real code** — the highest-value follow-up for the
+   foundation: it upgrades E8 from a transfer check to a like-for-like
+   replication of E2's isolation, and settles whether the low
+   `same_name_diff_binding` recall is a threshold artifact. Build by mutating
+   real functions: given a def of `v` at line *i* and a use at *k*, rename an
+   interposed assignment target at *j* (*i*<*j*<*k*) from `w` to `v`. Same
+   invariants as E2 (single differing token, unchanged anchors and distance,
+   `v` used in (*i*, *j*] so def *i* stays live). Measured yield: 150 candidate
+   sites across 61 of 200 functions. `_Renamer` in `src/data/obfuscation.py` is
+   the transform to reuse. Note the corpus is then mutated real code, not
+   pristine CodeSearchNet.
+2. **E8 stratum sizes** — `static_probes.csv` records per-stratum accuracy but
    not per-stratum *n*. The `same_name_diff_binding` count on real code must be
-   measured before the E8 negative result goes in a paper: if that stratum is
-   only a handful of pairs, the claim weakens from "fails" to "underpowered".
-   A builder-side count on `csn_python_200.jsonl`, no GPU needed.
-3. **E6 layer-7 robustness** — the headline (21/32 early, +2.3 steps) rests on a
-   single calibration split (`calib_frac=0.3`, seed 42) and one threshold per
-   layer. Re-run across a few seeds to get a CI on the early-warning *rate*, not
-   just on `mean_lead`.
-4. **E6 reporting** — prefer the `latent first / model wrong` rate over the
-   shipped `frac_positive_lead`+`mean_lead` columns, which condition on
-   `n_both_fail` and so change denominator across layers. Consider adding that
-   ratio to the summary CSV in `src/experiments/behavioral_leadtime.py`.
-5. Report E5/E9 at **peak/per-layer** rather than layer-averaged — the averages
-   hide the strongest findings (e.g. rename fools layer 0 but not layer 11).
-6. **E4 optional polish** — re-anchor on the guard variable / statement target
-   instead of the span's trailing literal (a CPU-only stage-20 re-run).
-7. **E1 lexical AUC is logged as 0.000** — a multi-class reporting artifact, not
-   a fit failure (all lexical fits now report `converged = True`). Worth emitting
-   `NaN` instead so the column isn't misread.
-8. **Provenance note for E6:** the layer sweep ran under the `uq` env
-   (Python 3.10 / sklearn 1.7.2) against probe checkpoints pickled by the older
-   `semflow` env (Python 3.11 / sklearn 1.9.0), via `micromamba run -n semflow`.
-   E7's patching numbers predate that move. Same data, same seeds, but if a
-   reviewer asks for exact reproducibility both stages should be re-run in one
-   environment.
+   measured before that negative goes in a paper; if it is a handful of pairs,
+   the claim weakens from "fails" to "underpowered". CPU-only.
+3. **Report E5/E9 at peak/per-layer** rather than layer-averaged — the averages
+   hide the strongest findings (rename fools layer 0 but not layer 11).
+4. **E4 re-anchoring** — guard variable and statement target instead of the
+   span's trailing literal. CPU-only stage-20 re-run.
+5. **E1 lexical AUC logs as 0.000** — a multi-class reporting artifact, not a
+   fit failure. Emit `NaN` so the column is not misread.
+6. **Environment provenance** — the archived E6 layer sweep ran under the `uq`
+   env against probe checkpoints pickled by `semflow`; E7's numbers predate
+   that move. Same data and seeds, but exact reproducibility would want both
+   stages re-run in one environment.
+7. **E11 pilot** — run `jobs/jspace_pilot.csh` and read
+   `results/jspace/deepseek-coder-1.3b/go_no_go.yaml`.

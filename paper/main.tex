@@ -18,7 +18,7 @@
 
 \graphicspath{{../results/figures/}}
 
-\title{Tracing Semantic Understanding in Code Models}
+\title{Code Models Compute Program Semantics They Cannot Report}
 
 \workshoptitle{Interpretability as a Science}
 
@@ -37,80 +37,51 @@
 \maketitle
 
 \begin{abstract}
-Code language models can often produce plausible programs without necessarily tracking the relations that determine what the code means. Identifier spelling, token proximity, and indentation all correlate with semantic structure, so behavioral success and high probing accuracy may arise from surface cues alone. We study whether pretrained code models internally represent variable binding, def--use structure, control dependence, and taint; how these representations change across layers and controlled transformations; whether they affect model behavior; and whether they are aligned with the model's output vocabulary. On context-matched binding pairs, for which both a model-free surface baseline and the embedding layer are exactly at chance, linear-probe accuracy rises from 0.500 to approximately 0.98--0.99 in the middle layers of DeepSeek-Coder 1.3B and 6.7B. Def--use edges show the same profile and remain accurately decodable over 50--200-token distances. Frozen probes survive inert context and several semantics-preserving rewrites, but degrade under scope shadowing and control-flow flattening. Activation patching shows a causal signal moving from the sink argument in early layers to the final-token position in late layers. However, a validated Jacobian lens finds no control-dependence signal where a supervised probe reaches AUC 0.999. After adding appropriate behavioral and statistical floors, we also find no evidence that probe failure precedes model failure. The results support a model in which code LMs construct and sometimes use program-semantic information without maintaining it in a fully invariant or consistently output-aligned form.
+Code language models can appear competent by exploiting identifier spelling, proximity, and indentation, all of which correlate with program semantics. We ask whether they instead construct program relations, use them, and make them available to their own output computation. Synthetic Python gives us construction-known semantic graphs, exact AST-to-token alignment, and counterfactual pairs whose surface floor is fixed rather than estimated. In DeepSeek-Coder 1.3B and 6.7B, binding accuracy on token-matched pairs rises from exactly 0.500 at both the surface and embedding baselines to approximately 0.984 in middle layers. Activation patching then traces causal recovery from the sink-argument token ($\approx 0.99$ at layer 0) to the final position (1.00 at layer 31); the sanitizer-definition position recovers 0.000 at every layer. Yet this state is dissociated from report and error anticipation. A Jacobian lens validated by exact last-layer identity and next-token recovery reads the guard variable at 0.813, but control dependence remains at chance where a trained probe reaches AUC 0.999. A taint probe is approximately 99\% accurate and remains correct on the prefixes where the model answers incorrectly; no anticipatory degradation survives a no-model floor. Code models therefore build and use program-semantic state without reliably reporting it or using its degradation to anticipate their own failures.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:introduction}
 
-Many programming tasks depend on relations that are not visible from a token in isolation. A use of \texttt{x} must be linked to the definition that reaches it. A value passed to a sink may or may not have passed through a sanitizer. A statement may be controlled by one guard rather than another at the same indentation depth. A code model that tracks these relations should behave differently from one that relies mainly on spelling, proximity, or common formatting patterns.
+Code language models predict convincing programs, but this does not establish that they compute the relations that determine program meaning. Equal names often denote the same variable, definitions and uses are usually nearby, and indentation exposes control structure. Binding, data flow, and control dependence can therefore be predicted from surface regularities even when the corresponding program relation is not represented.
 
-Distinguishing these possibilities is difficult because surface form and program semantics are strongly correlated in ordinary code. Equal names often denote the same variable, definitions and uses are often close, and indentation reveals control structure. Natural identifiers such as \texttt{result}, \texttt{cache}, and \texttt{sanitized} also reveal likely roles. A classifier can therefore recover a semantic label without showing that the model computed the corresponding relation.
+Code offers an unusually clean way to separate these possibilities. Static analysis provides decidable ground truth, and controlled programs allow counterfactual pairs whose semantic label changes while the relevant surface context is held fixed. This pins a baseline to exactly chance rather than estimating how much a shortcut might explain. We use that leverage to study four properties of semantic state in the same models: whether it is \emph{built} with depth, \emph{used} by the output computation, available for \emph{report}, and \emph{anticipatory} of behavioral failure.
 
-Prior work has shown that pretrained code models preserve syntax trees and expose information about identifiers, data flow, control flow, and data dependence \cite{wan2022capture,hernandez2022astprobe,troshin2022probing,ma2024unveiling}. Controlled synthetic studies further show that next-token models can develop representations of latent program execution state \cite{jin2024emergent}. These results establish recoverability, but leave several properties separate: whether a readout relies on a surface shortcut, whether it survives controlled changes, whether the model uses the information, and whether the information is aligned with what the output head can express.
+Prior work shows that code-model representations preserve AST structure and expose identifiers, namespaces, data flow, control flow, and data dependence \cite{wan2022capture,hernandez2022astprobe,troshin2022probing,ma2024unveiling}. Controlled language models trained on programs can also acquire latent execution state \cite{jin2024emergent}. These results establish recoverability, but recoverability alone does not distinguish model computation from surface cues or probe learning \cite{hewitt2019control}. Nor does it establish causal use or output accessibility. We connect probing to activation patching \cite{zhang2023patching}, long-context ``know but do not tell'' failures \cite{lu2024longcontext}, and the Jacobian lens for verbalizable representations \cite{gurnee2026workspace}.
 
-We study these properties in a single pipeline. We generate Python programs with exact binding, def--use, control-dependence, and taint labels and map source spans to verified token positions. Linear probes are evaluated using source-grouped cross-validation, within-program shuffled-label controls, and task-specific hard negatives. Most importantly, context-matched binding pairs hold the visible anchor context fixed while changing the binding relation, forcing both a surface classifier and the context-free embedding layer to chance. Def--use negatives are matched by token distance, and control-dependence negatives occur under sibling guards at the same indentation depth.
+Our results give a consistent but non-unitary picture. First, variable binding and def--use structure are absent from controlled input representations and constructed within the first transformer blocks. Second, taint-relevant information causally moves from the sink argument toward the final readout position. Third, control dependence is almost perfectly probe-decodable but absent from a validated output-aligned readout. Fourth, the taint state remains correctly decodable where the model's answer is wrong, rather than degrading beforehand. Program-semantic state is thus built and used, but dissociated from both report and self-prediction.
 
-We then apply frozen probes to programs with up to 1,000 tokens of inert or interfering filler and to an execution-verified obfuscation ladder. This distinguishes raw length from semantic interference and early name-dependent representations from more structural middle-layer states. We test transfer on 200 CodeSearchNet functions. Finally, activation patching measures causal use, a Jacobian lens measures output-aligned token disposition, and a prefix-by-prefix taint task tests whether internal failure precedes behavioral failure.
+\section{Setup and Controls}
+\label{sec:setup}
 
-Our strongest result is controlled variable binding. Accuracy rises from exactly 0.500 at the surface and embedding floors to approximately 0.98--0.99 in the middle layers of both models. Def--use structure follows the same profile and remains accurate across substantial distance. These representations survive inert length and identifier renaming in the middle layers, but fail under scope shadowing and flattened control flow. Activation patching shows that information associated with a tainted sink argument causally affects the answer and moves toward the output position across depth. Yet decodability does not imply output accessibility: control dependence is nearly perfectly decoded by a trained probe but remains at chance under a validated Jacobian lens.
+We study frozen DeepSeek-Coder models at 6.7B parameters (main) and 1.3B parameters (cross-scale replication). The synthetic Python corpus contains binding, shadowing, control-dependence, and source--propagation--sanitizer--sink programs. The generator records exact semantic graphs; AST spans are mapped to tokenizer offsets and checked against the original source. Def--use ground truth is independently cross-checked against Beniget. Linear probes use five-fold cross-validation grouped by source program and are reported with within-program shuffled-label selectivity.
 
-We do not interpret these results as evidence that the models execute programs symbolically or maintain compiler-like internal data structures. They show that specific program relations are linearly accessible, stable under some transformations, and causally consequential in one task. They also expose limits: the representations are not invariant to all semantics-preserving rewrites, the real-code evaluation cannot fully separate lexical and semantic information, and the corrected behavioral experiment provides no evidence of latent failure preceding output failure.
+The experiments are organized around controls that make each claim falsifiable (Table~\ref{tab:controls}). Context-matched binding pairs differ by one binding-changing character while preserving the probe anchors, placing both the model-free surface baseline and context-free embedding layer at exactly 0.500. Def--use negatives are distance-matched, and control-dependence negatives occur under a sibling guard at the same indentation depth. Frozen probes are evaluated under added context and execution-verified obfuscations without retraining. Behavioral and lens nulls are reported only with controls showing that the instrument works at the same decision point.
 
-\section{Related Work}
-\label{sec:related}
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Each claim is paired with a construction that could falsify it.}
+  \label{tab:controls}
+  \begin{tabular}{p{0.34\linewidth}p{0.58\linewidth}}
+    \toprule
+    Claim & Falsifying construction \\
+    \midrule
+    Relation computed, not read from surface & Token-matched pairs with a label flip; surface floor exactly 0.500 \\
+    Readout not using depth alone & No-model position readout with the same decision rule \\
+    Null reflects the model, not a dead readout & Same-anchor positive control and norm-matched random direction \\
+    Lens implemented correctly & Closed-form final-layer identity: J-lens must equal logit lens \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-\paragraph{Structural probing of code models.}
-Wan et al. analyze CodeBERT and GraphCodeBERT through attention, probing, and syntax-tree induction, finding that intermediate representations preserve substantial syntactic structure \cite{wan2022capture}. AST-Probe learns a low-dimensional syntactic subspace from which a complete abstract syntax tree can be recovered, with the strongest information in middle layers across five code models \cite{hernandez2022astprobe}. These studies motivate our layerwise analysis, but focus on grammar rather than relations whose labels can change while the visible anchor tokens remain fixed.
+Full generation, alignment, probe, and intervention details are provided in the supplementary material. The main text retains the controls required to interpret each claim.
 
-Broader probing suites move toward semantic structure. Troshin and Chirkova study syntax, identifiers, namespaces, data flow, and naming across code models and training choices \cite{troshin2022probing}. Ma et al. probe seven models for AST, control-flow graph, control-dependence graph, and data-dependence graph reconstruction, finding consistently strong syntax encoding but more variable semantic encoding \cite{ma2024unveiling}. Their DDG and CDG tasks are the closest precedents for our def--use and control-dependence experiments. We add shortcut-specific controls, frozen-probe stress tests, causal interventions, and an output-aligned readout.
+\section{The Representation Is Built and Causally Used}
+\label{sec:built-used}
 
-Jin and Rinard train a transformer on synthetic grid-world programs and recover unobserved intermediate execution states, using an interventional baseline to separate model representation from probe learning \cite{jin2024emergent}. We make a complementary tradeoff: pretrained Python models instead of a custom-trained DSL model, and static program relations instead of grid-world state. Synthetic counterfactuals provide exact control, while CodeSearchNet tests natural-code transfer. GraphCodeBERT injects data flow directly through graph-guided attention and structure-aware pretraining objectives \cite{guo2021graphcodebert}; we instead ask whether a token-based pretrained model makes def--use information accessible without receiving a graph at evaluation time.
-
-\paragraph{Probe controls and causal evidence.}
-Probe accuracy is not self-interpreting. Hewitt and Liang introduce control tasks and selectivity to distinguish information present in a representation from decisions learned by the probe \cite{hewitt2019control}. We use linear probes, shuffled-label selectivity, and controls specific to code: token-identical binding comparisons, equal-name hard negatives, distance-matched def--use negatives, same-depth sibling guards, and source-grouped folds.
-
-Even a controlled probe establishes availability rather than use. Activation patching tests whether replacing an internal state changes behavior, but conclusions depend on the corruption and effect metric \cite{zhang2023patching}. Our clean and corrupted programs are token-aligned and differ only in the variable passed to a sink. We measure normalized recovery of the clean--corrupted logit difference and treat late final-token patches separately because they may act directly on the output.
-
-\paragraph{Internal availability and output alignment.}
-Lu et al. show that language models may encode target information in long contexts while failing to use it in the final answer, a ``know but do not tell'' dissociation \cite{lu2024longcontext}. Our context experiment separates inert length from semantic interference, and our taint experiment similarly finds that an internal readout can remain correct when the output fails. We do not, however, find evidence that internal failure reliably precedes behavioral failure.
-
-The Jacobian lens maps intermediate activations into output-token directions using an average Jacobian from the current layer to the final residual state. Gurnee et al. use it to identify representations available for verbal report and other workspace-like functions \cite{gurnee2026workspace}. We validate the method on code next-token prediction, then test whether a probe-decodable relation is also expressed in an output-aligned direction. Our claim is restricted to this token-level operationalization of verbalizability.
-
-The contribution is therefore not the first observation that code models contain syntax or semantics. It is the joint separation of surface recoverability, contextual construction, robustness, natural-code transfer, causal use, and output alignment.
-
-\section{Experimental Setup}
-\label{sec:methods}
-
-\paragraph{Models.}
-We study frozen DeepSeek-Coder models at 1.3B and 6.7B parameters. The models contain 24 and 32 transformer blocks, respectively. We record the embedding state (layer $-1$), block 0, layers spaced through the network, and the final block. The 1.3B layers are $-1,0,3,7,11,15,19,23$; the 6.7B model additionally includes layers 27 and 31. Cross-model comparisons emphasize relative depth.
-
-\paragraph{Data and ground truth.}
-The synthetic core contains 740 Python programs covering binding, taint propagation, shadowing, and matched control dependence. Binding identity and reaching definitions are derived from the AST and construction metadata. Taint programs follow a source--propagation--optional-sanitizer--sink pattern and include the live state after each relevant line. Control dependence is derived from lexical nesting and exact join points.
-
-The context set contains 1,200 variants from 40 bases, with comment prose, dead code, lexical decoys, competing updates, or scope shadowing inserted at sizes from 0 to 1,000 tokenizer tokens. The obfuscation set contains 40 bases at five cumulative levels: normalization, identifier renaming, opaque dead branches, mixed Boolean-arithmetic encoding, and control-flow flattening. Every retained variant is execution-verified, and all levels of a base are kept or rejected together. The causal set contains 40 token-aligned clean/corrupted pairs that differ only in whether a sanitized or raw variable is passed to a sink. Natural-code transfer uses 200 AST-parseable Python functions from CodeSearchNet \cite{husain2019codesearchnet}.
-
-AST character spans are aligned to tokenizer offsets and checked against the source. The tokenizer must exactly reconstruct each program. Def--use extraction is independently cross-checked against Beniget. This check previously exposed a labeling error in a self-referential assignment, motivating independent validation rather than internal consistency alone.
-
-\paragraph{Probes and controls.}
-We train linear logistic probes with $C=0.1$, at most 2,000 iterations, and no more than 20,000 samples per task and layer. Five-fold cross-validation is grouped by source program. We report accuracy, ROC AUC, and selectivity, defined as target-label accuracy minus accuracy after labels are shuffled within each source example \cite{hewitt2019control}.
-
-Each task has a shortcut-specific control. Context-matched binding examples fix the visible anchors while flipping the relation, placing both the surface baseline and embedding layer at exactly 0.500. Same-name/different-binding cases make lexical identity predict the wrong label. Def--use negatives match the positive token-distance distribution. Control-dependence negatives lie under a different sibling guard at the same indentation depth. A model-free classifier using local token features and distance provides an explicit surface floor.
-
-For context and obfuscation, probes trained on the core set are frozen and applied without retraining. Ground truth is rebuilt for every variant. This tests stability of the accessible representation rather than learnability in each new condition.
-
-\paragraph{Behavioral and causal tests.}
-The taint behavior experiment grows a program one line at a time. At each prefix, a frozen probe predicts the live state and the model answers a forced-choice question using \texttt{yes}/\texttt{no} log probabilities. Probe thresholds are calibrated on held-out examples. We require a usable behavioral signal under balanced accuracy. Early-warning rates are compared with an analytic null determined by each readout's per-prefix error rate, a norm-matched random direction, and a position-only classifier.
-
-For activation patching, we replace the corrupted residual vector with the corresponding clean vector at the sink argument, sanitizer definition, or final token. We report normalized recovery of the clean--corrupted answer-logit difference. For the Jacobian lens, we first require exact agreement with the logit lens at the final layer, where the Jacobian is the identity, and above-random held-out next-token recovery. We then test taint and control-dependence readouts.
-
-\section{Results}
-\label{sec:results}
-
-\subsection{Semantic relations emerge after the embedding layer}
-\label{sec:representation}
-
-Figure~\ref{fig:binding} shows the central result. On context-matched binding pairs, both the model-free surface baseline and the embedding layer score exactly 0.500. In the 1.3B model, accuracy rises to 0.557 at block 0, 0.962 at layer 3, and 0.981 at layer 7 before declining to 0.915 at the final layer. In 6.7B, it rises from 0.528 at block 0 to 0.906 at layer 3 and 0.991 at layer 11, ending at 0.934. Because the input-level controls are exactly at chance, this rise reflects information constructed through contextual processing rather than recovered from isolated token identity.
+\paragraph{Built with depth.}
+Figure~\ref{fig:binding} gives the strongest evidence that the model computes rather than retrieves a program relation. On context-matched binding pairs, the surface baseline and embedding layer are exactly 0.500 by construction. The first transformer block reaches approximately 0.53--0.57, layer 3 reaches 0.91--0.96, and both models peak near 0.984 in the middle layers. Accuracy remains about 0.92 at the final layer. The curve has three clear phases: no relation at the input, rapid construction in the first blocks, and partial shedding near the output. Def--use edges show the same profile, reaching approximately 0.99 with only mild decay when definition and use are separated by 50--200 tokens.
 
 \begin{figure}[t]
   \centering
@@ -125,167 +96,319 @@ Figure~\ref{fig:binding} shows the central result. On context-matched binding pa
     \includegraphics[width=\linewidth]{binding_strata_deepseek-coder-6.7b_core.pdf}
     \caption{DeepSeek-Coder 6.7B.}
   \end{subfigure}
-  \caption{Binding accuracy by negative stratum and layer. The context-matched comparison is the load-bearing result: surface features and embeddings are exactly at chance, while middle-layer states approach perfect accuracy.}
+  \caption{Binding by layer and negative stratum. The context-matched relation rises from exact surface and embedding floors of 0.500 to approximately 0.984 in middle layers, replicated across model scale.}
   \label{fig:binding}
 \end{figure}
 
-The same-name/different-binding stratum makes the transition more visible. Embedding accuracy is approximately 0.001--0.002 because equal spelling strongly favors the wrong relation. By layer 3 it reaches 0.987 in 1.3B and 0.967 in 6.7B. Aggregate binding AUC reaches 0.997 and 0.998, with selectivity around 0.39--0.40 over 423 source groups.
+The stress tests characterize what is built. At 500 inserted tokens, 6.7B binding accuracy is 0.921 under inert comment filler but 0.570 under scope shadowing; at 1,000 tokens, scope shadowing reduces it to chance. Identifier renaming drives the earliest layers below chance while middle layers retain approximately 0.85--0.90. Control-flow flattening is the harder boundary, reducing the best layer to about 0.75. The representation therefore survives distance and surface renaming better than changes that complicate the underlying scope or control structure.
 
-Def--use edges follow the same profile. Peak accuracy is 0.989 for 1.3B and 0.990 for 6.7B, with AUC 0.999 in both models. At layer 3, 6.7B accuracy is 0.995 for edges separated by 0--10 tokens, 0.989 for 10--50 tokens, and 0.985 for 50--200 tokens. At the final layer these values remain 0.984, 0.982, and 0.962. The mild decay rules out a simple adjacency account.
-
-Lexical token type provides the expected contrast, reaching 1.000 accuracy at or near the embedding layer with high selectivity. The joint pattern is straightforward: lexical information is immediately available; relational information is built in early blocks, retained through the middle, and partially reorganized near the output.
-
-Control dependence is decodable but less cleanly separated from syntax. An original task version was invalid because indentation alone gave a perfect surface baseline. With sibling-guard negatives at the same depth, the surface baseline still reaches accuracy 0.927 and AUC 0.990. Its positive and hard-negative recalls are 0.959 and 0.676. Hidden states improve both simultaneously: the 1.3B probe reaches 0.981 and 0.873 with AUC 0.997, while 6.7B reaches 0.995 and 0.923 with AUC approximately 0.999. Thus the hidden state adds genuine relational information, but local syntax already predicts most of the task. This makes control dependence a useful contrast to binding rather than an equally strong isolation result.
-
-\subsection{Robustness reveals a context-sensitive structural representation}
-\label{sec:robustness}
-
-Frozen probes distinguish raw length from semantic interference. For 6.7B binding at 500 added tokens, accuracy is 0.921 with prose comments, 0.794 with dead code, 0.795 with lexical decoys, 0.859 with competing updates, and 0.570 with scope shadowing. At 1,000 tokens, scope-shadow binding falls to 0.498 and def--use to approximately 0.59, while all other fillers remain above roughly 0.70. Long inert context is therefore much less damaging than reuse of the tracked names in competing scopes.
+\paragraph{Causally used.}
+We next patch hidden states from a clean program, which passes a sanitized value to a sink, into a token-aligned corrupted program that passes the raw value. In 6.7B, recovery at the sink-argument token is approximately 0.99 at layer 0 and declines across depth. Recovery at the final position follows the reverse path and reaches 1.00 at layer 31 (Figure~\ref{fig:patching}). The smaller model replicates the same routing at compressed depth. The relation is locally consequential early and is moved into place for the output late.
 
 \begin{figure}[t]
+  \centering
+  \includegraphics[width=0.68\linewidth]{patching_recovery_deepseek-coder-6.7b.pdf}
+  \caption{Activation-patching recovery in DeepSeek-Coder 6.7B. Causal influence moves from the sink argument in early layers to the final position in late layers. Patching the sanitizer definition recovers 0.000 at every layer.}
+  \label{fig:patching}
+\end{figure}
+
+The sanitizer-definition position recovers 0.000 at every measured layer in both models. This does not show that sanitization is absent everywhere; it shows that this site does not mediate the answer under the intervention. Section~\ref{sec:correct-wrong} returns to this result from an independent direction.
+
+One relation requires a narrower claim. Control dependence reaches probe AUC 0.999, but its no-model surface baseline is already 0.927. Unlike binding's exact 0.500 floor, much of control dependence is locally reconstructable from syntax. Hidden states improve the relation, especially on same-depth sibling guards, but the result is best treated as a syntactic--semantic boundary and as the foil for the output-accessibility experiment below.
+
+\section{Dissociation I: Built but Not Reported}
+\label{sec:not-reported}
+
+A trained probe can recover any linear direction correlated with its labels, including one the model never makes available to its output computation. We therefore use the Jacobian lens to test a stronger property. For a candidate output token $w$ at layer $\ell$, its direction is
+\begin{equation}
+  v_w = J_\ell^{\top}\bigl(g W_U[w]\bigr),
+  \qquad
+  J_\ell = \mathbb{E}\!\left[\frac{\partial h_{\mathrm{final}}}{\partial h_\ell}\right],
+\end{equation}
+where $W_U$ is the unembedding and $g$ is the final normalization factor. The Jacobian is applied through vector--Jacobian products and is never explicitly materialized. Scores are used only for rankings within a position.
+
+Two checks establish that a null is interpretable. At the final layer, $J$ is the identity, so the Jacobian and logit lenses must agree; their measured cosine similarity is 1.0000 in both models. On held-out next-token prediction, the lens reaches top-1 accuracy 0.650 at 6.7B layer 27, compared with at most 0.050 for random directions. Before the final layer it exceeds the logit lens by as much as 0.183. The method therefore recovers code-token content that direct unembedding misses.
+
+At control-dependence guard anchors, the lens ranks two single-token identifiers, with chance exactly 0.500. A same-anchor positive control asks it to identify the variable tested by the guard. This score rises with depth to 0.813 ($z\approx 7.7$), showing that the readout is active and identifier-sensitive at the tested positions. The control-dependence target remains at chance at every layer, including those where the trained probe reaches AUC 0.999 (Figure~\ref{fig:jlens}). The relation is linearly recoverable, but the model is not disposed to name the dependent target.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.72\linewidth]{jlens_controldep_dissociation_deepseek-coder-6.7b.pdf}
+  \caption{Probe--report dissociation in DeepSeek-Coder 6.7B. The same-anchor guard-variable control rises to 0.813, while the control-dependence target remains at chance where a trained probe reaches AUC 0.999.}
+  \label{fig:jlens}
+\end{figure}
+
+The initial pooled analysis fell below chance late in the model because every positive target occurs after its guard, whereas half of the negative targets had already appeared and were visible under causal attention. Restricting negatives to positions after the guard removes this recency artifact. On 415 matched comparisons per layer, 0.500 lies inside every program-clustered 95\% interval after correction over layers. Finding and removing this confound strengthens rather than weakens the null: the late reversal disappears, while the absence of a positive control-dependence signal remains.
+
+The conclusion is deliberately token-level. The guard-variable control establishes that the readout works at these anchors, but it is an identity control rather than a relational one. We therefore show that control dependence is not aligned with a disposition to \emph{name} its target under this readout, not that the relation is inaccessible to every possible output format.
+
+\section{Dissociation II: Correct State, Wrong Answer}
+\label{sec:correct-wrong}
+
+If semantic state is built and used, it might seem natural for its degradation to precede a wrong answer. We test this by growing taint programs one line at a time. At every prefix, a frozen probe reads the live value's taint state and the model answers the same question through forced-choice probabilities.
+
+The behavioral signal must first be valid. With few-shot examples and the current variable named explicitly, 6.7B reaches balanced accuracy approximately 0.84. The 1.3B model remains at 0.471, so its lead time is undefined rather than zero. For 6.7B, we compare observed early errors with an analytic null based on each readout's error rate and with a no-model position readout.
+
+The taint probe is approximately 99\% accurate per prefix. At most layers, it is never wrong on any of the 19 examples where the model answers incorrectly: the latent state remains correct at the exact prefixes where behavior fails. No anticipatory degradation survives the floor. Mean probe excess over the analytic expectation is $-0.010$, while the position-only baseline scores $+0.113$. The result is therefore a representation--behavior dissociation, not an early-warning effect.
+
+This converges with the causal result in Section~\ref{sec:built-used}. Patching the sanitizer definition recovers 0.000 at every layer, while the probe correctly reads the sanitized state when the model answers as though it had not. Two independent measurements support the same interpretation: the model represents sanitization but does not route that representation into the requested answer.
+
+An earlier analysis appeared to show advance warning, but the effect came from the metric and the behavioral signal rather than the probe. Under a bare prompt both models were constant responders, and their opposite response biases manufactured an apparent scale difference. More generally, early-warning rate increases with readout error rate ($r\approx-0.96$ within readout families when reliability is measured as the fraction never wrong), so uninformative directions can score highest. This correction is methodologically important, but the substantive result is simpler: the semantic state is accurate when the answer is wrong.
+
+\section{Discussion}
+\label{sec:discussion}
+
+The four measurements describe different properties of one semantic representation. Binding and def--use are built from an exact input-level floor. Taint-relevant information is causally routed across depth. Control dependence is probe-decodable but not aligned with a validated verbalizability readout. Taint state remains correct at behavioral failure rather than anticipating it. Computation, causal use, report, and self-monitoring therefore come apart.
+
+This separation matters for interpretability. ``Decodable'' is often treated as the endpoint, but it is only one claim. Evidence for construction requires a surface floor; evidence for use requires an intervention; an informative null requires a positive control at the same readout site; and failure prediction requires comparison with a no-model rule and an error-rate-aware null. These controls are not the subject of the paper, but they determine which statements about the model are justified.
+
+The main limitation is also the reason the synthetic testbed is useful. Real-code probes transfer at approximately 0.90 accuracy and 0.98 AUC, but natural identifiers make the embedding layer highly predictive and prevent an exact semantic floor. Our strongest identification result therefore comes from controlled programs. The study is further limited to Python and two sizes of one model family, and the Jacobian-lens null concerns one token-level operationalization of reportability.
+
+The clearest concrete picture is the sanitizer. Its state is accurately decoded, its definition is causally inert for the answer, and the model can still respond incorrectly. Code models compute semantic state, but computation alone does not guarantee that the right state reaches the answer.
+
+\clearpage
+\appendix
+
+\section{Additional Results}
+\label{app:results}
+
+This appendix reports results that bear directly on the central thesis but are not required to follow the five-page argument. All values are taken from the CSV files in \texttt{results/tables}; the corresponding generated figures are in \texttt{results/figures}. We distinguish aggregate results, which combine all held-out examples, from hard-stratum results, which isolate a specific shortcut. Accuracy is the fraction classified correctly. AUC is threshold-independent binary ranking performance. Selectivity is target-label accuracy minus accuracy after labels are shuffled within each source program. Recovery is the fraction of the clean--corrupted answer-logit gap restored by activation patching.
+
+\subsection{Static probes and natural-code transfer}
+
+Table~\ref{tab:static-probes} gives the aggregate probe results for the main model. The task-specific controlled comparisons in the main text remain more informative than aggregate accuracy: for example, aggregate binding accuracy includes easy different-name negatives, whereas the context-matched stratum removes that cue entirely. The lexical task is included only as an extraction sanity check. Its AUC is omitted because the task is multiclass.
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Aggregate static-probe results for DeepSeek-Coder 6.7B. ``Control acc.'' is accuracy after within-program label shuffling. Source: \texttt{static\_probes\_deepseek-coder-6.7b\_core.csv}.}
+  \label{tab:static-probes}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Task & Best layer & Accuracy & AUC & Selectivity & Groups \\
+    \midrule
+    Binding & 0 & 0.975 & 0.998 & 0.391 & 423 \\
+    Def--use & 3 & 0.990 & 0.999 & 0.409 & 607 \\
+    Control dependence & 31 & 0.973 & 0.996 & 0.388 & 289 \\
+    Taint state & 0 & 1.000 & 1.000 & 0.522 & 200 \\
+    Lexical token type & 0 & 1.000 & --- & 0.843 & 347 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:real-code} shows that the binding and def--use decoders transfer to CodeSearchNet with nearly identical results across model scales. This rules out a pure generator-template explanation. It does not reproduce the exact semantic identification of the synthetic pairs, because natural identifier spelling is predictive and embedding-layer AUC is already high.
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Natural-code transfer on 200 CodeSearchNet Python functions. Sources: \texttt{static\_probes\_*\_csn\_python\_200.csv}.}
+  \label{tab:real-code}
+  \begin{tabular}{llrrrr}
+    \toprule
+    Model & Task & Best layer & Accuracy & AUC & Selectivity \\
+    \midrule
+    1.3B & Binding & 3 & 0.914 & 0.980 & 0.329 \\
+    1.3B & Def--use & 3 & 0.912 & 0.975 & 0.318 \\
+    6.7B & Binding & 7 & 0.902 & 0.978 & 0.308 \\
+    6.7B & Def--use & 3 & 0.911 & 0.979 & 0.308 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{layers_accuracy_deepseek-coder-6.7b_csn_python_200.pdf}
+    \caption{Accuracy by layer.}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{layers_selectivity_deepseek-coder-6.7b_csn_python_200.pdf}
+    \caption{Selectivity by layer.}
+  \end{subfigure}
+  \caption{Real-code transfer in 6.7B. The early-middle peak and late decline resemble the synthetic results, but natural lexical cues make the embedding state informative.}
+  \label{fig:real-code}
+\end{figure}
+
+\subsection{Context and semantics-preserving transformations}
+
+Table~\ref{tab:context} gives layer-averaged frozen-probe accuracy at selected context sizes. Comment prose mainly changes distance; scope shadowing adds new uses of the tracked names in nested scopes. Their widening gap shows that semantic interference, rather than length alone, is the dominant failure mode. The main text quotes the best-layer comment result at 500 tokens (0.921); the table reports the all-layer average (0.914), which is why the values differ slightly.
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{DeepSeek-Coder 6.7B frozen-probe accuracy under added context, averaged over evaluated layers. Sources: \texttt{context\_degradation\_deepseek-coder-6.7b.csv}.}
+  \label{tab:context}
+  \begin{tabular}{llrrrr}
+    \toprule
+    Task & Filler & 0 tokens & 100 & 500 & 1,000 \\
+    \midrule
+    Binding & Comment prose & 0.974 & 0.922 & 0.914 & 0.902 \\
+    Binding & Dead code & 0.974 & 0.908 & 0.786 & 0.759 \\
+    Binding & Lexical decoy & 0.974 & 0.877 & 0.797 & 0.769 \\
+    Binding & Competing update & 0.975 & 0.854 & 0.862 & 0.844 \\
+    Binding & Scope shadow & 0.974 & 0.745 & 0.576 & 0.519 \\
+    \midrule
+    Def--use & Comment prose & 0.980 & 0.908 & 0.892 & 0.881 \\
+    Def--use & Scope shadow & 0.981 & 0.722 & 0.643 & 0.596 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The obfuscation ladder in Table~\ref{tab:obfuscation} is cumulative. \emph{Rename} consistently changes local identifiers; \emph{opaque} adds provably dead branches; \emph{encode} rewrites arithmetic; and \emph{flatten} replaces structured control flow with a dispatch loop. Every program variant is execution-verified against its base. The table averages over layers, so it hides the main layerwise result: after renaming, early layers fall below chance while middle layers remain at approximately 0.85--0.90. Flattening damages even the best layer.
+
+\begin{table}[h]
+  \centering
+  \small
+  \caption{DeepSeek-Coder 6.7B frozen-probe accuracy across the cumulative obfuscation ladder, averaged over layers. Source: \texttt{obfuscation\_robustness\_deepseek-coder-6.7b.csv}.}
+  \label{tab:obfuscation}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Task & Normalize & Rename & Opaque & Encode & Flatten \\
+    \midrule
+    Binding & 0.974 & 0.726 & 0.722 & 0.738 & 0.590 \\
+    Def--use & 0.976 & 0.701 & 0.703 & 0.717 & 0.598 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[h]
   \centering
   \begin{subfigure}[t]{0.49\linewidth}
     \centering
     \includegraphics[width=\linewidth]{context_binding_deepseek-coder-6.7b.pdf}
-    \caption{Context degradation.}
+    \caption{Inserted context.}
   \end{subfigure}
   \hfill
   \begin{subfigure}[t]{0.49\linewidth}
     \centering
     \includegraphics[width=\linewidth]{obfuscation_levels_deepseek-coder-6.7b.pdf}
-    \caption{Semantics-preserving obfuscation.}
+    \caption{Obfuscation ladder.}
   \end{subfigure}
-  \caption{Robustness of frozen probes in the 6.7B model. Inert distance is comparatively inexpensive, whereas scope shadowing and control-flow flattening strongly degrade the accessible relation.}
-  \label{fig:robustness}
+  \caption{Robustness of the accessible relation. Inert length is comparatively inexpensive; scope interference and flattened control structure are the clear limits.}
+  \label{fig:robustness-appendix}
 \end{figure}
 
-The obfuscation results in Figure~\ref{fig:robustness} show the same boundary from another direction. For 6.7B binding, layer-averaged accuracy is 0.974 after normalization, 0.726 after renaming, 0.722 after opaque branches, 0.738 after arithmetic encoding, and 0.590 after flattening. Renaming pushes the embedding and earliest layers below chance, to about 0.29--0.33, but middle layers retain about 0.85--0.90; the best renamed-program result is approximately 0.897 at layer 11. Opaque branches and arithmetic encoding add little damage beyond renaming. Flattening produces the second large break, reducing even the best layer to about 0.75. The 1.3B model follows an almost identical sequence.
+\subsection{Cross-scale causal routing}
 
-The representation is therefore neither a shallow lexical lookup nor a fully invariant symbolic state. Middle layers generalize beyond particular names and tolerate large inert contexts, but remain tied to recognizable scope and control-flow organization.
+Table~\ref{tab:patching-replication} reports the smaller-model replication omitted from the main figure. Recovery can exceed one when a patch moves the answer beyond the clean endpoint; it should be read as normalized effect size, not probability. The qualitative result matches 6.7B: causal influence begins at the sink argument, moves to the final position, and is absent at the sanitizer-definition position.
 
-The same decoders also transfer to natural code. On 200 CodeSearchNet functions, 6.7B binding reaches 0.902 accuracy and 0.978 AUC at layer 7, compared with surface AUC 0.673. Def--use reaches 0.911 accuracy and 0.979 AUC at layer 3, compared with surface AUC 0.590. The 1.3B model peaks at AUC 0.980 and 0.975. Both models reproduce the rise from embeddings to an early-middle peak and an approximately 0.07 decline near the output.
-
-This transfer result does not isolate semantics as cleanly as the synthetic pairs. Natural identifier identity is predictive, so embedding AUC already approaches 0.96. E8 therefore shows that the decoder and layer signature transfer to real Python, not that the transferred signal is independent of lexical cues. Figure~\ref{fig:realcode} is placed in Appendix~\ref{app:figures}; it is useful corroboration but less central than the controlled binding result.
-
-\subsection{Causal use and output accessibility are distinct}
-\label{sec:causal}
-
-Activation patching shows a clear movement of causal influence across layer and position. In 6.7B, patching the clean state at the sink argument yields mean recovery 0.985 at layer 0, 0.912 at layer 3, 0.708 at layer 7, and 0.500 at layer 11, then approaches zero near the output. The final-token position follows the opposite trajectory: $-0.007$ at layer 0, 0.145 at layer 11, 0.308 at layer 15, 0.650 at layer 19, and 1.000 at layer 31. The 1.3B model shows the same progression at compressed depth. Patching the sanitizer-definition position yields exactly 0.000 mean recovery at every measured layer in both models.
-
-\begin{figure}[t]
+\begin{table}[h]
   \centering
-  \includegraphics[width=0.72\linewidth]{patching_recovery_deepseek-coder-6.7b.pdf}
-  \caption{Activation-patching recovery in DeepSeek-Coder 6.7B. Causal influence is concentrated at the sink argument early and moves toward the final-token position late. The sanitizer-definition position is inert throughout. Late final-token recovery is reported as a direct readout effect rather than independent evidence of a semantic circuit.}
-  \label{fig:patching}
-\end{figure}
+  \small
+  \caption{Selected activation-patching results for DeepSeek-Coder 1.3B. Source: \texttt{causal\_patching\_summary\_deepseek-coder-1.3b.csv}.}
+  \label{tab:patching-replication}
+  \begin{tabular}{rrrr}
+    \toprule
+    Layer & Sink argument & Final token & Sanitizer definition \\
+    \midrule
+    $-1$ & 0.000 & 0.000 & 0.000 \\
+    0 & 1.087 & 0.107 & 0.000 \\
+    3 & 0.872 & 0.129 & 0.000 \\
+    7 & 0.208 & 0.561 & 0.000 \\
+    11 & 0.106 & 0.771 & 0.000 \\
+    19 & 0.095 & 0.899 & 0.000 \\
+    23 & 0.000 & 1.000 & 0.000 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-This establishes a local causal claim. Information at the sink argument affects the answer early, and the effect is transferred toward the output position. It does not prove that the sanitizer is unrepresented elsewhere or identify a complete circuit, because whole-vector patching transports all information at the chosen site.
+\subsection{Jacobian-lens validation and temporal control}
 
-The Jacobian-lens experiment then asks whether a highly decodable relation is aligned with the model's output directions. The method passes both validation gates. At the final layer, Jacobian- and logit-lens agreement is exactly 1.0000 in both models, as required. On held-out next-token identifiers, top-1 accuracy reaches 0.633 in 1.3B and 0.650 in 6.7B, compared with chance 0.038 and much lower random floors. Before the final layer, the Jacobian correction improves over the logit lens by as much as 0.150 and 0.183, respectively.
+Table~\ref{tab:jlens-validation} shows selected next-token validation layers. Top-1 is the fraction of examples on which the correct held-out identifier is ranked first; MRR is the mean reciprocal rank of that identifier. The Jacobian lens substantially exceeds random directions and improves on the plain logit lens at several pre-final layers. Equality of Jacobian and logit results at layer 31 is required by the closed-form identity check, not an empirical coincidence.
 
-At guard anchors, an identity control confirms that the readout is active: in 6.7B, ranking the variable tested by the guard rises from 0.507 at embeddings to 0.813 at layer 31. The control-dependence target remains at chance. The initial pooled analysis was biased late in the network because some negative targets appeared before the guard and were already visible under causal attention. Restricting both candidates to positions after the guard removes this temporal confound. Across 417 matched comparisons per 6.7B layer, accuracy ranges from 0.453 to 0.537 and is 0.506 at the final layer. Chance lies in every program-clustered 95\% interval, with no significant layer after correction. An isolated 1.3B point estimate of 0.576 has interval $[0.495,0.644]$ and does not replicate.
-
-\begin{figure}[t]
+\begin{table}[h]
   \centering
-  \begin{subfigure}[t]{0.49\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{jlens_controldep_dissociation_deepseek-coder-6.7b.pdf}
-    \caption{Probe--lens dissociation and controls.}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[t]{0.49\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{jlens_controldep_temporally_matched_deepseek-coder-6.7b.pdf}
-    \caption{Temporally matched control-dependence test.}
-  \end{subfigure}
-  \caption{Control dependence is strongly probe-decodable but not output-aligned under the Jacobian-lens test. The guard-variable control shows that identifier information is readable at the same anchors; temporal matching removes the below-chance recency artifact.}
-  \label{fig:jlens}
-\end{figure}
+  \small
+  \caption{Selected 6.7B next-token validation results ($n=60$ per cell). Source: \texttt{jlens\_validation\_deepseek-coder-6.7b.csv}.}
+  \label{tab:jlens-validation}
+  \begin{tabular}{rrrrrrr}
+    \toprule
+    & & \multicolumn{2}{c}{J-lens} & \multicolumn{2}{c}{Logit lens} & \multicolumn{2}{c}{Random} \\
+    \cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
+    Layer & Top-1 & MRR & Top-1 & MRR & Top-1 & MRR \\
+    \midrule
+    3  & 0.283 & 0.465 & 0.150 & 0.243 & 0.000 & 0.139 \\
+    15 & 0.300 & 0.452 & 0.183 & 0.339 & 0.017 & 0.107 \\
+    19 & 0.567 & 0.662 & 0.383 & 0.542 & 0.033 & 0.157 \\
+    27 & 0.650 & 0.752 & 0.650 & 0.759 & 0.017 & 0.130 \\
+    31 & 0.517 & 0.706 & 0.517 & 0.706 & 0.000 & 0.116 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-The contrast is sharp: the trained control-dependence probe reaches AUC approximately 0.999, while the validated output-aligned readout remains at chance. Under this token-ranking operationalization, control dependence is decodable but not verbalizable. The result does not imply general inaccessibility because the positive control tests identifier identity rather than another relation, and abstract relations may not correspond cleanly to a single output token.
+The control-dependence comparison initially mixed candidates on opposite sides of the guard anchor. Table~\ref{tab:temporal-control} shows the corrected subset in which both candidates occur after the anchor. Accuracy remains close to the exact 0.500 chance level throughout. The main-text positive control is evaluated separately because it asks which variable is present in the guard, rather than which later statement depends on it.
 
-The taint behavior experiment provides a final distinction. A bare prompt initially made both models constant responders, producing balanced accuracy 0.500 and a spurious scale difference in lead time. After adding few-shot examples and explicitly naming the current variable, the 6.7B behavioral signal reaches accuracy 0.939 and balanced accuracy 0.836 over 342 prefixes. The 1.3B signal remains unusable at balanced accuracy 0.471, so its lead time is undefined.
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Temporally matched 6.7B J-lens control-dependence accuracy ($n=415$ per layer). Source: \texttt{jlens\_controldep\_summary\_deepseek-coder-6.7b.csv}.}
+  \label{tab:temporal-control}
+  \begin{tabular}{rrrrrrrrrr}
+    \toprule
+    Layer & $-1$ & 0 & 3 & 7 & 11 & 15 & 19 & 23 & 31 \\
+    \midrule
+    Accuracy & 0.480 & 0.535 & 0.484 & 0.472 & 0.448 & 0.472 & 0.472 & 0.494 & 0.504 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-With the corrected signal, 6.7B provides no evidence of early warning. A no-model position heuristic achieves early-warning excess $+0.113$ over its analytic null, while the trained probe's mean excess is reported as $-0.010$. Across Jacobian, logit, probe, and random readouts, apparent warning is strongly negatively correlated with the fraction of examples on which a readout is never wrong ($r=-0.905$, $p=1.1\times10^{-15}$). Unreliable readouts appear to warn earlier because they make more errors.
+\subsection{Behavioral-signal validation and the early-warning audit}
 
-The negative temporal result does not make the probe uninformative. At useful layers its per-prefix error is approximately 0.005--0.027, compared with 0.233 for the position floor. At many layers, it remains correct at every prefix for every example on which the model answers incorrectly. The supported conclusion is therefore that internal taint information can remain correct while the output fails, not that internal degradation anticipates failure. The E6 diagnostic figure is included in Appendix~\ref{app:figures}, where the controls can be shown without interrupting the main causal and output-accessibility narrative.
+The forced-choice behavior is useful only if the model distinguishes tainted from untainted prefixes. Table~\ref{tab:behavior-sanity} reports both raw and balanced accuracy. Balanced accuracy is the mean recall over the tainted and untainted classes, so a constant responder scores 0.500 regardless of class imbalance. This is why 6.7B supports a lead-time analysis and 1.3B does not.
 
-\section{Discussion}
-\label{sec:discussion}
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Behavioral-signal validation. Sources: \texttt{behavioral\_sanity\_*.csv}.}
+  \label{tab:behavior-sanity}
+  \begin{tabular}{lrrrrl}
+    \toprule
+    Model & Prefixes & Accuracy & Balanced acc. & Says tainted & Usable \\
+    \midrule
+    1.3B & 342 & 0.629 & 0.471 & 0.734 & No \\
+    6.7B & 342 & 0.939 & 0.836 & 0.874 & Yes \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-The experiments support a simple layerwise account. Lexical information is available at the input. Binding and def--use relations are constructed in the first few blocks, strongly accessible through the middle layers, and partially reorganized near the output. This profile appears in both model sizes and in synthetic and real code. It does not imply a symbolic environment, but it does show that contextual processing creates information unavailable to an input-level surface classifier.
+For a readout with per-prefix error rate $\epsilon$, the analytic null is the probability that independent readout errors occur before the model's first error. Early-warning excess is observed early-warning rate minus this null. Table~\ref{tab:leadtime} reports representative 6.7B layers. At layers 0, 7, 19, 23, and 27, the probe makes almost no prefix errors and never fails before the model; in all 19 model-wrong examples it is correct at every prefix. Layer 15 has a small positive excess but does not survive correction across layers. Layer 31 is less reliable and therefore produces a larger apparent warning, illustrating why the analytic floor is necessary.
 
-The robustness results specify the abstraction level. Middle layers survive identifier renaming and long inert context, which is inconsistent with a direct spelling or proximity heuristic. Scope shadowing and control-flow flattening nevertheless cause severe degradation. The representation abstracts beyond particular names while remaining dependent on familiar scope and control structure.
-
-Representation, use, and reportability remain separate. Probes establish linear availability. Patching establishes that a sink-argument state can causally affect the answer and that this influence moves toward the output position. The Jacobian-lens result shows that near-perfect supervised decoding need not correspond to an output-aligned direction. The behavioral result adds that an accurate internal readout can remain correct while the model answers incorrectly, without providing advance warning.
-
-One possible interpretation is that the residual stream contains more semantic information than a given output computation consumes. A supervised probe can adapt to any linear coordinates carrying the relation, while the output head accesses only directions prepared for the current prediction. The Jacobian correction accounts for average downstream coordinate change yet still finds no control-dependence signal, suggesting that the null is not explained by a simple rotation into the final basis. However, a different relational output format could produce a different result.
-
-The control-dependence experiments also illustrate why identification strength matters more than peak accuracy alone. Hidden states improve substantially over the hard sibling-guard baseline, but surface AUC is already 0.990. Binding provides a stronger semantic claim because its controlled surface and embedding floors are exactly chance. Probe results should therefore be ranked by the shortcut they exclude, not only by their maximum score.
-
-\section{Limitations}
-\label{sec:limitations}
-
-We study two sizes of one architecture family. The programs are small, single-function Python examples and omit interprocedural flow, object aliasing, exceptions, dynamic dispatch, and concurrency. A planned cross-architecture replication is needed for broader generality.
-
-Linear decodability is not native use. Frozen-probe failure may reflect representational rotation rather than information loss, while successful decoding need not affect ordinary generation. The causal experiment addresses one taint-related contrast only. Its whole-vector intervention transports all information at one position and does not identify a unique semantic direction or complete circuit.
-
-The real-code evaluation demonstrates transfer but not isolated semantic transfer because natural identifiers are predictive. Context-matched mutations of real functions would provide a stronger test. The current tables also omit the size of the real-code same-name/different-binding stratum.
-
-The behavioral result is interpretable only for 6.7B and includes 19 model-wrong examples in the canonical summary. Taint state correlates with prefix depth, explaining the apparent competence of a position baseline. A future corpus should randomize initial taint and include re-taint transitions, and calibration should be repeated across seeds.
-
-Finally, the Jacobian lens uses small single-token candidate sets. Its validation shows that it recovers code-token content, but abstract relations may not correspond to one token direction. We use ``verbalizable'' only to mean detectable as an output-aligned token disposition under this method.
-
-\section{Conclusion}
-\label{sec:conclusion}
-
-On binding examples where surface features and context-free embeddings are exactly uninformative, both DeepSeek-Coder models construct a representation reaching approximately 0.98--0.99 accuracy in the middle layers. Def--use structure is similarly accessible across substantial distance and transfers to real Python with approximately 0.98 AUC. These states survive inert length and several rewrites but fail under scope shadowing and flattened control flow.
-
-Activation patching shows causal influence moving from a sink argument toward the final-token position across layers. Yet strong decodability does not ensure output accessibility: control dependence remains at chance under a validated Jacobian lens where a supervised probe is nearly perfect. The corrected behavioral experiment likewise finds an internal taint readout that can remain correct when the output fails, but no evidence of early warning.
-
-The resulting picture is not that a code model either understands or does not understand a program in one undifferentiated sense. These models construct program-semantic information, preserve it under some conditions, use selected parts of it, and expose only a subset through their output computation. Each property requires its own controls and interventions.
-
-\appendix
-
-\section{Additional Figures and Recommended Placement}
-\label{app:figures}
-
-The main text uses four figure groups in argumentative order: controlled representation (Figure~\ref{fig:binding}), robustness (Figure~\ref{fig:robustness}), causal routing (Figure~\ref{fig:patching}), and output accessibility (Figure~\ref{fig:jlens}). The following two figures are recommended for the appendix under a tight workshop page limit. If space permits, Figure~\ref{fig:realcode} can move to the end of Section~\ref{sec:robustness}; Figure~\ref{fig:leadtime} should remain in the appendix unless the methodological correction becomes a primary contribution.
+\begin{table}[h]
+  \centering
+  \small
+  \caption{Representative corrected lead-time results for 6.7B. ``Never wrong'' counts model-wrong examples for which the readout remains correct at every prefix; the denominator is 19. Source: \texttt{behavioral\_leadtime\_summary\_deepseek-coder-6.7b.csv}.}
+  \label{tab:leadtime}
+  \begin{tabular}{rlrrrr}
+    \toprule
+    Layer & Readout & Prefix error & Warning rate & Excess & Never wrong \\
+    \midrule
+    all & Position only & 0.233 & 0.842 & 0.113 & 3 \\
+    0  & Probe & 0.005 & 0.000 & $-0.024$ & 19 \\
+    7  & Probe & 0.008 & 0.000 & $-0.041$ & 19 \\
+    11 & Probe & 0.027 & 0.105 & $-0.023$ & 17 \\
+    15 & Probe & 0.013 & 0.211 & 0.149 & 13 \\
+    19 & Probe & 0.014 & 0.000 & $-0.069$ & 19 \\
+    23 & Probe & 0.016 & 0.000 & $-0.080$ & 19 \\
+    27 & Probe & 0.010 & 0.000 & $-0.049$ & 19 \\
+    31 & Probe & 0.172 & 0.789 & 0.183 & 4 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \begin{figure}[h]
   \centering
-  \begin{subfigure}[t]{0.49\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{layers_selectivity_deepseek-coder-6.7b_csn_python_200.pdf}
-    \caption{Layerwise selectivity on CodeSearchNet.}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[t]{0.49\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{defuse_distance_deepseek-coder-6.7b_csn_python_200.pdf}
-    \caption{Real-code def--use distance strata.}
-  \end{subfigure}
-  \caption{Natural-code transfer. The decoder retains high performance and the same early-middle-layer peak, but lexical and semantic contributions are not isolated.}
-  \label{fig:realcode}
+  \includegraphics[width=0.7\linewidth]{leadtime_excess_deepseek-coder-6.7b.pdf}
+  \caption{Early-warning excess after accounting for each readout's error rate. The position-only baseline exceeds the reliable probe at most layers; degraded or random readouts can appear more anticipatory because they make more errors.}
+  \label{fig:leadtime-audit}
 \end{figure}
 
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=0.72\linewidth]{leadtime_excess_deepseek-coder-6.7b.pdf}
-  \caption{Corrected early-warning excess in 6.7B. The trained probe does not outperform the analytic and no-model floors; position and unreliable random readouts can appear to warn earlier despite carrying less semantic information.}
-  \label{fig:leadtime}
-\end{figure}
+\section{Reproducibility Notes}
+\label{app:reproducibility}
 
-\section{Figure Selection Under Different Page Budgets}
-
-\paragraph{Four-figure main paper, recommended.}
-Keep Figures~\ref{fig:binding}, \ref{fig:robustness}, \ref{fig:patching}, and \ref{fig:jlens}. This preserves the full progression from representation to stability, causal use, and output accessibility.
-
-\paragraph{Three-figure main paper.}
-Keep Figures~\ref{fig:binding}, \ref{fig:patching}, and \ref{fig:jlens}. Move robustness and real-code transfer to the appendix and summarize their numerical results in the text.
-
-\paragraph{Six-figure main paper.}
-Add Figure~\ref{fig:realcode} after the final robustness paragraph and Figure~\ref{fig:leadtime} after the corrected behavioral result. This is appropriate only if the page limit permits readable panels and captions.
+The canonical configuration uses seed 42. Activation extraction is separated from probe fitting, and every paper table and figure is regenerated from the CSV files alone by \texttt{scripts/90\_make\_paper\_assets.py}. Run manifests record command-line arguments and git revisions. The repository also contains tests for data generation, graph extraction, token alignment, probe construction, the Jacobian-lens calculation, and independent ground-truth cross-checks.
 
 \bibliographystyle{plainnat}
 \bibliography{references}

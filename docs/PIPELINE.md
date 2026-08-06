@@ -194,15 +194,56 @@ workspace or stays automatic, at E4's guard anchors against E4's
 
 Outputs `jlens_controldep{,_summary}_{model}.csv`.
 
+## Stages 70–74 — E11 J-space binding routing (the active direction)
+
+Stage 71 is a GATE: 72 and 73 are not interpretable until it passes.
+
+```bash
+# 70 (CPU): token-aligned counterfactual pairs; needs only the tokenizer
+python scripts/70_jspace_pairs.py --model deepseek-coder-1.3b
+
+# 71 (GPU): frozen per-layer J-lens from a held-out generic corpus + gates
+python scripts/71_jspace_lens.py --model deepseek-coder-1.3b \
+    --pairs data/synthetic/jspace_pairs_deepseek-coder-1.3b.jsonl
+
+# 72 (GPU): bound-value readout, paired counterfactual reversals
+python scripts/72_jspace_readout.py --model deepseek-coder-1.3b \
+    --pairs data/synthetic/jspace_pairs_deepseek-coder-1.3b.jsonl
+
+# 73 (GPU): the coordinate swap and its six controls
+python scripts/73_jspace_swap.py --model deepseek-coder-1.3b \
+    --pairs data/synthetic/jspace_pairs_deepseek-coder-1.3b.jsonl
+
+# 74 (CPU): pre-registered go/no-go
+python scripts/74_jspace_report.py --model deepseek-coder-1.3b
+
+# whole pilot in one screen session:
+#   screen -dmS jspace-pilot env MODEL=deepseek-coder-1.3b jobs/jspace_pilot.csh
+# full run, only after the pilot says GO:
+#   screen -dmS jspace-full  env MODEL=deepseek-coder-6.7b jobs/jspace_full.csh
+```
+
+Outputs land under `results/jspace/{model}/`: `lenses/*.pkl`,
+`lens/jspace_lens_{stability,validation,checks}.csv`,
+`readout/jspace_{readout,readout_summary,behaviour}.csv`,
+`swap/jspace_swap{,_summary,_by_operation,_contrasts}.csv`, and
+`go_no_go.{yaml,md}`. Design: `docs/EXPERIMENTS.md` §2.
+
 ## Stage 90 — paper assets (CPU, seconds)
 
 ```bash
-python scripts/90_make_paper_assets.py
+python scripts/90_make_paper_assets.py                  # active + supporting
+python scripts/90_make_paper_assets.py --include-archived
 ```
 
 Reads only `results/tables/*.csv`; writes every figure (`results/figures/*.png`
 + `.pdf`) and rendered summary tables (`results/tables/md/*.md`). Safe to run
 at any point; missing inputs are skipped.
+
+Experiments marked `archived` in `results/STATUS.yaml` (E6, E10-2, E10-3) are
+**skipped by default** — their raw CSVs and existing figures are untouched, but
+they no longer regenerate into the default asset set, so a retired claim cannot
+reappear in a figure by accident. `--include-archived` reproduces them in full.
 
 ---
 
@@ -211,6 +252,9 @@ at any point; missing inputs are skipped.
 ```bash
 make smoke                       # tiny end-to-end run on this machine (1.3b)
 make data / extract / probes / context / obfuscation / leadtime / patching / assets
+make jspace                      # E11 stages 70→74 in order
+make jspace-pilot                # the pre-registered 1.3b pilot
+make assets-all                  # stage 90 including archived experiments
 make test
 # every target takes MODEL=... and PY=<python path>
 ```
