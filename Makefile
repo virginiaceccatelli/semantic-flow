@@ -20,6 +20,7 @@
 #   make jspace-readout MODEL=...   stage 72 readout (GPU/MPS)
 #   make jspace-swap MODEL=...      stage 73 coordinate swap (GPU/MPS)
 #   make jspace-report MODEL=...    stage 74 go/no-go (CPU)
+#   make jspace-diagnose MODEL=...  stage 75 read a NO-GO (CPU, no re-run)
 #   make jspace MODEL=...           stages 70→74 in order
 #   make jspace-pilot               the 1.3b pilot exactly as pre-registered
 #
@@ -38,7 +39,7 @@ PROBES := results/probes/$(MODEL)/core
 .PHONY: smoke data data-real extract probes context obfuscation leadtime patching \
         jlens jlens-validate jlens-taint jlens-controldep \
         jspace jspace-pairs jspace-lens jspace-readout jspace-swap jspace-report \
-        jspace-pilot assets assets-all test
+        jspace-diagnose jspace-pilot assets assets-all test
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
 
@@ -95,6 +96,10 @@ jspace-swap:
 
 jspace-report:
 	$(PY) scripts/74_jspace_report.py --model $(MODEL)
+
+# Read a NO-GO: is it the position, a dead readout, or a real dissociation?
+jspace-diagnose:
+	$(PY) scripts/75_jspace_diagnose.py --model $(MODEL)
 
 jspace: jspace-pairs jspace-lens jspace-readout jspace-swap jspace-report
 
