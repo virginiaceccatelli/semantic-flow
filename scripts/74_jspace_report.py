@@ -186,9 +186,11 @@ def main(
 
     required = {"logit_value": "the Jacobian correction, not the unembedding",
                 "jlens_offvalue": "these values, not the digit subspace at large"}
+    has_contrasts = not swap_contrasts.empty and "contrast" in swap_contrasts.columns
     verdicts, details = [], []
     for control, what_it_shows in required.items():
-        row = swap_contrasts[swap_contrasts.contrast == f"jlens_value - {control}"]
+        row = (swap_contrasts[swap_contrasts.contrast == f"jlens_value - {control}"]
+               if has_contrasts else swap_contrasts)
         if row.empty:
             verdicts.append(False)
             details.append(f"{control}: NOT MEASURED (re-run stage 73 with the "
@@ -221,10 +223,14 @@ def main(
     report["verdict"] = "GO" if all(c["passed"] for c in criteria) else "NO-GO"
 
     # ── write ────────────────────────────────────────────────────────────────
+    # Position-suffixed, because the criteria are now routinely read at more
+    # than one position and a second run must not clobber the first. The
+    # unsuffixed pair is kept for the primary position so every existing
+    # reference to `go_no_go.{yaml,md}` still resolves.
     root.mkdir(parents=True, exist_ok=True)
-    (root / "go_no_go.yaml").write_text(yaml.safe_dump(report, sort_keys=False))
+    names = [f"go_no_go_{position}"] + (["go_no_go"] if position == "use" else [])
 
-    lines = [f"# E11 pilot go/no-go — {model}", "",
+    lines = [f"# E11 pilot go/no-go — {model} (position: {position})", "",
              f"**Verdict: {report['verdict']}**", ""]
     for c in criteria:
         mark = "PASS" if c["passed"] else "FAIL"
@@ -241,18 +247,21 @@ def main(
                   f"- max |Δ logit-diff| = "
                   f"{report['noop_control']['max_abs_delta_ld']:.2e} "
                   f"(passes: {report['noop_control']['passed']})"]
-    (root / "go_no_go.md").write_text("\n".join(lines) + "\n")
+    for name in names:
+        (root / f"{name}.yaml").write_text(yaml.safe_dump(report, sort_keys=False))
+        (root / f"{name}.md").write_text("\n".join(lines) + "\n")
 
-    console.print("\n[bold]E11 go/no-go[/bold]")
+    console.print(f"\n[bold]E11 go/no-go — position `{position}`[/bold]")
     for c in criteria:
         mark = "[green]PASS[/green]" if c["passed"] else "[red]FAIL[/red]"
         console.print(f"  {mark} {c['criterion']}: {c['detail']}")
     colour = "green" if report["verdict"] == "GO" else "yellow"
     console.print(f"\n[{colour}]Verdict: {report['verdict']}[/{colour}] "
-                  f"→ {root / 'go_no_go.yaml'}")
+                  f"→ {root / (names[0] + '.yaml')}")
 
     write_manifest("74_jspace_report", {
         "model": model, "position": position, "subset": subset, "seed": seed,
+        "select_metric": select_metric,
     }, t0, extra={"verdict": report["verdict"],
                   "criteria": {c["criterion"]: c["passed"] for c in criteria}})
 
