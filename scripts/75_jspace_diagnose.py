@@ -153,6 +153,32 @@ def main(
                               "the model is not computing them, so there is "
                               "nothing for a routed value to change.[/yellow]")
 
+        # WHICH capability failed. The two error types call for opposite fixes.
+        if "error_type" in test.columns:
+            errors = (test.groupby(["op_family", "error_type"]).size()
+                          .unstack("error_type").fillna(0))
+            errors = errors.div(errors.sum(axis=1), axis=0)
+            console.print("\n   error type when the model does not emit the "
+                          "bound answer (row-normalised):")
+            _table(errors.round(3))
+            if "wrong_binding" in errors.columns and "other" in errors.columns:
+                binding_share = float(errors["wrong_binding"].sum())
+                other_share = float(errors["other"].sum())
+                if other_share > 2 * binding_share:
+                    console.print(
+                        "   [yellow]→ Failures are mostly `other`: the model is "
+                        "emitting neither answer, i.e. it is miscomputing the "
+                        "OPERATION, not mis-resolving the binding. A bigger or "
+                        "different model treats the symptom; the design fix is "
+                        "easier operations, few-shot demonstrations, or scoring "
+                        "the binding separately from the arithmetic.[/yellow]")
+                elif binding_share > 2 * other_share:
+                    console.print(
+                        "   [yellow]→ Failures are mostly `wrong_binding`: the "
+                        "model resolves the WRONG definition. That is a real "
+                        "capability limit on the task under test, and a "
+                        "stronger model is the appropriate response.[/yellow]")
+
     # ── 1. the ceiling: is there headroom at this position? ──────────────────
     console.print(f"\n[bold]1. Ceiling — how much can ANY edit at each position "
                   f"move the answer?[/bold]")

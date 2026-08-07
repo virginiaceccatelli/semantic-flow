@@ -116,6 +116,16 @@ def behaviour_rows(
                 "correct": bool(logps[bound_id] > logps[other_id]),
                 "argmax_token_id": argmax,
                 "argmax_is_bound_answer": bool(argmax == bound_id),
+                "argmax_is_other_answer": bool(argmax == other_id),
+                # Which capability failed. The forced choice above cannot tell
+                # these apart, and they call for opposite fixes: `wrong_binding`
+                # means the model resolved the wrong definition, `other` means
+                # it resolved the binding and then miscomputed (or mis-formatted)
+                # the operation. A low score made of `other` errors is not
+                # evidence that the model cannot do the binding task.
+                "error_type": ("correct" if argmax == bound_id
+                               else "wrong_binding" if argmax == other_id
+                               else "other"),
             })
     df = pd.DataFrame(rows)
     both = (df.groupby("pair_id")["correct"].transform("all"))
