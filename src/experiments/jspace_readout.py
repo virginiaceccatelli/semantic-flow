@@ -282,6 +282,14 @@ def run_jspace_readout(
             seed=seed,
         )
         logger.info("trained %d calibration probes", len(probes))
+        # Frozen to disk so stage 73 can run the swap in the PROBE's own basis.
+        # That control asks whether the value is causally reusable in the
+        # coordinate system that demonstrably reads it, as opposed to the
+        # J-lens's — which is the difference between "not reusable" and "the
+        # J-lens is the wrong basis".
+        probe_dir = output_dir / "probes"
+        for (layer, position), probe in probes.items():
+            probe.save(probe_dir / f"value_probe_L{layer}_{position}.pkl")
 
     # ── readout rows ─────────────────────────────────────────────────────────
     both_correct = (behaviour.groupby("pair_id")["correct"].all().to_dict())

@@ -42,6 +42,7 @@ def main(
     pairs: Optional[Path] = typer.Option(None, help="Default data/synthetic/jspace_pairs_{model}.jsonl"),
     lenses: Optional[Path] = typer.Option(None, help="Default results/jspace/{model}/lenses"),
     behaviour: Optional[Path] = typer.Option(None, help="Default results/jspace/{model}/readout/jspace_behaviour.csv"),
+    probes: Optional[Path] = typer.Option(None, help="Stage 72's probes/ dir; enables the probe_basis control"),
     output: Optional[Path] = typer.Option(None, help="Default results/jspace/{model}/swap"),
     layers: Optional[str] = typer.Option(None, help="Comma-separated; default registry probe layers"),
     positions: str = typer.Option("use,pre_def", help="`pre_def` is the irrelevant-position control"),
@@ -96,6 +97,7 @@ def main(
     freeze_parameters(mdl)
 
     lens_dir = lenses or Path("results/jspace") / model / "lenses"
+    probe_dir = probes or Path(behaviour_path).parent / "probes"
     output = output or Path("results/jspace") / model / "swap"
 
     variant_list = resolve_variants(variants)
@@ -105,7 +107,7 @@ def main(
         output_dir=output, positions=[p.strip() for p in positions.split(",")],
         variants=variant_list,
         band_width=band_width, seed=seed, n_boot=n_boot, max_pairs=max_pairs,
-        behaviour=behaviour_df,
+        behaviour=behaviour_df, probe_dir=probe_dir,
     )
 
     noop = verify_noop(df)

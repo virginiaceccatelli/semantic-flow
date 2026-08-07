@@ -627,7 +627,8 @@ def test_swap_stage_runs_every_control_and_the_no_op_is_inert(toy_setup, tokeniz
         output_dir=tmp_path / "swap", positions=["use", "pre_def"],
         band_width=3, n_boot=50,
     )
-    assert set(df["variant"]) == set(SWAP_VARIANTS)
+    # every variant except `probe_basis`, which needs stage 72's frozen probes
+    assert set(df["variant"]) == set(SWAP_VARIANTS) - {"probe_basis"}
     assert set(df["position"]) == {"use", "pre_def"}
     assert set(df["site_kind"]) == {"single", "band"}
     assert {"ld_clean", "ld_patched", "delta_ld", "logp_clean_bound",
@@ -644,7 +645,8 @@ def test_swap_stage_runs_every_control_and_the_no_op_is_inert(toy_setup, tokeniz
 
     contrasts = control_contrasts(summary, df, split="test", position="use", n_boot=50)
     assert set(contrasts["contrast"]) == {
-        f"jlens_value - {v}" for v in SWAP_VARIANTS if v != "jlens_value"}
+        f"jlens_value - {v}" for v in SWAP_VARIANTS
+        if v not in ("jlens_value", "probe_basis")}
 
 
 def test_the_two_structural_zeros_hold(toy_setup, tokenizer, tmp_path):
@@ -711,6 +713,46 @@ def test_variant_default_comes_from_the_module_not_the_cli():
     assert not hardcoded, (
         f"stage 73 hardcodes variant names {hardcoded}; derive them from "
         "SWAP_VARIANTS via resolve_variants() so the two cannot drift")
+
+
+def test_push_control_at_full_dose_is_the_whole_state_patch():
+    """alpha=1 along h_other - h_self IS the counterfactual replacement.
+
+    That identity is what makes the dose sweep a norm-to-effect curve for the
+    site rather than a new intervention with its own unknown scale.
+    """
+    from src.models.jspace import make_push_fn
+
+    rng = np.random.default_rng(0)
+    h_self, h_other = rng.normal(size=16), rng.normal(size=16)
+    pushed = make_push_fn(h_other - h_self, 1.0)(
+        torch.tensor(h_self, dtype=torch.float32)).numpy()
+    assert np.allclose(pushed, h_other, atol=1e-5)
+
+
+def test_probe_basis_directions_undo_the_scaler():
+    """The probe reads a standardised state, so its raw-space direction is
+    `coef / scale`. Swapping along `coef` alone would use a direction the probe
+    does not actually read with — a near-miss that makes the control useless."""
+    from src.experiments.jspace_readout import _fit_probes
+    from src.experiments.jspace_swap import probe_directions
+
+    rng = np.random.default_rng(0)
+    values = [2, 3, 5]
+    axis = rng.normal(size=(12,))
+    X = np.stack([axis * v + 0.05 * rng.normal(size=12)
+                  for v in values for _ in range(12)])
+    y = np.array([v for v in values for _ in range(12)])
+    probe = _fit_probes({(0, "use"): (X, y)}, seed=0)[(0, "use")]
+
+    d_source, d_target = probe_directions(probe, 2, 5)
+    classes = list(probe.clf.classes_)
+    expected = probe.clf.coef_[classes.index(2)] / probe.scaler.scale_
+    assert np.allclose(d_source, expected)
+    assert not np.allclose(d_source, probe.clf.coef_[classes.index(2)])
+    # the two read directions must differ, or the swap is a no-op
+    assert not np.allclose(d_source, d_target)
+    assert probe_directions(probe, 2, 9) is None
 
 
 def test_offvalue_control_uses_digits_the_program_never_mentions():

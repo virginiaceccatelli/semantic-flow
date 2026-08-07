@@ -135,6 +135,30 @@ def make_swap_fn(
     return swap
 
 
+def make_push_fn(
+    direction: np.ndarray,
+    alpha: float,
+) -> Callable[[torch.Tensor], torch.Tensor]:
+    """`h + alpha * d` — a rank-1 edit along a given direction.
+
+    The dose-response control. A swap that moves 3% of the state's norm and
+    changes nothing is ambiguous: the coordinates may be causally inert, or a
+    3%-norm edit at this site may simply be too small to matter whatever
+    direction it points in. Pushing along the *empirical counterfactual
+    direction* `h_other - h_self` at a matched dose settles it, because that
+    direction is known to carry the difference — at `alpha = 1` this edit IS
+    the whole-state patch, so the sweep traces the site's own norm-to-effect
+    curve instead of assuming it is linear.
+    """
+    d = torch.from_numpy(np.asarray(direction, dtype=np.float32))
+
+    def push(vec: torch.Tensor) -> torch.Tensor:
+        h = vec.detach().float()
+        return h + float(alpha) * d.to(h.device)
+
+    return push
+
+
 def make_replace_fn(
     replacement: torch.Tensor,
 ) -> Callable[[torch.Tensor], torch.Tensor]:

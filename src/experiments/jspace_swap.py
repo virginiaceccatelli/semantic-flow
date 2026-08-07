@@ -41,7 +41,22 @@ reason.
 | `noop_same_value` | numerical noise (this edit is provably the zero vector) |
 | `jlens_answer` | direct answer steering, not an intermediate value |
 | `jlens_offvalue` | perturbing the digit subspace at all, not *these* values |
+| `probe_basis` | the J-lens basis, not the value being unreadable here |
+| `cf_push_*` | a 2-d edit specifically, not any small edit at all |
 | `whole_state` | not a control but the reference ceiling: everything this position holds |
+
+The last two were added on 2026-08-07 to close a gap in the null. "A
+two-dimensional edit did nothing where a four-thousand-dimensional edit moved
+the answer 1.7 nats" is, on its own, a claim about **rank**, not about
+coordinates — the positive control is a different kind of thing from the test.
+`cf_push_*` fixes the rank by pushing along the empirical counterfactual
+direction at matched dose, and `probe_basis` fixes the basis by running the
+identical swap on the directions of the *supervised probe that demonstrably
+reads the value out of this very state*. If `probe_basis` moves the output and
+`jlens_value` does not, the value is causally reusable and the J-lens is simply
+the wrong coordinate system; if neither moves it while the probe still decodes,
+the value is legible and not read. Those are opposite conclusions and one run
+decides between them.
 
 `jlens_offvalue` was added on 2026-08-07, after the answer-position run, and it
 is the sharpest of them. `gram_random` uses arbitrary directions of the right
@@ -93,6 +108,7 @@ from src.data.counterfactual_pairs import BindingCounterfactual, encode_prompt
 from src.models.hooks import extract_hidden_states_and_logits, transform_positions
 from src.models.jspace import (
     build_transforms,
+    make_push_fn,
     make_replace_fn,
     make_swap_fn,
     swap_matrix,
@@ -106,9 +122,16 @@ VARIANTS = ("source", "target")
 
 # Subspace variants. `whole_state` is handled separately (it replaces rather
 # than rotates), and every other entry is a 2-d coordinate exchange.
+# Doses for the rank-matched control, as a fraction of the counterfactual
+# direction. 0.03 matches the norm the two-coordinate swaps actually move
+# (measured: 2.4-3.1% of ||h|| at the marked use); 1.0 reproduces the
+# whole-state patch exactly and is therefore a consistency check on the sweep.
+PUSH_ALPHAS = (0.03, 0.1, 0.3, 1.0)
+
 SWAP_VARIANTS = ("jlens_value", "logit_value", "gram_random",
                  "noop_same_value", "jlens_answer", "jlens_offvalue",
-                 "whole_state")
+                 "probe_basis", "whole_state") + tuple(
+                     f"cf_push_{a:g}" for a in PUSH_ALPHAS)
 
 
 def resolve_variants(spec: Optional[str] = None) -> list[str]:
@@ -175,11 +198,45 @@ def _offvalue_pair(lens: JLens, pair: BindingCounterfactual,
     return rng.choice(candidates)
 
 
+def load_value_probes(probe_dir: str | Path) -> dict[tuple[int, str], object]:
+    """Stage 72's frozen value probes, keyed by (layer, position)."""
+    from src.probes.base import LinearProbe
+
+    probes: dict[tuple[int, str], object] = {}
+    for path in sorted(Path(probe_dir).glob("value_probe_L*_*.pkl")):
+        stem = path.stem[len("value_probe_L"):]
+        layer, _, position = stem.partition("_")
+        probes[(int(layer), position)] = LinearProbe.load(path)
+    return probes
+
+
+def probe_directions(probe, v_source: int, v_target: int) -> Optional[tuple]:
+    """The probe's own read directions for two values, in RAW state space.
+
+    The probe scores a standardised state, `coef . (h - mean) / scale + b`, so
+    the direction that actually reads `h` is `coef / scale`. Skipping that
+    division would swap along a direction the probe does not use, which is the
+    kind of near-miss that makes a control worthless.
+    """
+    classes = list(probe.clf.classes_)
+    if v_source not in classes or v_target not in classes:
+        return None
+    scale = probe.scaler.scale_
+    coef = probe.clf.coef_
+    if coef.shape[0] == 1:          # sklearn collapses the binary case
+        row = coef[0] / scale
+        first = classes.index(v_source) == 1
+        return (row, -row) if first else (-row, row)
+    return (coef[classes.index(v_source)] / scale,
+            coef[classes.index(v_target)] / scale)
+
+
 def _subspace(
     variant: str,
     lenses: dict[str, JLens],
     pair: BindingCounterfactual,
     seed: int,
+    probe=None,
 ) -> Optional[np.ndarray]:
     """The (d, 2) matrix whose coordinates get exchanged, or None for whole_state."""
     jlens, logit = lenses["jlens"], lenses["logit"]
@@ -204,6 +261,11 @@ def _subspace(
         rows = _digit_rows(jlens)
         return swap_matrix(jlens.vectors[rows[digits[0]]],
                            jlens.vectors[rows[digits[1]]])
+    if variant == "probe_basis":
+        if probe is None:
+            return None
+        directions = probe_directions(probe, pair.v_source, pair.v_target)
+        return None if directions is None else swap_matrix(*directions)
     if variant == "gram_random":
         real = swap_matrix(*rows(jlens, "v_source", "v_target"))
         # Gram-match the two REAL value directions, so the control has the same
@@ -236,6 +298,7 @@ def run_jspace_swap(
     n_boot: int = 2000,
     max_pairs: Optional[int] = None,
     behaviour: Optional[pd.DataFrame] = None,
+    probe_dir: Optional[str | Path] = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Run every (pair, direction, position, layer-or-band, variant) intervention.
 
@@ -253,6 +316,16 @@ def run_jspace_swap(
         "jlens": load_frozen_lenses(lens_dir, "jspace"),
         "logit": load_frozen_lenses(lens_dir, "jspace_logit"),
     }
+    probes: dict[tuple[int, str], object] = {}
+    if probe_dir is not None and Path(probe_dir).exists():
+        probes = load_value_probes(probe_dir)
+        logger.info("loaded %d frozen value probes for the probe_basis control",
+                    len(probes))
+    elif "probe_basis" in variants:
+        logger.warning("probe_basis requested but no probe directory given — "
+                       "that control will be missing. Run stage 72 first and "
+                       "pass its probes/ directory.")
+
     sites: list[tuple[str, tuple[int, ...]]] = [("single", (l,)) for l in layers]
     sites += [("band", band) for band in layer_bands(layers, band_width)]
     logger.info("E11 swap: %d pairs x %d directions x %d positions x %d sites "
@@ -293,7 +366,26 @@ def run_jspace_swap(
                     }
                     for variant in variants:
                         h = clean[direction]["hidden"][site[0]][pos_index]
-                        if variant == "whole_state":
+                        if variant.startswith("cf_push_"):
+                            # Rank-1 edit along h_other - h_self at a fixed
+                            # dose. Each layer of a band gets its own direction,
+                            # so alpha=1 reproduces `whole_state` exactly.
+                            alpha = float(variant[len("cf_push_"):])
+                            transforms = {
+                                int(layer): {int(pos_index): make_push_fn(
+                                    clean[counter]["hidden"][layer][pos_index]
+                                    - clean[direction]["hidden"][layer][pos_index],
+                                    alpha)}
+                                for layer in site
+                            }
+                            delta = alpha * (
+                                clean[counter]["hidden"][site[0]][pos_index] - h)
+                            report = {"delta_norm": float(np.linalg.norm(delta)),
+                                      "delta_norm_ratio": float(
+                                          np.linalg.norm(delta)
+                                          / (np.linalg.norm(h) or 1.0)),
+                                      "alpha": alpha}
+                        elif variant == "whole_state":
                             # Each layer of a band gets ITS OWN counterfactual
                             # vector — the reference ceiling is "this position
                             # came from the other program", not "one layer did".
@@ -306,8 +398,9 @@ def run_jspace_swap(
                             report = {"delta_norm": float(np.linalg.norm(
                                 clean[counter]["hidden"][site[0]][pos_index] - h))}
                         else:
-                            V = _subspace(variant, site_lenses, pair, seed)
-                            if V is None:      # no off-value pair available
+                            V = _subspace(variant, site_lenses, pair, seed,
+                                          probe=probes.get((site[0], position)))
+                            if V is None:   # no off-value pair, or no probe
                                 continue
                             report = swap_report(h, V)
                             fn = make_swap_fn(V, device=device)
