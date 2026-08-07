@@ -111,6 +111,25 @@ SWAP_VARIANTS = ("jlens_value", "logit_value", "gram_random",
                  "whole_state")
 
 
+def resolve_variants(spec: Optional[str] = None) -> list[str]:
+    """Parse a `--variants` string, defaulting to *every* variant.
+
+    The stage CLI must not carry its own copy of the list. It did, and when
+    `jlens_offvalue` was added to `SWAP_VARIANTS` the CLI kept passing the
+    older six — so a full re-run reproduced the previous grid exactly and the
+    new control silently never ran. Deriving the default here is the only way
+    the two cannot drift.
+    """
+    if not spec:
+        return list(SWAP_VARIANTS)
+    chosen = [v.strip() for v in spec.split(",") if v.strip()]
+    unknown = [v for v in chosen if v not in SWAP_VARIANTS]
+    if unknown:
+        raise ValueError(f"Unknown swap variant(s) {unknown}; "
+                         f"known variants are {list(SWAP_VARIANTS)}")
+    return chosen
+
+
 def layer_bands(layers: Sequence[int], width: int = 3) -> list[tuple[int, ...]]:
     """Consecutive runs of `width` probed layers, as tuples."""
     layers = sorted(int(l) for l in layers)

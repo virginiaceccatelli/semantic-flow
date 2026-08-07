@@ -687,6 +687,32 @@ def _stage90(tmp_path):
     return mod
 
 
+def test_variant_default_comes_from_the_module_not_the_cli():
+    """A stale CLI copy silently drops newly added controls — it did once.
+
+    `jlens_offvalue` was added to SWAP_VARIANTS while stage 73's `--variants`
+    default still listed the previous six, so a full GPU re-run reproduced the
+    old grid exactly and the new control never executed. The default must be
+    derived, and the script must not carry its own list.
+    """
+    from pathlib import Path as _Path
+
+    from src.experiments.jspace_swap import SWAP_VARIANTS, resolve_variants
+
+    assert resolve_variants(None) == list(SWAP_VARIANTS)
+    assert "jlens_offvalue" in resolve_variants(None)
+    assert resolve_variants("jlens_value,gram_random") == ["jlens_value", "gram_random"]
+    with pytest.raises(ValueError, match="Unknown swap variant"):
+        resolve_variants("jlens_value,not_a_variant")
+
+    source = (_Path(__file__).parent.parent / "scripts"
+              / "73_jspace_swap.py").read_text()
+    hardcoded = [v for v in SWAP_VARIANTS if f"{v}," in source]
+    assert not hardcoded, (
+        f"stage 73 hardcodes variant names {hardcoded}; derive them from "
+        "SWAP_VARIANTS via resolve_variants() so the two cannot drift")
+
+
 def test_offvalue_control_uses_digits_the_program_never_mentions():
     """The digit-geometry control: same separation, values not in the program."""
     from src.experiments.jspace_swap import _offvalue_pair

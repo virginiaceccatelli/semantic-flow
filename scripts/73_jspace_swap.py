@@ -45,8 +45,10 @@ def main(
     output: Optional[Path] = typer.Option(None, help="Default results/jspace/{model}/swap"),
     layers: Optional[str] = typer.Option(None, help="Comma-separated; default registry probe layers"),
     positions: str = typer.Option("use,pre_def", help="`pre_def` is the irrelevant-position control"),
-    variants: str = typer.Option("jlens_value,logit_value,gram_random,noop_same_value,"
-                                 "jlens_answer,whole_state"),
+    variants: Optional[str] = typer.Option(
+        None, help="Comma-separated subset; default is every variant in "
+                   "jspace_swap.SWAP_VARIANTS (never hardcode it here — a "
+                   "stale copy silently drops newly added controls)"),
     band_width: int = typer.Option(3, help="Consecutive probed layers per band; 0 disables bands"),
     max_pairs: Optional[int] = typer.Option(None),
     n_boot: int = typer.Option(2000),
@@ -61,6 +63,7 @@ def main(
     from src.data.counterfactual_pairs import assert_disjoint, load_pairs, split_pairs
     from src.experiments.jspace_swap import (
         control_contrasts,
+        resolve_variants,
         run_jspace_swap,
         verify_noop,
     )
@@ -95,10 +98,12 @@ def main(
     lens_dir = lenses or Path("results/jspace") / model / "lenses"
     output = output or Path("results/jspace") / model / "swap"
 
+    variant_list = resolve_variants(variants)
+    console.print(f"variants: {variant_list}")
     df, summary = run_jspace_swap(
         all_pairs, mdl, tokenizer, lens_dir=lens_dir, layers=layer_list,
         output_dir=output, positions=[p.strip() for p in positions.split(",")],
-        variants=[v.strip() for v in variants.split(",")],
+        variants=variant_list,
         band_width=band_width, seed=seed, n_boot=n_boot, max_pairs=max_pairs,
         behaviour=behaviour_df,
     )
@@ -137,7 +142,7 @@ def main(
 
     write_manifest("73_jspace_swap", {
         "model": model, "pairs": str(pairs_path), "lenses": str(lens_dir),
-        "layers": layer_list, "positions": positions, "variants": variants,
+        "layers": layer_list, "positions": positions, "variants": variant_list,
         "band_width": band_width, "dtype": dtype, "device": device, "seed": seed,
     }, t0, extra={"n_rows": len(df), "noop": noop})
     console.print("[green]Stage 73 done.[/green]")
