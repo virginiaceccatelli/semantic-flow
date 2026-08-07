@@ -141,8 +141,6 @@ def main(
     console.print(f"\n[bold]1. Ceiling — how much can ANY edit at each position "
                   f"move the answer?[/bold]")
     ceiling = swap[swap.split == "test"]
-    ceiling = ceiling[ceiling.variant.isin(["whole_state", "jlens_value",
-                                            "noop_same_value"])]
     if ceiling.empty:
         console.print("   [yellow]no test rows[/yellow]")
     else:
@@ -251,7 +249,83 @@ def main(
                     "control there. The controls that matter are `jlens_answer` "
                     "(direct answer steering) and `gram_random`.[/yellow]")
 
+    # ── 5. is the effect routing, or digit-space geometry? ───────────────────
+    console.print("\n[bold]5. Answer separation — does the shift track WHICH "
+                  "answer, or just how far apart the two answers are?[/bold]")
+    _answer_distance(root, position)
+
     console.print("")
+
+
+def _answer_distance(root: Path, position: str) -> None:
+    """Regress the per-example shift on |answer_source - answer_target|.
+
+    The alternative explanation for a positive swap result. Digit tokens are
+    not arbitrary directions in the unembedding — they carry magnitude
+    structure — so an edit that perturbs the digit subspace at all moves
+    *distant* digit pairs more than adjacent ones, for reasons that have
+    nothing to do with the program's operation. Two answers three apart move
+    more than two answers one apart, whatever the model computed.
+
+    That is exactly the pattern a family comparison can mistake for routing,
+    because the families differ in answer spread: threshold answers are always
+    {0, 1} while affine answers are spread across the digits. The clean test is
+    therefore WITHIN a family, where the operation is held fixed and only the
+    answer separation varies. A routing effect should be flat in separation; a
+    geometric one should rise with it.
+    """
+    import numpy as np
+    import pandas as pd
+
+    rows = _read(root / "swap" / "jspace_swap.csv")
+    if rows is None or rows.empty:
+        console.print("   [yellow]no per-example swap rows[/yellow]")
+        return
+    sub = rows[(rows.split == "test") & (rows.position == position)
+               & (rows.variant == "jlens_value")].copy()
+    if sub.empty or "target_answer" not in sub.columns:
+        console.print(f"   [yellow]no jlens_value rows at `{position}`[/yellow]")
+        return
+    sub["answer_gap"] = (sub["target_answer"] - sub["bound_answer"]).abs()
+
+    try:
+        from scipy.stats import spearmanr
+    except ImportError:
+        spearmanr = None
+
+    best_site = sub.groupby("site")["delta_ld"].mean().idxmax()
+    at_site = sub[sub.site == best_site]
+    console.print(f"   largest-effect site at `{position}`: {best_site}")
+
+    table = (at_site.groupby(["op_family", "answer_gap"])
+                    .agg(delta_ld=("delta_ld", "mean"), n=("delta_ld", "size"))
+                    .reset_index())
+    _table(table.round(4).set_index(["op_family", "answer_gap"]))
+
+    for family, fam in at_site.groupby("op_family"):
+        if fam["answer_gap"].nunique() < 3 or spearmanr is None:
+            console.print(f"   {family}: too few distinct answer gaps to correlate")
+            continue
+        rho, p = spearmanr(fam["answer_gap"], fam["delta_ld"])
+        if not np.isfinite(rho):
+            # constant shifts make the correlation undefined; saying "flat,
+            # consistent with routing" there would be reading a verdict out of
+            # an absence of data
+            console.print(f"   {family}: shift is constant (n={len(fam)}) — "
+                          "correlation undefined, no reading")
+            continue
+        verdict = ("[yellow]tracks separation → geometric[/yellow]"
+                   if p < 0.05 and rho > 0
+                   else "flat in separation → consistent with routing")
+        console.print(f"   {family}: Spearman(|Δanswer|, shift) = {rho:+.3f} "
+                      f"(p={p:.3g}, n={len(fam)})  {verdict}")
+
+    console.print("\n   Read this against table 4. If the per-family shifts "
+                  "differ by orders of magnitude AND the shift rises with "
+                  "answer separation within a family, the swap is moving the "
+                  "digit subspace rather than re-running the operation, and "
+                  "the cross-operation test has NOT been passed in spirit even "
+                  "where `all_families_positive` is True.")
 
 
 if __name__ == "__main__":
