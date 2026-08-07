@@ -258,74 +258,84 @@ def main(
 
 
 def _answer_distance(root: Path, position: str) -> None:
-    """Regress the per-example shift on |answer_source - answer_target|.
+    """Per-example shift as a FRACTION of the whole-state ceiling, by separation.
 
-    The alternative explanation for a positive swap result. Digit tokens are
-    not arbitrary directions in the unembedding — they carry magnitude
-    structure — so an edit that perturbs the digit subspace at all moves
-    *distant* digit pairs more than adjacent ones, for reasons that have
-    nothing to do with the program's operation. Two answers three apart move
-    more than two answers one apart, whatever the model computed.
+    The raw shift must not be regressed on answer separation, and an earlier
+    version of this function did exactly that and drew a conclusion from it.
+    The regression does not discriminate: `delta_ld` is a difference of
+    log-probabilities between two answer tokens, and when those two answers are
+    adjacent digits the clean logit-diff is small to begin with, so even a
+    *perfectly* routed swap can only move it a little. Separation scaling is
+    predicted by genuine routing every bit as much as by digit geometry.
 
-    That is exactly the pattern a family comparison can mistake for routing,
-    because the families differ in answer spread: threshold answers are always
-    {0, 1} while affine answers are spread across the digits. The clean test is
-    therefore WITHIN a family, where the operation is held fixed and only the
-    answer separation varies. A routing effect should be flat in separation; a
-    geometric one should rise with it.
+    Normalising by the whole-state patch on the same (pair, direction, site)
+    removes it: that patch is the empirical ceiling for this example, and it
+    scales with separation for the same reason the numerator does. The ratio
+    answers the question that matters — what fraction of everything this
+    position carries does the two-coordinate value edit actually capture — and
+    it is comparable across families whose answers are spread differently.
     """
     import numpy as np
-    import pandas as pd
 
     rows = _read(root / "swap" / "jspace_swap.csv")
     if rows is None or rows.empty:
         console.print("   [yellow]no per-example swap rows[/yellow]")
         return
-    sub = rows[(rows.split == "test") & (rows.position == position)
-               & (rows.variant == "jlens_value")].copy()
+    sub = rows[(rows.split == "test") & (rows.position == position)]
     if sub.empty or "target_answer" not in sub.columns:
-        console.print(f"   [yellow]no jlens_value rows at `{position}`[/yellow]")
+        console.print(f"   [yellow]no swap rows at `{position}`[/yellow]")
         return
-    sub["answer_gap"] = (sub["target_answer"] - sub["bound_answer"]).abs()
+
+    index = ["pair_id", "base_id", "op_family", "direction", "site",
+             "bound_answer", "target_answer"]
+    wide = sub.pivot_table(index=index, columns="variant",
+                           values="delta_ld").reset_index()
+    if "jlens_value" not in wide.columns or "whole_state" not in wide.columns:
+        console.print("   [yellow]need both jlens_value and whole_state rows[/yellow]")
+        return
+    wide["answer_gap"] = (wide["target_answer"] - wide["bound_answer"]).abs()
+
+    best_site = wide.groupby("site")["jlens_value"].mean().idxmax()
+    at_site = wide[wide.site == best_site].copy()
+    console.print(f"   largest-effect site at `{position}`: {best_site}")
+
+    # Only where the position carries something: dividing by a ceiling that is
+    # itself noise manufactures enormous ratios out of nothing.
+    usable = at_site[at_site["whole_state"].abs() > 0.05].copy()
+    usable["captured"] = usable["jlens_value"] / usable["whole_state"]
+    if usable.empty:
+        console.print("   [yellow]whole-state ceiling is ~0 everywhere here; "
+                      "no fraction is defined[/yellow]")
+        return
+
+    table = (usable.groupby(["op_family", "answer_gap"])
+                   .agg(raw_shift=("jlens_value", "mean"),
+                        ceiling=("whole_state", "mean"),
+                        captured=("captured", "mean"),
+                        n=("captured", "size"))
+                   .reset_index())
+    _table(table.round(4).set_index(["op_family", "answer_gap"]))
 
     try:
         from scipy.stats import spearmanr
     except ImportError:
         spearmanr = None
 
-    best_site = sub.groupby("site")["delta_ld"].mean().idxmax()
-    at_site = sub[sub.site == best_site]
-    console.print(f"   largest-effect site at `{position}`: {best_site}")
+    for family, fam in usable.groupby("op_family"):
+        share = float(fam["captured"].mean())
+        line = f"   {family}: captures {share:+.1%} of the ceiling (n={len(fam)})"
+        if fam["answer_gap"].nunique() >= 3 and spearmanr is not None:
+            rho, p = spearmanr(fam["answer_gap"], fam["captured"])
+            if np.isfinite(rho):
+                line += f"   Spearman(|Δanswer|, captured) = {rho:+.3f} (p={p:.3g})"
+        console.print(line)
 
-    table = (at_site.groupby(["op_family", "answer_gap"])
-                    .agg(delta_ld=("delta_ld", "mean"), n=("delta_ld", "size"))
-                    .reset_index())
-    _table(table.round(4).set_index(["op_family", "answer_gap"]))
-
-    for family, fam in at_site.groupby("op_family"):
-        if fam["answer_gap"].nunique() < 3 or spearmanr is None:
-            console.print(f"   {family}: too few distinct answer gaps to correlate")
-            continue
-        rho, p = spearmanr(fam["answer_gap"], fam["delta_ld"])
-        if not np.isfinite(rho):
-            # constant shifts make the correlation undefined; saying "flat,
-            # consistent with routing" there would be reading a verdict out of
-            # an absence of data
-            console.print(f"   {family}: shift is constant (n={len(fam)}) — "
-                          "correlation undefined, no reading")
-            continue
-        verdict = ("[yellow]tracks separation → geometric[/yellow]"
-                   if p < 0.05 and rho > 0
-                   else "flat in separation → consistent with routing")
-        console.print(f"   {family}: Spearman(|Δanswer|, shift) = {rho:+.3f} "
-                      f"(p={p:.3g}, n={len(fam)})  {verdict}")
-
-    console.print("\n   Read this against table 4. If the per-family shifts "
-                  "differ by orders of magnitude AND the shift rises with "
-                  "answer separation within a family, the swap is moving the "
-                  "digit subspace rather than re-running the operation, and "
-                  "the cross-operation test has NOT been passed in spirit even "
-                  "where `all_families_positive` is True.")
+    console.print("\n   Read the `captured` column, not `raw_shift`. A swap "
+                  "that re-ran the operation with the other value should "
+                  "capture a similar FRACTION in every family, whatever each "
+                  "family's answers happen to be worth in nats. Fractions that "
+                  "differ by orders of magnitude across families mean the edit "
+                  "is doing something the operations do not share.")
 
 
 if __name__ == "__main__":
