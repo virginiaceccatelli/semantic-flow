@@ -137,6 +137,22 @@ def main(
                           "so they are a capability result, not a "
                           "representational one.[/yellow]")
 
+        # Per family, because the cross-operation test compares families and a
+        # family the model cannot compute contributes a null for reasons that
+        # have nothing to do with routing. Pooled accuracy hides that.
+        if "op_family" in test.columns and test["op_family"].nunique() > 1:
+            per_family = (test.groupby(["op_family", "variant"])["correct"]
+                              .mean().unstack("variant"))
+            per_family["balanced"] = per_family.mean(axis=1)
+            console.print("\n   per operation family (test split):")
+            _table(per_family.round(3))
+            weak = per_family[per_family["balanced"] < 0.75].index.tolist()
+            if weak:
+                console.print(f"   [yellow]{weak}: below the gate. A null swap "
+                              "result in these families is uninterpretable — "
+                              "the model is not computing them, so there is "
+                              "nothing for a routed value to change.[/yellow]")
+
     # ── 1. the ceiling: is there headroom at this position? ──────────────────
     console.print(f"\n[bold]1. Ceiling — how much can ANY edit at each position "
                   f"move the answer?[/bold]")
