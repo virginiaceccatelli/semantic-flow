@@ -111,6 +111,8 @@ def main(
     results: Optional[Path] = typer.Option(None, help="Default results/jspace/{model}"),
     position: str = typer.Option("use", help="The position the criteria were read at"),
 ):
+    import numpy as np
+
     root = results or Path("results/jspace") / model
     readout = _read(root / "readout" / "jspace_readout_summary.csv")
     behaviour = _read(root / "readout" / "jspace_behaviour.csv")
@@ -158,26 +160,46 @@ def main(
             errors = (test.groupby(["op_family", "error_type"]).size()
                           .unstack("error_type").fillna(0))
             errors = errors.div(errors.sum(axis=1), axis=0)
+            # How many distinct answers the family can produce at all. With only
+            # two, `wrong_binding` and "the model guessed" are the SAME
+            # observation — half of all guesses land on the other answer by
+            # construction — so the taxonomy carries no information there, and
+            # the logit-diff metric is at its least sensitive for the same
+            # reason. Families are only diagnosable when the answer space is
+            # wide enough for a wrong guess to land outside it.
+            space = (test.groupby("op_family")
+                         .apply(lambda g: len(set(g["bound_answer"])
+                                              | set(g["other_answer"])),
+                                include_groups=False)
+                         .rename("n_distinct_answers"))
             console.print("\n   error type when the model does not emit the "
                           "bound answer (row-normalised):")
-            _table(errors.round(3))
-            if "wrong_binding" in errors.columns and "other" in errors.columns:
-                binding_share = float(errors["wrong_binding"].sum())
-                other_share = float(errors["other"].sum())
-                if other_share > 2 * binding_share:
+            _table(errors.join(space).round(3))
+            narrow = space[space <= 2].index.tolist()
+            if narrow:
+                console.print(f"   [yellow]{narrow}: only two possible answers, so "
+                              "`wrong_binding` is indistinguishable from guessing "
+                              "and these rows cannot diagnose anything.[/yellow]")
+            wide = errors.join(space)
+            wide = wide[wide["n_distinct_answers"] > 2]
+            if not wide.empty and {"wrong_binding", "other"} <= set(wide.columns):
+                binding = float(wide["wrong_binding"].sum())
+                other = float(wide["other"].sum())
+                console.print(f"   on the diagnosable families: `other` "
+                              f"{other:.2f} vs `wrong_binding` {binding:.2f}")
+                if other > 2 * binding:
                     console.print(
-                        "   [yellow]→ Failures are mostly `other`: the model is "
-                        "emitting neither answer, i.e. it is miscomputing the "
-                        "OPERATION, not mis-resolving the binding. A bigger or "
-                        "different model treats the symptom; the design fix is "
-                        "easier operations, few-shot demonstrations, or scoring "
-                        "the binding separately from the arithmetic.[/yellow]")
-                elif binding_share > 2 * other_share:
+                        "   [yellow]→ The model resolves the binding and "
+                        "miscomputes the OPERATION. A stronger model helps only "
+                        "insofar as it can compute these operations; the design "
+                        "fixes (few-shot, easier arithmetic) are cheaper and "
+                        "keep comparability with the rest of the "
+                        "project.[/yellow]")
+                elif binding > 2 * other:
                     console.print(
-                        "   [yellow]→ Failures are mostly `wrong_binding`: the "
-                        "model resolves the WRONG definition. That is a real "
-                        "capability limit on the task under test, and a "
-                        "stronger model is the appropriate response.[/yellow]")
+                        "   [yellow]→ The model resolves the WRONG definition. "
+                        "That is a capability limit on the task under test, and "
+                        "a stronger model is the appropriate response.[/yellow]")
 
     # ── 1. the ceiling: is there headroom at this position? ──────────────────
     console.print(f"\n[bold]1. Ceiling — how much can ANY edit at each position "
@@ -186,9 +208,32 @@ def main(
     if ceiling.empty:
         console.print("   [yellow]no test rows[/yellow]")
     else:
+        values = ["delta_ld", "flip_rate"]
+        # How much of the state each edit actually moved. Without it, "the 2-d
+        # edit did nothing where the 4096-d edit did 1.7 nats" is ambiguous
+        # between two very different claims: these coordinates are causally
+        # inert, or the state simply has almost no component along them, so
+        # `swap(c) - c` was a tiny vector and there was little to be causal
+        # with. The second is a much weaker and more mundane statement, and it
+        # has to be ruled out in the write-up rather than assumed away.
+        if "mean_delta_norm_ratio" in ceiling.columns:
+            values.append("mean_delta_norm_ratio")
         table = ceiling.pivot_table(index=["position", "site"], columns="variant",
-                                    values=["delta_ld", "flip_rate"])
+                                    values=values)
         _table(table.round(4))
+        at_position = ceiling[ceiling.position == position]
+        ratios = (at_position.groupby("variant")["mean_delta_norm_ratio"].mean()
+                  if "mean_delta_norm_ratio" in at_position.columns else None)
+        if ratios is not None and ratios.notna().any():
+            console.print(f"\n   mean |Δh|/|h| at `{position}` by variant:")
+            print("   " + ratios.dropna().round(4).to_string().replace("\n", "\n   "))
+            jl = ratios.get("jlens_value", float("nan"))
+            if np.isfinite(jl) and jl < 0.01:
+                console.print("   [yellow]The J-lens edit moved <1% of the state. "
+                              "Before calling these coordinates causally inert, "
+                              "check a rank-matched edit of comparable norm — "
+                              "otherwise the null is partly an effect-size "
+                              "artefact.[/yellow]")
         best = ceiling[(ceiling.position == position)
                        & (ceiling.variant == "whole_state")]["delta_ld"]
         if not best.empty:
