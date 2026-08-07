@@ -1,0 +1,42 @@
+{
+  "stage": "73_jspace_swap",
+  "timestamp": "20260806_203003",
+  "git_sha": "016400d",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/73_jspace_swap.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--pairs",
+    "data/synthetic/jspace_pairs_deepseek-coder-1.3b.jsonl",
+    "--layers",
+    "6,12,18,23",
+    "--dtype",
+    "float16",
+    "--band-width",
+    "3"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "pairs": "data/synthetic/jspace_pairs_deepseek-coder-1.3b.jsonl",
+    "lenses": "results/jspace/deepseek-coder-1.3b/lenses",
+    "layers": "[6, 12, 18, 23]",
+    "positions": "use,pre_def",
+    "variants": "jlens_value,logit_value,gram_random,noop_same_value,jlens_answer,whole_state",
+    "band_width": "3",
+    "dtype": "float16",
+    "device": "cuda",
+    "seed": "42"
+  },
+  "wall_time_s": 687.1,
+  "extra": {
+    "n_rows": 28800,
+    "noop": {
+      "checked": true,
+      "max_abs_delta_ld": 0.0,
+      "mean_abs_delta_ld": 0.0,
+      "passed": true,
+      "tolerance": 0.001
+    }
+  }
+}

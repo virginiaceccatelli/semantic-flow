@@ -1,0 +1,32 @@
+{
+  "stage": "74_jspace_report",
+  "timestamp": "20260807_093625",
+  "git_sha": "3fd0bf7",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/74_jspace_report.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--results",
+    "results/jspace/6.7b-5fam",
+    "--position",
+    "use"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "position": "use",
+    "subset": "all",
+    "seed": "42",
+    "select_metric": "reversal_rate"
+  },
+  "wall_time_s": 1.0,
+  "extra": {
+    "verdict": "NO-GO",
+    "criteria": {
+      "behavioural_balanced_accuracy": false,
+      "readout_beats_random_control": false,
+      "swap_moves_logits_toward_swapped_value": false,
+      "swap_is_specific_to_the_value_subspace": false
+    }
+  }
+}

@@ -1,0 +1,150 @@
+model: deepseek-coder-6.7b
+position: use
+subset: all
+thresholds:
+  balanced_accuracy: 0.75
+  readout_advantage: 0.0
+  swap_shift: 0.0
+lens_gates_failed: []
+both_counterfactuals_correct_rate: 0.52
+select_metric: reversal_rate
+calibration_selected_layer: 16
+calibration_selected_layer_by_paired_gap: 31
+readout_contrasts:
+- split: test
+  subset: all
+  position: use
+  layer: 16
+  contrast: jlens - gram_random
+  accuracy_delta: 0.11785714285714285
+  accuracy_ci_lo: 0.06428571428571428
+  accuracy_ci_hi: 0.17142857142857143
+  n_rows: 280
+  n_bases: 70
+  jlens_exceeds_control: true
+  reversal_delta: 0.18571428571428572
+  reversal_ci_lo: 0.09285714285714286
+  reversal_ci_hi: 0.2716071428571419
+- split: test
+  subset: all
+  position: use
+  layer: 16
+  contrast: jlens - logit
+  accuracy_delta: 0.10357142857142858
+  accuracy_ci_lo: 0.05357142857142857
+  accuracy_ci_hi: 0.15357142857142858
+  n_rows: 280
+  n_bases: 70
+  jlens_exceeds_control: true
+  reversal_delta: 0.17857142857142858
+  reversal_ci_lo: 0.09285714285714286
+  reversal_ci_hi: 0.2642857142857143
+- split: test
+  subset: all
+  position: use
+  layer: 16
+  contrast: jlens - probe
+  accuracy_delta: -0.07142857142857142
+  accuracy_ci_lo: -0.14642857142857144
+  accuracy_ci_hi: 0.007142857142857143
+  n_rows: 280
+  n_bases: 70
+  jlens_exceeds_control: false
+  reversal_delta: -0.17142857142857143
+  reversal_ci_lo: -0.2930357142857143
+  reversal_ci_hi: -0.03571428571428571
+calibration_selected_site: L8+16+24
+swap_contrasts:
+- split: test
+  position: use
+  site: L8+16+24
+  contrast: jlens_value - logit_value
+  delta: 0.0008928572492940112
+  ci_lo: -0.002345147476132425
+  ci_hi: 0.004129459453480586
+  n_rows: 280
+  n_bases: 70
+  jlens_exceeds_control: false
+- split: test
+  position: use
+  site: L8+16+24
+  contrast: jlens_value - gram_random
+  delta: -0.00044642782637050973
+  ci_lo: -0.004075058328786064
+  ci_hi: 0.003180804861975569
+  n_rows: 280
+  n_bases: 70
+  jlens_exceeds_control: false
+- split: test
+  position: use
+  site: L8+16+24
+  contrast: jlens_value - noop_same_value
+  delta: 0.0006138419466359294
+  ci_lo: -0.0025111566324319125
+  ci_hi: 0.003738841244152616
+  n_rows: 280
+  n_bases: 70
+  jlens_exceeds_control: false
+- split: test
+  position: use
+  site: L8+16+24
+  contrast: jlens_value - jlens_answer
+  delta: -0.004352678571428568
+  ci_lo: -0.007979908500398905
+  ci_hi: -0.000837058387696741
+  n_rows: 280
+  n_bases: 70
+  jlens_exceeds_control: false
+- split: test
+  position: use
+  site: L8+16+24
+  contrast: jlens_value - jlens_offvalue
+  delta: -0.004464284117732728
+  ci_lo: -0.007812498760010512
+  ci_hi: -0.0012276784410434106
+  n_rows: 280
+  n_bases: 70
+  jlens_exceeds_control: false
+- split: test
+  position: use
+  site: L8+16+24
+  contrast: jlens_value - whole_state
+  delta: -1.7099888351346766
+  ci_lo: -1.95047850635701
+  ci_hi: -1.480511993433216
+  n_rows: 280
+  n_bases: 70
+  jlens_exceeds_control: false
+cross_operation:
+  n_families: 2
+  min_family_delta: 0.0002232153500829
+  all_families_positive: true
+  all_families_ci_positive: false
+noop_control:
+  checked: true
+  max_abs_delta_ld: 0.0
+  mean_abs_delta_ld: 0.0
+  passed: true
+  tolerance: 0.001
+criteria:
+- criterion: behavioural_balanced_accuracy
+  passed: true
+  value: 0.7714285714285715
+  detail: 'test balanced accuracy 0.771 (all pairs 0.758); per variant {''source'':
+    0.807, ''target'': 0.736}; threshold 0.75'
+- criterion: readout_beats_random_control
+  passed: true
+  value: 0.11785714285714285
+  detail: 'layer 16 (chosen on calibration): accuracy advantage +0.118 [+0.064, +0.171]'
+- criterion: swap_moves_logits_toward_swapped_value
+  passed: false
+  value: 0.0006138419466359
+  detail: 'site L8+16+24 (chosen on calibration): paired logit shift +0.001 [-0.003,
+    +0.004], flip rate 0.000'
+- criterion: swap_is_specific_to_the_value_subspace
+  passed: false
+  value: null
+  detail: 'vs logit_value: +0.001 [-0.002, +0.004] (the Jacobian correction, not the
+    unembedding); vs jlens_offvalue: -0.004 [-0.008, -0.001] (these values, not the
+    digit subspace at large)'
+verdict: NO-GO

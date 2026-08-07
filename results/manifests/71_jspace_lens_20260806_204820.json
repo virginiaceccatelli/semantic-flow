@@ -1,0 +1,38 @@
+{
+  "stage": "71_jspace_lens",
+  "timestamp": "20260806_204820",
+  "git_sha": "016400d",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/71_jspace_lens.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--pairs",
+    "data/synthetic/jspace_pairs_deepseek-coder-6.7b.jsonl",
+    "--layers",
+    "8,16,24,31",
+    "--dtype",
+    "float16",
+    "--n-build",
+    "150",
+    "--n-seeds",
+    "3"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "corpus": "data/real/csn_python_200.jsonl",
+    "layers": "[8, 16, 24, 31]",
+    "n_corpus": "120",
+    "n_build": "150",
+    "n_tprime": "3",
+    "n_seeds": "3",
+    "dtype": "float16",
+    "grad_scale": "1024.0",
+    "device": "cuda",
+    "seed": "42"
+  },
+  "wall_time_s": 663.9,
+  "extra": {
+    "failed_checks": []
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "stage": "70_jspace_pairs",
+  "timestamp": "20260807_085403",
+  "git_sha": "4a50504",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/70_jspace_pairs.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--n-bases",
+    "60",
+    "--families",
+    "affine,mul_sub,threshold,modulus,index",
+    "--output",
+    "data/synthetic/jspace_pairs_6.7b_5fam.jsonl"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "n_bases": "60",
+    "families": "affine,mul_sub,threshold,modulus,index",
+    "templates": "global_shadow,call_frame,padded_shadow",
+    "calib_frac": "0.3",
+    "seed": "42",
+    "output": "data/synthetic/jspace_pairs_6.7b_5fam.jsonl"
+  },
+  "wall_time_s": 1.2,
+  "extra": {
+    "n_pairs": 290,
+    "n_calib": 86,
+    "n_test": 204
+  }
+}

@@ -1,0 +1,149 @@
+model: deepseek-coder-6.7b
+position: answer
+subset: all
+thresholds:
+  balanced_accuracy: 0.75
+  readout_advantage: 0.0
+  swap_shift: 0.0
+both_counterfactuals_correct_rate: 0.43103448275862066
+select_metric: reversal_rate
+calibration_selected_layer: 31
+calibration_selected_layer_by_paired_gap: 31
+readout_contrasts:
+- split: test
+  subset: all
+  position: answer
+  layer: 31
+  contrast: jlens - gram_random
+  accuracy_delta: 0.25735294117647056
+  accuracy_ci_lo: 0.21844660194174756
+  accuracy_ci_hi: 0.2965686274509804
+  n_rows: 408
+  n_bases: 42
+  jlens_exceeds_control: true
+  reversal_delta: 0.47058823529411764
+  reversal_ci_lo: 0.4068627450980392
+  reversal_ci_hi: 0.5384708737864077
+- split: test
+  subset: all
+  position: answer
+  layer: 31
+  contrast: jlens - logit
+  accuracy_delta: 0.0024509803921568627
+  accuracy_ci_lo: 0.0
+  accuracy_ci_hi: 0.007462686567164179
+  n_rows: 408
+  n_bases: 42
+  jlens_exceeds_control: false
+  reversal_delta: 0.004901960784313725
+  reversal_ci_lo: 0.0
+  reversal_ci_hi: 0.014925373134328358
+- split: test
+  subset: all
+  position: answer
+  layer: 31
+  contrast: jlens - probe
+  accuracy_delta: -0.06372549019607843
+  accuracy_ci_lo: -0.11000119617224881
+  accuracy_ci_hi: -0.016856794375089964
+  n_rows: 408
+  n_bases: 42
+  jlens_exceeds_control: false
+  reversal_delta: -0.12254901960784313
+  reversal_ci_lo: -0.20297029702970298
+  reversal_ci_hi: -0.038830261244782165
+calibration_selected_site: L24
+swap_contrasts:
+- split: test
+  position: answer
+  site: L24
+  contrast: jlens_value - logit_value
+  delta: -0.01608455524432893
+  ci_lo: -0.02409253757990826
+  ci_hi: -0.008774012198093638
+  n_rows: 408
+  n_bases: 42
+  jlens_exceeds_control: false
+- split: test
+  position: answer
+  site: L24
+  contrast: jlens_value - gram_random
+  delta: 0.1409313807300493
+  ci_lo: 0.11103413165537407
+  ci_hi: 0.17451172713005894
+  n_rows: 408
+  n_bases: 42
+  jlens_exceeds_control: true
+- split: test
+  position: answer
+  site: L24
+  contrast: jlens_value - noop_same_value
+  delta: 0.14093137875783676
+  ci_lo: 0.11147724342223797
+  ci_hi: 0.17532021539164203
+  n_rows: 408
+  n_bases: 42
+  jlens_exceeds_control: true
+- split: test
+  position: answer
+  site: L24
+  contrast: jlens_value - jlens_answer
+  delta: -0.43991267659208355
+  ci_lo: -0.5339885258282175
+  ci_hi: -0.3438342843987206
+  n_rows: 408
+  n_bases: 42
+  jlens_exceeds_control: false
+- split: test
+  position: answer
+  site: L24
+  contrast: jlens_value - jlens_offvalue
+  delta: 0.1499310727505123
+  ci_lo: 0.11695772934084138
+  ci_hi: 0.18870026908752596
+  n_rows: 408
+  n_bases: 42
+  jlens_exceeds_control: true
+- split: test
+  position: answer
+  site: L24
+  contrast: jlens_value - whole_state
+  delta: -1.8190104084856369
+  ci_lo: -2.0787541443579034
+  ci_hi: -1.5537721817424641
+  n_rows: 408
+  n_bases: 42
+  jlens_exceeds_control: false
+cross_operation:
+  n_families: 5
+  min_family_delta: -0.0236234970036007
+  all_families_positive: false
+  all_families_ci_positive: false
+noop_control:
+  checked: true
+  max_abs_delta_ld: 0.0
+  mean_abs_delta_ld: 0.0
+  passed: true
+  tolerance: 0.001
+criteria:
+- criterion: behavioural_balanced_accuracy
+  passed: false
+  value: 0.7058823529411764
+  detail: 'test balanced accuracy 0.706 (all pairs 0.709); per variant {''source'':
+    0.721, ''target'': 0.691}; threshold 0.75'
+- criterion: readout_beats_random_control
+  passed: true
+  value: 0.25735294117647056
+  detail: 'layer 31 (chosen on calibration): accuracy advantage +0.257 [+0.218, +0.297]'
+- criterion: swap_moves_logits_toward_swapped_value
+  passed: true
+  value: 0.1409313787578367
+  detail: 'site L24 (chosen on calibration): paired logit shift +0.141 [+0.111, +0.175],
+    flip rate 0.034'
+- criterion: swap_is_specific_to_the_value_subspace
+  passed: false
+  value: null
+  detail: 'vs logit_value: -0.016 [-0.024, -0.009] (the Jacobian correction, not the
+    unembedding); vs jlens_offvalue: +0.150 [+0.117, +0.189] (these values, not the
+    digit subspace at large)'
+verdict: NO-GO
