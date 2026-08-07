@@ -168,13 +168,40 @@ def main(
             f"{row['delta_ld']:+.3f} [{row['ci_lo']:+.3f}, {row['ci_hi']:+.3f}], "
             f"flip rate {row['flip_rate']:.3f}", value=float(row["delta_ld"])))
 
-    # ── supporting evidence: controls, cross-operation, no-op ────────────────
+    # ── 4. the swap must be specific to the J-lens VALUE subspace ────────────
+    # Added 2026-08-07, after the 6.7b answer-position run returned a large
+    # positive shift that turned out not to be J-lens-specific at all: at that
+    # site `logit_value` matched it to three decimals, and the effect tracked
+    # how far apart the two answers were rather than which operation was run.
+    # Criteria 1-3 as pre-registered cannot see either problem, so a shift can
+    # satisfy them while being a generic perturbation of the digit subspace.
+    # The original three are unchanged; this is an addition, and it is recorded
+    # as one.
     swap_contrasts = control_contrasts(swap_summary, swap, split="test",
                                        position=position, site=site,
                                        n_boot=n_boot, seed=seed)
     if not swap_contrasts.empty:
         swap_contrasts.to_csv(swap_dir / "jspace_swap_contrasts.csv", index=False)
         report["swap_contrasts"] = swap_contrasts.to_dict(orient="records")
+
+    required = {"logit_value": "the Jacobian correction, not the unembedding",
+                "jlens_offvalue": "these values, not the digit subspace at large"}
+    verdicts, details = [], []
+    for control, what_it_shows in required.items():
+        row = swap_contrasts[swap_contrasts.contrast == f"jlens_value - {control}"]
+        if row.empty:
+            verdicts.append(False)
+            details.append(f"{control}: NOT MEASURED (re-run stage 73 with the "
+                           "current code)")
+            continue
+        lo = float(row["ci_lo"].iloc[0])
+        verdicts.append(lo > 0)
+        details.append(f"vs {control}: {float(row['delta'].iloc[0]):+.3f} "
+                       f"[{lo:+.3f}, {float(row['ci_hi'].iloc[0]):+.3f}] "
+                       f"({what_it_shows})")
+    criteria.append(_criterion(
+        "swap_is_specific_to_the_value_subspace",
+        bool(verdicts) and all(verdicts), "; ".join(details)))
 
     if by_operation is not None and site is not None:
         fam = by_operation[(by_operation.split == "test")

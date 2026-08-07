@@ -687,6 +687,24 @@ def _stage90(tmp_path):
     return mod
 
 
+def test_offvalue_control_uses_digits_the_program_never_mentions():
+    """The digit-geometry control: same separation, values not in the program."""
+    from src.experiments.jspace_swap import _offvalue_pair
+    from src.models.lens import lens_filename  # noqa: F401  (import sanity)
+
+    rng = np.random.default_rng(0)
+    lens = JLens(vectors=rng.normal(size=(10, 8)), token_ids=list(range(100, 110)),
+                 token_strings=[str(d) for d in range(10)], layer=0)
+    pair = types.SimpleNamespace(pair_id="base_0001_affine", v_source=2,
+                                 v_target=5, answer_source=4, answer_target=7)
+    digits = _offvalue_pair(lens, pair, seed=42)
+    assert digits is not None
+    assert not set(digits) & {2, 5, 4, 7}
+    # separation matched to the bound pair, so it controls for digit distance
+    assert abs(digits[1] - digits[0]) == abs(pair.v_target - pair.v_source)
+    assert _offvalue_pair(lens, pair, seed=42) == digits      # deterministic
+
+
 def test_probe_readout_decodes_the_VALUE_not_the_program_variant():
     """The control must not be winnable by reading the mutated token.
 

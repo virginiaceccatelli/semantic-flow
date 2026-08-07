@@ -40,7 +40,19 @@ reason.
 | `gram_random` | any 2-d subspace of the same shape — i.e. generic perturbation |
 | `noop_same_value` | numerical noise (this edit is provably the zero vector) |
 | `jlens_answer` | direct answer steering, not an intermediate value |
+| `jlens_offvalue` | perturbing the digit subspace at all, not *these* values |
 | `whole_state` | not a control but the reference ceiling: everything this position holds |
+
+`jlens_offvalue` was added on 2026-08-07, after the answer-position run, and it
+is the sharpest of them. `gram_random` uses arbitrary directions of the right
+shape, which leaves a loophole: digit tokens are not arbitrary directions — they
+carry magnitude structure — so an edit anywhere in the digit subspace shifts
+probability mass along the number line and moves widely separated answers more
+than adjacent ones, whatever the program computed. `jlens_offvalue` closes it
+by swapping the coordinates of two *real digit* directions the program never
+mentions, matched to the bound pair's separation. If it moves the output as
+much as the real value swap, the effect is generic digit perturbation and no
+value was routed.
 
 and one control on position rather than subspace: the same swap at `pre_def`,
 which precedes both definitions and cannot yet carry a binding.
@@ -67,6 +79,7 @@ correctness checks:
 from __future__ import annotations
 
 import logging
+import random
 import zlib
 from pathlib import Path
 from typing import Optional, Sequence
@@ -94,7 +107,8 @@ VARIANTS = ("source", "target")
 # Subspace variants. `whole_state` is handled separately (it replaces rather
 # than rotates), and every other entry is a 2-d coordinate exchange.
 SWAP_VARIANTS = ("jlens_value", "logit_value", "gram_random",
-                 "noop_same_value", "jlens_answer", "whole_state")
+                 "noop_same_value", "jlens_answer", "jlens_offvalue",
+                 "whole_state")
 
 
 def layer_bands(layers: Sequence[int], width: int = 3) -> list[tuple[int, ...]]:
@@ -107,6 +121,39 @@ def layer_bands(layers: Sequence[int], width: int = 3) -> list[tuple[int, ...]]:
 
 def band_label(band: Sequence[int]) -> str:
     return "L" + "+".join(str(int(l)) for l in band)
+
+
+def _digit_rows(lens: JLens) -> dict[int, int]:
+    """{digit value: row index} for the lens's numeric candidates."""
+    rows: dict[int, int] = {}
+    for i, spelling in enumerate(lens.token_strings):
+        try:
+            rows[int(spelling.strip())] = i
+        except ValueError:
+            continue
+    return rows
+
+
+def _offvalue_pair(lens: JLens, pair: BindingCounterfactual,
+                   seed: int) -> Optional[tuple[int, int]]:
+    """Two digits this program never mentions, separated like the bound pair.
+
+    Matching the separation is what makes it a control for digit *geometry*
+    rather than merely for "some other direction": the confound being tested is
+    that widely separated digits move more than adjacent ones.
+    """
+    available = _digit_rows(lens)
+    used = {pair.v_source, pair.v_target, pair.answer_source, pair.answer_target}
+    gap = abs(pair.v_target - pair.v_source) or 1
+    candidates = [(a, a + gap) for a in sorted(available)
+                  if a + gap in available and a not in used and a + gap not in used]
+    if not candidates:                      # fall back to any unused pair
+        digits = [d for d in sorted(available) if d not in used]
+        candidates = [(a, b) for i, a in enumerate(digits) for b in digits[i + 1:]]
+    if not candidates:
+        return None
+    rng = random.Random(seed + zlib.crc32(pair.pair_id.encode()))
+    return rng.choice(candidates)
 
 
 def _subspace(
@@ -131,6 +178,13 @@ def _subspace(
     if variant == "noop_same_value":
         v = jlens.vectors[jlens.index_of_token(pair.token_ids["v_source"])]
         return swap_matrix(v, v)
+    if variant == "jlens_offvalue":
+        digits = _offvalue_pair(jlens, pair, seed)
+        if digits is None:
+            return None
+        rows = _digit_rows(jlens)
+        return swap_matrix(jlens.vectors[rows[digits[0]]],
+                           jlens.vectors[rows[digits[1]]])
     if variant == "gram_random":
         real = swap_matrix(*rows(jlens, "v_source", "v_target"))
         # Gram-match the two REAL value directions, so the control has the same
@@ -234,6 +288,8 @@ def run_jspace_swap(
                                 clean[counter]["hidden"][site[0]][pos_index] - h))}
                         else:
                             V = _subspace(variant, site_lenses, pair, seed)
+                            if V is None:      # no off-value pair available
+                                continue
                             report = swap_report(h, V)
                             fn = make_swap_fn(V, device=device)
                             # The same subspace is reused across a band: the
