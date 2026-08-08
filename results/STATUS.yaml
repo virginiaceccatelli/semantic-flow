@@ -193,5 +193,37 @@ experiments:
       - stage 73: causal coordinate swap with six controls
       - stage 74: pre-registered go/no-go for the full run
     status_note: >
-      No claim is recorded here yet. The pilot's verdict lands in
-      results/jspace/{model}/go_no_go.yaml.
+      Run on 6.7b (1.3b failed the behavioural gate at 0.53 and is a capability
+      result only). Two findings and one retraction, all in
+      results/jspace/6.7b-5fam/ and reflected in paper/main.tex §5.
+    findings:
+      - >
+        At the READOUT position (L24) the value-coordinate swap reaches 46% of
+        the efficiency of an ideal same-norm push along the counterfactual
+        direction, while two matched-norm controls reach zero (unrelated digits
+        at matched separation -0.17; Gram-matched random 0.00). Positive in both
+        operation families the model computes reliably (affine +0.554, modulus
+        +0.171). The value is causally reused near the output.
+      - >
+        NOT attributable to the Jacobian correction. The plain logit lens is
+        more efficient at the same site (2.35 vs 1.82), and at the last layer
+        the two are equal by construction. E11's framing survives as a claim
+        about output-aligned value directions, not about the J-lens.
+    retracted:
+      - >
+        The use-position null. The dose-matched control (added 2026-08-07)
+        shows the site's response to small edits is strongly convex: efficiency
+        rises 18x from the smallest dose to the largest, and a push along the
+        KNOWN-CORRECT direction at 2% of the norm yields 0.002 nats with an
+        interval covering zero — the same as the value swap at 3.7%. No
+        two-dimensional edit is large enough to test the question there, so
+        "the value coordinates are causally inert at the marked use" is not
+        supported. Without that control it would have been reported as a clean
+        null with four passing subspace controls and a potent site.
+    outstanding:
+      - >
+        The `probe_basis` control did not run: stage 72 was not re-run before
+        stage 73, so no frozen probes were on disk and the variant was skipped.
+        It is the readout-matched arm — the same swap in the basis of a probe
+        that decodes the value from the same state (reversal 0.402 vs 0.025
+        floor at the marked use).

@@ -111,9 +111,40 @@ pushes the model's own output head toward token `w`. No claim about
 reportability, verbalizability, or a workspace is made or needed — see
 `docs/LEGACY_RESULTS.md` for why that framing was dropped.
 
-**Status: designed, tested on CPU, not yet run on a model.** There are no E11
-numbers in this repository. What follows is the design and the pre-registered
-criteria, so that the pilot's outcome is interpretable either way.
+**Status: run on 6.7b.** 1.3b failed the behavioural gate (balanced accuracy
+0.53) and is a capability result only. Results are in
+`results/jspace/6.7b-5fam/`; the design and pre-registered criteria follow, and
+the outcome is at the end of this section.
+
+### Outcome, in three parts
+
+**Causally reused at the readout position.** At L24 the value-coordinate swap
+reaches 46% of the efficiency of an ideal same-norm push along the
+counterfactual direction, while two matched-norm controls reach zero — unrelated
+digits at matched numeric separation give −0.17, a Gram-matched random subspace
+gives 0.00. It is positive in both operation families the model computes
+reliably (affine +0.554, modulus +0.171), so one edit produces each operation's
+own different answer.
+
+**Not attributable to the Jacobian correction.** The plain logit lens is more
+efficient at the same site (2.35 vs 1.82), and at the last layer the two are
+equal by construction. What survives is a claim about output-aligned value
+directions in general, not about the J-lens. The instrument was validated
+(E10-0) and did not earn its keep here.
+
+**The use-position null is retracted.** A dose-matched control shows the site's
+response to small edits is strongly convex: efficiency rises 18× from the
+smallest dose to the largest, and a push along the *known-correct* direction at
+2% of the norm yields 0.002 nats with an interval covering zero — the same as
+the value swap at 3.7%. No two-dimensional edit is large enough to test the
+question there. Without that control this would have been reported as a clean
+null, with a passing readout positive control, four subspace controls at the
+same magnitude, and a site potent enough to flip 22% of answers when replaced
+wholesale. It is the most instructive failure in the project.
+
+**Outstanding:** the `probe_basis` control did not run — stage 72 was not
+re-run before stage 73, so no frozen probes were on disk and the variant was
+skipped. It is the readout-matched arm.
 
 ## The data (stage 70)
 

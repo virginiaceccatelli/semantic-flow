@@ -15,10 +15,11 @@
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{subcaption}
+\usepackage{multirow}
 
 \graphicspath{{../results/figures/}}
 
-\title{Code Models Compute Program Semantics They Cannot Report}
+\title{Where Code Models Build Program Semantics, and What Breaks It}
 
 \workshoptitle{Interpretability as a Science}
 
@@ -37,19 +38,43 @@
 \maketitle
 
 \begin{abstract}
-Code language models can appear competent by exploiting identifier spelling, proximity, and indentation, all of which correlate with program semantics. We ask whether they instead construct program relations, use them, and make them available to their own output computation. Synthetic Python gives us construction-known semantic graphs, exact AST-to-token alignment, and counterfactual pairs whose surface floor is fixed rather than estimated. In DeepSeek-Coder 1.3B and 6.7B, binding accuracy on token-matched pairs rises from exactly 0.500 at both the surface and embedding baselines to approximately 0.984 in middle layers. Activation patching then traces causal recovery from the sink-argument token ($\approx 0.99$ at layer 0) to the final position (1.00 at layer 31); the sanitizer-definition position recovers 0.000 at every layer. Yet this state is dissociated from report and error anticipation. A Jacobian lens validated by exact last-layer identity and next-token recovery reads the guard variable at 0.813, but control dependence remains at chance where a trained probe reaches AUC 0.999. A taint probe is approximately 99\% accurate and remains correct on the prefixes where the model answers incorrectly; no anticipatory degradation survives a no-model floor. Code models therefore build and use program-semantic state without reliably reporting it or using its degradation to anticipate their own failures.
+Code language models can appear to understand programs while only exploiting identifier spelling, proximity, and indentation, all of which correlate with program meaning. Distinguishing the two requires a baseline that is \emph{fixed by construction} rather than estimated. We build one: pairs of Python programs that are identical except for a single character, chosen so that the character changes which definition a variable use refers to while leaving every surface cue around both probing sites untouched. Any feature of the text is therefore uninformative by construction, and a model-free baseline scores exactly 0.500 rather than approximately so. Against that floor, in DeepSeek-Coder 1.3B and 6.7B, variable binding is absent at the input, is constructed within the first few transformer blocks, plateaus near 0.984 in the middle of the network, and is partly shed before the output; def--use structure follows the same profile. Stressing the representation separates what it is made of from what it merely correlates with: renaming every identifier drives the earliest layers below chance while middle layers hold at 0.85--0.90, and a thousand tokens of inert filler costs almost nothing (0.921) where scope-shadowing filler of the same length reduces the same probe to chance. What breaks the representation is added semantic difficulty, not added distance or altered spelling. Finally we ask whether the model's own computation reads the value it has resolved, by exchanging two output-aligned coordinates at a position where the two programs are token-identical. Against a dose-matched control that pushes along the true counterfactual direction, the answer depends sharply on where one intervenes: at the readout position the exchange reaches 46\% of an ideal same-norm edit while two matched-norm controls reach zero, and it moves each downstream operation toward its own different answer; at the site where the binding is resolved, the state's response to small edits is so nonlinear that even an ideal edit of that size does nothing, so the question is underpowered rather than answered. The causal channel we find is output-aligned value directions in general, not the Jacobian-corrected lens, which the plain unembedding matches or beats throughout.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:introduction}
 
-Code language models predict convincing programs, but this does not establish that they compute the relations that determine program meaning. Equal names often denote the same variable, definitions and uses are usually nearby, and indentation exposes control structure. Binding, data flow, and control dependence can therefore be predicted from surface regularities even when the corresponding program relation is not represented.
+Code language models predict convincing programs, but this does not establish that they compute the relations that determine program meaning. Equal names usually denote the same variable, definitions and uses are usually nearby, and indentation usually exposes control structure. A probe that recovers binding, data flow, or control dependence from a model's hidden states may therefore be recovering the model's computation --- or it may be recovering the text, which the hidden states also contain.
 
-Code offers an unusually clean way to separate these possibilities. Static analysis provides decidable ground truth, and controlled programs allow counterfactual pairs whose semantic label changes while the relevant surface context is held fixed. This pins a baseline to exactly chance rather than estimating how much a shortcut might explain. We use that leverage to study four properties of semantic state in the same models: whether it is \emph{built} with depth, \emph{used} by the output computation, available for \emph{report}, and \emph{anticipatory} of behavioral failure.
+The usual response is to estimate how much a shortcut could explain and subtract it. We take a different route, available in code and rarely available elsewhere: make the shortcut carry \emph{no information at all}, by construction. Consider two programs that differ in one character:
 
-Prior work shows that code-model representations preserve AST structure and expose identifiers, namespaces, data flow, control flow, and data dependence \cite{wan2022capture,hernandez2022astprobe,troshin2022probing,ma2024unveiling}. Controlled language models trained on programs can also acquire latent execution state \cite{jin2024emergent}. These results establish recoverability, but recoverability alone does not distinguish model computation from surface cues or probe learning \cite{hewitt2019control}. Nor does it establish causal use or output accessibility. We connect probing to activation patching \cite{zhang2023patching}, long-context ``know but do not tell'' failures \cite{lu2024longcontext}, and the Jacobian lens for verbalizable representations \cite{gurnee2026workspace}.
+\begin{center}
+\begin{minipage}{0.30\linewidth}
+\begin{verbatim}
+x = 3
+def f():
+    y = 7
+    return x
+\end{verbatim}
+\end{minipage}
+\hspace{0.06\linewidth}
+\begin{minipage}{0.30\linewidth}
+\begin{verbatim}
+x = 3
+def f():
+    x = 7
+    return x
+\end{verbatim}
+\end{minipage}
+\end{center}
 
-Our results give a consistent but non-unitary picture. First, variable binding and def--use structure are absent from controlled input representations and constructed within the first transformer blocks. Second, taint-relevant information causally moves from the sink argument toward the final readout position. Third, control dependence is almost perfectly probe-decodable but absent from a validated output-aligned readout. Fourth, the taint state remains correctly decodable where the model's answer is wrong, rather than degrading beforehand. Program-semantic state is thus built and used, but dissociated from both report and self-prediction.
+The marked use is the same token at the same index in both. On the left it refers to the outer definition; on the right the inner line has captured the name, so it refers to that instead. Both values occur in both programs, the token windows around both probing sites are identical, and the distance between them is unchanged. The correct answer flips; nothing observable about the text does. A model-free baseline therefore scores exactly $0.500$ --- not approximately, but as a property of the construction --- and so does a probe on the context-free embedding layer. Everything above that floor is something the model computed.
+
+We use this leverage for three questions, in increasing strength. Is the relation \emph{built}, and where? What is it \emph{made of} --- which perturbations destroy it and which leave it intact? And is it \emph{used}: does the model's own downstream computation read the relation it has computed, or merely coexist with it?
+
+Prior work shows that code-model representations preserve AST structure and expose identifiers, namespaces, data flow, control flow, and data dependence \cite{wan2022capture,hernandez2022astprobe,troshin2022probing,ma2024unveiling}, and that models trained on programs can acquire latent execution state \cite{jin2024emergent}. These results establish recoverability. Recoverability alone does not separate model computation from surface cues or from what the probe itself learned \cite{hewitt2019control}, and it does not establish causal use. We connect probing to activation patching \cite{zhang2023patching} and to output-aligned readouts of internal state \cite{gurnee2026workspace}.
+
+Our contribution is fourfold. First, binding and def--use structure are absent from the input representation and constructed within the first transformer blocks, replicated across two model scales at the same relative depth. Second, the representation has a characterizable failure surface: it is robust to distance and to identifier renaming in the middle layers, and it collapses under scope shadowing and under control-flow flattening --- it breaks when the underlying problem gets harder, not when the text gets longer or is spelled differently. Third, a two-coordinate exchange at a token-identical position shows the resolved value is causally reused near the output, specifically and in an operation-appropriate way, but attributes it to output-aligned value directions rather than to the Jacobian-corrected readout we built to find it. Fourth, and methodologically: the same intervention at the site where binding is resolved returns a clean-looking null that a dose-matched control shows to be underpowered, which is a general hazard for low-rank interventions and one we would have published without that control.
 
 \section{Setup and Controls}
 \label{sec:setup}
@@ -68,20 +93,27 @@ The experiments are organized around controls that make each claim falsifiable (
     Claim & Falsifying construction \\
     \midrule
     Relation computed, not read from surface & Token-matched pairs with a label flip; surface floor exactly 0.500 \\
-    Readout not using depth alone & No-model position readout with the same decision rule \\
-    Null reflects the model, not a dead readout & Same-anchor positive control and norm-matched random direction \\
-    Lens implemented correctly & Closed-form final-layer identity: J-lens must equal logit lens \\
+    Probe reads the state, not its own labels & Retrain on labels shuffled within each source program; report the difference \\
+    Robustness result is not probe re-fitting & Probes frozen before any variant is generated; ground truth rebuilt per variant \\
+    Degradation is semantic, not positional & Filler types matched on token count, varied only in whether they interfere with scope \\
+    A null reflects the model, not a dead instrument & A positive control of the same kind, at the same site, on the same states \\
+    Intervention changed the relation, not the input & Intervene only at positions where the two programs are token-identical \\
     \bottomrule
   \end{tabular}
 \end{table}
 
+The last two rows are the ones this paper had to learn. An earlier version of this work reported two null results that we have since withdrawn, because their positive controls were of the wrong kind to license the reading we gave them, and one causal result whose intervention site was the one place the two programs differed. Appendix~\ref{app:retired} documents all three, since a controls-focused venue should see the failures as well as the survivors.
+
 Full generation, alignment, probe, and intervention details are provided in the supplementary material. The main text retains the controls required to interpret each claim.
 
-\section{The Representation Is Built and Causally Used}
-\label{sec:built-used}
+\section{The Representation Is Built With Depth}
+\label{sec:built}
 
-\paragraph{Built with depth.}
-Figure~\ref{fig:binding} gives the strongest evidence that the model computes rather than retrieves a program relation. On context-matched binding pairs, the surface baseline and embedding layer are exactly 0.500 by construction. The first transformer block reaches approximately 0.53--0.57, layer 3 reaches 0.91--0.96, and both models peak near 0.984 in the middle layers. Accuracy remains about 0.92 at the final layer. The curve has three clear phases: no relation at the input, rapid construction in the first blocks, and partial shedding near the output. Def--use edges show the same profile, reaching approximately 0.99 with only mild decay when definition and use are separated by 50--200 tokens.
+Figure~\ref{fig:binding} is the paper's central measurement. On context-matched binding pairs, the model-free surface baseline and the context-free embedding layer both sit at exactly 0.500. The first transformer block reaches 0.53--0.57, layer 3 reaches 0.91--0.96, both models peak near 0.984 in the middle layers, and accuracy falls back to about 0.92 at the final layer.
+
+Read as a curve, this has three phases, and each says something different. \emph{Nothing at the input}: the relation is not in the tokens, so it cannot be looked up --- it has to be computed. \emph{Rapid construction}: most of the work happens in the first few blocks, which is early for a relation that requires resolving a scope. \emph{Partial shedding near the output}: the final third of the network gives some of it back, which is what one expects if an abstract fact is used and then displaced by the concrete business of predicting the next token. Def--use edges follow the same profile, reaching approximately 0.99, with only mild decay when the definition and the use are 50--200 tokens apart.
+
+Two features of this curve are worth separating from the headline number. The two model scales agree on shape and differ only where a scaling account predicts: the larger model does slightly less of the work in block 0 and holds its peak over a longer stretch --- the same relative depth, stretched. And the surface and embedding rows are numerically identical across the two models, which they must be, since neither involves the model; that identity doubles as a check that both runs share the same ground truth.
 
 \begin{figure}[t]
   \centering
@@ -100,10 +132,26 @@ Figure~\ref{fig:binding} gives the strongest evidence that the model computes ra
   \label{fig:binding}
 \end{figure}
 
-The stress tests characterize what is built. At 500 inserted tokens, 6.7B binding accuracy is 0.921 under inert comment filler but 0.570 under scope shadowing; at 1,000 tokens, scope shadowing reduces it to chance. Identifier renaming drives the earliest layers below chance while middle layers retain approximately 0.85--0.90. Control-flow flattening is the harder boundary, reducing the best layer to about 0.75. The representation therefore survives distance and surface renaming better than changes that complicate the underlying scope or control structure.
+\section{What the Representation Is Made Of}
+\label{sec:robustness}
 
-\paragraph{Causally used.}
-We next patch hidden states from a clean program, which passes a sanitized value to a sink, into a token-aligned corrupted program that passes the raw value. In 6.7B, recovery at the sink-argument token is approximately 0.99 at layer 0 and declines across depth. Recovery at the final position follows the reverse path and reaches 1.00 at layer 31 (Figure~\ref{fig:patching}). The smaller model replicates the same routing at compressed depth. The relation is locally consequential early and is moved into place for the output late.
+Knowing the relation is computed does not say what it is computed \emph{from}. We answer that by breaking it in controlled ways. Probes are fitted once, on the base programs, and then frozen: they are never refitted on a perturbed variant, so any change in accuracy is a change in the model's state rather than in the probe. Ground truth is recomputed from each variant's own source, so a perturbation that genuinely changes the answer is scored against the new answer.
+
+\paragraph{Distance is cheap; interference is not.}
+We insert filler between the tracked definition and use, sized by real tokenizer counts, and vary only what the filler \emph{does}. At 500 inserted tokens, 6.7B binding accuracy is 0.921 under inert prose but 0.570 under filler that reuses the tracked names; at 1{,}000 tokens the latter reaches chance while every other filler type stays above 0.70. A thousand tokens of comments is nearly free. The same length of code that forces a genuine scope resolution destroys the representation. Per layer, the pattern sharpens: under scope shadowing, block 0 is the most stable part of the network and the middle layers --- the ones doing the binding work --- are the ones that collapse. The interference lands on the computation, not on the lookup.
+
+\paragraph{Spelling is cheap in the middle, decisive at the edges.}
+We then apply a cumulative ladder of semantics-preserving transformations, each variant execution-verified to behave identically to its base. Renaming every local identifier is the first cliff, and averaging over layers hides what it means: at the embedding and block-0 layers renaming pushes the probe \emph{below} chance (0.29--0.33), because those layers keyed on the identifier strings and renaming actively misleads them, while layers 7--15 hold at 0.85--0.90. That contrast is the paper's cleanest statement of the lexical/structural split: early layers carry names, middle layers carry something closer to the relation. Opaque predicates and rewritten arithmetic barely register, because they do not change which definition reaches which use. Control-flow flattening is the real boundary: once the control structure is dissolved into a dispatch loop, even the best layer reaches only about 0.75.
+
+Taken together, the two ladders describe one failure surface. The representation is robust to how far apart things are and to what they are called, and it fails when the scope or control structure it is a representation \emph{of} becomes harder. That is what one wants from a computed relation rather than a positional heuristic --- and it is also a first, coarse map of when a tool built on these representations should not be trusted.
+
+\section{Is the Relation Used? Where, and How Much}
+\label{sec:causal}
+
+Everything above is correlational. A representation can be a faithful shadow of a computation that happens elsewhere, and probing cannot tell the difference. The question that matters for using these representations downstream is whether the model's own computation reads what it has built.
+
+\paragraph{What we can show.}
+We patch hidden states from a clean program, which passes a sanitized value to a sink, into a token-aligned corrupted program that passes the raw value. In 6.7B, recovery at the sink-argument token is approximately 0.99 at layer 0 and declines with depth, while recovery at the final position rises to 1.00 at layer 31 (Figure~\ref{fig:patching}). The smaller model shows the same crossover at compressed depth. This is a reproducible description of \emph{where the decision becomes committed}: early, the answer is determined at the argument; late, it is determined at the readout position, and the crossover sits near where the binding curve plateaus.
 
 \begin{figure}[t]
   \centering
@@ -112,59 +160,63 @@ We next patch hidden states from a clean program, which passes a sanitized value
   \label{fig:patching}
 \end{figure}
 
-The sanitizer-definition position recovers 0.000 at every measured layer in both models. This does not show that sanitization is absent everywhere; it shows that this site does not mediate the answer under the intervention. Section~\ref{sec:correct-wrong} returns to this result from an independent direction.
+\paragraph{Why this is not yet evidence of use.}
+The sink-argument token is the one place where the two programs differ --- that is how the pair is built. Patching it transports the surface difference along with whatever semantic state the position holds, and this design cannot separate them; near-perfect recovery at layer 0 is exactly what pure input restoration would produce. The sanitizer-definition position recovers 0.000 at every layer, but with no positive control at that site the zero is an absence of evidence at one hand-picked token. And recovery at the final position in late layers forces the answer trivially.
 
-One relation requires a narrower claim. Control dependence reaches probe AUC 0.999, but its no-model surface baseline is already 0.927. Unlike binding's exact 0.500 floor, much of control dependence is locally reconstructable from syntax. Hidden states improve the relation, especially on same-depth sibling guards, but the result is best treated as a syntactic--semantic boundary and as the foil for the output-accessibility experiment below.
+\paragraph{A targeted intervention.}
+We therefore built an intervention with the three properties this one lacks. It acts at a position where the two programs are \emph{token-identical}: on counterfactual pairs of the form in Section~\ref{sec:introduction}, at the marked use. It edits a nameable two-dimensional part of the state rather than replacing it: with $V=[v_{\text{src}}, v_{\text{tgt}}]$ the output-aligned directions of the two candidate values and $c = V^{+}h$ their coordinates, we set $h \mapsto h + V(\mathrm{swap}(c) - c)$, which exchanges the two coordinates and leaves the orthogonal complement untouched. And it is checked against several downstream operations over the same value, so that one edit must produce a \emph{different} correct answer in each --- something an intervention that merely pushes on the answer token cannot do.
 
-\section{Dissociation I: Built but Not Reported}
-\label{sec:not-reported}
+The control that matters most is a dose-matched one, and it changed our conclusion. A two-dimensional edit moves only a few percent of the state's norm, so ``the edit did nothing'' is ambiguous between \emph{these coordinates are not read} and \emph{no edit this small moves this site}. We therefore also push along the empirical counterfactual direction $h_{\text{other}} - h_{\text{self}}$ at a sweep of doses $\alpha$; at $\alpha = 1$ this reproduces the whole-state patch exactly (verified to machine precision), so the sweep measures the site's own norm-to-effect curve instead of assuming it is linear.
 
-A trained probe can recover any linear direction correlated with its labels, including one the model never makes available to its output computation. We therefore use the Jacobian lens to test a stronger property. For a candidate output token $w$ at layer $\ell$, its direction is
-\begin{equation}
-  v_w = J_\ell^{\top}\bigl(g W_U[w]\bigr),
-  \qquad
-  J_\ell = \mathbb{E}\!\left[\frac{\partial h_{\mathrm{final}}}{\partial h_\ell}\right],
-\end{equation}
-where $W_U$ is the unembedding and $g$ is the final normalization factor. The Jacobian is applied through vector--Jacobian products and is never explicitly materialized. Scores are used only for rankings within a position.
-
-Two checks establish that a null is interpretable. At the final layer, $J$ is the identity, so the Jacobian and logit lenses must agree; their measured cosine similarity is 1.0000 in both models. On held-out next-token prediction, the lens reaches top-1 accuracy 0.650 at 6.7B layer 27, compared with at most 0.050 for random directions. Before the final layer it exceeds the logit lens by as much as 0.183. The method therefore recovers code-token content that direct unembedding misses.
-
-At control-dependence guard anchors, the lens ranks two single-token identifiers, with chance exactly 0.500. A same-anchor positive control asks it to identify the variable tested by the guard. This score rises with depth to 0.813 ($z\approx 7.7$), showing that the readout is active and identifier-sensitive at the tested positions. The control-dependence target remains at chance at every layer, including those where the trained probe reaches AUC 0.999 (Figure~\ref{fig:jlens}). The relation is linearly recoverable, but the model is not disposed to name the dependent target.
-
-\begin{figure}[t]
+\begin{table}[t]
   \centering
-  \includegraphics[width=0.72\linewidth]{jlens_controldep_dissociation_deepseek-coder-6.7b.pdf}
-  \caption{Probe--report dissociation in DeepSeek-Coder 6.7B. The same-anchor guard-variable control rises to 0.813, while the control-dependence target remains at chance where a trained probe reaches AUC 0.999.}
-  \label{fig:jlens}
-\end{figure}
+  \small
+  \caption{Dose-matched intervention at two positions in DeepSeek-Coder 6.7B, test split, $n=204$ pairs. $\|\Delta h\|/\|h\|$ is the fraction of the state moved; efficiency is the logit shift per unit of that fraction. Brackets are cluster-bootstrap intervals over base programs.}
+  \label{tab:doseresponse}
+  \begin{tabular}{llrrr}
+    \toprule
+    Position & Edit & $\|\Delta h\|/\|h\|$ & $\Delta$ logit-diff & Efficiency \\
+    \midrule
+    \multirow{4}{*}{Marked use, L8}
+      & Counterfactual push, $\alpha{=}0.03$ & 0.021 & \phantom{0}0.002 [$-$0.000, 0.004] & 0.08 \\
+      & Counterfactual push, $\alpha{=}0.3$  & 0.214 & \phantom{0}0.069 [0.047, 0.094] & 0.32 \\
+      & Counterfactual push, $\alpha{=}1$ (= whole state) & 0.713 & \phantom{0}1.066 [0.873, 1.306] & 1.50 \\
+      & Value-coordinate swap & 0.037 & \phantom{0}0.002 [$-$0.000, 0.005] & 0.06 \\
+    \midrule
+    \multirow{5}{*}{Readout position, L24}
+      & Counterfactual push, $\alpha{=}0.03$ & 0.012 & \phantom{0}0.046 [0.041, 0.052] & 3.80 \\
+      & Counterfactual push, $\alpha{=}1$ (= whole state) & 0.407 & \phantom{0}1.960 [1.718, 2.237] & 4.81 \\
+      & Value-coordinate swap & 0.077 & \phantom{0}0.141 [0.112, 0.170] & 1.82 \\
+      & \quad control: unrelated digits, matched separation & 0.052 & $-$0.009 [$-$0.020, 0.001] & $-$0.17 \\
+      & \quad control: Gram-matched random subspace & 0.024 & $-$0.000 [$-$0.002, 0.001] & 0.00 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
-The initial pooled analysis fell below chance late in the model because every positive target occurs after its guard, whereas half of the negative targets had already appeared and were visible under causal attention. Restricting negatives to positions after the guard removes this recency artifact. On 415 matched comparisons per layer, 0.500 lies inside every program-clustered 95\% interval after correction over layers. Finding and removing this confound strengthens rather than weakens the null: the late reversal disappears, while the absence of a positive control-dependence signal remains.
+\paragraph{At the site where binding is resolved, the question is underpowered, not answered.}
+Table~\ref{tab:doseresponse} shows why. At the marked use the site is causally potent --- replacing the whole state moves the answer 1.066 nats and flips 22\% of them --- but its dose-response is strongly convex: efficiency rises eighteenfold from the smallest dose to the largest, and a push along the \emph{known-correct} direction at 2\% of the norm produces 0.002 nats with an interval covering zero. The value-coordinate swap, at 3.7\% of the norm, produces the same 0.002. It is therefore not possible to conclude from this that the value coordinates are causally inert; no two-dimensional edit is large enough to test the question here. We withdraw the null we would otherwise have reported. Consistent with that, the unrelated-digit control at the same site is \emph{larger} than the real value swap (0.007 [0.005, 0.010]), so there is no value specificity at this position in either direction.
 
-The conclusion is deliberately token-level. The guard-variable control establishes that the readout works at these anchors, but it is an identity control rather than a relational one. We therefore show that control dependence is not aligned with a disposition to \emph{name} its target under this readout, not that the relation is inaccessible to every possible output format.
+\paragraph{At the readout position the value is causally reused, and it is not the Jacobian correction that finds it.}
+Here the dose-response is essentially linear --- efficiency stays between 3.8 and 4.8 across a thirty-threefold range of doses --- so a norm correction is meaningful, and the comparison is clean. The value swap reaches 46\% of the efficiency of an ideal same-norm push, while the two matched-norm controls reach zero: swapping two unrelated digits chosen to have the same numeric separation does nothing, and a Gram-matched random subspace does nothing. Swapping \emph{these} values moves the answer toward what the other value implies. On the two operation families this model computes reliably (Appendix~\ref{app:results}) the shift is positive in both, $+0.554$ for affine and $+0.171$ for modulus, so one edit produces each operation's own different answer rather than a single pushed token; the remaining three families are excluded because the model fails their arithmetic rather than their binding, which makes their nulls uninterpretable. What the effect is \emph{not} is a property of the Jacobian correction: the plain logit lens is more efficient at the same site (2.35 against 1.82). The causal channel is output-aligned value directions in general, not the corrected lens.
 
-\section{Dissociation II: Correct State, Wrong Answer}
-\label{sec:correct-wrong}
+\paragraph{Outstanding.}
+One planned control has not run: the identical swap in the basis of a supervised probe that demonstrably decodes the value from the same state (paired reversal 0.402 against a 0.025 floor at the marked use). At the readout position it would test whether a better-aimed two-dimensional edit recovers more of the ideal; at the marked use, given the convex dose-response, we expect it to be equally underpowered and we would report it as such.
 
-If semantic state is built and used, it might seem natural for its degradation to precede a wrong answer. We test this by growing taint programs one line at a time. At every prefix, a frozen probe reads the live value's taint state and the model answers the same question through forced-choice probabilities.
-
-The behavioral signal must first be valid. With few-shot examples and the current variable named explicitly, 6.7B reaches balanced accuracy approximately 0.84. The 1.3B model remains at 0.471, so its lead time is undefined rather than zero. For 6.7B, we compare observed early errors with an analytic null based on each readout's error rate and with a no-model position readout.
-
-The taint probe is approximately 99\% accurate per prefix. At most layers, it is never wrong on any of the 19 examples where the model answers incorrectly: the latent state remains correct at the exact prefixes where behavior fails. No anticipatory degradation survives the floor. Mean probe excess over the analytic expectation is $-0.010$, while the position-only baseline scores $+0.113$. The result is therefore a representation--behavior dissociation, not an early-warning effect.
-
-This converges with the causal result in Section~\ref{sec:built-used}. Patching the sanitizer definition recovers 0.000 at every layer, while the probe correctly reads the sanitized state when the model answers as though it had not. Two independent measurements support the same interpretation: the model represents sanitization but does not route that representation into the requested answer.
-
-An earlier analysis appeared to show advance warning, but the effect came from the metric and the behavioral signal rather than the probe. Under a bare prompt both models were constant responders, and their opposite response biases manufactured an apparent scale difference. More generally, early-warning rate increases with readout error rate ($r\approx-0.96$ within readout families when reliability is measured as the fraction never wrong), so uninformative directions can score highest. This correction is methodologically important, but the substantive result is simpler: the semantic state is accurate when the answer is wrong.
+\paragraph{One relation needs a narrower claim throughout.}
+Control dependence reaches probe AUC 0.999, but its model-free surface baseline is already 0.927 --- a statement's guard is usually its nearest enclosing \texttt{if}, so token windows and distance recover most of it. Unlike binding, it has no construction that pins its floor to chance. We report it as the syntactic end of a spectrum whose semantic end is binding, and we draw no representational conclusion from it.
 
 \section{Discussion}
 \label{sec:discussion}
 
-The four measurements describe different properties of one semantic representation. Binding and def--use are built from an exact input-level floor. Taint-relevant information is causally routed across depth. Control dependence is probe-decodable but not aligned with a validated verbalizability readout. Taint state remains correct at behavioral failure rather than anticipating it. Computation, causal use, report, and self-monitoring therefore come apart.
+Binding and def--use structure are computed rather than read off the text, and the evidence is a floor fixed by construction rather than an estimate of how much a shortcut might explain. The representation has a shape: robust to distance and to spelling in the middle layers, fragile exactly where the underlying scope or control structure becomes harder. And the resolved value is causally reused, but late --- at the readout position, in output-aligned value directions, in a way that survives two matched-norm controls and moves each operation toward its own answer. Where the binding is actually resolved, we cannot say, because no edit small enough to be interpretable is large enough to register.
 
-This separation matters for interpretability. ``Decodable'' is often treated as the endpoint, but it is only one claim. Evidence for construction requires a surface floor; evidence for use requires an intervention; an informative null requires a positive control at the same readout site; and failure prediction requires comparison with a no-model rule and an error-rate-aware null. These controls are not the subject of the paper, but they determine which statements about the model are justified.
+That last sentence is the methodological point, and we would have missed it. A two-dimensional intervention moves a few percent of a state's norm. Whether that is enough depends entirely on the site's response curve, which is not something to assume: at the readout position it is near-linear, and at the marked use it is convex enough that an edit along the \emph{true} counterfactual direction at the same magnitude also does nothing. Without the dose-matched control we would have reported a clean, well-controlled null --- positive readout control passing, four subspace controls at the same magnitude, a potent site --- and it would have been an artefact of rank. Low-rank interventions are increasingly common; we suggest a dose-response sweep along a known-effective direction should accompany them as a matter of course.
 
-The main limitation is also the reason the synthetic testbed is useful. Real-code probes transfer at approximately 0.90 accuracy and 0.98 AUC, but natural identifiers make the embedding layer highly predictive and prevent an exact semantic floor. Our strongest identification result therefore comes from controlled programs. The study is further limited to Python and two sizes of one model family, and the Jacobian-lens null concerns one token-level operationalization of reportability.
+The same discipline retires three earlier claims (Appendix~\ref{app:retired}). ``Decodable'' is routinely treated as an endpoint; it is one claim among several, and the others need different evidence. Construction needs a floor pinned by design. Use needs an intervention at a site where the inputs agree, at a magnitude the site can register. An informative null needs a positive control \emph{of the same kind} at the same site --- and, as we learned here, at the same scale.
 
-The clearest concrete picture is the sanitizer. Its state is accurately decoded, its definition is causally inert for the answer, and the model can still respond incorrectly. Code models compute semantic state, but computation alone does not guarantee that the right state reaches the answer.
+The limitation that most constrains the work is also what makes the testbed useful. Probes transfer to real Python at approximately 0.90 accuracy and 0.98 AUC, but natural identifiers are genuinely informative, so the embedding layer starts high and no stratum pins the floor to chance. The isolation result therefore rests on controlled programs. Building the same one-character mutation in real functions is the obvious next step and does not require the surrounding program to be statically resolvable --- which also points at where these representations would earn their keep: not on programs a parser already handles exactly, but on the dynamic constructs where it cannot.
+
+The honest summary is narrower than the one we set out to write, and different in kind. Code models build a representation of program structure that no surface feature explains, within the first few blocks, and hold it through the middle of the network. They read a resolved value out of output-aligned coordinates near the point of use of that value --- not at the point where it was resolved, and not through the corrected readout we built for the purpose. Where the resolution itself happens, the causal question remains open for a reason we can now state precisely rather than gesture at.
 
 \clearpage
 \appendix
@@ -172,7 +224,7 @@ The clearest concrete picture is the sanitizer. Its state is accurately decoded,
 \section{Additional Results}
 \label{app:results}
 
-This appendix reports results that bear directly on the central thesis but are not required to follow the five-page argument. All values are taken from the CSV files in \texttt{results/tables}; the corresponding generated figures are in \texttt{results/figures}. We distinguish aggregate results, which combine all held-out examples, from hard-stratum results, which isolate a specific shortcut. Accuracy is the fraction classified correctly. AUC is threshold-independent binary ranking performance. Selectivity is target-label accuracy minus accuracy after labels are shuffled within each source program. Recovery is the fraction of the clean--corrupted answer-logit gap restored by activation patching.
+This appendix reports results that support the main argument but are not required to follow it, followed by the analyses we have withdrawn. All values are taken from the CSV files in \texttt{results/tables}; the corresponding generated figures are in \texttt{results/figures}. We distinguish aggregate results, which combine all held-out examples, from hard-stratum results, which isolate a specific shortcut. Accuracy is the fraction classified correctly. AUC is threshold-independent binary ranking performance. Selectivity is target-label accuracy minus accuracy after labels are shuffled within each source program. Recovery is the fraction of the clean--corrupted answer-logit gap restored by activation patching.
 
 \subsection{Static probes and natural-code transfer}
 
@@ -315,7 +367,7 @@ Table~\ref{tab:patching-replication} reports the smaller-model replication omitt
   \end{tabular}
 \end{table}
 
-\subsection{Jacobian-lens validation and temporal control}
+\subsection{Jacobian-lens implementation validation}
 
 Table~\ref{tab:jlens-validation} shows selected next-token validation layers. Top-1 is the fraction of examples on which the correct held-out identifier is ranked first; MRR is the mean reciprocal rank of that identifier. The Jacobian lens substantially exceeds random directions and improves on the plain logit lens at several pre-final layers. Equality of Jacobian and logit results at layer 31 is required by the closed-form identity check, not an empirical coincidence.
 
@@ -338,6 +390,24 @@ Table~\ref{tab:jlens-validation} shows selected next-token validation layers. To
     \bottomrule
   \end{tabular}
 \end{table}
+
+\section{Retired Analyses, and Why}
+\label{app:retired}
+
+Three claims from an earlier version of this work are withdrawn. We keep their measurements here because the reasons they failed are the paper's methodological content, and because a reader is better served by seeing which controls did the retiring than by seeing only the results that survived. All underlying data remain in the repository and every analysis below is reproducible from it.
+
+\paragraph{A null whose positive control was of the wrong kind.}
+We reported that control dependence is decodable (probe AUC 0.999) but not available to an output-aligned readout: at guard anchors, a Jacobian lens ranked the guard's own variable at 0.813 while the control-dependence target stayed at chance at every layer. The measurement stands, including a temporal confound we found and removed (Table~\ref{tab:temporal-control}); after correction, 0.500 lies inside every program-clustered interval. What does not stand is the interpretation. The positive control asks the readout to name a variable that is present at the anchor --- an identity fact. The test asks it to name a variable standing in a \emph{relation} to the anchor. A readout that can express the first and not the second is not evidence that the model lacks the relation; it may be evidence that this readout cannot express relations at these positions, and nothing in the design separates those. A second intended control failed for a mechanical reason: the guard anchor is the trailing literal of the guard expression, so the ``next identifier'' is several tokens downstream past the colon and the indent.
+
+\paragraph{A metric that rewarded unreliability.}
+We reported that a taint probe remains correct at the prefixes where the model answers wrongly, and that no anticipatory degradation survives a floor. The first half is a measurement and it holds. The second half rested on an early-warning statistic that we now know is not fit for the purpose: within a family of readouts, the apparent warning rate is almost perfectly predicted by how often the readout is simply wrong, so an uninformative direction scores well by erring early and often. Table~\ref{tab:leadtime} shows a model-free position rule scoring $+0.113$ against a 99\%-accurate probe's $-0.010$. A metric that cannot distinguish anticipation from unreliability does not become trustworthy when it returns a null, so we report neither direction. The original positive result, prior to these floors, was measured on a prompt under which both models emitted a constant answer (balanced accuracy exactly 0.500, Table~\ref{tab:behavior-sanity}); their opposite response biases manufactured an apparent difference between scales.
+
+\paragraph{A causal claim whose intervention transported the input.}
+We reported that patching the sanitizer-definition position recovers nothing, and read this together with the probe result as showing that the model represents sanitization without routing it to the answer. The recovery numbers stand and are reported in Section~\ref{sec:causal}; the reading does not, for the reasons given there. The relevant failure is that the design's informative position is also the only position at which the two programs differ.
+
+The common thread is that all three were claims about \emph{absence}, and absence is the hardest thing to establish. Each needed a positive control matched in kind to the test, at the same site, on the same states; none had one.
+
+\subsection{Control-dependence readout and its temporal control}
 
 The control-dependence comparison initially mixed candidates on opposite sides of the guard anchor. Table~\ref{tab:temporal-control} shows the corrected subset in which both candidates occur after the anchor. Accuracy remains close to the exact 0.500 chance level throughout. The main-text positive control is evaluated separately because it asks which variable is present in the guard, rather than which later statement depends on it.
 
