@@ -43,10 +43,13 @@ DIAGNOSTIC = {
     "G0": "Inspect results/store/{model}/verification.csv — the per-check columns "
           "say whether the trace, the interpreter or an invariant disagreed. Then "
           "re-run stage 80 with a different --seed, or stage 81 --drop-failures.",
-    "G1": "Read results/store/{model}/behaviour_summary.csv per family. If only "
-          "some families fail, the corpus is usable with those excluded; if the "
-          "overall balanced accuracy is near 0.5, check for a constant responder "
-          "(per-variant accuracy in behaviour.csv) before blaming the model.",
+    "G1": "Run `python scripts/89_store_diagnose.py --model {model}` (CPU, no "
+          "re-run): it separates a constant responder, a format that elicits no "
+          "digit, the model answering the INTERMEDIATE instead of the final "
+          "value, and a genuine capability limit. Then `--sweep-prompts` (GPU, "
+          "~2 min) searches prompt formats and family sets. G1 is a property of "
+          "the MODEL, not of the apparatus: E11's record has 1.3b at 0.53 where "
+          "6.7b reached 0.706, so a 1.3b failure is weak evidence about either.",
     "G2": "results/store/{model}/decode_summary.csv gives hidden vs surface vs "
           "control-task per layer. A hidden score at the surface score means the "
           "value is not linearly available; a high control-task score means the "

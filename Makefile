@@ -34,6 +34,8 @@
 #   make store-ceiling MODEL=...    stage 86 whole-state interchange — G4 (GPU)
 #   make store-interchange MODEL=.. stage 87 DAS low-rank + controls — G5 (GPU)
 #   make store-report MODEL=...     stage 88 gated report (CPU)
+#   make store-diagnose MODEL=...   stage 89 read a failed gate (CPU)
+#   make store-sweep MODEL=...      stage 89 prompt/family sweep — the G1 fix (GPU)
 #   make store MODEL=...            stages 80→88 in order; each refuses on a failed gate
 #   make store-pilot                the cheap 1.3b instrument pilot
 #
@@ -54,7 +56,8 @@ PROBES := results/probes/$(MODEL)/core
         jspace jspace-pairs jspace-lens jspace-readout jspace-swap jspace-report \
         jspace-diagnose jspace-pilot assets assets-all test \
         store store-pairs store-verify store-behaviour store-extract store-decode \
-        store-transition store-ceiling store-interchange store-report store-pilot
+        store-transition store-ceiling store-interchange store-report store-pilot \
+        store-diagnose store-sweep
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
 STORE_PAIRS := data/synthetic/store_pairs_$(MODEL).jsonl
@@ -165,6 +168,15 @@ store-interchange:
 
 store-report:
 	$(PY) scripts/88_store_report.py --model $(MODEL)
+
+# Read a failed gate: constant responder, wrong answer format, the model
+# answering the intermediate, or a genuine capability limit. CPU, no re-run.
+store-diagnose:
+	$(PY) scripts/89_store_diagnose.py --model $(MODEL) --pairs $(STORE_PAIRS)
+
+# Search for a prompt format and family set that elicits the task (GPU, ~2 min).
+store-sweep:
+	$(PY) scripts/89_store_diagnose.py --model $(MODEL) --pairs $(STORE_PAIRS) --sweep-prompts
 
 store: store-pairs store-verify store-behaviour store-extract store-decode \
        store-transition store-ceiling store-interchange store-report

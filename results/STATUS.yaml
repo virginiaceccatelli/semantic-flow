@@ -180,7 +180,7 @@ experiments:
   E12:
     name: latent store transitions (INSTRUMENT VALIDATION)
     status: active
-    stage: "80,81,82,83,84,85,86,87,88"
+    stage: "80,81,82,83,84,85,86,87,88,89"
     tables: []
     claim: >
       NONE. E12 claims no result and must not be written up as a finding.
@@ -217,6 +217,7 @@ experiments:
       - stage 86: whole-state interchange ceiling (GATE G4)
       - stage 87: DAS-style low-rank interchange + controls (GATE G5)
       - stage 88: machine-readable gated report
+      - stage 89: diagnostic for a failed gate (CPU triage; optional GPU prompt sweep)
     limitation: >
       G2 has no construction-pinned floor: the tracked value is a deterministic
       function of the visible text, so a baseline that can execute the program

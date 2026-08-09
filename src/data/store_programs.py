@@ -69,7 +69,10 @@ logger = logging.getLogger(__name__)
 
 # Identifier pool: single-letter names, drawn without replacement per base so
 # name identity is orthogonal to role across the corpus.
-NAME_POOL = tuple("abcdefghijkmnopqrstuvwxyz")     # no 'l' (reads as 1)
+# No 'l' (reads as 1) and no 'f' (the function's own name — `f = s + 3` inside
+# `def f():` followed by `assert f() ==` is a genuinely confusing prompt, and it
+# executes correctly only because the local shadow never escapes the frame).
+NAME_POOL = tuple("abcdeghijkmnopqrstuvwxyz")
 
 HEAD_POOL = tuple(range(1, 5))        # the mutated literal
 OFFSET_POOL = tuple(range(2, 7))      # the constant added to it
@@ -111,6 +114,15 @@ class ChainOp:
 
 OP_FAMILIES = ("add", "sub_from", "double_sub", "mod")
 
+# Lower-arithmetic families, for when G1 fails on arithmetic rather than on
+# binding. `succ`/`pred` ask the model only to take a successor or predecessor
+# of the text-absent intermediate, which is the cheapest transition that is
+# still a transition — `copied` and `transformed` remain distinct, so the
+# trichotomy survives intact. Nikankin et al. (arXiv:2410.21272) find
+# arithmetic is implemented by heuristic neurons that do not chain, so if a
+# two-step chain fails, shrinking the SECOND step is the first thing to try.
+LOW_ARITHMETIC_FAMILIES = ("succ", "pred", "add", "sub_from")
+
 
 def build_chain_op(family: str, rng: random.Random, c_values: Sequence[int]) -> Optional[ChainOp]:
     """Sample one operation whose results are single digits on both c values.
@@ -125,6 +137,12 @@ def build_chain_op(family: str, rng: random.Random, c_values: Sequence[int]) -> 
             return False
         return all(isinstance(o, int) and 0 <= o <= 9 for o in outs) and len(set(outs)) == len(set(c_values))
 
+    if family == "succ":
+        fn = (lambda c: c + 1)
+        return ChainOp(family, "{c} + 1", fn, {"p": 1}) if ok(fn) else None
+    if family == "pred":
+        fn = (lambda c: c - 1)
+        return ChainOp(family, "{c} - 1", fn, {"p": 1}) if ok(fn) else None
     if family == "add":
         p = rng.choice(range(1, 6))
         fn = (lambda c, p=p: c + p)
@@ -178,6 +196,8 @@ class StoreCounterfactual:
     mutation_index: int
     noise_mutation_index: int
     answer_suffix: str
+    prompt_prefix: str = ""        # few-shot demonstrations, or ""
+    prompt_format: str = "bare"
     split: str = "unassigned"
     metadata: dict = field(default_factory=dict)
 
@@ -215,7 +235,7 @@ class StoreCounterfactual:
                 "irrelevant": self.irrelevant_program}[variant]
 
     def prompt(self, variant: str) -> str:
-        return self.program(variant) + self.answer_suffix
+        return self.prompt_prefix + self.program(variant) + self.answer_suffix
 
     def answer(self, variant: str) -> int:
         """The correct answer for each program of the triple.
@@ -258,6 +278,84 @@ def render(names: dict, head: int, noise: int, offset: int, op_expr: str) -> str
     )
 
 
+# -- prompt formats -----------------------------------------------------------
+# The prompt is `prefix + source + answer_suffix`. Only the prefix varies, and
+# it exists because a base model's willingness to emit a digit after
+# `assert f() ==` is a property of the FORMAT, not of whether it can do the
+# task. E6 is the precedent: under a bare prompt both models were constant
+# responders at balanced accuracy exactly 0.500, and few-shot demonstrations
+# plus naming the variable lifted 6.7b to 0.857. That correction arrived after
+# the experiment had been run and written up.
+#
+# A prefix must end in a blank line so the program still starts at column 0 of
+# a fresh line; `positions_for` then shifts anchors by the prefix's line count
+# and every anchor stays exact.
+
+PROMPT_FORMATS = ("bare", "fewshot", "fewshot_commented")
+
+_DEMO_NAMES = (("p", "q", "r", "s"), ("m", "n", "u", "v"))
+
+
+def _demo(names: tuple, head: int, noise: int, offset: int, delta: int) -> tuple[str, int]:
+    """One worked example in the target's exact shape, and its answer."""
+    mapping = dict(zip(("head", "noise", "mid", "out"), names))
+    source = render(mapping, head, noise, offset, "{c} + %d" % delta)
+    return source, head + offset + delta
+
+
+def few_shot_prefix(
+    forbidden: set[int],
+    commented: bool = False,
+    seed: int = 0,
+) -> str:
+    """Two solved examples in the same shape, avoiding the target's values.
+
+    `forbidden` is the target's **intermediates** — the values the interchange
+    installs and that `copied` reads. Those must have no token anywhere in the
+    prompt, and a demonstration is part of the prompt.
+
+    Answers and program literals are deliberately NOT forbidden. A demo's
+    answer is the whole point of a demonstration, and any digit the prefix
+    contributes is identical across all three programs of the triple, so it
+    cancels in every within-pair comparison the design reads (the paired
+    reversal, the trichotomy, every control contrast). Forbidding them too left
+    two admissible digits out of ten and the generator produced nothing.
+
+    Returns "" if no admissible pair of demos exists, which the caller must
+    treat as a rejected candidate rather than silently dropping the
+    demonstrations.
+    """
+    rng = random.Random(seed)
+    blocks: list[str] = []
+    for names in _DEMO_NAMES:
+        for _ in range(60):
+            head = rng.randint(1, 4)
+            offset = rng.randint(2, 6)
+            delta = rng.randint(1, 3)
+            noise = rng.choice([head, offset])
+            source, answer = _demo(names, head, noise, offset, delta)
+            digits = {head, offset, delta, noise, head + offset, answer}
+            if digits & forbidden or not 0 <= answer <= 9:
+                continue
+            line = (f"assert f() == {answer}" if not commented
+                    else f"assert f() == {answer}  # the value of {names[3]}")
+            blocks.append(f"{source}\n{line}")
+            break
+        else:
+            return ""
+    return "\n\n".join(blocks) + "\n\n"
+
+
+def build_prefix(fmt: str, forbidden: set[int], seed: int = 0) -> Optional[str]:
+    """The prompt prefix for a format, or None if it cannot be built here."""
+    if fmt == "bare":
+        return ""
+    if fmt in ("fewshot", "fewshot_commented"):
+        prefix = few_shot_prefix(forbidden, commented=(fmt == "fewshot_commented"), seed=seed)
+        return prefix or None
+    raise ValueError(f"unknown prompt format '{fmt}'; known: {PROMPT_FORMATS}")
+
+
 def _spans(source: str) -> Optional[dict[str, tuple]]:
     """AST spans for every probed anchor. Never a string search.
 
@@ -294,20 +392,29 @@ def _spans(source: str) -> Optional[dict[str, tuple]]:
     }
 
 
-def positions_for(prompt: str, tokenizer, source: str) -> Optional[dict[str, int]]:
+def positions_for(
+    prompt: str,
+    tokenizer,
+    source: str,
+    prefix: str = "",
+) -> Optional[dict[str, int]]:
     """Anchor token index per event, in prompt-token space.
 
-    The prompt is `source + answer_suffix`, appended at the end, so every
-    source span keeps its (line, col).
+    The prompt is `prefix + source + answer_suffix`. The suffix is appended at
+    the end so it shifts nothing, but a prefix shifts every line: spans are
+    computed in SOURCE coordinates and then moved down by the prefix's line
+    count. Columns are untouched because a prefix always ends in a blank line,
+    so the program still begins at column 0.
     """
     spans = _spans(source)
     if spans is None:
         return None
+    line_offset = prefix.count("\n")
     ids = encode_prompt(tokenizer, prompt)
     aligner = TokenAligner(prompt, compute_offsets(prompt, tokenizer, ids))
     out: dict[str, int] = {}
     for name, (l0, c0, l1, c1) in spans.items():
-        aligned = aligner.align("", name, l0, c0, l1, c1)
+        aligned = aligner.align("", name, l0 + line_offset, c0, l1 + line_offset, c1)
         if aligned is None:
             return None
         out[name] = aligned.anchor
@@ -339,6 +446,7 @@ def _finalize(
     offset: int,
     tokenizer,
     answer_suffix: str,
+    prompt_format: str = "bare",
 ) -> Optional[StoreCounterfactual]:
     """Check every invariant and build the record, or return None."""
     src_base = render(names, head_base, noise_base, offset, op.expr)
@@ -384,8 +492,16 @@ def _finalize(
             return None
         token_ids[key] = number[0]
 
-    # 5. token alignment across the whole triple
-    prompts = {v: s + answer_suffix for v, s in
+    # 5. the prompt prefix, if any. Demonstrations are part of the prompt, so
+    #    they are held to the same text-absence invariant as the program: a
+    #    prefix containing a tracked value would reintroduce exactly the token
+    #    the design exists to remove.
+    prefix = build_prefix(prompt_format, intermediates)
+    if prefix is None:
+        return None
+
+    # 6. token alignment across the whole triple
+    prompts = {v: prefix + s + answer_suffix for v, s in
                (("base", src_base), ("counter", src_counter), ("irrelevant", src_irrelevant))}
     ids = {v: encode_prompt(tokenizer, p) for v, p in prompts.items()}
     if len({len(i) for i in ids.values()}) != 1:
@@ -395,8 +511,8 @@ def _finalize(
     if len(diff_counter) != 1 or len(diff_irrel) != 1:
         return None
 
-    # 6. anchors agree across the triple, and the mutation is where we think
-    pos = {v: positions_for(prompts[v], tokenizer, src)
+    # 7. anchors agree across the triple, and the mutation is where we think
+    pos = {v: positions_for(prompts[v], tokenizer, src, prefix)
            for v, src in (("base", src_base), ("counter", src_counter),
                           ("irrelevant", src_irrelevant))}
     if any(p is None for p in pos.values()):
@@ -409,7 +525,7 @@ def _finalize(
     if diff_irrel[0] != anchors["noise_def"]:
         return None
 
-    # 7. the mutation must be far enough before the injection site that no
+    # 8. the mutation must be far enough before the injection site that no
     #    local window around it can carry the label
     distance = anchors["mid_def"] - diff_counter[0]
     if distance < MIN_MUTATION_DISTANCE:
@@ -417,7 +533,7 @@ def _finalize(
     if anchors["out_def"] <= anchors["mid_def"]:
         return None
 
-    # 8. the answer is exactly one appended token in every program
+    # 9. the answer is exactly one appended token in every program
     for variant, answer in (("base", d_base), ("counter", d_counter), ("irrelevant", d_irrelevant)):
         if not _appends_one_token(tokenizer, prompts[variant], answer_suffix, answer):
             return None
@@ -433,7 +549,7 @@ def _finalize(
         c_base=c_base, c_counter=c_counter, d_base=d_base, d_counter=d_counter,
         positions=anchors, token_ids=token_ids, n_tokens=len(ids["base"]),
         mutation_index=diff_counter[0], noise_mutation_index=diff_irrel[0],
-        answer_suffix=answer_suffix,
+        answer_suffix=answer_suffix, prompt_prefix=prefix, prompt_format=prompt_format,
         metadata={"mutation_to_injection_tokens": distance,
                   "literals": sorted(literals),
                   "trichotomy": {"stale": d_base, "copied": c_counter,
@@ -451,6 +567,7 @@ def generate_base(
     answer_suffix: str,
     min_families: int = 3,
     n_param_tries: int = 8,
+    prompt_format: str = "bare",
 ) -> list[StoreCounterfactual]:
     """Every operation family for ONE base (same names, same values, same c).
 
@@ -479,7 +596,8 @@ def generate_base(
                 pair_id=f"{base_id}_{family}", base_id=base_id, names=names, op=op,
                 head_base=head_base, head_counter=head_counter,
                 noise_base=noise_base, noise_irrelevant=noise_irrelevant,
-                offset=offset, tokenizer=tokenizer, answer_suffix=answer_suffix)
+                offset=offset, tokenizer=tokenizer, answer_suffix=answer_suffix,
+                prompt_format=prompt_format)
             if record is not None:
                 out.append(record)
                 break
@@ -493,6 +611,7 @@ def generate_store_pairs(
     min_families: int = 3,
     seed: int = 42,
     max_attempts_per_base: int = 40,
+    prompt_format: str = "bare",
 ) -> list[StoreCounterfactual]:
     """`n_bases` verified base programs, each with several operation families."""
     rng = random.Random(seed)
@@ -502,7 +621,7 @@ def generate_store_pairs(
     while produced < n_bases and attempts < n_bases * max_attempts_per_base:
         attempts += 1
         got = generate_base(produced, tokenizer, families, rng, answer_suffix,
-                            min_families=min_families)
+                            min_families=min_families, prompt_format=prompt_format)
         if got:
             records.extend(got)
             produced += 1

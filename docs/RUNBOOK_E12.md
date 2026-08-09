@@ -1,4 +1,4 @@
-# Runbook — E12 instrument validation (stages 80–88)
+# Runbook — E12 instrument validation (stages 80–89)
 
 Exact commands, in order. **E12 validates the apparatus; it is not a result.**
 Nothing below should be written up as a finding — see
@@ -9,9 +9,16 @@ prerequisite gates have passed. To run one anyway, add
 `--override-gate 'reason'` — permanently recorded in `gates.yaml`, in the run
 manifest, and in every output row.
 
-Order of operations, and the one rule that matters: **run the pilot on 1.3b
-first, all the way to stage 88.** E11 was run to completion twice before its
-behavioural gate came back below threshold.
+Order of operations: **run the pilot on 1.3b first, all the way to stage 88** —
+E11 was run to completion twice before its behavioural gate came back below
+threshold.
+
+One correction to that rule, learned from the first pilot. **G1 is a property
+of the model, not of the apparatus.** E11's record has 1.3b at 0.53 where 6.7b
+reached 0.706, so a G1 failure on the pilot is close to expected and is weak
+evidence about the instrument. Every other gate is about the apparatus and is
+worth pilot-testing cheaply; G1 alone should be escalated to the larger model
+rather than treated as a verdict. §2b is the procedure.
 
 ---
 
@@ -22,7 +29,7 @@ behavioural gate came back below threshold.
 ```bash
 cd ~/Documents/semantic-flow
 conda activate semflow
-make test                     # 246 CPU-only tests; must be green before anything
+make test                     # 253 CPU-only tests; must be green before anything
 ```
 
 **GPU host** (no scheduler; each job runs in its own `screen` session):
@@ -246,6 +253,103 @@ python scripts/88_store_report.py --model $MODEL
 
 ---
 
+## 2b. When G1 fails
+
+Expect this on 1.3b. E11's record: 1.3b failed its behavioural gate at 0.53
+while 6.7b reached 0.706 on a *simpler* task. **G1 is a property of the model,
+not of the apparatus**, so a 1.3b failure is weak evidence about either — the
+pilot exists to catch instrument faults cheaply, and gating it on a capability
+number puts the weakest model in charge of a decision it cannot inform.
+
+Work through it in this order; the first two cost no GPU.
+
+### Step 1 — triage what kind of failure it is (CPU, ~1 min)
+
+```bash
+python scripts/89_store_diagnose.py --model $MODEL --pairs $PAIRS
+```
+
+Re-reads `behaviour.csv` and names the cause. Writes `$OUT/g1_triage.csv`.
+
+| flag | meaning | response |
+|---|---|---|
+| `constant_responder` | one token on ≥80% of prompts | **Prompt fault, not capability.** This is what retired E6: balanced accuracy exactly 0.500 from two opposite constant biases. Go to step 2. |
+| `answers_a_digit` low | the argmax is a newline or punctuation | The format does not elicit an answer at all. Step 2. |
+| `answers_the_intermediate` | it emits `c`, not `d` | Specific and informative: the first statement is executed, the second is not. Try `--families low_arithmetic` in step 2 — the transition is what is failing. |
+| `mutation_reaches_the_answer` flagged | base and counterfactual give the same argmax | The one-token mutation is not changing the output. If combined with `constant_responder`, it is the same fault; alone, the model is ignoring the head literal. |
+| nothing flagged | digits, spread, no bias, just wrong | A genuine capability limit. Step 2 is still worth 2 minutes, then step 3. |
+
+### Step 2 — sweep prompt formats and family sets (GPU, ~2 min)
+
+```bash
+python scripts/89_store_diagnose.py --model $MODEL --pairs $PAIRS --sweep-prompts
+```
+
+Generates a small corpus under each combination and reports balanced accuracy.
+Writes `$OUT/g1_prompt_sweep.csv`.
+
+- **formats:** `bare` (the default, `assert f() ==`), `fewshot` (two solved
+  examples in the same shape), `fewshot_commented`.
+- **family sets:** `default` (`add,sub_from,double_sub,mod`) and
+  `low_arithmetic` (`succ,pred,add,sub_from`) — `succ`/`pred` shrink the second
+  step to ±1, the cheapest transition that is still a transition, so the
+  trichotomy survives. Nikankin et al. ([arXiv:2410.21272](https://arxiv.org/abs/2410.21272))
+  find arithmetic is heuristic neurons that do not chain, so shrinking the
+  second step is the right first move.
+
+The few-shot demonstrations are held to the same text-absence invariant as the
+programs: a demo never contains the target's intermediates, and
+`few_shot_prefix` returns nothing rather than leak one.
+
+**If a combination clears 0.75**, regenerate and re-run from stage 80:
+
+```bash
+python scripts/80_store_pairs.py --model $MODEL --n-bases 400 \
+    --prompt-format fewshot --families low_arithmetic
+python scripts/81_store_verify.py --model $MODEL --pairs $PAIRS --strict
+python scripts/82_store_behaviour.py --model $MODEL --pairs $PAIRS --strict
+```
+
+Anchors are recomputed per format (a prefix shifts every line), so **any cached
+activations from the old format are invalid** — stage 83 must be re-run too.
+
+### Step 3 — escalate G1 to the larger model (GPU, ~5 min)
+
+If no format clears the bar on 1.3b, run **G1 alone** on 6.7b before concluding
+anything. It is stages 80→82 only, five GPU-minutes, and it is the number that
+actually decides whether the corpus is usable:
+
+```bash
+python scripts/80_store_pairs.py --model deepseek-coder-6.7b --n-bases 400 \
+    --prompt-format <best from step 2> --families <best from step 2>
+python scripts/81_store_verify.py --model deepseek-coder-6.7b --pairs <pairs> --strict
+python scripts/82_store_behaviour.py --model deepseek-coder-6.7b --pairs <pairs> --strict
+```
+
+If 6.7b passes, run the rest of the pipeline there and treat 1.3b as a
+capability result only — exactly how `results/STATUS.yaml` records E11's 1.3b
+arm.
+
+### Step 4 — if 6.7b also fails
+
+Then the corpus asks for arithmetic this model family cannot do, and that is a
+finding about the corpus, not about representation. Options, in order:
+
+1. `--families low_arithmetic` if not already tried — `succ`/`pred` only.
+2. Reduce the head arithmetic too: `c = a + k` with `k ∈ {1,2}`, by editing
+   `OFFSET_POOL` in `src/data/store_programs.py`. The text-absence invariant
+   still holds; the digit budget gets tighter, so check the yield.
+3. Accept that E12 cannot be validated on this model family and say so. **Do
+   not** override G1 to reach G5 — a `transformed` rate measured on programs
+   the model cannot solve is uninterpretable, and the override will appear in
+   every row and block `INSTRUMENT VALIDATED` anyway.
+
+Never respond to a failed G1 by loosening the threshold. It is pre-registered
+in `configs/experiments.yaml` and echoed into the gate detail; changing it is a
+change to the experiment.
+
+---
+
 ## 3. The full 6.7b run
 
 Only after the 1.3b pilot reaches `INSTRUMENT VALIDATED`, or after a deliberate
@@ -273,6 +377,8 @@ screen -dmS e12-full env MODEL=deepseek-coder-6.7b jobs/store_full.csh
 | 86 ceiling | GPU | ~15 GB | ~20–30 min | **G4** |
 | 87 interchange | GPU | ~20 GB (backward) | ~1–3 h | **G5** |
 | 88 report | CPU | — | seconds | — |
+| 89 diagnose | CPU | — | ~1 min | reads only |
+| 89 `--sweep-prompts` | GPU | ~15 GB | ~2 min | reads only |
 
 ---
 
@@ -309,5 +415,6 @@ results/store/{model}/
   interchange{,_summary,_contrasts,_by_family,_alignments}.csv   87 (G5)
   subspaces/das_L{layer}_r{rank}.pkl         87
   e12_report.{yaml,md}, e12_gates.csv        88
+  g1_triage.csv, g1_prompt_sweep.csv         89
 results/manifests/8*_store_*.json            every stage, always
 ```

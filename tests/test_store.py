@@ -15,13 +15,18 @@ import torch
 import torch.nn as nn
 
 from src.data.store_programs import (
+    LOW_ARITHMETIC_FAMILIES,
     MIN_MUTATION_DISTANCE,
+    NAME_POOL,
     OP_FAMILIES,
+    PROMPT_FORMATS,
     ChainOp,
     StoreCounterfactual,
     assert_disjoint,
     build_chain_op,
+    build_prefix,
     dataset_summary,
+    few_shot_prefix,
     generate_store_pairs,
     held_out_family,
     load_pairs,
@@ -458,6 +463,67 @@ def test_retention_is_a_fraction_of_the_diagonal():
         {"train_anchor": "mid_def", "test_anchor": "out_def", "accuracy": 0.4},
     ])
     assert retention(matrix, "mid_def", "out_def") == pytest.approx(0.5)
+
+
+# -- prompt formats (the G1 escape hatch) -------------------------------------
+
+def test_names_never_shadow_the_function(records):
+    """`f = s + 3` inside `def f():` executes, but is a confusing prompt."""
+    assert "f" not in NAME_POOL and "l" not in NAME_POOL
+    for record in records:
+        assert "f" not in record.names.values()
+
+
+def test_every_prompt_format_generates(tokenizer):
+    for fmt in PROMPT_FORMATS:
+        made = generate_store_pairs(tokenizer, n_bases=4, seed=13, prompt_format=fmt)
+        assert made, f"format {fmt} produced nothing"
+        assert all(r.prompt_format == fmt for r in made)
+        if fmt != "bare":
+            assert made[0].prompt_prefix.endswith("\n\n")
+            assert made[0].prompt("base").startswith(made[0].prompt_prefix)
+
+
+def test_anchors_stay_exact_under_a_prefix(tokenizer):
+    """A prefix shifts every line; anchors must move with it, not drift."""
+    made = generate_store_pairs(tokenizer, n_bases=4, seed=13, prompt_format="fewshot")
+    for record in made[:6]:
+        ids = tokenizer(record.prompt("base"))["input_ids"]
+        pieces = [tokenizer.decode([i]) for i in ids]
+        assert str(record.head_base) in pieces[record.mutation_index]
+        assert record.positions["answer"] == len(ids) - 1
+        assert record.positions["mid_def"] > record.mutation_index
+
+
+def test_few_shot_demonstrations_never_contain_the_tracked_value(tokenizer):
+    """A demonstration is part of the prompt, so the invariant reaches it."""
+    made = generate_store_pairs(tokenizer, n_bases=6, seed=13, prompt_format="fewshot")
+    for record in made:
+        digits = {int(ch) for ch in record.prompt_prefix if ch.isdigit()}
+        assert record.c_base not in digits
+        assert record.c_counter not in digits
+
+
+def test_few_shot_prefix_gives_up_rather_than_leaking():
+    """With every digit forbidden there is no admissible demo — return "", not one."""
+    assert few_shot_prefix(set(range(10))) == ""
+    assert build_prefix("fewshot", set(range(10))) is None
+    assert build_prefix("bare", set(range(10))) == ""
+
+
+def test_unknown_prompt_format_is_an_error():
+    with pytest.raises(ValueError):
+        build_prefix("no_such_format", set())
+
+
+def test_low_arithmetic_families_keep_the_trichotomy(tokenizer):
+    """succ/pred shrink the transition without collapsing stale/copied/transformed."""
+    made = generate_store_pairs(tokenizer, n_bases=6, seed=13,
+                                families=LOW_ARITHMETIC_FAMILIES)
+    assert made
+    assert {"succ", "pred"} & {r.op_family for r in made}
+    for record in made:
+        assert len({record.stale, record.copied, record.transformed}) == 3
 
 
 def test_render_keeps_every_statement_the_same_shape():

@@ -40,12 +40,19 @@ def main(
     model: str = typer.Option(..., help="Registry name; only its tokenizer is loaded"),
     output: Optional[Path] = typer.Option(None, help="Default data/synthetic/store_pairs_{model}.jsonl"),
     n_bases: int = typer.Option(400, help="Base programs; each yields one record per family"),
-    families: str = typer.Option("add,sub_from,double_sub,mod"),
+    families: str = typer.Option(
+        "add,sub_from,double_sub,mod",
+        help="Or 'low_arithmetic' (succ,pred,add,sub_from) when G1 fails on arithmetic"),
+    prompt_format: str = typer.Option(
+        "bare", help="bare | fewshot | fewshot_commented. Anchors are recomputed "
+                     "per format, so changing it invalidates cached activations."),
     min_families: int = typer.Option(3, help="Bases with fewer verified families are dropped"),
     calib_frac: float = typer.Option(0.3, help="Fraction of BASES reserved for calibration"),
     seed: int = typer.Option(42),
 ):
     from src.data.store_programs import (
+        LOW_ARITHMETIC_FAMILIES,
+        OP_FAMILIES,
         assert_disjoint,
         dataset_summary,
         generate_store_pairs,
@@ -61,10 +68,12 @@ def main(
         raise typer.BadParameter(f"Unknown model '{model}'")
     tokenizer = load_tokenizer(MODEL_REGISTRY[model]["hf_id"])
 
+    family_set = (LOW_ARITHMETIC_FAMILIES if families.strip() == "low_arithmetic"
+                  else OP_FAMILIES if families.strip() == "default"
+                  else tuple(f.strip() for f in families.split(",") if f.strip()))
     records = generate_store_pairs(
-        tokenizer, n_bases=n_bases,
-        families=tuple(f.strip() for f in families.split(",") if f.strip()),
-        min_families=min_families, seed=seed)
+        tokenizer, n_bases=n_bases, families=family_set,
+        min_families=min_families, seed=seed, prompt_format=prompt_format)
     if not records:
         console.print("[red]No records verified. Check the tokenizer: every "
                       "invariant here is tokenizer-dependent.[/red]")
@@ -85,9 +94,10 @@ def main(
     console.print("[dim]G0 is recorded by stage 81, not here.[/dim]")
 
     write_manifest("80_store_pairs", {
-        "model": model, "n_bases": n_bases, "families": families,
-        "min_families": min_families, "calib_frac": calib_frac, "seed": seed,
-        "output": str(path)}, t0, extra=summary)
+        "model": model, "n_bases": n_bases, "families": str(family_set),
+        "prompt_format": prompt_format, "min_families": min_families,
+        "calib_frac": calib_frac, "seed": seed, "output": str(path)},
+        t0, extra=summary)
 
 
 if __name__ == "__main__":

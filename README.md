@@ -128,6 +128,13 @@ everything else is CPU and re-runnable.
 72 jspace readout      GPU   E11: paired counterfactual margin reversals
 73 jspace swap         GPU   E11: the coordinate swap and its six controls
 74 jspace report       CPU   E11: pre-registered go/no-go
+80–89 store transitions      E12: INSTRUMENT VALIDATION, claims nothing — can a
+                             computed, text-absent program value be interchanged
+                             so downstream computation transforms it? Six gates
+                             (G0–G5); each stage refuses to run on a failed one.
+                             Design: docs/design/E12_PLAN.md · Commands:
+                             docs/RUNBOOK_E12.md · What a pass licenses:
+                             docs/design/E13_DIRECTIONS.md
 90 paper assets        CPU   every table + figure, regenerated from CSVs alone
 ```
 
@@ -311,7 +318,7 @@ configs/       model registry + canonical experiment settings
 results/       STATUS.yaml (what each experiment currently claims) + tables, figures, manifests
 docs/          living reference: SETUP · PIPELINE · EXPERIMENTS · METHODS · RESULTS · LEGACY_RESULTS
   design/      design rationale, one file per track: JLENS_PLAN (E10/E11) · E12_PLAN (next direction)
-tests/         203 CPU-only tests (alignment exactness, CV leakage, strata, pairs, obfuscation semantics,
+tests/         253 CPU-only tests (alignment exactness, CV leakage, strata, pairs, obfuscation semantics,
                ground-truth cross-check, swap invariants, build/test separation, …)
 ```
 
@@ -320,7 +327,7 @@ tests/         203 CPU-only tests (alignment exactness, CV leakage, strata, pair
 ```bash
 conda create -n semflow python=3.11 -y && conda activate semflow
 pip install -e ".[dev]"
-make test                     # 203 CPU-only tests
+make test                     # 253 CPU-only tests
 make smoke                    # tiny end-to-end run on this machine (~15 min, MPS)
 
 # full run (development model)
