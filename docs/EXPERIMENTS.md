@@ -13,6 +13,7 @@ counterpart, and the two are meant to be kept in step.
 2. [Active J-space binding experiments](#2-active-j-space-binding-experiments) — E11 (stages 70–74)
 3. [Supporting / appendix experiments](#3-supporting--appendix-experiments) — E1, E4, E5, E7, E8, E9, E10-0
 4. [Archived experiments](#4-archived-experiments) — E6, E10-2, E10-3
+5. [Instrument validation](#5-instrument-validation-not-a-result) — E12 (stages 80–88)
 
 Shared metric definitions:
 
@@ -437,6 +438,81 @@ would matter least.
 Still runnable: `make jlens-controldep MODEL=...`;
 `scripts/63_controldep_temporal.py` applies the temporal split and corrected
 tests retrospectively, no GPU required.
+
+---
+
+# 5. Instrument validation (NOT a result)
+
+## E12 — latent store transitions (stages 80–88)
+
+**Status: implemented, not run. Claims nothing.**
+
+**Question.** Can we reliably identify and interchange a computed,
+**text-absent** program value in a pretrained code model, such that downstream
+computation correctly *transforms* the installed value?
+
+**Why it is not a finding.** Causal state interchange on a learned low-rank
+subspace is established method — DAS, Othello-GPT, and variable binding in
+symbolic programs (`arXiv:2505.20896`) all do a version of it. What this
+project owns that the field does not is the construction-pinned surface floor.
+E12 builds and checks the instrument; `docs/design/E13_DIRECTIONS.md` is what a
+pass licenses. Full design: `docs/design/E12_PLAN.md`. Commands:
+`docs/RUNBOOK_E12.md`.
+
+**The data.** Token-aligned triples whose tracked value has no token:
+
+```python
+def f():                    # counterfactual: a = 2  (one differing token)
+    a = 1
+    b = 4                   # irrelevant variable — the twin mutates this instead
+    c = a + 4               # 5 / 6, absent from the text of EVERY program
+    d = c + 3               # 8 / 9
+    return d
+assert f() ==
+```
+
+Four operation families over the same `c` (`add`, `sub_from`, `double_sub`,
+`mod`), ≥3 per base, so one edit must imply a different correct answer in each
+and one family can be held out.
+
+**The critical readout.** After installing the counterfactual's `c` at the
+injection anchor, the frozen decoder at the *next* statement reads one of:
+
+| bin | value | what it would mean |
+|---|---|---|
+| `stale` | 8 | the edit did nothing |
+| `copied` | 6 | the value was carried, the operator was not applied |
+| `transformed` | 9 | the program's own next statement ran on the installed value |
+| `other` | — | noise / off-manifold |
+
+`copied` is why the endpoint is internal: answer-token steering and
+carry-without-composition both predict it; only a transition predicts
+`transformed`.
+
+**The gates.** Each stage refuses to run (exit 2) unless its prerequisites
+passed; `--override-gate REASON` is permitted and recorded permanently.
+
+| gate | stage | asserts |
+|---|---|---|
+| G0 | 81 | trace, reference interpreter and stored labels agree; invariants hold |
+| G1 | 82 | balanced accuracy ≥ 0.75 overall, ≥ 0.70 per retained family |
+| G2 | 84 | the text-absent value decodes above measured lexical/control-task baselines |
+| G3 | 85 | frozen-decoder transfer is measurable, with a live text-present control |
+| G4 | 86 | whole-state interchange yields `transformed` — the ceiling *and* the aliveness check |
+| G5 | 87 | low-rank interchange ≥ 50% of the ceiling, clears six controls, transfers to a held-out operation |
+
+**Controls (G5).** `random_rank`, `random_norm` (matched on removed norm, not
+rank), `noop` (provably the zero edit), `irrelevant` (the unread-literal twin),
+`pre_def` (position, not subspace), and `held_out_family` — the decisive one,
+since a subspace encoding the answer cannot transfer to a family mapping the
+same value to a different answer.
+
+**Limitation, stated with the result.** G2 has no construction-pinned floor:
+the value is a deterministic function of the visible text, so an executing
+baseline scores 1.0. It is a precondition, not a result.
+
+Stages: `make store MODEL=...` (80–88), `make store-pilot`,
+`jobs/store_{pilot,full}.csh`.
 
 ---
 

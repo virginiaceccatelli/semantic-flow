@@ -52,7 +52,7 @@ stage50_patching:                      # E7
   positions: [sink_arg, sanitizer_def, last_token]
   recovery_threshold: 0.5              # encoded_and_used cutoff on logit-diff recovery
 
-# ── E10: J-lens (see docs/JLENS_PLAN.md) ─────────────────────────────────────
+# ── E10: J-lens (see docs/design/JLENS_PLAN.md) ──────────────────────────────
 # Stage 60 is a GATE: it exits non-zero on a failed required check, and
 # stages 61/62 are not interpretable until it passes.
 
@@ -154,3 +154,79 @@ pilot:                                 # the pre-registered 1.3b pilot
   n_bases: 100
   families: [affine, threshold]        # 200 pairs
   layers: [6, 12, 18, 23]
+
+# ── E12: latent store transitions — INSTRUMENT VALIDATION ────────────────────
+# Not a research contribution. Causal state interchange is established method
+# (DAS, Othello-GPT, variable-binding work); E12 asks only whether THIS
+# apparatus can identify and interchange a computed, TEXT-ABSENT program value
+# such that downstream computation transforms it. Design: docs/design/E12_PLAN.md.
+# What a pass would license: docs/design/E13_DIRECTIONS.md.
+#
+# Stages 80-88 are hard-gated. Each declares its prerequisites in
+# src/experiments/store_gates.py::STAGE_REQUIREMENTS and REFUSES to run (exit 2)
+# unless they passed. `--override-gate REASON` is permitted and is recorded in
+# results/store/{model}/gates.yaml, in the manifest, and in every output row.
+
+stage80_store_pairs:                   # G0 data (gate recorded by stage 81)
+  n_bases: 400                         # E11's 42 test bases were too few
+  families: [add, sub_from, double_sub, mod]
+  min_families: 3                      # 2 for the cross-op test + 1 to hold out
+  calib_frac: 0.3                      # whole BASES move; split stored in the file
+  invariants: [one_token_mutation, equal_token_length, shared_anchors,
+               intermediate_absent_from_all_text, answers_disjoint,
+               trichotomy_pairwise_distinct, mutation_far_from_injection_site,
+               single_token_values, answer_appends_one_token]
+
+stage81_store_verify:                  # G0 — records the gate
+  readings: [execution_trace, reference_interpreter, stored_labels]
+  min_verified_fraction: 0.999         # a few percent bad = a generator bug
+
+stage82_store_behaviour:               # G1
+  metric: balanced accuracy on a two-alternative forced choice
+  min_overall_balanced_accuracy: 0.75
+  min_family_accuracy: 0.70            # failing families are RETAINED in the CSV
+  min_retained_families: 2
+
+stage83_store_extract:                 # no gate; requires G0,G1
+  anchors: [pre_def, mid_def, out_def, answer]
+  variants: [base, counter, irrelevant]
+  dtype: float16                       # storage dtype for the cached anchors
+
+stage84_store_decode:                  # G2
+  probe: linear                        # single-position multiclass — minutes, not hours
+  anchor: mid_def
+  controls: [within_base_shuffled_labels, surface_window_token_ids, hewitt_liang_control_task]
+  min_margin_over_best_control: 0.05
+  note: >
+    A precondition, not a result: the value is a deterministic function of the
+    visible text, so an executing baseline scores 1.0 and no floor here is
+    pinned by construction.
+
+stage85_store_transition:              # G3
+  measures: [frozen_decoder_transfer_matrix, paired_transition_reversal]
+  positive_control: head_value          # text-present, same anchors, same classifier
+  min_transfer_retention: 0.60
+  min_control_retention: 0.90           # if this fails the instrument is dead
+  min_transition_reversal: 0.50
+
+stage86_store_ceiling:                 # G4 — ceiling AND aliveness check
+  variants: [whole_state, noop, irrelevant, pre_def]
+  min_transformed_rate: 0.50
+  structural_zeros: [noop, pre_def]     # nonzero => hooks/anchors/dtype are wrong
+
+stage87_store_interchange:             # G5
+  ranks: [1, 2, 4, 8]
+  variants: [das, random_rank, random_norm, noop, irrelevant, pre_def, whole_state]
+  alignment: {steps: 200, batch_size: 8, lr: 0.01, trained_on: calibration_split_only}
+  min_fraction_of_ceiling: 0.50
+  decisive_control: held_out_operation_family
+  metric: transformed-rate, paired cluster bootstrap over base programs
+
+stage88_store_report:                  # machine-readable gated report
+  verdicts: [INSTRUMENT VALIDATED, INSTRUMENT NOT VALIDATED, INCOMPLETE]
+
+store_pilot:                           # the cheap 1.3b instrument pilot
+  model: deepseek-coder-1.3b
+  n_bases: 120
+  layers: [6, 12, 18]
+  ranks: [1, 2, 4]

@@ -177,6 +177,52 @@ experiments:
       readout, and E4 — the result it was interrogating — is itself mostly a
       statement about local syntax.
 
+  E12:
+    name: latent store transitions (INSTRUMENT VALIDATION)
+    status: active
+    stage: "80,81,82,83,84,85,86,87,88"
+    tables: []
+    claim: >
+      NONE. E12 claims no result and must not be written up as a finding.
+      It is a check on the measuring apparatus, asking whether a computed,
+      TEXT-ABSENT program value can be identified and interchanged such that
+      downstream computation correctly transforms the installed value.
+    why_not_a_finding: >
+      Causal state interchange on a learned low-rank subspace is established
+      method — DAS (arXiv:2303.02536), Othello-GPT (arXiv:2210.13382), and
+      variable binding in symbolic programs (arXiv:2505.20896) all do a version
+      of it. What this project owns that the field does not is the
+      construction-pinned surface floor; combining that with a magnitude-free
+      interchange is the contribution, and E12 builds only the instrument half.
+      docs/design/E13_DIRECTIONS.md is what a pass licenses.
+    status_note: >
+      IMPLEMENTED, NOT RUN. No GPU stage has been executed. Stages 80-88 are
+      hard-gated: each refuses to run (exit 2) unless its prerequisite gates
+      passed, and `--override-gate REASON` is recorded permanently in
+      results/store/{model}/gates.yaml, in the manifest, and in every row.
+    gates:
+      - "G0 (stage 81): execution trace, reference interpreter and stored labels agree; invariants hold"
+      - "G1 (stage 82): balanced accuracy >= 0.75 overall, >= 0.70 per retained operation family"
+      - "G2 (stage 84): text-absent value decodes above the MEASURED lexical and control-task baselines"
+      - "G3 (stage 85): frozen-decoder transfer is measurable, with a live text-present positive control"
+      - "G4 (stage 86): whole-state interchange yields the TRANSFORMED state — ceiling and aliveness check"
+      - "G5 (stage 87): low-rank interchange reaches >= 50% of the ceiling, clears six controls, transfers to a held-out operation"
+    parts:
+      - stage 80: token-aligned triples over a value absent from every program's text
+      - stage 81: two independent readings of program state (GATE G0)
+      - stage 82: behavioural capability (GATE G1)
+      - stage 83: cached anchor activations
+      - stage 84: decodability vs measured controls (GATE G2)
+      - stage 85: natural state transitions (GATE G3)
+      - stage 86: whole-state interchange ceiling (GATE G4)
+      - stage 87: DAS-style low-rank interchange + controls (GATE G5)
+      - stage 88: machine-readable gated report
+    limitation: >
+      G2 has no construction-pinned floor: the tracked value is a deterministic
+      function of the visible text, so a baseline that can execute the program
+      scores 1.0. It is reported against the measured lexical-window baseline as
+      a PRECONDITION, never as a result.
+
   E11:
     name: J-space binding routing
     status: active

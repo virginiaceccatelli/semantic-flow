@@ -309,8 +309,9 @@ scripts/       numbered stage CLIs (00–90)
 jobs/          csh scripts per GPU stage (run under screen; no scheduler)
 configs/       model registry + canonical experiment settings
 results/       STATUS.yaml (what each experiment currently claims) + tables, figures, manifests
-docs/          PIPELINE · EXPERIMENTS · METHODS · RESULTS · LEGACY_RESULTS
-tests/         165 CPU-only tests (alignment exactness, CV leakage, strata, pairs, obfuscation semantics,
+docs/          living reference: SETUP · PIPELINE · EXPERIMENTS · METHODS · RESULTS · LEGACY_RESULTS
+  design/      design rationale, one file per track: JLENS_PLAN (E10/E11) · E12_PLAN (next direction)
+tests/         203 CPU-only tests (alignment exactness, CV leakage, strata, pairs, obfuscation semantics,
                ground-truth cross-check, swap invariants, build/test separation, …)
 ```
 
@@ -319,7 +320,7 @@ tests/         165 CPU-only tests (alignment exactness, CV leakage, strata, pair
 ```bash
 conda create -n semflow python=3.11 -y && conda activate semflow
 pip install -e ".[dev]"
-make test                     # 165 CPU-only tests
+make test                     # 203 CPU-only tests
 make smoke                    # tiny end-to-end run on this machine (~15 min, MPS)
 
 # full run (development model)
@@ -330,12 +331,13 @@ make extract probes context obfuscation patching assets MODEL=deepseek-coder-1.3
 make jspace-pilot             # then read results/jspace/deepseek-coder-1.3b/go_no_go.md
 ```
 
-Setup and known pitfalls (the tokenizer!): [SETUP.md](SETUP.md) ·
+Setup and known pitfalls (the tokenizer!): [docs/SETUP.md](docs/SETUP.md) ·
 Pipeline commands and cluster workflow: [docs/PIPELINE.md](docs/PIPELINE.md) ·
 Experiment specs: [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) ·
 Methodology for the paper: [docs/METHODS.md](docs/METHODS.md) ·
 Supported findings: [docs/RESULTS.md](docs/RESULTS.md) ·
-Retired claims and why: [docs/LEGACY_RESULTS.md](docs/LEGACY_RESULTS.md).
+Retired claims and why: [docs/LEGACY_RESULTS.md](docs/LEGACY_RESULTS.md) ·
+Next direction, designed but not run: [docs/design/E12_PLAN.md](docs/design/E12_PLAN.md).
 
 ## 10. Intended contributions
 

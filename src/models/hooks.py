@@ -199,6 +199,112 @@ def transform_positions(
 
 
 @torch.no_grad()
+def transform_and_capture(
+    model: nn.Module,
+    input_ids: torch.Tensor,
+    transforms: dict[int, dict[int, Callable[[torch.Tensor], torch.Tensor]]],
+    layer_indices: Optional[list[int]] = None,
+    attention_mask: Optional[torch.Tensor] = None,
+) -> tuple[ActivationCache, torch.Tensor]:
+    """Edit some positions and read the resulting states, in ONE forward pass.
+
+    E12's primary endpoint is internal: after installing another run's value at
+    the injection site, what does a frozen decoder read at the *next*
+    statement's anchor? Answering that needs the edit and the capture in the
+    same pass, and needs the capture to see the edited stream.
+
+    Hook order is what guarantees that. A forward hook returning a value
+    replaces the module's output for every hook registered after it, so the
+    transform hooks are registered first and the capturing hooks second; at the
+    intervened layer the cache therefore holds the edited state, and at later
+    layers it holds the states the edit produced.
+
+    Returns (cache, logits).
+    """
+    manager = HookManager(model, layer_indices=layer_indices)
+    all_layers = manager._get_decoder_layers()
+    handles: list = []
+
+    def make_transform_hook(pos_transforms: dict[int, Callable]):
+        def hook(module, input, output):
+            hidden = output[0] if isinstance(output, tuple) else output
+            for pos, fn in pos_transforms.items():
+                hidden[0, pos, :] = fn(hidden[0, pos, :]).to(
+                    device=hidden.device, dtype=hidden.dtype)
+            if isinstance(output, tuple):
+                return (hidden,) + output[1:]
+            return hidden
+        return hook
+
+    if -1 in transforms:
+        embeddings = model.get_input_embeddings()
+        handles.append(embeddings.register_forward_hook(make_transform_hook(transforms[-1])))
+    for layer_idx, layer in all_layers:
+        if layer_idx in transforms:
+            handles.append(layer.register_forward_hook(make_transform_hook(transforms[layer_idx])))
+
+    try:
+        with manager.active():                    # registered second: sees the edit
+            out = model(input_ids=input_ids, attention_mask=attention_mask)
+        return manager.cache, out.logits
+    finally:
+        for h in handles:
+            h.remove()
+
+
+def transform_positions_with_grad(
+    model: nn.Module,
+    input_ids: torch.Tensor,
+    transforms: dict[int, dict[int, Callable[[torch.Tensor], torch.Tensor]]],
+    attention_mask: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """`transform_positions` with autograd left ON — a sibling, not a variant.
+
+    Every other stage in this pipeline runs forward-only, so `transform_positions`
+    is decorated `@torch.no_grad()` and writes the edit in place. Learning an
+    intervention subspace (`src/models/das.py`) needs the opposite on both
+    counts: gradients must reach the parameters the edit is built from, and an
+    in-place write into the hooked output would break the graph.
+
+    The edit is therefore applied to a **clone**. A clone is a non-leaf tensor,
+    so an index assignment into it is recorded by autograd with a well-defined
+    backward, while the module's own output buffer is never mutated.
+
+    The model's parameters are expected to be frozen by the caller; nothing
+    here changes them.
+    """
+    manager = HookManager(model)  # reuse its decoder-layer discovery
+    all_layers = manager._get_decoder_layers()
+    handles: list = []
+
+    def make_transform_hook(pos_transforms: dict[int, Callable]):
+        def hook(module, input, output):
+            hidden = output[0] if isinstance(output, tuple) else output
+            edited = hidden.clone()
+            for pos, fn in pos_transforms.items():
+                new_vec = fn(hidden[0, pos, :])
+                edited[0, pos, :] = new_vec.to(device=hidden.device, dtype=hidden.dtype)
+            if isinstance(output, tuple):
+                return (edited,) + output[1:]
+            return edited
+        return hook
+
+    if -1 in transforms:
+        embeddings = model.get_input_embeddings()
+        handles.append(embeddings.register_forward_hook(make_transform_hook(transforms[-1])))
+    for layer_idx, layer in all_layers:
+        if layer_idx in transforms:
+            handles.append(layer.register_forward_hook(make_transform_hook(transforms[layer_idx])))
+
+    try:
+        out = model(input_ids=input_ids, attention_mask=attention_mask)
+        return out.logits
+    finally:
+        for h in handles:
+            h.remove()
+
+
+@torch.no_grad()
 def patch_positions(
     model: nn.Module,
     input_ids: torch.Tensor,

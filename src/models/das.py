@@ -1,0 +1,359 @@
+"""Magnitude-free interchange interventions on a learned low-rank subspace.
+
+Every causal instrument this repository has tried sets the size of the edit by
+hand, and E11's retraction is what that costs. A whole-state patch replaces
+everything the position holds, so it transports the input difference along with
+any semantic content. A rank-2 additive swap moves 2-4% of ||h||, and at a site
+whose dose-response is 18x convex an edit that small registers nothing whether
+or not the coordinates are read -- the null is uninterpretable, and the
+retraction in `results/STATUS.yaml` says so.
+
+An **interchange** has no such knob:
+
+    h' = h_self + R R^T (h_other - h_self)
+
+`R` (d x r, orthonormal columns) names a subspace; the intervention installs
+whatever the *other run actually has* in it and leaves the orthogonal
+complement of `h_self` untouched. There is no alpha to choose, so "was the dose
+enough?" is not a question the design has to answer. The size of the edit is a
+measured consequence (`interchange_report`), not an assumption.
+
+Two further properties matter for interpreting a null:
+
+  * `R` is **learned** (DAS-style: Geiger et al., https://arxiv.org/abs/2303.02536)
+    by maximizing interchange accuracy on a disjoint calibration split. A null
+    then says "no r-dimensional subspace here behaves this way", which is much
+    stronger than "the two directions I picked did not".
+  * because it is learned, it is also expressive enough to find structure that
+    is not there. That is what the controls in `src/experiments/store_interchange.py`
+    are for, and the decisive one is held-out-operation transfer: a subspace
+    that encodes the answer cannot transfer to a family that maps the same
+    value to a different answer.
+
+Same numerical policy as `src/models/jspace.py`: the algebra is defined in
+float64 on numpy, and only the per-call products run on device.
+"""
+
+from __future__ import annotations
+
+import logging
+import pickle
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Callable, Optional, Sequence
+
+import numpy as np
+import torch
+
+logger = logging.getLogger(__name__)
+
+# Below this fraction of ||h||, an "interchange" moved nothing and is reported
+# as degenerate rather than as a real intervention with a tiny effect.
+MIN_EDIT_FRACTION = 1e-6
+
+
+# -- the subspace -------------------------------------------------------------
+
+def orthonormalize(matrix: np.ndarray) -> np.ndarray:
+    """Orthonormal basis for the column space of `matrix` (d, r), via QR."""
+    M = np.asarray(matrix, dtype=np.float64)
+    if M.ndim != 2:
+        raise ValueError(f"expected a (d, r) matrix, got shape {M.shape}")
+    if M.shape[1] > M.shape[0]:
+        raise ValueError(f"rank {M.shape[1]} exceeds dimension {M.shape[0]}")
+    Q, _ = np.linalg.qr(M)
+    return Q[:, : M.shape[1]]
+
+
+def random_subspace(d: int, rank: int, seed: int = 42) -> np.ndarray:
+    """A uniformly random orthonormal (d, rank) basis — the rank-matched floor.
+
+    Note what this is and is not matched on. For an orthogonal projector only
+    `span(R)` matters, so matching the Gram matrix of the *rows* (as
+    `lens.gram_matched_random` does for the E11 swap) says nothing here. A
+    random subspace of a d-dimensional stream captures on average rank/d of the
+    state's energy, while a learned one is selected to capture far more — so
+    rank-matching alone leaves the two conditions dose-mismatched, in the
+    direction that manufactures a positive. `norm_matched_random` exists
+    because of that, and the report carries both.
+    """
+    rng = np.random.default_rng(seed)
+    return orthonormalize(rng.standard_normal((d, rank)))
+
+
+def top_difference_subspace(
+    deltas: Sequence[np.ndarray],
+    rank: int,
+) -> np.ndarray:
+    """Top-`rank` right singular directions of the counterfactual differences.
+
+    The natural subtractive dual of the counterfactual push, and — unlike the
+    coefficient rows of a multiclass probe — defined at any rank up to the
+    number of calibration examples. (The E11 value probe has six classes, hence
+    six rows, which is why a rank sweep built on it stops at six.)
+    """
+    D = np.asarray(deltas, dtype=np.float64)
+    if D.ndim != 2 or D.shape[0] == 0:
+        raise ValueError(f"expected a (n, d) stack of differences, got {D.shape}")
+    rank = min(rank, D.shape[0], D.shape[1])
+    _, _, Vt = np.linalg.svd(D - D.mean(axis=0, keepdims=True), full_matrices=False)
+    return orthonormalize(Vt[:rank].T)
+
+
+@dataclass
+class AlignedSubspace:
+    """A frozen (d, rank) orthonormal basis plus how it was obtained.
+
+    Frozen artifact, same contract as `LinearProbe.save/load` and `JLens`:
+    fitted once on the calibration split, then applied unchanged. The metadata
+    is what makes a later reader able to tell a learned subspace from a control
+    without re-deriving it.
+    """
+
+    basis: np.ndarray
+    layer: int
+    position: str
+    kind: str                      # "das" | "random" | "difference" | "noop"
+    rank: int
+    metadata: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.basis = np.asarray(self.basis, dtype=np.float64)
+        if self.basis.ndim != 2:
+            raise ValueError(f"basis must be (d, rank), got {self.basis.shape}")
+        self.rank = int(self.basis.shape[1])
+
+    @property
+    def d_model(self) -> int:
+        return int(self.basis.shape[0])
+
+    def orthogonality_error(self) -> float:
+        """`max |R^T R - I|` — a correctness check, reported not assumed."""
+        gram = self.basis.T @ self.basis
+        return float(np.max(np.abs(gram - np.eye(self.rank))))
+
+    def save(self, path: str | Path) -> Path:
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "wb") as handle:
+            pickle.dump({"basis": self.basis, "layer": self.layer,
+                         "position": self.position, "kind": self.kind,
+                         "rank": self.rank, "metadata": self.metadata}, handle)
+        return path
+
+    @classmethod
+    def load(cls, path: str | Path) -> "AlignedSubspace":
+        with open(path, "rb") as handle:
+            state = pickle.load(handle)
+        return cls(**state)
+
+
+# -- the intervention ---------------------------------------------------------
+
+def interchange(h_self: np.ndarray, h_other: np.ndarray, basis: np.ndarray) -> np.ndarray:
+    """`h_self + R R^T (h_other - h_self)` in float64.
+
+    Three properties, each a unit test in `tests/test_store.py`:
+      * the component of `h_self` orthogonal to span(R) is untouched;
+      * `h_other == h_self` gives *exactly* the zero edit, so the no-op control
+        is provably inert rather than approximately so;
+      * at `rank == d` the result is exactly `h_other`, i.e. the whole-state
+        patch is the rank-d limit of the same operator, which is what makes it
+        the right ceiling to normalize against.
+    """
+    a = np.asarray(h_self, dtype=np.float64).reshape(-1)
+    b = np.asarray(h_other, dtype=np.float64).reshape(-1)
+    R = np.asarray(basis, dtype=np.float64)
+    if a.shape != b.shape:
+        raise ValueError(f"states differ in size: {a.shape} vs {b.shape}")
+    if R.shape[0] != a.shape[0]:
+        raise ValueError(f"basis has d={R.shape[0]}, state has d={a.shape[0]}")
+    delta = b - a
+    return a + R @ (R.T @ delta)
+
+
+def interchange_report(h_self: np.ndarray, h_other: np.ndarray, basis: np.ndarray) -> dict:
+    """Per-example diagnostics saved next to the logits.
+
+    `edit_fraction` is the dose the intervention actually applied. It is
+    reported for every condition and used in the decision rule, not merely
+    logged: a control that removes a different fraction of the state is not a
+    control, and rank-matching alone does not make two conditions comparable.
+    """
+    a = np.asarray(h_self, dtype=np.float64).reshape(-1)
+    b = np.asarray(h_other, dtype=np.float64).reshape(-1)
+    patched = interchange(a, b, basis)
+    delta = patched - a
+    norm = float(np.linalg.norm(a)) or 1.0
+    captured = float(np.linalg.norm(np.asarray(basis).T @ a))
+    return {
+        "edit_norm": float(np.linalg.norm(delta)),
+        "edit_fraction": float(np.linalg.norm(delta) / norm),
+        "state_norm": norm,
+        "captured_fraction": captured / norm,
+        "counterfactual_distance": float(np.linalg.norm(b - a) / norm),
+        "degenerate": bool(np.linalg.norm(delta) < MIN_EDIT_FRACTION * norm),
+    }
+
+
+def norm_matched_random(
+    h_self: np.ndarray,
+    h_other: np.ndarray,
+    target_fraction: float,
+    d_model: int,
+    rank: int,
+    seed: int = 42,
+    max_rank: Optional[int] = None,
+) -> tuple[np.ndarray, float]:
+    """A random subspace whose interchange moves the SAME fraction of ||h||.
+
+    Searches upward in rank until the random interchange's edit fraction
+    reaches `target_fraction`, and returns the basis with the fraction it
+    achieved. This is the control the preregistered rule is read against;
+    the equal-rank random subspace is reported alongside as the weaker one.
+    """
+    max_rank = max_rank or d_model
+    r = rank
+    best = random_subspace(d_model, r, seed=seed)
+    best_fraction = interchange_report(h_self, h_other, best)["edit_fraction"]
+    while best_fraction < target_fraction and r < max_rank:
+        r = min(max_rank, r * 2)
+        candidate = random_subspace(d_model, r, seed=seed)
+        best = candidate
+        best_fraction = interchange_report(h_self, h_other, candidate)["edit_fraction"]
+    return best, best_fraction
+
+
+def make_interchange_fn(
+    basis: np.ndarray,
+    h_other: np.ndarray,
+    device: Optional[torch.device] = None,
+) -> Callable[[torch.Tensor], torch.Tensor]:
+    """A `transform_positions` callable applying the interchange in a live pass.
+
+    The basis and the donor state are cast once into float32 and cached in the
+    closure; the fp16 hidden state is upcast before the edit and cast back by
+    the hook, so the intervention never happens in half precision.
+    """
+    R = torch.from_numpy(np.asarray(basis, dtype=np.float64).astype(np.float32))
+    other = torch.from_numpy(np.asarray(h_other, dtype=np.float64).astype(np.float32))
+    if device is not None:
+        R, other = R.to(device), other.to(device)
+
+    def apply(vec: torch.Tensor) -> torch.Tensor:
+        h = vec.detach().float()
+        R_local, other_local = R.to(h.device), other.to(h.device)
+        delta = other_local - h
+        return h + R_local @ (R_local.T @ delta)
+
+    return apply
+
+
+# -- learning the subspace (DAS) ----------------------------------------------
+
+@dataclass
+class AlignmentExample:
+    """One training row: run this program, install that state, expect this token."""
+
+    input_ids: torch.Tensor        # (1, T) for the run being intervened on
+    position: int                  # anchor index of the injection site
+    donor_state: np.ndarray        # (d,) the other run's state at the same anchor
+    target_token_id: int           # the answer implied by the donor's value
+    base_token_id: int             # the answer without intervention
+    group: str = ""                # base program id, for grouped reporting
+
+
+@dataclass
+class AlignmentFit:
+    subspace: AlignedSubspace
+    history: list[dict]
+    n_examples: int
+    converged: bool
+
+
+def learn_alignment(
+    model,
+    examples: Sequence[AlignmentExample],
+    layer: int,
+    position: str,
+    rank: int,
+    d_model: int,
+    steps: int = 200,
+    batch_size: int = 8,
+    lr: float = 1e-2,
+    seed: int = 42,
+    device: Optional[torch.device] = None,
+    log_every: int = 25,
+) -> AlignmentFit:
+    """Learn an orthonormal `R` maximizing interchange accuracy.
+
+    Only `R` is trained; the model is frozen throughout. The intervention site's
+    incoming state is **detached**, which is exact rather than an approximation:
+    layers before `layer` cannot depend on `R`, so no gradient should flow
+    there, and detaching keeps the backward pass to the tail of the network.
+
+    Deliberately fitted on the calibration split only. `assert_disjoint` is
+    called by every stage that uses the result, so a subspace can never be
+    evaluated on states it was fitted to.
+    """
+    from src.models.hooks import transform_positions_with_grad
+
+    torch.manual_seed(seed)
+    device = device or next(model.parameters()).device
+    for parameter in model.parameters():
+        parameter.requires_grad_(False)
+
+    generator = torch.Generator(device="cpu").manual_seed(seed)
+    raw = torch.randn(d_model, rank, generator=generator, dtype=torch.float32)
+    raw = (raw / raw.norm(dim=0, keepdim=True)).to(device).requires_grad_(True)
+    optimizer = torch.optim.Adam([raw], lr=lr)
+
+    rng = np.random.default_rng(seed)
+    history: list[dict] = []
+    order = np.arange(len(examples))
+
+    for step in range(steps):
+        rng.shuffle(order)
+        batch = [examples[i] for i in order[:batch_size]]
+        optimizer.zero_grad(set_to_none=True)
+
+        # Orthonormalize inside the graph: the parameter is unconstrained and
+        # the projector is always built from an orthonormal basis, so the
+        # operator stays a true interchange at every step of the optimization.
+        Q, _ = torch.linalg.qr(raw)
+        losses = []
+        for example in batch:
+            donor = torch.from_numpy(
+                np.asarray(example.donor_state, dtype=np.float32)).to(device)
+
+            def edit(vec: torch.Tensor, donor=donor, Q=Q) -> torch.Tensor:
+                h = vec.detach().float()          # exact: layers < L ignore R
+                return h + Q @ (Q.T @ (donor - h))
+
+            logits = transform_positions_with_grad(
+                model, example.input_ids.to(device),
+                {int(layer): {int(example.position): edit}})
+            log_probs = torch.log_softmax(logits[0, -1].float(), dim=-1)
+            losses.append(-log_probs[int(example.target_token_id)])
+
+        loss = torch.stack(losses).mean()
+        loss.backward()
+        optimizer.step()
+
+        if step % log_every == 0 or step == steps - 1:
+            history.append({"step": step, "loss": float(loss.detach().cpu())})
+            logger.info("    DAS layer %s rank %d step %d: loss %.4f",
+                        layer, rank, step, float(loss.detach().cpu()))
+
+    with torch.no_grad():
+        Q, _ = torch.linalg.qr(raw)
+        basis = Q.detach().float().cpu().numpy().astype(np.float64)
+
+    converged = bool(len(history) >= 2 and history[-1]["loss"] <= history[0]["loss"])
+    subspace = AlignedSubspace(
+        basis=basis, layer=int(layer), position=position, kind="das", rank=int(rank),
+        metadata={"steps": steps, "batch_size": batch_size, "lr": lr, "seed": seed,
+                  "n_examples": len(examples), "final_loss": history[-1]["loss"] if history else None},
+    )
+    return AlignmentFit(subspace=subspace, history=history,
+                        n_examples=len(examples), converged=converged)

@@ -1,7 +1,7 @@
 # Pipeline
 
-Eleven numbered stages. Each stage is one CLI in `scripts/`, writes its outputs
-under `results/`, and records a manifest (git sha, args, wall time) in
+Numbered stages. Each stage is one CLI in `scripts/`, writes its outputs under
+`results/`, and records a manifest (git sha, args, wall time) in
 `results/manifests/`. GPU stages are marked; everything else runs anywhere.
 
 ```
@@ -10,11 +10,33 @@ CPU   GPU   CPU    CPU CPU GPU GPU               CPU
                 │                                 ↑
                 └→ 60 → { 61, 62 } ───────────────┘
                    GPU    GPU GPU
+
+E11:  70 → 71 → 72 → 73 → 74
+      CPU  GPU  GPU  GPU  CPU
+
+E12:  80 → 81 → 82 → 83 → 84 → 85 → 86 → 87 → 88     (instrument validation)
+      CPU  CPU  GPU  GPU  CPU  CPU  GPU  GPU  CPU
+           G0   G1        G2   G3   G4   G5
 ```
 
 Stage 60 is a **gate**: it exits non-zero on a failed check, and 61/62 are
 not interpretable until it passes. 61 optionally reads stage-20 probes for
 its side-by-side comparison; 62 needs no probes.
+
+**Stages 80–88 (E12) are hard-gated**, which is stronger than the `|| exit 1`
+chaining used elsewhere: each stage declares its prerequisites in
+`src/experiments/store_gates.py` and **refuses to run** (exit 2) unless they
+have passed, whoever invokes it and in whatever order. `--override-gate REASON`
+is permitted for diagnostics and is recorded permanently in
+`results/store/{model}/gates.yaml`, in the run manifest, and in every output
+row, so a number produced under an override cannot later be mistaken for one
+produced under a passing gate. The mechanism exists because E11's stage 73 ran
+without stage 72's frozen probes on disk and silently skipped a control rather
+than refusing.
+
+E12 claims no result — it is instrument validation. See
+`docs/design/E12_PLAN.md` for the design, `docs/RUNBOOK_E12.md` for the exact
+commands, and `docs/design/E13_DIRECTIONS.md` for what a pass licenses.
 
 Model names come from `configs/models.yaml` (`deepseek-coder-1.3b` for
 development/MPS, `deepseek-coder-6.7b` for main results). Canonical settings:
@@ -247,6 +269,35 @@ reappear in a figure by accident. `--include-archived` reproduces them in full.
 
 ---
 
+## Stages 80–88 — E12 instrument validation (gated)
+
+Claims nothing. Validates whether a computed, **text-absent** program value can
+be identified and interchanged such that downstream computation transforms it.
+Exact commands, VRAM, runtimes and per-gate diagnostics: `docs/RUNBOOK_E12.md`.
+
+| Stage | Command | Where | Gate | Output |
+|---|---|---|---|---|
+| 80 | `80_store_pairs.py --model M --n-bases 400` | CPU, ~1 min | — | `data/synthetic/store_pairs_M.jsonl` |
+| 81 | `81_store_verify.py --model M --pairs P` | CPU, ~1 min | **G0** | `verification.csv`, `gates.yaml` |
+| 82 | `82_store_behaviour.py --model M --pairs P` | GPU, ~5 min | **G1** | `behaviour{,_summary}.csv` |
+| 83 | `83_store_extract.py --model M --layers L` | GPU, ~15 min | — | `acts/{variant}_L*.npz` |
+| 84 | `84_store_decode.py --model M` | CPU, minutes | **G2** | `decode{,_summary}.csv`, `decoders/*.pkl` |
+| 85 | `85_store_transition.py --model M` | CPU, minutes | **G3** | `transition_{transfer,control,reversal}.csv` |
+| 86 | `86_store_ceiling.py --model M --layers L` | GPU, ~30 min | **G4** | `ceiling{,_summary}.csv` |
+| 87 | `87_store_interchange.py --model M --ranks R` | GPU, 1–3 h | **G5** | `interchange*.csv`, `subspaces/*.pkl` |
+| 88 | `88_store_report.py --model M` | CPU, seconds | — | `e12_report.{yaml,md}`, `e12_gates.csv` |
+
+Everything lands under `results/store/{model}/`. Stage 84 writes the frozen
+decoders that 86 and 87 load — running 86 or 87 without it is the failure mode
+the gates exist to prevent.
+
+Stage 87 is the only stage in the whole repository that runs a **backward**
+pass (it learns the interchange subspace), so it is the only one exposed to
+fp16 gradient instability. If the loss goes non-finite, re-run with
+`--dtype float32`.
+
+---
+
 ## Make targets
 
 ```bash
@@ -254,6 +305,8 @@ make smoke                       # tiny end-to-end run on this machine (1.3b)
 make data / extract / probes / context / obfuscation / leadtime / patching / assets
 make jspace                      # E11 stages 70→74 in order
 make jspace-pilot                # the pre-registered 1.3b pilot
+make store                       # E12 stages 80→88 (instrument validation, gated)
+make store-pilot                 # the cheap 1.3b instrument pilot
 make assets-all                  # stage 90 including archived experiments
 make test
 # every target takes MODEL=... and PY=<python path>
@@ -274,6 +327,14 @@ session so it survives disconnects.
 4. `screen -dmS leadtime-6.7b env MODEL=deepseek-coder-6.7b jobs/leadtime.csh` and
    `screen -dmS patching-6.7b env MODEL=deepseek-coder-6.7b jobs/patching.csh`.
 5. Anywhere: `make assets`; rsync `results/tables results/figures` back.
+
+For E11: `screen -dmS jspace-pilot env MODEL=deepseek-coder-1.3b jobs/jspace_pilot.csh`.
+
+For E12 (stages 80–88), the whole gated sequence is one job:
+`screen -dmS e12-pilot env MODEL=deepseek-coder-1.3b jobs/store_pilot.csh`, then
+`jobs/store_full.csh` for 6.7b only once the pilot reports
+`INSTRUMENT VALIDATED`. Per-stage commands, VRAM, runtimes, how to read each
+gate and what to run when one fails: **`docs/RUNBOOK_E12.md`**.
 
 `jobs/common.csh` holds the shared env: `$PYTHON` (micromamba `uq` env),
 `HF_HOME`/`HF_DATASETS_CACHE` (Scratch, `NOT_BACKED_UP`), `MAMBA_ROOT_PREFIX`/

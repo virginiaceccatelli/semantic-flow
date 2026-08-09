@@ -24,6 +24,19 @@
 #   make jspace MODEL=...           stages 70→74 in order
 #   make jspace-pilot               the 1.3b pilot exactly as pre-registered
 #
+#   ── E12, instrument validation (NOT a result): latent store transitions ──
+#   make store-pairs MODEL=...      stage 80 text-absent counterfactuals (CPU)
+#   make store-verify MODEL=...     stage 81 trace + interpreter — G0 (CPU)
+#   make store-behaviour MODEL=...  stage 82 can the model solve them — G1 (GPU)
+#   make store-extract MODEL=...    stage 83 cache anchor states (GPU)
+#   make store-decode MODEL=...     stage 84 decodability — G2 (CPU)
+#   make store-transition MODEL=... stage 85 natural transitions — G3 (CPU)
+#   make store-ceiling MODEL=...    stage 86 whole-state interchange — G4 (GPU)
+#   make store-interchange MODEL=.. stage 87 DAS low-rank + controls — G5 (GPU)
+#   make store-report MODEL=...     stage 88 gated report (CPU)
+#   make store MODEL=...            stages 80→88 in order; each refuses on a failed gate
+#   make store-pilot                the cheap 1.3b instrument pilot
+#
 #   make assets               stage 90 tables + figures, archived excluded (CPU)
 #   make assets-all           stage 90 including archived experiments (CPU)
 #   make test                 pytest
@@ -39,9 +52,14 @@ PROBES := results/probes/$(MODEL)/core
 .PHONY: smoke data data-real extract probes context obfuscation leadtime patching \
         jlens jlens-validate jlens-taint jlens-controldep \
         jspace jspace-pairs jspace-lens jspace-readout jspace-swap jspace-report \
-        jspace-diagnose jspace-pilot assets assets-all test
+        jspace-diagnose jspace-pilot assets assets-all test \
+        store store-pairs store-verify store-behaviour store-extract store-decode \
+        store-transition store-ceiling store-interchange store-report store-pilot
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
+STORE_PAIRS := data/synthetic/store_pairs_$(MODEL).jsonl
+STORE_LAYERS ?= 6,12,18
+STORE_RANKS ?= 1,2,4,8
 
 data:
 	$(PY) scripts/00_generate_data.py --model $(MODEL)
@@ -117,6 +135,43 @@ jspace-pilot:
 		--pairs data/synthetic/jspace_pairs_deepseek-coder-1.3b.jsonl \
 		--layers 6,12,18,23 --band-width 3
 	$(PY) scripts/74_jspace_report.py --model deepseek-coder-1.3b
+
+# ── E12 instrument validation (stages 80→88; every stage is gated) ──────────
+# Each stage refuses to run (exit 2) unless its prerequisite gates passed. To
+# run one anyway, add --override-gate 'reason' — it is recorded permanently.
+store-pairs:
+	$(PY) scripts/80_store_pairs.py --model $(MODEL)
+
+store-verify:
+	$(PY) scripts/81_store_verify.py --model $(MODEL) --pairs $(STORE_PAIRS)
+
+store-behaviour:
+	$(PY) scripts/82_store_behaviour.py --model $(MODEL) --pairs $(STORE_PAIRS)
+
+store-extract:
+	$(PY) scripts/83_store_extract.py --model $(MODEL) --pairs $(STORE_PAIRS) --layers $(STORE_LAYERS)
+
+store-decode:
+	$(PY) scripts/84_store_decode.py --model $(MODEL) --pairs $(STORE_PAIRS)
+
+store-transition:
+	$(PY) scripts/85_store_transition.py --model $(MODEL) --pairs $(STORE_PAIRS)
+
+store-ceiling:
+	$(PY) scripts/86_store_ceiling.py --model $(MODEL) --pairs $(STORE_PAIRS)
+
+store-interchange:
+	$(PY) scripts/87_store_interchange.py --model $(MODEL) --pairs $(STORE_PAIRS) --ranks $(STORE_RANKS)
+
+store-report:
+	$(PY) scripts/88_store_report.py --model $(MODEL)
+
+store: store-pairs store-verify store-behaviour store-extract store-decode \
+       store-transition store-ceiling store-interchange store-report
+
+# The cheap instrument pilot: 120 bases, three layers, ranks 1/2/4.
+store-pilot:
+	$(MAKE) store MODEL=deepseek-coder-1.3b STORE_LAYERS=6,12,18 STORE_RANKS=1,2,4
 
 assets:
 	$(PY) scripts/90_make_paper_assets.py
