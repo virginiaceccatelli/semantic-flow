@@ -49,7 +49,7 @@ def main(
     import torch
 
     from src.data.counterfactual_pairs import encode_prompt
-    from src.data.store_programs import load_pairs
+    from src.data.store_programs import load_pairs, resolve_pairs_path
     from src.experiments.store_decode import save_states
     from src.experiments.store_gates import GateFailure, require_gates
     from src.models.hooks import extract_hidden_states
@@ -57,7 +57,7 @@ def main(
     from src.utils import write_manifest
 
     t0 = time.time()
-    pairs_path = pairs or Path("data/synthetic") / f"store_pairs_{model}.jsonl"
+    pairs_path = resolve_pairs_path(model, pairs)
     root = output or Path("results/store") / model
     try:
         provenance = require_gates(model, "83_store_extract", override_gate, root=root)

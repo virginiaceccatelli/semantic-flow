@@ -42,8 +42,17 @@ source jobs/common.csh        # sets PYTHON, HF_HOME, PYTHONPATH, cd's to the re
 nvidia-smi                    # confirm a free GPU before starting
 ```
 
-`jobs/common.csh` is the only place environment paths live. It defaults
-`MODEL` to `deepseek-coder-6.7b`; every command below sets it explicitly.
+`jobs/common.csh` is the only place environment paths live. **It sets
+`MODEL=deepseek-coder-6.7b` whenever `MODEL` is unset**, which has two
+consequences worth knowing before you start:
+
+- a shell that has sourced it carries `MODEL=deepseek-coder-6.7b` into every
+  later command, so never interpolate `$MODEL` into a `--pairs` path;
+- `jobs/store_pilot.csh` and `jobs/jspace_pilot.csh` previously sourced it
+  *before* applying their own 1.3b default, which made that default dead code —
+  a bare `jobs/store_pilot.csh` ran the **6.7b** model. Fixed on 2026-08-09;
+  check `results/manifests/82_store_behaviour_*.json` (`args.model`) to see
+  which model an earlier run actually used.
 
 ---
 
@@ -66,8 +75,14 @@ fails and you need to work at one stage at a time.
 ## 2. Stage by stage
 
 Throughout: `MODEL=deepseek-coder-1.3b` for the pilot,
-`deepseek-coder-6.7b` for the full run. `PAIRS` is
-`data/synthetic/store_pairs_$MODEL.jsonl`, `OUT` is `results/store/$MODEL`.
+`deepseek-coder-6.7b` for the full run; `OUT` is `results/store/$MODEL`.
+
+**Do not pass `--pairs`.** Every stage derives it from `--model`. Interpolating
+a shell `$MODEL` into the path is how you end up asking one model's stage for
+another model's data — `jobs/common.csh` sets `MODEL=deepseek-coder-6.7b`
+whenever it is unset, so a shell that has sourced it silently disagrees with
+`--model deepseek-coder-1.3b`. The stages now refuse with a message naming the
+mismatch instead of a traceback, but the fix is to omit the flag.
 
 ### Stage 80 — generate (CPU, ~1 min, no GPU)
 
@@ -89,7 +104,7 @@ python scripts/80_store_pairs.py --model $MODEL --n-bases 400
 ### Stage 81 — verify, records **G0** (CPU, ~1 min)
 
 ```bash
-python scripts/81_store_verify.py --model $MODEL --pairs $PAIRS --strict
+python scripts/81_store_verify.py --model $MODEL --strict
 ```
 
 - **Writes:** `$OUT/verification.csv`, `$OUT/gates.yaml`
@@ -99,7 +114,7 @@ python scripts/81_store_verify.py --model $MODEL --pairs $PAIRS --strict
   generator or interpreter bug, look at `*_detail`); `text_absent` false means
   a tracked value leaked into the source text and the whole design is void for
   that record. Re-run stage 80 with a different `--seed`, or
-  `python scripts/81_store_verify.py --model $MODEL --pairs $PAIRS --drop-failures`
+  `python scripts/81_store_verify.py --model $MODEL --drop-failures`
   to filter and continue.
 - **Next:** stage 82.
 
@@ -107,7 +122,7 @@ python scripts/81_store_verify.py --model $MODEL --pairs $PAIRS --strict
 
 ```csh
 screen -dmS e12-behaviour env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
-    scripts/82_store_behaviour.py --model $MODEL --pairs $PAIRS --dtype float16 --strict
+    scripts/82_store_behaviour.py --model $MODEL --dtype float16 --strict
 ```
 
 - **Needs:** 1 GPU. ~4 GB for 1.3b, ~15 GB for 6.7b, fp16.
@@ -127,7 +142,7 @@ screen -dmS e12-behaviour env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
 
 ```csh
 screen -dmS e12-extract env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
-    scripts/83_store_extract.py --model $MODEL --pairs $PAIRS \
+    scripts/83_store_extract.py --model $MODEL \
     --layers 8,12,16,20,24 --dtype float16
 ```
 
@@ -143,7 +158,7 @@ screen -dmS e12-extract env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
 ### Stage 84 — decode, records **G2** (CPU, minutes)
 
 ```bash
-python scripts/84_store_decode.py --model $MODEL --pairs $PAIRS --strict
+python scripts/84_store_decode.py --model $MODEL --strict
 ```
 
 - **Needs:** no GPU. Single-position multiclass probes — minutes, unlike the
@@ -163,7 +178,7 @@ python scripts/84_store_decode.py --model $MODEL --pairs $PAIRS --strict
 ### Stage 85 — natural transition, records **G3** (CPU, minutes)
 
 ```bash
-python scripts/85_store_transition.py --model $MODEL --pairs $PAIRS --strict
+python scripts/85_store_transition.py --model $MODEL --strict
 ```
 
 - **Writes:** `$OUT/transition_transfer.csv`, `$OUT/transition_control.csv`,
@@ -183,7 +198,7 @@ python scripts/85_store_transition.py --model $MODEL --pairs $PAIRS --strict
 
 ```csh
 screen -dmS e12-ceiling env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
-    scripts/86_store_ceiling.py --model $MODEL --pairs $PAIRS \
+    scripts/86_store_ceiling.py --model $MODEL \
     --layers 8,12,16,20,24 --dtype float16 --strict
 ```
 
@@ -205,7 +220,7 @@ screen -dmS e12-ceiling env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
 
 ```csh
 screen -dmS e12-interchange env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
-    scripts/87_store_interchange.py --model $MODEL --pairs $PAIRS \
+    scripts/87_store_interchange.py --model $MODEL \
     --layers 8,12,16,20,24 --ranks 1,2,4,8,16 --dtype float16
 ```
 
@@ -266,7 +281,7 @@ Work through it in this order; the first two cost no GPU.
 ### Step 1 — triage what kind of failure it is (CPU, ~1 min)
 
 ```bash
-python scripts/89_store_diagnose.py --model $MODEL --pairs $PAIRS
+python scripts/89_store_diagnose.py --model $MODEL
 ```
 
 Re-reads `behaviour.csv` and names the cause. Writes `$OUT/g1_triage.csv`.
@@ -282,7 +297,7 @@ Re-reads `behaviour.csv` and names the cause. Writes `$OUT/g1_triage.csv`.
 ### Step 2 — sweep prompt formats and family sets (GPU, ~2 min)
 
 ```bash
-python scripts/89_store_diagnose.py --model $MODEL --pairs $PAIRS --sweep-prompts
+python scripts/89_store_diagnose.py --model $MODEL --sweep-prompts
 ```
 
 Generates a small corpus under each combination and reports balanced accuracy.
@@ -306,8 +321,8 @@ programs: a demo never contains the target's intermediates, and
 ```bash
 python scripts/80_store_pairs.py --model $MODEL --n-bases 400 \
     --prompt-format fewshot --families low_arithmetic
-python scripts/81_store_verify.py --model $MODEL --pairs $PAIRS --strict
-python scripts/82_store_behaviour.py --model $MODEL --pairs $PAIRS --strict
+python scripts/81_store_verify.py --model $MODEL --strict
+python scripts/82_store_behaviour.py --model $MODEL --strict
 ```
 
 Anchors are recomputed per format (a prefix shifts every line), so **any cached
@@ -322,8 +337,8 @@ actually decides whether the corpus is usable:
 ```bash
 python scripts/80_store_pairs.py --model deepseek-coder-6.7b --n-bases 400 \
     --prompt-format <best from step 2> --families <best from step 2>
-python scripts/81_store_verify.py --model deepseek-coder-6.7b --pairs <pairs> --strict
-python scripts/82_store_behaviour.py --model deepseek-coder-6.7b --pairs <pairs> --strict
+python scripts/81_store_verify.py --model deepseek-coder-6.7b --strict
+python scripts/82_store_behaviour.py --model deepseek-coder-6.7b --strict
 ```
 
 If 6.7b passes, run the rest of the pipeline there and treat 1.3b as a
@@ -388,7 +403,7 @@ Legitimate when you need to see what a downstream stage does after an upstream
 failure. Never legitimate as a way to reach a number.
 
 ```bash
-python scripts/86_store_ceiling.py --model $MODEL --pairs $PAIRS \
+python scripts/86_store_ceiling.py --model $MODEL \
     --override-gate "G3 failed on the control; checking whether the ceiling is alive at all"
 ```
 

@@ -695,6 +695,33 @@ def load_pairs(path: str | Path) -> list[StoreCounterfactual]:
         return [StoreCounterfactual.from_dict(obj) for obj in reader]
 
 
+def resolve_pairs_path(model: str, pairs: str | Path | None = None) -> Path:
+    """The pair file for `model`, or an error that names the actual problem.
+
+    The failure this exists for: `jobs/common.csh` sets `MODEL` to
+    deepseek-coder-6.7b when it is unset, so a shell that has sourced it and
+    then runs `--model deepseek-coder-1.3b --pairs .../store_pairs_$MODEL.jsonl`
+    asks for one model's pairs while telling the stage another. Raw, that
+    surfaces as a FileNotFoundError inside jsonlines with no hint at the cause.
+    """
+    path = Path(pairs) if pairs else Path("data/synthetic") / f"store_pairs_{model}.jsonl"
+    if path.exists():
+        return path
+
+    named = path.stem[len("store_pairs_"):] if path.stem.startswith("store_pairs_") else ""
+    hint = ""
+    if named and named != model:
+        hint = (f"\n  The path names model '{named}' but --model is '{model}'. "
+                f"A leftover shell $MODEL is the usual cause (jobs/common.csh "
+                f"defaults it to deepseek-coder-6.7b): omit --pairs and the path "
+                f"is derived from --model.")
+    available = sorted(p.name for p in Path("data/synthetic").glob("store_pairs_*.jsonl"))
+    raise FileNotFoundError(
+        f"No E12 pair file at {path}.{hint}\n"
+        f"  Available: {available or 'none — stage 80 has not run'}\n"
+        f"  Generate:  python scripts/80_store_pairs.py --model {model}")
+
+
 def dataset_summary(records: Sequence[StoreCounterfactual]) -> dict:
     """The numbers stage 80 prints and the manifest records."""
     bases = {r.base_id for r in records}

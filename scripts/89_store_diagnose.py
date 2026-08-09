@@ -79,7 +79,6 @@ def main(
     from src.utils import write_manifest
 
     t0 = time.time()
-    pairs_path = pairs or Path("data/synthetic") / f"store_pairs_{model}.jsonl"
     root = output or Path("results/store") / model
     root.mkdir(parents=True, exist_ok=True)
 
@@ -92,11 +91,12 @@ def main(
                       f"Nothing to triage; use --sweep-prompts to search for a "
                       f"format that works before spending a full run.[/yellow]")
     else:
+        from src.data.store_programs import resolve_pairs_path
         from src.experiments.store_behaviour import balanced_accuracy
         from src.models.loader import MODEL_REGISTRY, load_tokenizer
 
         frame = pd.read_csv(behaviour_path)
-        records = {r.pair_id: r for r in load_pairs(pairs_path)}
+        records = {r.pair_id: r for r in load_pairs(resolve_pairs_path(model, pairs))}
         tokenizer = load_tokenizer(MODEL_REGISTRY[model]["hf_id"])
 
         console.print(f"\n[bold]E12 G1 triage — {model}[/bold]  ({len(frame)} rows)")
@@ -243,7 +243,8 @@ def main(
                     "E11's own record has 1.3b at 0.53 where 6.7b reached 0.706.")
 
     write_manifest("89_store_diagnose", {
-        "model": model, "sweep_prompts": sweep_prompts, "n_bases": n_bases,
+        "model": model, "pairs": str(pairs or ""), "sweep_prompts": sweep_prompts,
+        "n_bases": n_bases,
         "formats": formats, "family_sets": family_sets, "seed": seed}, t0,
         extra={"flags": [row["check"] for row in findings if row["flag"]],
                "sweep_rows": 0 if sweep is None else len(sweep)})

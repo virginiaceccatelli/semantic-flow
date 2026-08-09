@@ -50,7 +50,7 @@ def main(
 ):
     import torch
 
-    from src.data.store_programs import load_pairs
+    from src.data.store_programs import load_pairs, resolve_pairs_path
     from src.experiments.store_behaviour import (
         behaviour_summary,
         evaluate_gate,
@@ -62,7 +62,7 @@ def main(
     from src.utils import write_manifest
 
     t0 = time.time()
-    pairs_path = pairs or Path("data/synthetic") / f"store_pairs_{model}.jsonl"
+    pairs_path = resolve_pairs_path(model, pairs)
     root = output or Path("results/store") / model
     root.mkdir(parents=True, exist_ok=True)
 

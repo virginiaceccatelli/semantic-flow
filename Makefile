@@ -60,7 +60,6 @@ PROBES := results/probes/$(MODEL)/core
         store-diagnose store-sweep
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
-STORE_PAIRS := data/synthetic/store_pairs_$(MODEL).jsonl
 STORE_LAYERS ?= 6,12,18
 STORE_RANKS ?= 1,2,4,8
 
@@ -146,25 +145,25 @@ store-pairs:
 	$(PY) scripts/80_store_pairs.py --model $(MODEL)
 
 store-verify:
-	$(PY) scripts/81_store_verify.py --model $(MODEL) --pairs $(STORE_PAIRS)
+	$(PY) scripts/81_store_verify.py --model $(MODEL)
 
 store-behaviour:
-	$(PY) scripts/82_store_behaviour.py --model $(MODEL) --pairs $(STORE_PAIRS)
+	$(PY) scripts/82_store_behaviour.py --model $(MODEL)
 
 store-extract:
-	$(PY) scripts/83_store_extract.py --model $(MODEL) --pairs $(STORE_PAIRS) --layers $(STORE_LAYERS)
+	$(PY) scripts/83_store_extract.py --model $(MODEL) --layers $(STORE_LAYERS)
 
 store-decode:
-	$(PY) scripts/84_store_decode.py --model $(MODEL) --pairs $(STORE_PAIRS)
+	$(PY) scripts/84_store_decode.py --model $(MODEL)
 
 store-transition:
-	$(PY) scripts/85_store_transition.py --model $(MODEL) --pairs $(STORE_PAIRS)
+	$(PY) scripts/85_store_transition.py --model $(MODEL)
 
 store-ceiling:
-	$(PY) scripts/86_store_ceiling.py --model $(MODEL) --pairs $(STORE_PAIRS)
+	$(PY) scripts/86_store_ceiling.py --model $(MODEL)
 
 store-interchange:
-	$(PY) scripts/87_store_interchange.py --model $(MODEL) --pairs $(STORE_PAIRS) --ranks $(STORE_RANKS)
+	$(PY) scripts/87_store_interchange.py --model $(MODEL) --ranks $(STORE_RANKS)
 
 store-report:
 	$(PY) scripts/88_store_report.py --model $(MODEL)
@@ -172,11 +171,11 @@ store-report:
 # Read a failed gate: constant responder, wrong answer format, the model
 # answering the intermediate, or a genuine capability limit. CPU, no re-run.
 store-diagnose:
-	$(PY) scripts/89_store_diagnose.py --model $(MODEL) --pairs $(STORE_PAIRS)
+	$(PY) scripts/89_store_diagnose.py --model $(MODEL)
 
 # Search for a prompt format and family set that elicits the task (GPU, ~2 min).
 store-sweep:
-	$(PY) scripts/89_store_diagnose.py --model $(MODEL) --pairs $(STORE_PAIRS) --sweep-prompts
+	$(PY) scripts/89_store_diagnose.py --model $(MODEL) --sweep-prompts
 
 store: store-pairs store-verify store-behaviour store-extract store-decode \
        store-transition store-ceiling store-interchange store-report

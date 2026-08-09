@@ -51,6 +51,7 @@ def main(
     import pandas as pd
 
     from src.data.store_programs import (
+        resolve_pairs_path,
         MIN_MUTATION_DISTANCE,
         assert_disjoint,
         dataset_summary,
@@ -62,7 +63,7 @@ def main(
     from src.utils import write_manifest
 
     t0 = time.time()
-    pairs_path = pairs or Path("data/synthetic") / f"store_pairs_{model}.jsonl"
+    pairs_path = resolve_pairs_path(model, pairs)
     root = output or Path("results/store") / model
     root.mkdir(parents=True, exist_ok=True)
 

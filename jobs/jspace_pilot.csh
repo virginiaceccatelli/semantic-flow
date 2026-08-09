@@ -14,9 +14,13 @@
 #
 # Env overrides: MODEL, DTYPE (float32 if fp16 gradients go non-finite),
 # LAYERS, FAMILIES, NBASES.
+# NOTE: the default MUST be set BEFORE sourcing jobs/common.csh, which
+# sets MODEL to deepseek-coder-6.7b when it is unset. Sourcing first made
+# this script's own default dead code, so a bare invocation silently ran
+# the large model instead of the pilot one.
+if (! $?MODEL) setenv MODEL deepseek-coder-1.3b
 source jobs/common.csh
 if (! $?RUN) setenv RUN "$MAMBA_EXE run -n semflow python"
-if (! $?MODEL) setenv MODEL deepseek-coder-1.3b
 if (! $?DTYPE) setenv DTYPE float16
 if (! $?LAYERS) setenv LAYERS "6,12,18,23"
 if (! $?FAMILIES) setenv FAMILIES "affine,threshold"

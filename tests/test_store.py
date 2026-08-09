@@ -31,6 +31,7 @@ from src.data.store_programs import (
     held_out_family,
     load_pairs,
     render,
+    resolve_pairs_path,
     save_pairs,
     split_pairs,
 )
@@ -226,6 +227,28 @@ def test_assert_disjoint_catches_a_deliberate_leak(records):
     leaked[1].split = "test"
     with pytest.raises(AssertionError):
         assert_disjoint(leaked)
+
+
+def test_resolve_pairs_path_names_a_model_mismatch(tmp_path, monkeypatch):
+    """The real failure: a leftover shell $MODEL pointing at another model's file."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "data" / "synthetic").mkdir(parents=True)
+    with pytest.raises(FileNotFoundError) as excinfo:
+        resolve_pairs_path("deepseek-coder-1.3b",
+                           "data/synthetic/store_pairs_deepseek-coder-6.7b.jsonl")
+    message = str(excinfo.value)
+    assert "deepseek-coder-6.7b" in message and "deepseek-coder-1.3b" in message
+    assert "omit --pairs" in message
+
+
+def test_resolve_pairs_path_defaults_from_the_model(tmp_path, monkeypatch, records):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "data" / "synthetic").mkdir(parents=True)
+    save_pairs(records, tmp_path / "data/synthetic/store_pairs_m.jsonl")
+    assert resolve_pairs_path("m").name == "store_pairs_m.jsonl"
+    with pytest.raises(FileNotFoundError) as excinfo:
+        resolve_pairs_path("other")
+    assert "store_pairs_m.jsonl" in str(excinfo.value)      # lists what does exist
 
 
 def test_round_trip_through_disk(records, tmp_path):

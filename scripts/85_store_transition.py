@@ -50,7 +50,7 @@ def main(
     import numpy as np
     import pandas as pd
 
-    from src.data.store_programs import load_pairs
+    from src.data.store_programs import load_pairs, resolve_pairs_path
     from src.experiments.store_decode import (
         ANCHOR_TARGET,
         evaluate_gate_g3,
@@ -65,7 +65,7 @@ def main(
     from src.utils import write_manifest
 
     t0 = time.time()
-    pairs_path = pairs or Path("data/synthetic") / f"store_pairs_{model}.jsonl"
+    pairs_path = resolve_pairs_path(model, pairs)
     root = output or Path("results/store") / model
     try:
         provenance = require_gates(model, "85_store_transition", override_gate, root=root)
