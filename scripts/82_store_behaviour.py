@@ -54,6 +54,7 @@ def main(
     from src.experiments.store_behaviour import (
         behaviour_summary,
         evaluate_gate,
+        proximity_rule_accuracy,
         retained_families,
         score_behaviour,
     )
@@ -91,8 +92,16 @@ def main(
 
     passed, value, detail = evaluate_gate(summary)
     kept = retained_families(summary)
+    proximity = proximity_rule_accuracy(frame)
+    if proximity:
+        console.print(f"  proximity rule: {({k: round(v, 3) for k, v in proximity.items()})}")
+        if max((v for k, v in proximity.items() if k.startswith("agreement")), default=0) >= 0.70:
+            console.print("[yellow]  The forced choice is largely predicted by numeric "
+                          "distance to a visible digit. Whatever G1 says, this number has "
+                          "little computational content — run scripts/89_store_diagnose.py."
+                          "[/yellow]")
     record_gate(model, "G1", passed, detail, stage="82_store_behaviour", value=value,
-                extra={"retained_families": kept,
+                extra={"retained_families": kept, **proximity,
                        "override": provenance.get("gate_override", False)}, root=root)
 
     console.print(summary.to_string(index=False))

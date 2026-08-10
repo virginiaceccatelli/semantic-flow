@@ -14,9 +14,13 @@ CPU   GPU   CPU    CPU CPU GPU GPU               CPU
 E11:  70 → 71 → 72 → 73 → 74
       CPU  GPU  GPU  GPU  CPU
 
-E12:  80 → 81 → 82 → 83 → 84 → 85 → 86 → 87 → 88     (instrument validation)
+E12:  80 → 81 → 82 → 83 → 84 → 85 → 86 → 87 → 88     (PARKED — see STATUS.yaml)
       CPU  CPU  GPU  GPU  CPU  CPU  GPU  GPU  CPU
            G0   G1        G2   G3   G4   G5
+
+E13:  100 → 101 → 102 → 103 → 104 → 105 → 106 → 107   (the active direction)
+      CPU   CPU   GPU   GPU   CPU   GPU   GPU   CPU
+            H0    H1          H2    H3    H4/H5
 ```
 
 Stage 60 is a **gate**: it exits non-zero on a failed check, and 61/62 are
@@ -34,9 +38,17 @@ produced under a passing gate. The mechanism exists because E11's stage 73 ran
 without stage 72's frozen probes on disk and silently skipped a control rather
 than refusing.
 
-E12 claims no result — it is instrument validation. See
-`docs/design/E12_PLAN.md` for the design, `docs/RUNBOOK_E12.md` for the exact
-commands, and `docs/design/E13_DIRECTIONS.md` for what a pass licenses.
+**E13 is the active direction.** It asks whether a low-rank, magnitude-free
+interchange at the binding-resolution site transports *which definition is in
+scope* rather than a token or an answer direction, and it needs no arithmetic —
+the model returns a variable. Design and identification strategy:
+`docs/design/E13_PLAN.md`.
+
+E12 is parked: its 1.3b pilot failed the behavioural gate at 0.418 because the
+design coupled a question about program state to two-step arithmetic. Code and
+gates are kept and still run; `docs/design/E12_PLAN.md` and
+`docs/RUNBOOK_E12.md` remain accurate for it, and
+`docs/design/E13_DIRECTIONS.md` records the wider option space.
 
 Model names come from `configs/models.yaml` (`deepseek-coder-1.3b` for
 development/MPS, `deepseek-coder-6.7b` for main results). Canonical settings:
@@ -295,6 +307,37 @@ Stage 87 is the only stage in the whole repository that runs a **backward**
 pass (it learns the interchange subspace), so it is the only one exposed to
 fp16 gradient instability. If the loss goes non-finite, re-run with
 `--dtype float32`.
+
+---
+
+## Stages 100–107 — E13 binding interchange (gated, the active direction)
+
+Does a low-rank, magnitude-free interchange at the binding-resolution site
+transport *which definition is in scope*? Identification is a 2×2: the same
+one-token binding flip demands **opposite token movements** in the two value
+assignments, so the alignment is fitted on arm `ab` and the claim is read on
+arm `ba`. No arithmetic anywhere — the model returns a variable.
+
+| Stage | Command | Where | Gate | Output |
+|---|---|---|---|---|
+| 100 | `100_binding_pairs.py --model M --n-bases 400` | CPU, ~5 s | — | `data/synthetic/binding_pairs_M.jsonl` |
+| 101 | `101_binding_verify.py --model M` | CPU, ~5 s | **H0** | `verification.csv`, `gates.yaml` |
+| 102 | `102_binding_behaviour.py --model M` | GPU, ~2 min | **H1** | `behaviour{,_summary}.csv` |
+| 103 | `103_binding_extract.py --model M --layers L` | GPU, ~3 min | — | `acts/{arm}_{binding}_L*.npz` |
+| 104 | `104_binding_decode.py --model M` | CPU, minutes | **H2** | `decode.csv`, `decoders/*.pkl` |
+| 105 | `105_binding_ceiling.py --model M --layers L` | GPU, ~15 min | **H3** | `ceiling{,_summary}.csv` |
+| 106 | `106_binding_interchange.py --model M --ranks R` | GPU, 1–2 h | **H4, H5** | `interchange*.csv`, `subspaces/*.pkl` |
+| 107 | `107_binding_report.py --model M` | CPU, seconds | — | `e13_report.{yaml,md}` |
+
+Everything lands under `results/binding/{model}/`. Prompts are ~21 tokens, so
+the full 6.7b run is ≈ 1.5–3 GPU-hours, dominated by stage 106's backward
+passes (the only backward pass in E13; `--dtype float32` if fp16 goes
+non-finite).
+
+**Do not pass `--pairs`** — every stage derives it from `--model`, and
+interpolating a shell `$MODEL` is how a stage ends up reading another model's
+data. `H4` without `H5` is E11 again; read `docs/design/E13_PLAN.md` §8 before
+interpreting either.
 
 ---
 

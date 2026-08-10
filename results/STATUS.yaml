@@ -177,6 +177,48 @@ experiments:
       readout, and E4 — the result it was interrogating — is itself mostly a
       statement about local syntax.
 
+  E13:
+    name: binding interchange, falsified by the value assignment
+    status: active
+    stage: "100,101,102,103,104,105,106,107"
+    tables: []
+    claim: >
+      NONE YET — implemented, not run. Asks whether a low-rank, magnitude-free
+      interchange at the site where a variable binding is resolved transports
+      WHICH DEFINITION IS IN SCOPE, rather than a token or an answer direction.
+      This is the question paper/main.tex Discussion declares open.
+    identification: >
+      A 2x2 of binding x value assignment. The same one-token binding flip
+      demands OPPOSITE token movements in the two value assignments, so an
+      alignment fitted on arm `ab` and tested on arm `ba` refutes an
+      answer-direction account rather than assuming it away. E11 could not do
+      this: with an arithmetic operation between the value and the answer it had
+      to forbid answer == value to avoid circularity. Here the answer IS the
+      bound value and the arm crossing breaks the circularity instead.
+    why_not_e12: >
+      E12 made two chained arithmetic steps the load-bearing capability for a
+      question about program state, and failed its behavioural gate at 0.418 on
+      1.3b — below chance, with the correct answer as argmax on 6.3% of prompts
+      against a 10% uniform floor. Two of four families sat at exactly 0.500,
+      which a no-computation numeric-proximity rule reproduces. E13 requires no
+      arithmetic at all: the model returns a variable.
+    gates:
+      - "H0 (stage 101): execution and a SCOPE-AWARE reference interpreter agree; invariants hold, including the arm crossing"
+      - "H1 (stage 102): the model returns the correctly bound variable — >= 0.85 overall AND >= 0.75 per cell"
+      - "H2 (stage 104): which definition is in scope is decodable at the use anchor above the measured surface baseline"
+      - "H3 (stage 105): whole-state interchange flips the answer in BOTH arms — the ceiling, and the proof that H5 is testable"
+      - "H4 (stage 106): low-rank interchange beats matched controls on the TRAINING arm"
+      - "H5 (stage 106): the same subspace transfers to the HELD-OUT arm, where an explicit answer direction fails"
+    status_note: >
+      IMPLEMENTED, NOT RUN. No GPU stage has been executed. Stages 100-107 are
+      hard-gated and refuse to run (exit 2) on a failed prerequisite;
+      `--override-gate REASON` is recorded permanently.
+    limitation: >
+      H4 alone is E11 again. The claim requires H5, and an H5 null is only
+      interpretable if the `answer_direction` control failed on the held-out arm
+      as designed — otherwise the discriminator is broken and no verdict is
+      licensed.
+
   E12:
     name: latent store transitions (INSTRUMENT VALIDATION)
     status: active
@@ -196,8 +238,14 @@ experiments:
       interchange is the contribution, and E12 builds only the instrument half.
       docs/design/E13_DIRECTIONS.md is what a pass licenses.
     status_note: >
-      IMPLEMENTED, NOT RUN. No GPU stage has been executed. Stages 80-88 are
-      hard-gated: each refuses to run (exit 2) unless its prerequisite gates
+      PARKED after the 1.3b pilot failed G1 at 0.418 balanced accuracy (below
+      chance; correct answer as argmax on 6.3% of prompts against a 10% uniform
+      floor; two of four families at exactly 0.500, which a no-computation
+      numeric-proximity rule reproduces). The design coupled a question about
+      program state to two-step arithmetic competence, which is the wrong
+      bottleneck. Superseded by E13. Code, gates and the diagnostic are kept and
+      still run. IMPLEMENTED, NOT RUN beyond the 1.3b behavioural gate. Stages
+      80-89 are hard-gated: each refuses to run (exit 2) unless its prerequisite gates
       passed, and `--override-gate REASON` is recorded permanently in
       results/store/{model}/gates.yaml, in the manifest, and in every row.
     gates:

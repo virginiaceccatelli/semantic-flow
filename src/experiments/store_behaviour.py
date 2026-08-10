@@ -65,6 +65,24 @@ def score_behaviour(
             other_id = record.token_ids["d_base" if variant == "counter" else "d_counter"]
             lp_correct = float(log_probs[correct_id])
             lp_other = float(log_probs[other_id])
+
+            # Which candidate is numerically closer to a digit the model can
+            # SEE? A two-alternative choice can be settled by digit distance
+            # with no computation at all, and on a monotone operation family the
+            # two candidates straddle the anchor symmetrically, which scores
+            # exactly 0.500 — a tie that reads as "chance" but is a proximity
+            # rule. Recorded per row so no G1 number can be interpreted without
+            # it; `scripts/89_store_diagnose.py` turns these into a verdict.
+            correct_value, other_value = record.answer(variant), (
+                record.d_base if variant == "counter" else record.d_counter)
+            proximity = {}
+            for anchor_name, anchor in (
+                    ("head", record.head_counter if variant == "counter" else record.head_base),
+                    ("intermediate", record.intermediate(variant))):
+                d_correct, d_other = abs(correct_value - anchor), abs(other_value - anchor)
+                proximity[f"closer_to_{anchor_name}"] = (
+                    None if d_correct == d_other else int(d_correct < d_other))
+
             rows.append({
                 "pair_id": record.pair_id, "base_id": record.base_id,
                 "op_family": record.op_family, "split": record.split,
@@ -75,6 +93,7 @@ def score_behaviour(
                 "correct": int(lp_correct > lp_other),
                 "argmax_token": int(np.argmax(log_probs)),
                 "argmax_is_correct": int(int(np.argmax(log_probs)) == correct_id),
+                **proximity,
                 **(provenance or {}),
             })
     return pd.DataFrame(rows)
@@ -129,6 +148,29 @@ def retained_families(summary: pd.DataFrame) -> list[str]:
         return []
     families = summary[summary.scope == "family"]
     return sorted(families[families["retained"].astype(bool)]["op_family"].tolist())
+
+
+def proximity_rule_accuracy(frame: pd.DataFrame) -> dict:
+    """How well 'pick the candidate closer to a visible digit' predicts the model.
+
+    Reported next to G1 rather than only in the diagnostic, because a high value
+    means the forced choice is measuring digit distance and the accuracy number
+    has no computational content — a fault in the corpus that no change of model
+    will fix.
+    """
+    out: dict = {}
+    for anchor in ("head", "intermediate"):
+        column = f"closer_to_{anchor}"
+        if column not in frame:
+            continue
+        usable = frame[frame[column].notna()]
+        if usable.empty:
+            continue
+        rule = usable[column].astype(int).to_numpy()
+        out[f"agreement_with_{anchor}_proximity"] = float(
+            np.mean(rule == usable["correct"].to_numpy()))
+        out[f"{anchor}_proximity_would_score"] = float(np.mean(rule))
+    return out
 
 
 def evaluate_gate(summary: pd.DataFrame) -> tuple[bool, float, str]:

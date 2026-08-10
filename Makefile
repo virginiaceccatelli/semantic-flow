@@ -39,6 +39,18 @@
 #   make store MODEL=...            stages 80→88 in order; each refuses on a failed gate
 #   make store-pilot                the cheap 1.3b instrument pilot
 #
+#   ── E13, the active direction: binding interchange (no arithmetic) ──
+#   make binding-pairs MODEL=...      stage 100 binding x value factorial (CPU)
+#   make binding-verify MODEL=...     stage 101 scope-aware reading — H0 (CPU)
+#   make binding-behaviour MODEL=...  stage 102 returns the bound variable — H1 (GPU)
+#   make binding-extract MODEL=...    stage 103 cache anchor states (GPU)
+#   make binding-decode MODEL=...     stage 104 binding decodable — H2 (CPU)
+#   make binding-ceiling MODEL=...    stage 105 whole-state, per arm — H3 (GPU)
+#   make binding-interchange MODEL=.. stage 106 DAS + held-out arm — H4, H5 (GPU)
+#   make binding-report MODEL=...     stage 107 gated report (CPU)
+#   make binding MODEL=...            stages 100→107; each refuses on a failed gate
+#   make binding-pilot                the 1.3b pilot
+#
 #   make assets               stage 90 tables + figures, archived excluded (CPU)
 #   make assets-all           stage 90 including archived experiments (CPU)
 #   make test                 pytest
@@ -57,10 +69,14 @@ PROBES := results/probes/$(MODEL)/core
         jspace-diagnose jspace-pilot assets assets-all test \
         store store-pairs store-verify store-behaviour store-extract store-decode \
         store-transition store-ceiling store-interchange store-report store-pilot \
-        store-diagnose store-sweep
+        store-diagnose store-sweep \
+        binding binding-pairs binding-verify binding-behaviour binding-extract \
+        binding-decode binding-ceiling binding-interchange binding-report binding-pilot
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
 STORE_LAYERS ?= 6,12,18
+BINDING_LAYERS ?= 6,12,18
+BINDING_RANKS ?= 1,2,4,8
 STORE_RANKS ?= 1,2,4,8
 
 data:
@@ -183,6 +199,38 @@ store: store-pairs store-verify store-behaviour store-extract store-decode \
 # The cheap instrument pilot: 120 bases, three layers, ranks 1/2/4.
 store-pilot:
 	$(MAKE) store MODEL=deepseek-coder-1.3b STORE_LAYERS=6,12,18 STORE_RANKS=1,2,4
+
+# ── E13 binding interchange (stages 100→107; every stage is gated) ──────────
+binding-pairs:
+	$(PY) scripts/100_binding_pairs.py --model $(MODEL)
+
+binding-verify:
+	$(PY) scripts/101_binding_verify.py --model $(MODEL)
+
+binding-behaviour:
+	$(PY) scripts/102_binding_behaviour.py --model $(MODEL)
+
+binding-extract:
+	$(PY) scripts/103_binding_extract.py --model $(MODEL) --layers $(BINDING_LAYERS)
+
+binding-decode:
+	$(PY) scripts/104_binding_decode.py --model $(MODEL)
+
+binding-ceiling:
+	$(PY) scripts/105_binding_ceiling.py --model $(MODEL) --layers $(BINDING_LAYERS)
+
+binding-interchange:
+	$(PY) scripts/106_binding_interchange.py --model $(MODEL) \
+		--layers $(BINDING_LAYERS) --ranks $(BINDING_RANKS)
+
+binding-report:
+	$(PY) scripts/107_binding_report.py --model $(MODEL)
+
+binding: binding-pairs binding-verify binding-behaviour binding-extract \
+         binding-decode binding-ceiling binding-interchange binding-report
+
+binding-pilot:
+	$(MAKE) binding MODEL=deepseek-coder-1.3b BINDING_LAYERS=6,12,18 BINDING_RANKS=1,2,4
 
 assets:
 	$(PY) scripts/90_make_paper_assets.py

@@ -478,6 +478,39 @@ def test_control_task_labels_are_fixed_per_name(records):
     assert all(len(values) == 1 for values in by_name.values())
 
 
+def test_proximity_rule_is_detected_when_it_explains_the_choice(records):
+    """A model doing no computation, only picking the numerically closer digit."""
+    import pandas as pd
+
+    from src.experiments.store_behaviour import proximity_rule_accuracy
+
+    rows = []
+    for record in records:
+        for variant in ("base", "counter"):
+            correct = record.answer(variant)
+            other = record.d_base if variant == "counter" else record.d_counter
+            anchor = record.head_counter if variant == "counter" else record.head_base
+            d_correct, d_other = abs(correct - anchor), abs(other - anchor)
+            if d_correct == d_other:
+                continue
+            rows.append({"correct": int(d_correct < d_other),
+                         "closer_to_head": int(d_correct < d_other),
+                         "closer_to_intermediate": None})
+    out = proximity_rule_accuracy(pd.DataFrame(rows))
+    assert out["agreement_with_head_proximity"] == pytest.approx(1.0)
+
+
+def test_proximity_rule_is_absent_for_a_perfect_model(records):
+    import pandas as pd
+
+    from src.experiments.store_behaviour import proximity_rule_accuracy
+
+    rows = [{"correct": 1, "closer_to_head": 0, "closer_to_intermediate": None}
+            for _ in records]
+    out = proximity_rule_accuracy(pd.DataFrame(rows))
+    assert out["agreement_with_head_proximity"] == pytest.approx(0.0)
+
+
 def test_retention_is_a_fraction_of_the_diagonal():
     import pandas as pd
 

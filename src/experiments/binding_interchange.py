@@ -1,0 +1,485 @@
+"""E13: interchange the BINDING, and let the value assignment falsify it.
+
+One metric runs through every stage. With a host cell `(arm, binding)` and the
+donor being the *same arm's other binding*:
+
+    own       = the value the host's use resolves to
+    installed = the value the donor's binding would select
+    delta_ld  = [logP(installed) - logP(own)]_patched - [same]_clean
+
+Positive means the intervention moved the output toward the value the
+**installed binding** selects. The definition is uniform across arms; the token
+identity of `installed` is not. In arm `ab` a source-host's installed answer is
+`v_b`; in arm `ba` it is `v_a`. So:
+
+  * a subspace carrying "which definition is in scope" scores positive on both;
+  * a subspace carrying "push toward the token `v_b`" scores positive on `ab`
+    and NEGATIVE on `ba`;
+  * a subspace carrying "the answer" does the same.
+
+The alignment is therefore fitted on `ab` alone and the claim is read on `ba`.
+That is the whole design, and it is what E11 could not do: with an arithmetic
+operation between the value and the answer, E11 had to forbid `answer == value`
+to avoid circularity, and paid for it with a capability requirement. Here the
+answer IS the bound value and the arm swap breaks the circularity instead.
+
+**Why `answer_direction` exists.** A null on `ba` has two readings — the
+subspace encodes the answer, or `ba` is simply not measurable. The control that
+separates them is an explicit, known answer direction (the unembedding row of
+the answer that arm `ab` would demand). It MUST pass on `ab` and MUST fail on
+`ba`. If it does not fail on `ba`, the discriminator is not working and no
+verdict about the learned subspace is licensed. This is the E10-3 lesson —
+a positive control of the same kind, at the same site — applied to the
+falsification itself rather than to the effect.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Callable, Optional, Sequence
+
+import numpy as np
+import pandas as pd
+import torch
+
+from src.analysis.bootstrap import cluster_bootstrap_ci, paired_cluster_bootstrap_ci
+from src.data.binding_pairs import ARMS, BINDINGS, BindingFactorial
+from src.data.counterfactual_pairs import encode_prompt
+from src.models.das import (
+    AlignedSubspace,
+    interchange_report,
+    make_interchange_fn,
+    norm_matched_random,
+    random_subspace,
+)
+from src.models.hooks import extract_hidden_states_and_logits, transform_positions
+
+logger = logging.getLogger(__name__)
+
+# Pre-registered thresholds. Changing one is a change to the experiment.
+MIN_BEHAVIOURAL_ACCURACY = 0.85     # H1 — the task is a variable lookup
+MIN_CELL_ACCURACY = 0.75            # H1 — per (arm, binding) cell
+MIN_BINDING_DECODE = 0.80           # H2 — binding decodable at the use anchor
+MIN_CEILING_SHIFT = 0.0             # H3 — whole-state, CI lower bound
+MIN_CEILING_FLIP = 0.25             # H3 — fraction of answers actually flipped
+MIN_TRAIN_ARM_FRACTION = 0.50       # H4 — fraction of the ceiling on `ab`
+MIN_TRANSFER_FRACTION = 0.50        # H5 — fraction of the ceiling on `ba`
+
+TRAIN_ARM = "ab"
+HELD_OUT_ARM = "ba"
+
+VARIANTS = ("das_binding", "answer_direction", "random_rank", "random_norm",
+            "noop", "whole_state")
+
+# Sites, in program order. `def_source` precedes the mutation, so the host and
+# donor states there are provably identical and the interchange is exactly the
+# zero edit — a structural zero kept in the output as a free correctness check.
+SITES = ("def_source", "def_target", "mutation", "use")
+
+
+# -- H1: can the model return the bound variable? -----------------------------
+
+@torch.no_grad()
+def score_behaviour(
+    model,
+    tokenizer,
+    records: Sequence[BindingFactorial],
+    device: Optional[torch.device] = None,
+    provenance: Optional[dict] = None,
+) -> pd.DataFrame:
+    """Forced choice between the two values, for all four cells of each base."""
+    device = device or next(model.parameters()).device
+    rows: list[dict] = []
+    for record in records:
+        for arm in ARMS:
+            for binding in BINDINGS:
+                ids = torch.tensor([encode_prompt(tokenizer, record.prompt(arm, binding))],
+                                   device=device)
+                logits = model(input_ids=ids).logits
+                log_probs = torch.log_softmax(logits[0, -1].float(), dim=-1).cpu().numpy()
+                correct_id = record.answer_token(arm, binding)
+                other_id = record.other_answer_token(arm, binding)
+                rows.append({
+                    "base_id": record.base_id, "split": record.split,
+                    "arm": arm, "binding": binding,
+                    "answer": record.answer(arm, binding),
+                    "logp_correct": float(log_probs[correct_id]),
+                    "logp_other": float(log_probs[other_id]),
+                    "correct": int(log_probs[correct_id] > log_probs[other_id]),
+                    "argmax_token": int(np.argmax(log_probs)),
+                    "argmax_is_correct": int(int(np.argmax(log_probs)) == correct_id),
+                    **(provenance or {}),
+                })
+    return pd.DataFrame(rows)
+
+
+def behaviour_summary(frame: pd.DataFrame, split: str = "test",
+                      n_boot: int = 2000, seed: int = 42) -> pd.DataFrame:
+    """Overall and per-cell accuracy with cluster intervals over bases."""
+    subset = frame[frame.split == split] if split != "all" else frame
+    if subset.empty:
+        return pd.DataFrame()
+    rows = []
+    overall = cluster_bootstrap_ci(subset["correct"].to_numpy(),
+                                   subset["base_id"].to_numpy(), n_boot=n_boot, seed=seed)
+    rows.append({"scope": "overall", "arm": "", "binding": "", "split": split,
+                 "accuracy": overall.point, "ci_lo": overall.lo, "ci_hi": overall.hi,
+                 "n": overall.n, "n_bases": overall.n_groups,
+                 "threshold": MIN_BEHAVIOURAL_ACCURACY})
+    for (arm, binding), part in subset.groupby(["arm", "binding"]):
+        ci = cluster_bootstrap_ci(part["correct"].to_numpy(), part["base_id"].to_numpy(),
+                                  n_boot=n_boot, seed=seed)
+        rows.append({"scope": "cell", "arm": arm, "binding": binding, "split": split,
+                     "accuracy": ci.point, "ci_lo": ci.lo, "ci_hi": ci.hi,
+                     "n": ci.n, "n_bases": ci.n_groups,
+                     "threshold": MIN_CELL_ACCURACY})
+    return pd.DataFrame(rows)
+
+
+def evaluate_gate_h1(summary: pd.DataFrame) -> tuple[bool, float, str]:
+    """H1: a variable lookup the model can actually do, in every cell.
+
+    Per-cell matters as much as the mean: a model that answers the outer
+    binding well and the shadowed one at chance would pass on average while
+    being unable to do the only thing the experiment is about.
+    """
+    if summary.empty:
+        return False, float("nan"), "no behavioural rows"
+    overall = summary[summary.scope == "overall"].iloc[0]
+    cells = summary[summary.scope == "cell"]
+    worst = cells.loc[cells["accuracy"].idxmin()] if not cells.empty else None
+    passed = bool(overall["accuracy"] >= MIN_BEHAVIOURAL_ACCURACY
+                  and worst is not None and worst["accuracy"] >= MIN_CELL_ACCURACY)
+    detail = (f"overall {overall['accuracy']:.3f} "
+              f"[{overall['ci_lo']:.3f}, {overall['ci_hi']:.3f}] against "
+              f"{MIN_BEHAVIOURAL_ACCURACY}"
+              + ("" if worst is None else
+                 f"; weakest cell {worst['arm']}_{worst['binding']} "
+                 f"{worst['accuracy']:.3f} against {MIN_CELL_ACCURACY}"))
+    return passed, float(overall["accuracy"]), detail
+
+
+# -- the intervention ---------------------------------------------------------
+
+def donor_of(binding: str) -> str:
+    return "target" if binding == "source" else "source"
+
+
+@torch.no_grad()
+def collect_states(
+    model,
+    tokenizer,
+    records: Sequence[BindingFactorial],
+    layer: int,
+    sites: Sequence[str] = SITES,
+    device: Optional[torch.device] = None,
+) -> dict:
+    """Clean states at every site and clean log-probs, for all four cells.
+
+    Cached once per layer so the intervention grid never re-runs a donor
+    program: an interchange needs the donor's state, not another forward pass.
+    """
+    device = device or next(model.parameters()).device
+    out: dict = {}
+    for record in records:
+        for arm in ARMS:
+            for binding in BINDINGS:
+                ids = torch.tensor([encode_prompt(tokenizer, record.prompt(arm, binding))],
+                                   device=device)
+                cache, logits = extract_hidden_states_and_logits(
+                    model, ids, layer_indices=[int(layer)])
+                hidden = cache.get(int(layer)).float().numpy()
+                out[(record.base_id, arm, binding)] = {
+                    "states": {site: hidden[record.positions[site]] for site in sites},
+                    "log_probs": torch.log_softmax(
+                        logits[0, -1].float(), dim=-1).cpu().numpy(),
+                    "ids": ids,
+                }
+    return out
+
+
+def build_subspace(
+    variant: str,
+    record: BindingFactorial,
+    arm: str,
+    binding: str,
+    host: np.ndarray,
+    donor: np.ndarray,
+    d_model: int,
+    rank: int,
+    subspace: Optional[AlignedSubspace],
+    unembedding: Optional[np.ndarray],
+    seed: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """(basis, donor_state) for one control arm."""
+    if variant == "das_binding":
+        if subspace is None:
+            raise ValueError("das_binding needs a learned subspace")
+        return subspace.basis, donor
+    if variant == "answer_direction":
+        # A direction that explicitly encodes the answer arm `ab` would demand.
+        # It must pass on `ab` and FAIL on `ba`; that is what makes a `ba` null
+        # about the subspace rather than about the arm.
+        if unembedding is None:
+            raise ValueError("answer_direction needs the unembedding matrix")
+        token = record.other_answer_token(TRAIN_ARM, binding)
+        direction = unembedding[token].astype(np.float64).reshape(-1, 1)
+        direction /= (np.linalg.norm(direction) or 1.0)
+        return direction, donor
+    if variant == "random_rank":
+        return random_subspace(d_model, rank, seed=seed), donor
+    if variant == "random_norm":
+        reference = subspace.basis if subspace is not None else random_subspace(
+            d_model, rank, seed=seed)
+        target = interchange_report(host, donor, reference)["edit_fraction"]
+        basis, _ = norm_matched_random(host, donor, target, d_model, rank, seed=seed)
+        return basis, donor
+    if variant == "noop":
+        basis = subspace.basis if subspace is not None else random_subspace(
+            d_model, rank, seed=seed)
+        return basis, host                       # provably the zero edit
+    if variant == "whole_state":
+        return np.eye(d_model), donor
+    raise ValueError(f"unknown variant '{variant}'")
+
+
+@torch.no_grad()
+def run_grid(
+    model,
+    tokenizer,
+    records: Sequence[BindingFactorial],
+    states: dict,
+    layer: int,
+    variants: Sequence[str],
+    sites: Sequence[str],
+    rank: int,
+    subspace: Optional[AlignedSubspace] = None,
+    unembedding: Optional[np.ndarray] = None,
+    seed: int = 42,
+    provenance: Optional[dict] = None,
+) -> pd.DataFrame:
+    """One row per (record, arm, binding, variant, site).
+
+    The metric is uniform across arms by construction; only the token identity
+    of `installed` changes, which is exactly what the held-out arm tests.
+    """
+    rows: list[dict] = []
+    d_model = None
+    for record in records:
+        for arm in ARMS:
+            for binding in BINDINGS:
+                host_key = (record.base_id, arm, binding)
+                donor_key = (record.base_id, arm, donor_of(binding))
+                if host_key not in states or donor_key not in states:
+                    continue
+                host_entry, donor_entry = states[host_key], states[donor_key]
+                installed_id = record.other_answer_token(arm, binding)
+                own_id = record.answer_token(arm, binding)
+                clean = host_entry["log_probs"]
+                clean_ld = float(clean[installed_id] - clean[own_id])
+
+                for site in sites:
+                    host = host_entry["states"][site]
+                    donor = donor_entry["states"][site]
+                    d_model = d_model or int(host.shape[0])
+                    for variant in variants:
+                        basis, donor_state = build_subspace(
+                            variant, record, arm, binding, host, donor,
+                            d_model, rank, subspace, unembedding, seed)
+                        report = interchange_report(host, donor_state, basis)
+                        logits = transform_positions(
+                            model, host_entry["ids"],
+                            {int(layer): {int(record.positions[site]):
+                                          make_interchange_fn(basis, donor_state)}})
+                        patched = torch.log_softmax(
+                            logits[0, -1].float(), dim=-1).cpu().numpy()
+                        patched_ld = float(patched[installed_id] - patched[own_id])
+                        rows.append({
+                            "base_id": record.base_id, "split": record.split,
+                            "arm": arm, "binding": binding, "site": site,
+                            "variant": variant, "layer": int(layer),
+                            "rank": d_model if variant == "whole_state" else int(rank),
+                            "own_answer": record.answer(arm, binding),
+                            "installed_answer": record.other_answer(arm, binding),
+                            "clean_logit_diff": clean_ld,
+                            "patched_logit_diff": patched_ld,
+                            "delta_ld": patched_ld - clean_ld,
+                            "flipped": int(patched[installed_id] > patched[own_id]
+                                           and clean[installed_id] <= clean[own_id]),
+                            "edit_fraction": report["edit_fraction"],
+                            "degenerate": bool(report["degenerate"]),
+                            **(provenance or {}),
+                        })
+    return pd.DataFrame(rows)
+
+
+# -- summaries and gates ------------------------------------------------------
+
+def interchange_summary(frame: pd.DataFrame, split: str = "test",
+                        n_boot: int = 2000, seed: int = 42) -> pd.DataFrame:
+    """Per (arm, variant, site, rank): the paired shift with a cluster interval."""
+    subset = frame[frame.split == split] if split != "all" else frame
+    rows = []
+    for (arm, variant, site, rank), part in subset.groupby(
+            ["arm", "variant", "site", "rank"]):
+        ci = cluster_bootstrap_ci(part["delta_ld"].to_numpy(),
+                                  part["base_id"].to_numpy(), n_boot=n_boot, seed=seed)
+        rows.append({"arm": arm, "variant": variant, "site": site, "rank": int(rank),
+                     "split": split, "delta_ld": ci.point, "ci_lo": ci.lo, "ci_hi": ci.hi,
+                     "flip_rate": float(part["flipped"].mean()),
+                     "edit_fraction": float(part["edit_fraction"].mean()),
+                     "n": ci.n, "n_bases": ci.n_groups})
+    return pd.DataFrame(rows)
+
+
+def control_contrasts(frame: pd.DataFrame, site: str, arm: str,
+                      treatment: str = "das_binding",
+                      controls: Sequence[str] = ("random_rank", "random_norm", "noop"),
+                      split: str = "test", n_boot: int = 2000,
+                      seed: int = 42) -> pd.DataFrame:
+    """Paired differences on the SAME rows, within one arm and site."""
+    subset = frame[(frame.site == site) & (frame.arm == arm)]
+    subset = subset[subset.split == split] if split != "all" else subset
+    treated = subset[subset.variant == treatment].set_index(["base_id", "binding"])
+    rows = []
+    for control in controls:
+        other = subset[subset.variant == control].set_index(["base_id", "binding"])
+        shared = treated.index.intersection(other.index)
+        if shared.empty:
+            rows.append({"arm": arm, "site": site, "contrast": f"{treatment} - {control}",
+                         "delta": float("nan"), "ci_lo": float("nan"),
+                         "ci_hi": float("nan"), "n": 0})
+            continue
+        ci = paired_cluster_bootstrap_ci(
+            treated.loc[shared, "delta_ld"].to_numpy(),
+            other.loc[shared, "delta_ld"].to_numpy(),
+            treated.loc[shared].reset_index()["base_id"].to_numpy(),
+            n_boot=n_boot, seed=seed)
+        rows.append({"arm": arm, "site": site, "contrast": f"{treatment} - {control}",
+                     "delta": ci.point, "ci_lo": ci.lo, "ci_hi": ci.hi, "n": ci.n,
+                     "n_bases": ci.n_groups,
+                     "edit_fraction_treatment": float(treated.loc[shared, "edit_fraction"].mean()),
+                     "edit_fraction_control": float(other.loc[shared, "edit_fraction"].mean())})
+    return pd.DataFrame(rows)
+
+
+def verify_structural_zeros(frame: pd.DataFrame) -> dict:
+    """`noop` and the pre-mutation site must move the logits by nothing.
+
+    Not statistics — arithmetic. The no-op edit is the zero vector, and at
+    `def_source` the host and donor states are identical because the programs
+    are token-identical up to the mutation. Movement in either means the hooks,
+    anchors or dtypes are wrong and every other number in the stage is suspect.
+    """
+    out: dict = {}
+    noop = frame[frame.variant == "noop"]
+    if not noop.empty:
+        worst = float(np.nanmax(np.abs(noop["delta_ld"].to_numpy())))
+        out["noop"] = {"max_abs_delta_ld": worst, "passed": bool(worst < 1e-4),
+                       "n": int(len(noop))}
+    pre = frame[(frame.site == "def_source") & (frame.variant == "whole_state")]
+    if not pre.empty:
+        worst = float(np.nanmax(np.abs(pre["delta_ld"].to_numpy())))
+        out["pre_mutation_whole_state"] = {
+            "max_abs_delta_ld": worst, "passed": bool(worst < 1e-4), "n": int(len(pre))}
+    return out
+
+
+def _cell(summary: pd.DataFrame, arm: str, variant: str, site: str) -> Optional[pd.Series]:
+    hit = summary[(summary.arm == arm) & (summary.variant == variant)
+                  & (summary.site == site)]
+    return None if hit.empty else hit.iloc[0]
+
+
+def evaluate_gate_h3(summary: pd.DataFrame, site: str) -> tuple[bool, float, str]:
+    """H3: whole-state interchange flips the answer — in BOTH arms.
+
+    Per arm, because the held-out arm's measurability is exactly what makes an
+    H5 null interpretable. A ceiling that only works on the training arm would
+    leave `ba` untestable and the whole design mute.
+    """
+    verdicts, details, values = [], [], []
+    for arm in ARMS:
+        row = _cell(summary, arm, "whole_state", site)
+        if row is None:
+            verdicts.append(False)
+            details.append(f"{arm}: no rows")
+            continue
+        ok = bool(row["ci_lo"] > MIN_CEILING_SHIFT and row["flip_rate"] >= MIN_CEILING_FLIP)
+        verdicts.append(ok)
+        values.append(float(row["delta_ld"]))
+        details.append(f"{arm}: {row['delta_ld']:+.3f} "
+                       f"[{row['ci_lo']:+.3f}, {row['ci_hi']:+.3f}], "
+                       f"flip rate {row['flip_rate']:.3f}")
+    passed = bool(verdicts) and all(verdicts)
+    detail = ("; ".join(details) +
+              f" (thresholds: CI above {MIN_CEILING_SHIFT}, flip rate "
+              f"{MIN_CEILING_FLIP}). Both arms must be measurable or an H5 null "
+              f"says nothing.")
+    return passed, (float(np.mean(values)) if values else float("nan")), detail
+
+
+def evaluate_gate_h4(summary: pd.DataFrame, contrasts: pd.DataFrame,
+                     site: str) -> tuple[bool, float, str]:
+    """H4: on the TRAINING arm, the low-rank interchange clears its controls."""
+    das = _cell(summary, TRAIN_ARM, "das_binding", site)
+    ceiling = _cell(summary, TRAIN_ARM, "whole_state", site)
+    if das is None or ceiling is None:
+        return False, float("nan"), "missing das_binding or whole_state rows"
+    fraction = (float(das["delta_ld"]) / float(ceiling["delta_ld"])
+                if ceiling["delta_ld"] else float("nan"))
+    cleared = bool(not contrasts.empty and (contrasts["ci_lo"] > 0).all())
+    passed = bool(das["ci_lo"] > 0 and np.isfinite(fraction)
+                  and fraction >= MIN_TRAIN_ARM_FRACTION and cleared)
+    failing = [] if contrasts.empty else contrasts[contrasts["ci_lo"] <= 0]["contrast"].tolist()
+    detail = (f"{TRAIN_ARM} @ {site}: {das['delta_ld']:+.3f} "
+              f"[{das['ci_lo']:+.3f}, {das['ci_hi']:+.3f}] = {fraction:.0%} of the "
+              f"whole-state ceiling {ceiling['delta_ld']:+.3f} (threshold "
+              f"{MIN_TRAIN_ARM_FRACTION:.0%}); controls cleared: {cleared}"
+              + (f" (failing: {failing})" if failing else "")
+              + f"; edit moved {das['edit_fraction']:.3f} of ||h||")
+    return passed, fraction, detail
+
+
+def evaluate_gate_h5(summary: pd.DataFrame, site: str) -> tuple[bool, float, str]:
+    """H5: the same subspace transfers to the held-out value assignment.
+
+    Three conditions, and the third is what makes a null mean anything:
+      1. `das_binding` is positive on `ba`, at a decent fraction of the ceiling;
+      2. it is not merely the training arm leaking — `ba` is measurable, which
+         H3 established;
+      3. the explicit `answer_direction` control, which passes on `ab`, FAILS
+         on `ba`. If it does not fail, the discriminator cannot tell an answer
+         encoder from a binding encoder and no verdict is licensed.
+    """
+    das_ba = _cell(summary, HELD_OUT_ARM, "das_binding", site)
+    ceiling_ba = _cell(summary, HELD_OUT_ARM, "whole_state", site)
+    answer_ab = _cell(summary, TRAIN_ARM, "answer_direction", site)
+    answer_ba = _cell(summary, HELD_OUT_ARM, "answer_direction", site)
+    if das_ba is None or ceiling_ba is None:
+        return False, float("nan"), "missing held-out-arm rows"
+
+    fraction = (float(das_ba["delta_ld"]) / float(ceiling_ba["delta_ld"])
+                if ceiling_ba["delta_ld"] else float("nan"))
+    transfers = bool(das_ba["ci_lo"] > 0 and np.isfinite(fraction)
+                     and fraction >= MIN_TRANSFER_FRACTION)
+
+    discriminator = "NOT MEASURED"
+    discriminates = False
+    if answer_ab is not None and answer_ba is not None:
+        passes_train = bool(answer_ab["ci_lo"] > 0)
+        fails_heldout = bool(answer_ba["ci_hi"] < 0 or answer_ba["ci_lo"] <= 0)
+        discriminates = passes_train and fails_heldout
+        discriminator = (f"answer_direction {TRAIN_ARM} {answer_ab['delta_ld']:+.3f} "
+                         f"[{answer_ab['ci_lo']:+.3f}, {answer_ab['ci_hi']:+.3f}] "
+                         f"(passes: {passes_train}), {HELD_OUT_ARM} "
+                         f"{answer_ba['delta_ld']:+.3f} "
+                         f"[{answer_ba['ci_lo']:+.3f}, {answer_ba['ci_hi']:+.3f}] "
+                         f"(fails: {fails_heldout})")
+
+    passed = bool(transfers and discriminates)
+    detail = (f"{HELD_OUT_ARM} @ {site}: das_binding {das_ba['delta_ld']:+.3f} "
+              f"[{das_ba['ci_lo']:+.3f}, {das_ba['ci_hi']:+.3f}] = {fraction:.0%} of "
+              f"the held-out ceiling (threshold {MIN_TRANSFER_FRACTION:.0%}); "
+              f"discriminator — {discriminator}")
+    return passed, fraction, detail

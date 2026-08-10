@@ -203,3 +203,116 @@ def cross_check(source: str, expected: Optional[dict] = None) -> dict:
 def final_store(source: str) -> dict:
     """The environment after the last statement, per the reference reading."""
     return dict(interpret(source)[-1].store)
+
+
+# -- scope-aware reading, for E13 ---------------------------------------------
+#
+# `interpret` above walks one function body with a single environment, which is
+# all E12 needs and exactly what E13 must not use: E13's whole subject is
+# whether a name resolves to the enclosing definition or to a local one that
+# captured it, and a reader with no concept of globals cannot express that.
+#
+# The rule implemented here is Python's, stated explicitly because it is the
+# thing under test: **a name assigned anywhere in a function body is local for
+# the whole body**, so `x = 7` inside `f` makes every `x` in `f` local, and a
+# body that never assigns `x` reads the module-level binding instead.
+
+def interpret_scoped(source: str) -> dict:
+    """Evaluate a module with one function `f`, resolving names local-then-global.
+
+    Returns `{"globals": ..., "locals": ..., "return": ...}`. Written against
+    the AST independently of `binding_pairs.render`, so a template that renders
+    one thing and means another is caught rather than certified.
+    """
+    tree = ast.parse(source)
+    globals_env: dict = {}
+    fdef = None
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
+                raise ValueError("unsupported module-level assignment")
+            globals_env[node.targets[0].id] = _eval(node.value, globals_env)
+        elif isinstance(node, ast.FunctionDef) and node.name == "f":
+            fdef = node
+        else:
+            raise ValueError(f"unsupported module-level statement "
+                             f"{type(node).__name__}")
+    if fdef is None:
+        raise ValueError("no function `f` in source")
+
+    # The scoping rule, applied before any statement runs.
+    local_names = {t.id for stmt in ast.walk(fdef)
+                   if isinstance(stmt, ast.Assign)
+                   for t in stmt.targets if isinstance(t, ast.Name)}
+
+    locals_env: dict = {}
+
+    def resolve(name: str) -> int:
+        if name in local_names:
+            if name not in locals_env:
+                raise ValueError(f"local variable '{name}' read before assignment")
+            return locals_env[name]
+        if name not in globals_env:
+            raise ValueError(f"name '{name}' is not defined")
+        return globals_env[name]
+
+    def evaluate(node: ast.AST) -> int:
+        if isinstance(node, ast.Name):
+            return resolve(node.id)
+        return _eval(node, {**globals_env, **locals_env}) if not isinstance(
+            node, (ast.BinOp, ast.UnaryOp)) else _eval_with(node, evaluate)
+
+    returned = None
+    for stmt in fdef.body:
+        if isinstance(stmt, ast.Assign):
+            if len(stmt.targets) != 1 or not isinstance(stmt.targets[0], ast.Name):
+                raise ValueError("unsupported assignment in `f`")
+            locals_env[stmt.targets[0].id] = evaluate(stmt.value)
+        elif isinstance(stmt, ast.Return):
+            returned = evaluate(stmt.value) if stmt.value is not None else None
+            break
+        else:
+            raise ValueError(f"unsupported statement {type(stmt).__name__} in `f`")
+
+    return {"globals": dict(globals_env), "locals": dict(locals_env), "return": returned}
+
+
+def _eval_with(node: ast.AST, evaluate) -> int:
+    """`_eval` for compound nodes, with name resolution delegated to the caller."""
+    if isinstance(node, ast.BinOp):
+        op = _BINOPS.get(type(node.op))
+        if op is None:
+            raise ValueError(f"unsupported operator {type(node.op).__name__}")
+        return op(evaluate(node.left), evaluate(node.right))
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+        return -evaluate(node.operand)
+    raise ValueError(f"unsupported expression {type(node).__name__}")
+
+
+def cross_check_scoped(source: str, expected_return: Optional[int] = None) -> dict:
+    """Agreement between execution and the scope-aware reference reading."""
+    row: dict = {"agree": False, "executed": None, "interpreted": None, "detail": ""}
+    namespace: dict = {"__builtins__": {}}
+    try:
+        exec(compile(source, "<binding>", "exec"), namespace)   # noqa: S102
+        row["executed"] = int(namespace["f"]())
+    except Exception as exc:                                    # noqa: BLE001
+        row["detail"] = f"execution failed: {exc}"
+        return row
+    try:
+        row["interpreted"] = interpret_scoped(source)["return"]
+    except Exception as exc:                                    # noqa: BLE001
+        row["detail"] = f"scoped interpreter failed: {exc}"
+        return row
+
+    if row["executed"] != row["interpreted"]:
+        row["detail"] = (f"execution returns {row['executed']} but the scoped "
+                         f"interpreter returns {row['interpreted']}")
+        return row
+    if expected_return is not None and row["executed"] != expected_return:
+        row["detail"] = (f"both readings return {row['executed']}, but the record "
+                         f"claims {expected_return}")
+        return row
+    row["agree"] = True
+    row["detail"] = "execution and the scope-aware interpreter agree"
+    return row

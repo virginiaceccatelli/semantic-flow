@@ -230,3 +230,66 @@ store_pilot:                           # the cheap 1.3b instrument pilot
   n_bases: 120
   layers: [6, 12, 18]
   ranks: [1, 2, 4]
+
+# ── E13: binding interchange, falsified by the value assignment ──────────────
+# The active direction. Asks whether a low-rank, magnitude-free interchange at
+# the binding-resolution site transports WHICH DEFINITION IS IN SCOPE rather
+# than a token or an answer direction. Design: docs/design/E13_PLAN.md.
+#
+# No arithmetic anywhere — the model returns a variable. That is the coupling
+# E12 got wrong and this design removes.
+
+stage100_binding_pairs:
+  n_bases: 400
+  calib_frac: 0.3                      # whole BASES move; both arms stay together
+  template: global_shadow_no_operation  # E11's template with the operation removed
+  invariants: [four_cells_share_token_length, one_token_mutation_per_arm,
+               use_token_identical_everywhere, mutation_at_least_4_tokens_before_use,
+               arms_crossed, values_distinct_single_tokens,
+               answer_appends_one_token, no_arithmetic]
+
+stage101_binding_verify:               # H0
+  readings: [execution, scope_aware_reference_interpreter]
+  scoping_rule: "a name assigned anywhere in a body is local for the whole body"
+  min_verified_fraction: 0.999
+
+stage102_binding_behaviour:            # H1
+  metric: two-alternative forced choice between the two values
+  min_overall_accuracy: 0.85
+  min_cell_accuracy: 0.75              # per (arm, binding) — a mean can hide a dead cell
+
+stage103_binding_extract:
+  anchors: [def_source, def_target, mutation, use, answer]
+  cells: [ab_source, ab_target, ba_source, ba_target]
+
+stage104_binding_decode:               # H2
+  label: which definition is in scope
+  anchor: use
+  controls: [measured_surface_window, within_base_shuffled_labels]
+  min_accuracy: 0.80
+  min_margin_over_surface: 0.10
+
+stage105_binding_ceiling:              # H3
+  variants: [whole_state, noop]
+  per_arm: true                        # both arms must be measurable or H5 is mute
+  min_flip_rate: 0.25
+  structural_zeros: [noop, whole_state_at_def_source]
+
+stage106_binding_interchange:          # H4, H5
+  training_arm: ab
+  held_out_arm: ba
+  ranks: [1, 2, 4, 8]
+  variants: [das_binding, answer_direction, random_rank, random_norm, noop, whole_state]
+  alignment: {steps: 200, batch_size: 8, lr: 0.01, trained_on: calibration_split_and_training_arm_only}
+  min_train_arm_fraction: 0.50         # H4, fraction of the ceiling
+  min_transfer_fraction: 0.50          # H5, fraction of the HELD-OUT arm's ceiling
+  decisive_control: answer_direction   # must pass `ab` and FAIL `ba`
+
+stage107_binding_report:
+  verdicts: [BINDING TRANSPORTED, NOT SUPPORTED, INCOMPLETE]
+
+binding_pilot:
+  model: deepseek-coder-1.3b
+  n_bases: 200
+  layers: [6, 12, 18]
+  ranks: [1, 2, 4]

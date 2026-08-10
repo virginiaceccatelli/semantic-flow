@@ -128,13 +128,18 @@ everything else is CPU and re-runnable.
 72 jspace readout      GPU   E11: paired counterfactual margin reversals
 73 jspace swap         GPU   E11: the coordinate swap and its six controls
 74 jspace report       CPU   E11: pre-registered go/no-go
-80–89 store transitions      E12: INSTRUMENT VALIDATION, claims nothing — can a
-                             computed, text-absent program value be interchanged
-                             so downstream computation transforms it? Six gates
-                             (G0–G5); each stage refuses to run on a failed one.
-                             Design: docs/design/E12_PLAN.md · Commands:
-                             docs/RUNBOOK_E12.md · What a pass licenses:
-                             docs/design/E13_DIRECTIONS.md
+80–89 store transitions      E12: PARKED — its behavioural gate failed because the
+                             design coupled a question about program state to
+                             two-step arithmetic. docs/design/E12_PLAN.md
+100–107 binding interchange  E13, THE ACTIVE DIRECTION: does a magnitude-free
+                             low-rank interchange at the binding-resolution site
+                             transport WHICH DEFINITION IS IN SCOPE, rather than
+                             a token or an answer direction? Identified by a 2×2
+                             where the same binding flip demands OPPOSITE token
+                             movements, so an answer direction is refuted rather
+                             than assumed away. No arithmetic anywhere. Six
+                             gates (H0–H5). Design: docs/design/E13_PLAN.md ·
+                             Commands: docs/RUNBOOK_E13.md
 90 paper assets        CPU   every table + figure, regenerated from CSVs alone
 ```
 
@@ -317,7 +322,8 @@ jobs/          csh scripts per GPU stage (run under screen; no scheduler)
 configs/       model registry + canonical experiment settings
 results/       STATUS.yaml (what each experiment currently claims) + tables, figures, manifests
 docs/          living reference: SETUP · PIPELINE · EXPERIMENTS · METHODS · RESULTS · LEGACY_RESULTS
-  design/      design rationale, one file per track: JLENS_PLAN (E10/E11) · E12_PLAN (next direction)
+  design/      design rationale per track: JLENS_PLAN (E10/E11) · E12_PLAN (parked) ·
+               E13_PLAN (active) · E13_DIRECTIONS (the wider option space)
 tests/         253 CPU-only tests (alignment exactness, CV leakage, strata, pairs, obfuscation semantics,
                ground-truth cross-check, swap invariants, build/test separation, …)
 ```
@@ -344,7 +350,8 @@ Experiment specs: [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) ·
 Methodology for the paper: [docs/METHODS.md](docs/METHODS.md) ·
 Supported findings: [docs/RESULTS.md](docs/RESULTS.md) ·
 Retired claims and why: [docs/LEGACY_RESULTS.md](docs/LEGACY_RESULTS.md) ·
-Next direction, designed but not run: [docs/design/E12_PLAN.md](docs/design/E12_PLAN.md).
+Active direction, implemented but not run: [docs/design/E13_PLAN.md](docs/design/E13_PLAN.md) ·
+Its commands: [docs/RUNBOOK_E13.md](docs/RUNBOOK_E13.md).
 
 ## 10. Intended contributions
 

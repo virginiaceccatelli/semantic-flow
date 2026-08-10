@@ -13,7 +13,8 @@ counterpart, and the two are meant to be kept in step.
 2. [Active J-space binding experiments](#2-active-j-space-binding-experiments) — E11 (stages 70–74)
 3. [Supporting / appendix experiments](#3-supporting--appendix-experiments) — E1, E4, E5, E7, E8, E9, E10-0
 4. [Archived experiments](#4-archived-experiments) — E6, E10-2, E10-3
-5. [Instrument validation](#5-instrument-validation-not-a-result) — E12 (stages 80–88)
+5. [Instrument validation](#5-instrument-validation-not-a-result) — E12 (stages 80–88, parked)
+6. [Binding interchange](#6-binding-interchange-e13-stages-100107) — E13 (stages 100–107, active)
 
 Shared metric definitions:
 
@@ -513,6 +514,66 @@ baseline scores 1.0. It is a precondition, not a result.
 
 Stages: `make store MODEL=...` (80–88), `make store-pilot`,
 `jobs/store_{pilot,full}.csh`.
+
+---
+
+# 6. Binding interchange (E13, stages 100–107)
+
+**Status: implemented, not run. The active direction.**
+
+**Question.** Does a low-rank, magnitude-free interchange at the site where a
+variable binding is resolved transport *which definition is in scope*, rather
+than a token or an answer direction? This is the question `paper/main.tex`
+§Discussion declares open.
+
+**The data.** Four programs per base — binding × value assignment — all
+token-identical except one character:
+
+```python
+# arm ab, source (outer binding) -> a      # arm ba, source (outer binding) -> b
+x = a                                      x = b
+def f():                                   def f():
+    y = b       # target: `x = b`              y = a       # target: `x = a`
+    return x                                   return x
+assert f() ==                              assert f() ==
+```
+
+**The identification.** Install the target run's state into the source run at
+the marked use. In arm `ab` the answer must move **a → b**; in arm `ba` the same
+intervention must move it **b → a**. Fit the alignment on `ab`, read the claim
+on `ba`. A subspace encoding "the token b", or "the answer", scores positive on
+`ab` and **negative** on `ba`. Only one encoding which definition is in scope
+survives both.
+
+E11 could not build this: with an arithmetic operation between the value and the
+answer it had to forbid `answer == value` to avoid circularity, and paid with a
+capability requirement. Here the answer IS the bound value and the arm crossing
+breaks the circularity instead — so there is **no arithmetic anywhere**, which
+is exactly the coupling that sank E12.
+
+**The gates.** Each stage refuses to run (exit 2) on a failed prerequisite.
+
+| gate | stage | asserts |
+|---|---|---|
+| H0 | 101 | execution and a **scope-aware** reference interpreter agree; invariants hold, including the arm crossing |
+| H1 | 102 | the model returns the bound variable — ≥ 0.85 overall **and** ≥ 0.75 per cell |
+| H2 | 104 | the binding is decodable at the use anchor above the measured surface baseline (E2's `context_matched`, replicated here) |
+| H3 | 105 | whole-state interchange flips the answer in **both** arms — the ceiling, and the proof H5 is testable |
+| H4 | 106 | low-rank interchange beats matched controls on the **training** arm |
+| H5 | 106 | the same subspace transfers to the **held-out** arm, where an explicit `answer_direction` fails |
+
+**Controls.** `whole_state` (ceiling, per arm), **`answer_direction`** (the
+positive control for the falsification: must pass `ab`, must fail `ba`),
+`random_rank`, `random_norm` (matched on removed norm), `noop` (provably zero),
+and the `def_source` site (a structural zero — the programs are token-identical
+before the mutation).
+
+**Do not claim** H4 alone: without H5 it is E11 again, and E11's own go/no-go
+read NO-GO. Full design, outcome table and literature position:
+`docs/design/E13_PLAN.md`.
+
+Stages: `make binding MODEL=...` (100–107), `make binding-pilot`,
+`jobs/binding_{pilot,full}.csh`.
 
 ---
 

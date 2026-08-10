@@ -286,13 +286,45 @@ python scripts/89_store_diagnose.py --model $MODEL
 
 Re-reads `behaviour.csv` and names the cause. Writes `$OUT/g1_triage.csv`.
 
-| flag | meaning | response |
-|---|---|---|
-| `constant_responder` | one token on ≥80% of prompts | **Prompt fault, not capability.** This is what retired E6: balanced accuracy exactly 0.500 from two opposite constant biases. Go to step 2. |
-| `answers_a_digit` low | the argmax is a newline or punctuation | The format does not elicit an answer at all. Step 2. |
-| `answers_the_intermediate` | it emits `c`, not `d` | Specific and informative: the first statement is executed, the second is not. Try `--families low_arithmetic` in step 2 — the transition is what is failing. |
-| `mutation_reaches_the_answer` flagged | base and counterfactual give the same argmax | The one-token mutation is not changing the output. If combined with `constant_responder`, it is the same fault; alone, the model is ignoring the head literal. |
-| nothing flagged | digits, spread, no bias, just wrong | A genuine capability limit. Step 2 is still worth 2 minutes, then step 3. |
+Flags are grouped, because they call for opposite responses and lumping them
+together is how a design fault gets reported as a capability limit.
+
+**FORMAT — the prompt is not eliciting the task. Not evidence about the model.**
+
+| flag | meaning |
+|---|---|
+| `constant_responder` | one token on ≥80% of prompts. This is what retired E6: balanced accuracy exactly 0.500 from two opposite constant biases |
+| `answers_a_digit` low | the argmax is a newline or punctuation — no answer is being produced |
+| `mutation_reaches_the_answer` | base and counterfactual give the same argmax; the mutation is not changing the output |
+| `variant_asymmetry` | one variant is answered far better than the other |
+
+**DESIGN — the forced choice is decided by something other than computation.
+Changing the model will not fix it.**
+
+| flag | meaning |
+|---|---|
+| `below_chance` | the accuracy CI sits entirely under 0.500. A model with no information scores 0.5; systematically below means something is deciding the choice *against* the correct answer |
+| `proximity_to_head_literal` / `proximity_to_intermediate_c` | "pick the candidate numerically closer to a visible digit" predicts the model's choice ≥70% of the time. The forced choice is measuring digit distance |
+
+A related tell the triage prints separately: **a family sitting at exactly
+0.500.** That is a signature, not noise — on a monotone operation the two
+candidates straddle the anchor symmetrically, so a pure proximity rule scores
+exactly 0.500. Verified by simulation: a no-computation proximity-to-head
+responder reproduces `add: 0.500` and `double_sub: 0.500` exactly on this
+corpus.
+
+Stage 82 now records `closer_to_head` / `closer_to_intermediate` per row and
+prints the rule's agreement next to G1, so this cannot be missed at source.
+
+**CAPABILITY — the model is not producing usable answers.**
+
+| flag | meaning |
+|---|---|
+| `argmax_beats_a_uniform_digit` | the correct answer is the argmax less often than the 10% a uniform random digit would give. The bluntest honest number, and it does not depend on the two-alternative metric |
+| `answers_the_intermediate` | it emits `c`, not `d` — the first statement is executed, the second is not. Try `--families low_arithmetic` |
+
+| nothing flagged | digits, spread, no bias, just wrong — a genuine capability limit. Step 2 is still worth 2 minutes, then step 3 |
+|---|---|
 
 ### Step 2 — sweep prompt formats and family sets (GPU, ~2 min)
 

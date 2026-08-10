@@ -91,6 +91,7 @@ def main(
                       f"Nothing to triage; use --sweep-prompts to search for a "
                       f"format that works before spending a full run.[/yellow]")
     else:
+        from src.analysis.bootstrap import cluster_bootstrap_ci
         from src.data.store_programs import resolve_pairs_path
         from src.experiments.store_behaviour import balanced_accuracy
         from src.models.loader import MODEL_REGISTRY, load_tokenizer
@@ -152,7 +153,71 @@ def main(
                                        f"{same:.1%} of pairs — the one-token mutation is not "
                                        f"changing the output"})
 
-        # (e) per-variant asymmetry (a one-sided responder)
+        # (e) does it produce the right answer AT ALL, against a uniform digit?
+        #     `correct` is a two-alternative choice, so it can sit near 0.5 while
+        #     the model is producing nothing usable. The argmax rate against a
+        #     1-in-10 floor is the blunter and more honest number.
+        argmax_correct = float(frame["argmax_is_correct"].mean())
+        findings.append({"check": "argmax_beats_a_uniform_digit", "value": argmax_correct,
+                         "flag": argmax_correct < 0.10,
+                         "detail": f"the correct answer is the argmax on {argmax_correct:.1%} "
+                                   f"of prompts, against 10.0% for a uniform random digit — "
+                                   f"below that floor means the model is not doing the task, "
+                                   f"whatever the forced choice says"})
+
+        # (f) BELOW chance is not "no signal". A model with no information scores
+        #     0.500 on a two-alternative choice; systematically under it means
+        #     something is deciding the choice against the correct answer, and
+        #     that something is findable.
+        bacc = balanced_accuracy(frame)
+        ci = cluster_bootstrap_ci(frame["correct"].to_numpy(), frame["base_id"].to_numpy())
+        findings.append({"check": "below_chance", "value": bacc,
+                         "flag": bool(np.isfinite(ci.hi) and ci.hi < 0.5),
+                         "detail": f"balanced accuracy {bacc:.3f}; accuracy CI "
+                                   f"[{ci.lo:.3f}, {ci.hi:.3f}] over {ci.n_groups} bases. "
+                                   f"Below chance is a structured artifact, not a capability "
+                                   f"limit — see the proximity checks below"})
+
+        # (g) is the choice explained by numeric proximity to a VISIBLE digit?
+        #     The decisive one. If the model emits something near a digit it can
+        #     see and the forced choice is then settled by which candidate is
+        #     numerically closer, the metric is measuring digit distance rather
+        #     than computation — and a family whose two candidates are
+        #     symmetric about that digit lands at exactly 0.500 by construction.
+        anchors = {
+            "head_literal": lambda r, v: r.head_counter if v == "counter" else r.head_base,
+            "intermediate_c": lambda r, v: r.intermediate(v),
+        }
+        for anchor_name, anchor_of in anchors.items():
+            rule_says_correct, model_agrees = [], []
+            for pid, variant, is_correct in zip(frame["pair_id"], frame["variant"],
+                                                frame["correct"]):
+                record = records.get(pid)
+                if record is None:
+                    continue
+                correct_value = record.answer(variant)
+                other_value = record.d_base if variant == "counter" else record.d_counter
+                x = anchor_of(record, variant)
+                d_correct, d_other = abs(correct_value - x), abs(other_value - x)
+                if d_correct == d_other:
+                    continue
+                closer = d_correct < d_other
+                rule_says_correct.append(int(closer))
+                model_agrees.append(int(closer == bool(is_correct)))
+            if not model_agrees:
+                continue
+            agreement = float(np.mean(model_agrees))
+            rule_accuracy = float(np.mean(rule_says_correct))
+            findings.append({
+                "check": f"proximity_to_{anchor_name}", "value": agreement,
+                "flag": agreement >= 0.70,
+                "detail": f"'pick the candidate numerically closer to {anchor_name}' "
+                          f"predicts the model's choice {agreement:.1%} of the time; that "
+                          f"rule would itself score {rule_accuracy:.3f}, so if the model "
+                          f"follows it the observed accuracy is explained without any "
+                          f"computation"})
+
+        # (h) per-variant asymmetry (a one-sided responder)
         per_variant = frame.groupby("variant")["correct"].mean().to_dict()
         skew = max(per_variant.values()) - min(per_variant.values()) if per_variant else 0.0
         findings.append({"check": "variant_asymmetry", "value": skew,
@@ -169,15 +234,46 @@ def main(
 
         by_family = frame.groupby("op_family")["correct"].mean()
         console.print(f"\n  per family: {({k: round(v, 3) for k, v in by_family.items()})}")
+        pinned = [family for family, accuracy in by_family.items()
+                  if abs(accuracy - 0.5) < 1e-9]
+        if pinned:
+            console.print(f"  [yellow]exactly 0.500:[/yellow] {pinned} — an exact tie is a "
+                          f"signature, not noise. A rule that picks between the two "
+                          f"candidates symmetrically (numeric proximity to a visible digit, "
+                          f"for instance) scores exactly 0.500 whenever the two candidates "
+                          f"straddle the anchor.")
 
-        flagged = [row["check"] for row in findings if row["flag"]]
-        console.print("\n[bold]Reading:[/bold] " + (
-            "no structural flag — this looks like a genuine capability limit. "
-            "Try --sweep-prompts anyway (it is cheap), then a larger model."
-            if not flagged else
-            f"flagged {flagged}. These are PROMPT/FORMAT faults, not evidence "
-            f"about representation. Fix the format before concluding anything "
-            f"about the model — run with --sweep-prompts."))
+        # The flags mean different things and call for different responses, so
+        # they are grouped rather than listed. Lumping them together is how a
+        # design fault gets reported as a capability limit.
+        flagged = {row["check"] for row in findings if row["flag"]}
+        format_faults = flagged & {"constant_responder", "answers_a_digit",
+                                   "mutation_reaches_the_answer", "variant_asymmetry"}
+        design_faults = flagged & {"below_chance", "proximity_to_head_literal",
+                                   "proximity_to_intermediate_c"}
+        capability = flagged & {"argmax_beats_a_uniform_digit", "answers_the_intermediate"}
+
+        console.print("\n[bold]Reading:[/bold]")
+        if format_faults:
+            console.print(f"  [red]FORMAT[/red] {sorted(format_faults)} — the prompt is not "
+                          f"eliciting the task. Not evidence about representation. Run "
+                          f"--sweep-prompts before concluding anything.")
+        if design_faults:
+            console.print(f"  [red]DESIGN[/red] {sorted(design_faults)} — the forced choice "
+                          f"is being decided by something other than computation. A "
+                          f"proximity flag means the two candidate answers must be matched "
+                          f"on distance to every visible digit before this metric measures "
+                          f"anything; below chance without a proximity flag means look for "
+                          f"another systematic tie-break. Changing the model will not fix "
+                          f"either.")
+        if capability:
+            console.print(f"  [yellow]CAPABILITY[/yellow] {sorted(capability)} — the model is "
+                          f"not producing usable answers at all. Try --sweep-prompts, then a "
+                          f"larger model; if both fail, reduce the arithmetic load "
+                          f"(--families low_arithmetic).")
+        if not flagged:
+            console.print("  no structural flag. Accuracy near 0.5 with no flag is a genuine "
+                          "capability limit: try --sweep-prompts (cheap), then a larger model.")
         pd.DataFrame(findings).to_csv(root / "g1_triage.csv", index=False)
 
     # ── part 2: search for a format that elicits the task (GPU) ──────────────
