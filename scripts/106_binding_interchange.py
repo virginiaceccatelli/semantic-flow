@@ -81,6 +81,7 @@ def main(
         evaluate_gate_h5,
         interchange_summary,
         run_grid,
+        select_rank,
         verify_structural_zeros,
     )
     from src.experiments.store_gates import BINDING, GateFailure, load_gates, record_gate, require_gates
@@ -103,7 +104,8 @@ def main(
     if max_records:
         records = records[:max_records]
     gates = load_gates(model, root=root, spec=BINDING)
-    chosen_site = site or ((gates.get("H3").extra or {}).get("site") if gates.get("H3") else "") or "use"
+    h3 = (gates.get("H3").extra or {}) if gates.get("H3") else {}
+    chosen_site = site or h3.get("site") or "use"
     site_list = [s.strip() for s in sites.split(",") if s.strip()]
     if chosen_site not in site_list:
         site_list.append(chosen_site)
@@ -111,8 +113,11 @@ def main(
     variant_list = [v.strip() for v in variants.split(",") if v.strip()]
 
     config = ModelConfig.from_registry(model, dtype=getattr(torch, dtype), device=device)
+    # Default to the single layer stage 105 chose on calibration. Running the
+    # whole probe-layer sweep here costs ~5x the GPU time and buys nothing the
+    # gates read, since the claim-bearing cell is pre-committed.
     layer_list = ([int(x) for x in layers.split(",") if x.strip()]
-                  if layers else list(config.probe_layers))
+                  if layers else [int(h3.get("layer", config.probe_layers[len(config.probe_layers) // 2]))])
     loader = ModelLoader(config)
     device_t = next(loader.model.parameters()).device
     console.print(f"[bold]E13 stage 106 — {model}[/bold]  layers {layer_list}, "
@@ -125,15 +130,24 @@ def main(
               for record in records for binding in BINDINGS}
     unembedding = {int(t): W_U[int(t)].detach().float().cpu().numpy() for t in needed}
 
-    calib = [r for r in records if r.split == "calib"]
+    # Calibration is split again: the subspace is FITTED on one part and the
+    # rank is SELECTED on the other. Selecting the rank on the same bases the
+    # subspace was fitted to would reward capacity, not transport.
+    calib_all = [r for r in records if r.split == "calib"]
+    cut = int(round(0.67 * len(calib_all)))
+    calib, calib_select = calib_all[:cut], calib_all[cut:]
     test = [r for r in records if r.split == "test"]
+    console.print(f"  calibration: {len(calib)} bases to fit, "
+                  f"{len(calib_select)} held out to select the rank")
 
-    frames, fits = [], []
+    frames, select_frames, fits = [], [], []
     for layer in layer_list:
         states_calib = collect_states(loader.model, loader.tokenizer, calib, layer,
                                       sites=site_list)
         states_test = collect_states(loader.model, loader.tokenizer, test, layer,
                                      sites=site_list)
+        states_select = collect_states(loader.model, loader.tokenizer, calib_select,
+                                       layer, sites=site_list)
 
         # Training examples: the TRAINING ARM only, both binding directions.
         examples = []
@@ -170,7 +184,12 @@ def main(
                 variants=variant_list, sites=site_list, rank=rank,
                 subspace=fit.subspace, unembedding=unembedding, seed=seed,
                 provenance=provenance))
-            console.print(f"  layer {layer} rank {rank}: {len(frames[-1])} rows")
+            select_frames.append(run_grid(
+                loader.model, loader.tokenizer, calib_select, states_select,
+                layer=layer, variants=("das_binding", "whole_state"),
+                sites=[chosen_site], rank=rank, subspace=fit.subspace,
+                unembedding=unembedding, seed=seed, provenance=provenance))
+            console.print(f"  layer {layer} rank {rank}: {len(frames[-1])} test rows")
 
     if not frames:
         console.print("[red]Nothing ran.[/red]")
@@ -181,19 +200,40 @@ def main(
     pd.DataFrame(fits).to_csv(root / "interchange_alignments.csv", index=False)
     summary = interchange_summary(frame, split="test", n_boot=n_boot, seed=seed)
     summary.to_csv(root / "interchange_summary.csv", index=False)
+
+    # The rank is selected on the held-out calibration slice, then recorded.
+    select_frame = pd.concat(select_frames, ignore_index=True)
+    select_frame.to_csv(root / "interchange_rank_selection.csv", index=False)
+    select_summary = interchange_summary(select_frame, split="calib",
+                                         n_boot=500, seed=seed)
+    chosen_layer = int(summary["layer"].iloc[0])
+    chosen_rank = select_rank(select_summary, chosen_site, chosen_layer)
+    if chosen_rank is None:
+        chosen_rank = min(rank_list)
+        console.print(f"  [yellow]no rank cleared on the calibration slice; "
+                      f"reporting the smallest ({chosen_rank}) and expecting H4 to "
+                      f"fail — that is the honest outcome, not a fallback[/yellow]")
+    console.print(f"  selected on calibration: site {chosen_site}, "
+                  f"layer {chosen_layer}, rank {chosen_rank}")
+
     contrasts = control_contrasts(frame, site=chosen_site, arm=TRAIN_ARM,
+                                  layer=chosen_layer, rank=chosen_rank,
                                   n_boot=n_boot, seed=seed)
     contrasts.to_csv(root / "interchange_contrasts.csv", index=False)
 
-    passed4, value4, detail4 = evaluate_gate_h4(summary, contrasts, chosen_site)
+    passed4, value4, detail4 = evaluate_gate_h4(summary, contrasts, chosen_site,
+                                                chosen_layer, chosen_rank)
     record_gate(model, "H4", passed4, detail4, stage="106_binding_interchange",
-                value=value4, extra={"site": chosen_site,
+                value=value4, extra={"site": chosen_site, "layer": chosen_layer,
+                                     "rank": chosen_rank,
                                      "override": provenance.get("gate_override", False)},
                 root=root, spec=BINDING)
 
-    passed5, value5, detail5 = evaluate_gate_h5(summary, chosen_site)
+    passed5, value5, detail5 = evaluate_gate_h5(summary, chosen_site,
+                                               chosen_layer, chosen_rank)
     record_gate(model, "H5", passed5, detail5, stage="106_binding_interchange",
-                value=value5, extra={"site": chosen_site,
+                value=value5, extra={"site": chosen_site, "layer": chosen_layer,
+                                     "rank": chosen_rank,
                                      "structural_zeros": verify_structural_zeros(frame),
                                      "override": provenance.get("gate_override", False)},
                 root=root, spec=BINDING)
@@ -207,6 +247,7 @@ def main(
 
     write_manifest("106_binding_interchange", {
         "model": model, "layers": str(layer_list), "ranks": ranks, "site": chosen_site,
+        "selected_layer": chosen_layer, "selected_rank": chosen_rank,
         "steps": steps, "dtype": dtype, "seed": seed}, t0,
         extra={"H4": passed4, "H5": passed5, "train_arm_fraction": value4,
                "held_out_fraction": value5, **provenance})

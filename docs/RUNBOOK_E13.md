@@ -145,20 +145,28 @@ screen -dmS e13-ceiling env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
   running stage 106 — a "the subspace did not transfer" result would be
   indistinguishable from "the arm cannot be moved", which is the ambiguity that
   retired E10-3.
-- The site is chosen on **calibration** and recorded before test numbers are
-  read; stage 106 picks it up from the gate file.
+- **Site and layer are both chosen on calibration**, from the whole-state
+  ceiling — which never involves a learned subspace, so nothing about stage
+  106's result can leak into the choice. Both are recorded in the H3 gate entry
+  before any test number is read, and stage 106 reads them from there.
 - **Next:** stage 106.
 
 ### Stage 106 — interchange, records **H4** and **H5** (GPU, 1–2 h)
 
 ```csh
 screen -dmS e13-interchange env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
-    scripts/106_binding_interchange.py --model $MODEL --layers 8,12,16,20,24 \
-    --ranks 1,2,4,8,16 --dtype float16
+    scripts/106_binding_interchange.py --model $MODEL --ranks 1,2,4,8,16 --dtype float16
 ```
 
 - **Needs:** more memory than the others — the only backward pass in E13. If the
   loss goes non-finite, re-run with `--dtype float32`.
+- **Do not pass `--layers`.** It defaults to the single layer stage 105 chose on
+  calibration. Sweeping all five probe layers costs ~5× the GPU time and buys
+  nothing any gate reads, because the claim-bearing cell is pre-committed.
+- **The rank is selected on a held-out third of the calibration split**, not on
+  test and not on the bases the subspace was fitted to — selecting rank on the
+  fitting data rewards capacity, not transport. The rule is *smallest rank that
+  clears*, never the argmax over ranks.
 - **Writes:** `$OUT/interchange{,_summary,_contrasts,_alignments}.csv`,
   `$OUT/subspaces/das_L*_r*.pkl`
 - **Inspect, in this order:**
@@ -198,7 +206,8 @@ decision that a pilot failure was about the small model rather than the design.
 screen -dmS e13-full env MODEL=deepseek-coder-6.7b jobs/binding_full.csh
 ```
 
-400 bases, layers `8,12,16,20,24`, ranks `1,2,4,8,16`. ≈ 1.5–3 GPU-hours.
+400 bases, layers `8,12,16,20,24` for stages 103/105; stage 106 runs only the
+calibration-selected layer. ≈ 1–1.5 GPU-hours total.
 
 ---
 
@@ -212,7 +221,7 @@ screen -dmS e13-full env MODEL=deepseek-coder-6.7b jobs/binding_full.csh
 | 103 extract | GPU | ~15 GB | ~3 min | — |
 | 104 decode | CPU | — | minutes | **H2** |
 | 105 ceiling | GPU | ~15 GB | ~15 min | **H3** |
-| 106 interchange | GPU | ~20 GB (backward) | 1–2 h | **H4, H5** |
+| 106 interchange | GPU | ~20 GB (backward) | ~40 min (one layer × 5 ranks) | **H4, H5** |
 | 107 report | CPU | — | seconds | — |
 
 ---
@@ -229,6 +238,7 @@ results/binding/{model}/
   decode.csv, decoders/binding_L*_use.pkl         104 (H2)  ← 105/106 load these
   ceiling{,_summary}.csv                          105 (H3)
   interchange{,_summary,_contrasts,_alignments}.csv  106 (H4, H5)
+  interchange_rank_selection.csv                  106 — the held-out calib slice
   subspaces/das_L{layer}_r{rank}.pkl              106
   e13_report.{yaml,md}, e13_gates.csv             107
 results/manifests/10*_binding_*.json              every stage, always

@@ -143,15 +143,24 @@ def main(
                                    f"statement is being executed and the second is not"})
 
         # (d) does the mutation reach the answer at all?
-        pivot = frame.pivot_table(index="pair_id", columns="variant",
+        #     Read PER FAMILY. Pooling hides the decisive case: a family in which
+        #     the model answers both programs identically scores exactly 0.500,
+        #     which pools away into something that looks like ordinary chance.
+        pivot = frame.pivot_table(index=["op_family", "pair_id"], columns="variant",
                                   values="argmax_token", aggfunc="first")
         if {"base", "counter"} <= set(pivot.columns):
+            same_by_family = (pivot["base"] == pivot["counter"]).groupby("op_family").mean()
             same = float((pivot["base"] == pivot["counter"]).mean())
+            frozen = sorted(same_by_family[same_by_family >= 0.9].index.tolist())
             findings.append({"check": "mutation_reaches_the_answer", "value": 1 - same,
-                             "flag": same >= 0.9,
-                             "detail": f"base and counterfactual produce the SAME argmax on "
-                                       f"{same:.1%} of pairs — the one-token mutation is not "
-                                       f"changing the output"})
+                             "flag": bool(frozen) or same >= 0.9,
+                             "detail": f"same argmax in both programs on {same:.1%} of pairs "
+                                       f"overall; per family "
+                                       f"{ {k: round(v, 3) for k, v in same_by_family.items()} }"
+                                       + (f". FROZEN families {frozen}: the mutation never "
+                                          f"reaches the output there, so their accuracy is "
+                                          f"pinned at exactly 0.500 by construction"
+                                          if frozen else "")})
 
         # (e) does it produce the right answer AT ALL, against a uniform digit?
         #     `correct` is a two-alternative choice, so it can sit near 0.5 while
@@ -234,6 +243,12 @@ def main(
 
         by_family = frame.groupby("op_family")["correct"].mean()
         console.print(f"\n  per family: {({k: round(v, 3) for k, v in by_family.items()})}")
+        # Per-base spread, which is what distinguishes "chance" from "pinned".
+        per_base = frame.groupby(["op_family", "base_id"])["correct"].mean()
+        spread = per_base.groupby("op_family").std().fillna(0.0)
+        console.print(f"  per-base sd: {({k: round(v, 4) for k, v in spread.items()})} "
+                      f"[dim]— 0.0000 means every base is identical, which chance "
+                      f"cannot produce[/dim]")
         pinned = [family for family, accuracy in by_family.items()
                   if abs(accuracy - 0.5) < 1e-9]
         if pinned:

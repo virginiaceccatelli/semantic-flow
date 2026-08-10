@@ -245,10 +245,75 @@ def test_unknown_gate_for_this_spec_is_refused(tmp_path):
 
 # -- the metric and its gates -------------------------------------------------
 
-def _summary_row(arm, variant, site, delta, lo, hi, flip=0.5):
-    return {"arm": arm, "variant": variant, "site": site, "rank": 2, "split": "test",
+def _summary_row(arm, variant, site, delta, lo, hi, flip=0.5, layer=12, rank=2):
+    return {"arm": arm, "variant": variant, "site": site, "rank": rank,
+            "layer": layer, "split": "test",
             "delta_ld": delta, "ci_lo": lo, "ci_hi": hi, "flip_rate": flip,
             "edit_fraction": 0.05, "n": 100, "n_bases": 50}
+
+
+def test_summary_never_pools_layers():
+    """Averaging a dead layer with a live one describes neither."""
+    import pandas as pd
+
+    from src.experiments.binding_interchange import interchange_summary
+
+    rows = []
+    for layer, delta in ((8, 0.0), (16, 1.0)):
+        for base in range(20):
+            rows.append({"base_id": f"b{base}", "split": "test", "arm": "ab",
+                         "binding": "source", "site": "use", "variant": "das_binding",
+                         "layer": layer, "rank": 2, "delta_ld": delta,
+                         "flipped": 0, "edit_fraction": 0.05})
+    summary = interchange_summary(pd.DataFrame(rows), n_boot=50)
+    assert set(summary["layer"]) == {8, 16}
+    assert sorted(summary["delta_ld"].round(3)) == [0.0, 1.0]
+
+
+def test_cell_lookup_requires_a_layer():
+    import pandas as pd
+
+    from src.experiments.binding_interchange import _cell
+
+    summary = pd.DataFrame([
+        _summary_row("ab", "das_binding", "use", 0.0, -0.1, 0.1, layer=8),
+        _summary_row("ab", "das_binding", "use", 0.9, 0.7, 1.1, layer=16),
+    ])
+    assert _cell(summary, "ab", "das_binding", "use", 16)["delta_ld"] == 0.9
+    assert _cell(summary, "ab", "das_binding", "use", 8)["delta_ld"] == 0.0
+    assert _cell(summary, "ab", "das_binding", "use", 99) is None
+
+
+def test_rank_selection_takes_the_smallest_that_clears():
+    import pandas as pd
+
+    from src.experiments.binding_interchange import select_rank
+
+    summary = pd.DataFrame([
+        _summary_row("ab", "whole_state", "use", 1.0, 0.8, 1.2, rank=4096),
+        _summary_row("ab", "das_binding", "use", 0.2, -0.1, 0.5, rank=1),
+        _summary_row("ab", "das_binding", "use", 0.7, 0.5, 0.9, rank=2),
+        _summary_row("ab", "das_binding", "use", 0.9, 0.7, 1.1, rank=8),
+    ])
+    assert select_rank(summary, "use", 12) == 2      # not 8, though 8 is larger
+    weak = pd.DataFrame([
+        _summary_row("ab", "whole_state", "use", 1.0, 0.8, 1.2, rank=4096),
+        _summary_row("ab", "das_binding", "use", 0.1, -0.2, 0.4, rank=2),
+    ])
+    assert select_rank(weak, "use", 12) is None      # nothing clears — reportable
+
+
+def test_site_and_layer_are_selected_from_the_ceiling():
+    import pandas as pd
+
+    from src.experiments.binding_interchange import select_on_calibration
+
+    calib = pd.DataFrame([
+        _summary_row("ab", "whole_state", "use", 0.3, 0.1, 0.5, layer=8),
+        _summary_row("ab", "whole_state", "use", 1.2, 1.0, 1.4, layer=16),
+        _summary_row("ab", "whole_state", "def_source", 0.0, 0.0, 0.0, layer=16),
+    ])
+    assert select_on_calibration(calib, ["def_source", "use"]) == ("use", 16)
 
 
 def test_h5_passes_only_when_the_subspace_transfers_and_the_control_does_not():
@@ -260,7 +325,7 @@ def test_h5_passes_only_when_the_subspace_transfers_and_the_control_does_not():
         _summary_row(TRAIN_ARM, "answer_direction", "use", 0.7, 0.5, 0.9),
         _summary_row(HELD_OUT_ARM, "answer_direction", "use", -0.6, -0.8, -0.4),
     ])
-    passed, fraction, detail = evaluate_gate_h5(summary, "use")
+    passed, fraction, detail = evaluate_gate_h5(summary, "use", 12, 2)
     assert passed and fraction == pytest.approx(0.6)
     assert "fails: True" in detail
 
@@ -275,7 +340,7 @@ def test_h5_fails_when_the_discriminator_is_broken():
         _summary_row(TRAIN_ARM, "answer_direction", "use", 0.7, 0.5, 0.9),
         _summary_row(HELD_OUT_ARM, "answer_direction", "use", 0.6, 0.4, 0.8),
     ])
-    passed, _, detail = evaluate_gate_h5(summary, "use")
+    passed, _, detail = evaluate_gate_h5(summary, "use", 12, 2)
     assert not passed
     assert "fails: False" in detail
 
@@ -290,7 +355,7 @@ def test_h5_fails_when_the_subspace_is_an_answer_direction():
         _summary_row(TRAIN_ARM, "answer_direction", "use", 0.7, 0.5, 0.9),
         _summary_row(HELD_OUT_ARM, "answer_direction", "use", -0.6, -0.8, -0.4),
     ])
-    passed, _, _ = evaluate_gate_h5(summary, "use")
+    passed, _, _ = evaluate_gate_h5(summary, "use", 12, 2)
     assert not passed
 
 

@@ -138,7 +138,18 @@ def behaviour_summary(
                      "accuracy": ci.point, "ci_lo": ci.lo, "ci_hi": ci.hi,
                      "n": ci.n, "n_bases": ci.n_groups,
                      "threshold": MIN_FAMILY_ACCURACY,
-                     "retained": bool(bacc >= MIN_FAMILY_ACCURACY)})
+                     "retained": bool(bacc >= MIN_FAMILY_ACCURACY),
+                     # A cluster bootstrap over many bases cannot return a
+                     # zero-width interval by chance: it requires EVERY base to
+                     # take the identical value. At 0.5 with two rows per base
+                     # that means exactly one variant is right in every pair —
+                     # i.e. the model answers both programs the same way and the
+                     # mutation never reaches the output. Read as a signature,
+                     # never as "chance".
+                     "degenerate_interval": bool(np.isfinite(ci.lo)
+                                                 and np.isfinite(ci.hi)
+                                                 and abs(ci.hi - ci.lo) < 1e-12
+                                                 and ci.n_groups >= 5)})
     return pd.DataFrame(rows)
 
 
@@ -187,8 +198,17 @@ def evaluate_gate(summary: pd.DataFrame) -> tuple[bool, float, str]:
     kept = retained_families(summary)
     value = float(overall["balanced_accuracy"])
     passed = bool(value >= MIN_OVERALL_BALANCED_ACCURACY and len(kept) >= 2)
+    families = summary[summary.scope == "family"]
+    degenerate = (families[families.get("degenerate_interval", False).astype(bool)]
+                  ["op_family"].tolist() if "degenerate_interval" in families else [])
     detail = (f"balanced accuracy {value:.3f} (threshold "
               f"{MIN_OVERALL_BALANCED_ACCURACY}); retained families "
               f"{kept} at >= {MIN_FAMILY_ACCURACY}; "
-              f"dropped {sorted(set(summary[summary.scope == 'family']['op_family']) - set(kept))}")
+              f"dropped {sorted(set(families['op_family']) - set(kept))}")
+    if degenerate:
+        detail += (f". ZERO-WIDTH interval on {degenerate}: every base sits at the "
+                   f"identical value, which a bootstrap cannot produce by chance — "
+                   f"the model answers both programs of the pair the same way and "
+                   f"the mutation never reaches the output. This is a structural "
+                   f"signature, not chance performance")
     return passed, value, detail

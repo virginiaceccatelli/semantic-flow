@@ -317,14 +317,20 @@ def run_grid(
 
 def interchange_summary(frame: pd.DataFrame, split: str = "test",
                         n_boot: int = 2000, seed: int = 42) -> pd.DataFrame:
-    """Per (arm, variant, site, rank): the paired shift with a cluster interval."""
+    """Per (arm, variant, site, rank, LAYER): the paired shift with an interval.
+
+    Layer is part of the key, not pooled over. Averaging a layer where the edit
+    does nothing together with one where it works produces a number that
+    describes neither, and every gate evaluator reads from this table.
+    """
     subset = frame[frame.split == split] if split != "all" else frame
     rows = []
-    for (arm, variant, site, rank), part in subset.groupby(
-            ["arm", "variant", "site", "rank"]):
+    for (arm, variant, site, rank, layer), part in subset.groupby(
+            ["arm", "variant", "site", "rank", "layer"]):
         ci = cluster_bootstrap_ci(part["delta_ld"].to_numpy(),
                                   part["base_id"].to_numpy(), n_boot=n_boot, seed=seed)
         rows.append({"arm": arm, "variant": variant, "site": site, "rank": int(rank),
+                     "layer": int(layer),
                      "split": split, "delta_ld": ci.point, "ci_lo": ci.lo, "ci_hi": ci.hi,
                      "flip_rate": float(part["flipped"].mean()),
                      "edit_fraction": float(part["edit_fraction"].mean()),
@@ -332,13 +338,16 @@ def interchange_summary(frame: pd.DataFrame, split: str = "test",
     return pd.DataFrame(rows)
 
 
-def control_contrasts(frame: pd.DataFrame, site: str, arm: str,
+def control_contrasts(frame: pd.DataFrame, site: str, arm: str, layer: int,
+                      rank: Optional[int] = None,
                       treatment: str = "das_binding",
                       controls: Sequence[str] = ("random_rank", "random_norm", "noop"),
                       split: str = "test", n_boot: int = 2000,
                       seed: int = 42) -> pd.DataFrame:
-    """Paired differences on the SAME rows, within one arm and site."""
-    subset = frame[(frame.site == site) & (frame.arm == arm)]
+    """Paired differences on the SAME rows, within one arm, site and layer."""
+    subset = frame[(frame.site == site) & (frame.arm == arm) & (frame.layer == layer)]
+    if rank is not None:
+        subset = subset[(subset.variant == "whole_state") | (subset["rank"] == rank)]
     subset = subset[subset.split == split] if split != "all" else subset
     treated = subset[subset.variant == treatment].set_index(["base_id", "binding"])
     rows = []
@@ -355,7 +364,8 @@ def control_contrasts(frame: pd.DataFrame, site: str, arm: str,
             other.loc[shared, "delta_ld"].to_numpy(),
             treated.loc[shared].reset_index()["base_id"].to_numpy(),
             n_boot=n_boot, seed=seed)
-        rows.append({"arm": arm, "site": site, "contrast": f"{treatment} - {control}",
+        rows.append({"arm": arm, "site": site, "layer": int(layer),
+                     "contrast": f"{treatment} - {control}",
                      "delta": ci.point, "ci_lo": ci.lo, "ci_hi": ci.hi, "n": ci.n,
                      "n_bases": ci.n_groups,
                      "edit_fraction_treatment": float(treated.loc[shared, "edit_fraction"].mean()),
@@ -385,13 +395,58 @@ def verify_structural_zeros(frame: pd.DataFrame) -> dict:
     return out
 
 
-def _cell(summary: pd.DataFrame, arm: str, variant: str, site: str) -> Optional[pd.Series]:
+def _cell(summary: pd.DataFrame, arm: str, variant: str, site: str,
+          layer: int, rank: Optional[int] = None) -> Optional[pd.Series]:
+    """One cell of the surface. Layer is mandatory; pooling it is a bug."""
     hit = summary[(summary.arm == arm) & (summary.variant == variant)
-                  & (summary.site == site)]
+                  & (summary.site == site) & (summary.layer == layer)]
+    if rank is not None and variant != "whole_state":
+        hit = hit[hit["rank"] == rank]
     return None if hit.empty else hit.iloc[0]
 
 
-def evaluate_gate_h3(summary: pd.DataFrame, site: str) -> tuple[bool, float, str]:
+def select_on_calibration(calib_summary: pd.DataFrame,
+                          sites: Sequence[str]) -> tuple[str, int]:
+    """(site, layer) maximizing the WHOLE-STATE ceiling on calibration.
+
+    Chosen from the ceiling rather than from the learned subspace, so nothing
+    about the das result leaks into the choice. Recorded in the gate file before
+    any test number is read — E11's rule, which exists because a site picked
+    after seeing the test split is not a site, it is a maximum.
+    """
+    ceiling = calib_summary[(calib_summary.variant == "whole_state")
+                            & (calib_summary.site.isin(list(sites)))]
+    if ceiling.empty:
+        return (sites[-1] if sites else "use"), int(calib_summary["layer"].min())
+    best = ceiling.loc[ceiling["delta_ld"].idxmax()]
+    return str(best["site"]), int(best["layer"])
+
+
+def select_rank(calib_summary: pd.DataFrame, site: str, layer: int,
+                arm: str = TRAIN_ARM,
+                min_fraction: float = MIN_TRAIN_ARM_FRACTION) -> Optional[int]:
+    """The SMALLEST rank clearing the ceiling fraction on a held-out calib slice.
+
+    Smallest rather than best: a high-rank success is much weaker evidence of
+    localisation, and picking the argmax over ranks is the winner's curse with
+    extra steps. Returns None if no rank clears, which is itself reportable.
+    """
+    rows = calib_summary[(calib_summary.arm == arm) & (calib_summary.site == site)
+                         & (calib_summary.layer == layer)]
+    ceiling = rows[rows.variant == "whole_state"]
+    das = rows[rows.variant == "das_binding"].sort_values("rank")
+    if ceiling.empty or das.empty:
+        return None
+    reference = float(ceiling["delta_ld"].iloc[0])
+    if reference <= 0:
+        return None
+    for _, row in das.iterrows():
+        if row["ci_lo"] > 0 and float(row["delta_ld"]) / reference >= min_fraction:
+            return int(row["rank"])
+    return None
+
+
+def evaluate_gate_h3(summary: pd.DataFrame, site: str, layer: int) -> tuple[bool, float, str]:
     """H3: whole-state interchange flips the answer — in BOTH arms.
 
     Per arm, because the held-out arm's measurability is exactly what makes an
@@ -400,7 +455,7 @@ def evaluate_gate_h3(summary: pd.DataFrame, site: str) -> tuple[bool, float, str
     """
     verdicts, details, values = [], [], []
     for arm in ARMS:
-        row = _cell(summary, arm, "whole_state", site)
+        row = _cell(summary, arm, "whole_state", site, layer)
         if row is None:
             verdicts.append(False)
             details.append(f"{arm}: no rows")
@@ -420,10 +475,10 @@ def evaluate_gate_h3(summary: pd.DataFrame, site: str) -> tuple[bool, float, str
 
 
 def evaluate_gate_h4(summary: pd.DataFrame, contrasts: pd.DataFrame,
-                     site: str) -> tuple[bool, float, str]:
+                     site: str, layer: int, rank: int) -> tuple[bool, float, str]:
     """H4: on the TRAINING arm, the low-rank interchange clears its controls."""
-    das = _cell(summary, TRAIN_ARM, "das_binding", site)
-    ceiling = _cell(summary, TRAIN_ARM, "whole_state", site)
+    das = _cell(summary, TRAIN_ARM, "das_binding", site, layer, rank)
+    ceiling = _cell(summary, TRAIN_ARM, "whole_state", site, layer)
     if das is None or ceiling is None:
         return False, float("nan"), "missing das_binding or whole_state rows"
     fraction = (float(das["delta_ld"]) / float(ceiling["delta_ld"])
@@ -432,7 +487,7 @@ def evaluate_gate_h4(summary: pd.DataFrame, contrasts: pd.DataFrame,
     passed = bool(das["ci_lo"] > 0 and np.isfinite(fraction)
                   and fraction >= MIN_TRAIN_ARM_FRACTION and cleared)
     failing = [] if contrasts.empty else contrasts[contrasts["ci_lo"] <= 0]["contrast"].tolist()
-    detail = (f"{TRAIN_ARM} @ {site}: {das['delta_ld']:+.3f} "
+    detail = (f"{TRAIN_ARM} @ {site} L{layer} r{rank}: {das['delta_ld']:+.3f} "
               f"[{das['ci_lo']:+.3f}, {das['ci_hi']:+.3f}] = {fraction:.0%} of the "
               f"whole-state ceiling {ceiling['delta_ld']:+.3f} (threshold "
               f"{MIN_TRAIN_ARM_FRACTION:.0%}); controls cleared: {cleared}"
@@ -441,7 +496,8 @@ def evaluate_gate_h4(summary: pd.DataFrame, contrasts: pd.DataFrame,
     return passed, fraction, detail
 
 
-def evaluate_gate_h5(summary: pd.DataFrame, site: str) -> tuple[bool, float, str]:
+def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
+                     rank: int) -> tuple[bool, float, str]:
     """H5: the same subspace transfers to the held-out value assignment.
 
     Three conditions, and the third is what makes a null mean anything:
@@ -452,10 +508,10 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str) -> tuple[bool, float, str
          on `ba`. If it does not fail, the discriminator cannot tell an answer
          encoder from a binding encoder and no verdict is licensed.
     """
-    das_ba = _cell(summary, HELD_OUT_ARM, "das_binding", site)
-    ceiling_ba = _cell(summary, HELD_OUT_ARM, "whole_state", site)
-    answer_ab = _cell(summary, TRAIN_ARM, "answer_direction", site)
-    answer_ba = _cell(summary, HELD_OUT_ARM, "answer_direction", site)
+    das_ba = _cell(summary, HELD_OUT_ARM, "das_binding", site, layer, rank)
+    ceiling_ba = _cell(summary, HELD_OUT_ARM, "whole_state", site, layer)
+    answer_ab = _cell(summary, TRAIN_ARM, "answer_direction", site, layer)
+    answer_ba = _cell(summary, HELD_OUT_ARM, "answer_direction", site, layer)
     if das_ba is None or ceiling_ba is None:
         return False, float("nan"), "missing held-out-arm rows"
 
@@ -478,7 +534,7 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str) -> tuple[bool, float, str
                          f"(fails: {fails_heldout})")
 
     passed = bool(transfers and discriminates)
-    detail = (f"{HELD_OUT_ARM} @ {site}: das_binding {das_ba['delta_ld']:+.3f} "
+    detail = (f"{HELD_OUT_ARM} @ {site} L{layer} r{rank}: das_binding {das_ba['delta_ld']:+.3f} "
               f"[{das_ba['ci_lo']:+.3f}, {das_ba['ci_hi']:+.3f}] = {fraction:.0%} of "
               f"the held-out ceiling (threshold {MIN_TRANSFER_FRACTION:.0%}); "
               f"discriminator — {discriminator}")

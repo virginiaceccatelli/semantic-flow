@@ -238,10 +238,22 @@ experiments:
       interchange is the contribution, and E12 builds only the instrument half.
       docs/design/E13_DIRECTIONS.md is what a pass licenses.
     status_note: >
-      PARKED after the 1.3b pilot failed G1 at 0.418 balanced accuracy (below
-      chance; correct answer as argmax on 6.3% of prompts against a 10% uniform
-      floor; two of four families at exactly 0.500, which a no-computation
-      numeric-proximity rule reproduces). The design coupled a question about
+      PARKED. The 1.3b pilot failed G1 at 0.4125 balanced accuracy on the test
+      split — below chance — and the per-family breakdown is conclusive rather
+      than merely negative. `add` (78 bases) and `double_sub` (45 bases) both
+      returned cluster-bootstrap intervals of ZERO WIDTH at exactly 0.500. A
+      bootstrap over dozens of bases cannot produce that by chance: it requires
+      every base to take the identical value, which with two rows per base means
+      exactly one variant is correct in every pair, which means the model
+      answers BOTH programs of a pair the same way. The one-token mutation never
+      reaches the output. A simulated responder that does no computation at all
+      and merely picks the candidate numerically closer to the head literal
+      reproduces the whole structure (overall 0.429 vs observed 0.4125; the same
+      two families pinned at 0.500 with zero variance; one family near 0.22).
+      The model is anchored on the head literal and never composes it through
+      either statement, so this is not a chaining failure but a failure to do
+      the first step. Correct answer as argmax on 6.3% of prompts against a 10%
+      uniform-digit floor. The design coupled a question about
       program state to two-step arithmetic competence, which is the wrong
       bottleneck. Superseded by E13. Code, gates and the diagnostic are kept and
       still run. IMPLEMENTED, NOT RUN beyond the 1.3b behavioural gate. Stages

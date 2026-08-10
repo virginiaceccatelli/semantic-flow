@@ -67,6 +67,7 @@ def main(
         evaluate_gate_h3,
         interchange_summary,
         run_grid,
+        select_on_calibration,
         verify_structural_zeros,
     )
     from src.experiments.store_gates import BINDING, GateFailure, record_gate, require_gates
@@ -112,16 +113,17 @@ def main(
     summary.to_csv(root / "ceiling_summary.csv", index=False)
 
     zeros = verify_structural_zeros(frame)
-    # The site is chosen on CALIBRATION, recorded before the test numbers are read.
+    # Site AND layer are chosen on CALIBRATION, from the whole-state ceiling —
+    # which never involves a learned subspace, so nothing about the stage-106
+    # result can leak into the choice. Recorded before any test number is read.
     calib = interchange_summary(frame, split="calib", n_boot=200, seed=seed)
-    ceiling = calib[(calib.variant == "whole_state") & (calib.site.isin(site_list))]
-    site = (ceiling.loc[ceiling["delta_ld"].idxmax(), "site"]
-            if not ceiling.empty else "use")
+    site, layer = select_on_calibration(calib, site_list)
 
-    passed, value, detail = evaluate_gate_h3(summary, site)
-    record_gate(model, "H3", passed, f"site {site} (chosen on calibration): {detail}",
+    passed, value, detail = evaluate_gate_h3(summary, site, layer)
+    record_gate(model, "H3", passed,
+                f"site {site}, layer {layer} (both chosen on calibration): {detail}",
                 stage="105_binding_ceiling", value=value,
-                extra={"site": site, "structural_zeros": zeros,
+                extra={"site": site, "layer": int(layer), "structural_zeros": zeros,
                        "override": provenance.get("gate_override", False)},
                 root=root, spec=BINDING)
 
@@ -132,7 +134,8 @@ def main(
     write_manifest("105_binding_ceiling", {
         "model": model, "layers": str(layer_list), "sites": sites,
         "dtype": dtype, "seed": seed}, t0,
-        extra={"H3": passed, "site": site, "structural_zeros": zeros, **provenance})
+        extra={"H3": passed, "site": site, "layer": int(layer),
+               "structural_zeros": zeros, **provenance})
     if strict and not passed:
         raise typer.Exit(1)
 

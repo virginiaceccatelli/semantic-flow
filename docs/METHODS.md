@@ -15,6 +15,167 @@ loopholes.
 
 ---
 
+## 0. What "semantic" means here
+
+This word carries the whole project, and until now it was only implicit in the
+constructions. Stated explicitly.
+
+### 0.1 Two notions, both called semantic
+
+| | What it is | Ground truth | Used by |
+|---|---|---|---|
+| **Abstract semantics** | sound approximations of behaviour: reaching definitions, def-use edges, control dependence, taint | static analysis (`src/graphs/`) | E2, E3, E4, E6, E7 |
+| **Concrete semantics** | what the program actually computes when run | execution — `execute_program`, observational equivalence, `interpret_scoped` | E9, E11, E12, E13 |
+
+These are different levels and the project uses both. A claim about one is not
+automatically a claim about the other: E2 says the model tracks *which
+definition reaches a use* (abstract), E13 asks whether it causally uses *which
+value that use resolves to* (concrete).
+
+### 0.2 The working definition
+
+Neither table entry is what the word does methodologically. The operative
+definition is negative, and it is **enforced rather than estimated**:
+
+> A property of a program is **semantic** to the extent that a bounded reader of
+> the program's surface form cannot recover it.
+
+Operationally: construct program pairs in which every feature such a reader can
+see is held identical while the property flips. The model-free baseline then
+scores **exactly 0.500 by construction**, not approximately (§7). Anything above
+that floor is something the model computed rather than read off the page.
+
+Two consequences worth stating, because they are what make the definition
+usable rather than rhetorical:
+
+**It is falsifiable, and it has already falsified something.** Control
+dependence (E4) has a measured surface floor of 0.927 — a statement's guard is
+usually its nearest enclosing `if`, so token windows plus distance recover most
+of it. By this criterion control dependence is *mostly syntactic*, and E4 was
+demoted to "supporting, not central" for exactly that reason. A definition that
+never excludes anything is not doing work.
+
+**"Surface" is relative to a stated reader.** The floor is pinned against the
+baseline in §7 (±3 token ids plus bucketed distance). It is not pinned against
+*every* computable text feature — a cross-position string-equality feature is
+outside that window and is not currently in the baseline. Claims should say
+which reader the floor is pinned against.
+
+### 0.3 Semantics requires sensitivity *and* invariance
+
+A property being semantic implies two dual requirements on any representation
+that claims to encode it:
+
+- **Sensitivity** — hold the form fixed, change the meaning: the representation
+  must change. (E2's `context_matched`; E13's two arms.)
+- **Invariance** — change the form, hold the meaning fixed: the representation
+  must not care. (E9's obfuscation ladder, every variant execution-verified
+  observationally equivalent to its base.)
+
+Only one of the two is cheap to satisfy. A representation with invariance alone
+is a hash of behaviour; with sensitivity alone it is a diff of text. Semantics
+is the conjunction, and the conjunction is measurable: E9 found mid layers hold
+invariance under identifier renaming (0.85–0.90) and lose it under control-flow
+flattening (0.750), while E2 found sensitivity holds against a 0.500 floor.
+
+The four cells make the design space explicit:
+
+|  | **form held fixed** | **form changed** |
+|---|---|---|
+| **meaning held fixed** | identity (trivial) | **E9** — obfuscation ladder |
+| **meaning changed** | **E2, E13** — one token, one relation | two unrelated programs (trivial) |
+
+Note what the bottom-left cell contains: only *one-token, one-relation*
+instances. A general form-preserving, meaning-breaking construction — a program
+that presents as one thing and computes another — does not exist in this
+repository. It is the dual of `src/data/obfuscation.py` and it is the cell
+closest to the adversarial motivation.
+
+### 0.4 What this definition does not yet reach
+
+Three limits, stated so that results are not read past them.
+
+1. **Decidability.** Every relation studied here is exactly decidable by static
+   analysis or by execution. That is deliberate — approximate labels become
+   label noise, and label noise becomes the finding. "Semantic" therefore means
+   *decidably semantic on a restricted fragment*. §0.5 is about escaping this.
+2. **Scale.** Binding and def-use are single-relation facts at token positions.
+   Whole-program behaviour ("does this sort, or exfiltrate?") is a different
+   object, not a larger one.
+3. **Adversariality.** Nothing in the corpus is written by an adversary
+   optimizing to look benign. E9's transformations preserve meaning by design;
+   the security-relevant case breaks meaning while preserving appearance.
+
+### 0.5 Undecidable properties are not out of reach
+
+Undecidability is a property of a problem *class* quantified over all programs,
+not of a concrete instance: a given finite program either aliases on a given
+input or it does not. So "can we study undecidable semantics" decomposes into
+three separable questions, each with a workable method.
+
+**(a) Relations undecidable in general, known by construction.** The generator
+authors the program, so it knows the answer without deciding anything. May-alias
+is undecidable in general; in
+
+```python
+if int(input()) > 0: r = p
+else:                r = q
+r[0] = 9
+```
+
+the points-to set at the write is `{p, q}` by construction and confirmable by
+bounded enumeration. This is the same move E2 already makes for binding, and it
+inherits the same defence: the floor, not the difficulty of the relation, is
+what licenses the claim. The honest limitation is that the *instances* are easy
+even though the *class* is hard.
+
+**(b) The uncertainty undecidability forces — the sharper question.** Rather than
+asking a model to decide the undecidable, ask whether it represents the
+tri-partition a sound analyser is obliged to make:
+
+| class | holds on | a sound analyser must say |
+|---|---|---|
+| **must** | every feasible path | yes |
+| **must-not** | no feasible path | no |
+| **may** | some paths, not others | *both are possible* |
+
+All three are exactly constructible, so labels are exact. The question becomes:
+does the model's state separate `may` from `must` and `must-not`, or does it
+collapse `may` into whichever of the two it lexically resembles? A model doing
+something analysis-like represents the third class distinctly; a pattern matcher
+cannot. This tests representation *of the undecidability itself* and requires no
+oracle. The relevant threat is that transformers linearly represent
+distributions over states generically (Shai et al.,
+[arXiv:2405.15943](https://arxiv.org/abs/2405.15943)), so a two-element mixture
+at a merge point may be the expected result rather than evidence of a join —
+which is why exclusion of a *provably infeasible* third value, and collapse
+under a strong update, are the auxiliary predictions that separate "a set" from
+"uncertainty".
+
+**(c) Instances that are hard, decided by a solver.** For path conditions,
+alias queries and equivalence on real fragments, an SMT solver or symbolic
+executor decides many instances that no syntactic analysis can. Keep the decided
+subset, **report the decided fraction**, and stratify by time-to-solve. The
+difficulty gradient is itself a measurement: decodability flat in solver time
+says the model is not doing anything search-like; decodability that decays with
+it says something more interesting. The threat is selection bias — solver-decided
+instances may be systematically easier — and it is handled by reporting rather
+than by assumption.
+
+**(d) No labels at all — equivalence classes instead.** Where a property cannot
+be labelled, it can still induce an equivalence relation that is *sampleable*.
+`obfuscation.semantically_equivalent` already provides execution-verified
+equivalent variants at five levels of surface distortion. One can then ask
+whether a program and its flattened twin occupy nearer states than two
+surface-similar programs that compute different things — a representational-
+similarity question that needs no per-token labels, with the ladder itself as
+the surface control.
+
+Routes (a) and (d) are available with what is already in this repository; (b)
+and (c) need new generation and, for (c), a solver dependency.
+
+---
+
 ## 1. The probes
 
 **What.** Every result uses a single, deliberately weak classifier: **logistic
