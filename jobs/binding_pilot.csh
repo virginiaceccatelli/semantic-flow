@@ -52,11 +52,17 @@ $RUN scripts/105_binding_ceiling.py --model "$MODEL" \
     --layers "$LAYERS" --dtype "$DTYPE" --strict || exit 1
 
 echo "=== stage 106: DAS interchange + held-out-arm falsification (H4, H5) — GPU ==="
+# No --layers: stage 106 uses the single layer stage 105 chose on calibration.
+# Sweeping every probe layer costs ~5x the GPU time and buys nothing any gate
+# reads, because the claim-bearing cell is pre-committed.
 $RUN scripts/106_binding_interchange.py --model "$MODEL" \
-    --layers "$LAYERS" --ranks "$RANKS" --dtype "$DTYPE" || exit 1
+    --ranks "$RANKS" --dtype "$DTYPE" || exit 1
 
 echo "=== stage 107: gated report — CPU ==="
 $RUN scripts/107_binding_report.py --model "$MODEL"
+
+echo "=== stage 108: did it run well, and what does it say? — CPU ==="
+$RUN scripts/108_binding_diagnose.py --model "$MODEL" --verbose
 
 echo ""
 echo "Read $OUT/e13_report.md."

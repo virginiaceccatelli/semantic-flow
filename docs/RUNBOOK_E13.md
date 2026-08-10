@@ -1,4 +1,4 @@
-# Runbook — E13 binding interchange (stages 100–107)
+# Runbook — E13 binding interchange (stages 100–108)
 
 Exact commands, in order. Design and outcome table: `docs/design/E13_PLAN.md`.
 
@@ -20,7 +20,7 @@ a shell that has sourced it will silently disagree with
 ```bash
 cd ~/Documents/semantic-flow
 conda activate semflow
-make test                     # 285 CPU-only tests; green before anything
+make test                     # 290 CPU-only tests; green before anything
 ```
 
 **GPU host:**
@@ -184,6 +184,35 @@ screen -dmS e13-interchange env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
   reportable negative and precisely what E11 could not establish.
 - **Next:** stage 107.
 
+### Stage 108 — did it run well? (CPU, seconds) — **run this before reading anything**
+
+```bash
+python scripts/108_binding_diagnose.py --model $MODEL --verbose
+```
+
+Answers two questions that get confused with each other, in order:
+
+**MACHINERY** — did the apparatus work? Structural zeros at zero, the alignment
+converged and orthonormal, a live ceiling in **both** arms, a discriminator that
+actually discriminates, an edit that is neither degenerate nor a whole-state
+replacement in disguise, and enough clusters. None of this depends on the
+result.
+
+**READING** — given working machinery, one of four verdicts:
+
+| reading | what happened |
+|---|---|
+| `BINDING TRANSPORTED` | the same subspace moves both arms toward the installed binding's value; a token/answer account is refuted |
+| `ANSWER DIRECTION` | works on `ab`, **actively reversed** on `ba` — a real negative, and what E11 could not establish |
+| `PARTIAL` | works on `ab`, does not transfer, not reversed either — report as such, do not round up to H4 |
+| `NOT MOVED` / `NOT LOCALISED` | the low-rank edit does not register, or a control was not cleared |
+
+**If MACHINERY fails, no reading is printed.** That is deliberate: a number from
+broken apparatus is not a weak result, it is not a result. Each failed check
+prints what its failure means and what to do.
+
+Writes `$OUT/e13_diagnosis.csv`.
+
 ### Stage 107 — gated report (CPU, seconds)
 
 ```bash
@@ -223,6 +252,7 @@ calibration-selected layer. ≈ 1–1.5 GPU-hours total.
 | 105 ceiling | GPU | ~15 GB | ~15 min | **H3** |
 | 106 interchange | GPU | ~20 GB (backward) | ~40 min (one layer × 5 ranks) | **H4, H5** |
 | 107 report | CPU | — | seconds | — |
+| 108 diagnose | CPU | — | seconds | reads only |
 
 ---
 
@@ -241,6 +271,7 @@ results/binding/{model}/
   interchange_rank_selection.csv                  106 — the held-out calib slice
   subspaces/das_L{layer}_r{rank}.pkl              106
   e13_report.{yaml,md}, e13_gates.csv             107
+  e13_diagnosis.csv                               108
 results/manifests/10*_binding_*.json              every stage, always
 ```
 

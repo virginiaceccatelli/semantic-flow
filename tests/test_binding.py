@@ -359,6 +359,27 @@ def test_h5_fails_when_the_subspace_is_an_answer_direction():
     assert not passed
 
 
+def test_reading_is_withheld_when_the_discriminator_transfers_too():
+    """The one case where a positive-looking H5 must NOT be read as a result.
+
+    If an explicit answer direction also transfers to the held-out arm, the arm
+    cannot separate an answer encoder from a binding encoder — so `das_binding`
+    passing there means nothing. The gate must refuse rather than report.
+    """
+    import pandas as pd
+
+    summary = pd.DataFrame([
+        _summary_row(HELD_OUT_ARM, "das_binding", "use", 0.65, 0.5, 0.8),
+        _summary_row(HELD_OUT_ARM, "whole_state", "use", 1.0, 0.8, 1.2),
+        _summary_row(TRAIN_ARM, "answer_direction", "use", 0.8, 0.65, 0.95),
+        _summary_row(HELD_OUT_ARM, "answer_direction", "use", 0.6, 0.45, 0.75),
+    ])
+    passed, fraction, detail = evaluate_gate_h5(summary, "use", 12, 2)
+    assert not passed                      # das_binding looks fine on its own...
+    assert fraction >= 0.5                 # ...and it does clear the fraction...
+    assert "fails: False" in detail        # ...but the discriminator did not work
+
+
 def test_structural_zeros_are_checked_not_assumed():
     import pandas as pd
 

@@ -48,6 +48,7 @@
 #   make binding-ceiling MODEL=...    stage 105 whole-state, per arm — H3 (GPU)
 #   make binding-interchange MODEL=.. stage 106 DAS + held-out arm — H4, H5 (GPU)
 #   make binding-report MODEL=...     stage 107 gated report (CPU)
+#   make binding-diagnose MODEL=...   stage 108 DID IT RUN WELL? (CPU, read-only)
 #   make binding MODEL=...            stages 100→107; each refuses on a failed gate
 #   make binding-pilot                the 1.3b pilot
 #
@@ -71,7 +72,8 @@ PROBES := results/probes/$(MODEL)/core
         store-transition store-ceiling store-interchange store-report store-pilot \
         store-diagnose store-sweep \
         binding binding-pairs binding-verify binding-behaviour binding-extract \
-        binding-decode binding-ceiling binding-interchange binding-report binding-pilot
+        binding-decode binding-ceiling binding-interchange binding-report \
+        binding-diagnose binding-pilot
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
 STORE_LAYERS ?= 6,12,18
@@ -226,8 +228,14 @@ binding-interchange:
 binding-report:
 	$(PY) scripts/107_binding_report.py --model $(MODEL)
 
+# Separates "did the apparatus work" from "did the claim hold", and refuses to
+# give a reading when the machinery is broken.
+binding-diagnose:
+	$(PY) scripts/108_binding_diagnose.py --model $(MODEL) --verbose
+
 binding: binding-pairs binding-verify binding-behaviour binding-extract \
-         binding-decode binding-ceiling binding-interchange binding-report
+         binding-decode binding-ceiling binding-interchange binding-report \
+         binding-diagnose
 
 binding-pilot:
 	$(MAKE) binding MODEL=deepseek-coder-1.3b BINDING_LAYERS=6,12,18 BINDING_RANKS=1,2,4
