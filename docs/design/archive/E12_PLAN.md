@@ -1,5 +1,11 @@
 # E12 — Latent store transitions: an INSTRUMENT VALIDATION study
 
+> **ARCHIVED — E12 is parked.** Its behavioural gate failed at 0.418 (below
+> chance) because the design coupled a question about program state to
+> two-step arithmetic. Post-mortem: `docs/ARCHIVE.md`. The current experiment
+> is E13 (`docs/design/E13_PLAN.md`), which removes that coupling. Kept for
+> the design record; the code still runs and claims nothing.
+
 **Status: IMPLEMENTED, not run.** Stages 80–88 exist (`src/data/store_programs.py`,
 `src/data/store_semantics.py`, `src/models/das.py`, `src/experiments/store_*.py`,
 `scripts/8*.py`, `tests/test_store.py`, `jobs/store_*.csh`). No GPU stage has
@@ -17,7 +23,7 @@ narrower and entirely about the apparatus:
 
 A pass licenses the next experiment. It is not a finding, and §16 exists to
 stop it being written up as one. The contribution this instrument is being
-built *for* is in [E13_DIRECTIONS.md](E13_DIRECTIONS.md).
+built *for* is in [E13_DIRECTIONS.md](../E13_DIRECTIONS.md).
 
 **Provenance.** Designed 2026-08-08 from a two-agent review (creative proposal
 pass over five candidate directions, then a hostile reviewer pass with a
@@ -105,7 +111,7 @@ shortcut explains rather than making it explain nothing.
 | **Made of** | Survives 1,000 tokens of inert filler (0.921) and survives renaming every identifier in the middle layers (0.85–0.90); collapses under filler that reuses the same names (0.570) and under control-flow flattening (0.750). It breaks when the *problem* gets harder, not when the text gets longer or is spelled differently. | Supporting |
 | **Used** | Partly, and late. Exchanging two output-aligned directions near the *readout* position moves the answer; the same edit where the binding is *resolved* does nothing — but a control showed no edit that small does anything there, so that is an underpowered question, not an answer. | Preliminary, and formally a no-go (§3.1) |
 
-Three earlier interpretations were withdrawn (`docs/LEGACY_RESULTS.md`), all for
+Three earlier interpretations were withdrawn (`docs/ARCHIVE.md`), all for
 one reason: they were claims that something was *absent*, and none had a
 positive control good enough to tell "absent" from "our instrument cannot see it
 here".
@@ -182,7 +188,7 @@ not enough to carry a paper.
 What E12 buys is the right to run the next experiment on something harder
 without wondering whether a null means the model lacks the structure or the
 instrument cannot see it. §11 says what each outcome licenses;
-[E13_DIRECTIONS.md](E13_DIRECTIONS.md) says what to do with a pass.
+[E13_DIRECTIONS.md](../E13_DIRECTIONS.md) says what to do with a pass.
 
 ---
 
@@ -329,7 +335,7 @@ program value such that downstream computation transforms it?
 **Does not ask.** Whether code models represent program semantics; whether that
 representation is causally used in general; anything about scale, architecture,
 or real code. Those need the extensions in
-[E13_DIRECTIONS.md](E13_DIRECTIONS.md), and they need this instrument first.
+[E13_DIRECTIONS.md](../E13_DIRECTIONS.md), and they need this instrument first.
 
 **The operational claim, per gate.** Each of G0–G5 is a property of the
 apparatus:

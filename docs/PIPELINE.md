@@ -1,54 +1,47 @@
 # Pipeline
 
-Numbered stages. Each stage is one CLI in `scripts/`, writes its outputs under
-`results/`, and records a manifest (git sha, args, wall time) in
-`results/manifests/`. GPU stages are marked; everything else runs anywhere.
+Every stage is one CLI in `scripts/`, writes under `results/`, and records a
+manifest (git SHA, args, wall time) in `results/manifests/`. GPU stages are
+marked; everything else runs anywhere.
+
+Stages are grouped by the phase of the research they belong to. What each
+experiment asks and found: `docs/EXPERIMENTS.md`.
 
 ```
-00 → 10 → 20 → { 30, 31, 40, 50 } ─────────────→ 90
-CPU   GPU   CPU    CPU CPU GPU GPU               CPU
-                │                                 ↑
-                └→ 60 → { 61, 62 } ───────────────┘
-                   GPU    GPU GPU
+PHASE I + II — representation and robustness  (established)
 
-E11:  70 → 71 → 72 → 73 → 74
-      CPU  GPU  GPU  GPU  CPU
+  00 ─→ 10 ─→ 20 ─→ { 30, 31 } ────────────────→ 90
+  CPU   GPU   CPU     CPU  CPU                    CPU
+  data  extr  probes  E5   E9                     assets
+              E1-E4
+              E8
 
-E12:  80 → 81 → 82 → 83 → 84 → 85 → 86 → 87 → 88     (PARKED — see STATUS.yaml)
-      CPU  CPU  GPU  GPU  CPU  CPU  GPU  GPU  CPU
-           G0   G1        G2   G3   G4   G5
+PHASE III — causal use  (open; four attempts)
 
-E13:  100 → 101 → 102 → 103 → 104 → 105 → 106 → 107   (the active direction)
-      CPU   CPU   GPU   GPU   CPU   GPU   GPU   CPU
-            H0    H1          H2    H3    H4/H5
+  attempt 1   50                       E7  raw patching        [claim retired]
+  attempt 2   60 ─→ { 61, 62 }         E10 J-lens track        [60 kept, 61/62 archived]
+  attempt 3   70 → 71 → 72 → 73 → 74   E11 coordinate swap     [NO-GO]
+  attempt 4   80 → … → 89              E12 store transitions   [parked at G1]
+  current    100 → … → 108             E13 binding interchange [H0-H3 pass]
+
+  archived    40                       E6  behavioural lead time
 ```
 
-Stage 60 is a **gate**: it exits non-zero on a failed check, and 61/62 are
-not interpretable until it passes. 61 optionally reads stage-20 probes for
-its side-by-side comparison; 62 needs no probes.
+Two stages are **gates** in the weak sense — they exit non-zero on a failed
+check and later stages are not interpretable until they pass: stage 60 (E10) and
+stage 71 (E11).
 
-**Stages 80–88 (E12) are hard-gated**, which is stronger than the `|| exit 1`
-chaining used elsewhere: each stage declares its prerequisites in
-`src/experiments/store_gates.py` and **refuses to run** (exit 2) unless they
-have passed, whoever invokes it and in whatever order. `--override-gate REASON`
-is permitted for diagnostics and is recorded permanently in
-`results/store/{model}/gates.yaml`, in the run manifest, and in every output
-row, so a number produced under an override cannot later be mistaken for one
-produced under a passing gate. The mechanism exists because E11's stage 73 ran
-without stage 72's frozen probes on disk and silently skipped a control rather
-than refusing.
+Stages 80–89 (E12) and 100–108 (E13) are **hard-gated**, which is stronger: each
+declares its prerequisites in `src/experiments/store_gates.py` and **refuses to
+run** (exit 2) unless they have passed, whoever invokes it and in whatever
+order. `--override-gate REASON` is permitted for diagnostics and is recorded
+permanently in `gates.yaml`, in the run manifest, and in every output row, so a
+number produced under an override cannot later be mistaken for one produced
+under a passing gate.
 
-**E13 is the active direction.** It asks whether a low-rank, magnitude-free
-interchange at the binding-resolution site transports *which definition is in
-scope* rather than a token or an answer direction, and it needs no arithmetic —
-the model returns a variable. Design and identification strategy:
-`docs/design/E13_PLAN.md`.
-
-E12 is parked: its 1.3b pilot failed the behavioural gate at 0.418 because the
-design coupled a question about program state to two-step arithmetic. Code and
-gates are kept and still run; `docs/design/E12_PLAN.md` and
-`docs/RUNBOOK_E12.md` remain accurate for it, and
-`docs/design/E13_DIRECTIONS.md` records the wider option space.
+That mechanism exists because of a specific failure: E11's stage 73 ran without
+stage 72's frozen probes on disk and **silently skipped a control** rather than
+refusing. `results/STATUS.yaml` still records that as outstanding.
 
 Model names come from `configs/models.yaml` (`deepseek-coder-1.3b` for
 development/MPS, `deepseek-coder-6.7b` for main results). Canonical settings:
@@ -285,7 +278,7 @@ reappear in a figure by accident. `--include-archived` reproduces them in full.
 
 Claims nothing. Validates whether a computed, **text-absent** program value can
 be identified and interchanged such that downstream computation transforms it.
-Exact commands, VRAM, runtimes and per-gate diagnostics: `docs/RUNBOOK_E12.md`.
+Exact commands, VRAM, runtimes and per-gate diagnostics: `docs/design/archive/RUNBOOK_E12.md`.
 
 | Stage | Command | Where | Gate | Output |
 |---|---|---|---|---|
@@ -377,7 +370,7 @@ For E12 (stages 80–88), the whole gated sequence is one job:
 `screen -dmS e12-pilot env MODEL=deepseek-coder-1.3b jobs/store_pilot.csh`, then
 `jobs/store_full.csh` for 6.7b only once the pilot reports
 `INSTRUMENT VALIDATED`. Per-stage commands, VRAM, runtimes, how to read each
-gate and what to run when one fails: **`docs/RUNBOOK_E12.md`**.
+gate and what to run when one fails: **`docs/design/archive/RUNBOOK_E12.md`**.
 
 `jobs/common.csh` holds the shared env: `$PYTHON` (micromamba `uq` env),
 `HF_HOME`/`HF_DATASETS_CACHE` (Scratch, `NOT_BACKED_UP`), `MAMBA_ROOT_PREFIX`/

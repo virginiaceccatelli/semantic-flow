@@ -1,19 +1,26 @@
-# Legacy results — the retired interpretation
+# Archive — what was retired or abandoned, and why
 
-This file holds the interpretation this project used to run on, and the reason
-each part of it was retired. It exists so the retirement is auditable: the raw
-data behind every claim below is still in `results/tables/`, the figures are
-still in `results/figures/`, and every manifest is still in
-`results/manifests/`. What changed is what we say the data shows.
+Everything in this project that was tried and did not survive. Nothing here is
+deleted: every raw CSV is still in `results/tables/`, every figure in
+`results/figures/`, every manifest in `results/manifests/`, and every stage
+command still runs. What is withdrawn is the **claim**, not the data.
 
-Nothing here is deleted, and everything here is still reproducible — the stage
-commands are unchanged, and `python scripts/90_make_paper_assets.py
---include-archived` regenerates the archived figures. What archived means is
-narrow and specific: **the claim is withdrawn, so the asset no longer
-regenerates into the default figure set the paper draws from.**
+This file exists because the retirements are the project's methodological
+content. Four intervention designs were attempted before the current one, and
+each failed for a *different* reason that constrained the next. Read in order,
+they are an argument about what a causal claim in interpretability requires.
+
+| | Attempt | Failed because | Lesson carried forward |
+|---|---|---|---|
+| 1 | **E7** whole-state activation patching | the informative position is the only place the two programs differ, so the patch transports the input | intervene only where the inputs agree |
+| 2 | **E10-2 / E10-3** output-aligned readout | the positive control was an *identity* control where the test was *relational* | a null needs a positive control matched **in kind** |
+| 3 | **E11** rank-2 coordinate swap | the site's dose-response is 18x convex, so the edit was below its effective causal dose | ... and matched **in scale** |
+| 4 | **E12** latent store transitions | the design made two-step arithmetic the load-bearing capability for a question about program state | do not couple the semantic question to an unrelated capability |
+| — | **E6** behavioural lead time | the metric rewarded unreliable readouts | a metric that cannot separate signal from noise is not trustworthy in either direction |
 
 Current status of every experiment: `results/STATUS.yaml`.
-Current supported findings: `docs/RESULTS.md`.
+Currently supported findings: `docs/RESULTS.md`.
+What each experiment does: `docs/EXPERIMENTS.md`.
 
 ---
 
@@ -246,3 +253,101 @@ operations. Those three properties are exactly what E7 lacks.
   structurally forced (wrong at the first evaluable prefix on 100% of
   programs, so a positive lead is arithmetically impossible) and the 6.7b arm
   was uncontrolled.
+
+---
+
+## E11 — J-space coordinate swap (NO-GO; the use-position null retracted)
+
+**Not archived — reported, and read narrowly.** E11 is kept in
+`results/STATUS.yaml` because its numbers appear in the paper. What is recorded
+here is that it did not pass its own pre-registration, which the headline
+sentence can obscure.
+
+**Both go/no-go files read NO-GO** (`results/jspace/6.7b-5fam/go_no_go.md`,
+`go_no_go_answer.md`):
+
+| criterion | use position | answer position |
+|---|---|---|
+| `behavioural_balanced_accuracy` (≥ 0.75) | FAIL 0.706 | FAIL 0.706 |
+| `readout_beats_random_control` | FAIL +0.056 [−0.007, +0.117] | PASS +0.257 |
+| `swap_moves_logits_toward_swapped_value` | FAIL +0.001 [−0.002, +0.004] | PASS +0.141 |
+| `swap_is_specific_to_the_value_subspace` | FAIL | **FAIL −0.016 [−0.024, −0.009]** |
+| cross-operation, all families positive | False | False |
+
+**Retracted: the use-position null.** A dose-matched control added after the
+run showed the site's response to small edits is strongly convex — efficiency
+rises **18×** from the smallest dose to the largest, and a push along the
+*known-correct* direction at 2% of ‖h‖ produces 0.002 nats with an interval
+covering zero, the same as the value swap at 3.7%. No two-dimensional edit is
+large enough to test the question at that site.
+
+Without that control this would have been reported as a clean null: a passing
+readout positive control, four subspace controls at the same magnitude, and a
+site potent enough to flip 22% of answers when replaced wholesale. **It is the
+most instructive failure in the project**, and it is why every subsequent design
+either has no dose parameter or measures the site's response curve first.
+
+**Also not attributable to the Jacobian correction.** The plain logit lens is
+more efficient at the same site (2.35 vs 1.82), and at the last layer the two
+are equal by construction. What survives is a claim about output-aligned value
+directions in general, not about the J-lens.
+
+**Outstanding:** the `probe_basis` control never ran — stage 72 was not re-run
+before stage 73, so no frozen probes were on disk and the variant was silently
+skipped rather than refused. That failure is why every later stage is hard-gated
+and refuses to run on a missing prerequisite.
+
+**Preserved:** `results/jspace/`, `jspace_{lens,readout,behaviour,swap}_*.csv`.
+
+---
+
+## E12 — latent store transitions (parked before any claim)
+
+**Never claimed anything.** E12 was built as instrument validation: can a
+computed, **text-absent** program value be identified and interchanged such that
+downstream computation *transforms* it? It is parked at its behavioural gate.
+
+**Why it was tried.** E11's swapped values are literals in the program text, so
+its surviving claim is about output-aligned *token* directions. Tracking a value
+that appears nowhere in the text removes that escape route — in
+`a = 1; c = a + 4; d = c + 3`, the value of `c` has no token, so a direction
+carrying it cannot be a token-presence direction.
+
+**Why it is parked.** Text-absent-because-computed *forces arithmetic*. The
+design made two chained arithmetic steps the load-bearing capability for a
+question about program state. On 1.3B:
+
+- balanced accuracy **0.418 — below chance** on a two-alternative forced choice;
+- the correct answer was the argmax on **6.3%** of prompts, against **10%** for
+  a uniform random digit;
+- two of four operation families sat at **exactly 0.500**.
+
+That exact-0.500 pattern is the tell. A simulated model doing **no computation
+at all** — picking whichever candidate is numerically closer to the head literal
+— reproduces it precisely:
+
+```
+proximity to head (no computation)  overall 0.494  add 0.500  double_sub 0.500
+observed, deepseek-coder-1.3b       overall 0.418  add 0.500  double_sub 0.500
+```
+
+On a monotone operation the two candidates straddle the anchor symmetrically, so
+a pure proximity rule scores exactly chance. Two of four families therefore had
+**no computational headroom in the metric at all**, independent of model size.
+
+**The prediction was available in advance.** Arithmetic in language models is
+implemented by a sparse set of pattern-matching heuristic neurons that do not
+chain (Nikankin et al., https://arxiv.org/abs/2410.21272). A two-step chain was
+the wrong thing to require.
+
+**What is kept.** All code, gates and diagnostics still run; the G1 triage
+(`scripts/89_store_diagnose.py`) separates a constant responder, a format that
+elicits no digit, a model answering the *intermediate* instead of the final
+value, and a genuine capability limit. Design and full post-mortem:
+`docs/design/archive/E12_PLAN.md`; commands:
+`docs/design/archive/RUNBOOK_E12.md`.
+
+**Lesson carried forward, and it is the one that produced E13.** Do not couple
+the semantic question to a capability that is not the phenomenon of interest.
+E13 requires *no arithmetic anywhere* — the model returns a variable — and gets
+its falsification from a value-assignment factorial instead.

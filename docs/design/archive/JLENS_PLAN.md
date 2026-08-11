@@ -1,5 +1,9 @@
 # J-Lens Integration Plan (validation-first)
 
+> **ARCHIVED — the E10 track.** Only E10-0 (instrument validation) survives,
+> as `supporting`; E10-2 and E10-3 are retired, with reasons in
+> `docs/ARCHIVE.md`. Kept as the design record for the J-lens that E11 reuses.
+
 **Status: IMPLEMENTED, not yet run at scale.** Stages 60/61/62 exist
 (`src/models/lens.py`, `src/experiments/jlens_{validate,taint,controldep}.py`,
 `scripts/6*.py`, `tests/test_lens.py`, `jobs/jlens_*.csh`). The reference

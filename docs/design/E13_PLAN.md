@@ -53,7 +53,7 @@ observed, deepseek-coder-1.3b       overall 0.418  add 0.500  double_sub 0.500
 
 Nikankin et al. ([arXiv:2410.21272](https://arxiv.org/abs/2410.21272)) published
 the prediction: arithmetic in LMs is heuristic neurons that do not chain. E12's
-full diagnosis is in `docs/design/E12_PLAN.md` and
+full diagnosis is in `docs/design/archive/E12_PLAN.md` and
 `results/store/{model}/g1_triage.csv`; the code is kept and gated, not deleted.
 
 **E13 takes the cheaper escape.** There was one all along.

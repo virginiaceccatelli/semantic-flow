@@ -13,14 +13,17 @@
 #   supporting            real and reported, but it constrains rather than
 #                         carries the argument (or it is instrument validation)
 #   active                the current direction; being run now, not yet claimed
+#   parked                built and partly run, then abandoned before any claim
+#                         was made; the reason is recorded here and in
+#                         docs/ARCHIVE.md. Code and data are kept and still run.
 #   archived              the claim has been retired; data preserved, and the
 #                         reason for retirement is recorded here
 #
-# See docs/RESULTS.md for what is currently supported and docs/LEGACY_RESULTS.md
+# See docs/RESULTS.md for what is currently supported and docs/ARCHIVE.md
 # for the retired interpretation and why each piece of it was retired.
 
-version: 2
-updated: 2026-08-06
+version: 3
+updated: 2026-08-11
 
 experiments:
 
@@ -221,7 +224,7 @@ experiments:
 
   E12:
     name: latent store transitions (INSTRUMENT VALIDATION)
-    status: active
+    status: parked
     stage: "80,81,82,83,84,85,86,87,88,89"
     tables: []
     claim: >
@@ -287,6 +290,13 @@ experiments:
   E11:
     name: J-space binding routing
     status: active
+    verdict: >
+      NO-GO under its own pre-registration, at BOTH positions. Reported in the
+      paper because the failure is informative; not claimed as a positive
+      result. behavioural_balanced_accuracy 0.706 vs a 0.75 threshold, and
+      swap_is_specific_to_the_value_subspace FAILS (-0.016 [-0.024, -0.009] vs
+      the plain logit lens). The use-position null is RETRACTED: the site's
+      dose-response is 18x convex. See docs/ARCHIVE.md.
     stage: "70,71,72,73,74"
     tables: [jspace_lens_, jspace_readout_, jspace_behaviour_, jspace_swap_]
     question: >

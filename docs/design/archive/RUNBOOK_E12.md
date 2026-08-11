@@ -1,8 +1,12 @@
 # Runbook — E12 instrument validation (stages 80–89)
 
+> **ARCHIVED — E12 is parked** at its behavioural gate. These commands still
+> work; nothing downstream of G1 has been run and nothing is claimed. The
+> active runbook is `docs/RUNBOOK_E13.md`.
+
 Exact commands, in order. **E12 validates the apparatus; it is not a result.**
 Nothing below should be written up as a finding — see
-`docs/design/E12_PLAN.md` §16 and `docs/design/E13_DIRECTIONS.md`.
+`docs/design/archive/E12_PLAN.md` §16 and `docs/design/E13_DIRECTIONS.md`.
 
 Every stage is hard-gated: it exits **2** and prints what is missing unless its
 prerequisite gates have passed. To run one anyway, add

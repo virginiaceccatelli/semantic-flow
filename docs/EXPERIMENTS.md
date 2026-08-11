@@ -1,590 +1,574 @@
 # Experiments
 
-Each experiment states its hypothesis, method, controls, metrics, and output
-files. Ground truth always comes from static analysis of the program
-(`src/graphs/`) or from *executing* it (E11), aligned to token positions via
-AST spans (`src/data/alignment.py`) — never by matching token strings.
+This file is the catalogue: what every experiment asks, how it is built, why it
+is built that way, and what it found. It is organised by the **order the
+research actually took**, because each step exists because of what the previous
+one could not settle.
 
-This file is organized by **current role**, not by number. The registry that
-the pipeline itself reads is `results/STATUS.yaml`; this file is its prose
-counterpart, and the two are meant to be kept in step.
-
-1. [Active foundation](#1-active-foundation) — E2, E3
-2. [Active J-space binding experiments](#2-active-j-space-binding-experiments) — E11 (stages 70–74)
-3. [Supporting / appendix experiments](#3-supporting--appendix-experiments) — E1, E4, E5, E7, E8, E9, E10-0
-4. [Archived experiments](#4-archived-experiments) — E6, E10-2, E10-3
-5. [Instrument validation](#5-instrument-validation-not-a-result) — E12 (stages 80–88, parked)
-6. [Binding interchange](#6-binding-interchange-e13-stages-100107) — E13 (stages 100–107, active)
-
-Shared metric definitions:
-
-- **accuracy / f1 / auc** — mean over grouped CV test folds (no source example
-  in both train and test).
-- **selectivity** — accuracy − control accuracy, where the control retrains the
-  identical probe on labels shuffled *within* each source example.
-  Selectivity ≈ 0 means the probe exploits dataset regularities.
-- **converged** — every sklearn fit finished within tolerance; results with
-  `converged=False` are not reportable.
-- **cluster bootstrap** — resampling whole *base programs* with replacement.
-  E11 reports no interval any other way (`src/analysis/bootstrap.py`).
+Two companions: `docs/RESULTS.md` says what is currently established and what is
+not; `docs/ARCHIVE.md` holds the experiments whose claims were withdrawn or
+whose designs were abandoned, each with the reason. The registry the pipeline
+itself reads is `results/STATUS.yaml`.
 
 ---
 
-# 1. Active foundation
+## Contents
 
-The results the project stands on. Both have a surface floor pinned to exactly
-0.500 by construction, which is what separates them from everything in §3.
+- [§0 The research question, and the flow](#0-the-research-question-and-the-flow)
+- [§1 Phase I — Is the relation there?](#1-phase-i--is-the-relation-there) — E1, E2, E3, E4, E8
+- [§2 Phase II — What is it made of?](#2-phase-ii--what-is-it-made-of) — E5, E9
+- [§3 Phase III — Is it causally used?](#3-phase-iii--is-it-causally-used) — E7, E10, E11, E12, E13
+- [§4 Shared conventions](#4-shared-conventions)
+- [§5 Models and replication](#5-models-and-replication)
 
-## E2 — variable binding (lexical vs semantic identity)
+---
 
-**Hypothesis.** Mid layers encode *which definition an identifier occurrence
-refers to*, beyond surface name identity.
+# 0. The research question, and the flow
 
-**Method.** Pairwise probe on `[h_i; h_j; h_i−h_j; |h_i−h_j|]`. Positives:
-occurrence pairs sharing a reaching definition. Negative strata, each reported
-separately:
+> **Do code language models build representations of program *semantics* that
+> are distinct from lexical and syntactic regularity — and are those
+> representations causally used in the model's own computation?**
 
-| stratum | what it isolates |
+The question splits into three, and they need different evidence. It is easy to
+conflate them, and most of this project's retractions come from doing so.
+
+| | Question | What would settle it | Phase |
+|---|---|---|---|
+| **Representation** | Is the relation *present* in the hidden states, beyond what the text predicts? | a decoder that beats a floor no surface feature can exceed | I |
+| **Robustness** | What is the representation made *of*? Which perturbations destroy it? | change the form while fixing the meaning, and vice versa | II |
+| **Causal use** | Does the model's own downstream computation *read* it? | an intervention that changes the relation and nothing else | III |
+
+The flow, and why each step followed the last:
+
+```
+  Phase I    E1 machinery ─→ E2 binding ─→ E3 def-use ─→ E8 real code
+             (sanity)        THE FLOOR      same floor    transfer
+                                │
+                                │  E4 control dependence: floor is 0.927, not 0.500
+                                │  → demoted; kept as the CONTRAST that makes E2 mean something
+                                ↓
+  Phase II   E5 context: distance is cheap, interference is not
+             E9 obfuscation: renaming survives mid-layer, flattening does not
+                                │
+                                ↓
+  Phase III  "decodable" is not "used". Four attempts:
+             E7  whole-state patch      → transports the tokens too       [claim retired]
+             E10 J-lens readout track   → instrument OK, both uses failed [archived]
+             E11 rank-2 coordinate swap → below the site's causal dose    [NO-GO, retracted]
+             E12 latent store transfer  → bottlenecked on arithmetic      [parked]
+             E13 binding interchange    → running now
+```
+
+Phase III is where the work is, and its history is the project's real
+methodological content. Each attempt failed for a *different, nameable* reason,
+and each reason narrowed the design space for the next. `docs/ARCHIVE.md`
+records all four in detail.
+
+**One idea carries the whole project**, and it is worth stating before any
+experiment. Take two programs that are identical except for a single character,
+where that character changes what the program *means*:
+
+```python
+x = 3                  x = 3
+def f():               def f():
+    y = 7                  x = 7          ← one character
+    return x               return x
+#   → 3                    → 7
+```
+
+The token we ask about (`x` in `return x`) is at the same index in both. The
+words around it are the same. The distance to everything is the same. Only the
+answer changes. A predictor that sees only nearby tokens and distances is
+therefore right **exactly half the time — 0.500 by construction, not by
+estimate**. Everything above that floor is something the model computed.
+
+Most interpretability testbeds must *estimate* how much a shortcut could
+explain and subtract it. Code lets us make the shortcut carry no information at
+all. That construction is reused in E2, E3, E11 and E13, and its absence is why
+E4 was demoted.
+
+---
+
+# 1. Phase I — Is the relation there?
+
+## E1 — lexical token type (machinery check, not a finding)
+
+**Question.** Can a linear probe recover a token's syntactic class (keyword /
+identifier / literal / operator) from a single hidden state?
+
+**Why it exists.** It is a smoke test for the whole extraction chain. Token type
+is a pure surface property, so it must be near-ceiling at the embedding layer.
+If it is not, the tokenizer, the AST→token alignment or the activation store is
+broken, and every other number in the project is meaningless.
+
+**Method.** Multiclass linear probe on single positions, labels from
+`classify_token`, grouped cross-validation by source program.
+
+**Found.** Accuracy **1.000 at the embedding layer**, selectivity 0.88–0.90, in
+both models. Exactly as designed.
+
+**Reading.** Not a result about code models. It is the contrast that makes E2
+interpretable: lexical features are readable *before* any computation happens;
+semantic relations are not, and only appear after it.
+
+Stage 20 · rows `task=lexical_token_type` in `static_probes_*.csv`.
+
+## E2 — variable binding (the foundation)
+
+**Question.** Does the model represent *which definition* an identifier
+occurrence refers to — as opposed to merely which characters it is spelled with?
+
+**Why it matters.** This is the cleanest case where surface form and meaning
+come apart. Two occurrences of `data` may be the same variable or two different
+ones depending on scope, and nothing local tells you which.
+
+**Method.** A pairwise probe on `[h_i; h_j; h_i−h_j; |h_i−h_j|]` asking "do
+these two occurrences bind to the same definition?" Negatives are split into
+strata, reported separately, from easy to decisive:
+
+| stratum | what it removes |
 |---|---|
-| `same_name_diff_binding` | same surface name, different binding (shadowing). A purely lexical probe fails here — but local *context* can still leak. |
-| `diff_name` | easy negatives (capped at 3× positives) |
-| `distance_matched` | controls for token-distance shortcuts |
-| `context_matched` | **the** test: designed (def, use) pairs from program pairs that are token-identical except one rebinding token. Anchor windows and distance are identical across the pair while the label flips, so NO surface feature is informative; both programs share one CV group. |
+| `diff_name` | nothing — the trivial baseline (capped at 3× positives) |
+| `distance_matched` | the "nearby ⇒ related" shortcut |
+| `same_name_diff_binding` | the "same string ⇒ same variable" shortcut |
+| **`context_matched`** | **every fixed-offset surface cue at once** — the pair above |
 
-**Surface-shortcut baseline.** Stage 20 additionally fits a probe on windowed
-token ids (±3 around each anchor) + bucketed anchor distance — no hidden states
-(`features="surface"`, `layer=-1` rows). On `context_matched` it is ~0.5 by
-construction.
+**The control is the experiment.** On `context_matched` the two programs are
+token-identical except the one binding-flipping character; the anchor windows
+and the token distance are identical while the label flips; and both programs
+share a cross-validation group so neither can be memorised through the other.
 
-**Decision rule.** If held-out accuracy on `context_matched` ≈ chance while
-overall accuracy is high, the model tracks surface form, not bindings. The gap
-between this stratum and the surface baseline, by layer, is the central
-"lexical vs semantic" figure (`binding_strata_*.png`).
+**Found** (`context_matched`, the only clean headline):
 
-Stage: `make probes MODEL=...` (20). Output: rows `task=binding` in
-`static_probes_*.csv`.
+| | 1.3B | 6.7B |
+|---|---:|---:|
+| surface baseline (token ids + distance, no model) | 0.500 | 0.500 |
+| embedding layer (−1, token identity only) | 0.500 | 0.500 |
+| first transformer block | 0.570 | 0.531 |
+| layer 3 | 0.961 | 0.914 |
+| **peak, middle layers** | **0.984** (L7) | **0.984** (L11–15) |
+| last layer | 0.930 | 0.914 |
+
+**Reading.** Three things happen in order. *Nothing is there at the input* —
+both floors are exactly 0.500, so the relation cannot be looked up and has to be
+computed. *It is built in the first few blocks*, reaching ~0.95 by layer 3.
+*It is partly shed near the output*, consistent with the final layers
+reorganising toward next-token prediction. The two model scales agree on shape
+and differ only where a scaling account predicts.
+
+Stage 20 · `binding_strata_*.png`, `layers_accuracy_*.png`.
 
 ## E3 — def-use edges (data flow)
 
-**Hypothesis.** A def→use edge between two positions is linearly decodable,
-degrading with token distance.
+**Question.** Is a directed definition→use edge decodable, and how far does it
+reach?
 
-**Method.** Directed (definition, use) pairs; positives from the reaching-def
-DFG; same negative strata as E2; per-distance-bucket held-out accuracy (buckets
-0–10, 10–50, 50–200, 200+).
+**Method.** Same pairwise setup and the same strata as E2, over reaching-
+definition edges. Negatives are **distance-matched**, so "nearby ⇒ related"
+cannot win. Accuracy is bucketed by token distance (0–10, 10–50, 50–200, 200+).
 
-Stage: 20. Output: `defuse_distance_*.png` (layer × distance heatmap).
+**Found.** Same profile as E2 — peak ~0.99 at layers 7–11 over the same 0.500
+floor — with honest decay by distance: the hardest bucket (50–200 tokens apart)
+still reaches **0.96–0.99**.
+
+**Reading.** The model tracks data flow across real distance, not adjacency.
+
+Stage 20 · `defuse_distance_*.png`.
+
+## E4 — control dependence (demoted; the contrast that matters)
+
+**Question.** Does the model represent whether a statement executes under a
+given guard?
+
+**Method.** Pairs of (guard-expression anchor, statement anchor). Negatives are
+statements in the *same* program outside the guard, including an
+`indent_matched` hard stratum — a statement in a *sibling* guard's body at the
+same nesting depth. Ground truth from AST nesting with join points resolved
+exactly.
+
+**Found.** Decodable at near-ceiling (AUC 0.999 at 6.7B) — **but the model-free
+surface baseline is already 0.927 / AUC 0.990.**
+
+**Reading, and why it is demoted.** A statement's guard is usually its nearest
+enclosing `if`, so token windows plus indentation recover most of the relation
+without any model. Unlike binding and def-use, no construction pins this floor
+to chance. E4 is therefore reported as the **syntactic end of a spectrum whose
+semantic end is binding**, and no representational conclusion is drawn from it.
+
+This demotion is load-bearing. It shows the project's criterion for "semantic"
+excludes things, which is what makes it a criterion rather than a slogan.
+
+*Open caveat:* probing anchors fall on each span's last token, which here are
+integer literals. Re-anchoring on the guard variable and statement target is a
+CPU-only re-run and remains open.
+
+Stage 20.
+
+## E8 — does any of this transfer to real code?
+
+**Question.** Are E2/E3 artifacts of a synthetic generator?
+
+**Method.** Stages 10 and 20 re-run unchanged on ~200 `ast`-parseable
+CodeSearchNet Python functions, fixed seed.
+
+**Found** (6.7B, aggregate AUC — read AUC, not accuracy, since accuracy is
+threshold-dependent and peaks at the embedding layer here):
+
+| | surface | embedding | peak | last |
+|---|---:|---:|---:|---:|
+| binding | 0.673 | 0.962 | **0.978** (L7) | 0.913 |
+| def-use | 0.590 | 0.958 | **0.979** (L3) | 0.907 |
+
+**Reading, with the limitation stated in the same breath.** Hidden states beat
+the surface baseline by +0.31/+0.39 AUC and the layer profile matches synthetic
+at the same relative depth, which rules out a pure generator-template
+explanation. But **real identifiers are genuinely informative** — `self._cache`
+and `result` look different — so the embedding layer starts at 0.96 and no
+stratum pins the floor to chance. E8 shows *the decoder transfers to
+naturalistic input*; it does **not** show that the semantic component
+specifically transfers. E2's isolation still rests on synthetic programs.
+
+Stages 10, 20 on `data/real/csn_python_200.jsonl`.
 
 ---
 
-# 2. Active J-space binding experiments
+# 2. Phase II — What is it made of?
 
-## E11 — is the selected value routed into causally reusable coordinates?
+Phase I says a relation is present. It does not say what the representation is
+built from. Phase II breaks it in controlled ways: **the probes are fitted once
+on the base programs and then frozen**, never refitted on a perturbed variant,
+so any change in accuracy is a change in the model's state rather than in the
+probe. Ground truth is recomputed from each variant's own source, so a
+perturbation that genuinely changes the answer is scored against the new answer.
 
-**Research question.** When a code model resolves variable binding, does it
-route the *selected* value into J-lens coordinates that downstream computation
-can causally reuse?
+## E5 — context degradation: distance versus interference
 
-**Framing.** The J-lens is treated as a causal, output-aligned coordinate
-system — `v_w = J_ℓ^T (g·W_U[w])`, the direction at layer ℓ whose component
-pushes the model's own output head toward token `w`. E11 makes no claim about
-reportability, verbalizability, or a workspace; `docs/LEGACY_RESULTS.md`
-records why that framing was dropped.
+**Question.** Does the representation degrade because things get *far apart*, or
+because the *problem gets harder*?
 
-**Why it is the right next question.** E2/E3 show binding is decodable, which
-is compatible with the representation being a faithful shadow of a computation
-happening elsewhere. E7 attempted the causal question and cannot separate
-semantic state from transported surface difference (§3). E11's intervention is
-built to make that separation: it edits two coordinates and leaves the rest of
-the state alone, at a position where the two programs are token-identical, and
-demands that one edit produce a *different* correct answer under each of
-several downstream operations.
+**Method.** Insert filler between the tracked definition and its use, sized by
+real tokenizer counts (0 → 1000 tokens), varying only what the filler *does*:
 
-### E11-0 — counterfactual pairs (stage 70, CPU)
-
-**Method.** A one-token mutation of the inner definition's name flips which
-value the marked use selects, while both values occur in both programs:
-
-```python
-# case 0007                      # case 0007
-x = 3                            x = 3
-def f():                         def f():
-    y = 7                            x = 7
-    return x * 2 + 1                 return x * 2 + 1
-assert f() ==   → 7              assert f() ==   → 15
-```
-
-Templates: `global_shadow`, `call_frame` (the operation lives in a callee, so
-routing crosses a call boundary), `padded_shadow` (filler between mutation and
-use). Operation families: affine, multiply/subtract, threshold comparison,
-modulus/parity, list indexing. Each **base** carries several families over the
-same two values — the unit of the cross-operation test and of the cluster
-bootstrap.
-
-**Invariants**, enforced at generation and re-checked in `tests/test_jspace.py`:
-
-| invariant | why it matters |
+| filler | what it adds |
 |---|---|
-| exactly one differing token, at the inner definition's *name* | the marked use itself must be identical |
-| equal token length | every probed position is the same index in both programs |
-| mutation never adjacent to the use | no local window can leak the label |
-| answers distinct, single-token, **disjoint from both values** | otherwise an answer token and a distractor value token are the same lens row, and readout and swap are circular |
-| ground truth by execution, cross-checked against the operation's Python function | catches a template that binds the wrong variable |
+| `comment_prose` | inert English |
+| `dead_code` | unreachable statements |
+| `lexical_decoy` | similar-looking but irrelevant fresh names |
+| `competing_update` | genuinely rebinds other variables |
+| `scope_shadow` | reuses the *tracked* names in a nested scope |
 
-Positions recorded per pair: `pre_def`, `def_source`, `def_target`, `mutation`,
-`use`, `answer`. The calibration/test split is assigned here, grouped by base
-and stratified by template, and stored in the data file so every stage agrees.
+**Found** (6.7B binding accuracy at 500 inserted tokens):
 
-Output: `data/synthetic/jspace_pairs_{model}.jsonl`.
+| filler | acc | reading |
+|---|---:|---|
+| `comment_prose` | **0.921** | length is almost free |
+| `dead_code` | 0.794 | mild |
+| `lexical_decoy` | 0.795 | mild |
+| `competing_update` | 0.859 | moderate |
+| `scope_shadow` | **0.570** | **severe** |
 
-### E11-1 — the frozen lens (stage 71, GPU) — a GATE
+At 1000 tokens `scope_shadow` drives binding to 0.498 — chance — while every
+other filler stays above 0.70.
 
-**Method.** One J-lens per layer, built from a **held-out generic Python
-corpus** (CodeSearchNet by default), never from evaluation programs, with broad
-source positions `t` and randomly sampled future readout positions `t' ≥ t`.
-Candidate vocabulary: the ten digits plus every value and answer in the pair
-file.
+**Reading.** The representation degrades when the *semantic task* gets harder,
+not when the context gets longer. A per-layer detail sharpens it: under
+`scope_shadow`, block 0 is the most stable part of the network (flat ~0.75)
+while the middle layers — the ones doing the binding work — collapse. The
+interference lands on the computation, not on a lookup.
 
-**Stability.** Three independent build samples per layer. Two numbers, because
-they can come apart: rowwise cosine (do the *directions* agree?) and
-margin-sign agreement on held-out states (do the *decisions* agree?). The gate
-reads the second. A layer that fails it is reported but must not carry a claim.
+Stage 30 · `context_{task}_*.png`.
 
-**Validation.** V1 (at the last decoder layer `J` is the identity, so the
-J-lens must reproduce the logit lens) and V2 (next-token recovery against the
-Gram-matched floor) come from `jlens_validate` unchanged.
+## E9 — obfuscation: same meaning, harder surface
 
-**Required checks:** `V1_last_layer_equals_logit_lens`,
-`V2_beats_gram_matched_floor`, `lens_stable_across_seeds`. Stage 71 exits
-non-zero if any fails; 72/73 are not interpretable until it passes.
+**Question.** Is the relation carried by the identifiers, or by something that
+survives rewriting them?
 
-Output: `results/jspace/{model}/lenses/*.pkl`,
-`jspace_lens_{stability,validation,checks}.csv`.
+**Method.** A cumulative, Tigress-inspired ladder implemented natively for
+Python. **Every variant is executed and verified observationally equivalent to
+its base**, and all levels of a base are kept or dropped together so level
+curves compare identical program sets.
 
-### E11-2 — bound-value readout (stage 72, GPU)
+| level | transformation |
+|---:|---|
+| 0 | normalize (`ast.unparse`, a formatting baseline) |
+| 1 | + consistent renaming of every local |
+| 2 | + dead branches under provably false opaque predicates |
+| 3 | + mixed boolean-arithmetic rewriting (`a+b → (a^b)+((a&b)<<1)`) |
+| 4 | + control-flow flattening into a dispatch loop |
 
-**Hypothesis.** At the marked use, the frozen J-lens ranks the *bound* value
-above the distractor, and the ranking **flips** with the counterfactual.
+**Found** (6.7B binding, best layer per level): 1.000 → **0.897** (rename) →
+0.857 → 0.846 → **0.750** (flatten).
 
-**Metric.** The paired counterfactual margin reversal, not accuracy. With
-`m = score(v_source) − score(v_target)` measured at the same position in both
-programs, a reversal requires `m > 0` in the source-binding program *and*
-`m < 0` in its mutation. A readout with any per-token bias — preferring small
-numbers, the first-mentioned literal, the token it just saw — produces the same
-margin in both and scores zero. Accuracy and candidate rank are reported too,
-as the weaker numbers.
+**Reading — the layer breakdown is the finding.** Renaming pushes the
+*embedding and block-0* probes below chance (0.29–0.33): those layers keyed on
+identifier strings and renaming actively misleads them. Middle layers 7–15 hold
+at 0.85–0.90. Opaque predicates and rewritten arithmetic barely register,
+because they do not change which definition reaches which use. **Control-flow
+flattening is the real boundary**: the frozen probes encode binding relative to
+the surrounding control structure, and dissolving that scaffold breaks transfer.
 
-**Readouts**, all on identical hidden states: `jlens`, `logit`, `gram_random`
-(same norms *and* angles as the real lens; only the directions are arbitrary),
-and `probe` — a linear probe trained on the calibration split. The probe is the
-incumbent, not a floor: E2/E3 already show supervision recovers binding, so the
-interesting outcome is whether the unsupervised lens matches it.
+Taken with E5, the two ladders describe one failure surface: robust to *how far
+apart* things are and to *what they are called*, fragile when the scope or
+control structure it is a representation *of* becomes harder.
 
-**Positions.** All six, so the answer to "where does the selected value become
-legible" is measured rather than assumed. `pre_def` precedes both definitions
-and is the position-level floor.
-
-**Behaviour.** The same forward passes score the model's own forced choice
-between the two answers. Reported for every example; the "both counterfactuals
-correct" subset is labelled and summarized alongside, never instead.
-
-Output: `jspace_readout{,_summary,_contrasts}.csv`, `jspace_behaviour.csv`.
-
-### E11-3 — the coordinate swap (stage 73, GPU)
-
-**Hypothesis.** Exchanging the two value coordinates at the marked use moves
-the output toward the answer implied by the swapped-in value.
-
-**Method.** With `V = [v_source, v_target]` and `c = V⁺h`,
-`h_patched = h + V(swap(c) − c)`. Applied in both directions, at individual
-layers and short bands of consecutive probed layers (each layer sees the
-previous one's effect). Scored as a paired shift in
-`logP(answer implied by the other value) − logP(answer bound here)` against the
-same program's clean run.
-
-Three algebraic properties, each a unit test: only the two coordinates change;
-the operator is an involution; identical directions give *exactly* the zero
-edit, so the same-value control is provably inert.
-
-**The key test.** The same value swap must move each operation family toward
-*its own* answer. An intervention that steers the answer token cannot produce a
-different correct token per family from one edit, so the summary reports the
-per-family minimum, and `all_families_positive` is what the go/no-go reads.
-
-**Controls.**
-
-| variant | if it matches `jlens_value`, the finding is… |
-|---|---|
-| `logit_value` | the unembedding matrix, not the causal correction |
-| `gram_random` | any 2-d subspace of the same shape |
-| `noop_same_value` | numerical noise (the edit is provably the zero vector) |
-| `jlens_answer` | direct answer steering, not an intermediate value |
-| `whole_state` | not a control — the reference ceiling for this position |
-| `pre_def` position | position, not subspace: nothing bound can be routed there yet |
-
-**Two structural zeros**, kept in the output as free correctness checks rather
-than suppressed: an edit at the *last* decoder layer at any position before the
-answer cannot move the logits (nothing downstream mixes it in), and
-`whole_state` at `pre_def` is zero because the two programs are token-identical
-before the mutation, so the "counterfactual" state there is the same state. A
-nonzero value in either cell means positions or hooks are wrong.
-
-Output: `jspace_swap{,_summary,_by_operation,_contrasts}.csv`.
-
-### E11-4 — pre-registered go/no-go (stage 74, CPU)
-
-Recommend the full 6.7b run only if all three hold on the 1.3b pilot (200
-pairs, two operation families, four layers):
-
-1. behavioural balanced accuracy ≥ 0.75;
-2. the bound-value J-lens readout beats the Gram-matched random control
-   (paired cluster-bootstrap CI lower bound above zero);
-3. the coordinate swap produces a positive paired logit shift (CI lower bound
-   above zero).
-
-The layer and the intervention site are chosen on the **calibration** split and
-recorded before the test numbers are read. Output:
-`results/jspace/{model}/go_no_go.{yaml,md}`.
-
-### Running it
-
-```bash
-make jspace-pilot                                   # local, 1.3b
-jobs/jspace_pilot.csh                               # cluster, 1.3b
-setenv MODEL deepseek-coder-6.7b; jobs/jspace_full.csh   # cluster, full run
-```
+Stage 31 · `obfuscation_levels_*.png`.
 
 ---
 
-# 3. Supporting / appendix experiments
+# 3. Phase III — Is it causally used?
+
+Everything above is correlational. A representation can be a faithful shadow of
+a computation happening somewhere else, and probing cannot tell the difference.
+Phase III needs an intervention.
+
+The requirement is harder than it sounds. A useful intervention must change
+**the relation and nothing else** — which means acting at a position where the
+programs are token-identical, editing a nameable part of the state rather than
+replacing it, and doing so at a magnitude the site can actually register. No
+attempt so far has had all three at once. What follows is four attempts, in
+order, and what each established.
+
+## E7 — activation patching (attempt 1: too coarse)
+
+**Question.** Does patching a clean program's state into a corrupted one move
+the answer?
+
+**Method.** Length-matched taint minimal pairs, identical except the sink
+argument. Patch the clean run's residual stream into the corrupted run at one
+(layer, position) at a time; measure logit-difference recovery.
+
+**Found** (6.7B mean recovery):
+
+| layer | `sink_arg` | `last_token` | `sanitizer_def` |
+|---:|---:|---:|---:|
+| 0 | **0.99** | −0.01 | 0.00 |
+| 15 | 0.24 | 0.31 | 0.00 |
+| 31 | 0.00 | **1.00** | 0.00 |
+
+**What survives.** A reproducible description of *where the decision becomes
+committed*: the causal locus migrates from the sink-argument token to the
+last-token position across the middle of the network, crossing over near where
+E2's binding curve plateaus.
+
+**What was retired, and why.** The claim that it *isolates semantic use*.
+`sink_arg` is the only place the two programs differ — that is how the pair is
+built — so patching there transports the surface difference along with any
+semantic state, and ~1.0 recovery at layer 0 is exactly what pure input
+restoration would produce. The `sanitizer_def` null has no positive control at
+that position, so it is absence of evidence at one hand-picked token. And
+late-layer `last_token` recovery forces the answer trivially.
+
+**Lesson carried forward.** *Intervene only where the inputs agree.*
+
+Stage 50 · `docs/ARCHIVE.md` for the full retirement.
+
+## E10 — the J-lens track (attempt 2: instrument fine, uses failed)
+
+**E10-0 (kept, supporting).** Validation of a Jacobian-corrected output-aligned
+readout: at the last decoder layer the Jacobian is provably the identity, so the
+J-lens must reproduce the logit lens exactly — measured cosine **1.0000**, a
+closed-form check of the entire gradient path. Next-token recovery beats a
+norm-matched floor, and the correction adds +0.15/+0.18 top-1 over the plain
+logit lens pre-final. This is a statement about the *instrument*, and it is the
+only part of the track that survives.
+
+**E10-2 and E10-3 (archived).** Two attempts to use that readout — for taint
+"verbalizability" and for a control-dependence probe/lens dissociation. Both are
+retired: E10-2 inherits a metric that was itself shown to be broken, and E10-3's
+positive control was an *identity* control where the test was *relational*, so
+"the model cannot report this" and "this readout cannot express relations here"
+remain indistinguishable. Full reasoning in `docs/ARCHIVE.md`.
+
+**Lesson carried forward.** *A null needs a positive control matched in kind —
+same type of question, same site, same states.*
+
+Stages 60, 61, 62.
+
+## E11 — the J-space coordinate swap (attempt 3: too fine)
+
+**Question.** When the model resolves a binding, does it route the *selected
+value* into output-aligned coordinates that downstream computation reuses?
+
+**Method.** Token-aligned counterfactual pairs where a one-token mutation of an
+inner definition's name flips which value a marked use selects, with both values
+present in both programs and the answer computed by five different downstream
+operations. The intervention exchanges just two coordinates,
+`h ← h + V(swap(c) − c)`, leaving the orthogonal complement untouched. The
+falsification: one edit must produce a *different correct answer* in each
+operation family, which answer-steering cannot do.
+
+**Found.** At the readout position (L24) the swap reaches 46% of the efficiency
+of an ideal same-norm push while two matched-norm controls reach zero. But:
+
+- **The pre-registered gate reads NO-GO at both positions.** Behavioural
+  balanced accuracy 0.706 against a 0.75 threshold, and
+  `swap_is_specific_to_the_value_subspace` **fails** — the plain logit lens is
+  more efficient than the Jacobian-corrected one (−0.016 [−0.024, −0.009]).
+- **The use-position null was retracted.** A dose-matched control showed the
+  site's response to small edits is strongly convex: efficiency rises 18× from
+  the smallest dose to the largest, and a push along the *known-correct*
+  direction at 2% of ‖h‖ yields 0.002 nats with an interval covering zero — the
+  same as the value swap at 3.7%. No two-dimensional edit is large enough to
+  test the question there.
+
+**Reading.** Without the dose control this would have been reported as a clean
+null, with a passing readout positive control, four subspace controls at the
+same magnitude, and a site potent enough to flip 22% of answers when replaced
+wholesale. It is the most instructive failure in the project.
+
+**Lesson carried forward.** *A positive control must be matched in **scale** as
+well as in kind. A low-rank edit may sit below a site's effective causal dose,
+and whether it does is a measured property of the site, not an assumption.*
 
-Real and reported; they constrain the picture rather than carry it.
+Stages 70–74 · `results/jspace/6.7b-5fam/go_no_go*.md`.
 
-## E1 — lexical token type (sanity baseline)
+## E12 — latent store transitions (attempt 4: parked)
 
-**Hypothesis.** Token-type identity is near-perfectly decodable at every layer.
-This validates the extraction and probing machinery; failure here means a
-pipeline bug, not a finding.
+**Question.** Does the model hold a computed value that appears *nowhere in the
+program text*, and apply the program's own transition function to it?
 
-**Method.** Multiclass linear probe on single hidden states; labels from
-`classify_token`. **Expected:** > 0.95 accuracy from early layers.
+**Why it was tried.** E11's swapped values are literals in the text, so its
+surviving claim is about output-aligned *token* directions. Tracking a
+text-absent value removes that escape route.
 
-Stage: 20. Output: rows `task=lexical_token_type` in `static_probes_*.csv`.
+**Why it is parked.** Text-absent-because-computed forces arithmetic, and the
+design made *two chained arithmetic steps* the load-bearing capability for a
+question about program state. The 1.3B behavioural gate returned **0.418 —
+below chance** — with the correct answer as argmax on 6.3% of prompts against a
+10% uniform floor. Two of four operation families sat at exactly 0.500, which a
+simulation showed is reproduced by a model doing **no computation at all** and
+picking whichever candidate is numerically closer to the head literal.
 
-## E4 — control dependence (supporting, not central)
+**Reading.** Not a finding about code models; a design error. The published
+prediction was available in advance: arithmetic in language models is
+implemented by heuristic neurons that do not chain. Code, gates and diagnostics
+are kept and still run; nothing is claimed.
 
-**Hypothesis.** Whether a statement executes under a guard is encoded in the
-pair (guard-expression state, statement state).
+**Lesson carried forward.** *Do not couple the semantic question to a capability
+that is not the phenomenon of interest.*
 
-**Method.** Positives: (guard `test`/`iter` expression anchor, statement anchor)
-for statements inside the guard's body/orelse, computed by AST walk with
-nesting. Negatives: same-program statements outside the guard, including the
-`indent_matched` hard stratum (a statement in a *sibling* guard's body at the
-same nesting depth).
+Stages 80–89 · `docs/design/archive/E12_PLAN.md`.
 
-**Why not central.** Its surface baseline is already 0.927 / AUC 0.990, unlike
-E2/E3 whose floor is pinned to exactly 0.500. Control dependence is largely a
-local syntactic relation, so this result is best read as the contrast that
-makes E2's isolation meaningful.
-
-Stage: 20.
-
-## E5 — context degradation
-
-**Hypothesis.** Semantic relation recovery degrades as filler separates
-definition from use, and degrades *differently* by filler type: prose and dead
-code (inert) < lexically similar decoys < shadowing scopes < competing updates.
-
-**Method.** **Frozen** E2/E3 probes from stage 20 — never retrained — applied to
-variants where a token-counted filler block (0–1000 tokens, measured with the
-real tokenizer) is inserted between the tracked def and use. Ground truth is
-recomputed from each variant's own source.
-
-Stage: `make context MODEL=...` (30). Output: `context_degradation_*.csv`,
-`context_{task}_*.png`.
-
-## E7 — causal patching (preliminary causal evidence)
-
-**What it measures.** Length-matched pairs (identical except the sink
-argument); patch clean→corrupted at each probed layer × position and measure
-logit-diff recovery `(ld_patched − ld_corr) / (ld_clean − ld_corr)`.
-
-**Retired claim.** That it isolates *semantic use*. `sink_arg` is the only place
-the two programs differ, so patching there transports the surface difference
-along with any semantic state; the `sanitizer_def` null has no positive control
-at that position; and late-layer `last_token` recovery forces the answer
-trivially. Reasoning in `docs/LEGACY_RESULTS.md`.
-
-**What it still supports.** The causal locus of the decision migrates from the
-sink-argument token to the last-token position across the middle of the
-network — a reproducible description of where the decision becomes committed.
-
-Stage: `make patching MODEL=...` (50). Output: `causal_patching{,_summary}_*.csv`,
-`patching_recovery_*.png`.
-
-## E8 — real-code generalization (with its limitation)
-
-**Method.** Stages 10+20 run unchanged on ~200 ast-parseable CodeSearchNet
-functions (fixed-seed sample). Report synthetic vs real accuracy/selectivity
-side by side per task and layer.
-
-**Limitation, reported with the result.** Real identifiers are informative, so
-the embedding layer starts at ~0.96 AUC and no stratum pins the surface floor to
-chance. E8 shows the decoder transfers to naturalistic inputs; it does **not**
-show that the semantic component specifically transfers. The fix —
-context-matched pairs built by mutating real functions — is open item 1 in
-`docs/RESULTS.md`.
-
-Stages: 10, 20 on `data/real/csn_python_200.jsonl`.
-
-## E9 — obfuscation robustness
-
-**Hypothesis.** If the model represents program *semantics* rather than surface
-form, frozen E2/E3 probe accuracy should survive semantics-preserving
-obfuscation; probes riding lexical shortcuts should collapse already at pure
-renaming.
-
-**Method.** Tigress-inspired obfuscation ladder implemented natively for Python
-in `src/data/obfuscation.py`. Cumulative levels, each variant
-**execution-verified** observationally equivalent to its base:
-
-| level | name | transformation |
-|---|---|---|
-| 0 | normalize | ast round-trip only — shared formatting baseline |
-| 1 | rename | consistent alpha-renaming of all locals |
-| 2 | opaque | + dead branches under opaque predicates |
-| 3 | encode | + mixed boolean-arithmetic encoding |
-| 4 | flatten | + control-flow flattening into a state machine |
-
-Frozen E2/E3 probes are evaluated on the variants; ground truth is rebuilt from
-each variant's own source. All levels of a base are kept or dropped together.
-
-Stage: `make obfuscation MODEL=...` (31). Output:
-`obfuscation_robustness_*.csv`, `obfuscation_levels_*.png`.
-
-## E10-0 — J-lens implementation validation (stage 60)
-
-**Hypothesis.** None — this is a gate, not a result, and it exits non-zero on
-failure.
-
-**Checks.** Phase 0 (applicability): candidate identifiers are single tokens;
-the unembedding and final-norm accessors resolve; autograd reaches an
-intermediate activation with finite gradients; the Jacobian correction is not a
-no-op. Phase 1: **V1** the last-layer identity against the logit lens; **V2**
-next-token recovery beating a norm-matched random floor; **V3** the yes/no
-disposition readout (retained for completeness — it passed at n=10, too small
-to carry weight).
-
-Controls are compared **at the J-lens's own best layer**, not max-against-max.
-
-**Why it survives while E10-2/E10-3 do not.** It is a statement about the
-instrument, not about the model, and E11 reuses it unchanged.
-
-Stage: `make jlens-validate MODEL=...` (60). Output:
-`jlens_validation{,_checks}_{model}.csv`.
-
----
-
-# 4. Archived experiments
-
-Claims withdrawn; data, figures and manifests preserved; stage commands
-unchanged. `scripts/90_make_paper_assets.py` skips these by default and
-regenerates them with `--include-archived`. Full reasoning for each:
-`docs/LEGACY_RESULTS.md`.
-
-## E6 — behavioural lead time (stage 40)
-
-**Retired claim.** That latent taint-state corruption precedes behavioural
-failure, and that the effect is scale-dependent.
-
-**Why.** The original positive was measured on a constant responder (balanced
-accuracy 0.500 in both models). With a fixed prompt and an analytic null, a
-no-model `position` baseline scores +0.113 excess while a 99%-accurate probe
-scores −0.010: within readout families, early-warning rate and accuracy
-correlate at r ≈ −0.9, so the metric rewards unreliability rather than
-anticipation. The negative is not a finding either — a metric that cannot
-separate anticipation from unreliability does not become trustworthy when it
-returns a null.
-
-Still runnable: `make leadtime MODEL=...`; `scripts/41_leadtime_floors.py`
-re-applies the floors to any stage-40 run without a GPU.
-
-## E10-2 — taint workspace membership (stage 61)
-
-**Retired claim.** That the taint state is "verbalizable", and that this
-explains E6's scale difference.
-
-**Why.** It inherits E6's broken metric, and the effect it was built to explain
-did not survive its own floors. Its lasting contribution is diagnostic: it
-produced the r = −0.905 measurement that condemned the early-warning statistic,
-and it showed a norm-matched random direction outscoring every real readout.
-
-Still runnable: `make jlens-taint MODEL=...`.
-
-## E10-3 — control dependence, J-lens (stages 62, 63)
-
-**Retired claim.** That control dependence is decodable but not verbalizable —
-a probe/lens dissociation.
-
-**Why.** The null itself was carefully defended (temporal confound identified
-and conditioned out; no layer differs from chance after Bonferroni correction
-with a cluster bootstrap). But `guard_var` is a recency/identity control, not a
-*relational* one, so "not verbalizable" cannot be distinguished from "this
-readout cannot express relations at these positions" — and `next_ident`, the
-control that was supposed to be sharp, failed for a mechanical anchoring
-reason. The relation it interrogates is also the most syntactic one in the
-suite (E4's surface baseline is 0.927), which is where such a dissociation
-would matter least.
-
-Still runnable: `make jlens-controldep MODEL=...`;
-`scripts/63_controldep_temporal.py` applies the temporal split and corrected
-tests retrospectively, no GPU required.
-
----
-
-# 5. Instrument validation (NOT a result)
-
-## E12 — latent store transitions (stages 80–88)
-
-**Status: implemented, not run. Claims nothing.**
-
-**Question.** Can we reliably identify and interchange a computed,
-**text-absent** program value in a pretrained code model, such that downstream
-computation correctly *transforms* the installed value?
-
-**Why it is not a finding.** Causal state interchange on a learned low-rank
-subspace is established method — DAS, Othello-GPT, and variable binding in
-symbolic programs (`arXiv:2505.20896`) all do a version of it. What this
-project owns that the field does not is the construction-pinned surface floor.
-E12 builds and checks the instrument; `docs/design/E13_DIRECTIONS.md` is what a
-pass licenses. Full design: `docs/design/E12_PLAN.md`. Commands:
-`docs/RUNBOOK_E12.md`.
-
-**The data.** Token-aligned triples whose tracked value has no token:
-
-```python
-def f():                    # counterfactual: a = 2  (one differing token)
-    a = 1
-    b = 4                   # irrelevant variable — the twin mutates this instead
-    c = a + 4               # 5 / 6, absent from the text of EVERY program
-    d = c + 3               # 8 / 9
-    return d
-assert f() ==
-```
-
-Four operation families over the same `c` (`add`, `sub_from`, `double_sub`,
-`mod`), ≥3 per base, so one edit must imply a different correct answer in each
-and one family can be held out.
-
-**The critical readout.** After installing the counterfactual's `c` at the
-injection anchor, the frozen decoder at the *next* statement reads one of:
-
-| bin | value | what it would mean |
-|---|---|---|
-| `stale` | 8 | the edit did nothing |
-| `copied` | 6 | the value was carried, the operator was not applied |
-| `transformed` | 9 | the program's own next statement ran on the installed value |
-| `other` | — | noise / off-manifold |
-
-`copied` is why the endpoint is internal: answer-token steering and
-carry-without-composition both predict it; only a transition predicts
-`transformed`.
-
-**The gates.** Each stage refuses to run (exit 2) unless its prerequisites
-passed; `--override-gate REASON` is permitted and recorded permanently.
-
-| gate | stage | asserts |
-|---|---|---|
-| G0 | 81 | trace, reference interpreter and stored labels agree; invariants hold |
-| G1 | 82 | balanced accuracy ≥ 0.75 overall, ≥ 0.70 per retained family |
-| G2 | 84 | the text-absent value decodes above measured lexical/control-task baselines |
-| G3 | 85 | frozen-decoder transfer is measurable, with a live text-present control |
-| G4 | 86 | whole-state interchange yields `transformed` — the ceiling *and* the aliveness check |
-| G5 | 87 | low-rank interchange ≥ 50% of the ceiling, clears six controls, transfers to a held-out operation |
-
-**Controls (G5).** `random_rank`, `random_norm` (matched on removed norm, not
-rank), `noop` (provably the zero edit), `irrelevant` (the unread-literal twin),
-`pre_def` (position, not subspace), and `held_out_family` — the decisive one,
-since a subspace encoding the answer cannot transfer to a family mapping the
-same value to a different answer.
-
-**Limitation, stated with the result.** G2 has no construction-pinned floor:
-the value is a deterministic function of the visible text, so an executing
-baseline scores 1.0. It is a precondition, not a result.
-
-Stages: `make store MODEL=...` (80–88), `make store-pilot`,
-`jobs/store_{pilot,full}.csh`.
-
----
-
-# 6. Binding interchange (E13, stages 100–107)
-
-**Status: implemented, not run. The active direction.**
+## E13 — binding interchange, falsified by the value assignment (current)
 
 **Question.** Does a low-rank, magnitude-free interchange at the site where a
-variable binding is resolved transport *which definition is in scope*, rather
-than a token or an answer direction? This is the question `paper/main.tex`
-§Discussion declares open.
+binding is resolved transport *which definition is in scope* — rather than a
+token, or an answer direction?
 
-**The data.** Four programs per base — binding × value assignment — all
+This is the question `paper/main.tex` §Discussion currently declares open:
+*"Where the resolution itself happens, the causal question remains open."*
+
+**The design.** Four programs per base — binding × value assignment — all
 token-identical except one character:
 
 ```python
-# arm ab, source (outer binding) -> a      # arm ba, source (outer binding) -> b
-x = a                                      x = b
-def f():                                   def f():
-    y = b       # target: `x = b`              y = a       # target: `x = a`
-    return x                                   return x
-assert f() ==                              assert f() ==
+# ARM ab: (outer, inner) = (a, b)        # ARM ba: (outer, inner) = (b, a)
+x = a                                    x = b
+def f():                                 def f():
+    y = b     # target program: `x = b`      y = a     # target: `x = a`
+    return x                                 return x
+#   → a  (outer)   /  → b  (inner)       #   → b  (outer)   /  → a  (inner)
 ```
 
-**The identification.** Install the target run's state into the source run at
-the marked use. In arm `ab` the answer must move **a → b**; in arm `ba` the same
-intervention must move it **b → a**. Fit the alignment on `ab`, read the claim
-on `ba`. A subspace encoding "the token b", or "the answer", scores positive on
-`ab` and **negative** on `ba`. Only one encoding which definition is in scope
-survives both.
+Install the *target* run's state into the *source* run at the marked use. In arm
+`ab` the answer must move **a → b**; in arm `ba` the same intervention must move
+it **b → a**. Fit the alignment on `ab`; read the claim on `ba`.
 
-E11 could not build this: with an arithmetic operation between the value and the
-answer it had to forbid `answer == value` to avoid circularity, and paid with a
-capability requirement. Here the answer IS the bound value and the arm crossing
-breaks the circularity instead — so there is **no arithmetic anywhere**, which
-is exactly the coupling that sank E12.
+**Why this identifies what the earlier attempts could not:**
 
-**The gates.** Each stage refuses to run (exit 2) on a failed prerequisite.
-
-| gate | stage | asserts |
+| account | arm `ab` | arm `ba` |
 |---|---|---|
-| H0 | 101 | execution and a **scope-aware** reference interpreter agree; invariants hold, including the arm crossing |
-| H1 | 102 | the model returns the bound variable — ≥ 0.85 overall **and** ≥ 0.75 per cell |
-| H2 | 104 | the binding is decodable at the use anchor above the measured surface baseline (E2's `context_matched`, replicated here) |
-| H3 | 105 | whole-state interchange flips the answer in **both** arms — the ceiling, and the proof H5 is testable |
-| H4 | 106 | low-rank interchange beats matched controls on the **training** arm |
-| H5 | 106 | the same subspace transfers to the **held-out** arm, where an explicit `answer_direction` fails |
+| the subspace carries *which definition is in scope* | positive | **positive** |
+| the subspace carries *the token `b`* | positive | **negative** |
+| the subspace carries *the answer* | positive | **negative** |
 
-**Controls.** `whole_state` (ceiling, per arm), **`answer_direction`** (the
-positive control for the falsification: must pass `ab`, must fail `ba`),
-`random_rank`, `random_norm` (matched on removed norm), `noop` (provably zero),
-and the `def_source` site (a structural zero — the programs are token-identical
-before the mutation).
+E11 could not build this table. With an arithmetic operation between the value
+and the answer it had to forbid `answer == value` to avoid circularity, and paid
+for it with a capability requirement. **Here the answer *is* the bound value —
+deliberately — and the arm crossing breaks the circularity instead.** So there
+is **no arithmetic anywhere**: the model has to return a variable. That is
+exactly the coupling that sank E12.
 
-**Do not claim** H4 alone: without H5 it is E11 again, and E11's own go/no-go
-read NO-GO. Full design, outcome table and literature position:
-`docs/design/E13_PLAN.md`.
+And the intervention has **no dose parameter**. An interchange installs whatever
+the donor run holds in the subspace; magnitude is a measured consequence, not a
+choice. That is the E11 failure removed by construction rather than argued away.
 
-Stages: `make binding MODEL=...` (100–107), `make binding-pilot`,
-`jobs/binding_{pilot,full}.csh`.
+**Six gates**, each refusing to run downstream stages until it passes:
+
+| gate | asserts | threshold |
+|---|---|---|
+| H0 | execution and a scope-aware reference interpreter agree; invariants hold, **including the arm crossing** | ≥ 0.999 of bases |
+| H1 | the model returns the correctly bound variable | ≥ 0.85 overall, ≥ 0.75 per cell |
+| H2 | which definition is in scope is decodable at the use anchor | ≥ 0.80, ≥ 0.10 over the measured surface baseline |
+| H3 | whole-state interchange flips the answer **in both arms** | CI > 0, flip rate ≥ 0.25 |
+| H4 | low-rank interchange beats matched controls on the **training** arm | ≥ 50% of the ceiling |
+| H5 | the same subspace transfers to the **held-out** arm | ≥ 50% of that arm's ceiling, **and** `answer_direction` fails there |
+
+**Controls.** `whole_state` (the ceiling, per arm — and the proof both arms are
+measurable); **`answer_direction`** (an explicit answer direction, norm-matched
+to the treatment, which *must* pass `ab` and *must* fail `ba` — the positive
+control for the falsification itself); `random_rank`; `random_norm` (matched on
+removed norm, since for an orthogonal projector only the span matters); `noop`
+(provably the zero edit); and the `def_source` site (a structural zero — the
+programs are token-identical before the mutation).
+
+**Found so far** (6.7B, 400 bases):
+
+| gate | result |
+|---|---|
+| H0 | **PASS** — 400/400 bases, all six invariant checks at 1.0000 |
+| H1 | **PASS** — 1.000 overall, 1.000 in the weakest cell |
+| H2 | **PASS** — binding decodable at 1.000 against a measured 0.500 surface floor |
+| H3 | **PASS** — ab +4.781, ba +4.799, flip rate 0.857; structural zeros exactly 0.00e+00 |
+| H4, H5 | **not yet valid** — see below |
+
+**H4/H5 are pending a re-run.** The first attempt produced three anomalies that
+a working apparatus cannot produce: `das_binding` at **189% of the whole-state
+ceiling** (a rank-1 subspace cannot out-move installing the entire donor state),
+a rank-1 edit moving **48% of ‖h‖**, and the `answer_direction` control reading
+**+0.001 on both arms** — i.e. discriminating nothing. The last is a bug in the
+control: it was a *unit-norm* unembedding row moving ~1% of ‖h‖ while the
+treatment moved 48%, which is the E11 dose error rebuilt inside the control. It
+is now norm-matched per row and verified exact. Stage 108 refuses to report a
+reading while the machinery is broken, which is why no result is claimed here.
+
+Stages 100–108 · design `docs/design/E13_PLAN.md` · commands
+`docs/RUNBOOK_E13.md`.
 
 ---
 
-## Models & replication
+# 4. Shared conventions
+
+These apply everywhere and are the reason the numbers mean what they claim.
+Full rationale: `docs/METHODS.md`.
+
+| Convention | What it kills |
+|---|---|
+| **Grouped cross-validation** — folds split by source program, never within | rows from one program share hidden vectors; random folds leak train into test |
+| **Selectivity control** — the identical probe on labels shuffled *within* each program | accuracy from class priors or per-program regularities |
+| **Negative strata reported separately** | a headline averaged over easy negatives |
+| **Measured surface baseline** — a probe on ±3 token ids + bucketed distance, no hidden states | any claim that a hidden-state result beats "the text" without checking |
+| **Verified token alignment** — AST spans → offsets checked against the source | string-matching a variable name silently mislabels shadows, the exact thing E2 measures |
+| **Cross-validated ground truth** — def-use tested against `beniget`; obfuscation execution-verified; E13 against a scope-aware interpreter | labels wrong in the same way for train and test look like signal |
+| **Cluster bootstrap** over source programs; control comparisons paired on the same rows | intervals too narrow, in the direction that makes a null look like a finding |
+| **Calibration/test separation**, with layer and site chosen on calibration and recorded before test numbers are read | a site picked after seeing the test split is a maximum, not a site |
+
+One non-obvious hazard: `AutoTokenizer` on transformers 5.x silently
+mis-tokenizes deepseek-coder (`def func` → `['de','ff','unc']`), relabelling
+*every* example without crashing. `src/models/loader.py::load_tokenizer` rejects
+any tokenizer failing an exact code round-trip.
+
+---
+
+# 5. Models and replication
 
 | Role | Model | Where |
 |---|---|---|
-| Development / smoke / E11 pilot | deepseek-coder-1.3b | local MPS or cluster |
-| Main results / E11 full run | deepseek-coder-6.7b | cluster GPU |
-| Architecture replication (optional) | starcoder2-3b | cluster GPU |
+| Development, smoke, pilots | `deepseek-coder-1.3b` | local MPS or cluster |
+| Main results | `deepseek-coder-6.7b` | cluster GPU |
+| Architecture replication (optional) | `starcoder2-3b` | cluster GPU |
 
-All experiments are model-agnostic through `--model`; probed layers per model
-live in `configs/models.yaml`, and per-stage settings in
-`configs/experiments.yaml`.
+Base (non-instruct) models on purpose: the object of study is the
+representation built during code pretraining, not chat behaviour. Every stage
+takes `--model`; probed layers per model live in `configs/models.yaml`, and
+canonical per-stage settings in `configs/experiments.yaml`.

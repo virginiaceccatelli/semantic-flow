@@ -1,9 +1,13 @@
-# E13 — what a working instrument must be pointed at
+# What a working interchange instrument must be pointed at next
 
-**Read after `docs/design/E12_PLAN.md`.** E12 validates an apparatus: it asks
-whether a computed, text-absent program value can be identified and
-interchanged such that downstream computation transforms it. That is a check on
-the measurement, and a passing E12 is a methods section, not a contribution.
+**Read after `docs/design/E13_PLAN.md`.** E13 asks whether a low-rank,
+magnitude-free interchange can transport *which definition is in scope*. If it
+can, the apparatus works — and "the apparatus works" is a methods section, not
+a contribution. This document is about what to point it at afterwards.
+
+(Its first version was written against E12, the parked text-absent-value design;
+the argument is unchanged because it was never about E12's specific object.
+E12's post-mortem is in `docs/ARCHIVE.md`.)
 
 The reason is unglamorous: **scalar interchange is already done.** DAS supplies
 the formalism and the metric; Othello-GPT and the chess world-model work supply
@@ -16,15 +20,16 @@ identification strategy that the field does not have.
 What this project owns that the field does not is the **construction-pinned
 floor** — a counterfactual where no surface feature is informative *by
 construction* rather than by estimate. Combining that with a magnitude-free
-interchange is the contribution. E12 builds half of it. This document is about
+interchange is the contribution. E13 builds half of it. This document is about
 the other half: which semantic object to point it at.
 
 ---
 
 ## 1. The bar a successful extension has to clear
 
-A one-scalar store is the simplest possible program state, which is why it is
-the right thing to validate on and the wrong thing to publish. An extension
+A single binding is the simplest possible program-semantic fact, which is why
+it is the right thing to validate an instrument on and the wrong thing to build
+a paper's headline on. An extension
 earns a contribution when the object being interchanged is one that:
 
 1. **static analysis considers hard** — the interesting cases are where a
