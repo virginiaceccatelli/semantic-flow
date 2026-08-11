@@ -359,6 +359,66 @@ def test_h5_fails_when_the_subspace_is_an_answer_direction():
     assert not passed
 
 
+def test_answer_direction_is_norm_matched_to_the_treatment(records):
+    """The control must move the SAME fraction of ‖h‖ as what it controls for.
+
+    The first version was a unit-norm unembedding row: on 6.7b it moved ~1% of
+    ‖h‖ while the treatment moved 48%, so it did nothing on either arm and
+    discriminated nothing. A control at a different dose is not a control.
+    """
+    import numpy as np
+
+    from src.experiments.binding_interchange import build_subspace
+    from src.models.das import interchange_report
+
+    rng = np.random.default_rng(0)
+    d = 64
+    host, donor = rng.standard_normal(d), rng.standard_normal(d)
+    unembedding = {t: rng.standard_normal(d)
+                   for t in records[0].token_ids.values()}
+    for target in (0.5, 3.7, 12.0):
+        basis, synthetic = build_subspace(
+            "answer_direction", records[0], "ab", "source", host, donor,
+            d, 1, None, unembedding, 0, target_edit_norm=target)
+        assert interchange_report(host, synthetic, basis)["edit_norm"] == pytest.approx(target)
+
+
+def test_answer_direction_refuses_a_degenerate_direction(records):
+    """A silently dead control reads as 'it failed on ba' — fail loudly instead."""
+    import numpy as np
+
+    from src.experiments.binding_interchange import build_subspace
+
+    d = 64
+    same = np.ones(d)
+    unembedding = {t: same for t in records[0].token_ids.values()}
+    with pytest.raises(ValueError, match="identical"):
+        build_subspace("answer_direction", records[0], "ab", "source",
+                       np.zeros(d), np.ones(d), d, 1, None, unembedding, 0,
+                       target_edit_norm=1.0)
+
+
+def test_norm_matched_random_is_cheap_and_close(records):
+    """It is called once per row; the closed-form rank keeps it out of the way."""
+    import time
+
+    import numpy as np
+
+    from src.models.das import norm_matched_random
+
+    d = 4096
+    rng = np.random.default_rng(0)
+    host = rng.standard_normal(d)
+    donor = host + 0.7 * np.linalg.norm(host) / np.sqrt(d) * rng.standard_normal(d)
+    norm_matched_random(host, donor, 0.4, d, 1, seed=0)          # warm the cache
+    start = time.time()
+    for _ in range(50):
+        basis, fraction = norm_matched_random(host, donor, 0.4, d, 1, seed=0)
+    per_call = (time.time() - start) / 50
+    assert per_call < 0.05, f"{per_call:.3f}s per call would stall the grid"
+    assert fraction >= 0.4 * 0.8       # the closed-form estimate brackets the target
+
+
 def test_reading_is_withheld_when_the_discriminator_transfers_too():
     """The one case where a positive-looking H5 must NOT be read as a result.
 

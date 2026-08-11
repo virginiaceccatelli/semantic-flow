@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import logging
 import pickle
+from functools import lru_cache
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional, Sequence
@@ -211,6 +212,20 @@ def interchange_report(h_self: np.ndarray, h_other: np.ndarray, basis: np.ndarra
     }
 
 
+@lru_cache(maxsize=64)
+def _cached_random_subspace(d: int, rank: int, seed: int) -> np.ndarray:
+    """`random_subspace`, memoized.
+
+    The basis depends only on (d, rank, seed), but `norm_matched_random` is
+    called once per evaluated row — tens of thousands of times per stage — and
+    each miss is a QR on a (d, rank) matrix. Uncached and doubling from rank 1,
+    a single call at a das-like target measured **1.55 s**, which is 58 minutes
+    of CPU per rank on a 2,240-row grid with the GPU sitting idle. That is what
+    "stuck at step 199" was.
+    """
+    return random_subspace(d, rank, seed=seed)
+
+
 def norm_matched_random(
     h_self: np.ndarray,
     h_other: np.ndarray,
@@ -222,21 +237,43 @@ def norm_matched_random(
 ) -> tuple[np.ndarray, float]:
     """A random subspace whose interchange moves the SAME fraction of ||h||.
 
-    Searches upward in rank until the random interchange's edit fraction
-    reaches `target_fraction`, and returns the basis with the fraction it
-    achieved. This is the control the preregistered rule is read against;
-    the equal-rank random subspace is reported alongside as the weaker one.
+    This is the control the pre-registered rule is read against; the equal-rank
+    random subspace is reported alongside as the weaker one.
+
+    The required rank is estimated in closed form rather than found by doubling.
+    For a uniformly random rank-r subspace, `E||R R^T d||^2 = (r/d) ||d||^2`, so
+
+        edit_fraction ~ sqrt(r/d) * ||h_other - h_self|| / ||h_self||
+
+    and setting that equal to the target gives `r ~ d (target ||h|| / ||d||)^2`.
+    One or two cached corrections then bracket it exactly. The rank actually
+    reached is returned and reported: needing many random dimensions to match
+    one learned dimension is itself informative about what the learned direction
+    is doing.
     """
     max_rank = max_rank or d_model
-    r = rank
-    best = random_subspace(d_model, r, seed=seed)
-    best_fraction = interchange_report(h_self, h_other, best)["edit_fraction"]
-    while best_fraction < target_fraction and r < max_rank:
-        r = min(max_rank, r * 2)
-        candidate = random_subspace(d_model, r, seed=seed)
-        best = candidate
-        best_fraction = interchange_report(h_self, h_other, candidate)["edit_fraction"]
-    return best, best_fraction
+    a = np.asarray(h_self, dtype=np.float64).reshape(-1)
+    delta = np.asarray(h_other, dtype=np.float64).reshape(-1) - a
+    norm_h = float(np.linalg.norm(a)) or 1.0
+    norm_delta = float(np.linalg.norm(delta))
+    if norm_delta <= 0 or target_fraction <= 0:
+        basis = _cached_random_subspace(d_model, rank, seed)
+        return basis, interchange_report(a, h_other, basis)["edit_fraction"]
+
+    ratio = target_fraction * norm_h / norm_delta
+    estimate = int(round(d_model * min(1.0, ratio) ** 2))
+    r = int(np.clip(estimate, rank, max_rank))
+
+    basis = _cached_random_subspace(d_model, r, seed)
+    fraction = interchange_report(a, h_other, basis)["edit_fraction"]
+    # At most a few corrections; the estimate is unbiased so this rarely fires.
+    for _ in range(4):
+        if fraction >= target_fraction or r >= max_rank:
+            break
+        r = int(min(max_rank, max(r + 1, round(r * 1.5))))
+        basis = _cached_random_subspace(d_model, r, seed)
+        fraction = interchange_report(a, h_other, basis)["edit_fraction"]
+    return basis, fraction
 
 
 def make_interchange_fn(

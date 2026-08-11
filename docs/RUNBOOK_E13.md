@@ -169,16 +169,28 @@ screen -dmS e13-interchange env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
   clears*, never the argmax over ranks.
 - **Writes:** `$OUT/interchange{,_summary,_contrasts,_alignments}.csv`,
   `$OUT/subspaces/das_L*_r*.pkl`
+- **Progress:** the grid logs `grid N/M records (rate, ETA)` every 25 records.
+  The last DAS line (`step 199`) is the *end* of training, not a stall — the
+  grid runs after it. If nothing appears for more than a couple of minutes after
+  `step 199`, that IS a stall; check `nvidia-smi` (an idle GPU means the time is
+  going somewhere on the CPU).
 - **Inspect, in this order:**
   1. `interchange_alignments.csv` — `converged` true, `orthogonality_error`
      < 1e-6, else you are reading the optimiser, not the model;
   2. `interchange_contrasts.csv` — every `ci_lo` > 0 on the training arm, and
      `edit_fraction_treatment` ≈ `edit_fraction_control` for `random_norm`;
-  3. `interchange_summary.csv`, **`variant=answer_direction`** — it must be
+  3. `interchange_alignments.csv` again — `concentration_top5` against
+     `uniform_top5`. A basis spread over the stream sits near the uniform value;
+     one riding a massive-activation dimension approaches 1.0, which means DAS
+     found a lever rather than transporting a state;
+  4. `interchange_summary.csv`, **`variant=answer_direction`** — it must be
      **positive on `ab` and negative on `ba`**. This is the positive control for
      the falsification. If it passes on `ba` too, the discriminator is broken
      and **no verdict about `das_binding` is licensed**;
-  4. only then `das_binding` on `ba`.
+  5. `effective_rank` for `random_norm` — the rank a *random* subspace needed to
+     move as much of ‖h‖ as the learned one. Needing hundreds of random
+     dimensions to match one learned dimension is informative in its own right;
+  6. only then `das_binding` on `ba`.
 - **If H4 passes and H5 fails** with `answer_direction` failing on `ba` as
   designed: the learned subspace *is* an answer direction. That is a real,
   reportable negative and precisely what E11 could not establish.

@@ -44,6 +44,7 @@ rather than becoming a push: with the synthetic donor `h + alpha*r`,
 from __future__ import annotations
 
 import logging
+import time
 from typing import Callable, Optional, Sequence
 
 import numpy as np
@@ -253,7 +254,16 @@ def build_subspace(
         installed = unembedding[record.other_answer_token(TRAIN_ARM, binding)]
         own = unembedding[record.answer_token(TRAIN_ARM, binding)]
         direction = np.asarray(installed - own, dtype=np.float64).reshape(-1, 1)
-        norm = float(np.linalg.norm(direction)) or 1.0
+        norm = float(np.linalg.norm(direction))
+        if norm <= 0:
+            # The generator guarantees the two answer tokens differ, so a zero
+            # direction means the unembedding lookup is wrong. Fail loudly: a
+            # silently dead control reads as "it failed on the held-out arm",
+            # which is indistinguishable from the discriminator working.
+            raise ValueError(
+                f"{record.base_id}: the two answer tokens have identical "
+                f"unembedding rows, so the answer_direction control would be "
+                f"the zero edit. Check the rows passed in `unembedding`.")
         direction /= norm
         alpha = float(target_edit_norm if target_edit_norm else norm)
         return direction, (host + alpha * direction.reshape(-1))
@@ -288,6 +298,7 @@ def run_grid(
     unembedding: Optional[np.ndarray] = None,
     seed: int = 42,
     provenance: Optional[dict] = None,
+    progress_every: int = 25,
 ) -> pd.DataFrame:
     """One row per (record, arm, binding, variant, site).
 
@@ -296,7 +307,16 @@ def run_grid(
     """
     rows: list[dict] = []
     d_model = None
-    for record in records:
+    total = len(records)
+    started = time.time()
+    for index, record in enumerate(records):
+        # The grid is the long pole and used to print nothing until it finished,
+        # which is indistinguishable from a hang. Report often enough that a
+        # stall is visible within a minute.
+        if progress_every and index and index % progress_every == 0:
+            rate = index / max(time.time() - started, 1e-9)
+            logger.info("    grid %d/%d records (%.1f/s, ~%.0f s left)",
+                        index, total, rate, (total - index) / max(rate, 1e-9))
         for arm in ARMS:
             for binding in BINDINGS:
                 host_key = (record.base_id, arm, binding)
@@ -346,6 +366,7 @@ def run_grid(
                             "flipped": int(patched[installed_id] > patched[own_id]
                                            and clean[installed_id] <= clean[own_id]),
                             "edit_fraction": report["edit_fraction"],
+                            "effective_rank": int(basis.shape[1]),
                             "degenerate": bool(report["degenerate"]),
                             **(provenance or {}),
                         })
