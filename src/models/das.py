@@ -132,6 +132,21 @@ class AlignedSubspace:
         gram = self.basis.T @ self.basis
         return float(np.max(np.abs(gram - np.eye(self.rank))))
 
+    def concentration(self, top_k: int = 5) -> float:
+        """Share of the basis's mass carried by its `top_k` largest dimensions.
+
+        The lever-versus-transport diagnostic. Transformer residual streams have
+        a handful of massive-activation dimensions whose values dwarf the rest,
+        and an unconstrained low-rank fit maximizing a logit shift will happily
+        align with one of them: that produces a large effect while transporting
+        nothing about the variable under study. A basis spread over the stream
+        gives ~top_k/d here; one riding a rogue dimension approaches 1.0.
+        """
+        mass = np.sum(self.basis ** 2, axis=1)
+        order = np.sort(mass)[::-1]
+        total = float(mass.sum()) or 1.0
+        return float(order[:top_k].sum() / total)
+
     def save(self, path: str | Path) -> Path:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)

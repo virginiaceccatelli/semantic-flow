@@ -177,6 +177,8 @@ def main(
             fits.append({"layer": layer, "rank": rank, "n_train": fit.n_examples,
                          "converged": fit.converged,
                          "orthogonality_error": fit.subspace.orthogonality_error(),
+                         "concentration_top5": fit.subspace.concentration(5),
+                         "uniform_top5": 5.0 / config.d_model,
                          "final_loss": fit.subspace.metadata.get("final_loss")})
 
             frames.append(run_grid(

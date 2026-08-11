@@ -178,10 +178,36 @@ def main(
                    layer=layer, rank=rank)
     if das_ab is not None:
         frac = float(das_ab["edit_fraction"])
-        check("edit_is_a_real_but_partial_intervention", 1e-4 < frac < 0.9,
-              f"the rank-{rank} edit moved {frac:.3f} of ‖h‖",
-              "≈0 means the subspace has no component in the state (nothing happened); "
-              "≈1 means it is a whole-state replacement wearing a low-rank label")
+        ceil_frac = float(ceiling_rows[TRAIN_ARM]["edit_fraction"]) if ceiling_rows[TRAIN_ARM] is not None else float("nan")
+        share = frac / ceil_frac if ceil_frac else float("nan")
+        check("edit_is_a_real_but_partial_intervention", 1e-4 < frac < 0.25,
+              f"the rank-{rank} edit moved {frac:.3f} of ‖h‖ — {share:.0%} of what "
+              f"the whole-state replacement moves ({ceil_frac:.3f})",
+              "≈0 means the subspace has no component in the state (nothing happened). "
+              "A large fraction from a LOW-RANK edit means the direction is aligned "
+              "with a very high-variance dimension — DAS optimising a lever rather "
+              "than transporting a state. Transformers have a handful of "
+              "massive-activation dimensions and an unconstrained rank-1 fit will "
+              "find them")
+
+    # A rank-r interchange installs part of what the whole-state patch installs
+    # all of. Exceeding the ceiling is not a strong result, it is evidence the
+    # edit is not behaving like an interchange at all — it is pushing the state
+    # somewhere no input goes.
+    if das_ab is not None and ceiling_rows[TRAIN_ARM] is not None:
+        ratios = {}
+        for arm, das in ((TRAIN_ARM, das_ab), (HELD_OUT_ARM, das_ba)):
+            ceil = ceiling_rows[arm]
+            if das is None or ceil is None or not ceil["delta_ld"]:
+                continue
+            ratios[arm] = float(das["delta_ld"]) / float(ceil["delta_ld"])
+        worst = max((abs(v) for v in ratios.values()), default=0.0)
+        check("das_does_not_exceed_the_ceiling", worst <= 1.10,
+              "; ".join(f"{a}: {v:.0%} of the ceiling" for a, v in ratios.items()),
+              "a rank-r subspace cannot out-move installing the ENTIRE donor state, "
+              "so >110% means the edit is off-manifold rather than an interchange. "
+              "Read it together with the edit fraction: a low-rank edit moving a "
+              "large share of ‖h‖ and beating the ceiling is one phenomenon, not two")
     n_bases = int(summary["n_bases"].max()) if "n_bases" in summary else 0
     check("enough_clusters", n_bases >= MIN_BASES,
           f"{n_bases} base programs in the largest cell",

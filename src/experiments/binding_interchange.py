@@ -25,12 +25,20 @@ answer IS the bound value and the arm swap breaks the circularity instead.
 
 **Why `answer_direction` exists.** A null on `ba` has two readings — the
 subspace encodes the answer, or `ba` is simply not measurable. The control that
-separates them is an explicit, known answer direction (the unembedding row of
-the answer that arm `ab` would demand). It MUST pass on `ab` and MUST fail on
-`ba`. If it does not fail on `ba`, the discriminator is not working and no
-verdict about the learned subspace is licensed. This is the E10-3 lesson —
-a positive control of the same kind, at the same site — applied to the
-falsification itself rather than to the effect.
+separates them is an explicit, known answer direction, fixed by the TRAINING
+arm. It MUST pass on `ab` and MUST fail on `ba`. If it does not fail on `ba`,
+the discriminator is not working and no verdict about the learned subspace is
+licensed. This is the E10-3 lesson — a positive control of the same kind, at the
+same site — applied to the falsification itself rather than to the effect.
+
+**And it must be NORM-MATCHED to the treatment.** The first version was a
+unit-norm unembedding row, which on 6.7b moved ~1% of ||h|| and did nothing on
+either arm while `das_binding` moved 48% — a control 40x smaller than the
+treatment, which is the E11 dose error rebuilt inside the control. It is now
+matched to the treatment's per-row edit norm, and it stays an exact interchange
+rather than becoming a push: with the synthetic donor `h + alpha*r`,
+`interchange(h, h + alpha*r, r) == h + alpha*r` exactly, so the edit norm is
+`alpha` by construction.
 """
 
 from __future__ import annotations
@@ -210,22 +218,45 @@ def build_subspace(
     subspace: Optional[AlignedSubspace],
     unembedding: Optional[np.ndarray],
     seed: int,
+    target_edit_norm: float = 0.0,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """(basis, donor_state) for one control arm."""
+    """(basis, donor_state) for one control arm.
+
+    `target_edit_norm` is the treatment's ||delta h|| on this row, used to
+    norm-match `answer_direction`. Any control compared against a treatment at
+    a different dose is not a control.
+    """
     if variant == "das_binding":
         if subspace is None:
             raise ValueError("das_binding needs a learned subspace")
         return subspace.basis, donor
     if variant == "answer_direction":
-        # A direction that explicitly encodes the answer arm `ab` would demand.
-        # It must pass on `ab` and FAIL on `ba`; that is what makes a `ba` null
-        # about the subspace rather than about the arm.
+        # A direction that explicitly encodes the answer arm `ab` would demand,
+        # NORM-MATCHED to the treatment. It must pass on `ab` and fail on `ba`;
+        # that is what makes a `ba` null about the subspace rather than the arm.
+        #
+        # The first version of this control was a unit-norm unembedding row, and
+        # it was worthless: an interchange along a unit direction unaligned with
+        # the counterfactual difference moves ~1/sqrt(d) of it — about 1% of
+        # ||h|| at d=4096 — while DAS *optimises* its direction to align with
+        # that difference and moved 48%. Comparing them asked which of a large
+        # edit and a negligible one works, which is the E11 dose error rebuilt
+        # inside the control. Measured on 6.7b: answer_direction +0.001 on both
+        # arms, i.e. it did nothing anywhere, so it discriminated nothing.
+        #
+        # The fix keeps it an exact interchange rather than switching to a push:
+        # with a synthetic donor `h + alpha*r`, `interchange(h, h + alpha*r, r)`
+        # is exactly `h + alpha*r`, so the edit norm is `alpha` by construction
+        # and can be set to the treatment's.
         if unembedding is None:
             raise ValueError("answer_direction needs the unembedding matrix")
-        token = record.other_answer_token(TRAIN_ARM, binding)
-        direction = unembedding[token].astype(np.float64).reshape(-1, 1)
-        direction /= (np.linalg.norm(direction) or 1.0)
-        return direction, donor
+        installed = unembedding[record.other_answer_token(TRAIN_ARM, binding)]
+        own = unembedding[record.answer_token(TRAIN_ARM, binding)]
+        direction = np.asarray(installed - own, dtype=np.float64).reshape(-1, 1)
+        norm = float(np.linalg.norm(direction)) or 1.0
+        direction /= norm
+        alpha = float(target_edit_norm if target_edit_norm else norm)
+        return direction, (host + alpha * direction.reshape(-1))
     if variant == "random_rank":
         return random_subspace(d_model, rank, seed=seed), donor
     if variant == "random_norm":
@@ -282,11 +313,19 @@ def run_grid(
                     host = host_entry["states"][site]
                     donor = donor_entry["states"][site]
                     d_model = d_model or int(host.shape[0])
-                    for variant in variants:
+                    # The treatment runs first so its edit norm is available to
+                    # norm-match `answer_direction` on the SAME row.
+                    ordered = ([v for v in variants if v == "das_binding"]
+                               + [v for v in variants if v != "das_binding"])
+                    treatment_norm = 0.0
+                    for variant in ordered:
                         basis, donor_state = build_subspace(
                             variant, record, arm, binding, host, donor,
-                            d_model, rank, subspace, unembedding, seed)
+                            d_model, rank, subspace, unembedding, seed,
+                            target_edit_norm=treatment_norm)
                         report = interchange_report(host, donor_state, basis)
+                        if variant == "das_binding":
+                            treatment_norm = float(report["edit_norm"])
                         logits = transform_positions(
                             model, host_entry["ids"],
                             {int(layer): {int(record.positions[site]):
