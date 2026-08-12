@@ -151,12 +151,29 @@ screen -dmS e13-ceiling env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
   before any test number is read, and stage 106 reads them from there.
 - **Next:** stage 106.
 
-### Stage 106 — interchange, records **H4** and **H5** (GPU, 1–2 h)
+### Stage 106 — interchange, records **H4** and **H5** (GPU, ~1–2 h)
 
 ```csh
 screen -dmS e13-interchange env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
     scripts/106_binding_interchange.py --model $MODEL --ranks 1,2,4,8,16 --dtype float16
 ```
+
+**Cost.** The first 6.7B run took ~30 hours. Three things were wrong, all fixed,
+none of them a reduction in scope:
+
+| | fix |
+|---|---|
+| `whole_state` built a 4096×4096 float64 identity **per evaluated row** and shipped it to the GPU | it is now a direct replacement (`basis=None`), which is the same operator — `interchange(h, o, I) == o` exactly. **61× on that arm** |
+| one forward pass per cell, at 21 tokens, where a 6.7B forward is almost entirely per-call overhead | batched (`--grid-batch-size 32`); prompts are uniformly 21 tokens so no padding, and the output is verified **bit-identical** |
+| the full test grid ran at **all five ranks** and at both sites | the test grid runs once at the **calibration-selected** rank and site. This is also *stricter*: evaluating every rank on test and then reading the surface is the winner's curse the split exists to prevent |
+
+Together: **4.5× fewer forward passes**, each batched 32×. If throughput is what
+E11 measured this is well under an hour; even at the first run's observed rate
+it should be ~1–2 h. The grid now reports its own `cells/s` so the next run
+measures rather than assumes.
+
+`--test-all-ranks` restores the full descriptive surface if you want it; the
+gates read the pre-committed cell either way.
 
 - **Needs:** more memory than the others — the only backward pass in E13. If the
   loss goes non-finite, re-run with `--dtype float32`.
@@ -183,14 +200,19 @@ screen -dmS e13-interchange env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
      `uniform_top5`. A basis spread over the stream sits near the uniform value;
      one riding a massive-activation dimension approaches 1.0, which means DAS
      found a lever rather than transporting a state;
-  4. `interchange_summary.csv`, **`variant=answer_direction`** — it must be
+  4. **`says_installed_rate`** before `delta_ld`. `delta_ld` is positively
+     biased here — with H1 at 1.000 any disruption raises it — so read whether
+     the model actually *emits* the installed answer, and check
+     `says_other_rate` (emitting neither candidate means the computation was
+     destroyed, not redirected);
+  5. `interchange_summary.csv`, **`variant=answer_direction`** — it must be
      **positive on `ab` and negative on `ba`**. This is the positive control for
      the falsification. If it passes on `ba` too, the discriminator is broken
      and **no verdict about `das_binding` is licensed**;
-  5. `effective_rank` for `random_norm` — the rank a *random* subspace needed to
+  6. `effective_rank` for `random_norm` — the rank a *random* subspace needed to
      move as much of ‖h‖ as the learned one. Needing hundreds of random
      dimensions to match one learned dimension is informative in its own right;
-  6. only then `das_binding` on `ba`.
+  7. only then `das_binding` on `ba`.
 - **If H4 passes and H5 fails** with `answer_direction` failing on `ba` as
   designed: the learned subspace *is* an answer direction. That is a real,
   reportable negative and precisely what E11 could not establish.
@@ -262,7 +284,7 @@ calibration-selected layer. ≈ 1–1.5 GPU-hours total.
 | 103 extract | GPU | ~15 GB | ~3 min | — |
 | 104 decode | CPU | — | minutes | **H2** |
 | 105 ceiling | GPU | ~15 GB | ~15 min | **H3** |
-| 106 interchange | GPU | ~20 GB (backward) | ~40 min (one layer × 5 ranks) | **H4, H5** |
+| 106 interchange | GPU | ~20 GB (backward) | ~1–2 h (was ~30 h) | **H4, H5** |
 | 107 report | CPU | — | seconds | — |
 | 108 diagnose | CPU | — | seconds | reads only |
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Callable, Generator, Optional
+from typing import Callable, Generator, Optional, Sequence
 
 import torch
 import torch.nn as nn
@@ -193,6 +193,58 @@ def transform_positions(
     try:
         out = model(input_ids=input_ids, attention_mask=attention_mask)
         return out.logits
+    finally:
+        for h in handles:
+            h.remove()
+
+
+@torch.no_grad()
+def transform_positions_batched(
+    model: nn.Module,
+    input_ids: torch.Tensor,
+    layer: int,
+    positions: Sequence[int],
+    fns: Sequence[Callable[[torch.Tensor], torch.Tensor]],
+    attention_mask: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """One edit per ROW of a batch, at that row's own position, in one pass.
+
+    `transform_positions` hardcodes batch index 0 and therefore forces one
+    forward pass per intervention. At E13's prompt length (21 tokens, uniform
+    across every generated cell) a 6.7B forward is almost entirely per-call
+    overhead — hook registration, launch latency, host-device transfers — so
+    batch size 1 wastes most of the GPU. Batching amortises all of it and the
+    arithmetic is unchanged: row `i` gets exactly the edit it would have got
+    alone.
+
+    Requires equal-length sequences, which E13 guarantees by construction and
+    `tests/test_binding.py` asserts. Returns the logits, shape (B, T, V).
+    """
+    if not (input_ids.shape[0] == len(positions) == len(fns)):
+        raise ValueError(
+            f"batch mismatch: {input_ids.shape[0]} sequences, "
+            f"{len(positions)} positions, {len(fns)} edit functions")
+
+    manager = HookManager(model)
+    all_layers = manager._get_decoder_layers()
+    handles: list = []
+
+    def hook(module, input, output):
+        hidden = output[0] if isinstance(output, tuple) else output
+        for row, (pos, fn) in enumerate(zip(positions, fns)):
+            edited = fn(hidden[row, int(pos), :])
+            hidden[row, int(pos), :] = edited.to(
+                device=hidden.device, dtype=hidden.dtype)
+        return (hidden,) + output[1:] if isinstance(output, tuple) else hidden
+
+    if int(layer) == -1:
+        handles.append(model.get_input_embeddings().register_forward_hook(hook))
+    for layer_idx, module in all_layers:
+        if layer_idx == int(layer):
+            handles.append(module.register_forward_hook(hook))
+
+    try:
+        return model(input_ids=input_ids, attention_mask=attention_mask).logits
     finally:
         for h in handles:
             h.remove()

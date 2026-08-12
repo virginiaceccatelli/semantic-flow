@@ -374,13 +374,17 @@ def test_answer_direction_is_norm_matched_to_the_treatment(records):
     rng = np.random.default_rng(0)
     d = 64
     host, donor = rng.standard_normal(d), rng.standard_normal(d)
-    unembedding = {t: rng.standard_normal(d)
-                   for t in records[0].token_ids.values()}
-    for target in (0.5, 3.7, 12.0):
-        basis, synthetic = build_subspace(
-            "answer_direction", records[0], "ab", "source", host, donor,
-            d, 1, None, unembedding, 0, target_edit_norm=target)
-        assert interchange_report(host, synthetic, basis)["edit_norm"] == pytest.approx(target)
+    unembedding = {t: rng.standard_normal(d) for t in records[0].token_ids.values()}
+    lens = {t: rng.standard_normal(d) for t in records[0].token_ids.values()}
+    # Both arms: the J-lens direction (the one that functions at the layer) and
+    # the raw unembedding row (kept for comparison after it failed to reverse).
+    for variant, extra in (("answer_direction", {"lens_vectors": lens}),
+                           ("answer_direction_unembedding", {})):
+        for target in (0.5, 3.7, 12.0):
+            basis, synthetic = build_subspace(
+                variant, records[0], "ab", "source", host, donor,
+                d, 1, None, unembedding, 0, target_edit_norm=target, **extra)
+            assert interchange_report(host, synthetic, basis)["edit_norm"] == pytest.approx(target)
 
 
 def test_answer_direction_refuses_a_degenerate_direction(records):
@@ -391,10 +395,14 @@ def test_answer_direction_refuses_a_degenerate_direction(records):
 
     d = 64
     same = np.ones(d)
-    unembedding = {t: same for t in records[0].token_ids.values()}
+    degenerate = {t: same for t in records[0].token_ids.values()}
     with pytest.raises(ValueError, match="identical"):
         build_subspace("answer_direction", records[0], "ab", "source",
-                       np.zeros(d), np.ones(d), d, 1, None, unembedding, 0,
+                       np.zeros(d), np.ones(d), d, 1, None, degenerate, 0,
+                       target_edit_norm=1.0, lens_vectors=degenerate)
+    with pytest.raises(ValueError, match="identical"):
+        build_subspace("answer_direction_unembedding", records[0], "ab", "source",
+                       np.zeros(d), np.ones(d), d, 1, None, degenerate, 0,
                        target_edit_norm=1.0)
 
 
@@ -417,6 +425,35 @@ def test_norm_matched_random_is_cheap_and_close(records):
     per_call = (time.time() - start) / 50
     assert per_call < 0.05, f"{per_call:.3f}s per call would stall the grid"
     assert fraction >= 0.4 * 0.8       # the closed-form estimate brackets the target
+
+
+def test_says_installed_is_recorded_and_is_not_the_two_way_margin():
+    """The gate-bearing outcome must be the full-vocabulary argmax.
+
+    `delta_ld` is positively biased on this corpus: H1 is 1.000, so the clean
+    distribution is confident and ANY disruptive edit regresses it toward the
+    middle, raising logP(installed) - logP(own) with nothing transported. The
+    6.7B run showed the answer_direction control at +0.136 on the arm where the
+    design requires it to reverse. `says_installed` cannot be produced that way.
+    """
+    import numpy as np
+    import pandas as pd
+
+    from src.experiments.binding_interchange import interchange_summary
+
+    rows = []
+    for base in range(20):
+        rows.append({"base_id": f"b{base}", "split": "test", "arm": "ab",
+                     "binding": "source", "site": "use", "variant": "das_binding",
+                     "layer": 8, "rank": 1, "delta_ld": 2.0, "flipped": 1,
+                     "says_installed": 0, "says_own": 0, "says_other": 1,
+                     "edit_fraction": 0.05})
+    summary = interchange_summary(pd.DataFrame(rows), n_boot=50)
+    # A big logit shift with the model emitting NEITHER candidate is the
+    # signature of disruption, and the summary must make that visible.
+    assert summary["delta_ld"].iloc[0] == pytest.approx(2.0)
+    assert summary["says_installed_rate"].iloc[0] == 0.0
+    assert summary["says_other_rate"].iloc[0] == 1.0
 
 
 def test_reading_is_withheld_when_the_discriminator_transfers_too():

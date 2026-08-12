@@ -17,7 +17,17 @@ identity of `installed` is not. In arm `ab` a source-host's installed answer is
     and NEGATIVE on `ba`;
   * a subspace carrying "the answer" does the same.
 
-The alignment is therefore fitted on `ab` alone and the claim is read on `ba`.
+**`delta_ld` is positively biased and must not be gated on alone.** H1 is 1.000
+on this corpus, so the clean distribution is confident and `logP(own)` sits far
+above `logP(installed)`. Any edit that merely *disrupts* the state regresses
+both toward the middle and therefore raises `delta_ld`, with no transport of
+anything. The 6.7B run demonstrated this: the `answer_direction` control, which
+the design requires to REVERSE on the held-out arm, came out at **+0.136** there
+— more positive than on the arm it was built for. Every row therefore also
+records `says_installed`, the full-vocabulary argmax, which a disruption cannot
+produce systematically, and the gates read that.
+
+The alignment is fitted on `ab` alone and the claim is read on `ba`.
 That is the whole design, and it is what E11 could not do: with an arithmetic
 operation between the value and the answer, E11 had to forbid `answer == value`
 to avoid circularity, and paid for it with a capability requirement. Here the
@@ -39,6 +49,19 @@ matched to the treatment's per-row edit norm, and it stays an exact interchange
 rather than becoming a push: with the synthetic donor `h + alpha*r`,
 `interchange(h, h + alpha*r, r) == h + alpha*r` exactly, so the edit norm is
 `alpha` by construction.
+
+**And the direction must be one that FUNCTIONS at the intervention layer.**
+Norm-matching alone was not enough: at layer 8 of 32 the raw unembedding row is
+not the direction that moves the output head toward a token, and the control
+came out *positive on both arms* rather than reversing. That is the premise of
+the whole J-lens track (E10-0): `v_w = J_l^T (g W_U[w])` is the direction at
+layer `l` whose component pushes the model's own output toward `w`, and the
+plain unembedding row is a poor proxy for it away from the last layer. E10-0 is
+the one surviving piece of that track, it was validated to cosine 1.0000 against
+a closed-form answer, and it is exactly the instrument this control needs. The
+control therefore uses the **J-lens difference** `v_installed - v_own` at the
+intervention layer, with the raw unembedding row kept behind
+`--answer-direction unembedding` for comparison.
 """
 
 from __future__ import annotations
@@ -61,7 +84,10 @@ from src.models.das import (
     norm_matched_random,
     random_subspace,
 )
-from src.models.hooks import extract_hidden_states_and_logits, transform_positions
+from src.models.hooks import (
+    extract_hidden_states_and_logits,
+    transform_positions_batched,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -77,8 +103,8 @@ MIN_TRANSFER_FRACTION = 0.50        # H5 — fraction of the ceiling on `ba`
 TRAIN_ARM = "ab"
 HELD_OUT_ARM = "ba"
 
-VARIANTS = ("das_binding", "answer_direction", "random_rank", "random_norm",
-            "noop", "whole_state")
+VARIANTS = ("das_binding", "answer_direction", "answer_direction_unembedding",
+            "random_rank", "random_norm", "noop", "whole_state")
 
 # Sites, in program order. `def_source` precedes the mutation, so the host and
 # donor states there are provably identical and the interchange is exactly the
@@ -220,6 +246,7 @@ def build_subspace(
     unembedding: Optional[np.ndarray],
     seed: int,
     target_edit_norm: float = 0.0,
+    lens_vectors: Optional[dict] = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """(basis, donor_state) for one control arm.
 
@@ -231,7 +258,7 @@ def build_subspace(
         if subspace is None:
             raise ValueError("das_binding needs a learned subspace")
         return subspace.basis, donor
-    if variant == "answer_direction":
+    if variant == "answer_direction_unembedding":
         # A direction that explicitly encodes the answer arm `ab` would demand,
         # NORM-MATCHED to the treatment. It must pass on `ab` and fail on `ba`;
         # that is what makes a `ba` null about the subspace rather than the arm.
@@ -267,6 +294,24 @@ def build_subspace(
         direction /= norm
         alpha = float(target_edit_norm if target_edit_norm else norm)
         return direction, (host + alpha * direction.reshape(-1))
+    if variant == "answer_direction":
+        # Same construction, but on the J-LENS rows rather than the unembedding
+        # rows: at the intervention layer the J-lens direction is the one whose
+        # component pushes the output head toward the token, which the raw
+        # unembedding row is not away from the last layer (E10-0).
+        if lens_vectors is None:
+            raise ValueError("answer_direction needs J-lens vectors at this layer")
+        installed = lens_vectors[record.other_answer_token(TRAIN_ARM, binding)]
+        own = lens_vectors[record.answer_token(TRAIN_ARM, binding)]
+        direction = np.asarray(installed - own, dtype=np.float64).reshape(-1, 1)
+        norm = float(np.linalg.norm(direction))
+        if norm <= 0:
+            raise ValueError(
+                f"{record.base_id}: the two answer tokens have identical J-lens "
+                f"rows, so the answer_direction control would be the zero edit.")
+        direction /= norm
+        alpha = float(target_edit_norm if target_edit_norm else norm)
+        return direction, (host + alpha * direction.reshape(-1))
     if variant == "random_rank":
         return random_subspace(d_model, rank, seed=seed), donor
     if variant == "random_norm":
@@ -296,27 +341,30 @@ def run_grid(
     rank: int,
     subspace: Optional[AlignedSubspace] = None,
     unembedding: Optional[np.ndarray] = None,
+    lens_vectors: Optional[dict] = None,
     seed: int = 42,
     provenance: Optional[dict] = None,
     progress_every: int = 25,
+    batch_size: int = 32,
 ) -> pd.DataFrame:
-    """One row per (record, arm, binding, variant, site).
+    """One row per (record, arm, binding, variant, site), evaluated in batches.
 
     The metric is uniform across arms by construction; only the token identity
     of `installed` changes, which is exactly what the held-out arm tests.
+
+    **Two phases, because the arithmetic and the forward passes have very
+    different costs.** Phase 1 builds every cell's basis and donor in numpy —
+    no GPU, and it is where the per-row edit norm of the treatment is computed
+    so `answer_direction` can be norm-matched to it on the same row. Phase 2
+    runs the forward passes in batches: E13's prompts are uniformly 21 tokens
+    (asserted in `tests/test_binding.py`), so no padding is needed and row `i`
+    of a batch receives exactly the edit it would have received alone. The
+    first 6.7B run did one forward pass per cell, where a 21-token 6.7B forward
+    is almost entirely per-call overhead.
     """
-    rows: list[dict] = []
+    cells: list[dict] = []
     d_model = None
-    total = len(records)
-    started = time.time()
-    for index, record in enumerate(records):
-        # The grid is the long pole and used to print nothing until it finished,
-        # which is indistinguishable from a hang. Report often enough that a
-        # stall is visible within a minute.
-        if progress_every and index and index % progress_every == 0:
-            rate = index / max(time.time() - started, 1e-9)
-            logger.info("    grid %d/%d records (%.1f/s, ~%.0f s left)",
-                        index, total, rate, (total - index) / max(rate, 1e-9))
+    for record in records:
         for arm in ARMS:
             for binding in BINDINGS:
                 host_key = (record.base_id, arm, binding)
@@ -333,8 +381,8 @@ def run_grid(
                     host = host_entry["states"][site]
                     donor = donor_entry["states"][site]
                     d_model = d_model or int(host.shape[0])
-                    # The treatment runs first so its edit norm is available to
-                    # norm-match `answer_direction` on the SAME row.
+                    # The treatment is built first so its edit norm is available
+                    # to norm-match `answer_direction` on the SAME row.
                     ordered = ([v for v in variants if v == "das_binding"]
                                + [v for v in variants if v != "das_binding"])
                     treatment_norm = 0.0
@@ -342,34 +390,69 @@ def run_grid(
                         basis, donor_state = build_subspace(
                             variant, record, arm, binding, host, donor,
                             d_model, rank, subspace, unembedding, seed,
-                            target_edit_norm=treatment_norm)
+                            target_edit_norm=treatment_norm,
+                            lens_vectors=lens_vectors)
                         report = interchange_report(host, donor_state, basis)
                         if variant == "das_binding":
                             treatment_norm = float(report["edit_norm"])
-                        logits = transform_positions(
-                            model, host_entry["ids"],
-                            {int(layer): {int(record.positions[site]):
-                                          make_interchange_fn(basis, donor_state)}})
-                        patched = torch.log_softmax(
-                            logits[0, -1].float(), dim=-1).cpu().numpy()
-                        patched_ld = float(patched[installed_id] - patched[own_id])
-                        rows.append({
-                            "base_id": record.base_id, "split": record.split,
-                            "arm": arm, "binding": binding, "site": site,
-                            "variant": variant, "layer": int(layer),
-                            "rank": d_model if variant == "whole_state" else int(rank),
-                            "own_answer": record.answer(arm, binding),
-                            "installed_answer": record.other_answer(arm, binding),
-                            "clean_logit_diff": clean_ld,
-                            "patched_logit_diff": patched_ld,
-                            "delta_ld": patched_ld - clean_ld,
-                            "flipped": int(patched[installed_id] > patched[own_id]
-                                           and clean[installed_id] <= clean[own_id]),
-                            "edit_fraction": report["edit_fraction"],
-                            "effective_rank": int(basis.shape[1]),
-                            "degenerate": bool(report["degenerate"]),
-                            **(provenance or {}),
+                        cells.append({
+                            "record": record, "arm": arm, "binding": binding,
+                            "site": site, "variant": variant,
+                            "basis": basis, "donor_state": donor_state,
+                            "report": report, "installed_id": installed_id,
+                            "own_id": own_id, "clean_ld": clean_ld,
+                            "ids": host_entry["ids"],
                         })
+
+    rows: list[dict] = []
+    started = time.time()
+    for start in range(0, len(cells), batch_size):
+        batch = cells[start:start + batch_size]
+        ids = torch.cat([c["ids"] for c in batch], dim=0)
+        positions = [c["record"].positions[c["site"]] for c in batch]
+        fns = [make_interchange_fn(c["basis"], c["donor_state"]) for c in batch]
+        logits = transform_positions_batched(model, ids, int(layer), positions, fns)
+        log_probs = torch.log_softmax(logits[:, -1].float(), dim=-1).cpu().numpy()
+
+        for row_index, cell in enumerate(batch):
+            patched = log_probs[row_index]
+            record, report = cell["record"], cell["report"]
+            installed_id, own_id = cell["installed_id"], cell["own_id"]
+            patched_ld = float(patched[installed_id] - patched[own_id])
+            # Full-vocabulary argmax, not the two-way margin: with clean
+            # accuracy at ceiling any disruptive edit raises the margin.
+            argmax_id = int(np.argmax(patched))
+            rows.append({
+                "base_id": record.base_id, "split": record.split,
+                "arm": cell["arm"], "binding": cell["binding"],
+                "site": cell["site"], "variant": cell["variant"],
+                "layer": int(layer),
+                "rank": int(report.get("rank", rank)),
+                "own_answer": record.answer(cell["arm"], cell["binding"]),
+                "installed_answer": record.other_answer(cell["arm"], cell["binding"]),
+                "clean_logit_diff": cell["clean_ld"],
+                "patched_logit_diff": patched_ld,
+                "delta_ld": patched_ld - cell["clean_ld"],
+                "flipped": int(patched_ld > 0 >= cell["clean_ld"]),
+                "says_installed": int(argmax_id == installed_id),
+                "says_own": int(argmax_id == own_id),
+                "says_other": int(argmax_id not in (installed_id, own_id)),
+                "edit_fraction": report["edit_fraction"],
+                "effective_rank": int(report.get("rank", rank)),
+                "degenerate": bool(report["degenerate"]),
+                **(provenance or {}),
+            })
+
+        done = start + len(batch)
+        if progress_every and done % max(progress_every * batch_size, 1) < batch_size:
+            rate = done / max(time.time() - started, 1e-9)
+            logger.info("    grid %d/%d cells (%.1f/s, ~%.0f s left)",
+                        done, len(cells), rate, (len(cells) - done) / max(rate, 1e-9))
+
+    elapsed = time.time() - started
+    if cells:
+        logger.info("    grid done: %d cells in %.0f s (%.1f cells/s, batch=%d)",
+                    len(cells), elapsed, len(cells) / max(elapsed, 1e-9), batch_size)
     return pd.DataFrame(rows)
 
 
@@ -393,6 +476,10 @@ def interchange_summary(frame: pd.DataFrame, split: str = "test",
                      "layer": int(layer),
                      "split": split, "delta_ld": ci.point, "ci_lo": ci.lo, "ci_hi": ci.hi,
                      "flip_rate": float(part["flipped"].mean()),
+                     "says_installed_rate": float(part["says_installed"].mean())
+                     if "says_installed" in part else float("nan"),
+                     "says_other_rate": float(part["says_other"].mean())
+                     if "says_other" in part else float("nan"),
                      "edit_fraction": float(part["edit_fraction"].mean()),
                      "n": ci.n, "n_bases": ci.n_groups})
     return pd.DataFrame(rows)

@@ -119,6 +119,26 @@ Three further properties, none of which E11 or E7 had together:
 
 # 4. The metric
 
+> **Correction, 2026-08-11, pre-registered before the re-run.** The first 6.7B
+> run showed `delta_ld` is positively biased on this corpus. H1 is 1.000, so
+> the clean distribution is confident and `logP(own)` sits far above
+> `logP(installed)`; any edit that merely *disrupts* the state regresses both
+> toward the middle and raises `delta_ld` with nothing transported. The
+> `answer_direction` control proved it: the design requires it to **reverse** on
+> the held-out arm and it came out at **+0.136** there, more positive than on the
+> arm it was built for.
+>
+> Two consequences, both now in the code. Every row records
+> **`says_installed`** — the full-vocabulary argmax — which a disruption cannot
+> produce systematically, and the gates read it alongside `delta_ld`. And the
+> `answer_direction` control is built from **J-lens rows at the intervention
+> layer** rather than raw unembedding rows: at layer 8 of 32 the unembedding row
+> is not the direction that moves the output head toward a token, which is the
+> premise of E10-0 and the reason it is the one surviving piece of that track.
+> The unembedding version is kept as `answer_direction_unembedding` for
+> comparison.
+
+
 With host cell `(arm, binding)` and donor the same arm's other binding:
 
 ```

@@ -166,8 +166,15 @@ class AlignedSubspace:
 
 # -- the intervention ---------------------------------------------------------
 
-def interchange(h_self: np.ndarray, h_other: np.ndarray, basis: np.ndarray) -> np.ndarray:
+def interchange(h_self: np.ndarray, h_other: np.ndarray,
+                basis: Optional[np.ndarray]) -> np.ndarray:
     """`h_self + R R^T (h_other - h_self)` in float64.
+
+    `basis=None` means the rank-d limit — full replacement — and is handled
+    directly rather than by materialising an identity. `interchange(h, o, I)`
+    equals `o` exactly, so this is the same operator, but building a
+    4096x4096 float64 identity (134 MB) per evaluated row and shipping it to
+    the GPU is what made the whole-state arm dominate the runtime.
 
     Three properties, each a unit test in `tests/test_store.py`:
       * the component of `h_self` orthogonal to span(R) is untouched;
@@ -179,16 +186,19 @@ def interchange(h_self: np.ndarray, h_other: np.ndarray, basis: np.ndarray) -> n
     """
     a = np.asarray(h_self, dtype=np.float64).reshape(-1)
     b = np.asarray(h_other, dtype=np.float64).reshape(-1)
-    R = np.asarray(basis, dtype=np.float64)
+    R = None if basis is None else np.asarray(basis, dtype=np.float64)
     if a.shape != b.shape:
         raise ValueError(f"states differ in size: {a.shape} vs {b.shape}")
-    if R.shape[0] != a.shape[0]:
+    if R is not None and R.shape[0] != a.shape[0]:
         raise ValueError(f"basis has d={R.shape[0]}, state has d={a.shape[0]}")
+    if basis is None:
+        return b.copy()
     delta = b - a
     return a + R @ (R.T @ delta)
 
 
-def interchange_report(h_self: np.ndarray, h_other: np.ndarray, basis: np.ndarray) -> dict:
+def interchange_report(h_self: np.ndarray, h_other: np.ndarray,
+                       basis: Optional[np.ndarray]) -> dict:
     """Per-example diagnostics saved next to the logits.
 
     `edit_fraction` is the dose the intervention actually applied. It is
@@ -201,8 +211,10 @@ def interchange_report(h_self: np.ndarray, h_other: np.ndarray, basis: np.ndarra
     patched = interchange(a, b, basis)
     delta = patched - a
     norm = float(np.linalg.norm(a)) or 1.0
-    captured = float(np.linalg.norm(np.asarray(basis).T @ a))
+    captured = (float(np.linalg.norm(a)) if basis is None
+                else float(np.linalg.norm(np.asarray(basis).T @ a)))
     return {
+        "rank": int(a.shape[0]) if basis is None else int(np.asarray(basis).shape[1]),
         "edit_norm": float(np.linalg.norm(delta)),
         "edit_fraction": float(np.linalg.norm(delta) / norm),
         "state_norm": norm,
@@ -277,7 +289,7 @@ def norm_matched_random(
 
 
 def make_interchange_fn(
-    basis: np.ndarray,
+    basis: Optional[np.ndarray],
     h_other: np.ndarray,
     device: Optional[torch.device] = None,
 ) -> Callable[[torch.Tensor], torch.Tensor]:
@@ -287,10 +299,18 @@ def make_interchange_fn(
     closure; the fp16 hidden state is upcast before the edit and cast back by
     the hook, so the intervention never happens in half precision.
     """
-    R = torch.from_numpy(np.asarray(basis, dtype=np.float64).astype(np.float32))
     other = torch.from_numpy(np.asarray(h_other, dtype=np.float64).astype(np.float32))
     if device is not None:
-        R, other = R.to(device), other.to(device)
+        other = other.to(device)
+
+    if basis is None:                       # rank-d limit: replace outright
+        def replace(vec: torch.Tensor) -> torch.Tensor:
+            return other.to(vec.device).float()
+        return replace
+
+    R = torch.from_numpy(np.asarray(basis, dtype=np.float64).astype(np.float32))
+    if device is not None:
+        R = R.to(device)
 
     def apply(vec: torch.Tensor) -> torch.Tensor:
         h = vec.detach().float()

@@ -190,24 +190,56 @@ def main(
               "massive-activation dimensions and an unconstrained rank-1 fit will "
               "find them")
 
-    # A rank-r interchange installs part of what the whole-state patch installs
-    # all of. Exceeding the ceiling is not a strong result, it is evidence the
-    # edit is not behaving like an interchange at all — it is pushing the state
-    # somewhere no input goes.
+    # The whole-state patch bounds how much STATE can be installed, not how much
+    # output movement results: a targeted edit that moves only the causally
+    # efficacious part of the difference can legitimately produce a LARGER logit
+    # shift than installing the whole difference, some of which pushes back. The
+    # real bound is on the edit itself — an interchange cannot move more of ‖h‖
+    # than the full state difference does.
     if das_ab is not None and ceiling_rows[TRAIN_ARM] is not None:
-        ratios = {}
-        for arm, das in ((TRAIN_ARM, das_ab), (HELD_OUT_ARM, das_ba)):
-            ceil = ceiling_rows[arm]
-            if das is None or ceil is None or not ceil["delta_ld"]:
-                continue
-            ratios[arm] = float(das["delta_ld"]) / float(ceil["delta_ld"])
-        worst = max((abs(v) for v in ratios.values()), default=0.0)
-        check("das_does_not_exceed_the_ceiling", worst <= 1.10,
-              "; ".join(f"{a}: {v:.0%} of the ceiling" for a, v in ratios.items()),
-              "a rank-r subspace cannot out-move installing the ENTIRE donor state, "
-              "so >110% means the edit is off-manifold rather than an interchange. "
-              "Read it together with the edit fraction: a low-rank edit moving a "
-              "large share of ‖h‖ and beating the ceiling is one phenomenon, not two")
+        ceil_frac = float(ceiling_rows[TRAIN_ARM]["edit_fraction"])
+        das_frac = float(das_ab["edit_fraction"])
+        check("edit_within_the_state_difference", das_frac <= ceil_frac * 1.02,
+              f"the rank-{rank} edit moved {das_frac:.3f} of ‖h‖; the full state "
+              f"difference is {ceil_frac:.3f}",
+              "an interchange installs part of the donor's state, so it cannot move "
+              "more than the whole difference does. Exceeding it means the operator "
+              "is not an interchange — check the basis and the donor")
+        ratios = {a: float(d["delta_ld"]) / float(c["delta_ld"])
+                  for a, d, c in ((TRAIN_ARM, das_ab, ceiling_rows[TRAIN_ARM]),
+                                  (HELD_OUT_ARM, das_ba, ceiling_rows[HELD_OUT_ARM]))
+                  if d is not None and c is not None and c["delta_ld"]}
+        if ratios:
+            console.print("  [dim]das vs whole-state logit shift: "
+                          + "; ".join(f"{a} {v:.0%}" for a, v in ratios.items())
+                          + " — >100% is allowed (a targeted edit can beat installing "
+                            "the whole difference); it is the EDIT FRACTION that is "
+                            "bounded.[/dim]")
+    # Is `delta_ld` measuring transport, or just damage? With clean accuracy at
+    # ceiling, any perturbation regresses a confident distribution toward the
+    # middle and raises logP(installed) - logP(own). Two tells: a random
+    # subspace at matched norm producing a large shift, and the model emitting
+    # NEITHER candidate.
+    random_norm = _cell(summary, arm=TRAIN_ARM, variant="random_norm",
+                        site=site, layer=layer)
+    if random_norm is not None and das_ab is not None:
+        share = (float(random_norm["delta_ld"]) / float(das_ab["delta_ld"])
+                 if das_ab["delta_ld"] else float("nan"))
+        check("metric_is_not_just_disruption", share < 0.5,
+              f"a norm-matched RANDOM subspace produces {random_norm['delta_ld']:+.3f}, "
+              f"{share:.0%} of the treatment's {das_ab['delta_ld']:+.3f}",
+              "if a random subspace at the same dose moves the metric nearly as much, "
+              "the metric is measuring how hard the state was hit, not what was "
+              "transported. Read says_installed_rate instead of delta_ld")
+    if das_ab is not None and "says_other_rate" in das_ab and np.isfinite(das_ab.get("says_other_rate", np.nan)):
+        check("model_still_answers_a_candidate",
+              float(das_ab["says_other_rate"]) < 0.5,
+              f"under the edit the model emits NEITHER candidate on "
+              f"{float(das_ab['says_other_rate']):.1%} of rows",
+              "an edit that makes the model emit something else entirely has "
+              "destroyed the computation rather than redirected it; a logit-diff "
+              "shift measured through that is not transport")
+
     n_bases = int(summary["n_bases"].max()) if "n_bases" in summary else 0
     check("enough_clusters", n_bases >= MIN_BASES,
           f"{n_bases} base programs in the largest cell",
@@ -253,6 +285,11 @@ def main(
                  and frac_ba >= MIN_TRANSFER_FRACTION)
     reversed_ba = bool(das_ba is not None and das_ba["ci_hi"] < 0)
 
+    for arm, das in ((TRAIN_ARM, das_ab), (HELD_OUT_ARM, das_ba)):
+        if das is not None and np.isfinite(das.get("says_installed_rate", np.nan)):
+            console.print(f"  [{arm}] model EMITS the installed answer on "
+                          f"{float(das['says_installed_rate']):.1%} of rows "
+                          f"(neither candidate: {float(das.get('says_other_rate', 0)):.1%})")
     console.print(f"\n  training arm  [{TRAIN_ARM}]  "
                   f"{das_ab['delta_ld']:+.3f} [{das_ab['ci_lo']:+.3f}, {das_ab['ci_hi']:+.3f}]"
                   f"  = {frac_ab:.0%} of its ceiling   → H4 "
