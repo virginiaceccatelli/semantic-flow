@@ -28,8 +28,9 @@ first affirmative answer: in E13 a rank-1, magnitude-free interchange transports
 the one it was never fitted on, where a token or answer-direction account demands
 the opposite movement. Three earlier intervention designs were retired or parked
 for nameable reasons, and those retirements are not incidental: they are the
-project's methodological content, and E13's design is what survived them. One
-baseline is still outstanding before the claim can be written at full strength.
+project's methodological content, and E13's design is what survived them. The
+closed-form difference-in-means baseline transports too, at 76%, and the learned
+direction dominates it at two-thirds the dose.
 
 ---
 
@@ -48,7 +49,7 @@ baseline is still outstanding before the claim can be written at full strength.
 | E10-0 J-lens | instrument validation | ● | ● | supporting | V1 exact; the Jacobian correction is real |
 | E11 J-space | is the value causally reused? | ● | ● | **NO-GO** | see below — reported, not claimed |
 | E12 store | text-absent value transfer | ● | ☐ | **parked** | behavioural gate failed at 0.418 |
-| **E13** binding interchange | is the *binding* transported? | ☐ | ☑ | **H0–H5 pass** | rank-1 interchange installs the binding's value in BOTH arms (100%/100%); pending the `mean_difference` baseline |
+| **E13** binding interchange | is the *binding* transported? | ☐ | ☑ | **H0–H5 pass** | a rank-1 interchange installs the binding's value in BOTH arms (100%/100%), beating a closed-form baseline at two-thirds the dose |
 | E6, E10-2, E10-3 | — | — | — | archived | `docs/ARCHIVE.md` |
 
 Legend: ☐ not run · ◐ dev model only · ◑ partially run · ● run
@@ -270,7 +271,7 @@ are kept and runnable; nothing is claimed.
 | **H2** the binding is decodable at the use anchor | **PASS** — 1.000 against a measured surface floor of 0.500 |
 | **H3** whole-state interchange flips the answer, per arm | **PASS** — ab +4.781 [+4.683, +4.878], ba +4.799 [+4.694, +4.903], flip rate 0.857; both structural zeros exactly 0.00e+00 |
 | **H4** low-rank interchange beats matched controls on the training arm | **PASS** — +9.029 [+8.952, +9.108]; `das − random_norm` +8.126 [+8.020, +8.225], `das − random_rank` +9.033, `das − noop` +9.029 |
-| **H5** the same subspace transfers to the held-out arm | **PASS** — +9.009 [+8.933, +9.089]; transfer ratio 0.998 against `whole_state`'s 1.004 |
+| **H5** the same subspace transfers to the held-out arm | **PASS** — 100.0% of held-out rows emit the installed answer, 114% of that arm's ceiling; the `answer_direction` control transfers at 0.154 against transport's 1.025 |
 
 H1 at 1.000 and H2 at 1.000 are worth pausing on: with no arithmetic anywhere,
 6.7B resolves these bindings perfectly, and which definition is in scope is
@@ -287,10 +288,11 @@ positively biased at ceiling accuracy and any disruption inflates it.
 
 | variant | `ab` emits installed | `ba` emits installed | edit fraction |
 |---|---:|---:|---:|
-| **`das_binding`** (rank 1) | **100.0%** | **100.0%** | 0.479 |
+| **`das_binding`** (rank 1, learned) | **100.0%** | **100.0%** | **0.479** |
 | `whole_state` (the entire donor state) | 85.7% | 87.9% | 0.805 |
+| **`mean_difference`** (rank 1, closed form) | 76.1% | 76.8% | 0.711 |
 | `answer_direction` (J-lens, norm-matched) | 27.9% | 4.3% | 0.479 |
-| `random_norm` (dose-matched random) | 1.1% | 0.7% | **0.538** |
+| `random_norm` (dose-matched random) | 2.1% | 1.8% | 0.513 |
 | `random_rank` / `noop` / raw unembedding | 0.0% | 0.0% | 0.018 / 0 / 0.479 |
 
 All 14 machinery checks pass: structural zeros exactly 0.00e+00, alignment
@@ -307,17 +309,25 @@ off-candidate on 9.1% of rows where the treatment never does. This is the
 falsification E11 could not construct, because with arithmetic between the value
 and the answer it had to forbid `answer == value` to avoid circularity.
 
-**Two things remain open, and the first gates how the claim may be written.**
-The learned direction sits at |cos| **0.673** from the mean donor−host difference
-— substantially aligned, not identical. A cosine cannot say whether the optimiser
-earned the rest, so a closed-form `mean_difference` baseline has been added and
-stage 106 needs one re-run. If that baseline also transports, the honest claim
-narrows to *a single fixed direction carries the binding* — still a result, and a
-cleaner one, but a different sentence. Second, a rank-1 edit outperforming the
-whole-state patch (100% vs 86%) has a plausible explanation — the full patch
-installs the driving component *and* components that fight it — that is **not**
-independently demonstrated. Until both are settled this reads "a rank-1
-subspace", never "a learned abstraction".
+**The closed-form baseline transports too — and loses.** The learned direction
+sits at |cos| 0.673 from the mean donor−host difference, which is substantially
+aligned but not identical, and no cosine can say whether the optimiser earned the
+rest. So the difference-in-means direction was run as its own arm: no optimiser,
+no labels, one fixed direction for every example. It works — **76.1% / 76.8%**,
+transfer ratio 1.003, so a fixed direction does carry much of the binding, and
+that was worth knowing.
+
+But it does not explain the result. `das_binding` reaches **100% while moving
+0.479 of ‖h‖; `mean_difference` reaches 76% while moving 0.711** — roughly twice
+the effect per unit of dose. And the learned direction captures *less* of the raw
+state difference (59.5% against 88.2%), so it is not a better-aligned version of
+the same object. Whatever the optimiser found, a difference in means does not
+recover it.
+
+**What is still open.** A rank-1 edit outperforming the whole-state patch (100%
+vs 86%) has a plausible explanation — the full patch installs the driving
+component *and* components that fight it — that is **not** independently
+demonstrated. And this is one site, one layer, one model, one construction.
 
 ---
 
@@ -329,9 +339,10 @@ subspace", never "a learned abstraction".
   transports the binding at one site, in one layer, in one model, on one
   synthetic construction. E7, E10, E11 and E12 each failed to establish even
   that, for a different recorded reason.
-- Not that the E13 subspace is a *learned* abstraction rather than the
-  difference-in-means direction. |cos| is 0.673 and the closed-form baseline has
-  not yet been run.
+- Not that the E13 subspace is the *only* direction that transports. The
+  closed-form difference-in-means direction reaches 76% in both arms; the
+  learned one reaches 100% at two-thirds the dose. The claim is that it
+  dominates that baseline, not that the baseline is inert.
 - Not that the isolation transfers to real code. E8 shows the decoder
   transfers; the 0.500 floor exists only in synthetic programs.
 - Not that control dependence is a semantic result — its floor is 0.927.
@@ -348,15 +359,13 @@ Withdrawn claims, with reasons: `docs/ARCHIVE.md`.
 
 # 6. Open items
 
-1. **Run the `mean_difference` baseline** (one stage-106 re-run, one extra
-   variant, no backward pass). The learned direction is at |cos| 0.673 from the
-   mean donor−host difference; if the closed-form direction transports too, the
-   E13 claim must be written as "a fixed direction" rather than "a learned
-   subspace". This is the only thing standing between E13 and a paper claim.
-2. **Explain, or bound, the rank-1 edit beating the whole-state patch**
+1. **Explain, or bound, the rank-1 edit beating the whole-state patch**
    (100% vs 86% at 60% of the edit norm). The available account — the full patch
    installs components that fight the driving one — is plausible and untested. A
    reviewer will ask; better to answer it first.
+2. **A second model and a second site for E13.** The result is currently one
+   cell: `use`, layer 8, rank 1, 6.7B. 1.3b is cheap now that stage 106 runs in
+   minutes.
 3. **Context-matched pairs on real code** — the highest-value follow-up for the
    foundation. It would upgrade E8 from a transfer check to a like-for-like
    replication of E2's isolation. Build by mutating real functions; 150

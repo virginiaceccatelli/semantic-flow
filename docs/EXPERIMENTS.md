@@ -56,13 +56,14 @@ The flow, and why each step followed the last:
              E10 J-lens readout track   → instrument OK, both uses failed [archived]
              E11 rank-2 coordinate swap → below the site's causal dose    [NO-GO, retracted]
              E12 latent store transfer  → bottlenecked on arithmetic      [parked]
-             E13 binding interchange    → running now
+             E13 binding interchange    → H0-H5 PASS: the binding transports
 ```
 
 Phase III is where the work is, and its history is the project's real
-methodological content. Each attempt failed for a *different, nameable* reason,
-and each reason narrowed the design space for the next. `docs/ARCHIVE.md`
-records all four in detail.
+methodological content. Each of the first four attempts failed for a
+*different, nameable* reason, and each reason narrowed the design space for the
+next; E13 is what was left standing. `docs/ARCHIVE.md` records all four in
+detail, along with every criterion this project changed after seeing data.
 
 **One idea carries the whole project**, and it is worth stating before any
 experiment. Take two programs that are identical except for a single character,
@@ -532,10 +533,11 @@ ceiling and any disruption inflates it.
 
 | variant | `ab` emits installed | `ba` emits installed | edit fraction |
 |---|---:|---:|---:|
-| **`das_binding`** (rank 1) | **100.0%** | **100.0%** | 0.479 |
+| **`das_binding`** (rank 1, learned) | **100.0%** | **100.0%** | **0.479** |
 | `whole_state` (the entire donor state) | 85.7% | 87.9% | 0.805 |
+| **`mean_difference`** (rank 1, closed form) | 76.1% | 76.8% | 0.711 |
 | `answer_direction` (J-lens, norm-matched) | 27.9% | 4.3% | 0.479 |
-| `random_norm` (dose-matched random) | 1.1% | 0.7% | **0.538** |
+| `random_norm` (dose-matched random) | 2.1% | 1.8% | 0.513 |
 | `random_rank`, `noop`, raw unembedding | 0.0% | 0.0% | 0.018 / 0 / 0.479 |
 
 Two accounts are refuted rather than merely unsupported. **Not disruption:** the
@@ -546,14 +548,23 @@ the explicit one attenuates 6.9× across the arms while the treatment does not
 attenuate at all, and it pushes the model off-candidate on 9.1% of rows where the
 treatment never does.
 
-**Two things are open, and neither is a detail.** The learned direction sits at
-|cos| **0.673** from the mean donor−host difference — substantially aligned, not
-identical — so the closed-form difference-in-means baseline may do the same job;
-a `mean_difference` arm has been added and stage 106 needs one re-run to settle
-it. And a rank-1 edit outperforming the whole-state patch (100% vs 86%) has a
-plausible explanation — the full patch installs components that fight the driving
-one — that is *not* independently demonstrated. Until the first is settled the
-claim is written as "a rank-1 subspace", not "a learned abstraction".
+**The baseline the |cos| 0.673 demanded.** The learned direction is
+substantially aligned with the mean donor−host difference without being identical
+to it, and no cosine settles whether the optimiser earned the remainder. So the
+difference-in-means direction — no optimiser, no labels, one fixed direction for
+every example — was run as its own arm. It transports: 76.1% / 76.8%, transfer
+ratio 1.003. A fixed direction really does carry much of the binding.
+
+It also loses. `das_binding` gets 100% while moving 0.479 of ‖h‖ against the
+baseline's 76% at 0.711 — about twice the effect per unit dose — and captures
+*less* of the raw state difference (59.5% vs 88.2%). The learned direction is
+therefore not a better-aligned version of the difference in means; it is a
+different direction that works better while disturbing the state less.
+
+**Still open:** why a rank-1 edit beats the whole-state patch (100% vs 86%). The
+available account — the full patch installs the driving component *and*
+components that fight it — is plausible and not independently demonstrated. And
+this is one site, one layer, one model, one construction.
 
 Stages 100–108 · design `docs/design/E13_PLAN.md` · commands
 `docs/RUNBOOK_E13.md`.

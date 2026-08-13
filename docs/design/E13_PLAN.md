@@ -269,7 +269,8 @@ held-out base programs, 560 rows per cell, cluster bootstrap over bases:
 | **`das_binding`** (rank 1) | **100.0%** | **100.0%** | +9.029 [8.952, 9.108] | 0.479 |
 | `whole_state` (installs the ENTIRE donor state) | 85.7% | 87.9% | +4.781 [4.683, 4.878] | 0.805 |
 | `answer_direction` (J-lens, norm-matched) | 27.9% | 4.3% | +2.322 [2.157, 2.482] | 0.479 |
-| `random_norm` (dose-matched random subspace) | 1.1% | 0.7% | +0.903 [0.834, 0.977] | **0.538** |
+| **`mean_difference`** (rank 1, no optimiser) | 76.1% | 76.8% | +4.138 [4.025, 4.252] | 0.711 |
+| `random_norm` (dose-matched random subspace) | 2.1% | 1.8% | +0.757 [0.691, 0.827] | **0.513** |
 | `answer_direction` (raw unembedding) | 0.0% | 0.0% | +0.039 | 0.479 |
 | `random_rank` (rank-1 random) | 0.0% | 0.0% | −0.004 | 0.018 |
 | `noop` | 0.0% | 0.0% | 0.000 | 0.000 |
