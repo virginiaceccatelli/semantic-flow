@@ -1,0 +1,49 @@
+{
+  "stage": "73_jspace_swap",
+  "timestamp": "20260807_142132",
+  "git_sha": "97a0ceb",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/73_jspace_swap.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--pairs",
+    "data/synthetic/jspace_pairs_6.7b_5fam.jsonl",
+    "--lenses",
+    "results/jspace/deepseek-coder-6.7b/lenses",
+    "--behaviour",
+    "results/jspace/6.7b-5fam/readout/jspace_behaviour.csv",
+    "--output",
+    "results/jspace/6.7b-5fam/swap",
+    "--layers",
+    "8,16,24,31",
+    "--positions",
+    "answer,use",
+    "--band-width",
+    "3",
+    "--no-tables"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "pairs": "data/synthetic/jspace_pairs_6.7b_5fam.jsonl",
+    "lenses": "results/jspace/deepseek-coder-6.7b/lenses",
+    "layers": "[8, 16, 24, 31]",
+    "positions": "answer,use",
+    "variants": "['jlens_value', 'logit_value', 'gram_random', 'noop_same_value', 'jlens_answer', 'jlens_offvalue', 'probe_basis', 'whole_state', 'cf_push_0.03', 'cf_push_0.1', 'cf_push_0.3', 'cf_push_1']",
+    "band_width": "3",
+    "dtype": "float16",
+    "device": "cuda",
+    "seed": "42"
+  },
+  "wall_time_s": 2858.3,
+  "extra": {
+    "n_rows": 83520,
+    "noop": {
+      "checked": true,
+      "max_abs_delta_ld": 0.0,
+      "mean_abs_delta_ld": 0.0,
+      "passed": true,
+      "tolerance": 0.001
+    }
+  }
+}

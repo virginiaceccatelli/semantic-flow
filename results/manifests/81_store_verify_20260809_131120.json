@@ -1,0 +1,32 @@
+{
+  "stage": "81_store_verify",
+  "timestamp": "20260809_131120",
+  "git_sha": "2e11785",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/81_store_verify.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--pairs",
+    "data/synthetic/store_pairs_deepseek-coder-1.3b.jsonl",
+    "--strict"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "pairs": "data/synthetic/store_pairs_deepseek-coder-1.3b.jsonl",
+    "drop_failures": "False"
+  },
+  "wall_time_s": 0.1,
+  "extra": {
+    "G0": true,
+    "verified_fraction": 1.0,
+    "checks": {
+      "semantics_agree": 1.0,
+      "text_absent": 1.0,
+      "trichotomy_distinct": 1.0,
+      "answers_disjoint": 1.0,
+      "mutation_distance_ok": 1.0,
+      "anchors_ordered": 1.0
+    }
+  }
+}

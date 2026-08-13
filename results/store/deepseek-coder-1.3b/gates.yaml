@@ -1,0 +1,43 @@
+model: deepseek-coder-1.3b
+updated: '2026-08-09 13:43:51'
+note: E12 is instrument validation. A passing gate says the measurement works, not
+  that a scientific claim holds.
+gates:
+  G0:
+    name: G0
+    passed: true
+    value: 1.0
+    detail: '1.0000 of 395 records agree across execution trace, reference interpreter
+      and stored labels, and satisfy every invariant (threshold 0.999). Per check:
+      semantics_agree 1.0000, text_absent 1.0000, trichotomy_distinct 1.0000, answers_disjoint
+      1.0000, mutation_distance_ok 1.0000, anchors_ordered 1.0000'
+    stage: 81_store_verify
+    timestamp: '2026-08-09 13:43:22'
+    override: false
+    override_reason: ''
+    extra:
+      n_records: 395
+      n_bases: 120
+      families:
+        add: 111
+        sub_from: 111
+        double_sub: 59
+        mod: 114
+      splits:
+        calib: 36
+        test: 84
+      min_mutation_to_injection_tokens: 12
+      n_tokens_mean: 36.88607594936709
+  G1:
+    name: G1
+    passed: false
+    value: 0.4125
+    detail: balanced accuracy 0.412 (threshold 0.75); retained families [] at >= 0.7;
+      dropped ['add', 'double_sub', 'mod', 'sub_from']
+    stage: 82_store_behaviour
+    timestamp: '2026-08-09 13:43:51'
+    override: false
+    override_reason: ''
+    extra:
+      retained_families: []
+      override: false
