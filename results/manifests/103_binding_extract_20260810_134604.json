@@ -1,0 +1,51 @@
+{
+  "stage": "103_binding_extract",
+  "timestamp": "20260810_134604",
+  "git_sha": "79d8e5a",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/103_binding_extract.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--layers",
+    "8,12,16,20,24",
+    "--dtype",
+    "float16"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "pairs": "data/synthetic/binding_pairs_deepseek-coder-6.7b.jsonl",
+    "layers": "[8, 12, 16, 20, 24]",
+    "anchors": "def_source,def_target,mutation,use,answer",
+    "dtype": "float16",
+    "n_bases": "400"
+  },
+  "wall_time_s": 217.9,
+  "extra": {
+    "files": [
+      "results/binding/deepseek-coder-6.7b/acts/ab_source_L8.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_source_L12.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_source_L16.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_source_L20.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_source_L24.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_target_L8.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_target_L12.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_target_L16.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_target_L20.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_target_L24.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_source_L8.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_source_L12.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_source_L16.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_source_L20.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_source_L24.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_target_L8.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_target_L12.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_target_L16.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_target_L20.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_target_L24.npz"
+    ],
+    "gates_required": "H0,H1",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

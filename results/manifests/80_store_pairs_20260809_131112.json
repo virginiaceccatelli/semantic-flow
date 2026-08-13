@@ -1,0 +1,40 @@
+{
+  "stage": "80_store_pairs",
+  "timestamp": "20260809_131112",
+  "git_sha": "2e11785",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/80_store_pairs.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--n-bases",
+    "120"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "n_bases": "120",
+    "families": "add,sub_from,double_sub,mod",
+    "min_families": "3",
+    "calib_frac": "0.3",
+    "seed": "42",
+    "output": "data/synthetic/store_pairs_deepseek-coder-1.3b.jsonl"
+  },
+  "wall_time_s": 14.8,
+  "extra": {
+    "n_records": 397,
+    "n_bases": 120,
+    "families": {
+      "add": 111,
+      "sub_from": 110,
+      "double_sub": 60,
+      "mod": 116
+    },
+    "splits": {
+      "calib": 36,
+      "test": 84
+    },
+    "min_mutation_to_injection_tokens": 12,
+    "n_tokens_mean": 36.896725440806044,
+    "held_out_family_candidate": "double_sub"
+  }
+}

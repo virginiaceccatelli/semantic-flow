@@ -1,0 +1,39 @@
+experiment: E13
+model: deepseek-coder-1.3b
+updated: '2026-08-10 08:42:10'
+note: A passing gate says the measurement works at that step. It is not itself a scientific
+  claim.
+gates:
+  H0:
+    name: H0
+    passed: true
+    value: 1.0
+    detail: '1.0000 of 200 bases agree with an independent interpreter and satisfy
+      every invariant, including the arm crossing that makes the held-out test a falsification
+      (threshold 0.999). Per check: semantics_agree 1.0000, arms_crossed 1.0000, mutation_distance_ok
+      1.0000, anchors_ordered 1.0000, values_distinct 1.0000, tokens_distinct 1.0000'
+    stage: 101_binding_verify
+    timestamp: '2026-08-10 08:41:44'
+    override: false
+    override_reason: ''
+    extra:
+      n_bases: 200
+      n_programs: 800
+      splits:
+        calib: 60
+        test: 140
+      min_use_minus_mutation: 6
+      n_tokens_mean: 21.0
+      distinct_value_pairs: 30
+  H1:
+    name: H1
+    passed: false
+    value: 0.8089285714285714
+    detail: overall 0.809 [0.779, 0.838] against 0.85; weakest cell ab_target 0.571
+      against 0.75
+    stage: 102_binding_behaviour
+    timestamp: '2026-08-10 08:42:10'
+    override: false
+    override_reason: ''
+    extra:
+      override: false

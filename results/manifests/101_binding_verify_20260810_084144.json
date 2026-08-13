@@ -1,0 +1,29 @@
+{
+  "stage": "101_binding_verify",
+  "timestamp": "20260810_084144",
+  "git_sha": "a42973d",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/101_binding_verify.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--strict"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "pairs": "data/synthetic/binding_pairs_deepseek-coder-1.3b.jsonl"
+  },
+  "wall_time_s": 0.1,
+  "extra": {
+    "H0": true,
+    "verified_fraction": 1.0,
+    "checks": {
+      "semantics_agree": 1.0,
+      "arms_crossed": 1.0,
+      "mutation_distance_ok": 1.0,
+      "anchors_ordered": 1.0,
+      "values_distinct": 1.0,
+      "tokens_distinct": 1.0
+    }
+  }
+}
