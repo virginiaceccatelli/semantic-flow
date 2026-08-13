@@ -627,3 +627,51 @@ def test_a_per_row_rank_does_not_shatter_the_control():
     assert _cell(summary, "ab", "random_norm", "use", 8, rank=1) is not None
     # while a variant whose rank IS requested stays keyed by it
     assert len(summary[summary.variant == "das_binding"]) == 1
+
+
+def test_difference_vectors_are_one_per_base_and_do_not_cancel():
+    """Iterating both binding directions yields each delta AND its negative.
+
+    For a host bound to `source` the donor is `target` and vice versa, so
+    summing over BINDINGS gives an exactly antisymmetric set whose mean is the
+    zero vector. Building the difference-in-means baseline that way raised
+    "the mean difference is the zero vector" on 6.7b — the guard working, but
+    only after a GPU job had loaded a 6.7B model.
+    """
+    import numpy as np
+
+    from src.experiments.binding_interchange import (
+        TRAIN_ARM,
+        binding_difference_vectors,
+        donor_of,
+    )
+    from src.models.das import mean_difference_subspace
+
+    rng = np.random.default_rng(1)
+    axis = rng.standard_normal(32)
+    axis /= np.linalg.norm(axis)
+
+    class FakeRecord:
+        def __init__(self, i):
+            self.base_id = f"b{i}"
+
+    records = [FakeRecord(i) for i in range(12)]
+    states = {}
+    for i, record in enumerate(records):
+        base = rng.standard_normal(32)
+        for binding, sign in (("source", -1.0), ("target", +1.0)):
+            states[(record.base_id, TRAIN_ARM, binding)] = {
+                "states": {"use": base + sign * axis}}
+
+    deltas = binding_difference_vectors(states, records, "use", TRAIN_ARM)
+    assert len(deltas) == len(records), "one per base, not one per (base, binding)"
+    direction = mean_difference_subspace(deltas)
+    assert abs(float(direction[:, 0] @ axis)) > 0.99
+
+    # and the construction that failed: both directions, mean exactly zero
+    both = [states[(r.base_id, TRAIN_ARM, donor_of(b))]["states"]["use"]
+            - states[(r.base_id, TRAIN_ARM, b)]["states"]["use"]
+            for r in records for b in ("source", "target")]
+    assert np.allclose(np.mean(both, axis=0), 0.0)
+    with pytest.raises(ValueError, match="zero vector"):
+        mean_difference_subspace(both)

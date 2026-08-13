@@ -611,6 +611,37 @@ def transfer_ratios(summary: pd.DataFrame, site: str, layer: int,
     return pd.DataFrame(rows)
 
 
+def binding_difference_vectors(
+    states: dict,
+    records: Sequence[BindingFactorial],
+    site: str,
+    arm: str = TRAIN_ARM,
+) -> list[np.ndarray]:
+    """Counterfactual differences at `site`, ONE PER BASE, consistently oriented.
+
+    Always `target - source`, never both directions. This is not a detail. For a
+    host whose binding is `source` the donor is `target`, and for a host whose
+    binding is `target` the donor is `source` — so iterating over both bindings
+    produces each difference alongside its exact negative, and their mean is
+    identically the zero vector. Building the difference-in-means baseline that
+    way raised "the mean difference is the zero vector" on 6.7b, which is the
+    guard working: a silent version would have handed back an arbitrary
+    direction from floating-point residue.
+
+    **The orientation is free.** The interchange is
+    `h + R Rᵀ(h_donor - h_self)`, which projects the row's OWN difference onto
+    the basis, so `R` and `-R` produce the identical edit. The convention exists
+    to make the mean well-defined, not to point the edit anywhere.
+    """
+    deltas = []
+    for record in records:
+        host = (record.base_id, arm, "source")
+        donor = (record.base_id, arm, "target")
+        if host in states and donor in states:
+            deltas.append(states[donor]["states"][site] - states[host]["states"][site])
+    return deltas
+
+
 def difference_direction_alignment(
     subspace: AlignedSubspace,
     states: dict,
@@ -631,12 +662,7 @@ def difference_direction_alignment(
 
     CPU-only: it needs the saved subspace and the cached states, nothing else.
     """
-    deltas = []
-    for record in records:
-        host = (record.base_id, arm, "source")
-        donor = (record.base_id, arm, "target")
-        if host in states and donor in states:
-            deltas.append(states[donor]["states"][site] - states[host]["states"][site])
+    deltas = binding_difference_vectors(states, records, site, arm)
     if len(deltas) < 3:
         return {"measured": False, "reason": f"only {len(deltas)} difference vectors"}
 

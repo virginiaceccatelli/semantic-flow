@@ -87,6 +87,7 @@ def main(
     from src.data.counterfactual_pairs import encode_prompt
     from src.experiments.binding_interchange import (
         TRAIN_ARM,
+        binding_difference_vectors,
         collect_states,
         control_contrasts,
         donor_of,
@@ -207,13 +208,14 @@ def main(
         # honest claim is that a single fixed direction carries the binding and
         # the optimiser added nothing; if it does not transfer, the learned
         # direction earned its keep. Neither is decidable from a cosine.
-        mean_direction = mean_difference_subspace([
-            states_calib[(r.base_id, TRAIN_ARM, donor_of(b))]["states"][chosen_site]
-            - states_calib[(r.base_id, TRAIN_ARM, b)]["states"][chosen_site]
-            for r in calib for b in BINDINGS
-            if (r.base_id, TRAIN_ARM, b) in states_calib
-            and (r.base_id, TRAIN_ARM, donor_of(b)) in states_calib])
+        # One difference per base, consistently oriented — see the helper. The
+        # first version of this summed over both binding directions, whose
+        # differences are exact negatives, and the mean was identically zero.
+        mean_direction = mean_difference_subspace(
+            binding_difference_vectors(states_calib, calib, chosen_site, TRAIN_ARM))
         np.save(root / f"mean_difference_L{layer}.npy", mean_direction)
+        console.print(f"  layer {layer}: difference-in-means baseline from "
+                      f"{len(calib)} calibration bases")
 
         fitted = {}
         for rank in rank_list:
