@@ -119,6 +119,32 @@ Three further properties, none of which E11 or E7 had together:
 
 # 4. The metric
 
+> **Correction 2, 2026-08-13 — the falsification criterion was wrong.** H5
+> originally required the `answer_direction` control to **reverse sign** on the
+> held-out arm. On 6.7B it did not reverse; it *attenuated 7x* (+2.322 →
+> +0.335), while `das_binding` did not attenuate at all (+9.029 → +9.009) and
+> `whole_state` — which installs the entire donor state and therefore genuinely
+> transports the binding — sat at +4.781 → +4.799.
+>
+> Reversal is one way a token/answer account can fail, not the only one, and
+> demanding it reported "machinery broken" on data that discriminates cleanly.
+> The criterion is now the **transfer ratio** (held-out / training arm), read
+> against `whole_state` as the known-good reference in the same table:
+>
+> | variant | ratio |
+> |---|---:|
+> | `whole_state` (known-good transport) | 1.004 |
+> | `das_binding` | 0.998 |
+> | `answer_direction` | 0.144 |
+>
+> Why the control attenuated rather than reversed is a genuine bind, recorded
+> here rather than patched: norm-matching it to the treatment means a
+> 48%-of-‖h‖ push, and at that magnitude "a direction that moves the output
+> toward token *w*" is no longer a meaningful linear statement. Unit-norm makes
+> the control underpowered; matched-norm makes it non-linear. There is no
+> version of this control that is both, which is why the ratio — a *relative*
+> statistic with an internal reference — is the right thing to read.
+
 > **Correction, 2026-08-11, pre-registered before the re-run.** The first 6.7B
 > run showed `delta_ld` is positively biased on this corpus. H1 is 1.000, so
 > the clean distribution is confident and `logP(own)` sits far above

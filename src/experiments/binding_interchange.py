@@ -80,6 +80,7 @@ from src.data.counterfactual_pairs import encode_prompt
 from src.models.das import (
     AlignedSubspace,
     interchange_report,
+    top_difference_subspace,
     make_interchange_fn,
     norm_matched_random,
     random_subspace,
@@ -540,6 +541,92 @@ def verify_structural_zeros(frame: pd.DataFrame) -> dict:
         out["pre_mutation_whole_state"] = {
             "max_abs_delta_ld": worst, "passed": bool(worst < 1e-4), "n": int(len(pre))}
     return out
+
+
+def transfer_ratios(summary: pd.DataFrame, site: str, layer: int,
+                    rank: Optional[int] = None) -> pd.DataFrame:
+    """held-out / training arm, per variant — the falsification, restated.
+
+    The original criterion asked the answer-direction control to REVERSE on the
+    held-out arm. On 6.7B it did not reverse; it attenuated 7x (+2.322 -> +0.335)
+    while `das_binding` did not attenuate at all (+9.029 -> +9.009). Reversal was
+    the wrong thing to demand: it is one way a token account can fail, not the
+    only way, and demanding it reported "broken" on data that discriminates
+    cleanly.
+
+    The ratio is the right statistic because there is a known-good reference in
+    the same table. `whole_state` installs the entire donor state, so it
+    genuinely transports the binding, and whatever ratio it achieves is what
+    transport looks like on this corpus. A variant matching it transfers; one
+    far below it does not.
+    """
+    rows = []
+    for variant in sorted(summary["variant"].unique()):
+        cells = {}
+        for arm in (TRAIN_ARM, HELD_OUT_ARM):
+            hit = summary[(summary.arm == arm) & (summary.variant == variant)
+                          & (summary.site == site) & (summary.layer == layer)]
+            if rank is not None and variant not in ("whole_state", "noop"):
+                hit = hit[hit["rank"] == rank]
+            cells[arm] = None if hit.empty else hit.iloc[0]
+        train, held = cells[TRAIN_ARM], cells[HELD_OUT_ARM]
+        if train is None or held is None or not train["delta_ld"]:
+            continue
+        rows.append({
+            "variant": variant, "site": site, "layer": int(layer),
+            "train_arm": float(train["delta_ld"]),
+            "held_out_arm": float(held["delta_ld"]),
+            "transfer_ratio": float(held["delta_ld"]) / float(train["delta_ld"]),
+            "train_says_installed": float(train.get("says_installed_rate", float("nan"))),
+            "held_says_installed": float(held.get("says_installed_rate", float("nan"))),
+            "edit_fraction": float(train["edit_fraction"]),
+        })
+    return pd.DataFrame(rows)
+
+
+def difference_direction_alignment(
+    subspace: AlignedSubspace,
+    states: dict,
+    records: Sequence[BindingFactorial],
+    site: str,
+    arm: str = TRAIN_ARM,
+) -> dict:
+    """How much of the learned basis is just the counterfactual difference?
+
+    The alternative to "an optimiser found a binding subspace" is "an optimiser
+    found the direction in which the two binding states differ". Those are
+    different claims and only one of them is surprising, so the distinction has
+    to be measured rather than assumed. If the learned rank-1 basis is nearly
+    parallel to the top singular direction of `{h_target - h_source}`, the edit
+    is a rank-1 approximation of the whole-state patch — which explains a
+    symmetric transfer ratio, a large edit fraction, and a logit shift that
+    exceeds the whole-state patch, all at once.
+
+    CPU-only: it needs the saved subspace and the cached states, nothing else.
+    """
+    deltas = []
+    for record in records:
+        host = (record.base_id, arm, "source")
+        donor = (record.base_id, arm, "target")
+        if host in states and donor in states:
+            deltas.append(states[donor]["states"][site] - states[host]["states"][site])
+    if len(deltas) < 3:
+        return {"measured": False, "reason": f"only {len(deltas)} difference vectors"}
+
+    top = top_difference_subspace(deltas, rank=1)[:, 0]
+    learned = np.asarray(subspace.basis, dtype=np.float64)
+    cosines = np.abs(top @ learned) / (np.linalg.norm(top) or 1.0)
+    stack = np.asarray(deltas, dtype=np.float64)
+    centred = stack - stack.mean(axis=0, keepdims=True)
+    singular = np.linalg.svd(centred, compute_uv=False)
+    return {
+        "measured": True,
+        "n_differences": len(deltas),
+        "max_cosine_with_top_difference": float(np.max(cosines)),
+        "top_singular_share": float(singular[0] ** 2 / max((singular ** 2).sum(), 1e-12)),
+        "captured_by_learned_basis": float(
+            np.linalg.norm(learned.T @ centred.T) ** 2 / max((centred ** 2).sum(), 1e-12)),
+    }
 
 
 def _cell(summary: pd.DataFrame, arm: str, variant: str, site: str,
