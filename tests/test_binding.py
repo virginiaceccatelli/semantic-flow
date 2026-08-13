@@ -553,3 +553,43 @@ def test_structural_zeros_are_checked_not_assumed():
     assert verify_structural_zeros(clean)["pre_mutation_whole_state"]["passed"]
     broken = pd.DataFrame([{"variant": "noop", "site": "use", "delta_ld": 0.3}])
     assert not verify_structural_zeros(broken)["noop"]["passed"]
+
+
+def test_mean_difference_baseline_is_uncentred_and_rank_one():
+    """The no-optimiser baseline is the MEAN difference, not its variation.
+
+    `top_difference_subspace` centres before the SVD, so on differences that all
+    point the same way it returns the axes of the residual noise — nearly
+    orthogonal to the thing being transported. The baseline must not inherit
+    that: it is the mean itself.
+    """
+    import numpy as np
+
+    from src.models.das import mean_difference_subspace, top_difference_subspace
+
+    rng = np.random.default_rng(0)
+    signal = np.zeros(64)
+    signal[0] = 1.0
+    deltas = [signal + 0.05 * rng.standard_normal(64) for _ in range(200)]
+
+    basis = mean_difference_subspace(deltas)
+    assert basis.shape == (64, 1)
+    assert np.isclose(np.linalg.norm(basis), 1.0)
+    assert abs(float(basis[:, 0] @ signal)) > 0.99          # it IS the mean
+    centred = top_difference_subspace(deltas, rank=1)
+    assert abs(float(centred[:, 0] @ signal)) < 0.5         # and the SVD is not
+
+    with pytest.raises(ValueError):
+        mean_difference_subspace([signal, -signal])          # a zero-edit baseline
+
+
+def test_mean_difference_variant_needs_its_direction():
+    """A silently-dead baseline reads as 'the learned direction won'."""
+    import numpy as np
+
+    from src.experiments.binding_interchange import build_subspace
+
+    host, donor = np.zeros(8), np.ones(8)
+    with pytest.raises(ValueError):
+        build_subspace("mean_difference", None, "ab", "source", host, donor,
+                       d_model=8, rank=1, subspace=None, unembedding=None, seed=0)

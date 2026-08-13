@@ -104,8 +104,9 @@ MIN_TRANSFER_FRACTION = 0.50        # H5 — fraction of the ceiling on `ba`
 TRAIN_ARM = "ab"
 HELD_OUT_ARM = "ba"
 
-VARIANTS = ("das_binding", "answer_direction", "answer_direction_unembedding",
-            "random_rank", "random_norm", "noop", "whole_state")
+VARIANTS = ("das_binding", "mean_difference", "answer_direction",
+            "answer_direction_unembedding", "random_rank", "random_norm",
+            "noop", "whole_state")
 
 # Sites, in program order. `def_source` precedes the mutation, so the host and
 # donor states there are provably identical and the interchange is exactly the
@@ -248,6 +249,7 @@ def build_subspace(
     seed: int,
     target_edit_norm: float = 0.0,
     lens_vectors: Optional[dict] = None,
+    mean_direction: Optional[np.ndarray] = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """(basis, donor_state) for one control arm.
 
@@ -313,6 +315,16 @@ def build_subspace(
         direction /= norm
         alpha = float(target_edit_norm if target_edit_norm else norm)
         return direction, (host + alpha * direction.reshape(-1))
+    if variant == "mean_difference":
+        # The baseline the alignment measurement demands. On 6.7b the learned
+        # rank-1 direction sits at |cos| 0.673 from the mean donor-host
+        # difference — substantially aligned, not identical. That number does
+        # not say whether the optimiser earned the remaining component, and only
+        # running the mean direction as its own arm can. Computed on CALIBRATION
+        # states, so it is as blind to the test split as the learned subspace.
+        if mean_direction is None:
+            raise ValueError("mean_difference needs the calibration mean direction")
+        return mean_direction, donor
     if variant == "random_rank":
         return random_subspace(d_model, rank, seed=seed), donor
     if variant == "random_norm":
@@ -343,6 +355,7 @@ def run_grid(
     subspace: Optional[AlignedSubspace] = None,
     unembedding: Optional[np.ndarray] = None,
     lens_vectors: Optional[dict] = None,
+    mean_direction: Optional[np.ndarray] = None,
     seed: int = 42,
     provenance: Optional[dict] = None,
     progress_every: int = 25,
@@ -392,7 +405,8 @@ def run_grid(
                             variant, record, arm, binding, host, donor,
                             d_model, rank, subspace, unembedding, seed,
                             target_edit_norm=treatment_norm,
-                            lens_vectors=lens_vectors)
+                            lens_vectors=lens_vectors,
+                            mean_direction=mean_direction)
                         report = interchange_report(host, donor_state, basis)
                         if variant == "das_binding":
                             treatment_norm = float(report["edit_norm"])

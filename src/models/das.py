@@ -82,6 +82,27 @@ def random_subspace(d: int, rank: int, seed: int = 42) -> np.ndarray:
     return orthonormalize(rng.standard_normal((d, rank)))
 
 
+def mean_difference_subspace(deltas: Sequence[np.ndarray]) -> np.ndarray:
+    """The rank-1 span of the MEAN counterfactual difference, uncentred.
+
+    The cheapest thing that could possibly work, and therefore the baseline a
+    learned direction has to beat: no optimiser, no labels beyond which state is
+    the donor, one direction for every example. Deliberately NOT centred —
+    `top_difference_subspace` subtracts the mean to find the axes of variation
+    *around* it, whereas here the mean itself is the object.
+    """
+    D = np.asarray(deltas, dtype=np.float64)
+    if D.ndim != 2 or D.shape[0] == 0:
+        raise ValueError(f"expected a (n, d) stack of differences, got {D.shape}")
+    mean = D.mean(axis=0)
+    norm = float(np.linalg.norm(mean))
+    if norm <= 0:
+        raise ValueError("the mean difference is the zero vector; the donor and "
+                         "host states are identical on average, so this baseline "
+                         "would be the zero edit")
+    return (mean / norm).reshape(-1, 1)
+
+
 def top_difference_subspace(
     deltas: Sequence[np.ndarray],
     rank: int,

@@ -175,6 +175,23 @@ measures rather than assumes.
 `--test-all-ranks` restores the full descriptive surface if you want it; the
 gates read the pre-committed cell either way.
 
+**The `mean_difference` arm.** Added after the first 6.7B run, and the reason to
+re-run this stage. It is the rank-1 span of the mean donor−host difference over
+the calibration states — no optimiser, no training, one fixed direction for
+every example — evaluated in both arms exactly like the treatment. It exists
+because the learned direction came back at |cos| 0.673 from that mean, which is
+substantially aligned but not identical, and a cosine cannot say whether the
+optimiser earned the rest. Two outcomes, both publishable:
+
+- **The baseline matches on both arms** → the honest claim narrows to *a single
+  fixed direction, computable in closed form, carries the binding*. DAS is then
+  a convenience, not the finding, and the paper says so.
+- **The baseline works on `ab` and not on `ba`** → the learned direction is
+  doing work no difference-in-means captures, and H5 is a claim about a learned
+  abstraction rather than about a mean.
+
+It costs one extra variant in the test grid — no backward pass, no training.
+
 - **Needs:** more memory than the others — the only backward pass in E13. If the
   loss goes non-finite, re-run with `--dtype float32`.
 - **Do not pass `--layers`.** It defaults to the single layer stage 105 chose on
@@ -223,6 +240,13 @@ gates read the pre-committed cell either way.
 ```bash
 python scripts/108_binding_diagnose.py --model $MODEL --verbose
 ```
+
+Reads `interchange.csv` and **recomputes** the control contrasts rather than
+trusting `interchange_contrasts.csv`. The raw per-row file cannot go stale; the
+contrast file is a derived aggregate written by the GPU stage, so an aggregation
+bug stays frozen in it until 106 re-runs. That is not hypothetical — on 6.7b the
+dose-matched control was dropped from it by a rank filter and H4 failed on a
+missing row. If the file on disk disagrees, this stage says so and rewrites it.
 
 Answers two questions that get confused with each other, in order:
 

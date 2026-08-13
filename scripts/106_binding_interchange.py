@@ -54,8 +54,8 @@ def main(
     site: str = typer.Option("", help="Default: the site stage 105 chose on calibration"),
     sites: str = typer.Option("def_source,use", help="Sites the grid is run over"),
     variants: str = typer.Option(
-        "das_binding,answer_direction,answer_direction_unembedding,"
-        "random_rank,random_norm,noop,whole_state"),
+        "das_binding,mean_difference,answer_direction,"
+        "answer_direction_unembedding,random_rank,random_norm,noop,whole_state"),
     lens_samples_n: int = typer.Option(
         60, help="Calibration programs used to build the J-lens per layer"),
     steps: int = typer.Option(200),
@@ -98,7 +98,8 @@ def main(
         verify_structural_zeros,
     )
     from src.experiments.store_gates import BINDING, GateFailure, load_gates, record_gate, require_gates
-    from src.models.das import AlignmentExample, learn_alignment
+    from src.models.das import (AlignmentExample, learn_alignment,
+                                mean_difference_subspace)
     from src.models.lens import LensSample, compute_lens_vectors, get_output_unembedding
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
@@ -200,6 +201,20 @@ def main(
                     base_token_id=record.answer_token(TRAIN_ARM, binding),
                     group=record.base_id))
 
+        # The no-optimiser baseline, from the SAME calibration states the
+        # alignment is fitted on: one fixed direction, the mean donor-host
+        # difference. If it matches the learned subspace on both arms, the
+        # honest claim is that a single fixed direction carries the binding and
+        # the optimiser added nothing; if it does not transfer, the learned
+        # direction earned its keep. Neither is decidable from a cosine.
+        mean_direction = mean_difference_subspace([
+            states_calib[(r.base_id, TRAIN_ARM, donor_of(b))]["states"][chosen_site]
+            - states_calib[(r.base_id, TRAIN_ARM, b)]["states"][chosen_site]
+            for r in calib for b in BINDINGS
+            if (r.base_id, TRAIN_ARM, b) in states_calib
+            and (r.base_id, TRAIN_ARM, donor_of(b)) in states_calib])
+        np.save(root / f"mean_difference_L{layer}.npy", mean_direction)
+
         fitted = {}
         for rank in rank_list:
             fit = learn_alignment(loader.model, examples, layer=layer,
@@ -257,8 +272,8 @@ def main(
             loader.model, loader.tokenizer, test, states_test, layer=chosen_layer,
             variants=variant_list, sites=[chosen_site], rank=rank,
             subspace=fitted[rank], unembedding=unembedding,
-            lens_vectors=lens_vectors, seed=seed, provenance=provenance,
-            batch_size=grid_batch_size))
+            lens_vectors=lens_vectors, mean_direction=mean_direction, seed=seed,
+            provenance=provenance, batch_size=grid_batch_size))
     frames.append(run_grid(
         loader.model, loader.tokenizer, test[:zero_check_n], states_test,
         layer=chosen_layer, variants=("noop", "whole_state"),

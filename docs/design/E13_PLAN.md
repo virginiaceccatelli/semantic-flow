@@ -295,6 +295,29 @@ maximise exactly this quantity, so 100% there is the optimiser succeeding. The
 non-trivial number is `ba` — 100% on a value assignment it never saw, where a
 token account demands the opposite direction.
 
+**What the learned direction is.** Measured against the calibration differences:
+
+| | |
+|---|---:|
+| \|cos\| with the **mean** donor−host difference | 0.673 |
+| \|cos\| with the top **variation** direction (7.6% of between-example variance) | 0.037 |
+| share of each difference's norm the basis captures | 59.8% |
+
+Read this carefully, because the first version of the measurement centred the
+differences before the SVD and reported only the 0.037 — which is the alignment
+with the *residual noise*, not with the thing being transported. The direction
+is substantially the mean difference and orthogonal to how examples vary around
+it. That is a coherent picture: one shared axis, not a per-example code.
+
+It also makes one baseline mandatory, and no cosine can substitute for it. 0.673
+is neither ~1.0 (the optimiser rediscovered the mean, and the finding is about a
+closed-form direction) nor small (the optimiser found something else). So the
+**`mean_difference` arm** was added to the grid: the mean donor−host difference
+over calibration states, rank 1, no optimiser, run in both arms like any other
+variant. If it reaches `ba` too, the claim narrows honestly to a fixed direction;
+if it does not, the learned direction earned the difference. Stage 106 must
+re-run once for this — it is one extra variant, no backward pass.
+
 ---
 
 # 8. What each outcome means

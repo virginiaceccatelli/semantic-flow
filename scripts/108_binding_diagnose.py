@@ -64,7 +64,9 @@ def main(
         HELD_OUT_ARM,
         MIN_TRAIN_ARM_FRACTION,
         MIN_TRANSFER_FRACTION,
+        RANK_IS_AN_OUTCOME,
         TRAIN_ARM,
+        control_contrasts,
         difference_direction_alignment,
         transfer_ratios,
     )
@@ -101,6 +103,25 @@ def main(
     console.print(f"  claim-bearing cell (chosen on calibration): "
                   f"site [bold]{site}[/bold], layer [bold]{layer}[/bold], "
                   f"rank [bold]{rank}[/bold]")
+
+    # Contrasts are RECOMPUTED here rather than read off disk. `interchange.csv`
+    # is the raw per-row record and cannot go stale; the contrast file is a
+    # derived aggregate written by stage 106, so a bug in the aggregation is
+    # frozen into it until a GPU stage re-runs. That is exactly what happened on
+    # 6.7b: the dose-matched control was dropped by a rank filter, H4 failed on
+    # a missing row, and no CPU re-run could clear it. Recomputing keeps this
+    # stage able to correct the record on its own.
+    recomputed = control_contrasts(grid, site=site, arm=TRAIN_ARM, layer=layer,
+                                   rank=rank)
+    if not recomputed.empty:
+        stale = (contrasts is not None
+                 and int(contrasts["n"].eq(0).sum()) > int(recomputed["n"].eq(0).sum()))
+        contrasts = recomputed
+        contrasts.to_csv(root / "interchange_contrasts.csv", index=False)
+        if stale:
+            console.print("  [yellow]interchange_contrasts.csv was stale — a control "
+                          "was missing from it. Recomputed from interchange.csv and "
+                          "rewritten; the H4 verdict below uses the new one.[/yellow]")
 
     # ── part 1: did the machinery work? ──────────────────────────────────────
     checks: list[dict] = []
@@ -359,7 +380,8 @@ def main(
     if verbose:
         console.print("\n[dim]claim-bearing rows:[/dim]")
         rows = summary[(summary.site == site) & (summary.layer == layer)
-                       & ((summary["rank"] == rank) | (summary.variant == "whole_state"))]
+                       & ((summary["rank"] == rank)
+                          | summary.variant.isin(RANK_IS_AN_OUTCOME))]
         console.print(rows.to_string(index=False))
         if contrasts is not None:
             console.print("\n" + contrasts.to_string(index=False))
