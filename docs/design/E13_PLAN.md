@@ -1,10 +1,9 @@
 # E13 — Binding interchange, falsified by the value assignment
 
-**Status: IMPLEMENTED, not run.** Stages 100–107 exist
-(`src/data/binding_pairs.py`, `src/experiments/binding_interchange.py`,
-`scripts/10*.py`, `tests/test_binding.py`, `jobs/binding_*.csh`). No GPU stage
-has been executed and no result is claimed. `results/STATUS.yaml` carries E13 as
-`active` with `claim: none`.
+**Status: RUN on deepseek-coder-6.7b. H0–H5 all pass.** The result and every
+control are in §7b. `results/STATUS.yaml` carries the claim and its caveats;
+`docs/ARCHIVE.md` records the one gate criterion that was changed after seeing
+data, with the numbers under both rules.
 
 > **Does a low-rank, magnitude-free interchange at the site where a variable
 > binding is resolved transport *which definition is in scope* — rather than a

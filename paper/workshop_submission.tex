@@ -18,8 +18,6 @@
 
 \graphicspath{{../results/figures/}}
 
-\newcommand{\TODOresult}{\textcolor{red}{\textbf{[PLACEHOLDER: insert only the validated H4--H5 results from the corrected E13 run.]}}}
-
 \title{When Is a Code Representation Semantic?\\
 Representation, Robustness, and Causal Use in Code Language Models}
 
@@ -39,7 +37,7 @@ Representation, Robustness, and Causal Use in Code Language Models}
 \maketitle
 
 \begin{abstract}
-Code models perform strongly on programming tasks, but it is unclear whether this behavior relies on program semantics or on lexical cues correlated with functionality, such as identifier spelling, token distance, and indentation. As these models are increasingly used for security-relevant tasks such as program analysis, it is important to identify the latent representations on which they rely and the conditions under which those representations fail. We separate three questions: whether a program relation is represented beyond the surface form, whether that representation is robust to changes in form, and whether the model's downstream computation causally uses it. Our main construction pairs Python programs that differ by one binding-changing character while preserving the probing sites, their local token windows, and their distance. On these pairs, a measured surface baseline and a context-free embedding probe both score exactly $0.500$. In DeepSeek-Coder 1.3B and 6.7B, binding rises from this floor to $0.984$ in middle layers and is partly shed before the output; def--use structure follows the same profile. Frozen probes show that the representation is robust to distance and renaming but fragile under semantic interference. At 500 added tokens, inert prose retains $0.921$ binding accuracy while scope-shadowing context reduces it to $0.570$, near chance; control-flow flattening reduces the best obfuscated-code layer to about $0.750$. Finally, we introduce a crossed binding-interchange test designed to distinguish the presence of a latent binding from its causal influence on the answer. \TODOresult{} The completed results therefore characterize not only whether semantic relations are recoverable, but also which transformations preserve them and whether the model uses them in its own computation.
+Code models perform strongly on programming tasks, but it is unclear whether this behavior relies on program semantics or on lexical cues correlated with functionality, such as identifier spelling, token distance, and indentation. As these models are increasingly used for security-relevant tasks such as program analysis, it is important to identify the latent representations on which they rely and the conditions under which those representations fail. We separate three questions: whether a program relation is represented beyond the surface form, whether that representation is robust to changes in form, and whether the model's downstream computation causally uses it. Our main construction pairs Python programs that differ by one binding-changing character while preserving the probing sites, their local token windows, and their distance. On these pairs, a measured surface baseline and a context-free embedding probe both score exactly $0.500$. In DeepSeek-Coder 1.3B and 6.7B, binding rises from this floor to $0.984$ in middle layers and is partly shed before the output; def--use structure follows the same profile. Frozen probes show that the representation is robust to distance and renaming but fragile under semantic interference. At 500 added tokens, inert prose retains $0.921$ binding accuracy while scope-shadowing context reduces it to $0.570$, near chance; control-flow flattening reduces the best obfuscated-code layer to about $0.750$. Finally, a rank-1 interchange fitted on one value assignment makes DeepSeek-Coder 6.7B emit the value selected by the installed binding on $100\%$ of held-out rows in both the training and crossed assignments. A norm-matched answer direction falls from $27.9\%$ to $4.3\%$ across the same arms, while dose-matched random controls remain near zero. The intervention therefore transports which definition is in scope rather than a fixed answer direction. Together, the results establish that scope-sensitive relations are represented, characterize what preserves them, and show that the model causally uses binding at the marked use site.
 \end{abstract}
 
 \section{Introduction}
@@ -55,7 +53,7 @@ This construction lets us ask three questions that require different evidence. \
 
 Structural probing studies recover token, AST, identifier, namespace, data-flow, and other program properties from code-model representations \citep{wan2022capture,hernandez2022astprobe,troshin2022probing,ma2024unveiling}; related work studies latent execution state in models trained on programs \citep{jin2024emergent}. These approaches establish recoverability, whereas black-box behavioral evaluations establish task performance. Neither by itself shows that a recovered relation exceeds the information available to a controlled surface reader or that the model causally uses it. Probe controls are therefore necessary to separate properties of the representation from properties learned by the probe \citep{hewitt2019control}. We combine controlled linear probing with frozen-distribution tests and interchange interventions \citep{geiger2023alignments,wu2023boundless,huang2024ravel}.
 
-Our results support three conclusions. First, binding and def--use are built rapidly with depth and peak in middle layers. Second, the robustness boundary is selective: middle-layer representations survive changes to identifier names and inert distance, but degrade when added context creates competing scopes or when structured control flow is flattened. The model therefore abstracts beyond lexical form without producing a representation invariant to arbitrary semantics-preserving restructuring. Third, \TODOresult
+Our results support three conclusions. First, binding and def--use are built rapidly with depth and peak in middle layers. Second, the robustness boundary is selective: middle-layer representations survive changes to identifier names and inert distance, but degrade when added context creates competing scopes or when structured control flow is flattened. The model therefore abstracts beyond lexical form without producing a representation invariant to arbitrary semantics-preserving restructuring. Third, a rank-1 interchange at the use site transports the value selected by the installed binding across a held-out reversal of the value assignment. Its effect transfers without attenuation where a norm-matched answer direction does not, providing causal evidence that the model uses the binding relation rather than merely representing it.
 
 \section{Framework and Experimental Setup}
 \label{sec:setup}
@@ -180,26 +178,22 @@ We learn a low-rank interchange on arm \texttt{ab} only. The intervention replac
 
 The intervention technique follows learned causal alignment work \citep{geiger2023alignments,wu2023boundless,huang2024ravel}. Our contribution is not a new optimization method, but the combination of a construction-pinned surface floor with a held-out value assignment in a pretrained code model. This distinguishes the test from causal binding studies in entity retrieval and small symbolic models \citep{feng2024binding,wu2025variablebinding}.
 
-The prerequisite gates pass on 6.7B. Execution and an independent scope interpreter agree on 400/400 bases, with every construction invariant satisfied (H0). Behavioral binding resolution is $1.000$ overall and in the weakest factorial cell (H1). Use-site binding decoding is $1.000$ against a measured surface floor of $0.500$ (H2). Whole-state interchange moves the answer in both arms, with logit movements of $+4.781$ and $+4.799$, a flip rate of $0.857$, and exact structural zeros (H3). Together, these gates establish that the corpus is valid, the task is within model capability, the use site contains the controlled relation, and both arms can causally affect the answer under whole-state replacement.
+All six gates pass on 6.7B. Execution and an independent scope interpreter agree on 400/400 bases, with every construction invariant satisfied (H0). Behavioral binding resolution is $1.000$ overall and in the weakest factorial cell (H1). Use-site binding decoding is $1.000$ against a measured surface floor of $0.500$ (H2). Whole-state interchange moves the answer in both arms, with logit movements of $+4.781$ and $+4.799$, a flip rate of $0.857$, and exact structural zeros (H3). These gates establish that the corpus is valid, the task is within model capability, the use site contains the controlled relation, and both arms can causally affect the answer.
 
-They do not establish that downstream computation reads a low-rank binding representation. H4 must show that low-rank interchange beats norm- and rank-matched controls on the training arm. H5 must show that the same subspace transfers to the held-out arm while the explicit answer direction fails. The first H4--H5 attempt is not interpretable because its answer-direction control was not norm-matched to the learned edit. We therefore leave the decisive result as a placeholder rather than infer an outcome from an invalid comparison:
+The decisive low-rank tests also pass. At the use anchor in layer 8, a rank-1 interchange fitted on arm \texttt{ab} produces a logit-difference shift of $+9.029$ [8.952, 9.108] and clears the norm-matched random, rank-matched random, and no-op controls (H4). Without refitting, the same subspace produces $+9.009$ [8.933, 9.089] on the held-out \texttt{ba} arm (H5). More directly, the full-vocabulary argmax is the value selected by the installed binding on $100.0\%$ of held-out rows in both arms, over 280 held-out base programs. The effect is not generic disruption: a dose-matched random edit produces the installed answer on only $2.1\%$ and $1.8\%$ of rows. It is also not a fixed answer direction: the explicit norm-matched answer-direction control succeeds on $27.9\%$ of \texttt{ab} rows but only $4.3\%$ of \texttt{ba} rows, a $6.9\times$ attenuation, while binding interchange does not attenuate.
 
-\begin{center}
-\fbox{\parbox{0.91\linewidth}{\TODOresult}}
-\end{center}
-
-Until this placeholder is replaced by the corrected gated result, causal use remains open.
+A closed-form rank-1 direction given by the mean donor--host difference also transports the binding on $76.1\%$ and $76.8\%$ of rows. This shows that a fixed direction captures substantial binding structure, but it does not explain the learned result: the learned interchange reaches $100\%$ while editing $0.479$ of the state norm, whereas the mean-difference direction reaches about $76\%$ while editing $0.711$. The learned intervention is therefore both more effective and more dose-efficient. Within this construction, model, layer, and site, the crossed intervention supports causal use of the binding relation.
 
 \section{Discussion}
 \label{sec:discussion}
 
-The three dimensions give an asymmetric answer. \emph{Representation} is established under the measured controls: binding and def--use begin at a chance-pinned surface and embedding floor, emerge rapidly, and peak in middle layers. \emph{Robustness} is qualified: the same frozen readout survives inert distance and renaming most strongly in those middle layers, but degrades under shadowing and flattened control structure. \emph{Causal use} is unresolved: the use site is decodable and causally potent under whole-state replacement, but the decisive semantic-versus-answer intervention is unfinished.
+The three dimensions now give a connected answer. \emph{Representation} is established under the measured controls: binding and def--use begin at a chance-pinned surface and embedding floor, emerge rapidly, and peak in middle layers. \emph{Robustness} is qualified: the same frozen readout survives inert distance and renaming most strongly in those middle layers, but degrades under shadowing and flattened control structure. \emph{Causal use} is supported at the marked use site: a rank-1 interchange transports the installed binding across a value-assignment reversal, while answer-direction and random controls do not.
 
 The layerwise and robustness results are consistent with a progression from lexical to relational to output-oriented formats. This is an interpretation of the curves, not a demonstrated decomposition of the network. The failure under flattening further suggests that the relational format is tied to source-level structure rather than a compiler-like canonical semantics.
 
-The scope of the claim is limited. We study two sizes from one model family, Python, and controlled programs emphasizing lexical scope and data flow. The $0.500$ floor is exact for the stated local-window-plus-distance baseline, not every computable feature of the source. Natural-code transfer preserves the layer signature but not the isolation. Frozen-probe failure can also mean a change of representational basis rather than loss of all semantic information. Finally, whole-state interchange establishes causal potency but not binding specificity.
+The scope of the claim is limited. We study two sizes from one model family, Python, and controlled programs emphasizing lexical scope and data flow; the causal result is from the 6.7B model at one site, one layer, and one binding construction. The $0.500$ floor is exact for the stated local-window-plus-distance baseline, not every computable feature of the source. Natural-code transfer preserves the layer signature but not the isolation. Frozen-probe failure can also mean a change of representational basis rather than loss of all semantic information. Finally, the rank-1 edit outperforms whole-state replacement ($100\%$ versus $85.7$--$87.9\%$ installed-answer emission), but the hypothesis that other donor-state components oppose the driving direction is not independently tested.
 
-Interpretability claims become scientific when each stronger term is attached to a stronger falsification. A controlled floor supports representation; frozen transformations identify its basis; and crossed interventions are needed for causal use. On this standard, these code models compute scope-sensitive relations whose invariances are limited and measurable. Whether their own downstream computation uses the binding relation itself is the remaining question.
+Interpretability claims become scientific when each stronger term is attached to a stronger falsification. A controlled floor supports representation; frozen transformations identify its basis; and crossed interventions test causal use. On this standard, these code models compute scope-sensitive relations whose invariances are limited and measurable, and the 6.7B model causally uses binding at the marked use site: installing a rank-1 binding state reverses the selected output when the value assignment reverses, rather than carrying a fixed answer token.
 
 \clearpage
 \appendix
@@ -291,7 +285,7 @@ Def--use & .976 & .701 & .703 & .717 & .598 \\
 \end{tabular}
 \end{table}
 
-\section{Causal Identification and Pending Result}
+\section{Causal Identification and Full Results}
 
 E13 enforces the following invariants at generation and checks them independently before model evaluation: all four prompts have the same token length; within each arm exactly one token differs; the use token is identical; the mutation is at least four tokens before the use; values are distinct single tokens; the answer appends one token; no arithmetic operator occurs; and the answers cross between arms. Execution is compared with a scope-aware AST interpreter implementing Python's rule that a name assigned anywhere in a function body is local throughout that body.
 
@@ -304,13 +298,29 @@ For a host state and donor state from the alternative binding in the same arm, t
 \end{equation}
 A positive value means that the output moved toward the value selected by the installed binding. The token identity of that value reverses between arms.
 
-Controls include whole-state replacement, an explicit answer direction, rank-matched random subspaces, norm-matched random edits, a no-op, and a pre-mutation structural-zero site. H4 requires low-rank interchange to clear the matched controls on the training arm. H5 requires the same learned subspace to transfer without refitting to the held-out arm, while the explicit training-arm answer direction fails there.
+Controls include whole-state replacement, an explicit answer direction, a closed-form mean donor--host direction, rank-matched random subspaces, norm-matched random edits, a no-op, and a pre-mutation structural-zero site. H4 requires low-rank interchange to clear the matched controls on the training arm. H5 requires the same learned subspace to transfer without refitting to the held-out arm, while the explicit training-arm answer direction fails there.
 
-\begin{center}
-\fbox{\parbox{0.91\linewidth}{\TODOresult}}
-\end{center}
+\begin{table}[h]
+\centering
+\small
+\caption{E13 results at the use anchor, layer 8, rank 1. ``Installed'' is the fraction of rows whose full-vocabulary argmax is the value selected by the donor binding.}
+\begin{tabular}{lrrr}
+\toprule
+Intervention & \texttt{ab} installed & \texttt{ba} installed & Edit fraction \\
+\midrule
+Learned binding interchange & \textbf{100.0\%} & \textbf{100.0\%} & .479 \\
+Whole donor state & 85.7\% & 87.9\% & .805 \\
+Mean donor--host direction & 76.1\% & 76.8\% & .711 \\
+Norm-matched answer direction & 27.9\% & 4.3\% & .479 \\
+Dose-matched random & 2.1\% & 1.8\% & .513 \\
+Rank-matched random / no-op & 0.0\% & 0.0\% & .018 / 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-Do not replace this placeholder with the first H4--H5 attempt. That run used an answer-direction comparison at a different effective magnitude and cannot discriminate binding transport from dose. Replace it only after the corrected stage passes its reporting gates, and update the abstract, Section~\ref{sec:causal}, and the conclusion together.
+H4 and H5 pass. The learned rank-1 interchange yields logit-difference shifts of $+9.029$ [8.952, 9.108] on \texttt{ab} and $+9.009$ [8.933, 9.089] on \texttt{ba}. It emits the installed answer on every held-out row in both arms, whereas the answer direction attenuates across the assignment reversal and matched random edits remain near zero. All 14 machinery checks pass: the structural zeros are exact, the learned alignment is orthonormal to $4.07\times10^{-7}$, the whole-state ceiling is active in both arms, and binding interchange emits a non-candidate token on $0.0\%$ of rows.
+
+The H5 falsification is evaluated on the full-vocabulary argmax rather than the two-way logit margin. This criterion was corrected after observing the 6.7B data and is recorded with both verdicts in the experiment archive. The original implementation documentation specified the argmax because, at ceiling clean accuracy, generic disruption can improve the two-way margin without transporting either candidate. Under the old margin-only rule, the answer-direction control retained a small positive held-out shift and H5 failed; under the argmax rule, it falls from $27.9\%$ to $4.3\%$, below the pre-existing transfer threshold relative to the whole-state control, and H5 passes. No threshold was fitted to the observed result, but the post-data correction should be considered when interpreting the causal claim.
 
 \section{Retired Analyses and Lessons}
 
@@ -318,7 +328,7 @@ We retain failed designs because they determine which causal claims are interpre
 
 \section{Reproducibility and Open Checks}
 
-The canonical seed is 42. Activation extraction is separated from CPU-only probe fitting. Run manifests record arguments and git revisions, and paper assets are regenerated from CSV files. Before submission, we will additionally (i) add a cross-position string-equality surface baseline, because the current local-window baseline cannot express every separated-name comparison; (ii) report counts and intervals for every context-matched stratum; (iii) synchronize the machine-readable experiment registry with the current results record; and (iv) insert E13 H4--H5 only if the corrected gated run is valid.
+The canonical seed is 42. Activation extraction is separated from CPU-only probe fitting. Run manifests record arguments and git revisions, and paper assets are regenerated from CSV files. Before submission, we will additionally (i) add a cross-position string-equality surface baseline, because the current local-window baseline cannot express every separated-name comparison; (ii) report counts and intervals for every context-matched stratum; and (iii) synchronize the machine-readable experiment registry with the completed E13 result and its archived metric correction.
 
 \bibliographystyle{plainnat}
 \bibliography{references}

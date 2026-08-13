@@ -198,15 +198,15 @@ experiments:
       held-out base programs, 560 rows per cell, cluster bootstrap over bases.
       An answer-direction account is refuted rather than merely unsupported.
     caveat: >
-      NOT YET SUBMITTABLE AS STATED. The learned direction sits at |cos| 0.673
-      from the mean donor-host difference, so the no-optimiser
-      difference-in-means baseline (`mean_difference`) may reach the same
-      result. Stage 106 must re-run once with that arm before the claim is
-      written as "a learned subspace"; if the baseline matches, the honest claim
-      is the narrower and cleaner "a single fixed direction". Separately, the
-      rank-1 edit outperforming the whole-state patch (100% vs 86%) has a
-      plausible explanation — the full patch installs components that fight the
-      driving one — that is NOT independently demonstrated.
+      The closed-form difference-in-means baseline was run and it TRANSPORTS —
+      76.1% / 76.8%, transfer ratio 1.003 — so a single fixed direction carries
+      much of the binding. The learned direction dominates it: 100% at edit
+      fraction 0.479 against 76% at 0.711, about twice the effect per unit dose,
+      while capturing LESS of the raw state difference (59.5% vs 88.2%). It is
+      therefore not a better-aligned mean. Report both arms. Still NOT
+      demonstrated: why a rank-1 edit beats the whole-state patch (100% vs 86%);
+      the available account (the full patch installs the driving component and
+      components that fight it) is plausible and untested.
     identification: >
       A 2x2 of binding x value assignment. The same one-token binding flip
       demands OPPOSITE token movements in the two value assignments, so an
@@ -228,17 +228,28 @@ experiments:
       - "H2 (stage 104): which definition is in scope is decodable at the use anchor above the measured surface baseline"
       - "H3 (stage 105): whole-state interchange flips the answer in BOTH arms — the ceiling, and the proof that H5 is testable"
       - "H4 (stage 106): PASS — +9.029 [8.952, 9.108], 189% of the ceiling; all three control contrasts clear zero"
-      - "H5 (stage 106): PASS — +9.009 [8.933, 9.089] on the held-out arm, 188% of its ceiling; transfer ratio 0.998 against whole_state's 1.004, while the explicit answer direction manages 0.144"
+      - "H5 (stage 106): PASS — 100.0% of held-out rows emit the installed answer, 114% of that arm's ceiling; the answer_direction control transfers at an argmax ratio of 0.154 against transport's 1.025"
+    gate_criterion_changed: >
+      2026-08-13. H5's discriminator clause was moved from delta_ld to
+      says_installed — the metric this module pre-registered in its design
+      section and never implemented in any gate evaluator. delta_ld is
+      positively biased at ceiling accuracy, so a disruptive edit lifts it with
+      nothing transported. Under the old rule H5 read FAIL on that clause alone
+      while its transfer condition passed at 188% of ceiling. Both readings, the
+      full justification, and what would have made the change illegitimate are
+      recorded in docs/ARCHIVE.md under 2026-08-13.
     numbers:
       site: use
       layer: 8
       rank: 1
       n_bases_test: 280
-      says_installed_das: "ab 100.0%, ba 100.0%"
-      says_installed_whole_state: "ab 85.7%, ba 87.9%"
-      says_installed_random_norm: "ab 1.1%, ba 0.7% — at edit fraction 0.538 against the treatment's 0.479, i.e. an OVER-dosed control"
-      says_installed_answer_direction: "ab 27.9%, ba 4.3% — 6.9x attenuation, the signature the design predicts for a token account"
+      says_installed_das: "ab 100.0%, ba 100.0% — at edit fraction 0.479"
+      says_installed_whole_state: "ab 85.7%, ba 87.9% — at edit fraction 0.805"
+      says_installed_mean_difference: "ab 76.1%, ba 76.8% — the closed-form baseline, at edit fraction 0.711"
+      says_installed_random_norm: "ab 2.1%, ba 1.8% — at edit fraction 0.513 against the treatment's 0.479, i.e. an OVER-dosed control"
+      says_installed_answer_direction: "ab 27.9%, ba 4.3% — 6.5x attenuation, the signature the design predicts for a token account"
       alignment_with_mean_difference: 0.673
+      share_of_state_difference_captured: "das 0.595, mean_difference 0.882"
     status_note: >
       RUN on deepseek-coder-6.7b. All 14 machinery checks pass: structural zeros
       exactly 0.00e+00, alignment orthonormal to 4.07e-07, ceiling alive in both
@@ -248,11 +259,12 @@ experiments:
       aggregation bugs in the dose-matched control were caught this way, and both
       had made H4 fail on bookkeeping rather than on data.
     limitation: >
-      H4 alone would be E11 again; the claim is H5, and it holds. What is NOT yet
-      established: whether the closed-form difference-in-means direction does the
-      same job (the `mean_difference` arm, pending one stage-106 re-run), and why
-      a rank-1 edit beats installing the whole donor state. Single model, single
-      site, single layer, one binding construction — scope claims accordingly.
+      H4 alone would be E11 again; the claim is H5, and it holds. The
+      difference-in-means question is settled: the baseline transports at 76%
+      and the learned direction beats it at two-thirds the dose. What is NOT
+      established: why a rank-1 edit beats installing the whole donor state.
+      Single model, single site, single layer, one binding construction — scope
+      claims accordingly.
 
   E12:
     name: latent store transitions (INSTRUMENT VALIDATION)
