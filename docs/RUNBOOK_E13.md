@@ -158,7 +158,7 @@ screen -dmS e13-interchange env MODEL=$MODEL $MAMBA_EXE run -n semflow python \
     scripts/106_binding_interchange.py --model $MODEL --ranks 1,2,4,8,16 --dtype float16
 ```
 
-**Cost.** The first 6.7B run took ~30 hours. Three things were wrong, all fixed,
+**Cost.** The first 6.7B run took ~30 hours. Four things were wrong, all fixed,
 none of them a reduction in scope:
 
 | | fix |
@@ -166,7 +166,6 @@ none of them a reduction in scope:
 | `whole_state` built a 4096×4096 float64 identity **per evaluated row**, and `run_grid` retains every cell's basis until phase 2 — 150 GB held live before a single forward pass | it is now a direct replacement (`basis=None`), the same operator since `interchange(h, o, I) == o` exactly. The fast path was added in `das.py` first and the call site in `build_subspace` was missed, so this only took effect later |
 | one forward pass per cell, at 21 tokens, where a 6.7B forward is almost entirely per-call overhead | batched (`--grid-batch-size 32`); prompts are uniformly 21 tokens so no padding, and the output is verified **bit-identical** |
 | the full test grid ran at **all five ranks** and at both sites | the test grid runs once at the **calibration-selected** rank and site. This is also *stricter*: evaluating every rank on test and then reading the surface is the winner's curse the split exists to prevent |
-
 | `norm_matched_random` picks its rank per row, so several hundred distinct ranks hit a 64-entry cache; each miss is a QR on a (4096, ~1900) matrix at ~0.7 s, and every distinct basis stays live at 62 MB | the rank snaps **up** to a multiple of 64, collapsing the 960-2460 band to ~24 shared values. Measured: 145 ms/row against ~1.5 s, and the matched dose still never falls below the treatment's |
 
 **Watch for a long silence after `selected on calibration`.** `run_grid` builds
