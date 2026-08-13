@@ -825,22 +825,55 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
     """H5: the same subspace transfers to the held-out value assignment.
 
     Three conditions, and the third is what makes a null mean anything:
-      1. `das_binding` is positive on `ba`, at a decent fraction of the ceiling;
+      1. `das_binding` moves `ba` (its `delta_ld` interval clears zero) and
+         reaches a decent fraction of the ceiling;
       2. it is not merely the training arm leaking — `ba` is measurable, which
          H3 established;
       3. the explicit `answer_direction` control, which passes on `ab`, FAILS
          on `ba`. If it does not fail, the discriminator cannot tell an answer
          encoder from a binding encoder and no verdict is licensed.
+
+    **Conditions 1 and 3 are read on `says_installed`, the full-vocabulary
+    argmax, not on `delta_ld`.** This module's design section says so and always
+    did; the first implementation nonetheless used `delta_ld` throughout, and
+    the two disagree. `delta_ld` is positively biased here — H1 is 1.000, so any
+    edit that merely disrupts a confident distribution regresses both terms
+    toward the middle and lifts the margin with nothing transported. On 6.7b
+    that is exactly what the control did: `answer_direction` on `ba` read
+    +0.335 with an interval clearing zero, which the old rule scored as "did not
+    fail", while its argmax rate was 4.3% against the treatment's 100% and it
+    knocked the model off both candidates on 6.4% of those rows. Recorded in
+    `docs/ARCHIVE.md` under 2026-08-13, with the numbers under both rules —
+    which agree on condition 1 and differ only on condition 3.
+
+    "Fails on `ba`" is operationalised against a MEASURED reference rather than
+    a chosen number: `whole_state` installs the entire donor state, so whatever
+    arm-to-arm ratio it achieves is what transport looks like on this corpus. A
+    control transferring at less than `MIN_TRANSFER_FRACTION` of that ratio has
+    failed. The threshold is the one already pre-registered for condition 1, not
+    a new one.
     """
     das_ba = _cell(summary, HELD_OUT_ARM, "das_binding", site, layer, rank)
     ceiling_ba = _cell(summary, HELD_OUT_ARM, "whole_state", site, layer)
+    ceiling_ab = _cell(summary, TRAIN_ARM, "whole_state", site, layer)
     answer_ab = _cell(summary, TRAIN_ARM, "answer_direction", site, layer)
     answer_ba = _cell(summary, HELD_OUT_ARM, "answer_direction", site, layer)
     if das_ba is None or ceiling_ba is None:
         return False, float("nan"), "missing held-out-arm rows"
 
-    fraction = (float(das_ba["delta_ld"]) / float(ceiling_ba["delta_ld"])
-                if ceiling_ba["delta_ld"] else float("nan"))
+    def installed(cell) -> float:
+        if cell is None:
+            return float("nan")
+        return float(cell.get("says_installed_rate", float("nan")))
+
+    def ratio(top: float, bottom: float) -> float:
+        return top / bottom if bottom else float("nan")
+
+    # Reported in both metrics; gated on the argmax where one is available, and
+    # falling back to the margin only when `says_installed` was not recorded.
+    fraction_margin = ratio(float(das_ba["delta_ld"]), float(ceiling_ba["delta_ld"]))
+    fraction_argmax = ratio(installed(das_ba), installed(ceiling_ba))
+    fraction = fraction_argmax if np.isfinite(fraction_argmax) else fraction_margin
     transfers = bool(das_ba["ci_lo"] > 0 and np.isfinite(fraction)
                      and fraction >= MIN_TRANSFER_FRACTION)
 
@@ -848,18 +881,27 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
     discriminates = False
     if answer_ab is not None and answer_ba is not None:
         passes_train = bool(answer_ab["ci_lo"] > 0)
-        fails_heldout = bool(answer_ba["ci_hi"] < 0 or answer_ba["ci_lo"] <= 0)
+        transport_ratio = ratio(installed(ceiling_ba), installed(ceiling_ab))
+        control_ratio = ratio(installed(answer_ba), installed(answer_ab))
+        if np.isfinite(control_ratio) and np.isfinite(transport_ratio):
+            bar = MIN_TRANSFER_FRACTION * transport_ratio
+            fails_heldout = bool(control_ratio < bar)
+            shape = (f"{HELD_OUT_ARM}/{TRAIN_ARM} argmax ratio {control_ratio:.3f} "
+                     f"against transport's {transport_ratio:.3f} (bar {bar:.3f})")
+        else:                       # no argmax recorded: the pre-2026-08-13 rule
+            fails_heldout = bool(answer_ba["ci_hi"] < 0 or answer_ba["ci_lo"] <= 0)
+            shape = (f"{HELD_OUT_ARM} {answer_ba['delta_ld']:+.3f} "
+                     f"[{answer_ba['ci_lo']:+.3f}, {answer_ba['ci_hi']:+.3f}]")
         discriminates = passes_train and fails_heldout
         discriminator = (f"answer_direction {TRAIN_ARM} {answer_ab['delta_ld']:+.3f} "
-                         f"[{answer_ab['ci_lo']:+.3f}, {answer_ab['ci_hi']:+.3f}] "
-                         f"(passes: {passes_train}), {HELD_OUT_ARM} "
-                         f"{answer_ba['delta_ld']:+.3f} "
-                         f"[{answer_ba['ci_lo']:+.3f}, {answer_ba['ci_hi']:+.3f}] "
-                         f"(fails: {fails_heldout})")
+                         f"[{answer_ab['ci_lo']:+.3f}, {answer_ab['ci_hi']:+.3f}], "
+                         f"installed {installed(answer_ab):.1%} (passes: {passes_train}); "
+                         f"{shape} (fails: {fails_heldout})")
 
     passed = bool(transfers and discriminates)
-    detail = (f"{HELD_OUT_ARM} @ {site} L{layer} r{rank}: das_binding {das_ba['delta_ld']:+.3f} "
-              f"[{das_ba['ci_lo']:+.3f}, {das_ba['ci_hi']:+.3f}] = {fraction:.0%} of "
-              f"the held-out ceiling (threshold {MIN_TRANSFER_FRACTION:.0%}); "
-              f"discriminator — {discriminator}")
+    detail = (f"{HELD_OUT_ARM} @ {site} L{layer} r{rank}: das_binding installed "
+              f"{installed(das_ba):.1%} = {fraction:.0%} of the held-out ceiling "
+              f"(threshold {MIN_TRANSFER_FRACTION:.0%}); margin {das_ba['delta_ld']:+.3f} "
+              f"[{das_ba['ci_lo']:+.3f}, {das_ba['ci_hi']:+.3f}] = {fraction_margin:.0%} "
+              f"of it; discriminator — {discriminator}")
     return passed, fraction, detail

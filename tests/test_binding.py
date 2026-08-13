@@ -245,10 +245,15 @@ def test_unknown_gate_for_this_spec_is_refused(tmp_path):
 
 # -- the metric and its gates -------------------------------------------------
 
-def _summary_row(arm, variant, site, delta, lo, hi, flip=0.5, layer=12, rank=2):
+def _summary_row(arm, variant, site, delta, lo, hi, flip=0.5, layer=12, rank=2,
+                 installed=None):
     return {"arm": arm, "variant": variant, "site": site, "rank": rank,
             "layer": layer, "split": "test",
             "delta_ld": delta, "ci_lo": lo, "ci_hi": hi, "flip_rate": flip,
+            # H5 is gated on the argmax, not the margin; default it to the flip
+            # rate so rows that do not care about the distinction stay terse.
+            "says_installed_rate": flip if installed is None else installed,
+            "says_other_rate": 0.0,
             "edit_fraction": 0.05, "n": 100, "n_bases": 50}
 
 
@@ -383,15 +388,26 @@ def test_site_and_layer_are_selected_from_the_ceiling():
     assert select_on_calibration(calib, ["def_source", "use"]) == ("use", 16)
 
 
-def test_h5_passes_only_when_the_subspace_transfers_and_the_control_does_not():
+def _h5_summary(das_installed, control_ba_installed, das_delta=0.6,
+                control_ba_delta=-0.6):
+    """A minimal H5 surface. Ceilings at 1.0 in both arms, so transport's own
+    arm-to-arm ratio is 1.0 and the control's bar is MIN_TRANSFER_FRACTION."""
     import pandas as pd
 
-    summary = pd.DataFrame([
-        _summary_row(HELD_OUT_ARM, "das_binding", "use", 0.6, 0.4, 0.8),
-        _summary_row(HELD_OUT_ARM, "whole_state", "use", 1.0, 0.8, 1.2),
-        _summary_row(TRAIN_ARM, "answer_direction", "use", 0.7, 0.5, 0.9),
-        _summary_row(HELD_OUT_ARM, "answer_direction", "use", -0.6, -0.8, -0.4),
+    return pd.DataFrame([
+        _summary_row(HELD_OUT_ARM, "das_binding", "use", das_delta, das_delta - 0.2,
+                     das_delta + 0.2, installed=das_installed),
+        _summary_row(TRAIN_ARM, "whole_state", "use", 1.0, 0.8, 1.2, installed=1.0),
+        _summary_row(HELD_OUT_ARM, "whole_state", "use", 1.0, 0.8, 1.2, installed=1.0),
+        _summary_row(TRAIN_ARM, "answer_direction", "use", 0.7, 0.5, 0.9, installed=0.7),
+        _summary_row(HELD_OUT_ARM, "answer_direction", "use", control_ba_delta,
+                     control_ba_delta - 0.2, control_ba_delta + 0.2,
+                     installed=control_ba_installed),
     ])
+
+
+def test_h5_passes_only_when_the_subspace_transfers_and_the_control_does_not():
+    summary = _h5_summary(das_installed=0.6, control_ba_installed=0.05)
     passed, fraction, detail = evaluate_gate_h5(summary, "use", 12, 2)
     assert passed and fraction == pytest.approx(0.6)
     assert "fails: True" in detail
@@ -399,14 +415,8 @@ def test_h5_passes_only_when_the_subspace_transfers_and_the_control_does_not():
 
 def test_h5_fails_when_the_discriminator_is_broken():
     """If an explicit answer direction ALSO transfers, no verdict is licensed."""
-    import pandas as pd
-
-    summary = pd.DataFrame([
-        _summary_row(HELD_OUT_ARM, "das_binding", "use", 0.6, 0.4, 0.8),
-        _summary_row(HELD_OUT_ARM, "whole_state", "use", 1.0, 0.8, 1.2),
-        _summary_row(TRAIN_ARM, "answer_direction", "use", 0.7, 0.5, 0.9),
-        _summary_row(HELD_OUT_ARM, "answer_direction", "use", 0.6, 0.4, 0.8),
-    ])
+    summary = _h5_summary(das_installed=0.6, control_ba_installed=0.6,
+                          control_ba_delta=0.6)
     passed, _, detail = evaluate_gate_h5(summary, "use", 12, 2)
     assert not passed
     assert "fails: False" in detail
@@ -414,16 +424,51 @@ def test_h5_fails_when_the_discriminator_is_broken():
 
 def test_h5_fails_when_the_subspace_is_an_answer_direction():
     """The signature: positive on the training arm, negative on the held-out one."""
+    summary = _h5_summary(das_installed=0.02, control_ba_installed=0.05,
+                          das_delta=-0.5)
+    passed, _, _ = evaluate_gate_h5(summary, "use", 12, 2)
+    assert not passed
+
+
+def test_h5_reads_the_argmax_not_the_biased_margin():
+    """The 2026-08-13 change, pinned on the numbers that forced it.
+
+    On 6.7b the control read +0.335 on the held-out arm with an interval
+    clearing zero -- which the margin rule scored as "did not fail" -- while its
+    argmax rate was 4.3% against the treatment's 100%. `delta_ld` is positively
+    biased at ceiling accuracy: a disruptive edit regresses a confident
+    distribution toward the middle and lifts the margin with nothing
+    transported. Both readings of the same run are in docs/ARCHIVE.md.
+    """
     import pandas as pd
 
     summary = pd.DataFrame([
-        _summary_row(HELD_OUT_ARM, "das_binding", "use", -0.5, -0.7, -0.3),
-        _summary_row(HELD_OUT_ARM, "whole_state", "use", 1.0, 0.8, 1.2),
-        _summary_row(TRAIN_ARM, "answer_direction", "use", 0.7, 0.5, 0.9),
-        _summary_row(HELD_OUT_ARM, "answer_direction", "use", -0.6, -0.8, -0.4),
+        _summary_row(HELD_OUT_ARM, "das_binding", "use", 9.009, 8.933, 9.089,
+                     installed=1.000, layer=8, rank=1),
+        _summary_row(TRAIN_ARM, "whole_state", "use", 4.781, 4.683, 4.878,
+                     installed=0.857, layer=8, rank=1),
+        _summary_row(HELD_OUT_ARM, "whole_state", "use", 4.799, 4.694, 4.903,
+                     installed=0.879, layer=8, rank=1),
+        _summary_row(TRAIN_ARM, "answer_direction", "use", 2.322, 2.157, 2.482,
+                     installed=0.279, layer=8, rank=1),
+        _summary_row(HELD_OUT_ARM, "answer_direction", "use", 0.335, 0.208, 0.456,
+                     installed=0.043, layer=8, rank=1),
     ])
-    passed, _, _ = evaluate_gate_h5(summary, "use", 12, 2)
-    assert not passed
+    passed, fraction, detail = evaluate_gate_h5(summary, "use", 8, 1)
+    assert passed, detail
+    assert "fails: True" in detail
+    # the margin, which the old rule used, would have called this "did not fail"
+    assert summary.iloc[-1]["ci_lo"] > 0
+
+
+def test_h5_falls_back_to_the_margin_when_no_argmax_was_recorded():
+    """Runs predating `says_installed` must still evaluate, under the old rule."""
+    import pandas as pd
+
+    rows = _h5_summary(das_installed=0.6, control_ba_installed=0.05)
+    rows = rows.drop(columns=["says_installed_rate"])
+    passed, _, detail = evaluate_gate_h5(pd.DataFrame(rows), "use", 12, 2)
+    assert passed and "fails: True" in detail
 
 
 def test_answer_direction_is_norm_matched_to_the_treatment(records):

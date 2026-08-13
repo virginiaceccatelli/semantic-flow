@@ -24,6 +24,61 @@ What each experiment does: `docs/EXPERIMENTS.md`.
 
 ---
 
+## 2026-08-13 — E13's H5 discriminator moved from the margin to the argmax
+
+**A gate criterion was changed after seeing data.** That is the thing this
+project is most careful about, so the change, its justification, and the numbers
+under *both* rules are recorded here in full. Judge it yourself.
+
+**What changed.** H5's third condition — the explicit `answer_direction`
+control must FAIL on the held-out arm — was evaluated on `delta_ld`, the
+two-way logit margin. It is now evaluated on `says_installed`, the
+full-vocabulary argmax, against the arm-to-arm ratio `whole_state` achieves on
+the same rows.
+
+**Why this is implementing the pre-registration rather than relaxing it.** The
+module docstring of `src/experiments/binding_interchange.py`, written before any
+6.7B run, states: *"`delta_ld` is positively biased and must not be gated on
+alone… Every row therefore also records `says_installed`, the full-vocabulary
+argmax, which a disruption cannot produce systematically, and the gates read
+that."* No gate evaluator ever read it. The stated design and the implementation
+disagreed from the start, and stages 106 and 108 have reported different H5
+verdicts on every run because of it.
+
+**Why the margin is the wrong metric here specifically.** H1 is 1.000 on this
+corpus, so the clean distribution is confident and `logP(own)` sits far above
+`logP(installed)`. Any edit that merely disrupts the state regresses both toward
+the middle and *raises* `delta_ld` with nothing transported. This is not
+hypothetical: the control also knocked the model off both candidate tokens on
+6.4% of held-out rows, which is disruption, not transport.
+
+**The 6.7B numbers under both rules** (site `use`, layer 8, rank 1, 280 held-out
+bases). Only condition 3 differs:
+
+| | margin `delta_ld` | argmax `says_installed` |
+|---|---|---|
+| `das_binding` transfers to `ba` | +9.009 [8.933, 9.089] = 188% of ceiling — **passes** | 100.0% = 114% of ceiling — **passes** |
+| `answer_direction` on `ab` | +2.322 [2.157, 2.482] — works | 27.9% — works |
+| `answer_direction` on `ba` | +0.335 [0.208, 0.456], interval clears zero — scored **"did not fail"** | 4.3%; arm ratio 0.154 against transport's 1.025 — **fails** |
+| **H5 verdict** | **FAIL** (on condition 3) | **PASS** |
+
+**What the new rule is, precisely.** A control fails on the held-out arm if its
+`ba`/`ab` argmax ratio is below `MIN_TRANSFER_FRACTION` (0.50) of the ratio
+`whole_state` achieves. The reference is measured on the same rows rather than
+chosen, and the coefficient is the threshold already pre-registered for H5's
+first condition — no new free parameter was introduced.
+
+**What would have made this illegitimate**, and did not happen: inventing a
+threshold that the observed 4.3% happens to clear; switching metrics on
+condition 1 as well, where the verdict is unchanged either way (188% of ceiling
+on the margin, 114% on the argmax); or making the change without leaving the
+old numbers on the record.
+
+Runs predating `says_installed` still evaluate under the old rule — the fallback
+is explicit in `evaluate_gate_h5` and pinned by a test.
+
+---
+
 ## The retired frame: "computes, uses, but does not report"
 
 The previous `docs/RESULTS.md` closed with a single synthesizing claim:
