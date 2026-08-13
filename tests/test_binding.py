@@ -270,6 +270,73 @@ def test_summary_never_pools_layers():
     assert sorted(summary["delta_ld"].round(3)) == [0.0, 1.0]
 
 
+def test_variants_whose_rank_is_an_outcome_are_not_filtered_away():
+    """The dose-matched control's rank is chosen, not requested.
+
+    `norm_matched_random` escalates rank until it moves the treatment's
+    fraction of ‖h‖, and `whole_state` is rank d by definition. Filtering the
+    summary by the *requested* rank drops both — which is exactly what removed
+    the dose-matched control from the 6.7B run and failed H4 on a missing
+    contrast rather than on the data.
+    """
+    import pandas as pd
+
+    from src.experiments.binding_interchange import _cell, control_contrasts
+
+    def row(variant, rank, delta):
+        return {"arm": "ab", "variant": variant, "site": "use", "rank": rank,
+                "layer": 8, "split": "test", "delta_ld": delta, "ci_lo": delta - 0.1,
+                "ci_hi": delta + 0.1, "flip_rate": 1.0, "says_installed_rate": 1.0,
+                "says_other_rate": 0.0, "edit_fraction": 0.48, "n": 560, "n_bases": 280}
+
+    summary = pd.DataFrame([row("das_binding", 1, 9.0),
+                            row("random_norm", 1903, 0.2),
+                            row("whole_state", 4096, 4.8)])
+    for variant in ("das_binding", "random_norm", "whole_state"):
+        assert _cell(summary, "ab", variant, "use", 8, rank=1) is not None, variant
+
+    grid = pd.DataFrame([
+        {"base_id": f"b{i}", "split": "test", "arm": "ab", "binding": "source",
+         "site": "use", "layer": 8, "variant": v, "rank": r, "delta_ld": d,
+         "edit_fraction": 0.48}
+        for i in range(20)
+        for v, r, d in (("das_binding", 1, 9.0), ("random_norm", 1903, 0.2))])
+    contrasts = control_contrasts(grid, site="use", arm="ab", layer=8, rank=1,
+                                  controls=("random_norm",), n_boot=50)
+    assert not contrasts.empty and contrasts["n"].iloc[0] > 0
+
+
+def test_alignment_separates_the_mean_from_the_variation():
+    """Aligned with the mean flip, orthogonal to the variation — a real case.
+
+    The first version of this check centred the differences before the SVD,
+    which removes the mean, and then reported |cos| = 0.037 for a basis that
+    demonstrably carried 60% of the difference norm.
+    """
+    import numpy as np
+
+
+    from src.experiments.binding_interchange import difference_direction_alignment
+    from src.models.das import AlignedSubspace
+
+    d = 64
+    rng = np.random.default_rng(0)
+    mean_dir = np.zeros(d); mean_dir[0] = 1.0
+    var_dir = np.zeros(d); var_dir[1] = 1.0
+    states, recs = {}, []
+    for i in range(40):
+        rec = type("R", (), {"base_id": f"b{i}"})()
+        recs.append(rec)
+        host = rng.standard_normal(d) * 0.01
+        delta = 5.0 * mean_dir + rng.normal() * var_dir      # mean >> variation
+        states[(rec.base_id, "ab", "source")] = {"states": {"use": host}}
+        states[(rec.base_id, "ab", "target")] = {"states": {"use": host + delta}}
+    basis = AlignedSubspace(mean_dir.reshape(-1, 1), 8, "use", "das", 1)
+    out = difference_direction_alignment(basis, states, recs, "use")
+    assert out["cosine_with_mean_difference"] > 0.99      # it IS the mean flip
+    assert out["cosine_with_top_variation"] < 0.1         # and not the variation axis
+
+
 def test_cell_lookup_requires_a_layer():
     import pandas as pd
 

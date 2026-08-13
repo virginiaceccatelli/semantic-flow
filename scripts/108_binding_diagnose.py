@@ -391,27 +391,38 @@ def main(
             alignment = {"measured": False, "reason": str(exc)}
 
     if alignment.get("measured"):
-        cos = alignment["max_cosine_with_top_difference"]
-        console.print(f"\n[bold]What the learned basis is:[/bold]")
-        console.print(f"  |cos| with the top singular direction of the "
-                      f"counterfactual differences: [bold]{cos:.3f}[/bold] "
-                      f"(n={alignment['n_differences']})")
-        console.print(f"  that top direction carries "
-                      f"{alignment['top_singular_share']:.1%} of the difference variance; "
-                      f"the learned basis captures "
-                      f"{alignment['captured_by_learned_basis']:.1%}")
-        if cos > 0.9:
-            console.print("  [yellow]The learned basis is essentially the "
-                          "counterfactual difference direction.[/yellow] The result is "
-                          "then a claim about GEOMETRY — the binding difference is "
-                          "concentrated in ~1 direction at this layer, and installing "
-                          "that direction transports the binding in both value "
-                          "assignments — NOT a claim that an optimiser discovered a "
-                          "subspace no simpler method would find. State it that way.")
+        cos_mean = alignment["cosine_with_mean_difference"]
+        cos_var = alignment["cosine_with_top_variation"]
+        share = alignment["mean_share_of_difference_norm"]
+        console.print(f"\n[bold]What the learned basis is[/bold] "
+                      f"(n={alignment['n_differences']} calibration differences):")
+        console.print(f"  |cos| with the MEAN difference direction   "
+                      f"[bold]{cos_mean:.3f}[/bold]   "
+                      f"— the simplest thing it could have rediscovered")
+        console.print(f"  |cos| with the top VARIATION direction     {cos_var:.3f}   "
+                      f"(that axis holds {alignment['top_singular_share_of_variation']:.1%} "
+                      f"of between-example variance)")
+        console.print(f"  share of each difference's norm captured   {share:.1%}")
+        if cos_mean > 0.9:
+            console.print("\n  [yellow]The learned basis is essentially the MEAN "
+                          "binding-flip direction — a difference-in-means direction.[/yellow] "
+                          "The claim is then about GEOMETRY plus causality: the average "
+                          "binding flip lies along one direction, and installing the "
+                          "donor's coordinate there transports the binding in both value "
+                          "assignments. Real, but a rank-1 difference-in-means would find "
+                          "the same direction, so do NOT present it as something only an "
+                          "optimiser could locate. Report the difference-in-means "
+                          "baseline alongside it.")
+        elif cos_mean > 0.5:
+            console.print("\n  Substantially aligned with the mean difference but not "
+                          "identical to it. Report the difference-in-means direction as a "
+                          "baseline arm so the delta is visible.")
         else:
-            console.print("  The learned basis is NOT simply the difference direction, "
-                          "so the optimisation found something a rank-1 SVD of the "
-                          "counterfactual differences does not.")
+            console.print("\n  [green]The learned basis is NOT the mean difference "
+                          "direction and NOT its principal axis of variation.[/green] The "
+                          "optimisation found a direction no simple statistic of the "
+                          "counterfactual differences recovers — which is the strong form "
+                          "of the claim, and the form a reviewer will scrutinise hardest.")
     else:
         console.print(f"\n[dim]difference-direction check not run: "
                       f"{alignment.get('reason')}[/dim]")

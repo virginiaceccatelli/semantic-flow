@@ -255,6 +255,48 @@ other number in the stage is suspect.
 
 ---
 
+# 7b. The 6.7B run — what it showed
+
+**Machinery: all 14 checks pass.** Structural zeros exactly 0.00e+00, alignment
+orthonormal to 4e-07, ceiling alive in both arms, 280 test bases, and the model
+never emits a non-candidate token.
+
+**On the strict metric** — full-vocabulary argmax, not the logit margin:
+
+| variant | `ab` emits installed | `ba` emits installed | edit fraction |
+|---|---:|---:|---:|
+| **`das_binding`** | **100.0%** | **100.0%** | 0.479 |
+| `whole_state` (installs the ENTIRE donor state) | 85.7% | 87.9% | 0.805 |
+| `answer_direction` (J-lens) | 27.9% | 4.3% | 0.479 |
+| `answer_direction` (raw unembedding) | 0.0% | 0.0% | 0.479 |
+| `random_rank` (rank-1) | 0.0% | 0.0% | 0.018 |
+| `noop` | 0.0% | 0.0% | 0.000 |
+
+Transfer ratios (held-out / training arm): `whole_state` 1.004, `das_binding`
+0.998, `answer_direction` 0.144.
+
+**Two readings this rules out.** It is not disruption — a dose-matched random
+subspace produces ~2% of the effect and the model never emits a non-candidate.
+It is not an answer direction — the explicit one attenuates 7x across arms while
+the treatment does not attenuate at all, and the raw unembedding version does
+nothing anywhere.
+
+**One reading it does not yet rule out, and the reason it matters.** A rank-1
+edit that outperforms installing the whole donor state (100% vs 86%) is
+surprising and is the first thing a reviewer will press on. The available
+explanation is that the whole-state patch installs the driving component *and*
+components that fight it, while the rank-1 edit isolates the former. That is
+plausible, it is consistent with the edit moving 48% of ||h|| against the full
+difference's 81%, and it is not yet independently demonstrated. Do not present
+it as established.
+
+**And note what `das_binding` was optimised for.** It was trained on arm `ab` to
+maximise exactly this quantity, so 100% there is the optimiser succeeding. The
+non-trivial number is `ba` — 100% on a value assignment it never saw, where a
+token account demands the opposite direction.
+
+---
+
 # 8. What each outcome means
 
 | Outcome | Reading |

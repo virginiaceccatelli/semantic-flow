@@ -495,7 +495,8 @@ def control_contrasts(frame: pd.DataFrame, site: str, arm: str, layer: int,
     """Paired differences on the SAME rows, within one arm, site and layer."""
     subset = frame[(frame.site == site) & (frame.arm == arm) & (frame.layer == layer)]
     if rank is not None:
-        subset = subset[(subset.variant == "whole_state") | (subset["rank"] == rank)]
+        subset = subset[subset.variant.isin(RANK_IS_AN_OUTCOME)
+                        | (subset["rank"] == rank)]
     subset = subset[subset.split == split] if split != "all" else subset
     treated = subset[subset.variant == treatment].set_index(["base_id", "binding"])
     rows = []
@@ -566,7 +567,7 @@ def transfer_ratios(summary: pd.DataFrame, site: str, layer: int,
         for arm in (TRAIN_ARM, HELD_OUT_ARM):
             hit = summary[(summary.arm == arm) & (summary.variant == variant)
                           & (summary.site == site) & (summary.layer == layer)]
-            if rank is not None and variant not in ("whole_state", "noop"):
+            if rank is not None and variant not in (*RANK_IS_AN_OUTCOME, "noop"):
                 hit = hit[hit["rank"] == rank]
             cells[arm] = None if hit.empty else hit.iloc[0]
         train, held = cells[TRAIN_ARM], cells[HELD_OUT_ARM]
@@ -613,20 +614,49 @@ def difference_direction_alignment(
     if len(deltas) < 3:
         return {"measured": False, "reason": f"only {len(deltas)} difference vectors"}
 
-    top = top_difference_subspace(deltas, rank=1)[:, 0]
     learned = np.asarray(subspace.basis, dtype=np.float64)
-    cosines = np.abs(top @ learned) / (np.linalg.norm(top) or 1.0)
     stack = np.asarray(deltas, dtype=np.float64)
-    centred = stack - stack.mean(axis=0, keepdims=True)
+
+    # Two different objects, and conflating them is how the first version of
+    # this check reported 0.037 for a basis that plainly carries 60% of the
+    # difference norm:
+    #   * the MEAN difference direction — "the average binding flip". A
+    #     difference-in-means direction, the simplest thing DAS could have
+    #     rediscovered, and the one to rule out.
+    #   * the top singular direction of the CENTRED differences — the axis of
+    #     greatest variation *between* examples, which is a different question
+    #     and is near-orthogonal to the mean whenever the mean dominates.
+    mean_delta = stack.mean(axis=0)
+    mean_norm = float(np.linalg.norm(mean_delta)) or 1.0
+    cos_mean = float(np.max(np.abs(mean_delta @ learned)) / mean_norm)
+
+    centred = stack - mean_delta
+    top = top_difference_subspace(deltas, rank=1)[:, 0]
+    cos_var = float(np.max(np.abs(top @ learned)) / (np.linalg.norm(top) or 1.0))
     singular = np.linalg.svd(centred, compute_uv=False)
+
+    # How much of each raw difference the basis actually captures — the
+    # quantity the edit fraction reflects.
+    captured = np.linalg.norm(stack @ learned, axis=1)
+    total = np.linalg.norm(stack, axis=1)
     return {
         "measured": True,
         "n_differences": len(deltas),
-        "max_cosine_with_top_difference": float(np.max(cosines)),
-        "top_singular_share": float(singular[0] ** 2 / max((singular ** 2).sum(), 1e-12)),
-        "captured_by_learned_basis": float(
-            np.linalg.norm(learned.T @ centred.T) ** 2 / max((centred ** 2).sum(), 1e-12)),
+        "cosine_with_mean_difference": cos_mean,
+        "cosine_with_top_variation": cos_var,
+        "mean_share_of_difference_norm": float(np.mean(captured / np.maximum(total, 1e-12))),
+        "top_singular_share_of_variation": float(
+            singular[0] ** 2 / max((singular ** 2).sum(), 1e-12)),
     }
+
+
+# Variants whose rank is a CONSEQUENCE of the construction rather than a
+# setting: `whole_state` is rank d by definition, and `norm_matched_random`
+# escalates rank until it moves the treatment's fraction of ||h||. Filtering
+# those by the requested rank silently drops them — which is what removed the
+# dose-matched control from the 6.7B summary and failed H4 on a missing
+# contrast rather than on the data.
+RANK_IS_AN_OUTCOME = ("whole_state", "random_norm")
 
 
 def _cell(summary: pd.DataFrame, arm: str, variant: str, site: str,
@@ -634,7 +664,7 @@ def _cell(summary: pd.DataFrame, arm: str, variant: str, site: str,
     """One cell of the surface. Layer is mandatory; pooling it is a bug."""
     hit = summary[(summary.arm == arm) & (summary.variant == variant)
                   & (summary.site == site) & (summary.layer == layer)]
-    if rank is not None and variant != "whole_state":
+    if rank is not None and variant not in RANK_IS_AN_OUTCOME:
         hit = hit[hit["rank"] == rank]
     return None if hit.empty else hit.iloc[0]
 
