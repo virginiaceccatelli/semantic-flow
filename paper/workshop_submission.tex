@@ -7,19 +7,33 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{subcaption}
 \usepackage{microtype}
 \usepackage{multirow}
+\usepackage{tikz}
 \usepackage{url}
 \usepackage{hyperref}
 \usepackage{xcolor}
 
-\graphicspath{{../results/figures/}}
+\graphicspath{{../results/figures/paper/}{../results/figures/}}
 
-\title{When Is a Code Representation Semantic?\\
-Representation, Robustness, and Causal Use in Code Language Models}
+\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
+\setlength{\intextsep}{10pt plus 2pt minus 2pt}
+\setlength{\abovecaptionskip}{6pt}
+
+% Two hues carry the two levels of every contrast in this paper. Blue marks
+% what the binding relation predicts, orange marks what a surface or
+% answer-token account predicts. Nothing is coloured for decoration.
+\definecolor{bindblue}{HTML}{1F4E79}
+\definecolor{surforange}{HTML}{B25000}
+
+\hypersetup{colorlinks=true, linkcolor=bindblue, citecolor=bindblue,
+            urlcolor=bindblue}
+
+\title{When Is a Code Representation Semantic?}
 
 \workshoptitle{Interpretability as a Science}
 
@@ -35,300 +49,555 @@ Representation, Robustness, and Causal Use in Code Language Models}
 
 \begin{document}
 \maketitle
-
 \begin{abstract}
-Code models perform strongly on programming tasks, but it is unclear whether this behavior relies on program semantics or on lexical cues correlated with functionality, such as identifier spelling, token distance, and indentation. As these models are increasingly used for security-relevant tasks such as program analysis, it is important to identify the latent representations on which they rely and the conditions under which those representations fail. We separate three questions: whether a program relation is represented beyond the surface form, whether that representation is robust to changes in form, and whether the model's downstream computation causally uses it. Our main construction pairs Python programs that differ by one binding-changing character while preserving the probing sites, their local token windows, and their distance. On these pairs, a measured surface baseline and a context-free embedding probe both score exactly $0.500$. In DeepSeek-Coder 1.3B and 6.7B, binding rises from this floor to $0.984$ in middle layers and is partly shed before the output; def--use structure follows the same profile. Frozen probes show that the representation is robust to distance and renaming but fragile under semantic interference. At 500 added tokens, inert prose retains $0.921$ binding accuracy while scope-shadowing context reduces it to $0.570$, near chance; control-flow flattening reduces the best obfuscated-code layer to about $0.750$. Finally, a rank-1 interchange fitted on one value assignment makes DeepSeek-Coder 6.7B emit the value selected by the installed binding on $100\%$ of held-out rows in both the training and crossed assignments. A norm-matched answer direction falls from $27.9\%$ to $4.3\%$ across the same arms, while dose-matched random controls remain near zero. The intervention therefore transports which definition is in scope rather than a fixed answer direction. Together, the results establish that scope-sensitive relations are represented, characterize what preserves them, and show that the model causally uses binding at the marked use site.
+Code models perform well on programming tasks, but it is unclear whether this rests on program semantics or on lexical cues that correlate with it, such as identifier spelling, token distance, and indentation. We separate three questions that are often answered with the same evidence, asking whether a program relation is represented beyond surface form, whether that representation survives changes in form, and whether the model's own computation causally uses it. Our construction pairs Python programs differing by one binding-changing character while holding the two probing sites, their token windows, and their separation fixed, so a stated surface reader is uninformative by construction rather than by estimate and scores exactly $0.500$, as does a context-free embedding probe. Against that floor, in DeepSeek-Coder 1.3B and 6.7B, binding is absent at the input, rises within the first few blocks, peaks at $0.981$ and $0.991$ in middle layers, and is partly shed before the output. Frozen probes then locate the failure surface. At 500 inserted tokens inert prose costs little, at $0.914$, while scope-shadowing filler of the same length drives the same probe to $0.576$, so what breaks the representation is added semantic difficulty rather than added distance. Finally, decodability is not use. We fit a rank-1 interchange at the marked use site on one assignment of values to definitions and evaluate it on the crossed assignment, where transporting the same binding demands the opposite token movement. On 280 held-out programs the edit makes DeepSeek-Coder 6.7B emit the value the installed binding selects on $100\%$ of rows in both assignments, while a norm-matched answer direction falls from $27.9\%$ to $4.3\%$ and dose-matched random edits stay near zero. Within this model, layer, and site, the intervention transports which definition is in scope rather than a fixed answer token.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 
-Code models produce convincing programs, but it does not necessarily follow that they infer meaning and underlying functionality. Equal names usually denote the same variable, definitions and uses tend to be nearby, and indentation often exposes control structure. A probe that recovers binding or data flow from hidden states may therefore recover a relation computed by the model, or a surface regularity retained in those states.
+Code models produce convincing programs, but it does not follow that they compute the relations that determine what those programs mean. Equal names usually denote the same variable, definitions and uses tend to be nearby, and indentation usually exposes control structure, so a probe that recovers binding from hidden states may be recovering a relation the model computed, or the text, which those states also contain. The usual response is to estimate how much a shortcut could explain and subtract it. We take a different route, available in code and rarely elsewhere, which is to make the shortcut carry \emph{no information at all} by construction. Every probing example is a pair of Python programs that differ in a single character, at the name an inner assignment writes to. That one character decides whether a later, lexically identical use resolves to the outer definition or the inner one. The two probing sites keep the same token indices, the token windows around them are unchanged, and their separation is unchanged, so the correct answer flips while nothing observable about the text does. Figure~\ref{fig:design} shows the programs that result once this construction is extended for the causal experiment.
 
-We call a program property \emph{semantic} to the extent that a stated, bounded reader of surface form cannot recover it. This definition covers two levels used in this work. \emph{Abstract semantics} are sound approximations of behavior, including reaching definitions, def--use edges, control dependence, and taint. \emph{Concrete semantics} describe what a program computes at run time. A claim about one level does not automatically imply a claim about the other: our probes ask whether the model tracks which definition reaches a use, whereas the causal experiment asks whether changing the selected definition changes the value produced by the model.
+This fixes our definition. A program property is \emph{semantic} to the extent that a stated, bounded reader of surface form cannot recover it, and naming that reader is what makes the floor exact. A classifier restricted to the $\pm3$-token windows around both anchors and their bucketed separation must give both members of a pair the same prediction, so on balanced pairs it scores exactly $0.500$ rather than approximately so, and the context-free embedding probe inherits the same floor. Everything above it is information the model's contextual computation introduced. The word \emph{surface} stays relative to this reader, since the construction does not neutralize every computable feature of the source.
 
-We enforce the distinction between surface form and semantics rather than estimate it after the fact. Each context-matched pair contains two Python programs that differ only in one identifier character at an inner definition. This mutation changes whether a later, lexically identical use resolves to an outer or inner definition. The two probe anchors remain at identical token indices, the $\pm3$-token windows around them are unchanged, and their distance is unchanged; the semantic label alone flips. A classifier restricted to these surface features must therefore assign the same prediction to both members and scores exactly $0.500$ on the balanced pairs. The context-free embedding probe has the same floor. Performance above it requires information introduced by contextual computation. The word \emph{surface} is nevertheless relative to this stated reader: the construction does not rule out every computable feature of the complete source.
+We use this leverage for three questions of increasing strength, and our contributions follow that order. \emph{Representation} asks whether a relation is recoverable beyond controlled surface cues, and we give a construction that pins the baseline to exactly $0.500$ by design together with the layerwise profile it licenses (Section~\ref{sec:representation}). \emph{Robustness} asks what that representation is made of, measured with the decoder frozen so that a change in accuracy is a change in the model rather than a refitted probe, and we find it breaks when the underlying problem gets harder rather than when the text gets longer or is spelled differently (Section~\ref{sec:robustness}). \emph{Causal use} asks whether the model's downstream computation reads the relation or merely coexists with it, and we test it with a design that makes transporting a binding and steering an answer predict opposite token movements (Section~\ref{sec:causal}).
 
-This construction lets us ask three questions that require different evidence. \emph{Representation} asks whether a relation is recoverable beyond controlled surface cues. \emph{Robustness} asks whether a frozen representation survives changes in form and fails selectively when the relational problem becomes harder. \emph{Causal use} asks whether changing the internal relation makes behavior follow the corresponding semantic counterfactual, rather than merely changing the answer. Keeping these questions separate is central: decodability is not causality, and invariance strengthens a representation claim without establishing downstream use.
+\section{Related Work}
+\label{sec:related}
 
-Structural probing studies recover token, AST, identifier, namespace, data-flow, and other program properties from code-model representations \citep{wan2022capture,hernandez2022astprobe,troshin2022probing,ma2024unveiling}; related work studies latent execution state in models trained on programs \citep{jin2024emergent}. These approaches establish recoverability, whereas black-box behavioral evaluations establish task performance. Neither by itself shows that a recovered relation exceeds the information available to a controlled surface reader or that the model causally uses it. Probe controls are therefore necessary to separate properties of the representation from properties learned by the probe \citep{hewitt2019control}. We combine controlled linear probing with frozen-distribution tests and interchange interventions \citep{geiger2023alignments,wu2023boundless,huang2024ravel}.
+Structural probing recovers AST structure, identifiers and namespaces, data flow, and control flow from code models \citep{wan2022capture,hernandez2022astprobe,troshin2022probing,ma2024unveiling}, data flow has been written into pretraining objectives \citep{guo2021graphcodebert}, and models trained on programs acquire latent traces of execution state \citep{jin2024emergent}. These establish \emph{recoverability}, which is where our first question begins rather than ends, because in code the surface form is unusually predictive of the relation. Prior work scores against pooled or unmatched negatives, whereas our baseline is fixed at chance by the construction of the examples, and Section~\ref{sec:representation} shows this changes which relations count as evidence. Control tasks \citep{hewitt2019control} address a related confound and we use them throughout, since they limit what the probe can learn whereas our pairs remove the information from its input. Our intervention is a standard distributed interchange \citep{geiger2023alignments,wu2023boundless,huang2024ravel,zhang2023patching}, and what we add is the identification strategy around it, because a positive interchange at one site cannot separate installing a \emph{relation} from installing an \emph{answer} when both predict the same movement. Binding itself has been studied as attribute attachment to entities \citep{feng2024binding} and as a capability learned by transformers trained from scratch on symbolic programs \citep{wu2025variablebinding}, whereas we resolve which of two competing definitions of the \emph{same} name is in scope, in pretrained models, with arithmetic excluded because it is solved by heuristics that would confound a transport claim \citep{nikankin2024arithmetic}. Finally, semantics-preserving rewriting is a standard robustness probe and long-context work shows models often retain information they do not use \citep{lu2024longcontext}, so we apply rewrites with the decoder frozen and ground truth recomputed per variant. Appendix~\ref{app:related} gives the extended positioning.
 
-Our results support three conclusions. First, binding and def--use are built rapidly with depth and peak in middle layers. Second, the robustness boundary is selective: middle-layer representations survive changes to identifier names and inert distance, but degrade when added context creates competing scopes or when structured control flow is flattened. The model therefore abstracts beyond lexical form without producing a representation invariant to arbitrary semantics-preserving restructuring. Third, a rank-1 interchange at the use site transports the value selected by the installed binding across a held-out reversal of the value assignment. Its effect transfers without attenuation where a norm-matched answer direction does not, providing causal evidence that the model uses the binding relation rather than merely representing it.
-
-\section{Framework and Experimental Setup}
+\section{Framework and Setup}
 \label{sec:setup}
 
-Let $x$ be a program, $s(x)$ a semantic relation, and $h_l(x)$ its hidden state at layer $l$. The three dimensions can then be stated as three different relations between program, state, and output.
+Write $x$ for a program, $s(x)$ for a semantic relation such as which definition a use resolves to, $h_l(x)$ for the model's hidden state at layer $l$, and $y(x)$ for the model's output. The three questions place three different demands on these objects, in increasing order of strength.
 
 \paragraph{Representation.}
-Here $g$ is the pairwise linear probe used throughout the representation experiments. We say that the model \emph{represents} the relation operationally when this probe recovers $s(x)$ from $h_l(x)$ above a surface-only baseline on the same controlled examples:
+A relation is represented at layer $l$ when some probe $g$ drawn from a stated class recovers it from the state,
+%
 \begin{equation}
-  \exists g \quad \text{such that} \quad g(h_l(x)) \approx s(x),
-  \qquad\text{or abstractly}\qquad
-  I\!\left(s(x);h_l(x)\right)>0.
+  g\big(h_l(x)\big) \;\approx\; s(x),
+  \qquad\text{or in information terms}\qquad
+  I\big(s(x)\,;\,h_l(x)\big) \;>\; 0 ,
   \label{eq:representation}
 \end{equation}
-Equation~\ref{eq:representation} is a claim about information accessible from latent space, not human-like understanding or causal use. The mutual-information expression states the theoretical target; controlled linear probing is its operational test here.
+%
+scored against a surface-only baseline on the same examples. Naming the class matters, since a rich enough $g$ makes the condition vacuous. Here $g$ ranges over linear classifiers on the pairwise feature of Equation~\ref{eq:feature}. Equation~\ref{eq:representation} is a claim about information present in the state, not about the model using it.
 
 \paragraph{Robustness.}
-For a meaning-preserving transformation $T$, the relation stays fixed while the program's form changes. A decoder fitted on the original distribution should therefore remain valid:
-\begin{equation}
-  s(T(x))=s(x),
-  \qquad
-  g(h_l(T(x)))\approx s(x).
-  \label{eq:robustness}
-\end{equation}
-We summarize the cost of a transformation by
+Let $T$ be a transformation that preserves meaning, so that $s(T(x)) = s(x)$ while the form of the program changes. We fit $g$ once on base programs and evaluate it unchanged on transformed ones, and report the cost of $T$ as
+%
 \begin{equation}
   \Delta_{\mathrm{rob}}(T)
-  =\operatorname{Perf}\!\left(g(h_l(x))\right)
-  -\operatorname{Perf}\!\left(g(h_l(T(x)))\right),
-  \label{eq:robustness-drop}
+  \;=\;
+  \operatorname{Perf}\!\big(g(h_l(x))\big)
+  \;-\;
+  \operatorname{Perf}\!\big(g(h_l(T(x)))\big).
+  \label{eq:robustness}
 \end{equation}
-where \(\operatorname{Perf}\) is accuracy on the relevant controlled stratum. A small drop under surface change and a larger drop under genuine relational interference reveal what the readout depends on.
+%
+Freezing $g$ is what gives Equation~\ref{eq:robustness} its meaning, because a probe refitted on the transformed distribution could recover the relation from whatever cue survives there, and the drop would measure nothing about the model.
 
 \paragraph{Causal use.}
-Let $y(x)$ be the model output and $\mathcal{I}(h_l(x),s')$ an intervention intended to install alternative semantic state $s'$. Causal use requires the intervened output to follow the semantic counterfactual:
+Let $\mathcal{I}(h_l(x), s')$ be an intervention meant to install an alternative semantic state $s'$. Causal use requires the intervened output to match the output of the program that genuinely has $s'$,
+%
 \begin{equation}
-  y\!\left(\mathcal{I}(h_l(x),s')\right)
-  \approx
-  y\!\left(x\ \text{with}\ s\leftarrow s'\right).
+  y\Big(\mathcal{I}\big(h_l(x),\, s'\big)\Big)
+  \;\approx\;
+  y\big(x \text{ with } s \leftarrow s'\big).
   \label{eq:causal-use}
 \end{equation}
-In this paper, the counterfactual changes which definition is in scope while reversing the values assigned to the two candidate definitions in a held-out arm. A genuine binding intervention must therefore make the output follow the newly selected definition in both assignments. This is stronger than requiring $y(\mathcal{I}(h_l(x),s'))\neq y(x)$: a generic answer-steering edit can change the output, or push toward one fixed token, without transporting which definition is selected.
+%
+This is strictly stronger than requiring the output merely to change, that is $y(\mathcal{I}(h_l(x),s')) \neq y(x)$, which an edit that steers toward a fixed token satisfies while transporting nothing. Section~\ref{sec:causal} is built to make those two accounts predict opposite movements.
 
-We study the base, non-instruction-tuned DeepSeek-Coder models. The 6.7B model supplies the main results because it reliably performs the behavioral tasks used in the intervention; the 1.3B model tests whether the representational layer profile replicates at a smaller scale within the same model family. Both models remain frozen. Synthetic Python generators record exact binding and program-graph structure by construction. We map AST source spans to tokenizer positions and verify that each aligned token matches the original source. Def--use labels are independently checked with Beniget, an external Python static-analysis library that computes definition--use relations; agreement on straight-line code and inclusion under branching provide a check that the repository's own graph extractor is not generating self-consistent but incorrect labels. We additionally evaluate 200 AST-parseable Python functions from CodeSearchNet \citep{husain2019codesearchnet}. Obfuscated variants are executed and retained only when observationally equivalent to their source.
-
-For positions $i,j$, pairwise linear probes use
+\paragraph{Probes, controls, and data.}
+For anchor positions $i$ and $j$, the probe reads the concatenation
+%
 \begin{equation}
- [h_i;h_j;h_i-h_j;|h_i-h_j|].
+  \phi(i,j) \;=\; \big[\,h_i \,;\, h_j \,;\, h_i - h_j \,;\, |h_i - h_j|\,\big],
+  \label{eq:feature}
 \end{equation}
-Five-fold cross-validation is grouped by source program. This prevents rows that share token states or program-specific templates from appearing in both training and test folds. We retrain the identical classifier after shuffling labels within each program and report \emph{selectivity}, the true-label accuracy minus shuffled-label accuracy. This control asks whether the probe uses the intended correspondence between hidden state and relation, rather than class balance or regularities specific to a program. Negative pairs are reported by difficulty rather than pooled, because a large set of differently named negatives would otherwise dominate the score while being solvable from spelling alone. The decisive \texttt{context\_matched} stratum keeps both counterfactual programs in the same cross-validation group. Its model-free surface baseline sees only $\pm3$ token-ID windows around both anchors and their bucketed distance. It scores $0.500$ by construction on this stratum. We do not claim that this floor covers every computable feature of the complete source.
+%
+which admits position-specific and relational linear evidence without a nonlinear probe. Five-fold cross-validation is grouped by source program, so both members of a counterfactual pair stay in one fold, and we retrain the same classifier on labels shuffled within each program to report \emph{selectivity} \citep{hewitt2019control}. Negatives are reported by difficulty rather than pooled, since easy differently-named negatives would dominate a score they can pass on spelling alone.
 
-The corresponding evidential standards are a context-matched surface and embedding floor for representation, frozen readouts under matched or execution-verified transformations for robustness, and a whole-state ceiling plus a held-out answer-direction falsification for causal use. Confidence intervals for intervention effects use paired cluster bootstraps over base programs.
+We study the frozen, non-instruction-tuned DeepSeek-Coder models at 6.7B, which supplies the main results because it performs the behavioral task the intervention requires, and at 1.3B for cross-scale replication. Synthetic Python generators record exact binding and program-graph structure by construction, and def-use labels are cross-checked against an external static-analysis library. We also evaluate 200 CodeSearchNet Python functions \citep{husain2019codesearchnet}, and every obfuscated variant is executed and kept only if observationally equivalent to its base. Intervention intervals are paired cluster bootstraps over base programs. Appendices~\ref{app:data} and~\ref{app:probes} give alignment, corpus sizes, and the full protocol.
 
 \section{Representation}
 \label{sec:representation}
 
-\paragraph{Variable binding is built with depth.}
-Figure~\ref{fig:binding} is the central measurement. On context-matched pairs, the surface baseline and embedding probe are both $0.500$ for both models. The first transformer block reaches $0.570$ in 1.3B and $0.531$ in 6.7B; layer 3 reaches $0.961$ and $0.914$. Accuracy peaks at $0.984$ at layer 7 in 1.3B and across layers 11--15 in 6.7B, before falling to $0.930$ and $0.914$ at the final layer. Binding is therefore not linearly recoverable above the measured floor at the input, appears rapidly under contextual computation, and is partly shed near the output. The shared shape across scale is more informative than a small difference at any one layer: both models construct the relation at the same relative depth, while the larger model sustains its peak for longer.
+This section answers the weakest of the three questions and the prerequisite for the other two, which is whether the relation is present in the state and where. The alternative it must exclude is that a probe reporting binding is reporting the text, and the context-matched construction excludes that by removing the information rather than bounding it.
+
+Figure~\ref{fig:binding} is the central measurement and its layerwise \emph{shape} is the result rather than any single value. On context-matched pairs the surface reader and the context-free embedding probe both score exactly $0.500$ in both models. The first transformer block reaches $0.557$ in 1.3B and $0.528$ in 6.7B, by layer 3 accuracy is $0.962$ and $0.906$, the peak is $0.981$ at layer 7 in 1.3B and $0.991$ at layer 11 in 6.7B, and the final layer falls back to $0.915$ and $0.934$. Binding is therefore absent from the input representation above the measured floor, is built rapidly under contextual computation, and is partly shed near the output. The models agree on shape and differ only where a scaling account predicts, since 6.7B does less of the work in block 0 and sustains its peak longer over a deeper network. The surface and embedding rows are numerically identical across models, as they must be because neither involves the model, which doubles as a corpus-integrity check. Middle layers therefore carry information about which definition is in scope that no stated surface reader could supply. What does not follow is that the model uses it.
 
 \begin{figure}[t]
 \centering
-\begin{subfigure}[t]{0.49\linewidth}
-  \includegraphics[width=\linewidth]{binding_strata_deepseek-coder-1.3b_core.pdf}
-  \caption{DeepSeek-Coder 1.3B.}
-\end{subfigure}
-\hfill
-\begin{subfigure}[t]{0.49\linewidth}
-  \includegraphics[width=\linewidth]{binding_strata_deepseek-coder-6.7b_core.pdf}
-  \caption{DeepSeek-Coder 6.7B.}
-\end{subfigure}
-\caption{Binding accuracy by layer and negative stratum. The context-matched relation rises from exact surface and embedding floors of $0.500$ to $0.984$ in middle layers. Easier strata are shown for context but do not carry the semantic claim.}
+\includegraphics[width=\linewidth]{paper_binding_strata_6.7b.pdf}
+\caption{Binding accuracy by layer and negative stratum in DeepSeek-Coder 6.7B. The figure shows a \emph{profile} that no table of best layers conveys. On the decisive \texttt{context\_matched} stratum, accuracy starts at the exact $0.500$ floor the construction pins, rises within the first few blocks, peaks in middle layers, and declines before the output. The easier strata sit near $0.99$ from block 0 onward because their token strings already separate them, so only the matched stratum carries the claim. Figure~\ref{fig:binding-13b} gives the 1.3B panel.}
 \label{fig:binding}
 \end{figure}
 
-\paragraph{Def--use extends the result from reference to data flow.}
-A def--use edge links a definition to a later occurrence that reads its value. Distance-matched negatives remove the shortcut that related tokens are simply closer together. The layerwise profile closely follows binding and peaks near $0.99$ in middle layers. Even the hardest bucket, whose anchors are 50--200 tokens apart, reaches approximately $0.96$--$0.99$. The model therefore preserves directed data-flow structure over meaningful distance, motivating the more controlled distance tests below.
-
-\paragraph{Not every decodable relation is equally semantic.}
-% Why this is a contrast: a probe can decode a real program relation without
-% showing that the model computed it, when the same labels are already visible
-% to a model-free reader. Control dependence is the empirical example of that
-% distinction; binding is stronger because its controlled surface floor is chance.
-Control dependence asks whether execution of a statement depends on a particular guard. It is highly decodable from hidden states, but the model-free surface baseline already reaches $0.927$ accuracy and $0.990$ AUC. This happens because the controlling guard is often the nearest enclosing \texttt{if}, which is exposed by nearby tokens, indentation, and distance. The hidden-state result may improve on that baseline, but most of the label is already visible without running the model. We therefore use control dependence as a contrast showing that high probe accuracy alone is insufficient: binding provides stronger semantic evidence because its controlled surface reader is fixed at chance. On 200 CodeSearchNet functions, the 6.7B model reaches peak AUC $0.978$ for binding and $0.979$ for def--use, compared with surface baselines of $0.673$ and $0.590$. The similar early-middle peak argues against a result caused only by synthetic generator templates. The exact isolation does not transfer, however, because real identifier spelling is informative and embedding AUC is already about $0.96$.
+Two further results bound the reading. Def-use edges, whose negatives are matched on token distance, follow the same profile and peak near $0.99$, with the hardest bucket at 50 to 200 tokens holding between $0.96$ and $0.99$. Control dependence is where the criterion bites, since it is decoded almost perfectly yet its surface reader already reaches $0.927$ accuracy and $0.990$ AUC, because the controlling guard is usually the nearest enclosing \texttt{if}, so we report it as a contrast rather than a finding. On 200 CodeSearchNet functions the 6.7B model peaks at AUC $0.978$ for binding and $0.979$ for def-use against surface baselines of $0.673$ and $0.590$, so the layer signature transfers while the exact isolation does not. Appendix~\ref{app:representation} reports both in full.
 
 \section{Robustness}
 \label{sec:robustness}
 
-Decodability alone does not reveal whether a probe relies on a stable semantic relation or on a feature specific to the training form. We therefore fit each probe once on base programs and evaluate it unchanged on transformed programs. Because the decision boundary is fixed, a performance change cannot be explained by adapting the probe to the new distribution; it measures whether the original state--relation correspondence survives the transformation.
+Knowing a relation is decodable does not say what the decoder depends on. Two accounts remain open after Section~\ref{sec:representation}, since the probe may read a stable relational quantity or a feature that merely co-varies with it in the training form. Transformations that preserve the relation and change the form separate the two, measured as $\Delta_{\mathrm{rob}}$ with the probe frozen and ground truth recomputed on each variant.
 
-\paragraph{Distance and interference.}
-We insert filler between a tracked definition and use, sized by tokenizer length. The conditions range from inert prose through dead code and fresh-name decoys to competing updates and nested scopes that reuse the tracked names. At 500 inserted tokens, 6.7B binding accuracy is $0.921$ under comment prose, $0.794$ under dead code, $0.795$ under lexical decoys, $0.859$ under updates to other variables, and $0.570$ under scope shadowing. At 1,000 tokens scope shadowing reaches chance, approximately $0.498$, while the other fillers remain above $0.70$. Under shadowing, the middle layers that normally build binding collapse most strongly, whereas block 0 is comparatively stable. The degradation lands on the contextual computation rather than on a lexical lookup.
+\paragraph{Distance is cheap, interference is not.}
+We insert filler of a measured tokenizer length between a tracked definition and its use, graded by how much it interferes with the relation while leaving it well defined, ranging over inert comment prose, unreachable dead code, fresh decoy names, updates to \emph{other} variables, and nested scopes reusing the \emph{tracked} names. At 500 inserted tokens, 6.7B binding accuracy is $0.914$ under comment prose and $0.576$ under scope shadowing, with the other three conditions between $0.786$ and $0.862$. At 1{,}000 tokens shadowing falls to $0.519$, near chance, while every other filler stays above $0.70$. Because all conditions are matched on inserted token count, only interference varies, so the collapse cannot be attributed to length. Under shadowing the middle layers that normally build binding degrade most while block 0 stays comparatively stable, so the damage lands on the contextual computation rather than on a lexical lookup.
 
-\paragraph{Spelling and structure.}
-We next apply a cumulative, execution-verified ladder: normalization, consistent renaming of locals, opaque predicates, mixed boolean--arithmetic rewrites, and control-flow flattening. Best-layer 6.7B binding accuracy moves from approximately $1.000$ after normalization to $0.897$ after renaming, $0.857$ after opaque predicates, $0.846$ after arithmetic rewriting, and $0.750$ after flattening. The layerwise renaming result is the more informative one: embedding and block-0 probes fall below chance, to about $0.29$--$0.33$, while layers 7--15 remain at $0.85$--$0.90$. Early states retain lexical identity strongly enough that renaming systematically misleads the frozen decoder; middle states support a more abstract relation. Flattening damages even the best layer, showing that the representation is not invariant to arbitrary semantics-preserving compilation.
+\paragraph{Renaming survives, flattening does not.}
+We then apply a cumulative, execution-verified ladder of normalization, consistent renaming of every local, opaque predicates, mixed boolean and arithmetic rewriting, and control-flow flattening. Every transformed program is executed and kept only if observationally equivalent to its base, which licenses treating an accuracy drop as a change in the representation rather than in the label. Best-layer 6.7B binding accuracy moves from $1.000$ after normalization to $0.903$ after renaming, $0.862$ after opaque predicates, $0.857$ after arithmetic rewriting, and $0.770$ after flattening. Read by layer, renaming is the informative case. The embedding and block-0 probes fall well below chance, to $0.379$ and $0.316$, while layers 7 to 15 hold between $0.883$ and $0.903$. Early states encode lexical identity strongly enough that consistent renaming systematically \emph{misleads} the frozen decoder, which is sharper than mere loss of signal, whereas middle states support a relation abstract enough to survive. Flattening damages even the best layer.
 
 \begin{figure}[t]
 \centering
-\begin{subfigure}[t]{0.49\linewidth}
-  \includegraphics[width=\linewidth]{context_binding_deepseek-coder-6.7b.pdf}
-  \caption{Inserted context.}
-\end{subfigure}
-\hfill
-\begin{subfigure}[t]{0.49\linewidth}
-  \includegraphics[width=\linewidth]{obfuscation_levels_deepseek-coder-6.7b.pdf}
-  \caption{Cumulative obfuscation.}
-\end{subfigure}
-\caption{Frozen-probe robustness in DeepSeek-Coder 6.7B. Inert distance and lexical rewriting are comparatively inexpensive; competing scope and flattened control structure define the main failure surface.}
+\includegraphics[width=\linewidth]{paper_context_binding_6.7b.pdf}
+\caption{Frozen-probe binding accuracy in DeepSeek-Coder 6.7B under inserted context. The \emph{separation} between the conditions is the result. All filler types are matched on inserted token count, so the horizontal axis holds distance constant and the vertical spread is interference alone. Inert prose stays near the unperturbed value while scope shadowing descends to chance, and the intermediate conditions order as their interference predicts.}
 \label{fig:robustness}
 \end{figure}
 
-Together, the two tests locate the representation between lexical matching and syntax-independent program analysis. Its survival under renaming and long inert spans shows that the middle-layer signal is not tied to a particular identifier or token distance. Its failure under scope shadowing and control-flow flattening shows that this signal still depends on how scope and control are expressed in the source. The model therefore forms a relational abstraction, but not one that is invariant to every semantics-preserving rewrite.
+Together the two tests place the representation between lexical matching and syntax-independent program analysis. It survives renaming and long inert spans, so the signal is not tied to a spelling or a separation, and it fails under scope shadowing and flattened control flow, so it still depends on how scope and control are written in the source. What does not follow is that the information is destroyed in the failing cases, since a frozen probe can also fail when the representational basis moves.
 
 \section{Causal Use}
 \label{sec:causal}
 
-Everything above is correlational. A faithful representation can coexist with the computation that determines the output without being read by it. Causal use requires more than showing that an intervention changes an answer: the answer must change as the counterfactual semantic relation predicts.
+\paragraph{Why decoding does not imply use.}
+A probe is an external decoder, so it can recover a quantity the network computed and then ignored, or an incidental byproduct of computing something else. Establishing use means intervening on the internal quantity and checking that behavior follows Equation~\ref{eq:causal-use}. The obvious version of that experiment is ambiguous. Suppose we edit the state at the use site and the answer moves from token $a$ to token $b$, the value the other definition holds. The edit may have installed \emph{which definition is in scope}, and the answer followed, or it may simply encode \emph{emit $b$}, in which case nothing about binding was transported and we have built an answer-steering vector. Ordinary controls cannot separate these, because both accounts predict the same observation.
 
-\paragraph{A crossed binding interchange.}
-To test causal use, we cross two factors: whether the marked use resolves to the outer or inner definition, and which of two values is assigned to those definitions. This produces four programs per base. In arm \texttt{ab}, the outer definition holds $a$ and the inner definition holds $b$, so changing the binding from outer to inner should change the answer from $a$ to $b$. In held-out arm \texttt{ba}, the assignments are reversed, so the same binding change must instead move the answer from $b$ to $a$. Within each arm, only one upstream identifier character changes; the use token, its position, and total sequence length remain identical. The task also contains no arithmetic: the function returns the variable selected by the binding.
+\paragraph{The four-program design.}
+For each base we generate the $2\times2$ design in Figure~\ref{fig:design}. One factor is the \emph{binding}. In the \texttt{source} program the inner assignment writes to a different name, so \texttt{return x} resolves to the outer definition, while in the \texttt{target} program it writes to \texttt{x}, and because Python treats a name assigned anywhere in a function body as local to that body, the same use resolves to the inner definition. The other factor is the \emph{value assignment}, meaning which value sits at each definition. Within a row the two programs differ by exactly one token, at the inner definition's name, and the use token is identical in all four programs at the same index. Crossing the factors is what does the work. In arm \texttt{ab} the outer definition holds $a$ and the inner holds $b$, so switching the binding from outer to inner requires the answer to move from $a$ to $b$. In arm \texttt{ba} the values are exchanged, so the \emph{same} semantic switch requires the answer to move from $b$ to $a$. We fit the intervention only on \texttt{ab} and evaluate it on held-out \texttt{ba}. A direction encoding \emph{emit $b$} must therefore fail on \texttt{ba}, where $b$ is the answer it should be moving away from, whereas a direction carrying which definition is selected must succeed in both.
 
-We learn a low-rank interchange on arm \texttt{ab} only. The intervention replaces the host's coordinates in the learned subspace with the corresponding donor coordinates at the marked use, leaving the orthogonal remainder of the hidden state unchanged. If that subspace represents which definition is in scope, installing the inner-binding donor state should select the inner value under both assignments. It must therefore cause opposite token movements across arms: $a\rightarrow b$ during training and $b\rightarrow a$ when held out. By contrast, an edit that merely encodes the training answer $b$, or a fixed direction toward token $b$, can succeed on \texttt{ab} but should fail on \texttt{ba}. This crossed assignment is the falsification: it tests whether the intervention transports the binding relation rather than a correlated answer feature.
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[font=\small,
+  prog/.style={draw, rounded corners=2pt, inner sep=4pt, font=\ttfamily\scriptsize,
+               text width=2.3cm, align=left},
+  host/.style={prog, draw=bindblue, fill=bindblue!6},
+  donor/.style={prog, draw=surforange, fill=surforange!6},
+  lbl/.style={font=\scriptsize},
+]
+\node[host]  (habs) at (0,0)   {x = a\\def f():\\ \ \ y = b\\ \ \ return x};
+\node[donor] (habt) at (5.7,0) {x = a\\def f():\\ \ \ \textbf{x} = b\\ \ \ return x};
+\draw[->,thick,bindblue] (habt.west) --
+  node[above,lbl,black]{install donor state at \texttt{return x}}
+  node[below,lbl,black]{answer must move $a \rightarrow b$} (habs.east);
+\node[host]  (hbas) at (0,-2.15)   {x = b\\def f():\\ \ \ y = a\\ \ \ return x};
+\node[donor] (hbat) at (5.7,-2.15) {x = b\\def f():\\ \ \ \textbf{x} = a\\ \ \ return x};
+\draw[->,thick,bindblue] (hbat.west) --
+  node[above,lbl,black]{the same fitted direction}
+  node[below,lbl,black]{answer must move $b \rightarrow a$} (hbas.east);
+\node[lbl,anchor=south] at (0,0.85)   {\textbf{host}, outer binding};
+\node[lbl,anchor=south] at (5.7,0.85) {\textbf{donor}, inner binding};
+\node[lbl,anchor=west,align=left,text=bindblue] at (7.1,0)
+      {arm \texttt{ab}\\\textsc{fitted}};
+\node[lbl,anchor=west,align=left,text=surforange] at (7.1,-2.15)
+      {arm \texttt{ba}\\\textsc{held out}};
+\end{tikzpicture}
+\caption{The crossed causal design, drawn rather than tabulated because the falsification is a relation \emph{between} the two rows. Columns vary which definition \texttt{return x} resolves to, rows vary only which value sits at each definition, and the intervention always installs the donor's inner binding into the host at the use site. The two rows demand opposite token movements for the identical semantic change, so a direction fitted on \texttt{ab} that merely encodes the token $b$ cannot succeed on \texttt{ba}. Bold marks the single differing token.}
+\label{fig:design}
+\end{figure}
 
-The intervention technique follows learned causal alignment work \citep{geiger2023alignments,wu2023boundless,huang2024ravel}. Our contribution is not a new optimization method, but the combination of a construction-pinned surface floor with a held-out value assignment in a pretrained code model. This distinguishes the test from causal binding studies in entity retrieval and small symbolic models \citep{feng2024binding,wu2025variablebinding}.
+\paragraph{What the rank-1 interchange replaces.}
+Let $h_H$ and $h_D$ be the residual-stream states at the marked use token, after layer 8, in the host and donor runs, and let $P=uu^{\top}$ be the orthogonal projection onto a learned unit direction $u$. We replace the host's coordinate along that one direction with the donor's and leave the state otherwise untouched,
+\begin{equation}
+ h_H^{\mathrm{int}}=(I-P)\,h_H+P\,h_D \;=\; h_H+P\,(h_D-h_H),
+ \label{eq:interchange}
+\end{equation}
+after which the model continues its forward pass normally. Three properties matter. The edit is an interchange rather than a steering vector, so it installs whatever the donor run holds and the realized dose is a measured consequence rather than a tuned choice. It is applied where the two programs are token-identical, at least four tokens downstream of the mutation, so it cannot be transporting an input difference. It is rank 1, so it cannot be smuggling in the whole donor state.
 
-All six gates pass on 6.7B. Execution and an independent scope interpreter agree on 400/400 bases, with every construction invariant satisfied (H0). Behavioral binding resolution is $1.000$ overall and in the weakest factorial cell (H1). Use-site binding decoding is $1.000$ against a measured surface floor of $0.500$ (H2). Whole-state interchange moves the answer in both arms, with logit movements of $+4.781$ and $+4.799$, a flip rate of $0.857$, and exact structural zeros (H3). These gates establish that the corpus is valid, the task is within model capability, the use site contains the controlled relation, and both arms can causally affect the answer.
+\paragraph{Separating fitting from evaluation.}
+Whole base programs, with all four cells, are assigned to either calibration or test, so no test program contributes to any fitted quantity. The direction $u$ is optimized on the \texttt{ab} cells of calibration bases only, ranks $1,2,4,8,16$ are compared on a disjoint calibration split and the smallest successful one is taken, which is rank 1, and the site and layer are likewise chosen on calibration. Everything in Table~\ref{tab:causal-main} is measured on 280 held-out bases, with both arms of a base in the same split so that arm transfer is a within-base contrast rather than generalization to new programs. No \texttt{ba} example enters fitting at any stage.
 
-The decisive low-rank tests also pass. At the use anchor in layer 8, a rank-1 interchange fitted on arm \texttt{ab} produces a logit-difference shift of $+9.029$ [8.952, 9.108] and clears the norm-matched random, rank-matched random, and no-op controls (H4). Without refitting, the same subspace produces $+9.009$ [8.933, 9.089] on the held-out \texttt{ba} arm (H5). More directly, the full-vocabulary argmax is the value selected by the installed binding on $100.0\%$ of held-out rows in both arms, over 280 held-out base programs. The effect is not generic disruption: a dose-matched random edit produces the installed answer on only $2.1\%$ and $1.8\%$ of rows. It is also not a fixed answer direction: the explicit norm-matched answer-direction control succeeds on $27.9\%$ of \texttt{ab} rows but only $4.3\%$ of \texttt{ba} rows, a $6.9\times$ attenuation, while binding interchange does not attenuate.
+\paragraph{Prerequisites, and what H4 and H5 add.}
+Four conditions are verified first, each closing off a way for the result to be an artifact rather than a finding. Execution and an independently written scope-aware interpreter agree with the generated labels on all 400 bases, with every invariant holding including the arm crossing (H0). The unedited model returns the correctly bound value on $100\%$ of held-out prompts in each cell, so nothing we observe is a capability limit (H1). Binding is decodable at the intervention site at $1.000$ against the measured $0.500$ floor (H2). Replacing the \emph{entire} donor state moves the answer in \emph{both} arms, which sets a ceiling and proves the held-out arm is movable, without which a null on \texttt{ba} could not be distinguished from an arm that is simply not measurable (H3). H4 then asks whether the rank-1 interchange beats its matched controls on the fitted arm, which it does at $189\%$ of that ceiling, though H4 alone is weak evidence since the direction was optimized for that quantity. H5 is the claim, that the same direction transfers unchanged to the held-out assignment where an answer account demands the opposite movement. Table~\ref{tab:causal-main} reports the \emph{installed-answer rate}, whether the full-vocabulary argmax is the value the installed binding selects, which is stricter than a two-way choice because an edit making an unrelated token most likely counts as a failure. Appendix~\ref{app:causal} gives each gate with its threshold.
 
-A closed-form rank-1 direction given by the mean donor--host difference also transports the binding on $76.1\%$ and $76.8\%$ of rows. This shows that a fixed direction captures substantial binding structure, but it does not explain the learned result: the learned interchange reaches $100\%$ while editing $0.479$ of the state norm, whereas the mean-difference direction reaches about $76\%$ while editing $0.711$. The learned intervention is therefore both more effective and more dose-efficient. Within this construction, model, layer, and site, the crossed intervention supports causal use of the binding relation.
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\caption{Installed-answer rate at the marked use in DeepSeek-Coder 6.7B, layer 8, rank 1, on 280 held-out bases and 560 rows per cell. Each row after the first is an alternative explanation, and the last column names what its result rules out. \emph{Dose} is the realized edit fraction $\|h^{\mathrm{int}}-h\|/\|h\|$, and both random controls are dosed \emph{above} the treatment. Read within a row, where transport is flat across arms and answer steering collapses.}
+\label{tab:causal-main}
+\begin{tabular}{lrrrl}
+\toprule
+Intervention & \texttt{ab} & \texttt{ba} & Dose & Rules out \\
+\midrule
+\textcolor{bindblue}{\textbf{Learned rank-1 interchange}} & \textbf{100.0\%} & \textbf{100.0\%} & .479 & treatment, not a control \\
+\midrule
+Whole donor state & 85.7\% & 87.9\% & .805 & an unmovable held-out arm \\
+Mean donor minus host & 76.1\% & 76.8\% & .711 & need for an optimizer \\
+\textcolor{surforange}{Norm-matched answer direction} & 27.9\% & \textcolor{surforange}{4.3\%} & .479 & answer steering \\
+Dose-matched random & 2.1\% & 1.8\% & .513 & disruption of this size \\
+Rank-matched random & 0.0\% & 0.0\% & .018 & rank-1 edits in general \\
+Raw unembedding answer row & 0.0\% & 0.0\% & .479 & a weaker answer account \\
+No-op & 0.0\% & 0.0\% & .000 & measurement error \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{What the controls rule out.}
+The learned interchange installs the correct value on every held-out row in both arms and never leaves the model on a token that is neither candidate. The decisive comparison is the answer control, which is norm-matched to the treatment and pointed at the token arm \texttt{ab} requires. It works partially where it was aimed, at $27.9\%$, then collapses to $4.3\%$ once the required answer reverses, while the treatment does not attenuate at all, and it knocks the model off both candidates on $9.1\%$ of fitted-arm and $6.4\%$ of held-out rows, which is disruption rather than transport. The remaining rows close the other routes. Random edits dosed \emph{above} the treatment reach only $2.1\%$ and $1.8\%$, so the effect is not perturbation of this size. Whole-state replacement reaches $85.7\%$ and $87.9\%$, so a held-out failure would have been a real negative rather than an untestable cell. The closed-form mean donor minus host direction transports on roughly $76\%$ of rows yet needs dose $.711$ against the learned direction's $.479$, at absolute cosine $0.673$, so the optimizer is isolating a shared axis rather than inventing one.
+
+\paragraph{What follows.}
+Within DeepSeek-Coder 6.7B, at layer 8 of the marked use position, under this construction, one direction carries information whose interchange makes downstream behavior follow the installed binding across a reversal of which token that binding implies. That is causal use of the relation rather than merely its presence. It does not follow that binding is globally one-dimensional, that this direction operates at other layers, sites, or templates, or that we have identified the complete mechanism.
 
 \section{Discussion}
 \label{sec:discussion}
 
-The three dimensions now give a connected answer. \emph{Representation} is established under the measured controls: binding and def--use begin at a chance-pinned surface and embedding floor, emerge rapidly, and peak in middle layers. \emph{Robustness} is qualified: the same frozen readout survives inert distance and renaming most strongly in those middle layers, but degrades under shadowing and flattened control structure. \emph{Causal use} is supported at the marked use site: a rank-1 interchange transports the installed binding across a value-assignment reversal, while answer-direction and random controls do not.
+Read together, the layerwise and robustness results are consistent with a progression from a lexical format, through a relational one, to an output-oriented one. We offer that as an interpretation of the curves rather than a demonstrated decomposition of the network, and the flattening result adds a caution, since whatever the middle layers compute is tied to how scope and control are written in the source rather than to a canonical semantics.
 
-The layerwise and robustness results are consistent with a progression from lexical to relational to output-oriented formats. This is an interpretation of the curves, not a demonstrated decomposition of the network. The failure under flattening further suggests that the relational format is tied to source-level structure rather than a compiler-like canonical semantics.
+The evidence is narrower than the framing. We study two sizes from one model family, one language, and generated programs emphasizing lexical scope and data flow, and the causal result comes from one model at one layer, one site, and one binding template. The $0.500$ floor is exact for the stated reader and no stronger one, so \emph{surface} is a defined term rather than an absolute, and on natural code the layer signature replicates while the isolation does not. A frozen probe that fails may mean the information is gone or only that its basis moved, which our experiments cannot separate. The rank-1 edit outperforms whole-state replacement, for which we have a plausible but untested account and therefore make no claim. One gate criterion was corrected after the data were seen, and Appendix~\ref{app:h5} gives the verdict under both rules so the reader can discount accordingly.
 
-The scope of the claim is limited. We study two sizes from one model family, Python, and controlled programs emphasizing lexical scope and data flow; the causal result is from the 6.7B model at one site, one layer, and one binding construction. The $0.500$ floor is exact for the stated local-window-plus-distance baseline, not every computable feature of the source. Natural-code transfer preserves the layer signature but not the isolation. Frozen-probe failure can also mean a change of representational basis rather than loss of all semantic information. Finally, the rank-1 edit outperforms whole-state replacement ($100\%$ versus $85.7$--$87.9\%$ installed-answer emission), but the hypothesis that other donor-state components oppose the driving direction is not independently tested.
-
-Interpretability claims become scientific when each stronger term is attached to a stronger falsification. A controlled floor supports representation; frozen transformations identify its basis; and crossed interventions test causal use. On this standard, these code models compute scope-sensitive relations whose invariances are limited and measurable, and the 6.7B model causally uses binding at the marked use site: installing a rank-1 binding state reverses the selected output when the value assignment reverses, rather than carrying a fixed answer token.
+Interpretability claims become checkable when each stronger word is attached to a stronger falsification. A construction-pinned floor supports \emph{represented}, frozen transformations identify what that representation is made of, and a crossed intervention tests \emph{used}. On that standard, these code models compute scope-sensitive relations whose invariances are limited and measurable, and DeepSeek-Coder 6.7B causally uses binding at the marked use site.
 
 \clearpage
 \appendix
 
-\section{Detailed Methods}
-\label{app:methods}
+\section{Datasets and Construction}
+\label{app:data}
 
-\paragraph{Data.}
-The canonical core corpus contains 200 binding programs, 200 taint programs, and 100 shadowing programs. The context study uses 40 bases crossed with five filler types and target insertions of 0, 50, 100, 200, 500, and 1,000 tokenizer tokens. The cumulative obfuscation ladder uses 40 bases. E13 uses 400 bases and four factorial cells per base. All members of a matched family are kept or dropped together.
+\paragraph{Corpora.}
+The core representation corpus contains 200 generated binding programs together with additional shadowing templates, from which binding and def-use pairs are extracted, yielding 4{,}015 evaluation rows across 423 program groups. The context study uses 40 base programs crossed with five filler types and insertion targets of 0, 50, 100, 200, 500, and 1{,}000 tokenizer tokens. The cumulative obfuscation ladder uses 40 base programs. The causal study uses 400 base programs with four cells each, for 1{,}600 prompts. All members of a matched family are kept or dropped together, so a caps-based subsample removes whole source-program groups and never individual rows.
+
+\paragraph{Binding pair construction.}
+For binding, positive pairs link two identifier occurrences that resolve to the same definition. Negatives are stratified into four kinds of increasing difficulty. \texttt{diff\_name} pairs carry different identifier spellings and are solvable from the text alone. \texttt{distance\_matched} pairs equalize token separation between positives and negatives. \texttt{same\_name\_diff\_binding} pairs share the spelling but resolve to different definitions. \texttt{context\_matched} pairs are the counterfactual construction described in Section~\ref{sec:intro}, in which a second program is token-identical apart from the single character that flips the binding, so that both members carry identical surface features and opposite labels. Reporting the strata separately prevents the easy negatives from dominating the aggregate. Def-use pairs connect a definition to an occurrence reached by that definition, with negatives matched by token distance and reported in buckets of 0 to 10, 10 to 50, and 50 to 200 tokens.
 
 \paragraph{Ground truth and alignment.}
-Generators record exact AST-derived semantic events. Def--use extraction is checked against Beniget by set inclusion when branches allow multiple reaching definitions and by equality on straight-line programs. This audit caught an error in self-referential updates, where a right-hand-side use was initially linked to the same-line target rather than the preceding definition. AST spans are converted to source offsets and then tokenizer indices, and the recovered token text is checked against the source. The model loader rejects tokenizers that fail an exact code round trip.
+Generators record exact AST-derived semantic events at generation time rather than recovering them afterwards. Def-use extraction is checked against Beniget by equality on straight-line programs and by set inclusion when branching allows several reaching definitions. This audit caught one error in self-referential updates, where a right-hand-side use had been linked to the same-line target rather than to the preceding definition. AST spans are converted to source offsets and then to tokenizer indices, and the recovered token text is compared against the source. The model loader rejects any tokenizer that fails an exact code round trip.
+
+\paragraph{Context variants.}
+Filler is inserted between the tracked definition and its use at tokenizer-measured lengths. \texttt{comment\_prose} adds inert English with no executable structure. \texttt{dead\_code} adds unreachable statements. \texttt{lexical\_decoy} introduces fresh identifiers that resemble the tracked names without colliding with them. \texttt{competing\_update} reassigns variables other than the tracked ones. \texttt{scope\_shadow} reuses the tracked names inside a nested scope. All five derive from the same base programs, so the conditions differ only in the content of the insertion, and the frozen probe is scored against ground truth recomputed on each variant.
+
+\paragraph{Obfuscation ladder.}
+The ladder is cumulative, so each level includes all previous ones. \texttt{normalize} standardizes formatting. \texttt{rename} consistently replaces every local identifier. \texttt{opaque} inserts branches whose outcome is fixed. \texttt{encode} rewrites arithmetic and boolean expressions. \texttt{flatten} replaces structured control flow with a dispatch loop. Every transformed program is executed and compared against its base, and all variants of a base are retained or rejected together. The guarantee is observational equivalence on the generated executions rather than formal equivalence for all inputs.
+
+\section{Probing Protocol and Controls}
+\label{app:probes}
 
 \paragraph{Probe fitting.}
-All probes are linear with $C=0.1$, at most 2,000 optimization iterations, and at most 20,000 examples per task and layer. Dataset caps remove whole source-program groups, never individual rows. Five-fold \texttt{StratifiedGroupKFold} keeps every row from a source program in one fold. For pairwise tasks, control labels are shuffled within programs, preserving each program's label distribution.
+All probes are linear with regularization $C=0.1$, at most 2{,}000 optimization iterations, and at most 20{,}000 examples per task and layer. The pairwise feature $[h_i;h_j;h_i-h_j;|h_i-h_j|]$ permits both position-specific and relational linear evidence without requiring a nonlinear probe, which keeps the probe class stated and fixed as Section~\ref{sec:setup} requires.
 
-\paragraph{Robustness.}
-Stage-20 probes are evaluated without retraining. Ground truth is rebuilt from each transformed program. Each obfuscated program is executed and checked for the same observed output as its base. This is an empirical observational-equivalence guarantee for the generated cases, not a proof for all possible inputs.
+\paragraph{Splits.}
+Five-fold \texttt{StratifiedGroupKFold} keeps every row from a source program inside a single fold. For the \texttt{context\_matched} stratum this is essential, because the two members of a counterfactual pair belong to the same group and would otherwise leak across folds while carrying opposite labels.
+
+\paragraph{Control task.}
+For every pairwise task we retrain the identical classifier on labels shuffled within each source program, which preserves each program's label distribution, and report selectivity as true-label accuracy minus shuffled-label accuracy. On the core corpus, pooled binding selectivity is $0.354$ at layer 11 in 6.7B and def-use selectivity is $0.388$ at layer 3, against control accuracies near chance.
+
+\paragraph{Surface reader.}
+The model-free reader receives the token IDs in a $\pm3$ window around both anchors and the bucketed distance between them, and it is trained and evaluated with the same grouped folds as the hidden-state probe. Pooled across strata it reaches $0.798$ accuracy and $0.905$ AUC on binding, which is exactly why the pooled number cannot carry a semantic claim. Per stratum it scores $0.729$ on \texttt{diff\_name}, $0.815$ on \texttt{distance\_matched}, $0.883$ on \texttt{same\_name\_diff\_binding}, and $0.500$ on \texttt{context\_matched}. The last value is fixed by construction, since both members expose identical features and carry opposite labels. This guarantee is specific to the stated reader and does not cover arbitrary whole-program feature engineering.
 
 \paragraph{Uncertainty.}
-Intervention intervals use paired cluster bootstraps over base programs. Controls are compared on identical rows. Accuracy is used for balanced controlled strata; AUC is emphasized on natural code because identifiers are genuinely predictive there.
+Accuracy is used for balanced controlled strata. AUC is emphasized on natural code because identifiers there are genuinely predictive and the classes are less balanced. Intervention intervals are paired cluster bootstraps over base programs, and controls are compared on identical rows.
 
-\section{Additional Representation Results}
+\section{Representation Results}
+\label{app:representation}
 
-\begin{table}[h]
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{paper_binding_strata_1.3b.pdf}
+\caption{Binding accuracy by layer and negative stratum in DeepSeek-Coder 1.3B, the cross-scale replication of Figure~\ref{fig:binding}. The profile is the same, with the peak reached earlier in absolute layer index and sustained over fewer layers.}
+\label{fig:binding-13b}
+\end{figure}
+
+\begin{table}[htbp]
 \centering
 \small
-\caption{Context-matched binding accuracy at selected layers.}
-\begin{tabular}{lrrrrrr}
+\caption{Context-matched binding accuracy by layer, on 4{,}015 rows across 423 program groups. Layer $-1$ is the context-free embedding. The surface reader and the embedding probe are identical across models because neither involves the model, which is a corpus-integrity check.}
+\label{tab:app-binding}
+\begin{tabular}{lrrrrrrrrrrr}
 \toprule
-Model & Surface & Embed. & Block 0 & L3 & Peak & Final \\
+Model & Surf. & Emb. & L0 & L3 & L7 & L11 & L15 & L19 & L23 & L27 & L31 \\
 \midrule
-1.3B & .500 & .500 & .570 & .961 & .984 (L7) & .930 \\
-6.7B & .500 & .500 & .531 & .914 & .984 (L11--15) & .914 \\
+1.3B & .500 & .500 & .557 & .962 & \textbf{.981} & .972 & .953 & .943 & .915 & n/a & n/a \\
+6.7B & .500 & .500 & .528 & .906 & .972 & \textbf{.991} & .962 & .972 & .972 & .925 & .934 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \small
-\caption{Natural-code transfer on 200 CodeSearchNet Python functions.}
+\caption{DeepSeek-Coder 6.7B def-use accuracy by token distance between the anchors. Negatives are distance-matched within each bucket, so the hardest bucket is not merely a longer-range version of an easier problem.}
+\label{tab:app-defuse}
+\begin{tabular}{lrrrrrrrrrrr}
+\toprule
+Bucket & Emb. & L0 & L3 & L7 & L11 & L15 & L19 & L23 & L27 & L31 \\
+\midrule
+0 to 10 tokens    & .835 & .982 & .995 & .994 & .996 & .986 & .992 & .990 & .987 & .984 \\
+10 to 50 tokens   & .891 & .976 & .989 & .989 & .987 & .986 & .988 & .986 & .985 & .982 \\
+50 to 200 tokens  & .923 & .948 & .985 & .974 & .965 & .968 & .979 & .984 & .967 & .962 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Transfer to 200 AST-parseable CodeSearchNet Python functions, at each model's best layer. The layer signature replicates, but the surface floor is no longer pinned at chance, so these numbers are an upper bound on what transfers semantically.}
+\label{tab:app-csn}
 \begin{tabular}{llrrrr}
 \toprule
 Model & Task & Best layer & Accuracy & AUC & Selectivity \\
 \midrule
-1.3B & Binding & 3 & .914 & .980 & .329 \\
-1.3B & Def--use & 3 & .912 & .975 & .318 \\
-6.7B & Binding & 7 & .902 & .978 & .308 \\
-6.7B & Def--use & 3 & .911 & .979 & .308 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Control dependence reaches high hidden-state accuracy, but its model-free surface baseline is already $0.927$ accuracy and $0.990$ AUC. This result is intentionally secondary: it demonstrates that the criterion excludes a relation when local syntax already supplies most of the answer.
-
-\section{Full Robustness Tables}
-
-\begin{table}[h]
-\centering
-\small
-\caption{DeepSeek-Coder 6.7B frozen-probe accuracy under inserted context, averaged over evaluated layers. The main text reports best-layer values where stated.}
-\begin{tabular}{llrrrr}
-\toprule
-Task & Filler & 0 & 100 & 500 & 1,000 \\
+1.3B & Binding  & 3 & .914 & .980 & .329 \\
+1.3B & Def-use  & 3 & .912 & .975 & .318 \\
+6.7B & Binding  & 7 & .902 & .978 & .308 \\
+6.7B & Def-use  & 3 & .911 & .979 & .308 \\
 \midrule
-Binding & Comment prose & .974 & .922 & .914 & .902 \\
-Binding & Dead code & .974 & .908 & .786 & .759 \\
-Binding & Lexical decoy & .974 & .877 & .797 & .769 \\
-Binding & Competing update & .975 & .854 & .862 & .844 \\
-Binding & Scope shadow & .974 & .745 & .576 & .519 \\
-Def--use & Comment prose & .980 & .908 & .892 & .881 \\
-Def--use & Scope shadow & .981 & .722 & .643 & .596 \\
+\multicolumn{3}{l}{Surface reader, binding} & .685 & .673 & .070 \\
+\multicolumn{3}{l}{Surface reader, def-use} & .599 & .590 & $-.025$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{table}[h]
+\paragraph{Control dependence as a contrast.}
+Control dependence asks whether the execution of a statement depends on a particular guard. In 6.7B it is decoded at $0.984$ accuracy and $0.999$ AUC at layer 15, which in isolation looks like strong evidence of semantic computation. Its model-free surface reader, however, reaches $0.927$ accuracy and $0.990$ AUC on the same rows, because the controlling guard is usually the nearest enclosing \texttt{if} and is exposed by neighbouring tokens, nesting depth, and distance. Most of the label is therefore visible without running the model. We include the result because it is a useful falsification of our own criterion. High probe accuracy receives a weaker interpretation whenever a surface-only reader already recovers most of the label, and binding is the stronger case precisely because its controlled reader is pinned at chance.
+
+\section{Robustness Results}
+\label{app:robustness}
+
+\begin{table}[htbp]
 \centering
 \small
-\caption{DeepSeek-Coder 6.7B frozen-probe accuracy across the cumulative obfuscation ladder, averaged over layers.}
+\caption{DeepSeek-Coder 6.7B frozen-probe accuracy under inserted context, averaged over evaluated layers. Insertion lengths are measured in tokenizer tokens, so every filler type is matched on length at each column and the differences between rows are interference alone.}
+\label{tab:app-context}
+\begin{tabular}{llrrrrrr}
+\toprule
+Task & Filler & 0 & 50 & 100 & 200 & 500 & 1{,}000 \\
+\midrule
+Binding & \texttt{comment\_prose}    & .974 & .932 & .922 & .918 & .914 & .902 \\
+Binding & \texttt{competing\_update} & .975 & .881 & .854 & .866 & .862 & .844 \\
+Binding & \texttt{dead\_code}        & .974 & .928 & .908 & .847 & .786 & .759 \\
+Binding & \texttt{lexical\_decoy}    & .974 & .884 & .877 & .846 & .797 & .769 \\
+Binding & \texttt{scope\_shadow}     & .974 & .816 & .745 & .666 & .576 & .519 \\
+\midrule
+Def-use & \texttt{comment\_prose}    & .980 & .924 & .908 & .897 & .892 & .881 \\
+Def-use & \texttt{competing\_update} & .980 & .895 & .846 & .847 & .868 & .875 \\
+Def-use & \texttt{dead\_code}        & .981 & .918 & .876 & .807 & .748 & .712 \\
+Def-use & \texttt{lexical\_decoy}    & .981 & .887 & .880 & .843 & .810 & .769 \\
+Def-use & \texttt{scope\_shadow}     & .981 & .761 & .722 & .689 & .643 & .596 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{DeepSeek-Coder 6.7B frozen-probe accuracy across the cumulative obfuscation ladder. Best-layer values carry the claim in the main text, and the layer at which the best value occurs is given in parentheses. Layer-averaged values are included because the gap between the two columns is itself informative, showing that the surviving signal is concentrated in a few layers rather than spread across the network.}
+\label{tab:app-obf}
+\begin{tabular}{lrrrr}
+\toprule
+Level & Binding, best (layer) & Binding, mean & Def-use, best (layer) & Def-use, mean \\
+\midrule
+\texttt{normalize} & 1.000 (L7)  & .974 & 1.000 (L7)  & .976 \\
+\texttt{rename}    & .903 (L11)  & .726 & .864 (L7)   & .701 \\
+\texttt{opaque}    & .862 (L7)   & .722 & .846 (L7)   & .703 \\
+\texttt{encode}    & .857 (L7)   & .738 & .833 (L7)   & .717 \\
+\texttt{flatten}   & .770 (L31)  & .590 & .890 (L31)  & .598 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{DeepSeek-Coder 6.7B binding accuracy by layer under the obfuscation ladder. The renaming column is the informative one. The embedding and block-0 probes fall far below chance, which means the frozen decoder is systematically misled by consistent renaming rather than merely uninformed, while layers 7 to 15 hold near $0.90$.}
+\label{tab:app-obf-layer}
 \begin{tabular}{lrrrrr}
 \toprule
-Task & Normalize & Rename & Opaque & Encode & Flatten \\
+Layer & \texttt{normalize} & \texttt{rename} & \texttt{opaque} & \texttt{encode} & \texttt{flatten} \\
 \midrule
-Binding & .974 & .726 & .722 & .738 & .590 \\
-Def--use & .976 & .701 & .703 & .717 & .598 \\
+Embedding & .757 & .379 & .459 & .477 & .261 \\
+0  & .987 & .316 & .353 & .384 & .175 \\
+3  & 1.000 & .624 & .690 & .758 & .440 \\
+7  & 1.000 & .883 & .862 & .857 & .615 \\
+11 & 1.000 & \textbf{.903} & .848 & .842 & .686 \\
+15 & .999 & .886 & .846 & .840 & .729 \\
+19 & 1.000 & .875 & .820 & .822 & .748 \\
+23 & 1.000 & .837 & .789 & .808 & .724 \\
+27 & .999 & .790 & .787 & .799 & .751 \\
+31 & .999 & .765 & .770 & .792 & \textbf{.770} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\section{Causal Identification and Full Results}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{paper_obfuscation_6.7b.pdf}
+\caption{Frozen-probe accuracy across the cumulative obfuscation ladder in DeepSeek-Coder 6.7B, showing best-layer values (solid) and the mean over evaluated layers (dotted). The gap between the two is itself informative, since it shows the surviving signal is concentrated in a few middle layers rather than spread across the network. Cost is roughly flat across \texttt{rename}, \texttt{opaque}, and \texttt{encode}, which change form, and falls again at \texttt{flatten}, which changes structure.}
+\label{fig:obf}
+\end{figure}
 
-E13 enforces the following invariants at generation and checks them independently before model evaluation: all four prompts have the same token length; within each arm exactly one token differs; the use token is identical; the mutation is at least four tokens before the use; values are distinct single tokens; the answer appends one token; no arithmetic operator occurs; and the answers cross between arms. Execution is compared with a scope-aware AST interpreter implementing Python's rule that a name assigned anywhere in a function body is local throughout that body.
+\clearpage
+\section{Causal Use in Detail}
+\label{app:causal}
 
-For a host state and donor state from the alternative binding in the same arm, the outcome metric is
+\subsection{Programs and invariants}
+
+Each base selects two distinct single-token values $a$ and $b$, an outer name \texttt{x}, and a distinct inner name \texttt{y}. The four program bodies are given below, compressed onto one line each for display, with line breaks and indentation present in the actual prompts.
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\texttt{ab/source} & \texttt{x=a; def f(): y=b; return x} \\
+\texttt{ab/target} & \texttt{x=a; def f(): x=b; return x} \\
+\texttt{ba/source} & \texttt{x=b; def f(): y=a; return x} \\
+\texttt{ba/target} & \texttt{x=b; def f(): x=a; return x} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Python treats a name assigned anywhere in a function body as local to that body for the whole body, so the target programs' \texttt{return x} reads the inner assignment while the source programs' identical use reads the outer assignment. Eight invariants are enforced at generation, re-checked independently in verification, and pinned by unit tests. All four prompts share a token length, so every anchor is the same index in all four. Within an arm exactly one token differs, at the inner definition's name. The use token is identical in all four. The use is at least four tokens after the mutation, so no local window on the use can see it. The crossing holds, meaning the answer to \texttt{ab/source} equals the answer to \texttt{ba/target} and the answer to \texttt{ab/target} equals the answer to \texttt{ba/source}. Both values are distinct single tokens. The answer appends exactly one token. No program contains an arithmetic operator, which keeps the required capability a lookup. The crossing is the invariant that makes the held-out arm a falsification rather than a replication, and without it the experiment would prove nothing.
+
+Ground truth is read twice. The generator executes each program, and a separate AST interpreter independently implements Python's function-local scoping rule. All 400 bases agree under both readings and satisfy every invariant, at a measured yield of 400 of 400.
+
+\subsection{Splits and optimization}
+
+Whole base programs, including all four cells, are assigned together to calibration or test, with 120 calibration and 280 test bases. The alignment is optimized only on the \texttt{ab} cells of calibration bases, using 160 training rows. A separate held-out portion of calibration selects the smallest successful rank. For host state $h_H$, donor state $h_D$, and an orthonormal basis $U\in\mathbb{R}^{d\times r}$, the general interchange is
 \begin{equation}
-\Delta_{\mathrm{LD}} =
-\left[\log p(y_{\mathrm{installed}})-\log p(y_{\mathrm{own}})\right]_{\mathrm{patched}}
--
-\left[\log p(y_{\mathrm{installed}})-\log p(y_{\mathrm{own}})\right]_{\mathrm{clean}}.
+ h_H^{\mathrm{int}}=h_H+UU^{\top}(h_D-h_H),
+ \label{eq:interchange-general}
 \end{equation}
-A positive value means that the output moved toward the value selected by the installed binding. The token identity of that value reverses between arms.
+which reduces to Equation~\ref{eq:interchange} at $r=1$. Ranks 1, 2, 4, 8, and 16 were fitted and all five converged, with orthogonality error at most $4.07\times10^{-7}$ and final training losses between $0.0025$ and $0.0086$. Rank 1 was selected as the smallest rank meeting the calibration criterion, and it is the only rank reported. The donor is always the opposite binding within the same value-assignment arm. The intervention is applied at the use anchor after layer 8, and the edited run then proceeds with no further modification.
 
-Controls include whole-state replacement, an explicit answer direction, a closed-form mean donor--host direction, rank-matched random subspaces, norm-matched random edits, a no-op, and a pre-mutation structural-zero site. H4 requires low-rank interchange to clear the matched controls on the training arm. H5 requires the same learned subspace to transfer without refitting to the held-out arm, while the explicit training-arm answer direction fails there.
+The site and layer were also chosen on calibration, using the whole-state ceiling as the selection statistic. That scan is informative in its own right. At the use anchor, whole-state replacement produces a logit-difference shift of $+4.781$ at layer 8 and $+3.731$ at layer 12, then falls to $+0.078$ at layer 16 and to zero within noise at layers 20 and 24. At the mutation anchor it reaches only $+0.557$ at layer 8, and at the source definition anchor it is exactly zero, as it must be because host and donor share that state. The causal pathway is therefore concentrated at the use anchor in early-middle layers.
 
-\begin{table}[h]
+\subsection{Outcome measures}
+
+The primary outcome is the \emph{installed-answer rate}, which asks whether the model's full-vocabulary argmax equals the value the donor binding selects. It is stricter than a two-way choice between the candidates, because an edit that makes an unrelated token most likely counts as a failure. We also report the change in the installed-versus-own logit difference,
+\begin{equation}
+\Delta_{\mathrm{LD}}=
+\big[\log p(y_{\mathrm{inst}})-\log p(y_{\mathrm{own}})\big]_{\mathrm{int}}
+-\big[\log p(y_{\mathrm{inst}})-\log p(y_{\mathrm{own}})\big]_{\mathrm{clean}},
+\label{eq:delta-ld}
+\end{equation}
+where $y_{\mathrm{own}}$ is the value the host's use resolves to and $y_{\mathrm{inst}}$ is the value the donor's binding selects. This continuous measure is useful for paired contrasts but is not sufficient evidence of transport. Because clean accuracy is $1.000$, the clean distribution is confident and $\log p(y_{\mathrm{own}})$ sits far above $\log p(y_{\mathrm{inst}})$, so any edit that merely disrupts the state regresses both terms toward the middle and raises $\Delta_{\mathrm{LD}}$ with nothing transported.
+
+\subsection{Prerequisite gates}
+
+\begin{table}[htbp]
 \centering
 \small
-\caption{E13 results at the use anchor, layer 8, rank 1. ``Installed'' is the fraction of rows whose full-vocabulary argmax is the value selected by the donor binding.}
-\begin{tabular}{lrrr}
+\caption{Prerequisites and decisive tests. Each gate closes off a specific way for the rank-1 result to be uninterpretable rather than negative.}
+\label{tab:app-gates}
+\begin{tabular}{clp{0.60\linewidth}}
 \toprule
-Intervention & \texttt{ab} installed & \texttt{ba} installed & Edit fraction \\
+Gate & Result & What it establishes \\
 \midrule
-Learned binding interchange & \textbf{100.0\%} & \textbf{100.0\%} & .479 \\
-Whole donor state & 85.7\% & 87.9\% & .805 \\
-Mean donor--host direction & 76.1\% & 76.8\% & .711 \\
-Norm-matched answer direction & 27.9\% & 4.3\% & .479 \\
-Dose-matched random & 2.1\% & 1.8\% & .513 \\
-Rank-matched random / no-op & 0.0\% & 0.0\% & .018 / 0 \\
+H0 & Pass & Execution, an independent scope-aware interpreter, and the construction invariants agree on 400 of 400 bases, including the arm crossing. \\
+H1 & Pass & Clean behavioral accuracy is $1.000$ overall and $1.000$ in each of the four cells, against thresholds of $0.85$ and $0.75$. \\
+H2 & Pass & Binding is decodable at the intervention site at $1.000$ with selectivity $0.524$, against a measured surface floor of $0.500$. \\
+H3 & Pass & Whole-state interchange moves both arms, at $+4.781$ on \texttt{ab} and $+4.799$ on \texttt{ba}, with flip rates of $0.857$ and $0.879$. Structural-zero interventions produce exactly zero. \\
+H4 & Pass & The rank-1 interchange reaches $189\%$ of the whole-state ceiling on the fitted arm, and all three paired control contrasts clear zero. \\
+H5 & Pass & The same direction transfers to the unseen reversed assignment at $100\%$ installed-answer rate, while the answer direction attenuates to an arm ratio of $0.154$. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-H4 and H5 pass. The learned rank-1 interchange yields logit-difference shifts of $+9.029$ [8.952, 9.108] on \texttt{ab} and $+9.009$ [8.933, 9.089] on \texttt{ba}. It emits the installed answer on every held-out row in both arms, whereas the answer direction attenuates across the assignment reversal and matched random edits remain near zero. All 14 machinery checks pass: the structural zeros are exact, the learned alignment is orthonormal to $4.07\times10^{-7}$, the whole-state ceiling is active in both arms, and binding interchange emits a non-candidate token on $0.0\%$ of rows.
+\subsection{Held-out results}
 
-The H5 falsification is evaluated on the full-vocabulary argmax rather than the two-way logit margin. This criterion was corrected after observing the 6.7B data and is recorded with both verdicts in the experiment archive. The original implementation documentation specified the argmax because, at ceiling clean accuracy, generic disruption can improve the two-way margin without transporting either candidate. Under the old margin-only rule, the answer-direction control retained a small positive held-out shift and H5 failed; under the argmax rule, it falls from $27.9\%$ to $4.3\%$, below the pre-existing transfer threshold relative to the whole-state control, and H5 passes. No threshold was fitted to the observed result, but the post-data correction should be considered when interpreting the causal claim.
+\begin{table}[htbp]
+\centering
+\small
+\caption{Complete held-out causal results at the use anchor, layer 8, rank 1, on 280 base programs and 560 rows per cell. Intervals are paired cluster bootstraps over base programs. \emph{Off-cand.} is the fraction of rows on which the model emits a token that is neither candidate, which separates transport from disruption.}
+\label{tab:app-causal}
+\begin{tabular}{lrrrrr}
+\toprule
+Intervention & \texttt{ab} inst. & \texttt{ba} inst. & $\Delta_{\mathrm{LD}}$ (\texttt{ab}) & Off-cand. & Dose \\
+\midrule
+Learned rank-1 interchange & \textbf{100.0\%} & \textbf{100.0\%} & 9.029 [8.952, 9.108] & 0.0\% & .479 \\
+Whole donor state          & 85.7\% & 87.9\% & 4.781 [4.683, 4.878] & 0.0\% & .805 \\
+Mean donor minus host      & 76.1\% & 76.8\% & 4.138 [4.025, 4.252] & 0.0\% & .711 \\
+Norm-matched answer dir.   & 27.9\% & 4.3\%  & 2.322 [2.157, 2.482] & 9.1\% & .479 \\
+Dose-matched random        & 2.1\%  & 1.8\%  & 0.757 [0.691, 0.827] & 0.0\% & .513 \\
+Raw unembedding answer row & 0.0\%  & 0.0\%  & 0.039 [0.026, 0.052] & 0.0\% & .479 \\
+Rank-matched random        & 0.0\%  & 0.0\%  & $-0.004$ [$-0.005$, $-0.003$] & 0.0\% & .018 \\
+No-op                      & 0.0\%  & 0.0\%  & 0.000 [0.000, 0.000] & 0.0\% & .000 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\section{Retired Analyses and Lessons}
+\paragraph{Whole state.}
+Replacing the entire donor state is the causal ceiling and the proof that both arms are movable. Its installed-answer rate is lower than the rank-1 edit's, which is an observed result and not evidence that whole-state replacement is intrinsically weaker. One possible account is that the donor state contains components that oppose the useful direction, which is consistent with the dose figures but has not been tested.
 
-We retain failed designs because they determine which causal claims are interpretable. Raw activation patching shows a migration of causal influence from an early changed-token site to the final readout position, but cannot isolate a semantic variable. A J-space coordinate swap near the output changes logits relative to matched random controls, but fails its registered specificity criterion; the use-site null is retracted because the site's response to small edits is strongly nonlinear. A latent-store design is parked because its arithmetic behavioral prerequisite fails. Behavioral lead-time and control-dependence lens claims are retired because their floors or positive controls do not support the proposed absence claims. The common lesson is that a null requires a positive control matched in kind, site, and scale.
+\paragraph{Answer direction.}
+This control is norm-matched to the treatment and points explicitly toward the answer that arm \texttt{ab} requires. It is built from logit-lens rows at the intervention layer rather than from raw unembedding rows, because at layer 8 of 32 the unembedding row is not the direction that moves the output head toward a token. The raw unembedding version is retained in the table for comparison and does nothing in either arm. The lens version works partially where it was aimed and then attenuates $6.5\times$ when the correct answer reverses, which is the behavior an answer-steering account predicts. Unlike the learned interchange, it also produces off-candidate outputs on $9.1\%$ of fitted-arm and $6.4\%$ of held-out rows. One tension is worth stating. Norm-matching this control means a push of $48\%$ of $\|h\|$, and at that magnitude the statement that a direction moves the output toward a token is no longer clearly linear, whereas a unit-norm version would be underpowered. There is no version of this control that is both, which is why the arm-to-arm ratio, a relative statistic with an internal reference, is what we read.
 
-\section{Reproducibility and Open Checks}
+\paragraph{Random controls.}
+The dose-matched random direction makes a slightly larger edit than the treatment and almost never produces the installed answer. Rank-matched random and no-op edits stay at zero. Together these rule out rank, numerical noise, and perturbation magnitude as explanations.
 
-The canonical seed is 42. Activation extraction is separated from CPU-only probe fitting. Run manifests record arguments and git revisions, and paper assets are regenerated from CSV files. Before submission, we will additionally (i) add a cross-position string-equality surface baseline, because the current local-window baseline cannot express every separated-name comparison; (ii) report counts and intervals for every context-matched stratum; and (iii) synchronize the machine-readable experiment registry with the completed E13 result and its archived metric correction.
+\paragraph{Mean difference.}
+The normalized average donor minus host difference is a fixed, closed-form direction requiring no optimization. It transports the binding on roughly $76\%$ of rows in both arms, so much of the relevant geometry is shared across examples. It nevertheless moves more of the state and performs worse than the learned direction, and their absolute cosine is $0.673$, so the two are related without being identical. The learned direction captures $59.5\%$ of each state difference against the mean's $88.2\%$, so it is not simply a better-aligned mean.
+
+\paragraph{Implementation checks.}
+All 14 checks pass. Structural-zero interventions are exactly $0.00$, which matters because a no-op edit is provably the zero vector and any movement would indicate misaligned hooks, anchors, or dtypes. Patching before the mutation, where host and donor hold the same state, likewise produces exactly zero. The learned basis is orthonormal to $4.07\times10^{-7}$. The whole-state ceiling is alive in both arms. The learned interchange produces no off-candidate outputs. The largest cell contains 280 base programs, which is enough for cluster bootstraps to be informative. Paired training-arm contrasts of the treatment against rank-matched random, dose-matched random, and no-op all have bootstrap intervals above zero, at $+9.033$, $+8.272$, and $+9.029$ respectively.
+
+\subsection{The post-data metric correction}
+\label{app:h5}
+
+One gate criterion was changed after the 6.7B data were observed, and we record it here in full because it affects how the causal evidence should be weighed.
+
+H5's third condition requires the explicit \texttt{answer\_direction} control to fail on the held-out arm. If that control does not fail, the design cannot separate an answer encoder from a binding encoder and no verdict is licensed. That condition was originally evaluated on $\Delta_{\mathrm{LD}}$. It is now evaluated on the installed-answer rate, compared against the arm-to-arm ratio that whole-state interchange achieves on the same rows.
+
+The reason we treat this as implementing the pre-registration rather than relaxing it is that the module's design section, written before any 6.7B run, states that $\Delta_{\mathrm{LD}}$ is positively biased and must not be gated on alone, and that every row therefore also records the full-vocabulary argmax, which the gates should read. No gate evaluator read it, so the stated design and the implementation disagreed from the start. The bias is not hypothetical here. Clean accuracy is $1.000$, so any edit that merely disrupts a confident distribution raises $\Delta_{\mathrm{LD}}$ with nothing transported, and the control in question knocked the model off both candidate tokens on $6.4\%$ of held-out rows.
+
+The numbers under both rules are given in Table~\ref{tab:app-h5}. Only the third condition differs. Under the new rule, a control fails on the held-out arm when its \texttt{ba} to \texttt{ab} argmax ratio falls below half the ratio that whole-state interchange achieves on the same rows. The reference is measured on those rows rather than chosen, and the coefficient is the threshold already pre-registered for H5's first condition, so no new free parameter was introduced. What would have made the change illegitimate, and did not happen, is inventing a threshold that the observed $4.3\%$ happens to clear, switching metrics on the first condition as well, where the verdict is unchanged either way, or making the change without leaving the old numbers on the record.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{H5 under both discriminators, at the use anchor, layer 8, rank 1, on 280 held-out bases. The two rules agree on the first condition and differ only on the third.}
+\label{tab:app-h5}
+\begin{tabular}{@{}p{0.24\linewidth}p{0.40\linewidth}p{0.29\linewidth}@{}}
+\toprule
+Condition & Margin rule ($\Delta_{\mathrm{LD}}$) & Argmax rule (installed answer) \\
+\midrule
+Treatment transfers to \texttt{ba} & $+9.009$ [8.933, 9.089], $188\%$ of ceiling, passes & $100.0\%$, $114\%$ of ceiling, passes \\[2pt]
+Answer direction on \texttt{ab}    & $+2.322$ [2.157, 2.482], works & $27.9\%$, works \\[2pt]
+Answer direction on \texttt{ba}    & $+0.335$ [0.208, 0.456], interval clears zero, scored as not failing & $4.3\%$, arm ratio $0.154$ against $1.025$, fails \\
+\midrule
+\textbf{H5 verdict} & \textbf{Fail on the third condition} & \textbf{Pass} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scope of the conclusion}
+
+The experiment supports the following claim. At layer 8 of the marked use position in DeepSeek-Coder 6.7B, one learned direction carries information whose interchange makes downstream behavior follow the installed binding across a reversal of value identity, on 280 held-out base programs, against controls that rule out perturbation magnitude, rank, and an explicit answer direction. It does not establish that binding is globally one-dimensional, that the same direction operates at every layer or use site, that the mechanism transfers to natural code or to other languages and model families, or that the learned direction is the model's complete binding mechanism.
+
+\section{Extended Related Work}
+\label{app:related}
+
+\paragraph{Probing code models.}
+Studies of code-model representations recover token type, AST structure, identifiers, namespaces, data flow, and control flow, generally by fitting a probe on hidden states and reporting accuracy against negatives drawn from the same corpus \citep{wan2022capture,hernandez2022astprobe,troshin2022probing,ma2024unveiling}. The difficulty specific to code is that surface form is unusually predictive of program relations, since two occurrences of the same variable usually share a spelling, a definition and its use are usually close together, and control structure is usually visible in indentation. A probe can therefore score highly by reading the text. Our difference is not a better probe but a better negative. Because each context-matched pair holds a second program that is token-identical apart from the one character that flips the binding, a reader restricted to the stated features must predict identically on both members, so its accuracy is $0.500$ as a property of the construction rather than as an empirical estimate. Section~\ref{sec:representation} shows that this matters in practice, since control dependence is decoded at $0.984$ and is still mostly available to a surface reader at $0.927$.
+
+\paragraph{Probe controls.}
+Control tasks \citep{hewitt2019control} ask whether a probe's accuracy reflects the representation or the probe's own capacity, by refitting on randomized labels and reporting the gap. That control constrains the hypothesis class. It does not change what information the input carries, so a probe with low capacity can still read a surface shortcut that is genuinely present. The two controls are therefore complementary rather than substitutable, and we report both, selectivity for the probe and the pinned floor for the input.
+
+\paragraph{Causal abstraction.}
+Distributed alignment search and its successors fit a subspace in which interchanging activations between two runs realizes a specified counterfactual, and evaluate with interchange-intervention accuracy and isolation criteria \citep{geiger2023alignments,wu2023boundless,huang2024ravel}. Activation patching has its own methodology for metric choice and site selection \citep{zhang2023patching}. We reuse the operator unchanged. What we contribute is the identification design. In a two-value task, a subspace that installs the correct answer and a subspace that installs a fixed answer token are observationally equivalent at a single value assignment. Crossing the assignment separates them, because the token the binding implies reverses while the binding change does not. This turns an assumption into a measurement, and it is why the answer-direction control is reported as a required discriminator rather than as an optional baseline.
+
+\paragraph{Entity and program binding.}
+Feng and Steinhardt study how language models bind entities to attributes in context and identify binding identifiers by causal intervention \citep{feng2024binding}. Wu, Geiger, and Milli\`ere study transformers trained from scratch on symbolic programs with dereference chains and find that program state is not linearly decodable at a single location \citep{wu2025variablebinding}. Our task is different in kind. Attribute retrieval associates distinct entities with distinct properties, whereas lexical scoping requires choosing between two definitions that share a name, so the discriminating information cannot be carried by the identifier. Our setting also differs, since we work in pretrained code models at 1.3B and 6.7B rather than in models trained on the task, and we require no arithmetic at any point, which keeps the behavioral prerequisite a variable lookup that the model performs at $100\%$.
+
+\paragraph{Robustness.}
+Semantics-preserving transformation is the standard instrument for asking whether a model tracks meaning rather than form. Our use of it differs in two ways that matter for interpretation. The probe is frozen before any variant is generated, so accuracy changes are attributable to the model rather than to refitting, and the transformations are separated into those that only change form, such as consistent renaming and inert insertion, and those that leave behavior fixed while making the relational problem harder, such as scope shadowing and control-flow flattening. The separation is what produces the finding, since the two classes have clearly different costs. Long-context work provides a useful contrast, in that models can retain information they fail to use \citep{lu2024longcontext}, which is the same representation-versus-use gap that motivates Section~\ref{sec:causal}.
+
+\section{Reproducibility}
+
+The canonical seed is 42. Activation extraction is separated from CPU-only probe fitting, so probes can be refitted without GPU access. Run manifests record arguments and git revisions for every stage, and all paper assets are regenerated from the recorded CSV files. Each causal stage declares its prerequisite gates and refuses to run unless they passed, and any override is recorded permanently in the gate file, in the manifest, and in every affected row. The reported summary and control contrasts are recomputed from the raw per-row records rather than from aggregates written during the GPU run, which is how two aggregation errors in the dose-matched control were caught.
+
+\section{Limitations}
+
+The construction pins the floor for a stated reader, namely $\pm3$ token-ID windows around both anchors plus bucketed distance, and for no stronger one. A cross-position string-equality baseline would be a stricter test and is not yet included.
+
+The representation results cover two model sizes from one family and one language. On natural code the layer signature replicates while the isolation does not, so those numbers bound what transfers semantically rather than measuring it.
+
+Robustness is measured with a frozen decoder, which is what makes a drop attributable to the model. The cost is that a drop cannot distinguish loss of information from a change of representational basis.
+
+Observational equivalence for obfuscated variants is established by executing the generated programs, which is an empirical guarantee on those executions and not a proof for all inputs.
+
+The causal result covers one model, one site, one layer, one rank, and one binding template. The rank-1 edit outperforms whole-state replacement and we do not have a tested explanation. One gate criterion was corrected after the data were seen, as recorded in Appendix~\ref{app:h5}.
 
 \bibliographystyle{plainnat}
 \bibliography{references}
