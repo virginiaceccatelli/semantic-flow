@@ -261,25 +261,40 @@ other number in the stage is suspect.
 orthonormal to 4e-07, ceiling alive in both arms, 280 test bases, and the model
 never emits a non-candidate token.
 
-**On the strict metric** — full-vocabulary argmax, not the logit margin:
+**On the strict metric** — full-vocabulary argmax, not the logit margin. 280
+held-out base programs, 560 rows per cell, cluster bootstrap over bases:
 
-| variant | `ab` emits installed | `ba` emits installed | edit fraction |
-|---|---:|---:|---:|
-| **`das_binding`** | **100.0%** | **100.0%** | 0.479 |
-| `whole_state` (installs the ENTIRE donor state) | 85.7% | 87.9% | 0.805 |
-| `answer_direction` (J-lens) | 27.9% | 4.3% | 0.479 |
-| `answer_direction` (raw unembedding) | 0.0% | 0.0% | 0.479 |
-| `random_rank` (rank-1) | 0.0% | 0.0% | 0.018 |
-| `noop` | 0.0% | 0.0% | 0.000 |
+| variant | `ab` emits installed | `ba` emits installed | Δ logit-diff (`ab`) | edit fraction |
+|---|---:|---:|---:|---:|
+| **`das_binding`** (rank 1) | **100.0%** | **100.0%** | +9.029 [8.952, 9.108] | 0.479 |
+| `whole_state` (installs the ENTIRE donor state) | 85.7% | 87.9% | +4.781 [4.683, 4.878] | 0.805 |
+| `answer_direction` (J-lens, norm-matched) | 27.9% | 4.3% | +2.322 [2.157, 2.482] | 0.479 |
+| `random_norm` (dose-matched random subspace) | 1.1% | 0.7% | +0.903 [0.834, 0.977] | **0.538** |
+| `answer_direction` (raw unembedding) | 0.0% | 0.0% | +0.039 | 0.479 |
+| `random_rank` (rank-1 random) | 0.0% | 0.0% | −0.004 | 0.018 |
+| `noop` | 0.0% | 0.0% | 0.000 | 0.000 |
 
 Transfer ratios (held-out / training arm): `whole_state` 1.004, `das_binding`
 0.998, `answer_direction` 0.144.
 
-**Two readings this rules out.** It is not disruption — a dose-matched random
-subspace produces ~2% of the effect and the model never emits a non-candidate.
-It is not an answer direction — the explicit one attenuates 7x across arms while
-the treatment does not attenuate at all, and the raw unembedding version does
-nothing anywhere.
+Paired contrasts on the same rows, training arm — all three intervals clear zero:
+`das − random_rank` +9.033 [8.956, 9.113], `das − random_norm` +8.126 [8.020,
+8.225], `das − noop` +9.029 [8.952, 9.108].
+
+**Two readings this rules out.**
+
+*It is not disruption.* The dose-matched random subspace lands at edit fraction
+**0.538 against the treatment's 0.479** — 1.12x, i.e. the control is *over*-dosed,
+which is the conservative direction and the exact inverse of the E11 error. At
+that larger dose it produces the installed answer on 1.1% of rows against 100%,
+and the model never emits a non-candidate token under either. A perturbation
+account has to explain why the bigger perturbation does nothing.
+
+*It is not an answer direction.* The explicit one attenuates 6.9x across the arms
+(27.9% -> 4.3%) while the treatment does not attenuate at all (100% -> 100%), and
+the raw unembedding version does nothing on either arm. Note the J-lens control
+also pushes the model off-candidate on 9.1% of `ab` rows where the treatment
+never does — it is perturbing the readout, not moving a binding.
 
 **One reading it does not yet rule out, and the reason it matters.** A rank-1
 edit that outperforms installing the whole donor state (100% vs 86%) is
@@ -294,6 +309,18 @@ it as established.
 maximise exactly this quantity, so 100% there is the optimiser succeeding. The
 non-trivial number is `ba` — 100% on a value assignment it never saw, where a
 token account demands the opposite direction.
+
+**Two aggregation bugs sat between this run and its reading, and both inflated
+nothing — they broke it.** Recorded because the pattern is worth remembering.
+`norm_matched_random` escalates rank per row until it matches the treatment's
+dose, so its rank is a *measurement*, not a setting. It was first filtered out of
+the contrast by requested rank (H4 failed on a missing row, not on data), then,
+once the filter was fixed, still keyed by rank in the summary — which shattered
+the control into ~200 cells of n=2 and made every lookup read one base program.
+That is where a spurious "+0.195, 2% of the treatment" came from; pooled over all
+560 rows it is +0.903, 10%. Both fixes are pinned by tests, and stage 108 now
+rebuilds both aggregates from `interchange.csv` so an aggregation bug can no
+longer survive until the next GPU run.
 
 **What the learned direction is.** Measured against the calibration differences:
 

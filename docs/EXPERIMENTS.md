@@ -520,17 +520,40 @@ programs are token-identical before the mutation).
 | H1 | **PASS** — 1.000 overall, 1.000 in the weakest cell |
 | H2 | **PASS** — binding decodable at 1.000 against a measured 0.500 surface floor |
 | H3 | **PASS** — ab +4.781, ba +4.799, flip rate 0.857; structural zeros exactly 0.00e+00 |
-| H4, H5 | **not yet valid** — see below |
+| H4 | **PASS** — +9.029 [8.952, 9.108] on the training arm; all three control contrasts clear zero |
+| H5 | **PASS** — +9.009 [8.933, 9.089] on the **held-out** arm, which the subspace was never fitted on |
 
-**H4/H5 are pending a re-run.** The first attempt produced three anomalies that
-a working apparatus cannot produce: `das_binding` at **189% of the whole-state
-ceiling** (a rank-1 subspace cannot out-move installing the entire donor state),
-a rank-1 edit moving **48% of ‖h‖**, and the `answer_direction` control reading
-**+0.001 on both arms** — i.e. discriminating nothing. The last is a bug in the
-control: it was a *unit-norm* unembedding row moving ~1% of ‖h‖ while the
-treatment moved 48%, which is the E11 dose error rebuilt inside the control. It
-is now norm-matched per row and verified exact. Stage 108 refuses to report a
-reading while the machinery is broken, which is why no result is claimed here.
+**The result.** A rank-1 subspace at the use anchor, layer 8, fitted on arm `ab`
+alone, makes the model emit the value the *installed binding* selects on
+**100.0% of held-out rows in both arms** — 280 base programs, 560 rows per cell,
+cluster bootstrap over bases. The metric is the full-vocabulary argmax, not the
+logit margin, because `delta_ld` is positively biased when clean accuracy is at
+ceiling and any disruption inflates it.
+
+| variant | `ab` emits installed | `ba` emits installed | edit fraction |
+|---|---:|---:|---:|
+| **`das_binding`** (rank 1) | **100.0%** | **100.0%** | 0.479 |
+| `whole_state` (the entire donor state) | 85.7% | 87.9% | 0.805 |
+| `answer_direction` (J-lens, norm-matched) | 27.9% | 4.3% | 0.479 |
+| `random_norm` (dose-matched random) | 1.1% | 0.7% | **0.538** |
+| `random_rank`, `noop`, raw unembedding | 0.0% | 0.0% | 0.018 / 0 / 0.479 |
+
+Two accounts are refuted rather than merely unsupported. **Not disruption:** the
+random control is *over*-dosed — 0.538 of ‖h‖ against the treatment's 0.479 — and
+at that larger dose produces the installed answer on 1.1% of rows against 100%,
+with the model never emitting a non-candidate token. **Not an answer direction:**
+the explicit one attenuates 6.9× across the arms while the treatment does not
+attenuate at all, and it pushes the model off-candidate on 9.1% of rows where the
+treatment never does.
+
+**Two things are open, and neither is a detail.** The learned direction sits at
+|cos| **0.673** from the mean donor−host difference — substantially aligned, not
+identical — so the closed-form difference-in-means baseline may do the same job;
+a `mean_difference` arm has been added and stage 106 needs one re-run to settle
+it. And a rank-1 edit outperforming the whole-state patch (100% vs 86%) has a
+plausible explanation — the full patch installs components that fight the driving
+one — that is *not* independently demonstrated. Until the first is settled the
+claim is written as "a rank-1 subspace", not "a learned abstraction".
 
 Stages 100–108 · design `docs/design/E13_PLAN.md` · commands
 `docs/RUNBOOK_E13.md`.

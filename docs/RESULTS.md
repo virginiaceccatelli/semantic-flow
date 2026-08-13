@@ -22,10 +22,14 @@ Variable binding and def–use structure **are** represented in DeepSeek-Coder
 rather than estimated. That representation is **built** in the first few
 transformer blocks, **robust** to distance and to identifier renaming in the
 middle layers, and **fragile** exactly where the underlying scope or control
-structure gets harder. Whether the model **causally uses** it is still open:
-four intervention designs have been attempted, three have been retired or
-parked for nameable reasons, and the fourth is running. The retirements are not
-incidental — they are the project's methodological content.
+structure gets harder. Whether the model **causally uses** it now has its
+first affirmative answer: in E13 a rank-1, magnitude-free interchange transports
+*which definition is in scope* into both value assignments of a 2x2 — including
+the one it was never fitted on, where a token or answer-direction account demands
+the opposite movement. Three earlier intervention designs were retired or parked
+for nameable reasons, and those retirements are not incidental: they are the
+project's methodological content, and E13's design is what survived them. One
+baseline is still outstanding before the claim can be written at full strength.
 
 ---
 
@@ -44,7 +48,7 @@ incidental — they are the project's methodological content.
 | E10-0 J-lens | instrument validation | ● | ● | supporting | V1 exact; the Jacobian correction is real |
 | E11 J-space | is the value causally reused? | ● | ● | **NO-GO** | see below — reported, not claimed |
 | E12 store | text-absent value transfer | ● | ☐ | **parked** | behavioural gate failed at 0.418 |
-| **E13** binding interchange | is the *binding* transported? | ☐ | ◑ | **running** | H0–H3 pass; H4/H5 pending re-run |
+| **E13** binding interchange | is the *binding* transported? | ☐ | ☑ | **H0–H5 pass** | rank-1 interchange installs the binding's value in BOTH arms (100%/100%); pending the `mean_difference` baseline |
 | E6, E10-2, E10-3 | — | — | — | archived | `docs/ARCHIVE.md` |
 
 Legend: ☐ not run · ◐ dev model only · ◑ partially run · ● run
@@ -255,7 +259,7 @@ The design coupled a question about program state to two chained arithmetic
 steps. That is a design error, not a finding about code models. Code and gates
 are kept and runnable; nothing is claimed.
 
-## E13 — running now
+## E13 — H0–H5 all pass (6.7B)
 
 **Gates passed so far** (6.7B, 400 base programs):
 
@@ -265,7 +269,8 @@ are kept and runnable; nothing is claimed.
 | **H1** the model returns the bound variable | **PASS** — 1.000 overall, 1.000 in the weakest cell |
 | **H2** the binding is decodable at the use anchor | **PASS** — 1.000 against a measured surface floor of 0.500 |
 | **H3** whole-state interchange flips the answer, per arm | **PASS** — ab +4.781 [+4.683, +4.878], ba +4.799 [+4.694, +4.903], flip rate 0.857; both structural zeros exactly 0.00e+00 |
-| **H4, H5** low-rank interchange and its falsification | **not yet valid** |
+| **H4** low-rank interchange beats matched controls on the training arm | **PASS** — +9.029 [+8.952, +9.108]; `das − random_norm` +8.126 [+8.020, +8.225], `das − random_rank` +9.033, `das − noop` +9.029 |
+| **H5** the same subspace transfers to the held-out arm | **PASS** — +9.009 [+8.933, +9.089]; transfer ratio 0.998 against `whole_state`'s 1.004 |
 
 H1 at 1.000 and H2 at 1.000 are worth pausing on: with no arithmetic anywhere,
 6.7B resolves these bindings perfectly, and which definition is in scope is
@@ -273,16 +278,46 @@ perfectly decodable at the use anchor against a floor pinned to 0.500. That is a
 cleaner replication of E2's isolation than E2 itself, on a corpus built for
 intervention.
 
-**H4/H5 are pending a re-run**, because the first attempt produced three
-numbers a working apparatus cannot produce: the learned rank-1 subspace at
-**189% of the whole-state ceiling** (a rank-1 edit cannot out-move installing
-the entire donor state), that edit moving **48% of ‖h‖**, and the
-`answer_direction` control reading **+0.001 on both arms** — discriminating
-nothing. The last is a bug in the control (a unit-norm direction moving ~1% of
-‖h‖ compared against a treatment moving 48% — the E11 dose error, rebuilt inside
-the control); it is now norm-matched per row. The diagnostic stage refuses to
-report a reading while the machinery is broken, which is why **no E13 result is
-claimed here**.
+**H4 and H5 both pass.** A rank-1, magnitude-free interchange at the use anchor
+(layer 8), fitted on arm `ab` alone, makes the model emit the value the
+*installed binding* selects on **100.0% of held-out rows in both arms** — 280
+base programs, 560 rows per cell, cluster bootstrap over bases. The outcome is
+the full-vocabulary argmax rather than the logit margin, because `delta_ld` is
+positively biased at ceiling accuracy and any disruption inflates it.
+
+| variant | `ab` emits installed | `ba` emits installed | edit fraction |
+|---|---:|---:|---:|
+| **`das_binding`** (rank 1) | **100.0%** | **100.0%** | 0.479 |
+| `whole_state` (the entire donor state) | 85.7% | 87.9% | 0.805 |
+| `answer_direction` (J-lens, norm-matched) | 27.9% | 4.3% | 0.479 |
+| `random_norm` (dose-matched random) | 1.1% | 0.7% | **0.538** |
+| `random_rank` / `noop` / raw unembedding | 0.0% | 0.0% | 0.018 / 0 / 0.479 |
+
+All 14 machinery checks pass: structural zeros exactly 0.00e+00, alignment
+orthonormal to 4.07e-07, ceiling alive in both arms, and the model emits a
+non-candidate token on 0.0% of rows.
+
+**What this refutes, rather than merely fails to support.** A *disruption*
+account has to explain why the dose-matched random subspace, which is
+**over**-dosed at 0.538 of ‖h‖ against the treatment's 0.479, produces the
+installed answer on 1.1% of rows against 100%. An *answer-direction* account has
+to explain why the explicit answer direction attenuates 6.9× across the arms
+while the treatment does not attenuate at all — and why it pushes the model
+off-candidate on 9.1% of rows where the treatment never does. This is the
+falsification E11 could not construct, because with arithmetic between the value
+and the answer it had to forbid `answer == value` to avoid circularity.
+
+**Two things remain open, and the first gates how the claim may be written.**
+The learned direction sits at |cos| **0.673** from the mean donor−host difference
+— substantially aligned, not identical. A cosine cannot say whether the optimiser
+earned the rest, so a closed-form `mean_difference` baseline has been added and
+stage 106 needs one re-run. If that baseline also transports, the honest claim
+narrows to *a single fixed direction carries the binding* — still a result, and a
+cleaner one, but a different sentence. Second, a rank-1 edit outperforming the
+whole-state patch (100% vs 86%) has a plausible explanation — the full patch
+installs the driving component *and* components that fight it — that is **not**
+independently demonstrated. Until both are settled this reads "a rank-1
+subspace", never "a learned abstraction".
 
 ---
 
@@ -290,8 +325,13 @@ claimed here**.
 
 - Not that code models "understand" programs. Every claim is a decoding or
   intervention result at named sites under named controls.
-- Not that binding is causally used. That is the open question, and E7, E10,
-  E11 and E12 each failed to settle it for a different, recorded reason.
+- Not that binding is causally used *in general*. E13 shows a rank-1 interchange
+  transports the binding at one site, in one layer, in one model, on one
+  synthetic construction. E7, E10, E11 and E12 each failed to establish even
+  that, for a different recorded reason.
+- Not that the E13 subspace is a *learned* abstraction rather than the
+  difference-in-means direction. |cos| is 0.673 and the closed-form baseline has
+  not yet been run.
 - Not that the isolation transfers to real code. E8 shows the decoder
   transfers; the 0.500 floor exists only in synthetic programs.
 - Not that control dependence is a semantic result — its floor is 0.927.
@@ -308,23 +348,29 @@ Withdrawn claims, with reasons: `docs/ARCHIVE.md`.
 
 # 6. Open items
 
-1. **Finish E13.** Re-run stage 106 with the corrected `answer_direction`
-   control and read stage 108. This is the only thing standing between the
-   project and an answer to its central question.
-2. **Context-matched pairs on real code** — the highest-value follow-up for the
+1. **Run the `mean_difference` baseline** (one stage-106 re-run, one extra
+   variant, no backward pass). The learned direction is at |cos| 0.673 from the
+   mean donor−host difference; if the closed-form direction transports too, the
+   E13 claim must be written as "a fixed direction" rather than "a learned
+   subspace". This is the only thing standing between E13 and a paper claim.
+2. **Explain, or bound, the rank-1 edit beating the whole-state patch**
+   (100% vs 86% at 60% of the edit norm). The available account — the full patch
+   installs components that fight the driving one — is plausible and untested. A
+   reviewer will ask; better to answer it first.
+3. **Context-matched pairs on real code** — the highest-value follow-up for the
    foundation. It would upgrade E8 from a transfer check to a like-for-like
    replication of E2's isolation. Build by mutating real functions; 150
    candidate sites already exist in the CodeSearchNet corpus.
-3. **A cross-position string-equality surface baseline** in stage 20. The
+4. **A cross-position string-equality surface baseline** in stage 20. The
    current baseline cannot represent "the inner definition's name equals the
    use's name", which is the feature a lexical adversary would use. CPU-only,
    about an hour. Better to build it than to have a reviewer build it.
-4. **E8 stratum sizes** — `static_probes.csv` records per-stratum accuracy but
+5. **E8 stratum sizes** — `static_probes.csv` records per-stratum accuracy but
    not per-stratum *n*. If `same_name_diff_binding` on real code is a handful of
    pairs, the claim weakens from "fails" to "underpowered".
-5. **Report E5/E9 at peak rather than layer-averaged** — the averages hide the
+6. **Report E5/E9 at peak rather than layer-averaged** — the averages hide the
    strongest findings (renaming fools layer 0 but not layer 11).
-6. **E4 re-anchoring** — guard variable and statement target instead of the
+7. **E4 re-anchoring** — guard variable and statement target instead of the
    span's trailing literal. CPU-only re-run.
 
 Raw data of record: `results/tables/*.csv` (one row per measurement). Rendered

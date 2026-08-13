@@ -183,13 +183,30 @@ experiments:
   E13:
     name: binding interchange, falsified by the value assignment
     status: active
-    stage: "100,101,102,103,104,105,106,107"
-    tables: []
+    stage: "100,101,102,103,104,105,106,107,108"
+    model: deepseek-coder-6.7b
+    tables:
+      - results/binding/deepseek-coder-6.7b/interchange_summary.csv
+      - results/binding/deepseek-coder-6.7b/interchange_contrasts.csv
+      - results/binding/deepseek-coder-6.7b/e13_diagnosis.csv
     claim: >
-      NONE YET — implemented, not run. Asks whether a low-rank, magnitude-free
-      interchange at the site where a variable binding is resolved transports
-      WHICH DEFINITION IS IN SCOPE, rather than a token or an answer direction.
-      This is the question paper/main.tex Discussion declares open.
+      H0-H5 ALL PASS on deepseek-coder-6.7b. A rank-1, magnitude-free
+      interchange at the use anchor (layer 8) makes the model emit the value
+      the INSTALLED binding selects on 100.0% of held-out rows in BOTH value
+      assignments — including the arm the subspace was never fitted on, where a
+      token or answer-direction account demands the opposite movement. 280
+      held-out base programs, 560 rows per cell, cluster bootstrap over bases.
+      An answer-direction account is refuted rather than merely unsupported.
+    caveat: >
+      NOT YET SUBMITTABLE AS STATED. The learned direction sits at |cos| 0.673
+      from the mean donor-host difference, so the no-optimiser
+      difference-in-means baseline (`mean_difference`) may reach the same
+      result. Stage 106 must re-run once with that arm before the claim is
+      written as "a learned subspace"; if the baseline matches, the honest claim
+      is the narrower and cleaner "a single fixed direction". Separately, the
+      rank-1 edit outperforming the whole-state patch (100% vs 86%) has a
+      plausible explanation — the full patch installs components that fight the
+      driving one — that is NOT independently demonstrated.
     identification: >
       A 2x2 of binding x value assignment. The same one-token binding flip
       demands OPPOSITE token movements in the two value assignments, so an
@@ -210,17 +227,32 @@ experiments:
       - "H1 (stage 102): the model returns the correctly bound variable — >= 0.85 overall AND >= 0.75 per cell"
       - "H2 (stage 104): which definition is in scope is decodable at the use anchor above the measured surface baseline"
       - "H3 (stage 105): whole-state interchange flips the answer in BOTH arms — the ceiling, and the proof that H5 is testable"
-      - "H4 (stage 106): low-rank interchange beats matched controls on the TRAINING arm"
-      - "H5 (stage 106): the same subspace transfers to the HELD-OUT arm, where an explicit answer direction fails"
+      - "H4 (stage 106): PASS — +9.029 [8.952, 9.108], 189% of the ceiling; all three control contrasts clear zero"
+      - "H5 (stage 106): PASS — +9.009 [8.933, 9.089] on the held-out arm, 188% of its ceiling; transfer ratio 0.998 against whole_state's 1.004, while the explicit answer direction manages 0.144"
+    numbers:
+      site: use
+      layer: 8
+      rank: 1
+      n_bases_test: 280
+      says_installed_das: "ab 100.0%, ba 100.0%"
+      says_installed_whole_state: "ab 85.7%, ba 87.9%"
+      says_installed_random_norm: "ab 1.1%, ba 0.7% — at edit fraction 0.538 against the treatment's 0.479, i.e. an OVER-dosed control"
+      says_installed_answer_direction: "ab 27.9%, ba 4.3% — 6.9x attenuation, the signature the design predicts for a token account"
+      alignment_with_mean_difference: 0.673
     status_note: >
-      IMPLEMENTED, NOT RUN. No GPU stage has been executed. Stages 100-107 are
-      hard-gated and refuse to run (exit 2) on a failed prerequisite;
-      `--override-gate REASON` is recorded permanently.
+      RUN on deepseek-coder-6.7b. All 14 machinery checks pass: structural zeros
+      exactly 0.00e+00, alignment orthonormal to 4.07e-07, ceiling alive in both
+      arms, and the model emits a non-candidate token on 0.0% of rows. Stage 108
+      recomputes the summary and contrasts from the raw per-row `interchange.csv`
+      rather than trusting the aggregates the GPU stage wrote — two separate
+      aggregation bugs in the dose-matched control were caught this way, and both
+      had made H4 fail on bookkeeping rather than on data.
     limitation: >
-      H4 alone is E11 again. The claim requires H5, and an H5 null is only
-      interpretable if the `answer_direction` control failed on the held-out arm
-      as designed — otherwise the discriminator is broken and no verdict is
-      licensed.
+      H4 alone would be E11 again; the claim is H5, and it holds. What is NOT yet
+      established: whether the closed-form difference-in-means direction does the
+      same job (the `mean_difference` arm, pending one stage-106 re-run), and why
+      a rank-1 edit beats installing the whole donor state. Single model, single
+      site, single layer, one binding construction — scope claims accordingly.
 
   E12:
     name: latent store transitions (INSTRUMENT VALIDATION)
