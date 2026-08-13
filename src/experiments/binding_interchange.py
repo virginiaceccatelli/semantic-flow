@@ -338,7 +338,14 @@ def build_subspace(
             d_model, rank, seed=seed)
         return basis, host                       # provably the zero edit
     if variant == "whole_state":
-        return np.eye(d_model), donor
+        # `None` is the rank-d limit, handled directly by `interchange`,
+        # `interchange_report` and `make_interchange_fn`. `interchange(h, o, I)`
+        # is exactly `o`, so this is the same operator and the same numbers —
+        # but materialising a 4096x4096 float64 identity is 134 MB PER ROW, and
+        # `run_grid` retains every cell's basis until phase 2 runs. At 1120 rows
+        # that is 150 GB of identities held live before a single forward pass.
+        # The fast path existed and this call site was still building the eye.
+        return None, donor
     raise ValueError(f"unknown variant '{variant}'")
 
 

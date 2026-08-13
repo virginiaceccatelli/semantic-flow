@@ -675,3 +675,41 @@ def test_difference_vectors_are_one_per_base_and_do_not_cancel():
     assert np.allclose(np.mean(both, axis=0), 0.0)
     with pytest.raises(ValueError, match="zero vector"):
         mean_difference_subspace(both)
+
+
+def test_whole_state_is_the_rank_d_limit_not_a_materialised_identity():
+    """Same operator, same numbers, 134 MB per row less.
+
+    `run_grid` retains every cell's basis until phase 2, so an identity per row
+    is 150 GB held live on the 6.7B grid before a single forward pass.
+    """
+    import numpy as np
+
+    from src.experiments.binding_interchange import build_subspace
+    from src.models.das import interchange, interchange_report
+
+    rng = np.random.default_rng(4)
+    host, donor = rng.standard_normal(64), rng.standard_normal(64)
+    basis, donor_state = build_subspace("whole_state", None, "ab", "source", host,
+                                        donor, d_model=64, rank=1, subspace=None,
+                                        unembedding=None, seed=0)
+    assert basis is None, "the identity is materialised again"
+    assert np.allclose(interchange(host, donor_state, basis),
+                       interchange(host, donor_state, np.eye(64)))
+    assert interchange_report(host, donor_state, basis)["rank"] == 64
+
+
+def test_matched_rank_snaps_up_so_the_control_is_never_under_dosed():
+    """A per-row rank must land on a small shared grid, and never round down."""
+    from src.models.das import RANK_QUANTUM, _snap
+
+    for r in (961, 1211, 1900, 2450):
+        snapped = _snap(r, floor=1, ceiling=4096)
+        assert snapped >= r, "rounding down would under-dose the control"
+        assert snapped % RANK_QUANTUM == 0
+        assert snapped - r < RANK_QUANTUM
+
+    distinct = {_snap(r, 1, 4096) for r in range(960, 2460)}
+    assert len(distinct) <= 32, f"{len(distinct)} ranks would still thrash the cache"
+    assert _snap(5, floor=1, ceiling=4096) == 5          # small ranks stay exact
+    assert _snap(9000, floor=1, ceiling=4096) == 4096    # and the ceiling holds

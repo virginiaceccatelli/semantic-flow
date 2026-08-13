@@ -259,6 +259,32 @@ def _cached_random_subspace(d: int, rank: int, seed: int) -> np.ndarray:
     return random_subspace(d, rank, seed=seed)
 
 
+RANK_QUANTUM = 64
+
+
+def _snap(r: int, floor: int, ceiling: int, quantum: int = RANK_QUANTUM) -> int:
+    """Round a required rank UP to a multiple of `quantum`, above `floor`.
+
+    The rank is chosen per row, so without this it takes a different value on
+    almost every row: several hundred distinct ranks against a 64-entry cache,
+    each miss a QR on a (4096, ~1900) matrix at ~0.7 s, and — because `run_grid`
+    retains each cell's basis until phase 2 — every distinct rank held live at
+    62 MB. On the 6.7B grid that was ~70 GB and an hour of single-machine CPU
+    with the GPU idle.
+
+    Snapping collapses the 960-2460 band to ~24 values: the cache holds them
+    all, the QRs happen once each, and the cells share the arrays. Rounding UP
+    rather than to nearest is what keeps this a control — the matched dose may
+    exceed the treatment's but never falls short, so the comparison stays
+    conservative. Small ranks are left exact, where the relative overshoot would
+    be large and the QR is cheap anyway.
+    """
+    if r <= quantum:
+        return int(max(floor, min(r, ceiling)))
+    snapped = -(-int(r) // quantum) * quantum
+    return int(max(floor, min(snapped, ceiling)))
+
+
 def norm_matched_random(
     h_self: np.ndarray,
     h_other: np.ndarray,
@@ -295,7 +321,7 @@ def norm_matched_random(
 
     ratio = target_fraction * norm_h / norm_delta
     estimate = int(round(d_model * min(1.0, ratio) ** 2))
-    r = int(np.clip(estimate, rank, max_rank))
+    r = _snap(int(np.clip(estimate, rank, max_rank)), rank, max_rank)
 
     basis = _cached_random_subspace(d_model, r, seed)
     fraction = interchange_report(a, h_other, basis)["edit_fraction"]
@@ -303,7 +329,7 @@ def norm_matched_random(
     for _ in range(4):
         if fraction >= target_fraction or r >= max_rank:
             break
-        r = int(min(max_rank, max(r + 1, round(r * 1.5))))
+        r = _snap(int(min(max_rank, max(r + 1, round(r * 1.5)))), rank, max_rank)
         basis = _cached_random_subspace(d_model, r, seed)
         fraction = interchange_report(a, h_other, basis)["edit_fraction"]
     return basis, fraction
