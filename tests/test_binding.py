@@ -593,3 +593,37 @@ def test_mean_difference_variant_needs_its_direction():
     with pytest.raises(ValueError):
         build_subspace("mean_difference", None, "ab", "source", host, donor,
                        d_model=8, rank=1, subspace=None, unembedding=None, seed=0)
+
+
+def test_a_per_row_rank_does_not_shatter_the_control():
+    """`random_norm` picks its own rank per row; the summary must pool over it.
+
+    On 6.7b this shattered the dose-matched control into ~200 cells of n=2, none
+    with a usable interval, and every lookup silently read whichever shard
+    sorted first — reporting the control from a SINGLE base program.
+    """
+    import numpy as np
+    import pandas as pd
+
+    from src.experiments.binding_interchange import _cell, interchange_summary
+
+    rows = []
+    for i in range(40):
+        for variant, rank, delta in (("das_binding", 1, 9.0),
+                                     ("random_norm", 1200 + i, 0.2 + 0.01 * i),
+                                     ("whole_state", 4096, 4.8)):
+            rows.append({"base_id": f"b{i}", "split": "test", "arm": "ab",
+                         "binding": "source", "site": "use", "layer": 8,
+                         "variant": variant, "rank": rank, "delta_ld": delta,
+                         "flipped": 0, "edit_fraction": 0.48})
+    summary = interchange_summary(pd.DataFrame(rows), n_boot=50)
+
+    control = summary[summary.variant == "random_norm"]
+    assert len(control) == 1, "the control was split across its measured ranks"
+    assert int(control["n"].iloc[0]) == 40
+    assert control["rank_min"].iloc[0] < control["rank_max"].iloc[0]
+    assert np.isfinite(control["ci_lo"].iloc[0])
+    # and the requested-rank lookup still finds it
+    assert _cell(summary, "ab", "random_norm", "use", 8, rank=1) is not None
+    # while a variant whose rank IS requested stays keyed by it
+    assert len(summary[summary.variant == "das_binding"]) == 1

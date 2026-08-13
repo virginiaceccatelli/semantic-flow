@@ -56,6 +56,8 @@ def main(
     model: str = typer.Option(...),
     output: Optional[Path] = typer.Option(None),
     verbose: bool = typer.Option(False, help="Also dump the claim-bearing rows"),
+    n_boot: int = typer.Option(2000, help="Bootstrap resamples for the rebuilt "
+                                          "summary and contrasts"),
 ):
     import numpy as np
     import pandas as pd
@@ -67,6 +69,7 @@ def main(
         RANK_IS_AN_OUTCOME,
         TRAIN_ARM,
         control_contrasts,
+        interchange_summary,
         difference_direction_alignment,
         transfer_ratios,
     )
@@ -104,15 +107,27 @@ def main(
                   f"site [bold]{site}[/bold], layer [bold]{layer}[/bold], "
                   f"rank [bold]{rank}[/bold]")
 
-    # Contrasts are RECOMPUTED here rather than read off disk. `interchange.csv`
-    # is the raw per-row record and cannot go stale; the contrast file is a
-    # derived aggregate written by stage 106, so a bug in the aggregation is
-    # frozen into it until a GPU stage re-runs. That is exactly what happened on
-    # 6.7b: the dose-matched control was dropped by a rank filter, H4 failed on
-    # a missing row, and no CPU re-run could clear it. Recomputing keeps this
-    # stage able to correct the record on its own.
+    # The summary and the contrasts are RECOMPUTED here rather than read off
+    # disk. `interchange.csv` is the raw per-row record and cannot go stale;
+    # both other files are derived aggregates written by the GPU stage, so an
+    # aggregation bug stays frozen in them until 106 re-runs — which on 6.7b
+    # meant a bug fixed on a Tuesday could not be seen until a 30-hour job had
+    # gone again. Twice now the fault has been in the aggregation and not in the
+    # data: the dose-matched control was first filtered out of the contrast by
+    # rank, then shattered into one cell per row by the same field. Recomputing
+    # lets this stage correct the record on its own.
+    rebuilt = interchange_summary(grid, split="test", n_boot=n_boot, seed=42)
+    if not rebuilt.empty:
+        shards = int(len(summary)) - int(len(rebuilt))
+        summary = rebuilt
+        summary.to_csv(root / "interchange_summary.csv", index=False)
+        if shards > 0:
+            console.print(f"  [yellow]interchange_summary.csv held {shards} extra "
+                          f"rows — a variant whose rank is measured per row was "
+                          f"keyed by it, so it was split across its own ranks. "
+                          f"Rebuilt from interchange.csv.[/yellow]")
     recomputed = control_contrasts(grid, site=site, arm=TRAIN_ARM, layer=layer,
-                                   rank=rank)
+                                   rank=rank, n_boot=n_boot)
     if not recomputed.empty:
         stale = (contrasts is not None
                  and int(contrasts["n"].eq(0).sum()) > int(recomputed["n"].eq(0).sum()))

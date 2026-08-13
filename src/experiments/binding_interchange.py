@@ -482,12 +482,24 @@ def interchange_summary(frame: pd.DataFrame, split: str = "test",
     describes neither, and every gate evaluator reads from this table.
     """
     subset = frame[frame.split == split] if split != "all" else frame
+    # For a variant whose rank is CHOSEN PER ROW rather than requested, `rank`
+    # is an outcome and must not be part of the key. `norm_matched_random`
+    # escalates rank until it moves the treatment's fraction of ||h||, so it
+    # lands on a different rank for almost every row: grouping by it shattered
+    # the dose-matched control into ~200 cells of n=2, each with no usable
+    # interval, and every lookup then read whichever shard sorted first. On 6.7b
+    # that reported the control as +0.195 from a SINGLE base program.
+    key = subset["rank"].where(~subset.variant.isin(RANK_IS_AN_OUTCOME), -1)
+    subset = subset.assign(_rank_key=key)
     rows = []
-    for (arm, variant, site, rank, layer), part in subset.groupby(
-            ["arm", "variant", "site", "rank", "layer"]):
+    for (arm, variant, site, rank_key, layer), part in subset.groupby(
+            ["arm", "variant", "site", "_rank_key", "layer"]):
         ci = cluster_bootstrap_ci(part["delta_ld"].to_numpy(),
                                   part["base_id"].to_numpy(), n_boot=n_boot, seed=seed)
-        rows.append({"arm": arm, "variant": variant, "site": site, "rank": int(rank),
+        ranks = part["rank"].to_numpy()
+        rows.append({"arm": arm, "variant": variant, "site": site,
+                     "rank": int(np.median(ranks)) if rank_key == -1 else int(rank_key),
+                     "rank_min": int(ranks.min()), "rank_max": int(ranks.max()),
                      "layer": int(layer),
                      "split": split, "delta_ld": ci.point, "ci_lo": ci.lo, "ci_hi": ci.hi,
                      "flip_rate": float(part["flipped"].mean()),
@@ -666,10 +678,11 @@ def difference_direction_alignment(
 
 # Variants whose rank is a CONSEQUENCE of the construction rather than a
 # setting: `whole_state` is rank d by definition, and `norm_matched_random`
-# escalates rank until it moves the treatment's fraction of ||h||. Filtering
-# those by the requested rank silently drops them — which is what removed the
-# dose-matched control from the 6.7B summary and failed H4 on a missing
-# contrast rather than on the data.
+# escalates rank until it moves the treatment's fraction of ||h||, per row, so
+# its rank is a measured consequence and not a setting. Two things follow, and
+# the 6.7B run hit both: such a variant must not be KEYED by rank in
+# `interchange_summary` (or it shatters into one cell per row), and it must not
+# be FILTERED by the requested rank on lookup (or it disappears entirely).
 RANK_IS_AN_OUTCOME = ("whole_state", "random_norm")
 
 
