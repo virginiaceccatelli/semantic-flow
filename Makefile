@@ -14,6 +14,9 @@
 #   make jlens-controldep MODEL=... stage 62 — E10-3, ARCHIVED (GPU/MPS)
 #   make jlens MODEL=...            stages 60→62 in order (60 gates the rest)
 #
+#   ── E14, the R-lens representational track ──
+#   make rlens-validate MODEL=...   stage 110 — E14 gate R, must pass (GPU/MPS)
+#
 #   ── E11, the active direction: J-space binding routing ──
 #   make jspace-pairs MODEL=...     stage 70 counterfactual pairs (CPU)
 #   make jspace-lens MODEL=...      stage 71 frozen lenses — GATE (GPU/MPS)
@@ -65,7 +68,7 @@ ACT := results/activations/$(MODEL)
 PROBES := results/probes/$(MODEL)/core
 
 .PHONY: smoke data data-real extract probes context obfuscation leadtime patching \
-        jlens jlens-validate jlens-taint jlens-controldep \
+        jlens jlens-validate jlens-taint jlens-controldep rlens-validate \
         jspace jspace-pairs jspace-lens jspace-readout jspace-swap jspace-report \
         jspace-diagnose jspace-pilot assets assets-all test \
         store store-pairs store-verify store-behaviour store-extract store-decode \
@@ -118,6 +121,10 @@ jlens-controldep:
 	$(PY) scripts/62_jlens_controldep.py --model $(MODEL)
 
 jlens: jlens-validate jlens-taint jlens-controldep
+
+# ── E14 R-lens (stage 110 is the gate; it exits non-zero if a check fails) ───
+rlens-validate:
+	$(PY) scripts/110_rlens_validate.py --model $(MODEL)
 
 # ── E11 J-space binding routing (stage 71 gates 72/73) ──────────────────────
 jspace-pairs:

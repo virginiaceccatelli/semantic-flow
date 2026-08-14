@@ -293,3 +293,16 @@ binding_pilot:
   n_bases: 200
   layers: [6, 12, 18]
   ranks: [1, 2, 4]
+
+stage110_rlens_validate:               # E14 gate R — GATES stage 111
+  n_r0: 5                              # programs for the forward-invariance check
+  n_r2: 10                             # samples per (layer, ablation arm)
+  n_sources: 40
+  candidates: SAFE_NAMES               # only used to build a cotangent for R2
+  ablations: [all, no_ln, no_identity, no_half, none]
+  r0_rtol: {float32: 1.0e-4, float16: 1.0e-2}        # RELATIVE — logits run to ~80,
+                                                     # where an absolute bound fails
+                                                     # on float32 rounding alone
+  max_early_abs_error: 0.10            # R2: median |rho-1| under LRP, layers <= mid
+  required_checks: [R0_forward_invariance, R1_last_layer_equals_logit_lens,
+                    R2_lrp_beats_autograd_everywhere, R2_lrp_conserves_in_early_layers]

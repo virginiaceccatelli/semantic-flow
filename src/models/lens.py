@@ -55,6 +55,7 @@ from __future__ import annotations
 
 import logging
 import pickle
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Sequence
@@ -64,6 +65,7 @@ import torch
 import torch.nn as nn
 
 from src.models.hooks import HookManager
+from src.models.lrp import lrp_rules
 
 logger = logging.getLogger(__name__)
 
@@ -310,6 +312,7 @@ def _vjp_one_sample(
     cotangents: torch.Tensor,        # (V, d_model) float32, on model device
     last_layer: int,
     grad_scale: float,
+    lrp: bool = False,
 ) -> Optional[np.ndarray]:
     """Lens vectors from ONE sample: (V, d_model), averaged over t'.
 
@@ -343,7 +346,10 @@ def _vjp_one_sample(
         )
 
     try:
-        with torch.enable_grad():
+        # The LRP rules must be installed for the FORWARD pass too — they are
+        # value-preserving, so this changes no activation, but the graph the
+        # backward pass walks is built here.
+        with torch.enable_grad(), (lrp_rules(model) if lrp else nullcontext()):
             model(input_ids=input_ids)
             source = captured["source"]
             final = captured["source"] if layer == last_layer else captured["final"]
@@ -391,6 +397,7 @@ def compute_lens_vectors(
     token_strings: Optional[Sequence[str]] = None,
     grad_scale: float = 1024.0,
     progress_every: int = 25,
+    lrp: bool = False,
 ) -> JLens:
     """Build the frozen J-lens for one layer by averaging VJPs over samples.
 
@@ -398,6 +405,11 @@ def compute_lens_vectors(
     up before backward and divided out of the gradient, so fp16 backward
     passes do not underflow to zero. Samples whose gradients are still
     non-finite are dropped and counted.
+
+    With `lrp=True` the LRP rules of `src/models/lrp.py` are installed for the
+    forward+backward pass and the result is an **R-lens** (`kind="rlens"`) —
+    the same estimator against a more faithful derivative. Forward values are
+    unchanged, so every other argument means exactly what it did before.
     """
     if not samples:
         raise ValueError("No samples to build a lens from")
@@ -414,7 +426,8 @@ def compute_lens_vectors(
         # forcing the whole run into float32.
         vecs, used_scale = None, grad_scale
         for scale in (grad_scale, grad_scale / 32, 1.0, 1.0 / grad_scale):
-            vecs = _vjp_one_sample(model, layer, sample, cotangents, last_layer, scale)
+            vecs = _vjp_one_sample(model, layer, sample, cotangents, last_layer,
+                                   scale, lrp=lrp)
             if vecs is not None:
                 used_scale = scale
                 break
@@ -446,11 +459,99 @@ def compute_lens_vectors(
         token_ids=list(token_ids),
         token_strings=list(token_strings or [str(t) for t in token_ids]),
         layer=layer,
-        kind="jlens",
+        kind="rlens" if lrp else "jlens",
         n_samples=n_used,
         metadata={"n_dropped": n_dropped, "n_rescaled": n_rescaled,
-                  "grad_scale": grad_scale},
+                  "grad_scale": grad_scale, "lrp": lrp},
     )
+
+
+# ── faithfulness diagnostic (E14 gate R2) ────────────────────────────────────
+
+def conservation_ratio(
+    model,
+    layer: int,
+    sample: LensSample,
+    cotangent: torch.Tensor,        # (d_model,) float32, on model device
+    t_prime: Optional[int] = None,
+    lrp: bool = False,
+    lrp_flags: Optional[dict] = None,
+) -> Optional[float]:
+    """`sum_t <ds/dh_l,t , h_l,t> / s` — LRP conservation at one layer.
+
+    The completeness property of a relevance decomposition, measured directly.
+    Layer `l`'s outputs at ALL positions are the complete input to everything
+    downstream, so if that sub-network is degree-1 homogeneous the Euler
+    identity makes this ratio exactly 1:
+
+        f(c*x) = c*f(x)  for all c > 0   =>   <grad f(x), x> = f(x)
+
+    With the LRP rules installed every patched module is degree-1 homogeneous
+    (RMSNorm becomes diagonal, SiLU becomes elementwise, the gate splits
+    evenly) and Llama-family projections carry no bias, so the only departures
+    left are attention's softmax — deliberately unmodified, following the
+    R-lens post — and RMSNorm's epsilon. Under raw autograd (`lrp=False`) the
+    ratio also picks up the gate's double-counting and the norm's
+    relevance-collapse term, and the gap should grow with depth.
+
+    So: `lrp=True` minus `lrp=False` is the faithfulness gain, and `lrp=True`
+    minus 1 is what attention still costs. Needs no labels and no candidate
+    vocabulary — one backward pass per (sample, layer).
+
+    `lrp_flags` (e.g. `{"ln": False, "identity": True, "half": True}`) installs
+    a subset of the rules instead of all three — this is how R2b attributes the
+    faithfulness gain to individual rules. It implies `lrp=True`.
+
+    Returns None when the score is too small to divide by, or when the
+    gradient is not finite, so callers can drop rather than poison a mean.
+    """
+    use_lrp = lrp or bool(lrp_flags)
+    device = next(model.parameters()).device
+    input_ids = sample.input_ids.to(device)
+    seq_len = input_ids.shape[1]
+    tp = sample.t_primes[-1] if t_prime is None else t_prime
+    if tp >= seq_len:
+        return None
+
+    captured: dict[str, torch.Tensor] = {}
+    handles: list = []
+    last_layer = last_layer_index(model)
+
+    def source_hook(module, inputs, output):
+        hidden = output[0] if isinstance(output, tuple) else output
+        leaf = hidden.detach().requires_grad_(True)
+        captured["source"] = leaf
+        return (leaf,) + output[1:] if isinstance(output, tuple) else leaf
+
+    def final_hook(module, inputs, output):
+        captured["final"] = output[0] if isinstance(output, tuple) else output
+
+    handles.append(_layer_module(model, layer).register_forward_hook(source_hook))
+    if layer != last_layer:
+        handles.append(
+            _layer_module(model, last_layer).register_forward_hook(final_hook))
+
+    try:
+        ctx = lrp_rules(model, **(lrp_flags or {})) if use_lrp else nullcontext()
+        with torch.enable_grad(), ctx:
+            model(input_ids=input_ids)
+            source = captured["source"]
+            final = captured["source"] if layer == last_layer else captured["final"]
+
+            score = (final[0, tp].float() * cotangent.float()).sum()
+            (grad,) = torch.autograd.grad(score, source, retain_graph=False)
+    finally:
+        for handle in handles:
+            handle.remove()
+
+    score = score.detach()
+    if not torch.isfinite(grad).all() or not torch.isfinite(score):
+        return None
+    if score.abs() < 1e-6:
+        return None
+    # Sum over EVERY position: h_l,* jointly is the input to the tail network.
+    relevance = (grad[0].float() * source[0].detach().float()).sum()
+    return float(relevance / score)
 
 
 # ── controls ─────────────────────────────────────────────────────────────────
