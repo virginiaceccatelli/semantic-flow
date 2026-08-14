@@ -69,7 +69,9 @@ def test_linear_and_embedding_are_not_mistaken_for_norms():
 
 def test_install_reports_what_it_patched(llama):
     with lrp_rules(llama) as counts:
-        assert counts == {"ln": 7, "mlp": 3}
+        assert counts == {"ln": 7, "mlp": 3, "attn": 3}
+    with lrp_rules(llama, attn=False) as counts:
+        assert counts == {"ln": 7, "mlp": 3, "attn": 0}
 
 
 def test_empty_install_raises_rather_than_silently_becoming_a_jlens():
@@ -200,6 +202,43 @@ def test_conservation_holds_under_the_rules_and_fails_without(llama, ids, layer)
 
     assert with_lrp is not None and without is not None
     assert abs(with_lrp - 1.0) < abs(without - 1.0)
+
+
+def test_attn_rule_makes_conservation_exact(llama, ids):
+    """Attention's bilinear A@V is the only non-conserving path left.
+
+    Detaching q/k freezes the pattern, so the block is linear in x through V
+    and the Euler identity becomes exact rather than approximate. Measured on
+    deepseek-coder-1.3b the three-rule config drifts to rho = 2.69 over 24
+    blocks; with this rule it is 1.0000 at every depth.
+    """
+    cotangent = torch.randn(llama.config.hidden_size)
+    for layer in (0, 1):
+        without = conservation_ratio(llama, layer, _sample(ids), cotangent,
+                                     lrp_flags=dict(ln=True, identity=True,
+                                                    half=True, attn=False))
+        with_attn = conservation_ratio(llama, layer, _sample(ids), cotangent,
+                                       lrp_flags=dict(ln=True, identity=True,
+                                                      half=True, attn=True))
+        assert with_attn == pytest.approx(1.0, abs=1e-3)
+        assert abs(with_attn - 1.0) < abs(without - 1.0)
+
+
+def test_attn_rule_preserves_the_forward_value(llama, ids):
+    """Detaching q/k changes no activation — R0 still holds."""
+    base = llama(input_ids=ids).logits
+    with lrp_rules(llama, ln=False, identity=False, half=False, attn=True):
+        patched = llama(input_ids=ids).logits
+    assert torch.allclose(base, patched, atol=1e-5, rtol=1e-4)
+
+
+def test_attn_rule_is_removed_on_exit(llama, ids):
+    """The rule installs forward HOOKS, not a rebind — they must come off too."""
+    before = llama(input_ids=ids).logits
+    with lrp_rules(llama, ln=False, identity=False, half=False, attn=True):
+        pass
+    assert not llama.model.layers[0].self_attn.q_proj._forward_hooks
+    assert torch.equal(before, llama(input_ids=ids).logits)
 
 
 def test_conservation_is_exact_at_the_last_layer(llama, ids):

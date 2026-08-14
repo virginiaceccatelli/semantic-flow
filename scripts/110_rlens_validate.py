@@ -91,7 +91,7 @@ def main(
 
     conservation = Table(title="R2 — median |rho - 1| by layer (lower is more faithful)")
     conservation.add_column("layer")
-    arms = [a for a in ("none", "all", "no_ln", "no_identity", "no_half")
+    arms = [a for a in ("none", "all", "no_attn", "no_ln", "no_identity", "no_half")
             if a in set(summary["arm"])]
     for arm in arms:
         conservation.add_column("autograd" if arm == "none" else arm)

@@ -9,6 +9,27 @@ vector-Jacobian product computed against a deliberately modified derivative.
     LN-rule        detach RMSNorm's 1/rms, making the norm a diagonal map
     identity-rule  detach the sigmoid factor of SiLU, making it elementwise
     half-rule      split a gate's relevance 50/50 instead of double-counting
+    attn-rule      detach q and k, freezing the attention pattern
+
+## The attn-rule is a deliberate deviation from the post
+
+The R-lens post leaves attention unmodified. On deepseek-coder-1.3b that does
+not conserve: measured (fp32, n=10) the three-rule configuration over-shoots by
+~0.07 of relevance per block traversed, reaching rho = 2.69 across 24 blocks,
+because `A(q,k) @ V(x)` is bilinear and autograd double-counts it — the same
+failure the half-rule fixes for a gated MLP, on the one path the post leaves
+alone. Detaching q and k makes the pattern constant, the block linear in x
+through V, and conservation exact (rho = 1.0000 at every depth).
+
+`attn=True` is therefore the default here. Pass `attn=False` for the post's
+configuration; `rlens_validate.ABLATIONS` measures both so the choice stays
+visible in every run rather than buried in a default.
+
+**What this costs, and it is not nothing.** With q and k detached, the lens
+attributes no relevance to *pattern formation* — only to what the attention
+moved, not to the decision of where to look. For a binding task, where "attend
+to the right definition" is plausibly the mechanism of interest, that is a real
+limitation and belongs in any write-up of E14.
 
 ## The property everything else depends on
 
@@ -80,6 +101,12 @@ def is_gated_mlp(module: nn.Module) -> bool:
                for attr in ("gate_proj", "up_proj", "down_proj", "act_fn"))
 
 
+def is_attention(module: nn.Module) -> bool:
+    """A standard q/k/v/o attention block."""
+    return all(hasattr(module, attr)
+               for attr in ("q_proj", "k_proj", "v_proj", "o_proj"))
+
+
 def norm_eps_attr(module: nn.Module) -> Optional[str]:
     """The attribute holding an RMSNorm's epsilon, or None if not an RMSNorm.
 
@@ -133,6 +160,27 @@ def _rmsnorm_forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
     return self.weight * (h * scale).to(input_dtype)
 
 
+def _detach_output(module, inputs, output):
+    """attn-rule. Freezes the attention pattern by detaching q and k.
+
+    The attention output is `A(q,k) @ V(x)`, bilinear in `(A, V)`. Autograd
+    therefore double-counts it — relevance flows through the value path AND
+    through q/k — exactly the failure the half-rule fixes for a gated MLP, on
+    the one path the R-lens post leaves unmodified. Measured on
+    deepseek-coder-1.3b (fp32, n=10) that costs ~0.07 of excess relevance per
+    block traversed, accumulating to rho = 2.69 across 24 blocks.
+
+    Detaching q and k makes `A` a constant, so the output is linear in `x`
+    through `V` alone and the block conserves. Values are untouched, so R0
+    still holds: this is a backward-pass change like every other rule here.
+
+    Cheaper and far more robust than reimplementing the softmax: it needs no
+    access to the attention kernel, so it works identically under eager, sdpa
+    and flash paths.
+    """
+    return output.detach() if isinstance(output, torch.Tensor) else output
+
+
 def _make_mlp_forward(identity: bool, half: bool):
     """identity-rule and/or half-rule over a gated MLP.
 
@@ -162,6 +210,7 @@ def lrp_rules(
     ln: bool = True,
     identity: bool = True,
     half: bool = True,
+    attn: bool = True,
     strict: bool = True,
 ) -> Generator[dict, None, None]:
     """Install the LRP backward rules for the duration of the block.
@@ -176,11 +225,16 @@ def lrp_rules(
     degrades into the J-lens.
     """
     patched: list[tuple[nn.Module, str]] = []
-    counts = {"ln": 0, "mlp": 0}
+    handles: list = []
+    counts = {"ln": 0, "mlp": 0, "attn": 0}
     layernorms_skipped: list[str] = []
 
     try:
         for name, module in model.named_modules():
+            if attn and is_attention(module):
+                handles.append(module.q_proj.register_forward_hook(_detach_output))
+                handles.append(module.k_proj.register_forward_hook(_detach_output))
+                counts["attn"] += 1
             if isinstance(module, nn.LayerNorm):
                 layernorms_skipped.append(name)
             elif ln and norm_eps_attr(module) is not None:
@@ -203,7 +257,7 @@ def lrp_rules(
                 "LN-rule skipped %d LayerNorm module(s) (%s...): the rule is "
                 "written for RMSNorm. Relevance through them is unmodified.",
                 len(layernorms_skipped), layernorms_skipped[0])
-        if strict and not patched:
+        if strict and not patched and not handles:
             raise RuntimeError(
                 "No LRP rules installed — no gated MLP or RMSNorm module matched. "
                 "Inspect model.named_modules() and extend is_gated_mlp/norm_eps_attr; "
@@ -211,8 +265,10 @@ def lrp_rules(
             )
         # debug, not info: this fires once per backward pass, so at INFO it
         # buries the actual progress lines under thousands of identical rows.
-        logger.debug("LRP rules installed: %d norms, %d MLPs (ln=%s identity=%s half=%s)",
-                     counts["ln"], counts["mlp"], ln, identity, half)
+        logger.debug("LRP rules installed: %d norms, %d MLPs, %d attn "
+                     "(ln=%s identity=%s half=%s attn=%s)",
+                     counts["ln"], counts["mlp"], counts["attn"],
+                     ln, identity, half, attn)
         yield counts
     finally:
         # Deleting the instance attribute re-exposes the class's own bound
@@ -221,3 +277,5 @@ def lrp_rules(
             del module.forward
             if kind == "ln":
                 del module._lrp_eps_attr
+        for handle in handles:
+            handle.remove()

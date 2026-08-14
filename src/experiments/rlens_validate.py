@@ -87,12 +87,16 @@ R0_RTOL = {"float32": 1e-4, "float16": 1e-2, "bfloat16": 5e-2}
 R2_MAX_ERROR = 0.10          # required: median |rho-1| under LRP, layers <= mid
 R1_MIN_COSINE = 0.99
 
+# "all" is the configuration this repo ships and the one R2 gates. "no_attn" is
+# the R-lens post's own configuration, kept as an arm so the deviation is
+# measured in every run rather than asserted once — see src/models/lrp.py.
 ABLATIONS = {
-    "all": dict(ln=True, identity=True, half=True),
-    "no_ln": dict(ln=False, identity=True, half=True),
-    "no_identity": dict(ln=True, identity=False, half=True),
-    "no_half": dict(ln=True, identity=True, half=False),
-    "none": dict(ln=False, identity=False, half=False),
+    "all": dict(ln=True, identity=True, half=True, attn=True),
+    "no_attn": dict(ln=True, identity=True, half=True, attn=False),
+    "no_ln": dict(ln=False, identity=True, half=True, attn=True),
+    "no_identity": dict(ln=True, identity=False, half=True, attn=True),
+    "no_half": dict(ln=True, identity=True, half=False, attn=True),
+    "none": dict(ln=False, identity=False, half=False, attn=False),
 }
 
 

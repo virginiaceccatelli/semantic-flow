@@ -305,12 +305,54 @@ deficit** — precisely the quantity R2 was designed to isolate. Shipping
 every layer of every model. The indicated fix is the AttnLRP extension already
 flagged in §2.4, not a weaker rule set.
 
-**Open, and blocking.** At layers −1 and 0 the full-LRP `|ρ−1|` *exceeds 1*
-(1.84, 1.50), so ρ is either negative — a sign inversion, the same pathology as
-raw autograd — or above 2.8. An attention deficit alone cannot produce that.
-fp16 is a live confounder: R0's max *absolute* logit delta was 0.281 in fp16
-against 3.4e-4 in fp32. **Re-run R2 in float32 and read the signed `median_rho`
-column before concluding anything about attention.**
+### RESOLVED — it was attention, and it over-contributes
+
+The fp32 re-run with signed `median_rho` settled it. fp16 was not a factor
+(1.8397 vs 1.8406). The signed ratios:
+
+| layer | blocks traversed | autograd ρ | full LRP ρ |
+|---|---|---|---|
+| 19 | 4 | +0.18 | +1.018 |
+| 15 | 8 | −0.06 | +1.247 |
+| 11 | 12 | +0.04 | +1.407 |
+| 7 | 16 | +0.12 | +1.619 |
+| 3 | 20 | −0.07 | +1.969 |
+| −1 | 24 | −0.08 | +2.694 |
+
+Two facts, both clean. **Autograd ρ ≈ 0 at every depth** — total relevance
+collapse, the LN-rule pathology of §2.1 confirmed directly rather than
+inferred. And **the three-rule config over-contributes ~0.07 per block**,
+almost exactly linear in depth.
+
+That kills the cancellation story above: attention does not under-contribute,
+it **over**-contributes. `A(q,k) @ V(x)` is bilinear and autograd double-counts
+it — the identical failure the half-rule fixes for a gated MLP, on the one path
+the post leaves unmodified. Per-block, accumulating with depth, which is the
+observed shape.
+
+*(The earlier SiLU argument was wrong: `⟨silu'(g),g⟩ ≥ silu(g)` holds
+elementwise, but it was carried through `W_down` as if signs were preserved.
+`W_down` and `b` are sign-mixed, so it constrains nothing about the score.)*
+
+**The fix, and it is exact.** A fourth rule — detach q and k, freezing the
+attention pattern — makes the block linear in `x` through `V` alone. On a
+24-layer reference Llama:
+
+| layer | blocks | autograd | 3-rule | **+attn-rule** |
+|---|---|---|---|---|
+| 0 | 23 | 3.146 | 0.945 | **1.0000** |
+| 8 | 15 | 1.382 | 0.992 | **1.0000** |
+| 16 | 7 | 1.551 | 1.005 | **1.0000** |
+
+Exact at every depth. `attn=True` is now the default in `lrp_rules`; the post's
+three-rule configuration is retained as the `no_attn` ablation arm so the
+deviation is measured in every run rather than asserted once.
+
+**The cost, which belongs in any write-up.** With q/k detached the lens
+attributes no relevance to *pattern formation* — only to what attention moved,
+not to the decision of where to look. For binding, where "attend to the correct
+definition" is plausibly the mechanism, that is a real limitation on what §7's
+descriptors can claim.
 
 ---
 
