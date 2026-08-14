@@ -1,0 +1,6 @@
+phase,check,passed,required,detail
+gateR,R0_forward_invariance,True,True,"max |delta logit| / |logit| = 4.67e-06 over 3 programs (max abs 3.49e-04; tolerance 1e-04 relative for float32). The rules are value-preserving algebraically, not bitwise, so this measures rounding — an algebra error is O(1)."
+gateR,R1_last_layer_equals_logit_lens,True,True,mean rowwise cosine at layer 23 = 1.0000. Regression guard only — the LRP path is not traversed at the last layer.
+gateR,R2_lrp_beats_autograd_everywhere,False,True,LRP median |rho-1| is lower at 1/2 layers; NOT at layers [23]
+gateR,R2_lrp_conserves_in_early_layers,False,True,median |rho-1| under LRP over layers [3] = 0.7107 (required < 0.1). Residual is attention's cost — it is the only unmodified non-linear path.
+gateR,R2b_rule_ablation,True,False,"removing each rule, worst first: no_half 6.9541, no_ln 0.4904, no_identity 0.0551. The LN-rule is predicted to dominate (docs/design/E14_RLENS_PLAN.md §2.1)."
