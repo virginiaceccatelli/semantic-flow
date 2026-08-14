@@ -182,19 +182,21 @@ def summarize_conservation(df: pd.DataFrame) -> pd.DataFrame:
               .reset_index())
 
 
-def check_conservation(summary: pd.DataFrame, early_layers: Sequence[int]) -> list[Check]:
+def check_conservation(summary: pd.DataFrame, early_layers: Sequence[int],
+                       last_layer: Optional[int] = None) -> list[Check]:
     """R2 (required) and R2b (reported)."""
     checks: list[Check] = []
     lrp = summary[summary["arm"] == "all"].set_index("layer")["median_abs_error"]
     raw = summary[summary["arm"] == "none"].set_index("layer")["median_abs_error"]
     shared = [l for l in lrp.index if l in raw.index]
 
-    # Layers where autograd is already exact have nothing to beat: at the last
-    # decoder layer the tail is empty, so both arms are 1.0 by construction and
-    # `lrp >= raw` is a vacuous tie, not a failure. Compare only where the tail
-    # actually contains modules.
-    testable = [l for l in shared if raw[l] > 1e-6]
-    vacuous = [int(l) for l in shared if l not in testable]
+    # The last decoder layer has an empty tail: both arms are 1.0 by
+    # construction, so `lrp >= raw` there is a vacuous tie, not a failure.
+    # Excluded STRUCTURALLY rather than by thresholding the value — under fp16
+    # the tie lands near, but not exactly at, zero, and any value-based cutoff
+    # either misses it or starts silently excluding real layers.
+    testable = [l for l in shared if l != last_layer]
+    vacuous = [int(l) for l in shared if l == last_layer]
     worse = [int(l) for l in testable if lrp[l] >= raw[l]]
     checks.append(Check(
         name="R2_lrp_beats_autograd_everywhere", phase="gateR",
@@ -202,8 +204,8 @@ def check_conservation(summary: pd.DataFrame, early_layers: Sequence[int]) -> li
         detail=(f"LRP median |rho-1| is lower at {len(testable) - len(worse)}/"
                 f"{len(testable)} testable layers"
                 + (f"; NOT at layers {worse}" if worse else "")
-                + (f". Skipped {vacuous} where autograd is already exact "
-                   "(empty tail — nothing to beat)." if vacuous else "")),
+                + (f". Skipped the last layer {vacuous} — empty tail, "
+                   "nothing to beat." if vacuous else "")),
     ))
 
     early = [l for l in lrp.index if l in early_layers]
@@ -262,7 +264,7 @@ def run_gate_r(
     early = [l for l in layers if l != EMBEDDING_LAYER and l <= max(layers) // 2]
     summary = summarize_conservation(df)
     summary.to_csv(output_dir / "rlens_r2_summary.csv", index=False)
-    checks.extend(check_conservation(summary, early))
+    checks.extend(check_conservation(summary, early, last_layer=last_layer_index(model)))
 
     pd.DataFrame([c.as_row() for c in checks]).to_csv(
         output_dir / "rlens_validation_checks.csv", index=False)

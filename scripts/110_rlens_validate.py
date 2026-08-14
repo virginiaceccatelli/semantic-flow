@@ -103,6 +103,23 @@ def main(
         conservation.add_row(*row)
     console.print(conservation)
 
+    # |rho-1| hides the sign, and the sign is the diagnosis: rho slightly below
+    # 1 is a relevance DEFICIT (attention under-contributing, the expected
+    # residual), while rho < 0 is a sign INVERSION (the transported relevance
+    # points opposite to the score it explains) — a different and much worse
+    # failure, and the signature of fp16 breakdown over many blocks.
+    signed = Table(title="R2 — signed median rho (1.0 = conserved, <0 = inverted)")
+    signed.add_column("layer")
+    for arm in ("none", "all"):
+        signed.add_column("autograd" if arm == "none" else "full LRP")
+    for layer in sorted(set(summary["layer"])):
+        row = [str(layer)]
+        for arm in ("none", "all"):
+            cell = summary[(summary["layer"] == layer) & (summary["arm"] == arm)]
+            row.append(f"{cell['median_rho'].iloc[0]:+.4f}" if len(cell) else "-")
+        signed.add_row(*row)
+    console.print(signed)
+
     if tables:
         tables_dir = Path("results/tables")
         tables_dir.mkdir(parents=True, exist_ok=True)

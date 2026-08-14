@@ -209,8 +209,10 @@ def lrp_rules(
                 "Inspect model.named_modules() and extend is_gated_mlp/norm_eps_attr; "
                 "running on unpatched modules would silently produce a J-lens."
             )
-        logger.info("LRP rules installed: %d norms, %d MLPs (ln=%s identity=%s half=%s)",
-                    counts["ln"], counts["mlp"], ln, identity, half)
+        # debug, not info: this fires once per backward pass, so at INFO it
+        # buries the actual progress lines under thousands of identical rows.
+        logger.debug("LRP rules installed: %d norms, %d MLPs (ln=%s identity=%s half=%s)",
+                     counts["ln"], counts["mlp"], ln, identity, half)
         yield counts
     finally:
         # Deleting the instance attribute re-exposes the class's own bound

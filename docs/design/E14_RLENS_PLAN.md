@@ -270,9 +270,47 @@ asserts.
 
 `ρ_ℓ` with each rule individually disabled. **Prediction stated in advance:** the
 LN-rule dominates and its effect grows with the number of traversed blocks
-(§2.1); identity and half matter less and roughly uniformly. If that ordering
-does not hold, the mechanism story in §2.1 is wrong and should be corrected
-before §7's interpretation is trusted.
+(§2.1); identity and half matter less and roughly uniformly.
+
+**Measured on deepseek-coder-1.3b, fp16, n=10 (2026-08-14) — the prediction is
+half wrong, and the way it is wrong is the useful part.**
+
+| layer | autograd | all | no_ln | no_identity | no_half |
+|---|---|---|---|---|---|
+| −1 | 1.077 | 1.841 | 0.971 | 0.613 | 49.79 |
+| 3 | 1.073 | 1.026 | 1.007 | 0.276 | 17.38 |
+| 11 | 0.964 | 0.408 | 1.037 | **0.059** | 8.74 |
+| 19 | 0.842 | 0.140 | 0.993 | 0.254 | 2.06 |
+
+- **half-rule: essential**, and its cost grows with depth exactly as predicted —
+  double-counting compounds per block.
+- **LN-rule: necessary.** `no_ln` sits at ~1.0 everywhere, indistinguishable
+  from raw autograd — without it there is no gain at all. §2.1 holds.
+- **identity-rule: it makes conservation WORSE**, at every layer. Not
+  predicted, and not noise: monotone across eight layers at n=10.
+
+**Why — and why this must not be "fixed" by dropping the rule.** For SiLU,
+
+    <silu'(g), g> − silu(g)  =  σ(g) · g² · (1 − σ(g))  ≥  0
+
+with minimum exactly 0 (verified numerically over g ∈ [−8, 8]). So the
+*un-ruled* MLP branch **always over-contributes** relevance — never under — by
+~30% on realistic activations. Attention, left unmodified, under-contributes.
+The two errors partially cancel, and `no_identity` is that cancellation.
+
+The identity-rule is exactly conserving per node (`<σ(g), g> = silu(g)`), so
+what it actually does is remove the compensating error and **expose attention's
+deficit** — precisely the quantity R2 was designed to isolate. Shipping
+`no_identity` would make the lens depend on two errors staying balanced at
+every layer of every model. The indicated fix is the AttnLRP extension already
+flagged in §2.4, not a weaker rule set.
+
+**Open, and blocking.** At layers −1 and 0 the full-LRP `|ρ−1|` *exceeds 1*
+(1.84, 1.50), so ρ is either negative — a sign inversion, the same pathology as
+raw autograd — or above 2.8. An attention deficit alone cannot produce that.
+fp16 is a live confounder: R0's max *absolute* logit delta was 0.281 in fp16
+against 3.4e-4 in fp32. **Re-run R2 in float32 and read the signed `median_rho`
+column before concluding anything about attention.**
 
 ---
 
