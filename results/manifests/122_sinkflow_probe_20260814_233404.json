@@ -1,0 +1,58 @@
+{
+  "stage": "122_sinkflow_probe",
+  "timestamp": "20260814_233404",
+  "git_sha": "5ce2337",
+  "python": "3.13.13",
+  "argv": [
+    "scripts/122_sinkflow_probe.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--activations",
+    "results/smoke/act/sinkflow_train",
+    "--output",
+    "results/smoke/sinkflow",
+    "--cv-folds",
+    "3",
+    "--no-tables"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "activations": "results/smoke/act/sinkflow_train",
+    "output": "results/smoke/sinkflow",
+    "sites": "['sink_arg', 'last_token']",
+    "cv_folds": "3",
+    "max_iter": "2000",
+    "n_jobs": "1",
+    "seed": "42"
+  },
+  "wall_time_s": 5.1,
+  "extra": {
+    "S2": true,
+    "n_rows": 64,
+    "problems": [],
+    "provenance": {
+      "model": "deepseek-coder-1.3b",
+      "dataset": "data/smoke/synthetic/sinkflow_deepseek-coder-1.3b_train.jsonl",
+      "activations": "results/smoke/act/sinkflow_train",
+      "splits_seen": [
+        "train"
+      ],
+      "train_digest": "399a0e5b489f58c4",
+      "n_train_programs": 72,
+      "layers": [
+        -1,
+        0,
+        11
+      ],
+      "sites": [
+        "sink_arg",
+        "last_token"
+      ],
+      "seed": 42,
+      "git_sha": "5ce2337"
+    },
+    "gates_required": "S0,S1",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

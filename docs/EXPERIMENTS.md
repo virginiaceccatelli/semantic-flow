@@ -50,6 +50,9 @@ The flow, and why each step followed the last:
   Phase II   E5 context: distance is cheap, interference is not
              E9 obfuscation: renaming survives mid-layer, flattening does not
                                 │
+                                │  E15 the same ladder, on the security property:
+                                │  does "untrusted data reaches this sink" survive it?
+                                │  → built and gated; NOT RUN, nothing claimed
                                 ↓
   Phase III  "decodable" is not "used". Four attempts:
              E7  whole-state patch      → transports the tokens too       [claim retired]
@@ -313,6 +316,58 @@ apart* things are and to *what they are called*, fragile when the scope or
 control structure it is a representation *of* becomes harder.
 
 Stage 31 · `obfuscation_levels_*.png`.
+
+## E15 — source→sink under obfuscation (the security audit track, in progress)
+
+**Question.** E9 asks what the ladder does to *binding* and *def-use*. E15 asks
+the question the ladder was built for: **is the value that reaches a
+code-bearing, security-sensitive argument derived from untrusted input**, and
+does a readout of that fact, frozen on clean programs, survive obfuscation?
+
+**Why it exists.** Binding and def-use are the mechanism; "untrusted data
+reaches `os.system`" is the property an auditor actually wants, and it is the
+one an adversary has an interest in hiding. It is also the first place in this
+project where the corpus is built around a security label rather than a
+graph-theoretic relation.
+
+**Method.** 3 sink families (command execution, SQL execution, dynamic code
+execution) × 4 flow structures (direct, assignment chain, branch/merge, one
+helper boundary) × 20 base seeds × 2 labels = **480 clean programs**. Each base
+is a matched unsafe/safe pair holding the same source, propagation, trusted
+alternative and sink, differing **only at the sink argument** — checked
+character-exactly, not asserted. 14 seeds per cell train the readout, 6 are held
+out, and **only held-out programs are obfuscated**, with E9's ladder unchanged.
+The readout is fitted once on clean training programs and frozen, exactly as in
+E5/E9.
+
+**No sanitizers.** `html.escape` before `exec` and `shlex.quote` before `eval`
+are not mitigations, so the generic sanitizer list used in E6/E7 is deliberately
+not reused: the safe member carries an independently trusted literal instead.
+Labels are recomputed from each program by two independent readings — a static
+taint fixpoint matched on call shapes, and instrumented execution under stubs
+where every dangerous API is a recorder and builtins are empty — which must
+agree with each other and with the stored label.
+
+**Controls.** The measured surface baseline (±3 token ids at the anchor, no
+hidden states) is **frozen and transferred through the ladder too**, so "renaming
+kills the lexical shortcut" is a measurement rather than an argument; plus the
+embedding layer, the selectivity control, and grouped CV by base. The generator
+alternates which chain name carries the tainted value across bases, which is what
+keeps that baseline near chance on clean text.
+
+**Status: nothing claimed.** The track is built, gated (S0–S3) and smoke-tested
+end to end on `deepseek-coder-1.3b` at 96 programs and 3 layers; stage 120's S0
+passes on the full 480-program benchmark with the real tokenizer. No canonical
+run has been made at either scale. E15 stays `active` in `results/STATUS.yaml`
+until every gate passes on one.
+
+**Limitation, stated up front.** Unlike E2, the floor here is *not* pinned to
+chance by construction against every predictor — only against the declared
+surface family. Something that could read the whole program and run the taint
+analysis itself would score 1.0. E15 is an audit of a readout's transfer, not a
+representation claim of E2's kind.
+
+Stages 120–124 · design `docs/design/E15_SINKFLOW_PLAN.md`.
 
 ---
 

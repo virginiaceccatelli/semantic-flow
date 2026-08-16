@@ -50,6 +50,7 @@ direction dominates it at two-thirds the dose.
 | E11 J-space | is the value causally reused? | ● | ● | **NO-GO** | see below — reported, not claimed |
 | E12 store | text-absent value transfer | ● | ☐ | **parked** | behavioural gate failed at 0.418 |
 | **E13** binding interchange | is the *binding* transported? | ☐ | ☑ | **H0–H5 pass** | a rank-1 interchange installs the binding's value in BOTH arms (100%/100%), beating a closed-form baseline at two-thirds the dose |
+| **E15** source→sink | does "untrusted data reaches this sink" survive the ladder? | ☐ | ☐ | **built, not run** | nothing claimed; gates S0–S3 pass only on a 96-program smoke |
 | E6, E10-2, E10-3 | — | — | — | archived | `docs/ARCHIVE.md` |
 
 Legend: ☐ not run · ◐ dev model only · ◑ partially run · ● run
@@ -328,6 +329,23 @@ recover it.
 vs 86%) has a plausible explanation — the full patch installs the driving
 component *and* components that fight it — that is **not** independently
 demonstrated. And this is one site, one layer, one model, one construction.
+
+---
+
+## E15 — built and gated, nothing measured yet
+
+The security-audit track (3 sink families x 4 flow structures x 20 seeds x 2
+labels = 480 clean programs, the E9 ladder applied to the held-out side, a
+readout frozen on clean training programs) is implemented, hard-gated S0-S3, and
+smoke-tested end to end on 1.3B at 96 programs and 3 layers. Stage 120's S0
+passes on the full 480-program benchmark with the real tokenizer.
+
+**No number from it is a result.** The canonical runs have not been made at
+either scale, and the smoke numbers exist only to show the plumbing works. E15
+stays `active` in `results/STATUS.yaml` until every gate passes on a canonical
+run, and its floor is weaker than E2's by construction: it is pinned only
+against the declared surface family, not against every predictor. Design,
+threat model and the full limitation list: `docs/design/E15_SINKFLOW_PLAN.md`.
 
 ---
 

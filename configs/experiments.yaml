@@ -294,6 +294,68 @@ binding_pilot:
   layers: [6, 12, 18]
   ranks: [1, 2, 4]
 
+# ── E15: source → sensitive sink, audited through the E9 obfuscation ladder ──
+# "Do code models see through obfuscation?" — is the value at a code-bearing,
+# security-sensitive argument source-derived, and does a FROZEN linear readout
+# of that fact survive renaming, opaque predicates, MBA encoding and control-flow
+# flattening? Design: docs/design/E15_SINKFLOW_PLAN.md.
+#
+# Stages 120-124 are hard-gated through the same registry as E12/E13
+# (src/experiments/store_gates.py::SINKFLOW). Each refuses to run (exit 2)
+# unless its prerequisite gates passed; `--override-gate REASON` is recorded
+# permanently in results/sinkflow/{model}/gates.yaml and in the manifest.
+
+stage120_sinkflow_generate:            # S0
+  families: [command_exec, sql_exec, dynamic_exec]
+  structures: [direct, assign_chain, branch_merge, helper]
+  n_seeds: 20                          # base seeds per (family, structure)
+  n_train_seeds: 14                    # the rest (6) are held out
+  labels: [unsafe, safe]               # 3 x 4 x 20 x 2 = 480 clean programs
+  sanitizers: none                     # html.escape -> exec is NOT a mitigation;
+                                       # the safe member carries an independently
+                                       # trusted literal instead
+  obfuscation: {levels: [0, 1, 2, 3, 4], applied_to: heldout_only}
+  ground_truth: [static_taint_fixpoint, instrumented_execution_under_stubs]
+  invariants: [exact_program_count, cell_balance, no_split_leakage, programs_parse,
+               anchors_token_exact, labels_independently_recovered,
+               pair_differs_only_at_sink_argument, obfuscation_preserves_label,
+               all_levels_present_for_every_heldout_base, heldout_only_obfuscated]
+
+stage121_sinkflow_extract:             # S1 (the only GPU stage)
+  shards: [train, heldout, heldout_obf]
+  max_length: 1024
+  dtype: float16
+  layers: registry                     # must include -1 (the embedding control)
+  gate: every program extracted, every anchor on a stored token boundary
+
+stage122_sinkflow_probe:               # S2
+  sites: [sink_arg, last_token]        # sink_arg is the headline; last_token is secondary
+  label: is the value at the sensitive argument source-derived?
+  probe: linear                        # grouped CV, folds split by BASE
+  controls: [within_base_shuffled_labels, measured_surface_window, embedding_layer]
+  surface_window: 3                    # +-3 token ids around the anchor, no hidden states
+  trained_on: clean_training_bases_only # recorded in probes/provenance.json
+
+stage123_sinkflow_obfuscation:         # S3
+  conditions: [clean_heldout, obf0, obf1, obf2, obf3, obf4]
+  probes: frozen_from_stage122         # never retrained on a variant
+  surface_baseline: frozen_and_transferred
+  report_by: [family, structure, obfuscation_level, model, layer]
+  gate: expected row count, both classes in every reported cell, probe provenance
+        disjoint from the evaluated bases
+
+stage124_sinkflow_report:
+  verdicts: [GATES PASS, INCOMPLETE]
+  note: >
+    A passing gate says the measurement works, not that anything is shown. E15
+    stays `active` in results/STATUS.yaml until the gates pass on a real run.
+
+sinkflow_pilot:                        # the cheap local smoke
+  model: deepseek-coder-1.3b
+  n_seeds: 4
+  n_train_seeds: 3
+  layers: [-1, 0, 11]
+
 stage110_rlens_validate:               # E14 gate R — GATES stage 111
   n_r0: 5                              # programs for the forward-invariance check
   n_r2: 10                             # samples per (layer, ablation arm)

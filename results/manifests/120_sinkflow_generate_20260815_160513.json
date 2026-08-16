@@ -1,0 +1,95 @@
+{
+  "stage": "120_sinkflow_generate",
+  "timestamp": "20260815_160513",
+  "git_sha": "5ce2337",
+  "python": "3.13.13",
+  "argv": [
+    "scripts/120_sinkflow_generate.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--out-dir",
+    "data/smoke/synthetic",
+    "--output",
+    "results/smoke/sinkflow",
+    "--n-seeds",
+    "4",
+    "--n-train-seeds",
+    "3"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "families": "['command_exec', 'sql_exec', 'dynamic_exec']",
+    "structures": "['direct', 'assign_chain', 'branch_merge', 'helper']",
+    "n_seeds": "4",
+    "n_train_seeds": "3",
+    "levels": "[0, 1, 2, 3, 4]",
+    "seed": "42",
+    "out_dir": "data/smoke/synthetic"
+  },
+  "wall_time_s": 0.5,
+  "extra": {
+    "S0": true,
+    "outputs": {
+      "train": "data/smoke/synthetic/sinkflow_deepseek-coder-1.3b_train.jsonl",
+      "heldout": "data/smoke/synthetic/sinkflow_deepseek-coder-1.3b_heldout.jsonl",
+      "heldout_obf": "data/smoke/synthetic/sinkflow_deepseek-coder-1.3b_heldout_obf.jsonl"
+    },
+    "n_bases": 48,
+    "n_clean_programs": 96,
+    "n_obf_variants": 120,
+    "families": [
+      "command_exec",
+      "dynamic_exec",
+      "sql_exec"
+    ],
+    "structures": [
+      "assign_chain",
+      "branch_merge",
+      "direct",
+      "helper"
+    ],
+    "splits": {
+      "heldout": 12,
+      "train": 36
+    },
+    "labels": {
+      "0": 48,
+      "1": 48
+    },
+    "cells": {
+      "command_exec/direct/unsafe": 4,
+      "command_exec/direct/safe": 4,
+      "command_exec/assign_chain/unsafe": 4,
+      "command_exec/assign_chain/safe": 4,
+      "command_exec/branch_merge/unsafe": 4,
+      "command_exec/branch_merge/safe": 4,
+      "command_exec/helper/unsafe": 4,
+      "command_exec/helper/safe": 4,
+      "sql_exec/direct/unsafe": 4,
+      "sql_exec/direct/safe": 4,
+      "sql_exec/assign_chain/unsafe": 4,
+      "sql_exec/assign_chain/safe": 4,
+      "sql_exec/branch_merge/unsafe": 4,
+      "sql_exec/branch_merge/safe": 4,
+      "sql_exec/helper/unsafe": 4,
+      "sql_exec/helper/safe": 4,
+      "dynamic_exec/direct/unsafe": 4,
+      "dynamic_exec/direct/safe": 4,
+      "dynamic_exec/assign_chain/unsafe": 4,
+      "dynamic_exec/assign_chain/safe": 4,
+      "dynamic_exec/branch_merge/unsafe": 4,
+      "dynamic_exec/branch_merge/safe": 4,
+      "dynamic_exec/helper/unsafe": 4,
+      "dynamic_exec/helper/safe": 4
+    },
+    "obf_levels": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "train_digest": "399a0e5b489f58c4",
+    "heldout_digest": "3568394a6442bdbb"
+  }
+}

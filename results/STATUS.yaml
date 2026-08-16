@@ -151,6 +151,80 @@ experiments:
       causal claim — E13's interchange does that, and is strictly stronger for
       the purpose. Design and the four gates: docs/design/E14_RLENS_PLAN.md.
 
+  E15:
+    name: source-to-sink flow under obfuscation (the security audit track)
+    status: active
+    stage: "120,121,122,123,124"
+    tables: [sinkflow_clean_, sinkflow_obfuscation_]
+    claim: >
+      NOT YET CLAIMED. The benchmark, the gates, the frozen readout and the
+      frozen surface control are built and pass end to end on a reduced smoke
+      configuration (96 clean programs, 3 layers, deepseek-coder-1.3b). No
+      canonical run has been made at either scale, so no number here is a
+      result.
+    question: >
+      Does a code model represent whether the value reaching a code-bearing,
+      security-sensitive argument is derived from untrusted input — and does a
+      readout of that, frozen on clean programs, survive the E9 obfuscation
+      ladder?
+    design: >
+      3 sink families (command execution, SQL execution, dynamic code execution)
+      x 4 flow structures (direct, assignment chain, branch/merge, one helper
+      boundary) x 20 base seeds x 2 labels = 480 clean programs. Every base is a
+      matched unsafe/safe pair holding the same source, propagation, trusted
+      alternative and sink, differing ONLY at the sink argument. 14 of the 20
+      seeds per cell train the readout; 6 are held out, and only those are
+      obfuscated (levels 0-4, cumulative).
+    why_not_the_existing_sanitizer_list: >
+      html.escape before exec and shlex.quote before eval are not security
+      mitigations, so a safe class built from them would label vulnerable
+      programs safe. The safe member here carries an independently trusted
+      literal that never touches the source.
+    controls:
+      - "measured surface baseline: +-3 token ids around the anchor, no hidden
+         states, FROZEN and transferred through the ladder exactly like the
+         hidden-state probes — so 'renaming kills the lexical shortcut' is
+         measured rather than asserted"
+      - "the embedding layer (-1), i.e. token identity before any computation"
+      - "selectivity control: the same probe on labels shuffled within each base"
+      - "which chain name is the tainted one alternates with the base index, so
+         the anchor token identity is uninformative about the label corpus-wide"
+      - "grouped CV by base: both members of a pair share a fold"
+    ground_truth: >
+      Two independent readings must agree with each other and with every stored
+      label: a flow-insensitive AST taint fixpoint written against call shapes
+      (so it reads renamed and flattened variants), and instrumented execution
+      under stubs with a provenance-carrying string. Every dangerous API is a
+      recorder and the module runs with empty builtins, so no sink is ever
+      executed.
+    gates:
+      - "S0 (stage 120): 480 clean programs, exact balance, no split leakage,
+         every program parses, anchors token-exact, labels independently
+         recovered, pairs differ only at the sink argument, and every obfuscated
+         variant parses and preserves its security label"
+      - "S1 (stage 121): activations for every program, anchors on token
+         boundaries in the encoding that was actually stored"
+      - "S2 (stage 122): the readout is fitted on clean TRAINING bases only,
+         with the selectivity control, the embedding layer and the
+         no-hidden-state surface baseline all actually run"
+      - "S3 (stage 123): the frozen readout is evaluated on held-out clean text
+         and every level, the row count matches the design, both classes are
+         present in every reported cell, and the probe's training bases are
+         disjoint from the evaluated bases"
+    limitation: >
+      The floor is pinned only against the declared surface family (a +-3 token
+      window at the anchor). A predictor with the whole program text could
+      recover the label by doing the taint analysis itself, so this is an audit
+      of a readout's transfer, not a construction-pinned representation claim of
+      the E2 kind. Synthetic programs, one language, four flow structures; the
+      sink families are the common ones, not a taxonomy. Nothing causal is
+      claimed or tested here.
+    status_note: >
+      IMPLEMENTED, SMOKE-TESTED, NOT RUN at canonical scale. Stage 120 has run
+      with the real deepseek-coder tokenizer and S0 passes on the full 480-program
+      benchmark. Stages 121-124 have run only on the reduced smoke configuration.
+      E15 must stay `active` until S0-S3 pass on a canonical run.
+
   E6:
     name: behavioral lead time
     status: archived

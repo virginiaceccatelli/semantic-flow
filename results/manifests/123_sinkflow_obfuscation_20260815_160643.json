@@ -1,0 +1,43 @@
+{
+  "stage": "123_sinkflow_obfuscation",
+  "timestamp": "20260815_160643",
+  "git_sha": "5ce2337",
+  "python": "3.13.13",
+  "argv": [
+    "scripts/123_sinkflow_obfuscation.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--activations",
+    "results/smoke/act",
+    "--output",
+    "results/smoke/sinkflow",
+    "--data-dir",
+    "data/smoke/synthetic",
+    "--no-tables"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "activations": "results/smoke/act",
+    "probes": "results/smoke/sinkflow/probes",
+    "output": "results/smoke/sinkflow",
+    "sites": "['sink_arg', 'last_token']"
+  },
+  "wall_time_s": 2.7,
+  "extra": {
+    "S3": true,
+    "n_rows": 384,
+    "expected_rows": 384,
+    "conditions": [
+      "clean_heldout",
+      "obf0",
+      "obf1",
+      "obf2",
+      "obf3",
+      "obf4"
+    ],
+    "problems": [],
+    "gates_required": "S0,S1,S2",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

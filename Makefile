@@ -17,6 +17,15 @@
 #   ── E14, the R-lens representational track ──
 #   make rlens-validate MODEL=...   stage 110 — E14 gate R, must pass (GPU/MPS)
 #
+#   ── E15, the security audit track: source → sink under obfuscation ──
+#   make sinkflow-generate MODEL=..    stage 120 benchmark + validation — S0 (CPU)
+#   make sinkflow-extract MODEL=...    stage 121 hidden states — S1 (GPU/MPS)
+#   make sinkflow-probe MODEL=...      stage 122 clean readout + controls — S2 (CPU)
+#   make sinkflow-obf MODEL=...        stage 123 frozen ladder evaluation — S3 (CPU)
+#   make sinkflow-report MODEL=...     stage 124 gated report + figures (CPU)
+#   make sinkflow MODEL=...            stages 120→124; each refuses on a failed gate
+#   make sinkflow-smoke                the tiny 1.3b end-to-end check
+#
 #   ── E11, the active direction: J-space binding routing ──
 #   make jspace-pairs MODEL=...     stage 70 counterfactual pairs (CPU)
 #   make jspace-lens MODEL=...      stage 71 frozen lenses — GATE (GPU/MPS)
@@ -76,7 +85,9 @@ PROBES := results/probes/$(MODEL)/core
         store-diagnose store-sweep \
         binding binding-pairs binding-verify binding-behaviour binding-extract \
         binding-decode binding-ceiling binding-interchange binding-report \
-        binding-diagnose binding-pilot
+        binding-diagnose binding-pilot \
+        sinkflow sinkflow-generate sinkflow-extract sinkflow-probe sinkflow-obf \
+        sinkflow-report sinkflow-smoke
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
 STORE_LAYERS ?= 6,12,18
@@ -246,6 +257,47 @@ binding: binding-pairs binding-verify binding-behaviour binding-extract \
 
 binding-pilot:
 	$(MAKE) binding MODEL=deepseek-coder-1.3b BINDING_LAYERS=6,12,18 BINDING_RANKS=1,2,4
+
+# ── E15 source→sink under obfuscation (stages 120→124; every stage is gated) ─
+# Only stage 121 needs a GPU. Layers MUST include -1: the embedding control is
+# one of the controls S2 refuses to run without.
+sinkflow-generate:
+	$(PY) scripts/120_sinkflow_generate.py --model $(MODEL)
+
+sinkflow-extract:
+	$(PY) scripts/121_sinkflow_extract.py --model $(MODEL)
+
+sinkflow-probe:
+	$(PY) scripts/122_sinkflow_probe.py --model $(MODEL)
+
+sinkflow-obf:
+	$(PY) scripts/123_sinkflow_obfuscation.py --model $(MODEL)
+
+sinkflow-report:
+	$(PY) scripts/124_sinkflow_report.py --model $(MODEL)
+
+sinkflow: sinkflow-generate sinkflow-extract sinkflow-probe sinkflow-obf sinkflow-report
+
+# 96 clean programs, 3 layers, separate data/results trees — minutes on a laptop.
+sinkflow-smoke:
+	$(PY) scripts/120_sinkflow_generate.py --model $(MODEL) \
+		--out-dir $(SMOKE_DATA)/synthetic --output results/smoke/sinkflow \
+		--n-seeds 4 --n-train-seeds 3
+	$(PY) scripts/121_sinkflow_extract.py --model $(MODEL) \
+		--data-dir $(SMOKE_DATA)/synthetic --output results/smoke/sinkflow \
+		--activations results/smoke/act --layers=-1,0,11 --max-length 512
+	$(PY) scripts/122_sinkflow_probe.py --model $(MODEL) \
+		--activations results/smoke/act/sinkflow_train \
+		--output results/smoke/sinkflow --cv-folds 3 --no-tables
+	$(PY) scripts/123_sinkflow_obfuscation.py --model $(MODEL) \
+		--activations results/smoke/act --output results/smoke/sinkflow \
+		--data-dir $(SMOKE_DATA)/synthetic --no-tables
+	$(PY) scripts/124_sinkflow_report.py --model $(MODEL) \
+		--results results/smoke/sinkflow --figures results/smoke/figures
+	@test -f results/smoke/sinkflow/sinkflow_clean.csv
+	@test -f results/smoke/sinkflow/sinkflow_obfuscation.csv
+	@test -f results/smoke/sinkflow/e15_report.md
+	@echo "SINKFLOW SMOKE OK"
 
 assets:
 	$(PY) scripts/90_make_paper_assets.py

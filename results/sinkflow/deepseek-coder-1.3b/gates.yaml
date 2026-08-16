@@ -1,0 +1,71 @@
+experiment: E15
+model: deepseek-coder-1.3b
+updated: '2026-08-14 23:29:58'
+note: A passing gate says the measurement works at that step. It is not itself a scientific
+  claim.
+gates:
+  S0:
+    name: S0
+    passed: true
+    value: 480.0
+    detail: 'every validity gate passed: 480 clean programs, balanced across 3 families
+      x 4 structures x 2 labels, split {''heldout'': 72, ''train'': 168} with no base
+      leakage, all labels independently recovered, all anchors token-exact, and 720
+      obfuscated variants preserving their security label'
+    stage: 120_sinkflow_generate
+    timestamp: '2026-08-14 23:29:58'
+    override: false
+    override_reason: ''
+    extra:
+      n_bases: 240
+      n_clean_programs: 480
+      n_obf_variants: 720
+      families:
+      - command_exec
+      - dynamic_exec
+      - sql_exec
+      structures:
+      - assign_chain
+      - branch_merge
+      - direct
+      - helper
+      splits:
+        heldout: 72
+        train: 168
+      labels:
+        '0': 240
+        '1': 240
+      cells:
+        command_exec/direct/unsafe: 20
+        command_exec/direct/safe: 20
+        command_exec/assign_chain/unsafe: 20
+        command_exec/assign_chain/safe: 20
+        command_exec/branch_merge/unsafe: 20
+        command_exec/branch_merge/safe: 20
+        command_exec/helper/unsafe: 20
+        command_exec/helper/safe: 20
+        sql_exec/direct/unsafe: 20
+        sql_exec/direct/safe: 20
+        sql_exec/assign_chain/unsafe: 20
+        sql_exec/assign_chain/safe: 20
+        sql_exec/branch_merge/unsafe: 20
+        sql_exec/branch_merge/safe: 20
+        sql_exec/helper/unsafe: 20
+        sql_exec/helper/safe: 20
+        dynamic_exec/direct/unsafe: 20
+        dynamic_exec/direct/safe: 20
+        dynamic_exec/assign_chain/unsafe: 20
+        dynamic_exec/assign_chain/safe: 20
+        dynamic_exec/branch_merge/unsafe: 20
+        dynamic_exec/branch_merge/safe: 20
+        dynamic_exec/helper/unsafe: 20
+        dynamic_exec/helper/safe: 20
+      obf_levels:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      train_digest: 0b5fcb12614bab1e
+      heldout_digest: 58fb6d5d5193ec23
+      violations: []

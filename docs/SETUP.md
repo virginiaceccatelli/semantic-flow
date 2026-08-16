@@ -30,6 +30,28 @@ directly** — use `src.models.loader.load_tokenizer(hf_id)`, which loads the
 fast tokenizer and verifies an exact code round-trip, or `ModelLoader`, which
 does so internally. All pipeline scripts already do this.
 
+## 3b. Known pitfall: a network blip kills a cached run
+
+With transformers 5.x, loading a model with `trust_remote_code=True` fetches
+`custom_generate/generate.py` from the Hub **after** the weights are already in
+memory. On a machine where everything is cached, a DNS hiccup at that moment
+used to end the run with a confusing
+
+```
+RuntimeError: Cannot send a request, as the client has been closed.
+```
+
+`ModelLoader` and `load_tokenizer` now detect an unreachable Hub and retry
+against the local cache (with a warning), so a cached machine keeps running.
+To skip the Hub entirely — the right setting for an offline cluster node:
+
+```bash
+export HF_HUB_OFFLINE=1        # or: HF_HUB_OFFLINE=1 make sinkflow MODEL=...
+```
+
+If the cache genuinely lacks the model, the loader says so and names both the
+network error and the cache error rather than failing deep inside `httpx`.
+
 ## 4. First run (smoke, ~5 min on MPS)
 
 ```bash

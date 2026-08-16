@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from contextlib import contextmanager
-from typing import Callable, Generator, Optional, Sequence
+from typing import Any, Callable, Generator, Optional, Sequence
 
 import torch
 import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 
 class ActivationCache:
@@ -125,6 +128,58 @@ def extract_hidden_states(
     with manager.active():
         model(input_ids=input_ids, attention_mask=attention_mask)
     return manager.cache
+
+
+@torch.no_grad()
+def extract_examples_to_store(
+    model: nn.Module,
+    tokenizer,
+    examples: Sequence,
+    store,
+    layer_indices: list[int],
+    max_length: int = 1024,
+    device: str = "cpu",
+    on_example: Optional[Callable[[Any, Any, list], None]] = None,
+    progress: Optional[Callable[[Sequence], Sequence]] = None,
+) -> dict:
+    """One forward pass per example, written to an initialized activation store.
+
+    The loop stages 10 and 121 share: tokenize (truncating), compute verified
+    char offsets, capture the probe layers, save. `store` must already have had
+    `initialize()` called on it; `finalize()` is left to the caller, which is
+    what lets a stage add its own index fields first.
+
+    `on_example(example, input_ids, offsets)` is called for every successfully
+    extracted example — stage 121 uses it to check that its anchors still land
+    on token boundaries in the encoding that was actually stored, rather than in
+    one recomputed later.
+
+    An example that raises is skipped and counted rather than aborting the run:
+    a single over-long or untokenizable program should not cost a GPU pass over
+    the rest. The counts come back so the caller can gate on them.
+    """
+    import numpy as np
+
+    from src.data.alignment import compute_offsets
+
+    iterator = progress(examples) if progress else examples
+    skipped: list[str] = []
+    for example in iterator:
+        try:
+            inputs = tokenizer(example.source, return_tensors="pt",
+                               truncation=True, max_length=max_length)
+            ids = inputs["input_ids"]
+            offsets = compute_offsets(example.source, tokenizer, ids.squeeze(0).tolist())
+            cache = extract_hidden_states(model, ids.to(device), layer_indices=layer_indices)
+            hidden = cache.all_hidden_states().numpy()          # (n_layers, seq, d)
+            store.add(example, hidden, ids.squeeze(0).numpy(), np.array(offsets))
+            if on_example is not None:
+                on_example(example, ids.squeeze(0).numpy(), offsets)
+        except Exception as exc:                                # noqa: BLE001
+            logger.warning("Skipping %s: %s", getattr(example, "example_id", "?"), exc)
+            skipped.append(getattr(example, "example_id", "?"))
+    return {"n_saved": len(examples) - len(skipped), "n_skipped": len(skipped),
+            "skipped": skipped}
 
 
 @torch.no_grad()

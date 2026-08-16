@@ -140,10 +140,13 @@ is CPU and re-runnable.
 40 lead time          GPU   E6         · 61/62 J-lens taint / control-dep   E10-2, E10-3
 80–89 store           mixed E12 — parked at its behavioural gate
 
-── the active experiment ──
+── the active experiments ──
 100–108 binding interchange   E13: factorial → verify → behaviour → extract → decode
                               → ceiling → interchange → report → diagnose
                               Six gates (H0–H5); each stage refuses to run on a failed one.
+120–124 source→sink audit     E15: 480-program controlled benchmark → extract →
+                              clean frozen readout → the E9 ladder, held out → report
+                              Four gates (S0–S3). Built and smoke-tested; NOT RUN.
 ```
 
 Stage status lives in `results/STATUS.yaml`; stage 90 reads it and skips
@@ -183,8 +186,9 @@ jobs/          csh scripts per GPU stage (run under screen; no scheduler)
 configs/       model registry + canonical experiment settings
 results/       STATUS.yaml (what each experiment currently claims) + tables, figures, manifests
 docs/          EXPERIMENTS · RESULTS · ARCHIVE · METHODS · PIPELINE · RUNBOOK_E13 · SETUP · design/
-tests/         293 CPU-only tests (alignment exactness, CV leakage, strata, invariants,
-               interchange algebra, gate refusal, obfuscation semantics, …)
+tests/         362 CPU-only tests (alignment exactness, CV leakage, strata, invariants,
+               interchange algebra, gate refusal, obfuscation semantics,
+               source→sink label recovery, …)
 ```
 
 ## 9. Quickstart
@@ -192,7 +196,7 @@ tests/         293 CPU-only tests (alignment exactness, CV leakage, strata, inva
 ```bash
 conda create -n semflow python=3.11 -y && conda activate semflow
 pip install -e ".[dev]"
-make test                     # 293 CPU-only tests
+make test                     # 362 CPU-only tests
 make smoke                    # tiny end-to-end run on this machine (~15 min, MPS)
 
 # the foundation (Phase I + II)

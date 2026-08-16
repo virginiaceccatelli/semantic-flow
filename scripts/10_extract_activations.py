@@ -22,7 +22,6 @@ from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import numpy as np
 import torch
 import typer
 from rich.console import Console
@@ -56,9 +55,8 @@ def main(
     dtype: str = typer.Option("float16"),
 ):
     from src.data.activation_store import ActivationStore
-    from src.data.alignment import compute_offsets
     from src.data.dataset import CodeProbeDataset
-    from src.models.hooks import extract_hidden_states
+    from src.models.hooks import extract_examples_to_store
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
 
@@ -84,27 +82,20 @@ def main(
         "d_model": cfg.d_model, "max_length": max_length, "dataset": str(dataset),
     })
 
-    skipped = 0
-    for ex in track(examples, description="Extracting"):
-        try:
-            inputs = tokenizer(ex.source, return_tensors="pt",
-                               truncation=True, max_length=max_length)
-            ids = inputs["input_ids"]
-            offsets = compute_offsets(ex.source, tokenizer, ids.squeeze(0).tolist())
-            cache = extract_hidden_states(mdl, ids.to(dev), layer_indices=layer_indices)
-            hidden = cache.all_hidden_states().numpy()   # (n_layers, seq, d)
-            store.add(ex, hidden, ids.squeeze(0).numpy(), np.array(offsets))
-        except Exception as e:
-            logger.warning("Skipping %s: %s", ex.example_id, e)
-            skipped += 1
+    counts = extract_examples_to_store(
+        mdl, tokenizer, examples, store, layer_indices=layer_indices,
+        max_length=max_length, device=dev,
+        progress=lambda xs: track(xs, description="Extracting"),
+    )
     store.finalize()
 
     write_manifest("10_extract_activations", {
         "model": model, "dataset": str(dataset), "output": str(output),
         "layers": layer_indices, "max_length": max_length, "device": dev,
         "dtype": dtype,
-    }, t0, extra={"n_saved": len(examples) - skipped, "n_skipped": skipped})
-    console.print(f"[green]Stage 10 done:[/green] {len(examples) - skipped} saved, {skipped} skipped")
+    }, t0, extra={"n_saved": counts["n_saved"], "n_skipped": counts["n_skipped"]})
+    console.print(f"[green]Stage 10 done:[/green] {counts['n_saved']} saved, "
+                  f"{counts['n_skipped']} skipped")
 
 
 if __name__ == "__main__":

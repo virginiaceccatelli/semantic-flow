@@ -33,11 +33,11 @@ import yaml
 logger = logging.getLogger(__name__)
 
 # ── gate specifications ──────────────────────────────────────────────────────
-# One mechanism, one spec per experiment. E12 (store transitions) and E13
-# (binding interchange) have different gates but identical semantics: a stage
-# declares what it needs, the registry says what has passed, and a stage that
-# is not entitled to run refuses rather than producing an uninterpretable
-# number.
+# One mechanism, one spec per experiment. E12 (store transitions), E13 (binding
+# interchange) and E15 (source→sink under obfuscation) have different gates but
+# identical semantics: a stage declares what it needs, the registry says what
+# has passed, and a stage that is not entitled to run refuses rather than
+# producing an uninterpretable number.
 
 
 @dataclass(frozen=True)
@@ -111,7 +111,35 @@ BINDING = GateSpec(
     default_root="results/binding",
 )
 
-SPECS = {spec.experiment: spec for spec in (STORE, BINDING)}
+SINKFLOW = GateSpec(
+    experiment="E15",
+    order=("S0", "S1", "S2", "S3"),
+    meaning={
+        "S0": "the benchmark is exactly the designed one: counts, balance, splits, "
+              "parsing, anchor alignment, independently recovered labels, pair "
+              "invariants, and an obfuscation ladder that preserves every label",
+        "S1": "activations exist for every program, and the source and sink anchors "
+              "land on token boundaries in the encoding that was actually stored",
+        "S2": "the readout is fitted on CLEAN TRAINING programs only, with its "
+              "selectivity control and its no-hidden-state surface baseline both run",
+        "S3": "the frozen readout was evaluated on held-out clean text and on every "
+              "obfuscation level, with both classes present in every reported cell",
+    },
+    owner={
+        "S0": "120_sinkflow_generate", "S1": "121_sinkflow_extract",
+        "S2": "122_sinkflow_probe", "S3": "123_sinkflow_obfuscation",
+    },
+    requirements={
+        "120_sinkflow_generate": (),
+        "121_sinkflow_extract": ("S0",),
+        "122_sinkflow_probe": ("S0", "S1"),
+        "123_sinkflow_obfuscation": ("S0", "S1", "S2"),
+        "124_sinkflow_report": (),
+    },
+    default_root="results/sinkflow",
+)
+
+SPECS = {spec.experiment: spec for spec in (STORE, BINDING, SINKFLOW)}
 
 # Kept so E12's existing call sites and tests read unchanged. New code should
 # take a GateSpec rather than reach for these.

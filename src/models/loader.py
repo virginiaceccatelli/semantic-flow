@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizerBase
+
+logger = logging.getLogger(__name__)
 
 MODEL_REGISTRY: dict[str, dict] = {
     "deepseek-coder-1.3b": {
@@ -67,6 +70,33 @@ class ModelConfig:
 
 _TOKENIZER_PROBE = "def func():\n    a = 17\n    return a"
 
+# Markers of "the Hub is unreachable" rather than "this repo/file is wrong".
+# transformers 5.x resolves a model with `trust_remote_code=True` by fetching
+# `custom_generate/generate.py`, so a DNS blip on an otherwise fully cached
+# machine surfaces as a RuntimeError from httpx ("Cannot send a request, as the
+# client has been closed") *after* the weights have already loaded. Everything
+# this repository needs is in the cache at that point, so the right response is
+# to retry against the cache, not to lose the run.
+_HUB_UNREACHABLE_MARKERS = (
+    "cannot send a request",
+    "nodename nor servname",
+    "name or service not known",
+    "temporary failure in name resolution",
+    "max retries exceeded",
+    "connection",
+    "timed out",
+    "timeout",
+    "offline",
+    "couldn't connect",
+    "we couldn't connect",
+)
+
+
+def hub_unreachable(exc: BaseException) -> bool:
+    """Is this failure the network, rather than the request being wrong?"""
+    text = f"{type(exc).__name__}: {exc}".lower()
+    return any(marker in text for marker in _HUB_UNREACHABLE_MARKERS)
+
 
 def load_tokenizer(hf_id: str) -> PreTrainedTokenizerBase:
     """Load a tokenizer and VERIFY it round-trips code exactly.
@@ -81,9 +111,14 @@ def load_tokenizer(hf_id: str) -> PreTrainedTokenizerBase:
     from transformers import PreTrainedTokenizerFast
 
     last_error: Optional[Exception] = None
+    # Each strategy is tried against the Hub and then against the local cache,
+    # so a machine with everything cached still runs when the network is down.
     for loader_fn in (
         lambda: PreTrainedTokenizerFast.from_pretrained(hf_id),
+        lambda: PreTrainedTokenizerFast.from_pretrained(hf_id, local_files_only=True),
         lambda: AutoTokenizer.from_pretrained(hf_id, trust_remote_code=True),
+        lambda: AutoTokenizer.from_pretrained(hf_id, trust_remote_code=True,
+                                              local_files_only=True),
     ):
         try:
             tok = loader_fn()
@@ -124,12 +159,29 @@ class ModelLoader:
 
     def _load_model(self) -> PreTrainedModel:
         device_map = "auto" if self.config.device == "cuda" else self.config.device
-        model = AutoModelForCausalLM.from_pretrained(
-            self.config.hf_id,
-            dtype=self.config.dtype,
-            device_map=device_map,
-            trust_remote_code=True,
-        )
+        kwargs = {"dtype": self.config.dtype, "device_map": device_map,
+                  "trust_remote_code": True}
+        try:
+            model = AutoModelForCausalLM.from_pretrained(self.config.hf_id, **kwargs)
+        except Exception as exc:                                # noqa: BLE001
+            if not hub_unreachable(exc):
+                raise
+            logger.warning(
+                "Hub unreachable while loading %s (%s: %s); retrying against the "
+                "local cache. Set HF_HUB_OFFLINE=1 to skip the Hub entirely.",
+                self.config.hf_id, type(exc).__name__, exc)
+            try:
+                model = AutoModelForCausalLM.from_pretrained(
+                    self.config.hf_id, local_files_only=True, **kwargs)
+            except Exception as cache_exc:                       # noqa: BLE001
+                raise RuntimeError(
+                    f"{self.config.hf_id} is not usable: the Hub is unreachable "
+                    f"({exc}) and the local cache could not satisfy the load "
+                    f"({cache_exc}).\n"
+                    f"  Fix: restore network access, or point HF_HOME at a cache "
+                    f"that holds {self.config.hf_id} and re-run with "
+                    f"HF_HUB_OFFLINE=1."
+                ) from cache_exc
         model.eval()
         return model
 

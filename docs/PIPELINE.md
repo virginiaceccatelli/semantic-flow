@@ -256,6 +256,39 @@ Outputs land under `results/jspace/{model}/`: `lenses/*.pkl`,
 `swap/jspace_swap{,_summary,_by_operation,_contrasts}.csv`, and
 `go_no_go.{yaml,md}`. Design: `docs/EXPERIMENTS.md` §2.
 
+## Stages 120–124 — E15 source→sink under obfuscation (gated)
+
+Is the value at a code-bearing, security-sensitive argument source-derived, and
+does a **frozen** readout of that survive the E9 ladder? A controlled benchmark
+of 3 sink families × 4 flow structures × 20 base seeds × 2 labels = **480 clean
+programs**, obfuscated on the held-out side only. Design, threat model and
+limitations: `docs/design/E15_SINKFLOW_PLAN.md`.
+
+| Stage | Command | Where | Gate | Output |
+|---|---|---|---|---|
+| 120 | `120_sinkflow_generate.py --model M` | CPU, ~1 min | **S0** | `data/synthetic/sinkflow_M_{train,heldout,heldout_obf}.jsonl`, `benchmark.csv`, `gates.yaml` |
+| 121 | `121_sinkflow_extract.py --model M` | GPU, ~10 min (1.3b) | **S1** | `results/activations/M/sinkflow_{train,heldout,heldout_obf}/` |
+| 122 | `122_sinkflow_probe.py --model M` | CPU, minutes | **S2** | `sinkflow_clean.csv`, `probes/{site}/{layer_XX,surface}.pkl`, `probes/provenance.json` |
+| 123 | `123_sinkflow_obfuscation.py --model M` | CPU, minutes | **S3** | `sinkflow_obfuscation.csv`, `sinkflow_predictions.csv` |
+| 124 | `124_sinkflow_report.py --model M` | CPU, seconds | — | `e15_report.{yaml,md}`, `results/figures/sinkflow_*.png` |
+
+Everything else lands under `results/sinkflow/{model}/`. Stage 121 is the only
+GPU stage; on the GPU host run
+`screen -dmS sinkflow-extract-6.7b env MODEL=deepseek-coder-6.7b jobs/sinkflow_extract.csh`.
+
+Two things the gates enforce that are easy to get wrong by hand. **The probed
+layers must include `-1`** — the embedding layer is one of the controls, and S2
+refuses without it (pass it as `--layers=-1,0,11`, with an `=`, or typer reads
+the leading minus as a flag). And **stage 123 checks the probe's provenance**
+against the training shard on disk before it scores anything: a probe whose
+training bases intersect the evaluated ones, or whose digest does not match the
+current benchmark, is refused rather than reported as "frozen held-out".
+
+`make sinkflow-smoke` runs the whole track at 96 programs and 3 layers into
+`results/smoke/`, in a few minutes on a laptop.
+
+---
+
 ## Stage 90 — paper assets (CPU, seconds)
 
 ```bash
