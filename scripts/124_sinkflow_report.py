@@ -36,6 +36,8 @@ def main(
     results: Optional[Path] = typer.Option(None, help="Default results/sinkflow/{model}"),
     figures: Path = typer.Option(Path("results/figures"), help="Where figures are written"),
     site: str = typer.Option("sink_arg", help="The site the headline is read at"),
+    layer: Optional[int] = typer.Option(None, help="Report at this layer instead of the argmax"),
+    depth: Optional[float] = typer.Option(None, help="Report at the layer closest to this RELATIVE depth (0-1) — use for cross-model tables"),
     strict: bool = typer.Option(False, help="Exit non-zero unless every gate passed"),
 ):
     import pandas as pd
@@ -59,11 +61,14 @@ def main(
     evaluation = pd.read_csv(evaluation_path)
     gates = gate_table(model, root=root, spec=SINKFLOW)
 
-    payload, markdown = build_report(model, clean, evaluation, gates, site=site)
+    payload, markdown = build_report(model, clean, evaluation, gates, site=site,
+                                     layer=layer if layer is not None else
+                                     best_layer(evaluation, site=site, target_depth=depth))
     blocking = first_blocking_gate(model, root=root, spec=SINKFLOW)
     payload["first_blocking_gate"] = blocking
 
-    layer = best_layer(evaluation, site=site)
+    layer = layer if layer is not None else best_layer(evaluation, site=site,
+                                                       target_depth=depth)
     written = []
     if layer is not None:
         written.append(str(plot_levels(evaluation, figures / f"sinkflow_levels_{model}.png",

@@ -346,13 +346,16 @@ E2's binding profile, on a security label.
 
 **Frozen transfer to held-out programs** (1.3B / 6.7B):
 
-| condition | 1.3B | 6.7B |
+At **matched relative depth** — 1.3B layer 11 (48% of depth) against 6.7B layer
+15 (48%), not layer index against layer index:
+
+| condition | 1.3B (L11) | 6.7B (L15) |
 |---|---:|---:|
 | clean held-out | **1.000** [1.000, 1.000] | **1.000** [1.000, 1.000] |
-| rename | 0.931 [0.889, 0.972] | 0.910 [0.854, 0.958] |
-| opaque predicates | 0.951 [0.917, 0.986] | 0.917 [0.868, 0.958] |
-| MBA encoding | 0.938 [0.889, 0.972] | 0.896 [0.847, 0.944] |
-| **control-flow flattening** | **0.632** [0.556, 0.708] | **0.604** [0.556, 0.653] |
+| rename | 0.931 [0.889, 0.972] | **0.965** [0.938, 0.993] |
+| opaque predicates | 0.951 [0.917, 0.986] | 0.917 |
+| MBA encoding | 0.938 [0.889, 0.972] | 0.889 |
+| **control-flow flattening** | **0.632** [0.556, 0.708] | **0.562** [0.500, 0.625] |
 
 The frozen surface baseline stays at 0.444–0.507 in **every** condition, so none
 of this is the identifier — including at level 1, where renaming destroys every
@@ -362,20 +365,21 @@ actually ask for, and it replicates across scale.
 
 **The level-4 number is worse than it looks, and only the diagnostics show it.**
 Under flattening 1.3B half-loses the distinction (51% of matched pairs receive
-the same label, no class preference). 6.7B instead **collapses onto "unsafe"**:
-positive rate 0.882, accuracy 0.986 on unsafe against 0.222 on safe, 76% of
-pairs given one label. A constant "unsafe" predictor scores 0.500 there, so most
-of 6.7B's 0.604 is bias rather than retained flow information. At the
+the same label, no class preference). 6.7B instead **skews toward "unsafe"**:
+positive rate 0.729, accuracy 0.792 on unsafe against 0.333 on safe, 65% of
+pairs given one label. A constant "unsafe" predictor scores 0.500 there, so much
+of 6.7B's 0.562 is bias rather than retained flow information — at its layer 11
+the same skew is extreme (positive rate 0.882, safe 0.222). At the
 `last_token` site the collapse is total — 1.3B sits at 0.500 with a **zero-width**
 bootstrap interval and a constant "safe" answer, 6.7B at 0.507 with a constant
 "unsafe" answer. Two dead readouts pointing opposite ways.
 
 **Where the degradation lives.** By flow structure, `direct` and `branch_merge`
-are untouched by renaming in both models, while the **assignment chain is
-fragile** — 6.7B drops to 0.639 under renaming alone — and the helper boundary is
-next. A merge point being *more* robust than a two-step alias chain is backwards
-from a "longer chain is harder" account and is the open question this run
-raises. By sink family there is no ordering that reproduces across models, which
+are untouched by renaming in both models, while the **assignment chain is the
+fragile one** (1.3B 0.806, 6.7B 0.861 at matched depth) with the helper boundary
+next. A merge point being *at least as* robust as a two-step alias chain is
+backwards from a "longer chain is harder" account and is the open question this
+run raises. By sink family there is no ordering that reproduces across models, which
 is the null the design wanted: the readout tracks flow, not which API is at the
 end of it.
 
@@ -385,9 +389,8 @@ program and run the taint analysis itself would score 1.0, so this is an audit o
 a readout's transfer, not a representation claim of E2's kind. Level 4 is
 cumulative, so "flattening breaks it" is a *marginal* claim — levels 1–3 together
 cost ≤0.10 and adding the dispatch loop costs a further ~0.30; a flatten-only arm
-would settle it. The two models were probed on different layer grids (8 vs 10),
-so the cross-model agreement is not a matched-relative-depth comparison. Nothing
-causal is claimed. Full analysis, limitations and next steps:
+would settle it, and one has been verified to work on all 144 held-out programs.
+Nothing causal is claimed. Full analysis, limitations and next steps:
 `docs/design/E15_SINKFLOW_PLAN.md` §8–§10.
 
 # 5. What this project does not claim

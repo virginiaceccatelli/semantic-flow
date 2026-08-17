@@ -364,10 +364,15 @@ row, cluster bootstrap over bases; 1.3B / 6.7B):
 | measured surface baseline, every condition | 0.444–0.507 | 0.444–0.507 |
 | embedding layer (−1), clean | 0.482 | 0.482 |
 | **clean held-out** | **1.000** [1.000, 1.000] | **1.000** [1.000, 1.000] |
-| rename | 0.931 | 0.910 |
+| rename | 0.931 | **0.965** |
 | opaque predicates | 0.951 | 0.917 |
-| MBA encoding | 0.938 | 0.896 |
-| **control-flow flattening** | **0.632** | **0.604** |
+| MBA encoding | 0.938 | 0.889 |
+| **control-flow flattening** | **0.632** | **0.562** |
+
+Read at **matched relative depth**: 1.3B layer 11 and 6.7B layer 15 are both 48%
+of network depth. Comparing layer *index* to layer index (6.7B's L11 is only 35%
+depth) reverses the rename ordering and is how a cross-model claim goes wrong —
+`relative_depth` is now a column in every row for exactly that reason.
 
 **Reading.** Chance at the input (0.482), built by layer 7, at ceiling by layer
 11 and held to the output — E2's profile on a security label, replicated across
@@ -378,20 +383,20 @@ put it.
 
 **The level-4 number is worse than it looks**, and the diagnostics are what say
 so. Under flattening 1.3B half-loses the distinction (51% of matched pairs get
-the same label, no class preference), while 6.7B **collapses onto "unsafe"** —
-positive rate 0.882, 0.986 on unsafe against 0.222 on safe, 76% of pairs given
-one label. A constant "unsafe" predictor scores 0.500 there, so most of the
-0.604 is bias, not retained flow information. At `last_token` the collapse is
+the same label, no class preference), while 6.7B **skews toward "unsafe"** —
+positive rate 0.729, 0.792 on unsafe against 0.333 on safe, 65% of pairs given
+one label. A constant "unsafe" predictor scores 0.500 there, so much of the
+0.562 is bias, not retained flow information. At `last_token` the collapse is
 total: 1.3B returns a constant "safe" (0.500, **zero-width** interval), 6.7B a
 constant "unsafe" (0.507). Reporting the two sites separately, and reporting
 `pairs_same_label` beside accuracy, is what keeps this from being read as
 "60% retained".
 
 **Where it breaks.** By structure: `direct` and `branch_merge` are untouched by
-renaming in both models; the **assignment chain is the fragile one** (6.7B 0.639
-under renaming alone) with the helper boundary next. A merge point being more
-robust than a two-step alias chain is backwards from "longer chain is harder"
-and is the open question. By sink family: nothing that reproduces across models —
+renaming in both models; the **assignment chain is the fragile one** (1.3B 0.806,
+6.7B 0.861 at matched depth) with the helper boundary next. A merge point being
+at least as robust as a two-step alias chain is backwards from "longer chain is
+harder" and is the open question. By sink family: nothing that reproduces across models —
 the readout tracks flow, not which API sits at the end.
 
 **Limitation, stated up front.** Unlike E2, the floor is *not* pinned to chance

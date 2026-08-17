@@ -508,6 +508,19 @@ def aggregate_predictions(raw: pd.DataFrame, model: str,
     narrow in the direction that makes a degradation look real.
     """
     from src.analysis.bootstrap import cluster_bootstrap_ci
+    from src.models.loader import MODEL_REGISTRY
+
+    # Relative depth, carried on every row. Two models with different layer
+    # counts do not compare at the same layer INDEX, and reading them as if they
+    # did produced a wrong cross-model claim once already: 6.7b's layer 11 is 35%
+    # depth against 1.3b's layer 11 at 48%, and the ordering of the two models
+    # under renaming reverses when they are matched properly.
+    n_layers = MODEL_REGISTRY.get(model, {}).get("n_layers")
+
+    def relative_depth(layer: int) -> float:
+        if not n_layers or layer < 0:
+            return float("nan")
+        return round(layer / (n_layers - 1), 4)
 
     keys = ["condition", "obf_level", "obf_name", "site", "features", "layer"]
     rows: list[dict] = []
@@ -521,6 +534,7 @@ def aggregate_predictions(raw: pd.DataFrame, model: str,
             rows.append({
                 "model": model,
                 **{k: record[k] for k in keys},
+                "relative_depth": relative_depth(int(record["layer"])),
                 "breakdown": breakdown,
                 "cell": record.get(column, "all") if column else "all",
                 "accuracy": float(chunk["correct"].mean()),
@@ -598,12 +612,26 @@ def run_frozen_evaluation(
 
 
 def best_layer(frame: pd.DataFrame, site: str = PRIMARY_SITE,
-               condition: str = CONDITION_CLEAN_HELDOUT) -> Optional[int]:
-    """The layer with the highest pooled clean held-out accuracy, for reporting."""
+               condition: str = CONDITION_CLEAN_HELDOUT,
+               target_depth: Optional[float] = None) -> Optional[int]:
+    """The layer to report at.
+
+    By default the highest pooled clean held-out accuracy. Clean accuracy
+    saturates at 1.000 across most of the network, though, so the argmax is
+    decided by ties — and comparing two models at whatever layer index each
+    argmax happened to pick is how a cross-model claim goes wrong. Pass
+    `target_depth` (a fraction of network depth) to report both models at the
+    same RELATIVE depth instead.
+    """
     pooled = frame[(frame["site"] == site) & (frame["breakdown"] == "all")
                    & (frame["features"] == "hidden") & (frame["condition"] == condition)]
     if pooled.empty:
         return None
+    if target_depth is not None and "relative_depth" in pooled.columns \
+            and pooled["relative_depth"].notna().any():
+        candidates = pooled[pooled["relative_depth"].notna()]
+        closest = (candidates["relative_depth"] - target_depth).abs().idxmin()
+        return int(candidates.loc[closest, "layer"])
     return int(pooled.loc[pooled["accuracy"].idxmax(), "layer"])
 
 
@@ -707,9 +735,10 @@ def build_report(
     evaluation: pd.DataFrame,
     gates: Sequence[dict],
     site: str = PRIMARY_SITE,
+    layer: Optional[int] = None,
 ) -> tuple[dict, str]:
     """The machine-readable report and its markdown rendering."""
-    layer = best_layer(evaluation, site=site)
+    layer = layer if layer is not None else best_layer(evaluation, site=site)
     table = level_table(evaluation, site=site, layer=layer) if layer is not None \
         else pd.DataFrame()
     clean_pooled = clean[(clean["site"] == site) & (clean["breakdown"] == "all")]

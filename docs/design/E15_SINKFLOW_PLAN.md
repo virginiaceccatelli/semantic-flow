@@ -212,14 +212,18 @@ AUC is 1.000 from layer 7 on.
 
 `sink_arg`, layer 11, 144 programs / 72 bases per row:
 
-| condition | 1.3B | 6.7B | surface (both) |
+Read at **matched relative depth**: 1.3B layer 11 and 6.7B layer 15 are both 48%
+of network depth. (6.7B's layer 11 is 35% depth; comparing index to index
+reverses the rename ordering — see §9.7.)
+
+| condition | 1.3B (L11) | 6.7B (L15) | surface (both) |
 |---|---:|---:|---:|
 | clean held-out | **1.000** [1.000, 1.000] | **1.000** [1.000, 1.000] | 0.444 |
 | 0 normalize | 1.000 [1.000, 1.000] | 1.000 [1.000, 1.000] | 0.444 |
-| 1 rename | 0.931 [0.889, 0.972] | 0.910 [0.854, 0.958] | 0.479 |
-| 2 opaque | 0.951 [0.917, 0.986] | 0.917 [0.868, 0.958] | 0.500 |
-| 3 encode | 0.938 [0.889, 0.972] | 0.896 [0.847, 0.944] | 0.479 |
-| **4 flatten** | **0.632** [0.556, 0.708] | **0.604** [0.556, 0.653] | 0.507 |
+| 1 rename | 0.931 [0.889, 0.972] | **0.965** [0.938, 0.993] | 0.479 |
+| 2 opaque | 0.951 [0.917, 0.986] | 0.917 | 0.500 |
+| 3 encode | 0.938 [0.889, 0.972] | 0.889 | 0.479 |
+| **4 flatten** | **0.632** [0.556, 0.708] | **0.562** [0.500, 0.625] | 0.507 |
 
 The surface arm never leaves chance in any condition, so none of this is the
 identifier — including at level 1, where renaming destroys the identifiers
@@ -258,18 +262,21 @@ is the same signature that diagnosed E12's behavioural failure.)
 
 Per structure at layer 11 (36 programs per cell):
 
-| structure | 1.3B rename / flatten | 6.7B rename / flatten |
+| structure | 1.3B L11 rename / flatten | 6.7B L15 rename / flatten |
 |---|---:|---:|
-| `direct` | 1.000 / 0.611 | 1.000 / 0.694 |
-| `branch_merge` | 1.000 / 0.806 | 1.000 / 0.722 |
+| `direct` | 1.000 / 0.611 | 1.000 / 0.611 |
+| `branch_merge` | 1.000 / 0.806 | 1.000 / 0.750 |
 | `helper` | 0.917 / 0.556 | 1.000 / 0.528 |
-| `assign_chain` | 0.806 / 0.556 | **0.639** / 0.472 |
+| `assign_chain` | **0.806** / 0.556 | **0.861** / 0.361 |
 
 Two things reproduce across models. `direct` and `branch_merge` are untouched by
-renaming; the **assignment chain is the fragile structure** — 6.7B loses a third
-of it under renaming alone — and the helper boundary is next. A merge point is
-*more* robust than a two-step alias chain, which is the opposite of what "longer
-chain = harder" would predict and is worth a follow-up.
+renaming; the **assignment chain is the fragile structure**, with the helper
+boundary next. A merge point being *at least as* robust as a two-step alias
+chain is the opposite of what "longer chain = harder" would predict and is worth
+a follow-up. (At 6.7B's layer 11 — 35% depth — `assign_chain` reads 0.639, and
+an earlier draft of this section quoted that against 1.3B's 48%-depth number.
+The ordering it implied was an artifact of the layer mismatch, which is why
+§9.7 is now closed rather than outstanding.)
 
 By sink family the picture is flat (0.85–0.98 at levels 1–3, 0.58–0.73 at level
 4, no ordering that reproduces across models), which is the null the design
@@ -308,9 +315,13 @@ wanted: the readout is tracking flow, not which dangerous API is at the end of i
 7. **The two models were probed on different layer grids** — 8 layers for 1.3B,
    10 for 6.7B — because `ModelConfig` computes its own default from
    `MODEL_REGISTRY` and the `probe_layers` in `configs/models.yaml` are not read
-   by anything. Both peak at layer 11, which is 46% depth in 1.3B and 34% in
-   6.7B, so the cross-model agreement in §8 is *not* a matched-relative-depth
-   comparison. 6.7B's layer 15 (47% depth) is in the data and behaves the same.
+   by anything. *That* is a genuine repo defect and it is still open (it affects
+   every experiment, not just E15). Its consequence for E15 is **closed**:
+   `relative_depth` is a column on every result row, `124_sinkflow_report.py
+   --depth 0.48` reports both models at matched depth, and §8 is written from
+   those numbers. It mattered: at layer index 11 the two models' rename
+   robustness reads 0.931 vs 0.910, and at matched depth it reads 0.931 vs
+   0.965 — the ordering reverses.
 8. **Level 4 changes what "the source anchor" means.** After flattening, the
    first source expression in source order is whichever dispatch case the
    shuffle put first. The `sink_arg` anchor is unaffected, which is why it, not
