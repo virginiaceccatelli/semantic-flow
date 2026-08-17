@@ -1,0 +1,36 @@
+{
+  "stage": "110_rlens_validate",
+  "timestamp": "20260814_205352",
+  "git_sha": "5ce2337",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/110_rlens_validate.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--dataset",
+    "data/synthetic/core.jsonl",
+    "--dtype",
+    "float32",
+    "--n-r2",
+    "10",
+    "--output",
+    "results/rlens/deepseek-coder-1.3b/validate"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "dataset": "data/synthetic/core.jsonl",
+    "layers": "[-1, 0, 3, 7, 11, 15, 19, 23]",
+    "n_r0": "5",
+    "n_r2": "10",
+    "n_sources": "40",
+    "dtype": "float32",
+    "grad_scale": "1024.0",
+    "device": "cuda",
+    "seed": "42"
+  },
+  "wall_time_s": 25.1,
+  "extra": {
+    "n_rows": 48,
+    "failed_checks": []
+  }
+}

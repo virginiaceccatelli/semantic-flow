@@ -1,0 +1,103 @@
+experiment: E15
+model: deepseek-coder-1.3b
+site: sink_arg
+verdict: "GATES PASS \u2014 the track is measurable; the numbers below are reported,\
+  \ not yet claimed"
+all_gates_passed: true
+gates:
+- gate: S0
+  meaning: 'the benchmark is exactly the designed one: counts, balance, splits, parsing,
+    anchor alignment, independently recovered labels, pair invariants, and an obfuscation
+    ladder that preserves every label'
+  owner_stage: 120_sinkflow_generate
+  recorded: true
+  passed: true
+  value: 480.0
+  override: false
+  detail: 'every validity gate passed: 480 clean programs, balanced across 3 families
+    x 4 structures x 2 labels, split {''heldout'': 72, ''train'': 168} with no base
+    leakage, all labels independently recovered, all anchors token-exact, and 720
+    obfuscated variants preserving their security label'
+- gate: S1
+  meaning: activations exist for every program, and the source and sink anchors land
+    on token boundaries in the encoding that was actually stored
+  owner_stage: 121_sinkflow_extract
+  recorded: true
+  passed: true
+  value: 1200.0
+  override: false
+  detail: 1200 programs extracted across ['train', 'heldout', 'heldout_obf'] with
+    no skips and every source/sink anchor covered exactly by stored token positions
+- gate: S2
+  meaning: the readout is fitted on CLEAN TRAINING programs only, with its selectivity
+    control and its no-hidden-state surface baseline both run
+  owner_stage: 122_sinkflow_probe
+  recorded: true
+  passed: true
+  value: 1.0
+  override: false
+  detail: fitted on 336 clean training programs (168 bases, digest 0b5fcb12614bab1e);
+    best hidden accuracy 1.0000 at site sink_arg layer 11 with selectivity 0.3874;
+    surface baseline and selectivity control both run
+- gate: S3
+  meaning: the frozen readout was evaluated on held-out clean text and on every obfuscation
+    level, with both classes present in every reported cell
+  owner_stage: 123_sinkflow_obfuscation
+  recorded: true
+  passed: true
+  value: 864.0
+  override: false
+  detail: 864 result rows over conditions ['clean_heldout', 'obf0', 'obf1', 'obf2',
+    'obf3', 'obf4'], both classes present in every reported cell, evaluated with a
+    probe frozen on 168 training bases disjoint from all 72 evaluated bases
+clean_training_cv:
+  best_layer: 11
+  best_accuracy: 1.0
+  best_selectivity: 0.4325311942959002
+  surface_accuracy: 0.4912655971479501
+frozen_evaluation:
+  reported_layer: 11
+  by_condition:
+  - condition: clean_heldout
+    obf_level: -1
+    obf_name: clean
+    accuracy: 1.0
+    surface_accuracy: 0.4444444444444444
+    n: 144
+  - condition: obf0
+    obf_level: 0
+    obf_name: normalize
+    accuracy: 1.0
+    surface_accuracy: 0.4444444444444444
+    n: 144
+  - condition: obf1
+    obf_level: 1
+    obf_name: rename
+    accuracy: 0.9305555555555556
+    surface_accuracy: 0.4791666666666667
+    n: 144
+  - condition: obf2
+    obf_level: 2
+    obf_name: opaque
+    accuracy: 0.9513888888888888
+    surface_accuracy: 0.5
+    n: 144
+  - condition: obf3
+    obf_level: 3
+    obf_name: encode
+    accuracy: 0.9375
+    surface_accuracy: 0.4791666666666667
+    n: 144
+  - condition: obf4
+    obf_level: 4
+    obf_name: flatten
+    accuracy: 0.6319444444444444
+    surface_accuracy: 0.5069444444444444
+    n: 144
+n_rows:
+  clean: 144
+  evaluation: 864
+first_blocking_gate: null
+figures:
+- results/figures/sinkflow_levels_deepseek-coder-1.3b.png
+- results/figures/sinkflow_cells_deepseek-coder-1.3b.png
