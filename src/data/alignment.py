@@ -15,6 +15,26 @@ from dataclasses import dataclass
 from typing import Optional, Sequence
 
 
+def decode_exact(tokenizer, ids) -> str:
+    """Decode without the destructive BPE "cleanup" post-processing.
+
+    `clean_up_tokenization_spaces=True` strips spaces before punctuation and
+    rewrites contractions. It is meant for WordPiece and it corrupts code — and
+    starcoder2's tokenizer_config.json sets it to True while deepseek-coder's
+    does not, so the same pipeline round-trips on one model and raises
+    "Tokenizer round-trip does not reproduce the source" on the other. Newer
+    transformers ignore the flag for BPE; older ones apply it. Passing False
+    explicitly is correct on every version.
+
+    Tokenizers that do not accept the argument (the CPU-test fakes) fall back.
+    """
+    try:
+        return tokenizer.decode(ids, skip_special_tokens=True,
+                                clean_up_tokenization_spaces=False)
+    except TypeError:
+        return tokenizer.decode(ids, skip_special_tokens=True)
+
+
 def line_col_to_char(source: str, line: int, col: int) -> int:
     """Convert a 1-based line / 0-based column position to a character offset."""
     lines = source.splitlines(keepends=True)
@@ -59,11 +79,11 @@ def compute_offsets(
         if ids[i - 1] in special_ids:
             offsets.append((prev_len, prev_len))
             continue
-        cur = tokenizer.decode(ids[:i], skip_special_tokens=True)
+        cur = decode_exact(tokenizer, ids[:i])
         offsets.append((prev_len, len(cur)))
         prev_len = len(cur)
 
-    decoded = tokenizer.decode(ids, skip_special_tokens=True)
+    decoded = decode_exact(tokenizer, ids)
     if decoded != source[: len(decoded)]:
         raise ValueError(
             "Tokenizer round-trip does not reproduce the source; "
@@ -89,7 +109,7 @@ def _validated_fast_offsets(
         return None
     special = set(getattr(tokenizer, "all_special_ids", []) or [])
     recon = "".join(source[a:b] for (a, b), i in zip(offsets, ids) if i not in special)
-    decoded = tokenizer.decode(ids, skip_special_tokens=True)
+    decoded = decode_exact(tokenizer, ids)
     if recon != decoded or decoded != source[: len(decoded)]:
         return None
     # normalize special-token spans to empty so they are never matched
