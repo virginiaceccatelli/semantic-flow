@@ -1,0 +1,48 @@
+{
+  "stage": "121_sinkflow_extract",
+  "timestamp": "20260817_104331",
+  "git_sha": "ebf4a2b",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/121_sinkflow_extract.py",
+    "--model",
+    "starcoder2-3b"
+  ],
+  "args": {
+    "model": "starcoder2-3b",
+    "shards": "['train', 'heldout', 'heldout_obf']",
+    "layers": "[-1, 0, 3, 7, 11, 15, 19, 23, 27, 29]",
+    "max_length": "1024",
+    "device": "cuda",
+    "dtype": "float16",
+    "activations": "results/activations/starcoder2-3b"
+  },
+  "wall_time_s": 473.4,
+  "extra": {
+    "S1": true,
+    "shards": {
+      "train": {
+        "n_expected": 336,
+        "n_saved": 336,
+        "n_skipped": 0,
+        "skipped": []
+      },
+      "heldout": {
+        "n_expected": 144,
+        "n_saved": 144,
+        "n_skipped": 0,
+        "skipped": []
+      },
+      "heldout_obf": {
+        "n_expected": 720,
+        "n_saved": 720,
+        "n_skipped": 0,
+        "skipped": []
+      }
+    },
+    "misaligned": [],
+    "gates_required": "S0",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}
