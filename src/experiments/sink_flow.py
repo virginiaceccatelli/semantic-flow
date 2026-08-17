@@ -468,8 +468,47 @@ def _frozen_predictions(
 BREAKDOWNS = {"all": None, "family": "family", "structure": "structure"}
 
 
-def aggregate_predictions(raw: pd.DataFrame, model: str) -> pd.DataFrame:
-    """Pooled and per-cell accuracy, one tidy row per reported cell."""
+def _failure_mode_columns(chunk: pd.DataFrame) -> dict:
+    """Diagnostics that separate the two ways a readout can lose the property.
+
+    An accuracy of 0.5 has at least two very different causes, and the number
+    alone cannot tell them apart:
+
+      * **the information is gone** — the readout gives the two members of a
+        pair the *same* label, because the position no longer distinguishes
+        them. `pairs_same_label` goes to 1 and `frac_predicted_unsafe` collapses
+        toward one class.
+      * **the information is there and no longer means taint** — the readout
+        still splits the pair, but the direction is now arbitrary.
+        `pairs_same_label` stays low while accuracy falls to chance.
+
+    The two members of a base differ only at the sink argument, so pair
+    disagreement is exactly the discrimination the benchmark is built to test.
+    """
+    pairs = chunk.pivot_table(index="base_id", columns="role", values="predicted",
+                              aggfunc="first")
+    same = (float((pairs["unsafe"] == pairs["safe"]).mean())
+            if {"unsafe", "safe"} <= set(pairs.columns) else float("nan"))
+    by_role = chunk.groupby("role")["correct"].mean()
+    return {
+        "frac_predicted_unsafe": float(chunk["predicted"].mean()),
+        "acc_unsafe": float(by_role.get("unsafe", float("nan"))),
+        "acc_safe": float(by_role.get("safe", float("nan"))),
+        "pairs_same_label": same,
+    }
+
+
+def aggregate_predictions(raw: pd.DataFrame, model: str,
+                          n_boot: int = 1000, seed: int = 42) -> pd.DataFrame:
+    """Pooled and per-cell accuracy, one tidy row per reported cell.
+
+    Intervals are cluster-bootstrapped over **base programs**, not rows: the two
+    members of a pair are one draw, and a base the model happens to handle well
+    contributes two correlated successes. Row-level intervals here would be too
+    narrow in the direction that makes a degradation look real.
+    """
+    from src.analysis.bootstrap import cluster_bootstrap_ci
+
     keys = ["condition", "obf_level", "obf_name", "site", "features", "layer"]
     rows: list[dict] = []
     for breakdown, column in BREAKDOWNS.items():
@@ -477,17 +516,21 @@ def aggregate_predictions(raw: pd.DataFrame, model: str) -> pd.DataFrame:
         for values, chunk in raw.groupby(group_keys, dropna=False):
             values = values if isinstance(values, tuple) else (values,)
             record = dict(zip(group_keys, values))
+            ci = cluster_bootstrap_ci(chunk["correct"].values, chunk["base_id"].values,
+                                      n_boot=n_boot, seed=seed)
             rows.append({
                 "model": model,
                 **{k: record[k] for k in keys},
                 "breakdown": breakdown,
                 "cell": record.get(column, "all") if column else "all",
                 "accuracy": float(chunk["correct"].mean()),
+                "ci_lo": ci.lo, "ci_hi": ci.hi,
                 "n": int(len(chunk)),
                 "n_bases": int(chunk["base_id"].nunique()),
                 "n_pos": int((chunk["label"] == 1).sum()),
                 "n_neg": int((chunk["label"] == 0).sum()),
                 "pos_frac": float((chunk["label"] == 1).mean()),
+                **_failure_mode_columns(chunk),
             })
     return pd.DataFrame(rows).sort_values(
         ["site", "features", "layer", "condition", "breakdown", "cell"]).reset_index(drop=True)
@@ -571,10 +614,15 @@ def level_table(frame: pd.DataFrame, site: str = PRIMARY_SITE,
     hidden = pooled[(pooled["features"] == "hidden") & (pooled["layer"] == layer)]
     surface = pooled[pooled["features"] == "surface"]
     merged = hidden.merge(surface, on="condition", suffixes=("_hidden", "_surface"))
-    return merged[["condition", "obf_level_hidden", "obf_name_hidden",
-                   "accuracy_hidden", "accuracy_surface", "n_hidden"]].rename(columns={
+    columns = ["condition", "obf_level_hidden", "obf_name_hidden", "accuracy_hidden",
+               "ci_lo_hidden", "ci_hi_hidden", "accuracy_surface",
+               "pairs_same_label_hidden", "frac_predicted_unsafe_hidden", "n_hidden"]
+    return merged[[c for c in columns if c in merged.columns]].rename(columns={
         "obf_level_hidden": "obf_level", "obf_name_hidden": "obf_name",
-        "accuracy_hidden": "accuracy", "accuracy_surface": "surface_accuracy",
+        "accuracy_hidden": "accuracy", "ci_lo_hidden": "ci_lo", "ci_hi_hidden": "ci_hi",
+        "accuracy_surface": "surface_accuracy",
+        "pairs_same_label_hidden": "pairs_same_label",
+        "frac_predicted_unsafe_hidden": "frac_predicted_unsafe",
         "n_hidden": "n"}).sort_values("obf_level").reset_index(drop=True)
 
 
@@ -723,13 +771,22 @@ def build_report(
         "",
         f"## Frozen readout on held-out programs (layer {layer})",
         "",
-        "| condition | level | transformation | hidden | surface | n |",
-        "|---|---:|---|---:|---:|---:|",
+        "Intervals are cluster-bootstrapped over base programs. `pairs same` is the "
+        "fraction of matched pairs given the *same* label — the two members differ "
+        "only at the sink argument, so it rises only when the position has stopped "
+        "carrying the distinction at all.",
+        "",
+        "| condition | level | transformation | hidden [95% CI] | surface | pairs same | pred. unsafe | n |",
+        "|---|---:|---|---:|---:|---:|---:|---:|",
     ]
     for row in table.to_dict(orient="records"):
+        interval = (f" [{row['ci_lo']:.3f}, {row['ci_hi']:.3f}]"
+                    if "ci_lo" in row and pd.notna(row.get("ci_lo")) else "")
         lines.append(
             f"| {row['condition']} | {row['obf_level']} | {row['obf_name']} | "
-            f"{row['accuracy']:.3f} | {row['surface_accuracy']:.3f} | {int(row['n'])} |")
+            f"{row['accuracy']:.3f}{interval} | {row['surface_accuracy']:.3f} | "
+            f"{row.get('pairs_same_label', float('nan')):.3f} | "
+            f"{row.get('frac_predicted_unsafe', float('nan')):.3f} | {int(row['n'])} |")
     lines += [
         "",
         "Read the per-family and per-structure rows in `sinkflow_obfuscation.csv` "

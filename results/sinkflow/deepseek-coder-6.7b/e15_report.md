@@ -19,14 +19,16 @@
 
 ## Frozen readout on held-out programs (layer 11)
 
-| condition | level | transformation | hidden | surface | n |
-|---|---:|---|---:|---:|---:|
-| clean_heldout | -1 | clean | 1.000 | 0.444 | 144 |
-| obf0 | 0 | normalize | 1.000 | 0.444 | 144 |
-| obf1 | 1 | rename | 0.910 | 0.479 | 144 |
-| obf2 | 2 | opaque | 0.917 | 0.500 | 144 |
-| obf3 | 3 | encode | 0.896 | 0.479 | 144 |
-| obf4 | 4 | flatten | 0.604 | 0.507 | 144 |
+Intervals are cluster-bootstrapped over base programs. `pairs same` is the fraction of matched pairs given the *same* label — the two members differ only at the sink argument, so it rises only when the position has stopped carrying the distinction at all.
+
+| condition | level | transformation | hidden [95% CI] | surface | pairs same | pred. unsafe | n |
+|---|---:|---|---:|---:|---:|---:|---:|
+| clean_heldout | -1 | clean | 1.000 [1.000, 1.000] | 0.444 | 0.000 | 0.500 | 144 |
+| obf0 | 0 | normalize | 1.000 [1.000, 1.000] | 0.444 | 0.000 | 0.500 | 144 |
+| obf1 | 1 | rename | 0.910 [0.854, 0.958] | 0.479 | 0.153 | 0.521 | 144 |
+| obf2 | 2 | opaque | 0.917 [0.868, 0.958] | 0.500 | 0.167 | 0.569 | 144 |
+| obf3 | 3 | encode | 0.896 [0.847, 0.944] | 0.479 | 0.181 | 0.562 | 144 |
+| obf4 | 4 | flatten | 0.604 [0.556, 0.653] | 0.507 | 0.764 | 0.882 | 144 |
 
 Read the per-family and per-structure rows in `sinkflow_obfuscation.csv` before quoting the pooled number: a readout can hold on `direct` flows and fail across the helper boundary, and the pooled row hides that.
 

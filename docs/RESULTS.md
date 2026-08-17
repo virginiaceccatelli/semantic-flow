@@ -50,7 +50,7 @@ direction dominates it at two-thirds the dose.
 | E11 J-space | is the value causally reused? | ● | ● | **NO-GO** | see below — reported, not claimed |
 | E12 store | text-absent value transfer | ● | ☐ | **parked** | behavioural gate failed at 0.418 |
 | **E13** binding interchange | is the *binding* transported? | ☐ | ☑ | **H0–H5 pass** | a rank-1 interchange installs the binding's value in BOTH arms (100%/100%), beating a closed-form baseline at two-thirds the dose |
-| **E15** source→sink | does "untrusted data reaches this sink" survive the ladder? | ☐ | ☐ | **built, not run** | nothing claimed; gates S0–S3 pass only on a 96-program smoke |
+| **E15** source→sink | does "untrusted data reaches this sink" survive the ladder? | ● | ● | supporting | decodable at 1.000 over a 0.491 floor; survives renaming, breaks on flattening |
 | E6, E10-2, E10-3 | — | — | — | archived | `docs/ARCHIVE.md` |
 
 Legend: ☐ not run · ◐ dev model only · ◑ partially run · ● run
@@ -332,22 +332,63 @@ demonstrated. And this is one site, one layer, one model, one construction.
 
 ---
 
-## E15 — built and gated, nothing measured yet
+## E15 — the security property is decodable, and flattening is what breaks it
 
-The security-audit track (3 sink families x 4 flow structures x 20 seeds x 2
-labels = 480 clean programs, the E9 ladder applied to the held-out side, a
-readout frozen on clean training programs) is implemented, hard-gated S0-S3, and
-smoke-tested end to end on 1.3B at 96 programs and 3 layers. Stage 120's S0
-passes on the full 480-program benchmark with the real tokenizer.
+Run at canonical scale on **both** models: 480 clean programs, 336 training /
+144 held-out (72 bases) per condition, all four gates passing with no overrides.
+Site `sink_arg`, layer 11, cluster bootstrap over bases.
 
-**No number from it is a result.** The canonical runs have not been made at
-either scale, and the smoke numbers exist only to show the plumbing works. E15
-stays `active` in `results/STATUS.yaml` until every gate passes on a canonical
-run, and its floor is weaker than E2's by construction: it is pinned only
-against the declared surface family, not against every predictor. Design,
-threat model and the full limitation list: `docs/design/E15_SINKFLOW_PLAN.md`.
+**The property is there, and it is not the identifier.** On clean training
+programs the measured surface baseline is **0.491** and the embedding layer
+**0.482** — chance in both models — while accuracy rises 0.777 (L3) → 0.991 (L7)
+→ **1.000** and holds to the last layer. Chance at the input, built by layer 7:
+E2's binding profile, on a security label.
 
----
+**Frozen transfer to held-out programs** (1.3B / 6.7B):
+
+| condition | 1.3B | 6.7B |
+|---|---:|---:|
+| clean held-out | **1.000** [1.000, 1.000] | **1.000** [1.000, 1.000] |
+| rename | 0.931 [0.889, 0.972] | 0.910 [0.854, 0.958] |
+| opaque predicates | 0.951 [0.917, 0.986] | 0.917 [0.868, 0.958] |
+| MBA encoding | 0.938 [0.889, 0.972] | 0.896 [0.847, 0.944] |
+| **control-flow flattening** | **0.632** [0.556, 0.708] | **0.604** [0.556, 0.653] |
+
+The frozen surface baseline stays at 0.444–0.507 in **every** condition, so none
+of this is the identifier — including at level 1, where renaming destroys every
+identifier and the hidden-state readout loses 0.07–0.09. This is E9's finding
+(renaming survivable, flattening the boundary) on a property an auditor would
+actually ask for, and it replicates across scale.
+
+**The level-4 number is worse than it looks, and only the diagnostics show it.**
+Under flattening 1.3B half-loses the distinction (51% of matched pairs receive
+the same label, no class preference). 6.7B instead **collapses onto "unsafe"**:
+positive rate 0.882, accuracy 0.986 on unsafe against 0.222 on safe, 76% of
+pairs given one label. A constant "unsafe" predictor scores 0.500 there, so most
+of 6.7B's 0.604 is bias rather than retained flow information. At the
+`last_token` site the collapse is total — 1.3B sits at 0.500 with a **zero-width**
+bootstrap interval and a constant "safe" answer, 6.7B at 0.507 with a constant
+"unsafe" answer. Two dead readouts pointing opposite ways.
+
+**Where the degradation lives.** By flow structure, `direct` and `branch_merge`
+are untouched by renaming in both models, while the **assignment chain is
+fragile** — 6.7B drops to 0.639 under renaming alone — and the helper boundary is
+next. A merge point being *more* robust than a two-step alias chain is backwards
+from a "longer chain is harder" account and is the open question this run
+raises. By sink family there is no ordering that reproduces across models, which
+is the null the design wanted: the readout tracks flow, not which API is at the
+end of it.
+
+**What it does not establish.** The floor is pinned only against the declared
+surface family (±3 token ids at the anchor); something able to read the whole
+program and run the taint analysis itself would score 1.0, so this is an audit of
+a readout's transfer, not a representation claim of E2's kind. Level 4 is
+cumulative, so "flattening breaks it" is a *marginal* claim — levels 1–3 together
+cost ≤0.10 and adding the dispatch loop costs a further ~0.30; a flatten-only arm
+would settle it. The two models were probed on different layer grids (8 vs 10),
+so the cross-model agreement is not a matched-relative-depth comparison. Nothing
+causal is claimed. Full analysis, limitations and next steps:
+`docs/design/E15_SINKFLOW_PLAN.md` §8–§10.
 
 # 5. What this project does not claim
 

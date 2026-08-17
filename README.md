@@ -59,7 +59,12 @@ the same profile with mild distance decay.
 thousand tokens of inert comments costs almost nothing (0.921); the same length
 of filler that *reuses the tracked names* drives it to chance. Renaming every
 identifier leaves middle layers at 0.85–0.90 while pushing the embedding layer
-*below* chance. Control-flow flattening is the real limit (0.750).
+*below* chance. Control-flow flattening is the real limit (0.750). The same
+boundary holds for a security property an auditor would actually ask for: E15
+reads "is the value at this `os.system` / `cursor.execute` / `eval` argument
+source-derived?" at **1.000** on held-out programs over a measured 0.491 floor,
+loses only 0.07–0.09 when every identifier is renamed, and breaks under
+flattening — in both models.
 
 **Causal use — open, after four attempts.** This is where the work is:
 
@@ -146,7 +151,7 @@ is CPU and re-runnable.
                               Six gates (H0–H5); each stage refuses to run on a failed one.
 120–124 source→sink audit     E15: 480-program controlled benchmark → extract →
                               clean frozen readout → the E9 ladder, held out → report
-                              Four gates (S0–S3). Built and smoke-tested; NOT RUN.
+                              Four gates (S0–S3), all passing at 1.3B and 6.7B.
 ```
 
 Stage status lives in `results/STATUS.yaml`; stage 90 reads it and skips
@@ -186,7 +191,7 @@ jobs/          csh scripts per GPU stage (run under screen; no scheduler)
 configs/       model registry + canonical experiment settings
 results/       STATUS.yaml (what each experiment currently claims) + tables, figures, manifests
 docs/          EXPERIMENTS · RESULTS · ARCHIVE · METHODS · PIPELINE · RUNBOOK_E13 · SETUP · design/
-tests/         362 CPU-only tests (alignment exactness, CV leakage, strata, invariants,
+tests/         363 CPU-only tests (alignment exactness, CV leakage, strata, invariants,
                interchange algebra, gate refusal, obfuscation semantics,
                source→sink label recovery, …)
 ```
@@ -196,7 +201,7 @@ tests/         362 CPU-only tests (alignment exactness, CV leakage, strata, inva
 ```bash
 conda create -n semflow python=3.11 -y && conda activate semflow
 pip install -e ".[dev]"
-make test                     # 362 CPU-only tests
+make test                     # 363 CPU-only tests
 make smoke                    # tiny end-to-end run on this machine (~15 min, MPS)
 
 # the foundation (Phase I + II)

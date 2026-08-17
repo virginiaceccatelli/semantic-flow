@@ -4,9 +4,10 @@
 reaches a code-bearing, sensitive argument come from untrusted input, and does a
 *frozen* readout of that fact survive the obfuscation ladder?**
 
-Status: **active**. Built, gated, and smoke-tested end to end on
-`deepseek-coder-1.3b`; **not run at canonical scale**, so nothing here is a
-result. `results/STATUS.yaml` is the registry of record.
+Status: **run at canonical scale on both models**, all four gates passing with
+no overrides. The results are in §8. `results/STATUS.yaml` is the registry of
+record, and the limitations in §9 are not optional reading — the floor here is
+weaker than E2's by construction.
 
 ---
 
@@ -181,7 +182,100 @@ Outputs land in `results/sinkflow/{model}/`: `benchmark.csv`, `gates.yaml`,
 `e15_report.{md,yaml}`, `probes/{site}/{layer_XX,surface}.pkl` and
 `probes/provenance.json`; figures in `results/figures/sinkflow_*.png`.
 
-## 8. Limitations, stated before any number is read
+## 8. Results — canonical runs, 1.3B and 6.7B
+
+Both models: 480 clean programs, 336 training / **144 held-out (72 bases) per
+condition**, all four gates passing with no overrides. 1.3B probes 8 layers,
+6.7B probes 10 (see the caveat in §9.7). Intervals are cluster-bootstrapped over
+base programs. Headline site is `sink_arg`, layer 11 in both models.
+
+### 8.1 The property is decodable, and it is not the identifier
+
+Clean training programs, grouped CV at `sink_arg`:
+
+| layer | 1.3B | 6.7B |
+|---|---:|---:|
+| **surface baseline** (±3 token ids, no hidden states) | **0.491** | **0.491** |
+| −1 embedding | 0.482 | 0.482 |
+| 0 | 0.473 | 0.461 |
+| 3 | 0.777 | 0.758 |
+| 7 | 0.991 | 0.979 |
+| 11 | **1.000** | 0.988 |
+| 15 | 0.994 | **1.000** |
+| last (23 / 31) | 0.988 | 1.000 |
+
+Chance at the input, built by layer 7, held to the output — E2's binding profile
+reproduced on a security label, in both models, at the same relative depth.
+AUC is 1.000 from layer 7 on.
+
+### 8.2 Frozen transfer: renaming is cheap, flattening is the boundary
+
+`sink_arg`, layer 11, 144 programs / 72 bases per row:
+
+| condition | 1.3B | 6.7B | surface (both) |
+|---|---:|---:|---:|
+| clean held-out | **1.000** [1.000, 1.000] | **1.000** [1.000, 1.000] | 0.444 |
+| 0 normalize | 1.000 [1.000, 1.000] | 1.000 [1.000, 1.000] | 0.444 |
+| 1 rename | 0.931 [0.889, 0.972] | 0.910 [0.854, 0.958] | 0.479 |
+| 2 opaque | 0.951 [0.917, 0.986] | 0.917 [0.868, 0.958] | 0.500 |
+| 3 encode | 0.938 [0.889, 0.972] | 0.896 [0.847, 0.944] | 0.479 |
+| **4 flatten** | **0.632** [0.556, 0.708] | **0.604** [0.556, 0.653] | 0.507 |
+
+The surface arm never leaves chance in any condition, so none of this is the
+identifier — including at level 1, where renaming destroys the identifiers
+outright and the hidden-state readout loses only 0.07–0.09.
+
+### 8.3 What survives flattening is mostly class bias, not signal
+
+This is the finding that accuracy alone would have got wrong, and the reason
+`pairs_same_label` and `frac_predicted_unsafe` are columns rather than a
+footnote. At level 4:
+
+| | 1.3B | 6.7B |
+|---|---:|---:|
+| accuracy | 0.632 | 0.604 |
+| accuracy on unsafe / safe | 0.583 / 0.681 | **0.986 / 0.222** |
+| predicted unsafe | 0.451 | **0.882** |
+| matched pairs given the same label | 0.514 | 0.764 |
+
+The two numbers look alike and mean different things. **1.3B** half-loses the
+distinction — 51% of pairs get one label — with no class preference. **6.7B**
+collapses onto "unsafe": it calls 88% of programs vulnerable, is right on
+almost every unsafe program and wrong on three quarters of the safe ones, and
+gives 76% of pairs the same label. A constant "unsafe" predictor would score
+0.500 here, so **most of 6.7B's 0.604 is that bias**, not retained flow
+information. The honest reading of level 4 is *the readout is broken in both
+models*, not *it retains 60%*.
+
+The `last_token` site makes the same point at its limit: under flattening 1.3B
+sits at **0.500 [0.500, 0.500]** — a zero-width interval, `pairs_same_label`
+1.000, positive rate 0.000, i.e. a constant "safe" answer — while 6.7B is at
+0.507 with positive rate 0.979, a constant *"unsafe"* answer. Two dead readouts
+pointing in opposite directions. (A zero-width cluster bootstrap over 72 bases
+is the same signature that diagnosed E12's behavioural failure.)
+
+### 8.4 Where the degradation lives: structure, not sink family
+
+Per structure at layer 11 (36 programs per cell):
+
+| structure | 1.3B rename / flatten | 6.7B rename / flatten |
+|---|---:|---:|
+| `direct` | 1.000 / 0.611 | 1.000 / 0.694 |
+| `branch_merge` | 1.000 / 0.806 | 1.000 / 0.722 |
+| `helper` | 0.917 / 0.556 | 1.000 / 0.528 |
+| `assign_chain` | 0.806 / 0.556 | **0.639** / 0.472 |
+
+Two things reproduce across models. `direct` and `branch_merge` are untouched by
+renaming; the **assignment chain is the fragile structure** — 6.7B loses a third
+of it under renaming alone — and the helper boundary is next. A merge point is
+*more* robust than a two-step alias chain, which is the opposite of what "longer
+chain = harder" would predict and is worth a follow-up.
+
+By sink family the picture is flat (0.85–0.98 at levels 1–3, 0.58–0.73 at level
+4, no ordering that reproduces across models), which is the null the design
+wanted: the readout is tracking flow, not which dangerous API is at the end of it.
+
+## 9. Limitations, stated before any number is read
 
 1. **The floor is not pinned to chance by construction the way E2's is.** It is
    pinned only against the *declared* surface family (a ±3 token window at the
@@ -199,9 +293,55 @@ Outputs land in `results/sinkflow/{model}/`: `benchmark.csv`, `gates.yaml`,
    because no chain variable is ever assigned the other chain's value, and that
    property is what the execution reading independently checks. It is not a
    general-purpose taint analyser and must not be reused as one.
-5. **Level 4 changes what "the source anchor" means.** After flattening, the
+5. **Level 4 is cumulative, so "flattening breaks it" is a marginal claim.**
+   Level 4 contains renaming, opaque predicates and MBA encoding as well as the
+   dispatch loop. What the data supports is that levels 1–3 together cost
+   ≤ 0.10 and adding flattening costs a further ~0.30; a flatten-only arm would
+   turn that into a clean attribution, and the ladder can express one without
+   any new transformation.
+6. **The selectivity control is weak here by construction.** A base has exactly
+   two rows with opposite labels, so shuffling within it can only *swap* them,
+   never destroy the signal — which is why the control sits at 0.56–0.61 rather
+   than 0.500 and selectivity (~0.43) understates the effect. The load-bearing
+   floors in E15 are the measured surface baseline and the embedding layer, both
+   at chance; do not quote selectivity as the margin.
+7. **The two models were probed on different layer grids** — 8 layers for 1.3B,
+   10 for 6.7B — because `ModelConfig` computes its own default from
+   `MODEL_REGISTRY` and the `probe_layers` in `configs/models.yaml` are not read
+   by anything. Both peak at layer 11, which is 46% depth in 1.3B and 34% in
+   6.7B, so the cross-model agreement in §8 is *not* a matched-relative-depth
+   comparison. 6.7B's layer 15 (47% depth) is in the data and behaves the same.
+8. **Level 4 changes what "the source anchor" means.** After flattening, the
    first source expression in source order is whichever dispatch case the
    shuffle put first. The `sink_arg` anchor is unaffected, which is why it, not
    the source anchor, is the headline site.
-6. **Nothing causal.** A frozen readout surviving a transformation says the
-   information is still linearly present, not that the model uses it.
+9. **Nothing causal.** A frozen readout surviving a transformation says the
+   information is still linearly present, not that the model uses it. And a
+   readout *failing* says the information is not linearly present at that
+   position for this probe — not that the model has lost it.
+
+## 10. Next, in order
+
+1. **A flatten-only arm** (limitation §9.5). The one thing the current data
+   cannot separate: level 4 bundles four transformations, and the interesting
+   claim — "the readout is anchored on control structure, and dissolving it is
+   what breaks the audit" — needs the dispatch loop applied *without* renaming,
+   opaque predicates or MBA. No new transformation; the ladder already has the
+   pieces, only the composition is cumulative. This is the highest-value next
+   run and it is CPU + one GPU extraction.
+2. **Explain the `assign_chain` fragility** (§8.4). 6.7B drops to 0.639 on a
+   two-step alias chain under renaming alone while `branch_merge` stays at
+   1.000. That ordering is backwards from a "longer chain is harder" account and
+   is the most interesting thing in the run. Diagnose on the existing
+   predictions first (which member fails, and at which alias step), before
+   spending GPU.
+3. **Report 6.7B at matched relative depth** (§9.7). Layer 15 is 47% depth
+   against 1.3B's layer 11 at 46%; the data is already on disk. Then decide
+   whether to fix `configs/models.yaml` so the declared `probe_layers` are the
+   ones that actually run — a pre-existing repo inconsistency this track
+   surfaced, affecting every experiment, not just E15.
+4. **`starcoder2-3b`** for architecture replication, once 1–3 are settled. Same
+   corpus, same commands, one GPU extraction.
+5. **Naturalistic transfer** is the honest boundary (§9.2), and it is a project,
+   not a next step: real programs have no matched pair, so the surface floor
+   would stop being pinned and E8's caveat would apply in full.

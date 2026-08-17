@@ -430,6 +430,45 @@ def test_expected_row_count_matches_the_design():
     assert expected_row_count(n_layers=10, n_conditions=6) == 2 * 11 * 6 * 8
 
 
+def test_failure_mode_diagnostics_separate_collapse_from_mislabelling():
+    """0.5 accuracy has two causes, and the report must not conflate them.
+
+    Both frames below score exactly 0.5. In the first the readout gives the two
+    members of every pair the SAME label (the position stopped distinguishing
+    them); in the second it splits every pair but points the wrong way half the
+    time (the position still distinguishes them; it no longer means taint).
+    """
+    import pandas as pd
+
+    from src.experiments.sink_flow import aggregate_predictions
+
+    def frame(predictions):
+        rows = []
+        for base, (unsafe_pred, safe_pred) in enumerate(predictions):
+            for role, pred, label in (("unsafe", unsafe_pred, 1), ("safe", safe_pred, 0)):
+                rows.append({"condition": "obf4", "obf_level": 4, "obf_name": "flatten",
+                             "site": "sink_arg", "features": "hidden", "layer": 11,
+                             "family": "sql_exec", "structure": "direct",
+                             "base_id": f"b{base}", "program_id": f"b{base}_{role}",
+                             "role": role, "label": label, "predicted": pred,
+                             "correct": int(pred == label)})
+        return pd.DataFrame(rows)
+
+    collapsed = aggregate_predictions(frame([(1, 1), (0, 0), (1, 1), (0, 0)]), "m", n_boot=200)
+    pooled = collapsed[collapsed.breakdown == "all"].iloc[0]
+    assert pooled["accuracy"] == 0.5 and pooled["pairs_same_label"] == 1.0
+
+    mislabelled = aggregate_predictions(frame([(1, 0), (0, 1), (1, 0), (0, 1)]), "m", n_boot=200)
+    pooled = mislabelled[mislabelled.breakdown == "all"].iloc[0]
+    assert pooled["accuracy"] == 0.5 and pooled["pairs_same_label"] == 0.0
+
+    # and a one-sided collapse is visible as a positive-rate shift
+    biased = aggregate_predictions(frame([(1, 1), (1, 1), (1, 0), (1, 1)]), "m", n_boot=200)
+    pooled = biased[biased.breakdown == "all"].iloc[0]
+    assert pooled["frac_predicted_unsafe"] == 0.875
+    assert pooled["acc_unsafe"] == 1.0 and pooled["acc_safe"] == 0.25
+
+
 def test_empty_cells_are_reported_not_averaged_away():
     import pandas as pd
 

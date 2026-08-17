@@ -52,7 +52,8 @@ The flow, and why each step followed the last:
                                 │
                                 │  E15 the same ladder, on the security property:
                                 │  does "untrusted data reaches this sink" survive it?
-                                │  → built and gated; NOT RUN, nothing claimed
+                                │  → 1.000 clean over a 0.491 floor, renaming cheap,
+                                │    flattening breaks it — at 1.3B AND 6.7B
                                 ↓
   Phase III  "decodable" is not "used". Four attempts:
              E7  whole-state patch      → transports the tokens too       [claim retired]
@@ -355,17 +356,50 @@ embedding layer, the selectivity control, and grouped CV by base. The generator
 alternates which chain name carries the tainted value across bases, which is what
 keeps that baseline near chance on clean text.
 
-**Status: nothing claimed.** The track is built, gated (S0–S3) and smoke-tested
-end to end on `deepseek-coder-1.3b` at 96 programs and 3 layers; stage 120's S0
-passes on the full 480-program benchmark with the real tokenizer. No canonical
-run has been made at either scale. E15 stays `active` in `results/STATUS.yaml`
-until every gate passes on one.
+**Found** (site `sink_arg`, layer 11, 144 held-out programs from 72 bases per
+row, cluster bootstrap over bases; 1.3B / 6.7B):
 
-**Limitation, stated up front.** Unlike E2, the floor here is *not* pinned to
-chance by construction against every predictor — only against the declared
-surface family. Something that could read the whole program and run the taint
-analysis itself would score 1.0. E15 is an audit of a readout's transfer, not a
-representation claim of E2's kind.
+| | 1.3B | 6.7B |
+|---|---:|---:|
+| measured surface baseline, every condition | 0.444–0.507 | 0.444–0.507 |
+| embedding layer (−1), clean | 0.482 | 0.482 |
+| **clean held-out** | **1.000** [1.000, 1.000] | **1.000** [1.000, 1.000] |
+| rename | 0.931 | 0.910 |
+| opaque predicates | 0.951 | 0.917 |
+| MBA encoding | 0.938 | 0.896 |
+| **control-flow flattening** | **0.632** | **0.604** |
+
+**Reading.** Chance at the input (0.482), built by layer 7, at ceiling by layer
+11 and held to the output — E2's profile on a security label, replicated across
+scale. The frozen surface arm never leaves chance in any condition, so this is
+not the identifier: at level 1 renaming destroys every identifier and the
+hidden-state readout loses 0.07–0.09. E9's boundary reappears exactly where E9
+put it.
+
+**The level-4 number is worse than it looks**, and the diagnostics are what say
+so. Under flattening 1.3B half-loses the distinction (51% of matched pairs get
+the same label, no class preference), while 6.7B **collapses onto "unsafe"** —
+positive rate 0.882, 0.986 on unsafe against 0.222 on safe, 76% of pairs given
+one label. A constant "unsafe" predictor scores 0.500 there, so most of the
+0.604 is bias, not retained flow information. At `last_token` the collapse is
+total: 1.3B returns a constant "safe" (0.500, **zero-width** interval), 6.7B a
+constant "unsafe" (0.507). Reporting the two sites separately, and reporting
+`pairs_same_label` beside accuracy, is what keeps this from being read as
+"60% retained".
+
+**Where it breaks.** By structure: `direct` and `branch_merge` are untouched by
+renaming in both models; the **assignment chain is the fragile one** (6.7B 0.639
+under renaming alone) with the helper boundary next. A merge point being more
+robust than a two-step alias chain is backwards from "longer chain is harder"
+and is the open question. By sink family: nothing that reproduces across models —
+the readout tracks flow, not which API sits at the end.
+
+**Limitation, stated up front.** Unlike E2, the floor is *not* pinned to chance
+against every predictor — only against the declared surface family. Something
+able to read the whole program and run the taint analysis itself would score
+1.0. And level 4 is cumulative, so "flattening breaks it" is a marginal claim
+(levels 1–3 together cost ≤0.10, the dispatch loop a further ~0.30); a
+flatten-only arm would settle it. Nothing causal is claimed.
 
 Stages 120–124 · design `docs/design/E15_SINKFLOW_PLAN.md`.
 

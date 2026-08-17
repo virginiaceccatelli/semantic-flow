@@ -48,6 +48,10 @@ def main(
     output: Optional[Path] = typer.Option(None, help="Default results/sinkflow/{model}"),
     data_dir: Path = typer.Option(Path("data/synthetic")),
     sites: Optional[str] = typer.Option(None, help="Subset of sink_arg,last_token"),
+    from_predictions: bool = typer.Option(
+        False, help="Re-aggregate from sinkflow_predictions.csv instead of the "
+                    "activation stores (CPU, seconds, no GPU) — for when the "
+                    "aggregation changed but the forward passes did not"),
     tables: bool = typer.Option(True, help="Copy the tidy CSV into results/tables/"),
     override_gate: Optional[str] = typer.Option(None),
     strict: bool = typer.Option(True, help="Exit non-zero when S3 fails"),
@@ -56,6 +60,7 @@ def main(
     from src.data.sink_flow import base_ids_digest, load_programs, resolve_sinkflow_path
     from src.experiments.sink_flow import (
         SITES,
+        aggregate_predictions,
         assert_frozen_on_training_bases,
         check_evaluation_cells,
         expected_row_count,
@@ -75,25 +80,53 @@ def main(
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(2)
 
+    import pandas as pd
+
     site_list = [s.strip() for s in sites.split(",")] if sites else list(SITES)
     probes_dir = probes or root / "probes"
     act_root = activations or Path("results/activations") / model
-    store_dirs = [act_root / "sinkflow_heldout", act_root / "sinkflow_heldout_obf"]
-    for store_dir in store_dirs:
-        if not (store_dir / "index.json").exists():
-            console.print(f"[red]No activation store at {store_dir}.\n"
-                          f"  Fix: python scripts/121_sinkflow_extract.py --model {model}"
-                          f"[/red]")
+    predictions_path = root / "sinkflow_predictions.csv"
+
+    # Re-aggregation path: the forward passes are already on disk as one row per
+    # (program, site, features, layer), so a change to how they are SUMMARISED
+    # must never cost another GPU pass — and must never be done by hand either.
+    # This is E13 stage 108's rule ("recompute from the raw per-row CSV rather
+    # than trusting the aggregates the GPU stage wrote") applied to E15.
+    if from_predictions:
+        if not predictions_path.exists():
+            console.print(f"[red]No raw predictions at {predictions_path}.\n"
+                          f"  Fix: run stage 123 once against the activation stores "
+                          f"first: python scripts/123_sinkflow_obfuscation.py "
+                          f"--model {model}[/red]")
             raise typer.Exit(2)
-    stores = [ActivationStore(d) for d in store_dirs]
+        stores, store_dirs = [], []
+        raw_predictions = pd.read_csv(predictions_path)
+        n_layers_seen = raw_predictions[raw_predictions.features == "hidden"]["layer"].nunique()
+    else:
+        store_dirs = [act_root / "sinkflow_heldout", act_root / "sinkflow_heldout_obf"]
+        for store_dir in store_dirs:
+            if not (store_dir / "index.json").exists():
+                console.print(
+                    f"[red]No activation store at {store_dir}.\n"
+                    f"  Fix: python scripts/121_sinkflow_extract.py --model {model}\n"
+                    f"  Or, if only the aggregation changed and "
+                    f"{predictions_path.name} already exists, re-aggregate without a "
+                    f"GPU: python scripts/123_sinkflow_obfuscation.py --model {model} "
+                    f"--from-predictions[/red]")
+                raise typer.Exit(2)
+        stores = [ActivationStore(d) for d in store_dirs]
+        raw_predictions = None
+        n_layers_seen = len(stores[0].layers)
 
     # ── the frozen-probe provenance check, before a single number is produced ──
     provenance = load_provenance(probes_dir)
     train_path = resolve_sinkflow_path(model, "train",
                                        data_dir / f"sinkflow_{model}_train.jsonl")
     train_digest = base_ids_digest(sorted({p.base_id for p in load_programs(train_path)}))
-    evaluated_bases = sorted({record["metadata"]["base_id"]
-                              for store in stores for record in store.index})
+    evaluated_bases = (sorted(raw_predictions["base_id"].unique().tolist())
+                       if raw_predictions is not None
+                       else sorted({record["metadata"]["base_id"]
+                                    for store in stores for record in store.index}))
     try:
         assert_frozen_on_training_bases(provenance, evaluated_bases, train_digest)
     except ValueError as exc:
@@ -102,17 +135,25 @@ def main(
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(2)
 
+    n_programs = (raw_predictions["program_id"].nunique() if raw_predictions is not None
+                  else sum(len(s) for s in stores))
     console.print(f"[bold]E15 stage 123 — {model}[/bold]  "
-                  f"{sum(len(s) for s in stores)} held-out programs, "
+                  f"{n_programs} held-out programs"
+                  f"{' (re-aggregated from raw predictions)' if from_predictions else ''}, "
                   f"probe frozen on {len(provenance['train_base_ids'])} training bases "
                   f"(digest {provenance['train_digest']})")
 
-    frame, raw = run_frozen_evaluation(stores, probes_dir, root, sites=site_list)
+    if from_predictions:
+        raw = raw_predictions[raw_predictions["site"].isin(site_list)]
+        frame = aggregate_predictions(raw, model)
+        frame.to_csv(root / "sinkflow_obfuscation.csv", index=False)
+    else:
+        frame, raw = run_frozen_evaluation(stores, probes_dir, root, sites=site_list)
 
     # ── S3: the cells and the row count have to be the designed ones ─────────
     problems: list[str] = []
     conditions = sorted(frame["condition"].unique())
-    n_layers = len(stores[0].layers)
+    n_layers = n_layers_seen
     expected = expected_row_count(n_layers=n_layers, n_conditions=len(conditions),
                                   sites=site_list)
     if len(frame) != expected:
@@ -159,7 +200,7 @@ def main(
         console.print(f"    [red]{problem}[/red]")
     write_manifest("123_sinkflow_obfuscation", {
         "model": model, "activations": str(act_root), "probes": str(probes_dir),
-        "output": str(root), "sites": site_list,
+        "output": str(root), "sites": site_list, "from_predictions": from_predictions,
     }, t0, extra={"S3": passed, "n_rows": int(len(frame)), "expected_rows": expected,
                   "conditions": conditions, "problems": problems[:10], **gate_state})
     if strict and not passed:
