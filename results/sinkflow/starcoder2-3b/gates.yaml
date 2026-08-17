@@ -1,0 +1,112 @@
+experiment: E15
+model: starcoder2-3b
+updated: '2026-08-17 10:11:19'
+note: A passing gate says the measurement works at that step. It is not itself a scientific
+  claim.
+gates:
+  S0:
+    name: S0
+    passed: true
+    value: 480.0
+    detail: 'every validity gate passed: 480 clean programs, balanced across 3 families
+      x 4 structures x 2 labels, split {''heldout'': 72, ''train'': 168} with no base
+      leakage, all labels independently recovered, all anchors token-exact, and 720
+      obfuscated variants preserving their security label'
+    stage: 120_sinkflow_generate
+    timestamp: '2026-08-17 10:05:36'
+    override: false
+    override_reason: ''
+    extra:
+      n_bases: 240
+      n_clean_programs: 480
+      n_obf_variants: 720
+      families:
+      - command_exec
+      - dynamic_exec
+      - sql_exec
+      structures:
+      - assign_chain
+      - branch_merge
+      - direct
+      - helper
+      splits:
+        heldout: 72
+        train: 168
+      labels:
+        '0': 240
+        '1': 240
+      cells:
+        command_exec/direct/unsafe: 20
+        command_exec/direct/safe: 20
+        command_exec/assign_chain/unsafe: 20
+        command_exec/assign_chain/safe: 20
+        command_exec/branch_merge/unsafe: 20
+        command_exec/branch_merge/safe: 20
+        command_exec/helper/unsafe: 20
+        command_exec/helper/safe: 20
+        sql_exec/direct/unsafe: 20
+        sql_exec/direct/safe: 20
+        sql_exec/assign_chain/unsafe: 20
+        sql_exec/assign_chain/safe: 20
+        sql_exec/branch_merge/unsafe: 20
+        sql_exec/branch_merge/safe: 20
+        sql_exec/helper/unsafe: 20
+        sql_exec/helper/safe: 20
+        dynamic_exec/direct/unsafe: 20
+        dynamic_exec/direct/safe: 20
+        dynamic_exec/assign_chain/unsafe: 20
+        dynamic_exec/assign_chain/safe: 20
+        dynamic_exec/branch_merge/unsafe: 20
+        dynamic_exec/branch_merge/safe: 20
+        dynamic_exec/helper/unsafe: 20
+        dynamic_exec/helper/safe: 20
+      obf_levels:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      train_digest: 0b5fcb12614bab1e
+      heldout_digest: 58fb6d5d5193ec23
+      violations: []
+  S1:
+    name: S1
+    passed: false
+    value: 864.0
+    detail: '336 programs skipped; 0 anchors did not land on stored token boundaries
+      (first: [])'
+    stage: 121_sinkflow_extract
+    timestamp: '2026-08-17 10:11:19'
+    override: false
+    override_reason: ''
+    extra:
+      shards:
+        train:
+          n_expected: 336
+          n_saved: 336
+          n_skipped: 0
+          skipped: []
+        heldout:
+          n_expected: 144
+          n_saved: 144
+          n_skipped: 0
+          skipped: []
+        heldout_obf:
+          n_expected: 720
+          n_saved: 384
+          n_skipped: 336
+          skipped:
+          - command_exec_direct_00_unsafe_obf0
+          - command_exec_direct_00_unsafe_obf1
+          - command_exec_direct_00_unsafe_obf2
+          - command_exec_direct_00_unsafe_obf3
+          - command_exec_direct_00_unsafe_obf4
+          - command_exec_direct_00_safe_obf0
+          - command_exec_direct_00_safe_obf1
+          - command_exec_direct_00_safe_obf2
+          - command_exec_direct_00_safe_obf3
+          - command_exec_direct_00_safe_obf4
+      misaligned: []
+      gates_required: S0
+      gate_override: false
+      gate_override_reason: ''
