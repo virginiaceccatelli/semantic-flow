@@ -1,0 +1,57 @@
+{
+  "stage": "121_sinkflow_extract",
+  "timestamp": "20260818_152914",
+  "git_sha": "f829254",
+  "python": "3.13.13",
+  "argv": [
+    "scripts/121_sinkflow_extract.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--data-dir",
+    "data/smoke/synthetic",
+    "--output",
+    "results/smoke/sinkflow",
+    "--activations",
+    "results/smoke/act",
+    "--layers=-1,0,11",
+    "--max-length",
+    "512"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "shards": "['train', 'heldout', 'heldout_obf']",
+    "layers": "[-1, 0, 11]",
+    "max_length": "512",
+    "device": "mps",
+    "dtype": "float16",
+    "activations": "results/smoke/act"
+  },
+  "wall_time_s": 88.5,
+  "extra": {
+    "S1": true,
+    "shards": {
+      "train": {
+        "n_expected": 72,
+        "n_saved": 72,
+        "n_skipped": 0,
+        "skipped": []
+      },
+      "heldout": {
+        "n_expected": 24,
+        "n_saved": 24,
+        "n_skipped": 0,
+        "skipped": []
+      },
+      "heldout_obf": {
+        "n_expected": 216,
+        "n_saved": 216,
+        "n_skipped": 0,
+        "skipped": []
+      }
+    },
+    "misaligned": [],
+    "gates_required": "S0",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

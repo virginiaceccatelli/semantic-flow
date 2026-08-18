@@ -33,7 +33,7 @@ import ast
 import copy
 import itertools
 import random
-from typing import Optional
+from typing import Optional, Sequence
 
 from .dataset import ProbeExample
 
@@ -323,26 +323,68 @@ def _flatten_control_flow(tree: ast.AST, rng: random.Random) -> None:
 
 # ── Ladder + verification ────────────────────────────────────────────────────
 
+# The four transformations by name, in the canonical order the cumulative
+# ladder applies them. Nothing new is implemented here: this is the same four
+# rewrites the ladder has always used, made addressable individually so that
+# E15's atomic arms (`rename_only`, `opaque_only`, `encode_only`,
+# `flatten_only`) can apply exactly one of them. The cumulative ladder is
+# defined as a *prefix* of this tuple, so `obfuscate(level)` consumes the rng
+# in the identical order it always did and E9's numbers are unchanged.
+STEP_ORDER: tuple[str, ...] = ("rename", "opaque", "encode", "flatten")
+
+STEP_FUNCTIONS = {
+    "rename": _rename,
+    "opaque": _insert_opaque_dead_code,
+    "encode": _encode_int_exprs,
+    "flatten": _flatten_control_flow,
+}
+
+# level -> the prefix of STEP_ORDER that level applies (level 0 = normalize,
+# an ast round-trip with no rewrite at all).
+LEVEL_STEPS: dict[int, tuple[str, ...]] = {
+    level: STEP_ORDER[:level] for level, _ in OBFUSCATION_LEVELS
+}
+
+
 class ObfuscationLadder:
-    """Apply cumulative obfuscation levels to a (trusted, generated) source."""
+    """Apply obfuscation transformations to a (trusted, generated) source.
+
+    Two entry points over the same four rewrites: `obfuscate(level)` applies the
+    cumulative prefix E9 defines, and `apply_steps(steps)` applies any subset —
+    which is what E15's atomic arms need in order to attribute a failure to one
+    transformation rather than to the composition that contains it.
+    """
 
     def __init__(self, seed: int = 0):
         self.rng = random.Random(seed)
 
-    def obfuscate(self, source: str, level: int,
-                  rng: Optional[random.Random] = None) -> str:
+    def apply_steps(self, source: str, steps: Sequence[str],
+                    rng: Optional[random.Random] = None) -> str:
+        """Apply the named transformations, always in STEP_ORDER.
+
+        Order is canonical rather than caller-supplied on purpose: `encode`
+        after `flatten` would rewrite the dispatch machinery's own arithmetic
+        and is a different transformation from the one E9 measured. An unknown
+        name is an error, not a silent no-op.
+        """
+        unknown = [s for s in steps if s not in STEP_FUNCTIONS]
+        if unknown:
+            raise ValueError(f"unknown obfuscation step(s) {unknown}; "
+                             f"known: {list(STEP_ORDER)}")
         rng = rng or self.rng
         tree = ast.parse(source)
-        if level >= 1:
-            _rename(tree, rng)
-        if level >= 2:
-            _insert_opaque_dead_code(tree, rng)
-        if level >= 3:
-            _encode_int_exprs(tree, rng)
-        if level >= 4:
-            _flatten_control_flow(tree, rng)
+        for name in STEP_ORDER:
+            if name in steps:
+                STEP_FUNCTIONS[name](tree, rng)
         ast.fix_missing_locations(tree)
         return ast.unparse(tree)
+
+    def obfuscate(self, source: str, level: int,
+                  rng: Optional[random.Random] = None) -> str:
+        if level not in LEVEL_STEPS:
+            raise ValueError(f"unknown obfuscation level {level}; "
+                             f"known: {sorted(LEVEL_STEPS)}")
+        return self.apply_steps(source, LEVEL_STEPS[level], rng=rng)
 
 
 def _run_func(source: str, arg_tuples: list[tuple]) -> list:

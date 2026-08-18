@@ -63,8 +63,20 @@ identifier leaves middle layers at 0.85–0.90 while pushing the embedding layer
 boundary holds for a security property an auditor would actually ask for: E15
 reads "is the value at this `os.system` / `cursor.execute` / `eval` argument
 source-derived?" at **1.000** on held-out programs over a measured 0.491 floor,
-loses only 0.07–0.09 when every identifier is renamed, and breaks under
-flattening — in both models.
+loses only 0.03–0.13 when every identifier is renamed, and breaks under the
+cumulative ladder's last rung — in **all three models**, across two architecture
+families. (Those runs applied the transformations cumulatively, so the last rung
+bundles four of them. The **atomic** arms that make "flattening" an attribution
+rather than a marginal claim are built, gated and smoke-tested; they have not yet
+run at canonical scale.)
+
+That last result also shows why a pooled accuracy is not enough. At level 4 the
+three models score within 0.07 of each other while biasing in *opposite*
+directions (1.3B symmetric, 6.7B toward "unsafe", starcoder2 toward "safe"), so
+the residual is each model's prior, not retained flow information. And
+starcoder2's renaming loss is entirely **false negatives** — it misses 78% of
+the vulnerable programs in the assignment-chain structure after nothing but
+consistent identifier renaming, which the pooled 0.868 hides completely.
 
 **Causal use — open, after four attempts.** This is where the work is:
 
@@ -150,8 +162,15 @@ is CPU and re-runnable.
                               → ceiling → interchange → report → diagnose
                               Six gates (H0–H5); each stage refuses to run on a failed one.
 120–124 source→sink audit     E15: 480-program controlled benchmark → extract →
-                              clean frozen readout → the E9 ladder, held out → report
-                              Four gates (S0–S3), all passing at 1.3B and 6.7B.
+                              clean frozen readout (4 arms) → ten held-out
+                              conditions, four ATOMIC and four CUMULATIVE → report
+                              Four gates (S0–S3), all passing at 1.3B, 6.7B and
+                              starcoder2-3b on the cumulative ladder, no overrides.
+125–127 vocabulary contrast   E15-C: build + freeze logit/J/R lenses and the
+                              discovered token set on TRAINING pairs (GPU) →
+                              held-out contrast and controls (CPU) → report
+                              Two mechanical gates (J0, J1) that must pass even
+                              when the semantic result is null.
 ```
 
 Stage status lives in `results/STATUS.yaml`; stage 90 reads it and skips
@@ -218,7 +237,7 @@ make binding-pilot            # then read results/binding/*/e13_report.md
 |---|---|---|
 | `deepseek-coder-1.3b-base` | development, smoke, pilots | runs on Apple-Silicon MPS; full pipeline in minutes |
 | `deepseek-coder-6.7b-base` | main results | strong open code model; one cluster GPU in fp16 |
-| `starcoder2-3b` | optional replication | different corpus and architecture family |
+| `starcoder2-3b` | architecture replication | different corpus and architecture family; E15 complete, E1–E9 running |
 
 Base (non-instruct) models on purpose: the object of study is the representation
 built during code pretraining, not chat behaviour.

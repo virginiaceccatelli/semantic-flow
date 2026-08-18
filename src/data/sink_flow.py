@@ -87,6 +87,129 @@ OBF_LEVELS: tuple[int, ...] = tuple(level for level, _ in OBFUSCATION_LEVELS)
 OBF_NAMES: dict[int, str] = {level: name for level, name in OBFUSCATION_LEVELS}
 
 
+# ── conditions: the atomic arms and the cumulative ladder ────────────────────
+#
+# The first E15 run evaluated the cumulative ladder only, so its level-4 result
+# ("flattening breaks the readout") was a *marginal* claim: level 4 contains
+# renaming, opaque predicates and MBA encoding as well as the dispatch loop, and
+# nothing in the data could say which of the four did the damage. The atomic
+# arms fix exactly that and nothing else — no new transformation is added, and
+# no arbitrary pairwise combination is generated. Each atomic condition applies
+# exactly ONE of the ladder's existing rewrites to the clean program; each
+# cumulative condition applies exactly the declared prefix.
+#
+#   atomic      what does this transformation do ON ITS OWN?
+#   cumulative  what does an adversary who composes them achieve?
+#   difference  the interaction: cumulative minus the atomic that is in it
+#
+# `rename_only` and `rename_cumulative` apply the identical transformation set
+# (the cumulative prefix of length one *is* renaming). They are kept as two
+# conditions because their transformation draws are independent, which makes
+# their difference a measured DRAW-NOISE FLOOR for every other row of the
+# atomic-vs-cumulative table: an interaction smaller than that row is not an
+# interaction. This is the one row of that table which is a control by
+# construction, and the report says so.
+
+@dataclass(frozen=True)
+class Condition:
+    """One evaluated condition: a named subset of the ladder's transformations."""
+
+    name: str
+    steps: tuple[str, ...]          # names from obfuscation.STEP_ORDER
+    kind: str                       # clean | baseline | atomic | cumulative
+    order: int                      # sort key, and the value of `obf_level`
+    legacy_level: Optional[int] = None   # the old ladder level it reproduces
+    predecessor: Optional[str] = None    # for the marginal cumulative delta
+    atomic_counterpart: Optional[str] = None  # for the interaction column
+
+    @property
+    def n_steps(self) -> int:
+        return len(self.steps)
+
+    @property
+    def is_transformed(self) -> bool:
+        return self.kind != "clean"
+
+
+CLEAN_CONDITION = Condition(
+    name="clean_heldout", steps=(), kind="clean", order=-1)
+
+CONDITIONS: tuple[Condition, ...] = (
+    CLEAN_CONDITION,
+    # the shared-formatting baseline: an ast round-trip and nothing else, so
+    # unparse artifacts are never confounded with a transformation
+    Condition("normalize", (), "baseline", 0, legacy_level=0),
+    # atomic: exactly one transformation applied to the clean program
+    Condition("rename_only", ("rename",), "atomic", 11),
+    Condition("opaque_only", ("opaque",), "atomic", 12),
+    Condition("encode_only", ("encode",), "atomic", 13),
+    Condition("flatten_only", ("flatten",), "atomic", 14),
+    # cumulative: exactly the declared prefix of the ladder
+    Condition("rename_cumulative", ("rename",), "cumulative", 21,
+              legacy_level=1, predecessor="normalize",
+              atomic_counterpart="rename_only"),
+    Condition("rename_opaque", ("rename", "opaque"), "cumulative", 22,
+              legacy_level=2, predecessor="rename_cumulative",
+              atomic_counterpart="opaque_only"),
+    Condition("rename_opaque_encode", ("rename", "opaque", "encode"),
+              "cumulative", 23, legacy_level=3, predecessor="rename_opaque",
+              atomic_counterpart="encode_only"),
+    Condition("rename_opaque_encode_flatten",
+              ("rename", "opaque", "encode", "flatten"), "cumulative", 24,
+              legacy_level=4, predecessor="rename_opaque_encode",
+              atomic_counterpart="flatten_only"),
+)
+
+CONDITIONS_BY_NAME: dict[str, Condition] = {c.name: c for c in CONDITIONS}
+TRANSFORMED_CONDITIONS: tuple[Condition, ...] = tuple(
+    c for c in CONDITIONS if c.is_transformed)
+ATOMIC_CONDITIONS: tuple[str, ...] = tuple(
+    c.name for c in CONDITIONS if c.kind == "atomic")
+CUMULATIVE_CONDITIONS: tuple[str, ...] = tuple(
+    c.name for c in CONDITIONS if c.kind == "cumulative")
+DEFAULT_CONDITIONS: tuple[str, ...] = tuple(c.name for c in TRANSFORMED_CONDITIONS)
+
+# What the old five-level ladder called each condition. Result CSVs written
+# before the atomic arms existed carry `obf_level` 0-4; this is how a reader
+# (and stage 124) maps one onto the other without rerunning anything.
+LEGACY_LEVEL_TO_CONDITION: dict[int, str] = {
+    c.legacy_level: c.name for c in CONDITIONS if c.legacy_level is not None}
+
+
+def condition_for(name: str) -> Condition:
+    """The condition of that name, or an error listing the ones that exist."""
+    try:
+        return CONDITIONS_BY_NAME[name]
+    except KeyError:
+        raise ValueError(
+            f"unknown E15 condition '{name}'. Known: "
+            f"{sorted(CONDITIONS_BY_NAME)}") from None
+
+
+def resolve_conditions(names: Sequence[str] = DEFAULT_CONDITIONS) -> list[Condition]:
+    """Named conditions in canonical order, deduplicated, clean excluded.
+
+    The clean held-out shard is not a transformation and is never generated as
+    a variant, so asking for it here is a mistake worth naming.
+    """
+    wanted = []
+    for name in names:
+        condition = condition_for(name)
+        if condition.kind == "clean":
+            raise ValueError(
+                "'clean_heldout' is the untransformed held-out shard, not a "
+                "variant condition; it is evaluated from the heldout shard")
+        if condition not in wanted:
+            wanted.append(condition)
+    return sorted(wanted, key=lambda c: c.order)
+
+
+def expected_variant_count(n_heldout_programs: int,
+                           conditions: Sequence[Condition]) -> int:
+    """Exactly one variant per (held-out program, condition). No exceptions."""
+    return n_heldout_programs * len(conditions)
+
+
 def expected_clean_programs(
     families: Sequence[str] = FAMILIES,
     structures: Sequence[str] = STRUCTURES,
@@ -882,64 +1005,185 @@ def generate_benchmark(
 # ── obfuscation of held-out programs only ────────────────────────────────────
 
 
+# ── which transformations a program actually carries ─────────────────────────
+#
+# A condition called `flatten_only` that quietly also renamed would make the
+# atomic attribution worthless, and a condition called `encode_only` whose draw
+# happened to rewrite nothing would dilute the arm it names. Neither is
+# detectable from the condition label, so both are *measured* from the variant's
+# own AST, by signatures each transformation leaves and the others cannot:
+#
+#   rename    the program's own integer counter `count` is gone (the ladder's
+#             fresh names are two consonants and a digit, so they never collide)
+#   opaque    an opaque guard: `<expr> % k == c`, a shape the generator never
+#             emits (its only comparison is `count > 2`) and which survives
+#             flattening as the test of a state-transition IfExp
+#   encode    a bitwise operator (^ & << ~) — the MBA identities are the only
+#             thing in this repository that introduces one into these programs
+#   flatten   a `while` dispatch loop; the generator emits no loops at all
+
+_ENCODE_OPS = (ast.BitXor, ast.BitAnd, ast.BitOr, ast.LShift, ast.RShift, ast.Invert)
+
+
+def detect_transformations(source: str) -> set[str]:
+    """The transformations a variant carries, read off the variant itself."""
+    tree = ast.parse(source)
+    found: set[str] = set()
+    names = {node.id for node in ast.walk(tree) if isinstance(node, ast.Name)}
+    names |= {node.arg for node in ast.walk(tree) if isinstance(node, ast.arg)}
+    if COUNTER_NAME not in names:
+        found.add("rename")
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Compare) and len(node.ops) == 1 \
+                and isinstance(node.ops[0], ast.Eq) \
+                and isinstance(node.left, ast.BinOp) \
+                and isinstance(node.left.op, ast.Mod):
+            found.add("opaque")
+        elif isinstance(node, (ast.BinOp, ast.UnaryOp)) and isinstance(node.op, _ENCODE_OPS):
+            found.add("encode")
+        elif isinstance(node, ast.While):
+            found.add("flatten")
+    return found
+
+
+def transform_seed_for(base_id: str, condition: str, seed: int) -> int:
+    """The transformation draw for one (base, condition).
+
+    Derived from the BASE id, not the program id, so the unsafe and safe member
+    of a pair are transformed with the SAME draw: they hold the same locals in
+    the same structure, so an identical draw produces an identical renaming map,
+    identical opaque slots and identical dispatch state ids, and the pair still
+    differs only at the sink argument after the rewrite. A per-program draw
+    would break the matching and silently turn every pair metric into noise.
+    """
+    return int(base_ids_digest([base_id, condition, str(seed)])[:8], 16)
+
+
+def transform_heldout(
+    bases: Sequence[SinkFlowBase],
+    conditions: Sequence[str] = DEFAULT_CONDITIONS,
+    seed: int = 42,
+    max_draws: int = 8,
+) -> list[FlowProgram]:
+    """Every held-out program under every requested condition, verified per variant.
+
+    Both members of a base are transformed **together, under one draw**, and a
+    draw is accepted only if the variant it produced is the condition it claims
+    to be:
+
+      * it parses, and both independent readings still recover the base's label;
+      * the instrumented run observes the same sink call with the same argument
+        and the same provenance;
+      * the transformations detectable in the variant are **exactly** the ones
+        the condition declares (`detect_transformations`);
+      * the pair still differs only inside the sink-argument span.
+
+    The redraw exists because two of the ladder's rewrites are probabilistic:
+    the MBA encoder rewrites an addition with p=0.6 and an int constant with
+    p=0.5, so roughly a fifth of `encode` draws would leave the program
+    textually unchanged. Keeping those would report an arm diluted with
+    untransformed programs under the name of the transformation. This is not
+    repair-by-dropping: nothing is discarded, the number of draws used is
+    recorded per variant, and a base that never satisfies its own condition is
+    emitted marked as failing so the S0 gate refuses the run.
+    """
+    ladder = ObfuscationLadder(seed=seed)
+    wanted = resolve_conditions(conditions)
+    variants: list[FlowProgram] = []
+    for base in bases:
+        if base.split != "heldout":
+            continue
+        baselines = {p.role: observe_program(p.source) for p in base.programs()}
+        for condition in wanted:
+            attempt: dict = {}
+            for draw_index in range(max_draws):
+                draw = transform_seed_for(
+                    base.base_id,
+                    condition.name if draw_index == 0
+                    else f"{condition.name}#{draw_index}", seed)
+                attempt = _transform_pair(base, condition, ladder, draw,
+                                          baselines, draw_index + 1)
+                if attempt["ok"]:
+                    break
+            for role, payload in attempt["members"].items():
+                program = base.unsafe if role == "unsafe" else base.safe
+                variants.append(FlowProgram(
+                    program_id=f"{program.program_id}__{condition.name}",
+                    base_id=program.base_id, family=program.family,
+                    structure=program.structure, role=program.role,
+                    label=program.label, split=program.split,
+                    source=payload["source"],
+                    obf_level=condition.order, obf_name=condition.name,
+                    metadata={**program.metadata,
+                              "anchors": payload["anchors"],
+                              "condition": condition.name,
+                              "condition_kind": condition.kind,
+                              "condition_steps": ",".join(condition.steps),
+                              "n_steps": condition.n_steps,
+                              "legacy_level": condition.legacy_level,
+                              "transform_seed": attempt["draw"],
+                              "n_draws": attempt["n_draws"],
+                              "detected_steps": ",".join(sorted(payload["detected"])),
+                              "label_preserved": attempt["ok"],
+                              "recovered_label": payload["recovered"],
+                              "preservation_error": attempt["error"]},
+                ))
+    return variants
+
+
+def _transform_pair(base: SinkFlowBase, condition: Condition,
+                    ladder: ObfuscationLadder, draw: int,
+                    baselines: dict, n_draws: int) -> dict:
+    """One draw applied to both members of a base; what it produced and whether
+    it is the condition it claims to be."""
+    members: dict[str, dict] = {}
+    problems: list[str] = []
+    declared = set(condition.steps)
+    for program in base.programs():
+        source, detected, recovered = "", set(), -1
+        try:
+            source = ladder.apply_steps(program.source, condition.steps,
+                                        rng=random.Random(draw))
+            ast.parse(source)
+            recovered = recover_label(source)
+            observed = observe_program(source)
+            detected = detect_transformations(source)
+            if recovered != program.label:
+                problems.append(f"{program.program_id}: label {recovered} "
+                                f"vs {program.label}")
+            if observed.key() != baselines[program.role].key():
+                problems.append(f"{program.program_id}: observation "
+                                f"{observed.key()} vs {baselines[program.role].key()}")
+            if detected != declared:
+                problems.append(
+                    f"{program.program_id}: carries {sorted(detected) or ['nothing']} "
+                    f"but the condition declares {sorted(declared) or ['nothing']}")
+        except Exception as exc:                                # noqa: BLE001
+            problems.append(f"{program.program_id}: {type(exc).__name__}: {exc}")
+        members[program.role] = {
+            "source": source, "detected": detected, "recovered": recovered,
+            "anchors": ({k: list(v) for k, v in find_anchors(source).items()}
+                        if source else {}),
+        }
+    if all(m["source"] for m in members.values()):
+        confined, detail = pair_diff_is_confined_to_sink_arg(
+            members["unsafe"]["source"], members["safe"]["source"])
+        if not confined:
+            problems.append(f"{base.base_id}/{condition.name}: {detail}")
+    return {"ok": not problems, "error": "; ".join(problems), "members": members,
+            "draw": draw, "n_draws": n_draws}
+
+
 def obfuscate_heldout(
     bases: Sequence[SinkFlowBase],
     levels: Sequence[int] = OBF_LEVELS,
     seed: int = 42,
 ) -> list[FlowProgram]:
-    """E9's ladder applied to the held-out programs, verified per variant.
-
-    A variant is kept only if it parses, both independent readings still recover
-    the base's label, and the instrumented run observes the *same* sink call with
-    the same argument and the same provenance. Nothing is repaired: a variant
-    that changed the security label would be a broken ladder, and the caller's
-    gate must see it.
-    """
-    ladder = ObfuscationLadder(seed=seed)
-    variants: list[FlowProgram] = []
-
-    for base in bases:
-        if base.split != "heldout":
-            continue
-        for program in base.programs():
-            baseline = observe_program(program.source)
-            for level in levels:
-                name = OBF_NAMES.get(level, f"level{level}")
-                # Both members of a base are obfuscated with the SAME draw. They
-                # hold the same local names in the same structure, so the renaming
-                # map, the opaque slots and the flattened state ids come out
-                # identical and the pair stays matched at every level — the
-                # obfuscated pair still differs only at the sink argument.
-                draw = int(base_ids_digest([base.base_id, str(level), str(seed)])[:8], 16)
-                try:
-                    variant_src = ladder.obfuscate(
-                        program.source, level, rng=random.Random(draw))
-                    ast.parse(variant_src)
-                    recovered = recover_label(variant_src)
-                    observed = observe_program(variant_src)
-                    preserved = (recovered == program.label
-                                 and observed.key() == baseline.key())
-                    error = "" if preserved else (
-                        f"label {recovered} vs {program.label}; "
-                        f"observation {observed.key()} vs {baseline.key()}")
-                except Exception as exc:                        # noqa: BLE001
-                    variant_src, recovered, preserved = "", -1, False
-                    error = f"{type(exc).__name__}: {exc}"
-
-                variants.append(FlowProgram(
-                    program_id=f"{program.program_id}_obf{level}",
-                    base_id=program.base_id, family=program.family,
-                    structure=program.structure, role=program.role,
-                    label=program.label, split=program.split, source=variant_src,
-                    obf_level=level, obf_name=name,
-                    metadata={**program.metadata,
-                              "anchors": ({k: list(v) for k, v in find_anchors(variant_src).items()}
-                                          if variant_src else {}),
-                              "label_preserved": preserved,
-                              "recovered_label": recovered,
-                              "preservation_error": error},
-                ))
-    return variants
+    """The cumulative ladder alone, by level — kept for callers that predate the
+    atomic arms. `transform_heldout` is the general entry point."""
+    return transform_heldout(
+        bases, conditions=[LEGACY_LEVEL_TO_CONDITION[int(level)] for level in levels],
+        seed=seed)
 
 
 # ── validity gates ───────────────────────────────────────────────────────────
@@ -977,7 +1221,7 @@ def validate_benchmark(
     structures: Sequence[str] = STRUCTURES,
     n_seeds: int = N_BASE_SEEDS,
     n_train_seeds: int = N_TRAIN_SEEDS,
-    levels: Sequence[int] = OBF_LEVELS,
+    conditions: Sequence[str] = DEFAULT_CONDITIONS,
     rerun: str = "python scripts/120_sinkflow_generate.py --model MODEL",
 ) -> list[GateViolation]:
     """Every generation-time validity gate, as a list of failures (empty = pass).
@@ -1093,34 +1337,120 @@ def validate_benchmark(
              "the sink-argument span", f"{len(unmatched)} pairs differ elsewhere",
              unmatched)
 
-    # 8/9/10. the obfuscation ladder
+    # 8-14. the transformed conditions: atomic arms and the cumulative ladder
     if variants:
+        wanted = resolve_conditions(conditions)
+        heldout_programs = {p.program_id for b in bases if b.split == "heldout"
+                            for p in b.programs()}
+
+        # 8. the security label survives every transformation, under BOTH readings
         broken = [v.program_id for v in variants if not v.metadata.get("label_preserved")]
         if broken:
             details = [f"{v.program_id}: {v.metadata.get('preservation_error', '')}"
                        for v in variants if not v.metadata.get("label_preserved")]
-            fail("obfuscation_label_preserved", "every obfuscated variant parses and "
-                 "keeps its base's security label under both readings",
+            fail("transformation_label_preserved", "every transformed variant parses "
+                 "and keeps its base's security label under both readings",
                  f"{len(broken)} variants do not", details)
 
-        heldout_programs = {p.program_id for b in bases if b.split == "heldout"
-                            for p in b.programs()}
+        # 9. exact counts, per condition — a missing cell is a silently smaller
+        #    benchmark reported as if it were the designed one
+        wrong_counts = []
+        for condition in wanted:
+            n = sum(1 for v in variants if v.obf_name == condition.name)
+            if n != len(heldout_programs):
+                wrong_counts.append(f"{condition.name}={n}")
+        expected_total = expected_variant_count(len(heldout_programs), wanted)
+        if wrong_counts or len(variants) != expected_total:
+            fail("condition_counts", f"exactly {len(heldout_programs)} variants in "
+                 f"each of {len(wanted)} conditions ({expected_total} in total)",
+                 f"{len(variants)} variants; wrong cells: "
+                 f"{'; '.join(wrong_counts[:8]) or 'none'}", wrong_counts)
+
+        # 10. every held-out program is present in every requested condition
+        by_program: dict[str, set[str]] = {}
+        for variant in variants:
+            root = variant.program_id.split("__")[0]
+            by_program.setdefault(root, set()).add(variant.obf_name)
         missing = []
         for program_id in sorted(heldout_programs):
-            have = {v.obf_level for v in variants if v.program_id.startswith(program_id + "_obf")}
-            absent = sorted(set(levels) - have)
+            absent = sorted({c.name for c in wanted} - by_program.get(program_id, set()))
             if absent:
                 missing.append(f"{program_id} missing {absent}")
         if missing:
-            fail("obfuscation_levels_complete",
-                 f"levels {list(levels)} present for all {len(heldout_programs)} "
-                 f"held-out programs", f"{len(missing)} programs incomplete", missing)
+            fail("conditions_complete",
+                 f"conditions {[c.name for c in wanted]} present for all "
+                 f"{len(heldout_programs)} held-out programs",
+                 f"{len(missing)} programs incomplete", missing)
 
+        # 11. only held-out bases are ever transformed
         train_bases = set(split_base_ids(bases, "train"))
         stray = sorted({v.program_id for v in variants if v.base_id in train_bases})
         if stray:
-            fail("obfuscation_heldout_only", "only held-out programs are obfuscated",
-                 f"{len(stray)} variants come from training bases", stray)
+            fail("transformation_heldout_only", "only held-out programs are "
+                 "transformed", f"{len(stray)} variants come from training bases",
+                 stray)
+
+        # 12. each condition carries EXACTLY the transformations it declares —
+        #     read off the variant's own AST, never from its label
+        mislabelled = []
+        for variant in variants:
+            if not variant.source:
+                continue
+            declared = set(condition_for(variant.obf_name).steps)
+            try:
+                detected = detect_transformations(variant.source)
+            except SyntaxError as exc:
+                mislabelled.append(f"{variant.program_id} (unparsable: {exc})")
+                continue
+            if detected != declared:
+                mislabelled.append(
+                    f"{variant.program_id}: carries {sorted(detected) or ['nothing']}, "
+                    f"declares {sorted(declared) or ['nothing']}")
+        if mislabelled:
+            fail("condition_transformation_isolation",
+                 "each atomic condition contains only its named transformation and "
+                 "each cumulative condition exactly its declared prefix",
+                 f"{len(mislabelled)} variants disagree with their condition",
+                 mislabelled)
+
+        # 13. both members of a pair share one draw, and the transformed pair
+        #     still differs only inside the sink-argument span
+        pairs: dict[tuple[str, str], dict[str, FlowProgram]] = {}
+        for variant in variants:
+            pairs.setdefault((variant.base_id, variant.obf_name), {})[variant.role] = variant
+        seed_mismatch, unconfined = [], []
+        for (base_id, condition_name), members in sorted(pairs.items()):
+            if set(members) != {"unsafe", "safe"}:
+                unconfined.append(f"{base_id}/{condition_name}: only "
+                                  f"{sorted(members)} present")
+                continue
+            seeds = {m.metadata.get("transform_seed") for m in members.values()}
+            if len(seeds) != 1:
+                seed_mismatch.append(f"{base_id}/{condition_name}: draws {sorted(seeds)}")
+            if not (members["unsafe"].source and members["safe"].source):
+                continue
+            ok, detail = pair_diff_is_confined_to_sink_arg(
+                members["unsafe"].source, members["safe"].source)
+            if not ok:
+                unconfined.append(f"{base_id}/{condition_name}: {detail}")
+        if seed_mismatch:
+            fail("pair_transformation_seed", "both members of a pair are "
+                 "transformed under the same draw",
+                 f"{len(seed_mismatch)} pairs were not", seed_mismatch)
+        if unconfined:
+            fail("transformed_pair_diff_confined", "each transformed pair's two "
+                 "members differ only inside the sink-argument span",
+                 f"{len(unconfined)} transformed pairs differ elsewhere", unconfined)
+
+        # 14. the split survives the transformation: a variant inherits its base
+        stray_split = [v.program_id for v in variants if v.split != "heldout"]
+        unknown_base = [v.program_id for v in variants
+                        if v.base_id not in {b.base_id for b in bases}]
+        if stray_split or unknown_base:
+            fail("variant_split_integrity",
+                 "every variant is held out and belongs to a known base",
+                 f"{len(stray_split)} variants are not held out, "
+                 f"{len(unknown_base)} have no base", stray_split + unknown_base)
 
     return violations
 
@@ -1194,6 +1524,15 @@ def dataset_summary(bases: Sequence[SinkFlowBase],
                    for s in sorted({b.split for b in bases})},
         "labels": {str(l): sum(1 for p in programs if p.label == l) for l in (0, 1)},
         "cells": by_cell,
+        "conditions": sorted({v.obf_name for v in variants},
+                             key=lambda name: condition_for(name).order),
+        "condition_counts": {name: sum(1 for v in variants if v.obf_name == name)
+                             for name in sorted({v.obf_name for v in variants},
+                                                key=lambda n: condition_for(n).order)},
+        "condition_kinds": {name: condition_for(name).kind
+                            for name in sorted({v.obf_name for v in variants},
+                                               key=lambda n: condition_for(n).order)},
+        "n_redraws": sum(1 for v in variants if int(v.metadata.get("n_draws", 1)) > 1),
         "obf_levels": sorted({v.obf_level for v in variants}),
         "train_digest": base_ids_digest(split_base_ids(bases, "train")),
         "heldout_digest": base_ids_digest(split_base_ids(bases, "heldout")),

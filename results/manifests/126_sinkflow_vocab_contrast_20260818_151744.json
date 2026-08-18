@@ -1,0 +1,46 @@
+{
+  "stage": "126_sinkflow_vocab_contrast",
+  "timestamp": "20260818_151744",
+  "git_sha": "f829254",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/126_sinkflow_vocab_contrast.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--activations",
+    "results/smoke/act",
+    "--output",
+    "results/smoke/sinkflow",
+    "--n-permutations",
+    "200",
+    "--no-tables"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "activations": "results/smoke/act",
+    "output": "results/smoke/sinkflow",
+    "layers": "[11]",
+    "sites": "['sink_arg', 'last_token']",
+    "n_permutations": "200",
+    "top_k": "8",
+    "seed": "42"
+  },
+  "wall_time_s": 4.7,
+  "extra": {
+    "J1": false,
+    "n_pair_rows": 720,
+    "n_token_rows": 900,
+    "violations": [
+      {
+        "gate": "mismatched_control_ran",
+        "expected": "the mismatched control ran on the held-out pairs",
+        "observed": "it did not",
+        "offenders": [],
+        "fix": "python scripts/126_sinkflow_vocab_contrast.py --model deepseek-coder-1.3b"
+      }
+    ],
+    "gates_required": "S0,S1,J0",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

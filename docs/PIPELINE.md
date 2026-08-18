@@ -256,25 +256,47 @@ Outputs land under `results/jspace/{model}/`: `lenses/*.pkl`,
 `swap/jspace_swap{,_summary,_by_operation,_contrasts}.csv`, and
 `go_no_go.{yaml,md}`. Design: `docs/EXPERIMENTS.md` §2.
 
-## Stages 120–124 — E15 source→sink under obfuscation (gated)
+## Stages 120–127 — E15 source→sink under obfuscation (gated)
 
-Is the value at a code-bearing, security-sensitive argument source-derived, and
-does a **frozen** readout of that survive the E9 ladder? A controlled benchmark
-of 3 sink families × 4 flow structures × 20 base seeds × 2 labels = **480 clean
-programs**, obfuscated on the held-out side only. Design, threat model and
-limitations: `docs/design/E15_SINKFLOW_PLAN.md`.
+Is the value at a code-bearing, security-sensitive argument source-derived, does
+a **frozen** readout of that survive obfuscation, and is the difference expressed
+in the model's own vocabulary? A controlled benchmark of 3 sink families × 4 flow
+structures × 20 base seeds × 2 labels = **480 clean programs**, transformed on
+the held-out side only, under **ten conditions**: clean, `normalize`, four
+**atomic** arms (`rename_only`, `opaque_only`, `encode_only`, `flatten_only`) and
+four **cumulative** ones (`rename_cumulative` → `rename_opaque` →
+`rename_opaque_encode` → `rename_opaque_encode_flatten`). Design, threat model
+and limitations: `docs/design/E15_SINKFLOW_PLAN.md`.
 
 | Stage | Command | Where | Gate | Output |
 |---|---|---|---|---|
-| 120 | `120_sinkflow_generate.py --model M` | CPU, ~1 min | **S0** | `data/synthetic/sinkflow_M_{train,heldout,heldout_obf}.jsonl`, `benchmark.csv`, `gates.yaml` |
-| 121 | `121_sinkflow_extract.py --model M` | GPU, ~10 min (1.3b) | **S1** | `results/activations/M/sinkflow_{train,heldout,heldout_obf}/` |
-| 122 | `122_sinkflow_probe.py --model M` | CPU, minutes | **S2** | `sinkflow_clean.csv`, `probes/{site}/{layer_XX,surface}.pkl`, `probes/provenance.json` |
+| 120 | `120_sinkflow_generate.py --model M` | CPU, ~2 min | **S0** | `data/synthetic/sinkflow_M_{train,heldout,heldout_obf}.jsonl` (336 / 144 / **1296**), `benchmark.csv`, `gates.yaml` |
+| 121 | `121_sinkflow_extract.py --model M` | GPU, ~25 min (1.3b) | **S1** | `results/activations/M/sinkflow_{train,heldout,heldout_obf}/` |
+| 122 | `122_sinkflow_probe.py --model M` | CPU, minutes | **S2** | `sinkflow_clean.csv`, `probes/{site}/{layer_XX,surface,whole_program_lexical}.pkl`, `probes/provenance.json` |
 | 123 | `123_sinkflow_obfuscation.py --model M` | CPU, minutes | **S3** | `sinkflow_obfuscation.csv`, `sinkflow_predictions.csv` |
 | 124 | `124_sinkflow_report.py --model M` | CPU, seconds | — | `e15_report.{yaml,md}`, `results/figures/sinkflow_*.png` |
+| 125 | `125_sinkflow_vocab_discover.py --model M` | **GPU**, hours | **J0** | `vocab/vocab_discovery.json`, `vocab/vocab_train_deltas.csv`, `vocab/vocab_lens_diagnostics.csv`, `vocab/lenses/*.pkl` |
+| 126 | `126_sinkflow_vocab_contrast.py --model M` | CPU, minutes | **J1** | `vocab/vocab_{pairs,pair_tokens,tokens,summary,controls,condition_similarity,lens_agreement}.csv` |
+| 127 | `127_sinkflow_vocab_report.py --model M` | CPU, seconds | — | `vocab/e15c_report.{md,yaml}` |
 
-Everything else lands under `results/sinkflow/{model}/`. Stage 121 is the only
-GPU stage; on the GPU host run
-`screen -dmS sinkflow-extract-6.7b env MODEL=deepseek-coder-6.7b jobs/sinkflow_extract.csh`.
+Everything else lands under `results/sinkflow/{model}/`. Stages 121 and 125 are
+the only GPU stages; on the GPU host run
+`screen -dmS sinkflow-extract-6.7b env MODEL=deepseek-coder-6.7b jobs/sinkflow_extract.csh`
+and `screen -dmS sinkflow-vocab-6.7b env MODEL=deepseek-coder-6.7b jobs/sinkflow_vocab.csh`.
+
+**Stage 126 is CPU-only on purpose.** The lens vectors are already on disk after
+125, and scoring a state against them is a matrix multiply — which is also why
+the freeze of the discovered token set is a filesystem boundary: the held-out
+contrast reads a file it did not write and could not have influenced.
+
+**Two gate families, different jobs.** S0–S3 validate the benchmark, the
+activations, the probes and the frozen evaluation. J0/J1 validate the lens
+instrumentation and the contrast, and are **mechanical only** — they must pass
+when the semantic result is null, and no gate anywhere requires a positive
+security-token result. Lens *fidelity* (next-token recovery, agreement with the
+final layer, relevance conservation) is a **diagnostic**: it warns, it never
+blocks, and the report separates "mechanically invalid" from "mechanically valid
+with weak lens fidelity".
 
 Two things the gates enforce that are easy to get wrong by hand. **The probed
 layers must include `-1`** — the embedding layer is one of the controls, and S2
@@ -284,8 +306,37 @@ against the training shard on disk before it scores anything: a probe whose
 training bases intersect the evaluated ones, or whose digest does not match the
 current benchmark, is refused rather than reported as "frozen held-out".
 
-`make sinkflow-smoke` runs the whole track at 96 programs and 3 layers into
-`results/smoke/`, in a few minutes on a laptop.
+`make sinkflow-smoke` runs stages 120–124 at 96 programs and 3 layers into
+`results/smoke/`, in a few minutes on a laptop; `make sinkflow-vocab-smoke` then
+runs 125–127 over 2 layers and 24 candidate tokens on the same activations.
+
+**Stage 125's cost is `n_candidates × n_build × n_tprime` backward passes per
+(layer, lens)**, so the knobs are `--max-candidates`, `--n-build`, `--n-tprime`
+and `--layers`. Start small and widen; the defaults are sized for a CUDA host,
+not for MPS — on Apple silicon the fp16 backward through this path returns
+non-finite gradients at every scale in the retry ladder, so `--dtype float32` is
+required and the build is slow (~60 s per 8 candidates × 1 t' × 1 sample at layer
+11 on 1.3b).
+
+**Cross-model reading.** Run stage 124 with `--depth 0.48`, never at a common
+layer index: the canonical models have 24, 32 and 30 layers, so index 11 is 48%
+of depth in one and 35% in another, and reading them side by side at the same
+index once produced a claim whose ordering reversed. Every result row carries a
+`relative_depth` column for this.
+
+```bash
+for M in deepseek-coder-1.3b deepseek-coder-6.7b starcoder2-3b; do
+    python scripts/124_sinkflow_report.py --model $M --depth 0.48
+done
+```
+
+The track has run at canonical scale on all three, S0–S3 passing with no
+overrides. One pitfall it surfaced: starcoder2's tokenizer config sets
+`clean_up_tokenization_spaces: True`, which made `compute_offsets`' round-trip
+guard reject 336 of 720 obfuscated variants until `decode_exact()` began forcing
+the flag off. If S1 reports skipped programs with *"Tokenizer round-trip does not
+reproduce the source"*, that is the failure mode — the gate is working, and the
+fix is in `src/data/alignment.py`.
 
 ---
 
