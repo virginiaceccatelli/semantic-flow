@@ -287,6 +287,26 @@ current benchmark, is refused rather than reported as "frozen held-out".
 `make sinkflow-smoke` runs the whole track at 96 programs and 3 layers into
 `results/smoke/`, in a few minutes on a laptop.
 
+**Cross-model reading.** Run stage 124 with `--depth 0.48`, never at a common
+layer index: the canonical models have 24, 32 and 30 layers, so index 11 is 48%
+of depth in one and 35% in another, and reading them side by side at the same
+index once produced a claim whose ordering reversed. Every result row carries a
+`relative_depth` column for this.
+
+```bash
+for M in deepseek-coder-1.3b deepseek-coder-6.7b starcoder2-3b; do
+    python scripts/124_sinkflow_report.py --model $M --depth 0.48
+done
+```
+
+The track has run at canonical scale on all three, S0–S3 passing with no
+overrides. One pitfall it surfaced: starcoder2's tokenizer config sets
+`clean_up_tokenization_spaces: True`, which made `compute_offsets`' round-trip
+guard reject 336 of 720 obfuscated variants until `decode_exact()` began forcing
+the flag off. If S1 reports skipped programs with *"Tokenizer round-trip does not
+reproduce the source"*, that is the failure mode — the gate is working, and the
+fix is in `src/data/alignment.py`.
+
 ---
 
 ## Stage 90 — paper assets (CPU, seconds)

@@ -53,7 +53,7 @@ The flow, and why each step followed the last:
                                 │  E15 the same ladder, on the security property:
                                 │  does "untrusted data reaches this sink" survive it?
                                 │  → 1.000 clean over a 0.491 floor, renaming cheap,
-                                │    flattening breaks it — at 1.3B AND 6.7B
+                                │    flattening breaks it — at 1.3B, 6.7B AND starcoder2-3b
                                 ↓
   Phase III  "decodable" is not "used". Four attempts:
              E7  whole-state patch      → transports the tokens too       [claim retired]
@@ -356,55 +356,76 @@ embedding layer, the selectivity control, and grouped CV by base. The generator
 alternates which chain name carries the tainted value across bases, which is what
 keeps that baseline near chance on clean text.
 
-**Found** (site `sink_arg`, layer 11, 144 held-out programs from 72 bases per
-row, cluster bootstrap over bases; 1.3B / 6.7B):
+**Found** (site `sink_arg`, 144 held-out programs from 72 bases per row, cluster
+bootstrap over bases, **three models**). Read at the layer nearest 48% of
+network depth — 1.3B L11 (48%), 6.7B L15 (48%), starcoder2-3b L15 (52%) — which
+in all three is also the argmax of clean-training CV. Comparing layer *index* to
+layer index (6.7B's L11 is only 35% depth) reverses the rename ordering and is
+how a cross-model claim goes wrong; `relative_depth` is a column in every row for
+exactly that reason.
 
-| | 1.3B | 6.7B |
-|---|---:|---:|
-| measured surface baseline, every condition | 0.444–0.507 | 0.444–0.507 |
-| embedding layer (−1), clean | 0.482 | 0.482 |
-| **clean held-out** | **1.000** [1.000, 1.000] | **1.000** [1.000, 1.000] |
-| rename | 0.931 | **0.965** |
-| opaque predicates | 0.951 | 0.917 |
-| MBA encoding | 0.938 | 0.889 |
-| **control-flow flattening** | **0.632** | **0.562** |
+| | 1.3B | 6.7B | starcoder2-3b |
+|---|---:|---:|---:|
+| measured surface baseline, every condition | 0.444–0.507 | 0.444–0.507 | 0.451–0.521 |
+| embedding layer (−1), clean | 0.482 | 0.482 | 0.482 |
+| **clean held-out** | **1.000** | **1.000** | **1.000** |
+| rename | 0.931 | **0.965** | 0.868 |
+| opaque predicates | 0.951 | 0.979 | 0.938 |
+| MBA encoding | 0.938 | 0.958 | 0.924 |
+| **control-flow flattening** | **0.632** | **0.562** | **0.569** |
 
-Read at **matched relative depth**: 1.3B layer 11 and 6.7B layer 15 are both 48%
-of network depth. Comparing layer *index* to layer index (6.7B's L11 is only 35%
-depth) reverses the rename ordering and is how a cross-model claim goes wrong —
-`relative_depth` is now a column in every row for exactly that reason.
+**Reading.** Chance at the input (0.482), built inside the first quarter of the
+network, at ceiling near half depth and held to the output — E2's profile on a
+security label, now replicated across scale *and* across architecture family and
+pretraining corpus. The frozen surface arm never leaves chance in any condition
+or any model, so this is not the identifier: at level 1 renaming destroys every
+identifier and the hidden-state readout loses 0.03–0.13. E9's boundary reappears
+exactly where E9 put it, three times. (Starcoder2-3b builds the property
+noticeably earlier — 0.896 already at 10% depth against 0.76–0.78 for both
+deepseek models.)
 
-**Reading.** Chance at the input (0.482), built by layer 7, at ceiling by layer
-11 and held to the output — E2's profile on a security label, replicated across
-scale. The frozen surface arm never leaves chance in any condition, so this is
-not the identifier: at level 1 renaming destroys every identifier and the
-hidden-state readout loses 0.07–0.09. E9's boundary reappears exactly where E9
-put it.
+**The level-4 number is worse than it looks, and the third model is what proves
+it.** The three accuracies sit within 0.07 of each other and are produced three
+different ways: 1.3B half-loses the distinction (51% of matched pairs get the
+same label, no class preference), 6.7B **skews toward "unsafe"** (positive rate
+0.729, 0.792 on unsafe against 0.333 on safe), and starcoder2-3b **skews the
+opposite way, toward "safe"** (positive rate 0.347, 0.417 on unsafe against
+0.722 on safe). A constant predictor of either class scores 0.500 on this
+balanced set, so residual accuracy that biases in *opposite directions* across
+models is each model's prior, not retained flow information. At `last_token` the
+collapse is total: outside a narrow band around half depth, all three models
+return a constant answer at exactly 0.500 with a **zero-width** interval.
+Reporting the two sites separately, and `pairs_same_label` beside accuracy, is
+what keeps this from being read as "60% retained".
 
-**The level-4 number is worse than it looks**, and the diagnostics are what say
-so. Under flattening 1.3B half-loses the distinction (51% of matched pairs get
-the same label, no class preference), while 6.7B **skews toward "unsafe"** —
-positive rate 0.729, 0.792 on unsafe against 0.333 on safe, 65% of pairs given
-one label. A constant "unsafe" predictor scores 0.500 there, so much of the
-0.562 is bias, not retained flow information. At `last_token` the collapse is
-total: 1.3B returns a constant "safe" (0.500, **zero-width** interval), 6.7B a
-constant "unsafe" (0.507). Reporting the two sites separately, and reporting
-`pairs_same_label` beside accuracy, is what keeps this from being read as
-"60% retained".
+**The errors run the dangerous way.** Starcoder2-3b's renaming loss is entirely
+false negatives — 0.750 on unsafe against 0.986 on safe — and in the
+`assign_chain` structure it misses **78% of the vulnerable programs** (0.222 on
+unsafe, 0.944 on safe) after nothing but consistent identifier renaming. 1.3B
+loses the same 0.07 symmetrically. Same headline number, different failure; an
+audit readout has to be quoted per class.
 
-**Where it breaks.** By structure: `direct` and `branch_merge` are untouched by
-renaming in both models; the **assignment chain is the fragile one** (1.3B 0.806,
-6.7B 0.861 at matched depth) with the helper boundary next. A merge point being
-at least as robust as a two-step alias chain is backwards from "longer chain is
-harder" and is the open question. By sink family: nothing that reproduces across models —
-the readout tracks flow, not which API sits at the end.
+**Where it breaks.** By structure, the ordering now reproduces in three models:
+`direct` and `branch_merge` are untouched or nearly untouched by renaming, the
+**assignment chain is the fragile one** (1.3B 0.806, 6.7B 0.861, starcoder2-3b
+0.583) with the helper boundary next. A merge point being at least as robust as
+a two-step alias chain is backwards from "longer chain is harder" and, after
+three replications, is the open question this track raises. By sink family:
+nothing that reproduces across models — the readout tracks flow, not which API
+sits at the end.
 
 **Limitation, stated up front.** Unlike E2, the floor is *not* pinned to chance
 against every predictor — only against the declared surface family. Something
 able to read the whole program and run the taint analysis itself would score
-1.0. And level 4 is cumulative, so "flattening breaks it" is a marginal claim
-(levels 1–3 together cost ≤0.10, the dispatch loop a further ~0.30); a
-flatten-only arm would settle it. Nothing causal is claimed.
+1.0. Level 4 is cumulative, so "flattening breaks it" is a marginal claim
+(levels 1–3 together cost ≤0.13, the dispatch loop a further ~0.30); a
+flatten-only arm would settle it. The embedding control is model-*independent*
+by construction here — at layer −1 the probe reduces to a lookup on the anchor
+token, and the benchmark's fixed identifier pool induces the same partition under
+both tokenizers, so the three −1 rows are one measurement, not three. And the
+companion E9 run on starcoder2-3b is still outstanding, so "the ladder breaks
+this readout in three models" is established while "security representations are
+*specifically* fragile" is not. Nothing causal is claimed.
 
 Stages 120–124 · design `docs/design/E15_SINKFLOW_PLAN.md`.
 

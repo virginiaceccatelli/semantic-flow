@@ -1,637 +1,406 @@
-# Workshop paper outline: semantic representation along three dimensions
+# Workshop paper outline: security-relevant semantic representations under obfuscation
 
 ## Working title
 
-**When Is a Code Representation Semantic? Representation, Robustness, and Causal Use in Code Language Models**
+**Do Code Models See Through Obfuscation? Auditing Security-Relevant Semantic Representations**
 
-Alternative, slightly more result-led title:
+Alternative: **Code Models Track Security-Relevant Data Flow, but Control-Flow Flattening Breaks the Readout**
 
-**Code Models Build Scope-Sensitive Representations, but Their Causal Use Remains Open**
-
-The first title is preferable for an Interpretability as a Science workshop. It makes the paper's organizing framework visible, while the second foregrounds the asymmetry in the evidence.
+Use the first title for AI4GOOD. It makes the security question explicit while retaining semantic representation as the scientific premise.
 
 ## One-sentence paper claim
 
-- DeepSeek-Coder internally computes scope-sensitive binding and def--use relations that cannot be recovered from the controlled surface form, and these relations are robust to distance and renaming but fragile under genuine scope and control-flow interference; whether the downstream model computation causally uses the binding relation itself remains open under the strongest available intervention.
+- Across DeepSeek-Coder 1.3B and 6.7B and StarCoder2-3B, middle-layer states distinguish whether untrusted input reaches a code-bearing sensitive argument despite chance-level local surface and embedding controls. A frozen readout remains at 0.868--0.979 through renaming, opaque predicates, and mixed-boolean-arithmetic encoding, but falls to 0.562--0.632 after cumulative control-flow flattening, often by collapsing toward model-specific class priors rather than retaining usable flow information.
+
+## Paper position
+
+- This is a paper about **auditing the robustness of AI code analysis**, not malware detection or interpretability for its own sake.
+- The deployment-motivated question is whether a defender can recover a security-relevant program property when an adversarial author changes surface form while preserving behavior.
+- Binding and def--use provide the controlled foundation: the models compute program relations beyond the declared surface reader.
+- E15 is the application-facing contribution: it tests untrusted source-to-sensitive-sink flow under obfuscation.
+- E13 becomes supporting mechanistic evidence. It should no longer be the narrative climax.
 
 ## Claim discipline
 
-- Use **representation**, **robustness**, and **causal use** as three increasingly strong claims requiring different evidence.
-- State the evidential status immediately and repeat it in the conclusion:
-  - representation: established;
-  - robustness: established within the tested transformations;
-  - causal use: not established.
-- Do not use “understanding” except when explaining what is not claimed.
-- Do not describe E11 as a positive causal result. Its preregistered verdict is NO-GO and its use-position null was retracted after the dose-response control.
-- Describe E13 as the strongest causal design and report only gates that are valid. As of the repository's 2026-08-12 record, H0--H3 pass on the 6.7B model and H4--H5 require a corrected rerun. The result is therefore a validated, testable causal question rather than a positive causal finding.
-- Where the repository disagrees with itself, follow the newer `docs/RESULTS.md` and the three supplied notes: `results/STATUS.yaml` still contains the older “implemented, not run” description of E13.
+- Keep these claims distinct:
+  - controlled binding/def--use representation: established for the specified probe and surface controls;
+  - clean security-flow auditability: established on the synthetic E15 benchmark;
+  - frozen-readout robustness: established within the tested transformations;
+  - causal use: established locally for binding by E13, not for source-to-sink flow;
+  - deployment-ready security auditing: not established.
+- Do not call E15 a malware detector. Its programs instantiate primitives relevant to command injection, SQL injection, and dynamic-code injection.
+- Do not equate taint flow with vulnerability generally. E15 asks whether untrusted data reaches a code-bearing sensitive argument.
+- Do not say flattening alone causes the failure. Level 4 is cumulative: levels 1--3 cost at most 0.13, and adding flattening causes the large marginal drop. A flatten-only arm remains the clean attribution test.
+- Do not claim security representations are *specifically* more fragile until the companion E9 comparison is complete on StarCoder2.
+- Do not infer retained flow from level-4 accuracy alone. Pair collapse and opposite class biases show that much of the residual accuracy is a model prior.
+- E13 is positive: all H0--H5 pass on DeepSeek-Coder 6.7B. Constrain it to one construction, use site, layer, model, and intervention family.
+- Avoid “understanding” except when saying what is not claimed.
 
-## Five-page allocation
+## Target length
 
-- Abstract: about 180--220 words; normally outside or only minimally affecting the five-page budget, depending on the final workshop template.
-- 1. Introduction: 0.65 page.
-- 2. Framework and experimental setup: 0.75 page.
-- 3. Representation: 1.10 pages.
-- 4. Robustness: 0.95 page.
-- 5. Causal use: 1.05 pages.
-- 6. Discussion, limitations, and conclusion: 0.50 page.
-- References: follow the workshop rule; if references count toward the limit, compress Section 2 and move all secondary results to the appendix.
-- Main-text visual budget: two figures and one compact status/results table. Do not spend main-text space on separate figures for control dependence, real-code transfer, raw activation patching, J-lens validation, or retired experiments.
+Target a focused 7--8 page AI4GOOD workshop paper, excluding references and appendices:
+
+- Abstract: 180--220 words.
+- Introduction and threat model: 0.9 page.
+- Related work: 0.6 page.
+- Controlled foundations and audit methodology: 1.2 pages.
+- Security source-to-sink benchmark: 1.1 pages.
+- Obfuscation results: 2.0 pages.
+- Mechanistic evidence and implications: 0.8 page.
+- Limitations and conclusion: 0.7 page.
 
 ---
 
 # Abstract
 
-Write this as one compact argument, not as a catalogue of experiments.
+Write the abstract as a security-auditing argument:
 
-- Open with the identification problem:
-  - code-model behavior and probe accuracy can be explained by identifier identity, token distance, indentation, and generator regularities;
-  - consequently, decodability alone does not show that a model computed a program relation.
-- State the paper's three-dimensional framework in one sentence:
-  - ask whether a relation is represented beyond the surface form, whether that representation survives meaning-preserving changes, and whether the model's downstream computation causally uses it.
-- Introduce the central construction:
-  - paired Python programs are token-identical except for one character that changes which definition a use resolves to;
-  - the probing sites, their local windows, and their distance are unchanged while the label flips;
-  - under the measured surface feature family, the baseline and the embedding-layer probe are exactly 0.500 by construction.
-- State the representation result with the most useful numbers:
-  - in DeepSeek-Coder 1.3B and 6.7B, binding rises from 0.500 at the input to 0.984 in middle layers and declines to 0.930/0.914 at the final layer;
-  - def--use has the same layerwise profile and remains approximately 0.96--0.99 for pairs 50--200 tokens apart.
-- State the robustness result as a contrast rather than a list:
-  - at 500 inserted tokens, inert prose retains 0.921 binding accuracy, whereas scope-shadowing context reduces it to 0.570 and reaches chance at 1,000 tokens;
-  - consistent renaming misleads early layers but preserves 0.85--0.90 middle-layer decoding; control-flow flattening reduces the best layer to about 0.750.
-- State the causal result conservatively:
-  - a factorial binding-interchange experiment removes token transport, arithmetic, and fixed answer-direction explanations;
-  - ground truth, behavioral competence, use-site decoding, and whole-state interchange pass (H0--H3), but the low-rank intervention and its held-out falsification are not yet valid (H4--H5);
-  - therefore causal use remains open.
-- Close with the scientific conclusion:
-  - the results establish a scope-sensitive but structurally constrained internal representation;
-  - they also show why causal conclusions require matched positive controls, matched intervention magnitude, and explicit alternative hypotheses.
-- Do not mention every failed experiment in the abstract. “Causal use remains open under the strongest controlled test” is enough.
+- AI-assisted code auditors may perform well on ordinary source while failing when an adversarial author preserves behavior but conceals data and control flow.
+- Accuracy on clean code or probe decodability does not show that the relevant flow exists beyond identifiers and local syntax, nor that a frozen audit survives obfuscation.
+- Give the controlled foundation in one sentence: token-matched binding pairs pin the declared surface and embedding readers to 0.500 while middle-layer decoding approaches 0.99.
+- Introduce E15 precisely: 480 clean Python programs; three sensitive-sink families; four flow structures; matched safe/unsafe programs differing only at the sink argument; 336 clean training programs and 144 held-out programs per condition; independent dynamic and static labels; frozen evaluation through an execution-verified ladder.
+- Report clean surface 0.488--0.491, embedding 0.482, and middle-layer decoding 0.997--1.000 across three models.
+- Report levels 1--3 at 0.868--0.979 and cumulative flattening at 0.562--0.632.
+- State the operational asymmetry: StarCoder2's renaming accuracy is 0.868 overall but 0.750 on unsafe programs and 0.222 on unsafe assignment chains.
+- Conclude that security readouts require semantics-preserving adversarial tests, per-class rates, and matched-pair diagnostics rather than pooled clean accuracy.
+- Omit E13 from the abstract unless the security result is already clear and space remains.
 
 ---
 
-# 1. Introduction
+# 1. Introduction and Threat Model
 
-## Paragraph 1: the scientific problem
+## 1.1 Practical problem
 
-- Begin from the ambiguity of apparent code understanding:
-  - equal names usually denote the same variable;
-  - definitions and uses tend to occur near each other;
-  - indentation often exposes control structure;
-  - a representation containing the source text will therefore support high probe accuracy even if the model never computes the intended semantic relation.
-- Define the target at the right strength:
-  - the paper does not ask whether a model “understands code” in a general or human-like sense;
-  - it asks whether hidden states contain particular program relations beyond controlled surface cues, how stable those relations are, and whether downstream computation reads them.
-- Briefly connect to prior probing work on syntax, AST structure, identifiers, data flow, and program state: cite Wan et al. (2022), Hernández López et al. (2022), Troshin and Chirkova (2022), Ma et al. (2024), GraphCodeBERT for data-flow-aware pretraining (Guo et al., 2021), and Jin and Rinard (2024).
-- State the gap precisely: these works motivate recoverability, but recoverability can reflect input information or probe capacity and does not establish causal use; cite Hewitt and Liang (2019) for control tasks.
+- Code models are plausible components of vulnerability triage, code review, and security analysis.
+- A security auditor faces a distribution shift with an adversary behind it: the author can rename variables, insert opaque branches, encode expressions, or flatten control flow while preserving behavior.
+- The central question is not only whether a model classifies clean code, but whether its internal representation of security-relevant flow remains auditable under concealment.
 
-## Paragraph 2: the construction that identifies representation
+## 1.2 Why ordinary evaluation is insufficient
 
-- Show the minimal pair in a two-column code box:
+- Sensitive APIs and names such as `raw`, `safe`, or `command` can make clean benchmarks solvable lexically.
+- A detector refitted on every transformation can learn new shortcuts and conceal a representational failure.
+- Pooled accuracy can hide the dangerous failure mode: systematically predicting vulnerable programs as safe.
+- The paper therefore combines matched counterfactual programs, surface and embedding controls, frozen readouts, execution-verified transformations, per-class rates, and matched-pair collapse.
 
-  ```python
-  x = 3                  x = 3
-  def f():               def f():
-      y = 7                  x = 7
-      return x               return x
-  # returns 3             # returns 7
-  ```
+## 1.3 Threat model
 
-- Explain the example slowly enough for a non-program-analysis reader:
-  - Python treats a name assigned inside a function as local to that function;
-  - changing `y` to `x` therefore changes the definition selected by the identical `x` in `return x`;
-  - the use token stays fixed, its position stays fixed, and the local windows around the compared anchors remain fixed.
-- Phrase the baseline carefully:
-  - “The measured surface baseline, which uses the ±3 token windows around both anchors and their bucketed distance, scores exactly 0.500 on these paired examples.”
-  - Avoid the stronger sentence “no feature of the text can separate the labels.” The repository explicitly notes that a cross-position string-equality feature lies outside the current baseline and remains an open control.
-- Explain why the embedding layer matters:
-  - it is a model-derived but context-free lexical representation;
-  - its exact 0.500 score shows that binding information appears only after contextual computation.
+- **Defender:** an auditor using a fixed code model and frozen linear readout.
+- **Adversary:** controls program surface form and applies the tested semantics-preserving transformations; does not change weights or the security label.
+- **Protected property:** whether the value at a code-bearing sensitive argument derives from untrusted input.
+- **Attack success:** reduce the readout's ability to distinguish matched safe and unsafe programs, especially through false negatives.
+- **Out of scope:** executable malware, reflection, dynamic loading, heap aliasing, concurrency, and adaptive white-box attacks.
 
-## Paragraph 3: three dimensions of evidence
+## 1.4 Contributions
 
-- Present the framework in a single compact sequence:
-  1. **Representation:** can a low-capacity readout recover the relation above the controlled surface floor?
-  2. **Robustness:** does a frozen readout survive changes in form when meaning is preserved, and fail selectively when the relational problem becomes harder?
-  3. **Causal use:** does an intervention on the proposed state change behavior according to the counterfactual semantic relation rather than merely moving a token or answer direction?
-- Make clear that these dimensions are not interchangeable:
-  - robustness strengthens the representational interpretation but does not imply downstream use;
-  - an answer-changing intervention is not sufficient unless it isolates the semantic variable.
-- Cite causal abstraction/interchange work here: Geiger et al. (2023), Wu et al. (2023; Boundless DAS), Huang et al. (2024; RAVEL), Feng and Steinhardt (2024), and Wu, Geiger, and Millière (2025).
-
-## Paragraph 4: contributions and headline findings
-
-- Use three contributions matching the paper structure:
-  - **Representation:** binding and def--use are built rapidly with depth, peak in middle layers, and are partly shed near the output, replicated across 1.3B and 6.7B.
-  - **Robustness:** distance and spelling are comparatively cheap, while scope interference and control-flow flattening are expensive; the representation is more abstract than lexical identity but not invariant to arbitrary semantics-preserving restructuring.
-  - **Causal use and methodology:** the strongest binding-interchange test passes all prerequisites but not yet its decisive low-rank and held-out gates, leaving causal use open; earlier interventions reveal general failure modes involving surface transport, unmatched positive controls, and intervention dose.
-- End with the paper's central interpretation:
-  - the evidence supports a computed, scope-sensitive, structurally constrained relation;
-  - it does not support the broader claim that the model forms a fully normalized symbolic program representation.
+1. **Controlled semantic foundation.** Binding and def--use become decodable only after contextual computation and survive lexical changes better than structural interference.
+2. **Security-flow benchmark.** A gated, 480-program benchmark crossing three sink families with four flow structures, matched pairs, and two independent ground-truth readings.
+3. **Obfuscation audit.** Frozen-readout evaluation across three models reveals a replicated boundary between levels 1--3 and cumulative flattening, plus class- and structure-specific failures hidden by pooled accuracy.
+4. **Evidence standard.** Security readouts should be evaluated with explicit surface floors, held-out obfuscations, pair-collapse diagnostics, and per-class errors.
 
 ---
 
-# 2. Framework and Experimental Setup
+# 2. Related Work
 
-This section must be compact. Put implementation details in Appendix A, but retain every detail needed to interpret the three claims.
+Organize by the security problem rather than experiment chronology.
 
-## 2.1 Operational definitions
+## 2.1 Learned program representations
 
-- Introduce common notation:
-  - program (x);
-  - semantic relation (s(x)), chiefly binding and def--use;
-  - hidden state (h_l(x)) at layer (l);
-  - decoder (g).
-- Define representation operationally:
-  - (g(h_l(x)) \approx s(x)), evaluated against a surface-only baseline on the same controlled stratum;
-  - say explicitly that this is a claim about accessible information, not human-like understanding or causal use.
-- Define robustness using a transformation (T):
-  - for meaning-preserving (T), (s(T(x)) = s(x));
-  - freeze (g) after training on base programs and test whether (g(h_l(T(x)))) still recovers the relation;
-  - this isolates changes in representation from probe refitting.
-- Define causal use:
-  - an intervention that installs semantic state (s') should make output behavior match the corresponding counterfactual, not merely differ from the original output;
-  - cite interchange intervention and causal abstraction work.
-- Add one sentence on the intended hierarchy:
-  - representation is necessary but insufficient for robustness, and both are insufficient for causal use.
+- Cover probing of syntax, identifiers, namespaces, data flow, control flow, and latent execution state.
+- Explain the identification gap: hidden states retain source text, so recoverability need not mean contextual computation formed the relation.
+- Position the context-matched binding construction and surface controls as the answer to this gap.
 
-## 2.2 Models and data
+## 2.2 ML for vulnerability and taint analysis
 
-- Models:
-  - DeepSeek-Coder 6.7B base as the main model;
-  - DeepSeek-Coder 1.3B base as a cross-scale replication;
-  - base models are used to study representations learned through code pretraining without instruction-tuning behavior as an additional variable.
-- Synthetic datasets:
-  - canonical core generation uses 200 binding programs, 200 taint programs, and 100 shadowing programs;
-  - context study uses 40 base programs, five filler types, and 0/50/100/200/500/1,000 inserted-token targets;
-  - obfuscation uses 40 bases and a cumulative five-level ladder;
-  - E13 uses 400 bases, four programs per base crossing binding structure with value assignment.
-- Natural-code transfer:
-  - fixed sample of 200 AST-parseable Python functions from the CodeSearchNet validation split (Husain et al., 2019);
-  - present this only as transfer of the decoder/layer signature, not transfer of the exact 0.500 identification.
-- Ground truth:
-  - generators record exact program structure;
-  - def--use extraction is independently cross-checked against Beniget, using set inclusion where branches admit multiple reaching definitions and equality on straight-line code;
-  - obfuscated programs are executed and required to be observationally equivalent to their source;
-  - E13 execution labels are independently checked by a scope-aware AST interpreter.
-- Token alignment:
-  - AST spans are mapped to exact tokenizer positions and verified against source text;
-  - mention the exact code round-trip tokenizer guard only in the appendix, unless reproducibility is a workshop emphasis.
+- Discuss learned vulnerability detection and source-to-sink/data-flow analysis.
+- Distinguish E15 from end-to-end vulnerability classification: it isolates one security-relevant semantic bit under controlled transformations.
+- Note that the safe member uses an independently trusted literal, not a generic “sanitizer,” because mitigation is sink-specific.
 
-## 2.3 Readouts, controls, and uncertainty
+## 2.3 Adversarial code transformations
 
-- Pairwise probe representation:
-  - for identifier positions (i,j), use ([h_i;h_j;h_i-h_j;|h_i-h_j|]);
-  - linear classifier, (C=0.1), maximum 20,000 rows per task/layer;
-  - five-fold `StratifiedGroupKFold`, with all rows from a source program kept in the same fold.
-- Explain why linear:
-  - the intended claim is that a relation is explicitly accessible in the state;
-  - higher-capacity probes would make it harder to distinguish model structure from structure learned by the probe.
-- Selectivity control:
-  - retrain the identical probe after shuffling labels within each program;
-  - report target accuracy minus shuffled-label accuracy;
-  - preserve program-level grouping and label balance.
-- Surface baseline:
-  - identical training/evaluation protocol but no hidden states;
-  - features are ±3-token ID windows around both anchors and bucketed pair distance;
-  - report results per negative stratum rather than pooling easy and hard negatives.
-- Negative strata:
-  - `diff_name`, `distance_matched`, `same_name_diff_binding`, and decisive `context_matched`;
-  - both members of a context-matched counterfactual remain in one CV group.
-- Metrics:
-  - accuracy for balanced controlled strata;
-  - AUC for natural-code transfer, where identifiers are informative and a thresholded aggregate can obscure ranking quality;
-  - cluster-bootstrap confidence intervals over base programs for paired intervention effects.
-- Include a compact table with one row per dimension:
+- Relate renaming, opaque predicates, mixed boolean-arithmetic encoding, and control-flow flattening to evasion and robustness evaluation.
+- Emphasize independent label checking and that dangerous APIs are replaced by recorders during execution.
+- Position frozen transfer as the key distinction from retraining on obfuscated samples.
 
-  | Dimension | Main test | Required control | Status |
-  |---|---|---|---|
-  | Representation | context-matched linear decoding | surface and embedding floor = 0.500 | established |
-  | Robustness | frozen decoder under perturbation | matched lengths; execution-verified transforms | established within tested shifts |
-  | Causal use | crossed-arm binding interchange | whole-state ceiling, answer-direction falsification, matched random controls | open; H0--H3 pass |
+## 2.4 Causal analysis
+
+- Briefly cite causal abstraction, activation patching, and DAS/interchange.
+- E13 supports the premise that one controlled code relation is causally transportable; E15 itself remains observational.
 
 ---
 
-# 3. Representation: Is the Relation Present Beyond Surface Form?
+# 3. Controlled Foundations and Audit Methodology
 
-## 3.1 Variable binding is built with depth
+## 3.1 Operational definitions
 
-- Start with the question in plain language:
-  - does an identifier use encode which definition it resolves to, rather than only how it is spelled?
-- Make `context_matched` the only headline stratum:
-  - surface and embedding accuracy are exactly 0.500 for both model scales;
-  - first transformer block: 0.570 for 1.3B and 0.531 for 6.7B;
-  - layer 3: 0.961 and 0.914;
-  - peak: 0.984 at L7 for 1.3B and 0.984 across L11--15 for 6.7B;
-  - final layer: 0.930 at L23 and 0.914 at L31.
-- Interpret the profile in three stages:
-  - **absent at input:** controlled binding cannot be read from token identity alone;
-  - **rapidly constructed:** most of the recoverable relation appears in the first few transformer blocks;
-  - **partly shed near output:** the later state is reorganized toward next-token prediction, so representation need not increase monotonically with depth.
-- Be careful with “absent”:
-  - write “not linearly recoverable above the measured floor at the input,” rather than metaphysically absent from every possible representation.
-- Cross-scale interpretation:
-  - emphasize replicated curve shape and relative depth rather than claiming a scaling law from two models;
-  - the larger model holds the peak over more layers, but this is descriptive.
-- Recommended Figure 1:
-  - two panels, 1.3B and 6.7B;
-  - x-axis transformer depth normalized to [0,1], with actual layer numbers in secondary labels;
-  - y-axis context-matched binding accuracy;
-  - horizontal line at 0.500;
-  - optionally add def--use as a thinner line if legible;
-  - do not plot easy negative strata in the main figure. Put them in Appendix B.
-- Caption should carry the identification claim:
-  - the controlled relation begins at the surface/embedding floor, rises sharply after contextual computation, and peaks at the same relative depth across scales.
+Let `x` be a program, `s(x)` a semantic or security property, `h_l(x)` its layer-`l` state, `g` a linear readout, and `T` a transformation.
 
-## 3.2 Def--use extends the result from reference to data flow
+- **Representation:** `g(h_l(x))` recovers `s(x)` above the declared surface reader on a controlled distribution.
+- **Frozen auditability:** fit `g` on clean programs and evaluate the same `g` on held-out `T(x)` without refitting.
+- **Robustness cost:** the paired performance drop from clean held-out programs to their transformed variants.
+- **Causal use:** an intervention installing an alternative semantic state changes output according to the semantic counterfactual. E13 tests this for binding, not E15 flow.
 
-- Define a def--use edge for a general ML reader:
-  - a directed relation connecting a definition to a later occurrence that reads the value it defines.
-- Design:
-  - use the same pairwise feature construction;
-  - distance-match negative pairs so proximity cannot solve the task;
-  - bucket results by token distance.
-- Results:
-  - peak accuracy is approximately 0.99 in middle layers;
-  - the layerwise trajectory closely matches binding;
-  - the hardest 50--200-token bucket still reaches about 0.96--0.99.
-- Interpretation:
-  - the shared profile suggests that the model constructs related reference/data-flow structure rather than only retaining lexical adjacency;
-  - long-range accuracy motivates the later robustness result: raw distance alone is not the dominant limit.
-- Do not give this experiment equal visual space to binding. One paragraph plus a line/table entry is enough in five pages.
+## 3.2 Binding and def--use foundation
 
-## 3.3 Contrast and external relevance
+Show the one-character binding pair:
 
-- Control dependence as a negative contrast:
-  - hidden-state decoding is excellent, but a surface-only baseline already reaches about 0.927 accuracy and 0.990 AUC;
-  - therefore high decodability is not automatically a semantic result;
-  - the experiment demonstrates that the paper's criterion can demote a superficially impressive result.
-- Natural code as a transfer analysis:
-  - on 200 CodeSearchNet Python functions, 6.7B peak AUC is 0.978 for binding and 0.979 for def--use, compared with surface AUC 0.673 and 0.590;
-  - 1.3B reaches approximately 0.980/0.975 peak AUC;
-  - the early-middle peak and late decline resemble the synthetic profile.
-- Limitation:
-  - natural identifiers carry real information, with embedding AUC already about 0.96;
-  - the result rules against a pure synthetic-template explanation, but does not transfer the clean semantic isolation.
-- Move the full control-dependence and CodeSearchNet tables to Appendix C.
+```python
+x = 3                  x = 3
+def f():               def f():
+    y = 7                  x = 7
+    return x               return x
+# outer definition      # inner definition
+```
 
-## Section 3 takeaway sentence
+- The use token, anchor windows, and separation remain fixed while its resolved definition changes.
+- The declared surface reader and context-free embedding row are exactly 0.500.
+- In the attached paper's runs, binding peaks at 0.981 for DeepSeek 1.3B and 0.991 for 6.7B; def--use follows the same profile and remains strong at 50--200 token distances.
+- Use this to establish that contextual states can contain program relations beyond local lexical cues. Do not make it the largest result section.
 
-- “The controlled layerwise profile is evidence that the models compute scope-sensitive reference and data-flow relations, not merely that a classifier can recover labels correlated with the source text.”
+## 3.3 Common controls
+
+- Linear readouts and grouped splits by source/base program.
+- Surface-only local token windows and the context-free embedding layer.
+- Shuffled-label control, with the E15 caveat that within-pair shuffling can only swap two opposite labels and is not an ideal 0.500 null.
+- Cluster bootstrap over base programs.
+- Per-family, per-structure, per-class, and per-layer reporting.
+
+## Table 1: evidence ladder
+
+| Claim | Main test | Load-bearing control | Status |
+|---|---|---|---|
+| Binding/def--use representation | context-matched decoding | surface and embedding = 0.500 | established |
+| Clean source-to-sink auditability | E15 clean held-out | surface/embedding near 0.500; grouped bases | established synthetically |
+| Obfuscation robustness | frozen E15 readout | label-preserving held-out transforms | established for tested ladder |
+| Binding causal use | crossed E13 interchange | reversed value arm and matched controls | established locally |
+| Security-flow causal use | no intervention performed | -- | open |
 
 ---
 
-# 4. Robustness: What Is the Representation Made Of?
+# 4. E15: Security-Relevant Source-to-Sink Audit
 
-## Opening logic
+## 4.1 Security property and sink families
 
-- A decodable relation may still be tied to identifier strings, formatting, or generator-specific structure.
-- Robustness is therefore not an additional benchmark score; it identifies which changes preserve the same readout and which changes destroy it.
-- State the frozen-probe rule again in one clause: train on base programs once, never refit on transformed inputs.
+Ask one question per program:
 
-## 4.1 Context degradation separates distance from interference
+> Is the value passed to this code-bearing, security-sensitive argument derived from untrusted input?
 
-- Explain the controlled comparison:
-  - insert filler between the tracked definition and use;
-  - measure filler size in actual tokenizer tokens;
-  - use the same base programs across conditions.
-- Explain the filler ladder by the semantic problem it creates:
-  - `comment_prose`: inert text, mostly distance;
-  - `dead_code`: unreachable code;
-  - `lexical_decoy`: fresh but similar-looking names;
-  - `competing_update`: rebindings of other variables;
-  - `scope_shadow`: reuse of the tracked names inside a nested scope.
-- Main 6.7B results at 500 tokens:
-  - comment prose 0.921;
-  - dead code 0.794;
-  - lexical decoy 0.795;
-  - competing update 0.859;
-  - scope shadow 0.570.
-- At 1,000 tokens:
-  - scope shadow reaches approximately 0.498, while every other filler remains above 0.70;
-  - do not repeat every numeric value in the prose; let Figure 2 show the trajectories.
-- Layerwise result:
-  - under shadowing, block 0 is relatively stable while the middle layers that normally build binding collapse most strongly;
-  - this localizes the degradation to the contextual computation rather than the lexical lookup.
-- Interpretation:
-  - “distance is cheap; interference is expensive” should be the subsection's explicit conclusion;
-  - avoid claiming comments cost literally nothing, because performance does decline from the unperturbed condition.
+| Family | Sources | Sensitive argument |
+|---|---|---|
+| command execution | request arguments, `sys.argv[1]` | `os.system(x)`, `subprocess.call(x, shell=True)` |
+| SQL execution | request query/form input | SQL-text argument of `cursor.execute(x)` |
+| dynamic execution | request form input, `input()` | `eval(x)`, `exec(x)` |
 
-## 4.2 Obfuscation separates spelling from structural scaffold
+- The safe member passes an independently trusted literal; the unsafe member passes the source-derived value.
+- Both members contain the same source, trusted chain, propagation code, and sink and differ only at the sink-argument span.
+- This isolates source-to-sensitive-argument flow; it is not a taxonomy of vulnerabilities or mitigations.
 
-- Design:
-  - cumulative ladder: normalization, consistent local renaming, opaque predicates, mixed boolean-arithmetic encoding, control-flow flattening;
-  - every variant is execution-verified against its source;
-  - all levels for a base are retained or dropped together.
-- Report best-layer binding accuracy, because layer-averaged values hide the key result:
-  - normalized approximately 1.000;
-  - rename 0.897 at L11;
-  - opaque predicates 0.857;
-  - encoded arithmetic 0.846;
-  - flattened control flow 0.750.
-- Layerwise renaming result:
-  - embeddings/block 0 fall below chance, about 0.29--0.33;
-  - middle layers 7--15 remain around 0.85--0.90;
-  - early states remain lexical enough that consistent renaming systematically misleads the frozen decoder, while middle states support a more abstract relation.
-- Interpret flattening as a boundary, not a contradiction:
-  - the representation is invariant to some surface changes but not to arbitrary semantics-preserving compilation;
-  - it appears tied to the structured scope/control scaffold in which source code presents the computation.
-- Mention that def--use shows the same qualitative pattern; put its full table in the appendix.
+## 4.2 Factorial benchmark
 
-## Recommended Figure 2
+```text
+3 sink families x 4 flow structures x 20 base seeds x 2 labels
+= 480 clean programs
+```
 
-- Two panels sharing a clear “frozen probe” label:
-  - left: binding accuracy against inserted token count for comment prose and scope shadow; optionally gray lines for the other fillers;
-  - right: best-layer binding accuracy across the cumulative obfuscation ladder, with a small inset or callout showing early-layer versus middle-layer behavior after renaming.
-- The caption should synthesize rather than restate:
-  - inert distance and lexical rewriting are tolerated most strongly where the relation is built, while competing scope and flattened control structure define the main failure surface.
+- `direct`: source/trusted value directly reaches the sink.
+- `assign_chain`: two aliasing assignments.
+- `branch_merge`: two definitions meet at a join.
+- `helper`: one parameter-to-return helper boundary.
+- Fourteen bases per family/structure form the training set: 168 bases and 336 programs.
+- Six per family/structure are held out: 72 bases and 144 programs.
+- Pair members and every transformed variant inherit the base split; only held-out programs are obfuscated.
 
-## Section 4 takeaway sentence
+## 4.3 Ground truth and gates
 
-- “The representation is neither a lexical lookup nor a fully normalized symbolic analysis: it abstracts away from names and distance, but remains dependent on the program's presented scope and control structure.”
+- **Dynamic reading:** restricted execution with provenance-carrying values and recorder stubs replacing sensitive APIs; no dangerous call executes.
+- **Static reading:** AST taint fixpoint with one-level helper summaries.
+- Both readings must agree with each other and the intended label.
+- Four hard gates validate corpus size and balance, pair confinement, parsing, alignment, independent labels, split integrity, transformed-label preservation, activation completeness, probe provenance, required controls, expected result cells, and both classes in every cell.
+- Failures exit nonzero with expected/observed values and offending IDs; invalid rows are never silently dropped.
+
+## 4.4 Obfuscation protocol
+
+Reuse E9's cumulative ladder unchanged:
+
+0. AST normalization;
+1. consistent local renaming;
+2. opaque dead branches;
+3. mixed boolean-arithmetic encoding;
+4. control-flow flattening into a dispatch loop.
+
+- Both pair members use the same transformation draw and are revalidated at every level.
+- Fit on clean training programs once; freeze before evaluating clean and all transformed held-out programs.
 
 ---
 
-# 5. Causal Use: Does the Model Read the Relation?
+# 5. Results: What Survives Obfuscation?
 
-This section should be framed around identification, not around a chronological report of every experiment.
+## 5.1 Clean flow becomes explicit with depth
 
-## 5.1 Why decoding and answer-changing interventions are insufficient
+At the sink-argument site:
 
-- State the causal target:
-  - after editing hidden state to install an alternative binding (s'), behavior should follow the value selected by (s').
-- Distinguish this from generic answer movement:
-  - changing a logit does not show that the binding relation was transported;
-  - whole-state patching can carry token identity and many correlated features;
-  - a small low-rank null is uninterpretable without showing that an edit of the same magnitude can affect the same site.
-- Summarize three failure modes learned from earlier work, without giving each a full subsection:
-  - **surface transport (E7):** early patching at the sink argument also restores the only changed input token;
-  - **dose ambiguity (E11):** at the use site, response efficiency increases about 18-fold over the dose sweep, and a known-correct edit of the same small magnitude is also null;
-  - **capability bottleneck (E12):** the 1.3B model fails the chained-arithmetic behavioral gate (about 0.418 balanced accuracy), so the experiment cannot answer a question about semantic state.
-- If space permits, mention the general rule derived from these failures:
-  - positive controls must match the test in kind, site, and scale.
-- Cite activation-patching best practices (Zhang and Nanda, 2023), DAS/interchange work (Geiger et al., 2023), and Nikankin et al. (2024) when discussing arithmetic bottlenecks.
+| Measurement | DeepSeek 1.3B | DeepSeek 6.7B | StarCoder2-3B |
+|---|---:|---:|---:|
+| surface baseline | 0.491 | 0.491 | 0.488 |
+| embedding layer | 0.482 | 0.482 | 0.482 |
+| near 10% depth | 0.777 | 0.758 | 0.896 |
+| near 25% depth | 0.991 | 0.979 | 0.952 |
+| near 48% depth | 1.000 | 1.000 | 0.997 |
 
-## 5.2 Binding interchange provides a direct falsification test
+- The property is not recoverable from the measured local surface or anchor identity but becomes linearly explicit in contextual states.
+- It replicates across scale and across two model families/pretraining corpora.
+- Do not call the embedding row three independent results: the fixed identifier pool induces the same token partition under both tokenizers.
+- Unlike E2, E15's floor is not exact against every possible whole-program reader. E15 measures transfer of the declared readout.
 
-- Present the 2×2 design clearly:
-  - cross binding structure (outer/source versus inner/target definition) with value assignment (`ab` versus `ba`);
-  - four programs per base;
-  - within each arm, programs differ by one upstream character but have an identical use token and equal token length;
-  - the mutation is at least four tokens before the use;
-  - no arithmetic occurs: the function returns the selected variable.
-- Show the two arms in a compact schematic:
+## 5.2 Levels 1--3 are largely survivable; cumulative flattening is not
 
-  | Arm | Host/source answer | Donor/target answer | Required movement |
-  |---|---:|---:|---|
-  | `ab` | a | b | a → b |
-  | `ba` | b | a | b → a |
+Report the layer nearest 48% depth: 1.3B L11, 6.7B L15, StarCoder2 L15.
 
-- Explain the identification in words:
-  - fit the low-rank alignment on arm `ab` and evaluate it without refitting on held-out arm `ba`;
-  - a representation of which definition is in scope should transfer and reverse its token-level effect;
-  - a fixed answer or token-`b` direction can succeed on `ab` but should fail on `ba`.
-- Relate this directly to prior work:
-  - learned low-rank interchange is established by DAS/Boundless DAS and used in RAVEL and symbolic-program binding research;
-  - the contribution here is the value-assignment factorial plus a construction-pinned surface floor in a pretrained code model, not a new intervention algorithm.
+| Condition | DeepSeek 1.3B | DeepSeek 6.7B | StarCoder2-3B |
+|---|---:|---:|---:|
+| clean held-out | 1.000 | 1.000 | 1.000 |
+| rename | 0.931 | 0.965 | 0.868 |
+| opaque predicates | 0.951 | 0.979 | 0.938 |
+| MBA encoding | 0.938 | 0.958 | 0.924 |
+| cumulative flattening | 0.632 | 0.562 | 0.569 |
 
-## 5.3 Gates and current evidence
+- Include cluster-bootstrap intervals in the paper table or figure.
+- The surface arm remains between 0.444 and 0.521 in every condition.
+- Describe a replicated boundary: levels 1--3 are mostly survivable at the sink site, while adding flattened dispatch causes roughly 0.30--0.40 additional loss.
+- Do not rank models. The ordering is unstable.
 
-- Give the gate chain in one compact table. This is the main causal-use result table:
+## 5.3 Accuracy understates the level-4 collapse
 
-  | Gate | Question | Current 6.7B result | Reading |
-  |---|---|---|---|
-  | H0 | Do execution and an independent scope interpreter agree? | pass, 400/400 bases; invariants 1.000 | data valid |
-  | H1 | Does the model resolve the binding behaviorally? | pass, 1.000 overall and in weakest cell | task is within capability |
-  | H2 | Is binding decodable at the use over the surface floor? | pass, 1.000 vs 0.500 | intervention site contains the relation |
-  | H3 | Can whole-state interchange move behavior in both arms? | pass; logit movement +4.781/+4.799, flip rate 0.857 | both arms are causally testable |
-  | H4 | Does low-rank interchange beat matched controls on training arm? | not yet valid | no claim |
-  | H5 | Does it transfer to held-out arm while answer direction fails? | not yet valid | causal use remains open |
+| Diagnostic | DeepSeek 1.3B | DeepSeek 6.7B | StarCoder2-3B |
+|---|---:|---:|---:|
+| accuracy | 0.632 | 0.562 | 0.569 |
+| unsafe / safe accuracy | 0.583 / 0.681 | 0.792 / 0.333 | 0.417 / 0.722 |
+| predicted unsafe | 0.451 | 0.729 | 0.347 |
+| matched pairs given same label | 0.514 | 0.653 | 0.444 |
 
-- Explain why H3 is unusually important:
-  - a held-out null is meaningful only if whole-state replacement shows that the site and both arms can affect behavior;
-  - structural-zero controls are exactly zero where no movement should occur, supporting hook and anchor correctness.
-- Explain why the first H4/H5 run cannot be interpreted:
-  - the learned rank-1 edit exceeded the whole-state ceiling and moved about 48% of the hidden-state norm;
-  - the answer-direction comparison moved only about 1% and was therefore not norm-matched;
-  - this recreated the earlier dose problem inside the decisive control;
-  - the control has been corrected but the valid rerun is not in the repository record used for this outline.
-- State the conclusion without softening or dramatizing it:
-  - prerequisites for a decisive test pass;
-  - the decisive semantic-versus-answer comparison does not yet have a valid result;
-  - therefore the paper establishes representation and robustness, not causal use.
+- Similar pooled accuracies arise through opposite biases: 6.7B collapses toward “unsafe,” StarCoder2 toward “safe,” while 1.3B loses much of the pair distinction without the same bias.
+- The parsimonious reading is that the frozen flow distinction largely breaks and residual accuracy reflects model-specific priors.
+- Pair agreement and per-class error are therefore load-bearing security metrics.
 
-## 5.4 What each eventual result would mean
+## 5.4 Dangerous errors appear before flattening
 
-- If H4 and H5 pass:
-  - conclude that a low-rank use-site subspace transports which definition is in scope across crossed value assignments;
-  - still avoid “the model understands binding”; constrain the claim to this task, site, intervention family, and models.
-- If H4 passes and H5 fails while the answer-direction control fails on `ba` as designed:
-  - conclude that the learned training-arm subspace behaves like an answer direction rather than an abstract binding variable.
-- If the answer-direction control also transfers to `ba`:
-  - the discriminator is broken and no semantic conclusion is licensed.
-- If H3 later fails under a revised run:
-  - the held-out arm is not causally testable, so H5 cannot be interpreted.
-- Put this branching interpretation in Appendix D if the main text is tight.
+- Under renaming, StarCoder2 scores 0.868 pooled but 0.750 on unsafe versus 0.986 on safe programs.
+- For its assignment chains, unsafe accuracy is 0.222 and safe accuracy 0.944: the readout misses 78% of vulnerable members after only consistent renaming.
+- DeepSeek 1.3B's similarly sized pooled loss is symmetric at 0.931/0.931. Aggregate robustness cannot characterize audit risk.
 
-## Section 5 takeaway sentence
+## 5.5 Structure, not API spelling, predicts fragility
 
-- “The use site contains the controlled binding relation and can causally affect the answer under whole-state replacement, but the evidence does not yet show that a low-rank binding representation, rather than an answer-aligned feature, is what downstream computation reads.”
+Report rename/flatten accuracy:
+
+| Structure | DeepSeek 1.3B | DeepSeek 6.7B | StarCoder2-3B |
+|---|---:|---:|---:|
+| direct | 1.000 / 0.611 | 1.000 / 0.611 | 1.000 / 0.806 |
+| branch merge | 1.000 / 0.806 | 1.000 / 0.750 | 0.972 / 0.694 |
+| helper | 0.917 / 0.556 | 1.000 / 0.528 | 0.917 / 0.444 |
+| assignment chain | 0.806 / 0.556 | 0.861 / 0.361 | 0.583 / 0.333 |
+
+- Assignment chains are most fragile across all three models, with helper boundaries next.
+- Branch merges being more robust than two-step alias chains argues against a simple “longer path is harder” explanation.
+- Sink-family ordering does not replicate, supporting flow rather than dangerous-API memorization.
+- Treat the cause of assignment-chain fragility as an open mechanistic question.
+
+## Section 5 takeaway
+
+> Clean-code success substantially overstates the reliability of a frozen security-flow readout: surface transformations can preserve average accuracy while selectively hiding vulnerable programs, and cumulative control-flow flattening largely destroys the matched distinction across three models.
 
 ---
 
-# 6. Discussion, Limitations, and Conclusion
+# 6. Mechanistic Evidence and Security Implications
 
-## Paragraph 1: answer the three questions directly
+## 6.1 Why the audit is plausible
 
-- Representation:
-  - yes, under the paper's operational definition and measured surface controls;
-  - binding and def--use emerge rapidly after the embedding layer and share a middle-layer peak.
-- Robustness:
-  - qualified yes;
-  - the same frozen readout survives inert distance and renaming most strongly in middle layers, but degrades under shadowing and flattening.
-- Causal use:
-  - unresolved;
-  - H0--H3 establish a valid site and testable behavior, while H4--H5 remain pending a valid matched-control run.
+- Binding and def--use are prerequisites for following source-to-sink flow.
+- Their controlled profiles show contextual computation forming relational information rather than preserving only identifiers.
+- E9 supplies the companion result that binding/def--use also survive renaming better than flattened control structure in DeepSeek models.
+- Until StarCoder2 E9 is complete, do not claim a security-specific weakness rather than a general limitation of frozen linear semantic readouts.
 
-## Paragraph 2: scientific interpretation
+## 6.2 Causal evidence is supporting, not the E15 claim
 
-- The joint evidence suggests a sequence of representational formats:
-  - lexical at the input/earliest layer;
-  - relational in early-middle and middle layers;
-  - increasingly output-oriented near the final layers.
-- Phrase this as an interpretation consistent with the curves, not a demonstrated mechanistic decomposition.
-- The robustness boundary suggests the relational format is tied to source-level scope and control scaffolding, not a compiler-like canonical semantics.
-- The control-dependence contrast supports a graded criterion:
-  - not every program relation that is decodable should receive the same semantic interpretation.
+Summarize E13 in one paragraph or appendix table:
 
-## Paragraph 3: limitations
+- Cross binding structure with value assignment, fitting a rank-1 interchange on one arm and testing on an arm requiring the opposite answer-token movement.
+- All H0--H5 pass on DeepSeek-Coder 6.7B.
+- The learned edit transports the installed binding on 100% of held-out rows in both arms.
+- A mean-difference baseline transports at about 76% but at higher intervention dose.
+- Interpretation: binding is causally potent at one controlled site, layer, model, and construction.
+- Boundary: E13 does not establish causal use of E15's source-to-sink property.
 
-- Models:
-  - two sizes from one model family; replication across architecture and training corpus remains necessary.
-- Language/task scope:
-  - Python only, short synthetic programs, mostly lexical scoping and def--use;
-  - results do not establish general execution, alias analysis, heap reasoning, exceptions, or interprocedural semantics.
-- Surface floor:
-  - exact for the specified local-window-plus-distance baseline on constructed pairs, not for every computable feature of the complete source;
-  - add the cross-position name-equality baseline before submission if possible.
-- Natural code:
-  - transfer is supportive but does not preserve the controlled 0.500 isolation;
-  - static ground truth shares parts of the analysis pipeline.
-- Robustness:
-  - frozen-probe failure can mean that the representation changed basis, not necessarily that semantic information vanished;
-  - execution equivalence is tested on the generator's observations, not proved for all inputs.
-- Causality:
-  - the strongest causal claim is open;
-  - whole-state interchange establishes causal potency but is not specific to binding;
-  - a future positive low-rank result would remain local to the selected layer/site and task distribution.
+## 6.3 Implications for trustworthy code auditing
 
-## Final paragraph
+- Report false-negative robustness, not only balanced accuracy.
+- Preserve matched safe/unsafe pairs and measure when both receive the same label.
+- Test frozen transfer; retraining on each obfuscation answers a different question.
+- Stratify by flow structure because API-level aggregates hide the boundary.
+- Treat an internal readout as an audit instrument whose validity can shift under adversarial transformations, not as a stable semantic oracle.
 
-- End with the methodological point rather than a generic call for more work:
-  - interpretability claims become scientific when each stronger word is attached to a stronger falsification;
-  - a controlled floor supports representation, frozen transformations reveal its basis, and crossed interventions are needed for causal use;
-  - on this standard, code models clearly compute scope-sensitive relations, their invariances are limited and measurable, and their causal use is the remaining question.
+---
+
+# 7. Limitations and Conclusion
+
+## Limitations
+
+- **Synthetic scope:** Python only, three sink families, four structures, short generated programs, and no real malware or naturalistic vulnerability corpus.
+- **Narrow policy:** the label is untrusted flow to a code-bearing argument; vulnerability also depends on path feasibility, environment, sink semantics, and mitigations outside this benchmark.
+- **Declared surface floor:** the local-window baseline is near chance but is not a construction-exact lower bound against whole-program analysis.
+- **Cumulative ladder:** level 4 adds flattening after prior transformations; run the supported flatten-only arm before cleanly attributing the effect to flattening.
+- **Probe dependence:** frozen linear failure can mean a changed representation basis rather than loss of all flow information.
+- **Ground truth:** the static checker is valid for this generator, not a general taint analyzer; results are accepted only when instrumented execution agrees.
+- **Layer matching:** compare matched relative depth; StarCoder2's closest point is 52% rather than 48%.
+- **Observational security result:** no intervention establishes causal use of source-to-sink state.
+- **Fixed threat model:** transformations are not adaptively optimized against the model or readout.
+
+## Conclusion structure
+
+1. Code models construct scope-sensitive binding, def--use, and source-to-sink information beyond the measured local surface cues.
+2. This supports an accurate clean-code security-flow readout in three models, but frozen reliability depends strongly on presentation.
+3. Renaming, opaque predicates, and expression encoding are mostly tolerated in aggregate, yet can already produce dangerous false negatives for particular structures and models.
+4. Adding control-flow flattening largely erases the matched flow distinction, with residual pooled accuracy reflecting opposing class priors.
+5. Trustworthy evaluation of AI code auditors must treat semantics-preserving obfuscation, structural strata, pair collapse, and false-negative rates as first-class validity tests.
+
+End on the security lesson:
+
+> A code model can contain a highly decodable semantic relation on clean source and still provide an unreliable audit surface under adversarially equivalent code. Security evaluation must test the invariance of the representation it intends to trust.
 
 ---
 
 # Main-text visual and table plan
 
-## Figure 1: construction and layerwise representation
+## Figure 1: from controlled semantics to security flow
 
-- Left inset: the one-character binding flip with the use token highlighted.
-- Main panels: context-matched binding accuracy across normalized depth for 1.3B and 6.7B.
-- Horizontal surface/embedding floor at 0.500.
-- Optional faint def--use curve if it remains legible.
-- The figure should occupy no more than about 0.45 page.
+- Left: the one-character binding pair and exact 0.500 floor.
+- Right: clean E15 sink-flow accuracy across normalized depth for all three models, with surface/embedding controls.
+- Purpose: show the audit builds on a controlled semantic phenomenon rather than API-token recognition.
 
-## Figure 2: robustness failure surface
+## Figure 2: frozen audit under obfuscation
 
-- Left: context length curves, emphasizing comment prose versus scope shadow.
-- Right: cumulative obfuscation best-layer accuracy, with an early-versus-middle renaming annotation.
-- Use consistent colors for “surface change” and “semantic/structural interference.”
-- Avoid plotting all filler types with equal visual weight; gray supporting lines are sufficient.
+- Accuracy across clean, normalize, rename, opaque, encode, and flatten at matched relative depth for all three models.
+- Include the surface arm as a thin chance reference and mark that the ladder is cumulative.
 
-## Table 1: three-dimensional evidence, with causal gates
+## Figure 3: pooled accuracy versus operational failure
 
-- Prefer one combined compact table:
-  - rows for binding, def--use, context, obfuscation, and E13 H0--H5;
-  - columns for test, decisive control, result, and claim status.
-- If this is too dense, keep the three-row framework table in Section 2 and use the six-row H0--H5 table in Section 5.
+- Unsafe and safe accuracy under rename and flatten.
+- Fraction of matched pairs receiving the same prediction.
+- Highlight StarCoder2 assignment-chain false negatives under renaming.
 
----
+## Table 1: benchmark and validity controls
 
-# Appendix plan (unlimited length)
+- Sink families, flow structures, train/held-out counts, independent ground truth, pair invariant, frozen transfer, and gates S0--S3.
 
-## Appendix A: full methods and reproducibility
+## Table 2: structure-specific robustness
 
-- Program-generation grammar and all template families.
-- Exact model identifiers, layer maps, dtype, maximum lengths, random seed 42, hardware, and software versions.
-- Tokenizer integrity guard and the exact code round-trip test.
-- AST-span-to-token alignment algorithm and verification failures.
-- Def--use extractor and Beniget cross-check, including the self-referential-update bug that the comparison caught.
-- Full pairwise feature equation, classifier hyperparameters, group-level sampling, five-fold splits, and shuffled-label construction.
-- Surface feature encoding and distance buckets.
-- Cluster bootstrap procedure, resampling unit, number of resamples, and paired contrasts.
-- Manifest/reproducibility workflow and tests.
+- Use the rename/flatten table from Section 5.5.
+- Keep sink-family results in the appendix because the cross-model null is the relevant finding.
 
-## Appendix B: full representation results
+## Appendix plan
 
-- All binding strata by layer and model.
-- Surface, embedding, hidden-state, shuffled-label, selectivity, accuracy, and AUC tables.
-- Def--use distance buckets with counts.
-- Lexical token-type sanity check: embedding accuracy 1.000, clearly labelled as validation rather than a scientific finding.
-- Exact group/sample counts per task, layer, and stratum.
-
-## Appendix C: secondary and transfer analyses
-
-- Control dependence:
-  - surface accuracy 0.927/AUC 0.990;
-  - hidden-state performance and positive/hard-negative recall;
-  - explain why it is a contrast rather than a headline semantic result.
-- CodeSearchNet:
-  - all 1.3B and 6.7B binding/def--use results;
-  - embedding and surface baselines;
-  - stratum sizes once added to the output.
-- Complete context degradation curves for both tasks, all filler types, both models, and layerwise panels.
-- Complete obfuscation ladder for binding and def--use, with execution-equivalence yield.
-
-## Appendix D: causal experiments and audit trail
-
-- E13 factorial generation, invariants, independent interpreter, metric, ranks, alignment training split, and every control.
-- H0--H3 full tables and bootstrap intervals.
-- First invalid H4/H5 run shown only as a diagnostic:
-  - rank-1 result exceeding ceiling;
-  - 48% state-norm edit;
-  - unmatched 1% answer-direction control;
-  - why no causal verdict follows.
-- Predefine how the corrected H4/H5 rerun will update the main paper under each outcome.
-- E7 activation-patching migration as descriptive supporting evidence, with the surface-transport limitation.
-- E11 J-space NO-GO, readout-position measurement, use-site 18× convex dose response, missing `probe_basis` control, and retracted null.
-- E12 arithmetic behavioral-gate failure and proximity simulation.
-- J-lens implementation validation as instrument validation only.
-- Retired lead-time and control-dependence-lens analyses, with the exact reason each claim was withdrawn.
-
-## Appendix E: scope of claims and robustness checks requested before submission
-
-- Add a cross-position string-equality surface baseline. This is the highest-priority representational control because the existing ±3-token baseline cannot express name equality between separated anchors.
-- Report confidence intervals and sample counts for every headline number, particularly the context-matched stratum.
-- Report E5/E9 at preregistered or calibration-selected layers, not only post hoc best layers; retain best-layer values as descriptive summaries.
-- Add architecture-family replication if feasible; otherwise state clearly that scale replication is within DeepSeek-Coder.
-- Add context-matched mutations to natural CodeSearchNet functions if time permits; otherwise keep the transfer claim narrow.
-- Synchronize `results/STATUS.yaml`, `docs/RESULTS.md`, and the final manuscript before release.
-
----
-
-# Citation placement and bibliography additions
-
-The existing bibliography already supports the initial code-representation context:
-
-- Wan et al. (2022): structural analysis of pretrained code models.
-- Hernández López et al. (2022): AST-Probe.
-- Troshin and Chirkova (2022): probing pretrained source-code models.
-- Ma et al. (2024): syntax and semantics capacities of code pretrained models.
-- Jin and Rinard (2024): emergent program-semantics representations.
-- Guo et al. (2021): data-flow-aware code pretraining.
-- Hewitt and Liang (2019): probe control tasks.
-- Zhang and Nanda (2023): activation-patching methodology.
-- Husain et al. (2019): CodeSearchNet.
-
-Add full BibTeX records for the papers already cited in the supplied notes and E13 design:
-
-- Geiger et al. (2023), *Finding Alignments Between Interpretable Causal Variables and Distributed Neural Representations* — introduce causal abstraction and distributed alignment/interchange.
-- Wu et al. (2023), *Interpretability at Scale: Identifying Causal Mechanisms in Alpaca* — Boundless DAS and scalable learned causal alignments.
-- Feng and Steinhardt (2024), *How Do Language Models Bind Entities in Context?* — causal intervention on entity binding; contrast attribute retrieval with source-code scope resolution.
-- Huang et al. (2024), *RAVEL: Evaluating Interpretability Methods on Disentangling Language Model Representations* — isolation and disentanglement controls for representation interventions.
-- Wu, Geiger, and Millière (2025), *How Do Transformers Learn Variable Binding in Symbolic Programs?* — closest conceptual comparison; distinguish a small from-scratch symbolic model from pretrained code models and emphasize the present value-assignment factorial.
-- Nikankin et al. (2024), *Arithmetic Without Algorithms: Language Models Solve Math With a Bag of Heuristics* — use only when explaining why E12's chained arithmetic is a confounded capability requirement.
-
-Do not cite Gurnee et al. (2026) as support for the central representation or causal claims. If retained, use it only in the appendix to motivate the J-lens instrument, since the surviving main-paper argument does not depend on verbalizability or a global workspace.
-
----
-
-# Material to omit from the five-page main paper
-
-- E1 lexical token classification beyond one sentence as a pipeline sanity check.
-- Taint-state probing and behavioral lead time.
-- J-lens taint and J-lens control-dependence tracks.
-- Detailed activation-patching heatmaps.
-- Full E11 operation-family tables and lens comparisons.
-- Store-transition family diagnostics from E12.
-- Every stage number, script name, manifest path, and run command.
-- Aggregate static-probe accuracy that pools easy negative strata.
-- Separate prose discussions of normalization, opaque predicates, and arithmetic rewriting; group them as intermediate obfuscations and emphasize the renaming/flattening contrast.
-- Broad claims about model understanding, semantic equivalence under arbitrary compilation, or causal use of binding.
-- Historical narrative about all failed experiments in the main text. Retain the three general lessons and move the complete audit trail to the appendix.
-
----
-
-# Suggested final prose rhythm
-
-- Preserve the supplied notes' pattern of short declarative claims followed by a careful qualification: “Distance is cheap; interference is not.” Then explain exactly what the comparison holds fixed.
-- Use paired contrasts frequently: surface versus semantic, distance versus interference, representation versus use, answer movement versus binding transport.
-- Prefer medium-length sentences with one main logical turn. Use a longer sentence only when its clauses encode an explicit experimental contrast.
-- Define a technical term immediately before using it. For example: “A def--use edge links a definition to a later occurrence that reads its value.”
-- Let numbers serve an argument. Give the endpoints and decisive contrast in the main text; move exhaustive layer and condition values to tables.
-- State limitations in the sentence where a result is interpreted, not only in a final limitations section.
-- Use “supports,” “is consistent with,” and “does not establish” to match the evidential strength. Reserve “shows” for direct measurements and passed controls.
+- Full per-layer and per-model E15 tables with bootstrap intervals.
+- Per-family results and complete per-class rates.
+- Gate definitions, failures, and provenance digests.
+- Transformation examples and label-preservation checks.
+- Full binding/def--use/context robustness results from the attached paper.
+- Compact E13 factorial and gate table.
+- Archived intervention failures only if needed to motivate control design.

@@ -117,10 +117,18 @@ experiments:
     name: obfuscation robustness
     status: supporting
     stage: "31"
+    model: "deepseek-coder-1.3b, deepseek-coder-6.7b"
     tables: [obfuscation_robustness_]
     claim: >
       Frozen probes survive alpha-renaming and opaque predicates in the middle
       layers and collapse under control-flow flattening.
+    note: >
+      E9 is the COMPANION CONTROL for E15: same ladder, same models, binding and
+      def-use instead of the security label. It is what separates "this ladder
+      breaks linear readouts" from "security representations are specifically
+      fragile", and E15 cannot make the second claim without it. The
+      starcoder2-3b arm is in progress; until it lands, the three-model E15 table
+      has no matched binding comparison at starcoder2-3b.
 
   E10-0:
     name: J-lens implementation validation
@@ -155,19 +163,21 @@ experiments:
     name: source-to-sink flow under obfuscation (the security audit track)
     status: supporting
     stage: "120,121,122,123,124"
-    model: "deepseek-coder-1.3b, deepseek-coder-6.7b"
+    model: "deepseek-coder-1.3b, deepseek-coder-6.7b, starcoder2-3b"
     tables: [sinkflow_clean_, sinkflow_obfuscation_]
     claim: >
       Whether the value at a code-bearing, security-sensitive argument is
       source-derived is linearly decodable from mid-layer states at 1.000 on
-      held-out clean programs in BOTH models, over a measured surface baseline of
-      0.491 and an embedding layer at 0.482. A readout frozen on clean training
-      programs survives consistent renaming (0.931 / 0.965), opaque predicates
-      (0.951 / 0.917) and MBA encoding (0.938 / 0.889), and BREAKS under
-      control-flow flattening (0.632 / 0.562 - and most of what remains there is
-      class bias, not signal; see failure_modes). Read at MATCHED RELATIVE DEPTH
-      (1.3b L11, 6.7b L15, both 48%). 72 held-out bases per cell, cluster
-      bootstrap over bases.
+      held-out clean programs in ALL THREE models, over a measured surface
+      baseline of 0.488-0.491 and an embedding layer at 0.482. A readout frozen
+      on clean training programs survives consistent renaming (0.931 / 0.965 /
+      0.868), opaque predicates (0.951 / 0.979 / 0.938) and MBA encoding (0.938 /
+      0.958 / 0.924), and BREAKS under control-flow flattening (0.632 / 0.562 /
+      0.569 - and what remains there is class bias, not signal, demonstrated by
+      the three models biasing in DIFFERENT directions; see failure_modes). Read
+      at MATCHED RELATIVE DEPTH (1.3b L11 = 48%, 6.7b L15 = 48%, starcoder2-3b
+      L15 = 52%, its grid's closest). Order is 1.3b / 6.7b / starcoder2-3b
+      throughout. 72 held-out bases per cell, cluster bootstrap over bases.
     question: >
       Does a code model represent whether the value reaching a code-bearing,
       security-sensitive argument is derived from untrusted input - and does a
@@ -188,39 +198,57 @@ experiments:
       literal that never touches the source.
     numbers:
       site: sink_arg
-      layer: 11
+      layer: "1.3b L11, 6.7b L15, starcoder2-3b L15 (matched relative depth, NOT a common index)"
       n_heldout_bases_per_cell: 72
       clean_training_profile_1p3b: "L-1 0.482, L0 0.473, L3 0.777, L7 0.991, L11 1.000, L23 0.988; surface 0.491"
       clean_training_profile_6p7b: "L-1 0.482, L0 0.461, L3 0.758, L7 0.979, L15 1.000, L31 1.000; surface 0.491"
-      matched_relative_depth: "1.3b L11 and 6.7b L15 are both 48% of network depth; compare THESE, not layer index to layer index"
+      clean_training_profile_starcoder2_3b: "L-1 0.482, L0 0.462, L3 0.896, L7 0.952, L15 0.997, L29 0.988; surface 0.488"
+      matched_relative_depth: "1.3b L11 (48%), 6.7b L15 (48%), starcoder2-3b L15 (52%, closest on its grid; L11 is 38%). Compare THESE, not layer index to layer index"
       frozen_1p3b_L11: "clean 1.000 [1.000, 1.000]; rename 0.931 [0.889, 0.972]; opaque 0.951; encode 0.938; flatten 0.632 [0.556, 0.708]"
-      frozen_6p7b_L15: "clean 1.000 [1.000, 1.000]; rename 0.965 [0.938, 0.993]; opaque 0.917; encode 0.889; flatten 0.562 [0.500, 0.625]"
-      surface_baseline_all_conditions: "0.444-0.507 - never leaves chance, in either model, at any level"
-      weakest_structure: "assign_chain under renaming (1.3b 0.806, 6.7b 0.861 at matched depth) vs branch_merge 1.000 in both"
+      frozen_6p7b_L15: "clean 1.000 [1.000, 1.000]; rename 0.965 [0.938, 0.993]; opaque 0.979; encode 0.958; flatten 0.562 [0.500, 0.625]"
+      frozen_starcoder2_3b_L15: "clean 1.000 [1.000, 1.000]; rename 0.868 [0.812, 0.917]; opaque 0.938; encode 0.924; flatten 0.569 [0.479, 0.653]"
+      surface_baseline_all_conditions: "0.444-0.521 - never leaves chance, in any model, at any level"
+      weakest_structure: "assign_chain, in ALL THREE models, under renaming (1.3b 0.806, 6.7b 0.861, starcoder2-3b 0.583) vs branch_merge 0.972-1.000"
+      false_negative_asymmetry: "starcoder2-3b's rename loss is one-sided: 0.750 on unsafe vs 0.986 on safe pooled, and 0.222 vs 0.944 inside assign_chain - it misses 78% of vulnerable assignment-chain programs after renaming alone, while 1.3b loses the same 0.07 SYMMETRICALLY (0.931/0.931). Never quote this readout pooled"
+      earliest_construction: "starcoder2-3b reaches 0.896 at 10% depth vs 0.76-0.78 for both deepseek models"
       family_effect: "none that reproduces across models"
+      cross_model_ordering: "NOT stable and NOT a scale effect - 6.7b is best at levels 1-3 and worst at level 4"
     failure_modes: >
-      READ THIS BEFORE QUOTING THE LEVEL-4 NUMBER. Accuracy alone conflates two
-      failures, so pairs_same_label and frac_predicted_unsafe are columns in
-      sinkflow_obfuscation.csv. Under flattening 1.3b half-loses the distinction
-      (51% of matched pairs get the same label, no class preference), while 6.7b
-      SKEWS TOWARD "unsafe": at matched depth (L15) positive rate 0.729, unsafe
-      0.792 vs safe 0.333, 65% of pairs given the same label - and at its L11 the
-      skew is extreme (0.882 / 0.986 / 0.222). A constant "unsafe" predictor
-      scores 0.500, so much of 6.7b's 0.562 is bias rather than retained flow
-      information. At the last_token site the collapse is total: 1.3b sits at
-      0.500 with a ZERO-WIDTH bootstrap interval and a constant "safe" answer,
-      6.7b at 0.507 with a constant "unsafe" answer.
+      READ THIS BEFORE QUOTING THE LEVEL-4 NUMBER. Accuracy alone conflates
+      distinct failures, so pairs_same_label, frac_predicted_unsafe, acc_unsafe
+      and acc_safe are columns in sinkflow_obfuscation.csv. Under flattening the
+      three models land within 0.07 of each other by three DIFFERENT mechanisms:
+      1.3b half-loses the distinction (positive rate 0.451, unsafe 0.583 vs safe
+      0.681, 51% of matched pairs given the same label, no class preference);
+      6.7b SKEWS TOWARD "unsafe" (0.729 / 0.792 / 0.333, 65% of pairs same - and
+      at its L11 the skew is extreme, 0.882 / 0.986 / 0.222); starcoder2-3b
+      SKEWS THE OPPOSITE WAY, toward "safe" (0.347 / 0.417 / 0.722, 44% of pairs
+      same). A constant predictor of EITHER class scores exactly 0.500 on this
+      balanced set, so residual accuracy biasing in opposite directions across
+      models is each model's own prior, not retained flow information - the third
+      model is what turns this from an observation into an argument. At the
+      last_token site the collapse is total: outside a narrow band around half
+      depth all three models return a constant answer at exactly 0.500 with a
+      ZERO-WIDTH bootstrap interval and pairs_same_label 1.000. starcoder2-3b
+      loses last_token far earlier than either deepseek model - 0.632 already
+      under mere NORMALIZATION (level 0), where 1.3b holds 0.986 and 6.7b 0.965.
     controls:
       - "measured surface baseline: +-3 token ids around the anchor, no hidden
          states, FROZEN and transferred through the ladder exactly like the
-         hidden-state probes. It sits at 0.444-0.507 in every condition and both
-         models, so nothing reported here is the identifier - including at level
-         1, where renaming destroys identifiers and the hidden readout loses
-         0.07-0.09"
-      - "the embedding layer (-1) at 0.482: token identity before any computation"
+         hidden-state probes. It sits at 0.444-0.521 in every condition and all
+         three models, so nothing reported here is the identifier - including at
+         level 1, where renaming destroys identifiers and the hidden readout
+         loses 0.03-0.13"
+      - "the embedding layer (-1) at 0.482: token identity before any
+         computation. NOTE it is ONE measurement, not three - the -1 predictions
+         are byte-identical across all three models because the probe reduces to
+         a lookup on the anchor token and the benchmark's fixed identifier pool
+         induces the same 22-way partition under both tokenizers (verified by
+         recomputing anchor token ids per tokenizer). Expected, not a plumbing
+         bug, but do not cite it as three independent controls"
       - "selectivity control (labels shuffled within each base) - but see
          limitation: with two rows per base it can only SWAP the labels, so it
-         sits at 0.56-0.61 rather than 0.500 and understates the effect"
+         sits at 0.52-0.61 rather than 0.500 and understates the effect"
       - "which chain name is the tainted one alternates with the base index, so
          the anchor token identity is uninformative about the label corpus-wide"
       - "grouped CV by base: both members of a pair share a fold"
@@ -232,44 +260,59 @@ experiments:
       recorder and the module runs with empty builtins, so no sink is ever
       executed.
     gates:
-      - "S0 (stage 120): PASS both models - 480 clean programs, exact balance, no
-         split leakage, every program parses, anchors token-exact, labels
-         independently recovered, pairs differ only at the sink argument, 720
-         obfuscated variants preserving their security label"
-      - "S1 (stage 121): PASS both models - 1200 programs extracted per model, no
-         skips, every anchor on a token boundary in the STORED encoding"
-      - "S2 (stage 122): PASS both models - fitted on 336 clean training programs
-         (168 bases, digest 0b5fcb12614bab1e); surface baseline, embedding layer
+      - "S0 (stage 120): PASS all three models - 480 clean programs, exact
+         balance, no split leakage, every program parses, anchors token-exact,
+         labels independently recovered, pairs differ only at the sink argument,
+         720 obfuscated variants preserving their security label"
+      - "S1 (stage 121): PASS all three models - 1200 programs extracted per
+         model, no skips, every anchor on a token boundary in the STORED
+         encoding. starcoder2-3b needed the alignment fix first: its tokenizer
+         config sets clean_up_tokenization_spaces=True, which made
+         compute_offsets' round-trip guard reject 336 of 720 obfuscated variants
+         until decode_exact() started passing the flag off (src/data/alignment.py)"
+      - "S2 (stage 122): PASS all three models - fitted on 336 clean training
+         programs (168 bases, digest 0b5fcb12614bab1e, IDENTICAL across models:
+         the benchmark is model-independent); surface baseline, embedding layer
          and selectivity control all run"
-      - "S3 (stage 123): PASS both models - 864 rows (1.3b, 8 layers) / 1056 rows
-         (6.7b, 10 layers), both classes in every reported cell, probe training
-         bases disjoint from all 72 evaluated bases"
+      - "S3 (stage 123): PASS all three models - 864 rows (1.3b, 8 layers) /
+         1056 rows (6.7b and starcoder2-3b, 10 layers), both classes in every
+         reported cell, probe training bases disjoint from all 72 evaluated bases"
     limitation: >
       The floor is pinned only against the declared surface family (a +-3 token
       window at the anchor). A predictor with the whole program text could
       recover the label by doing the taint analysis itself, so this is an audit
       of a readout's transfer, not a construction-pinned representation claim of
       the E2 kind. Level 4 is CUMULATIVE, so "flattening breaks it" is a marginal
-      claim (levels 1-3 together cost <=0.10, adding flattening costs a further
+      claim (levels 1-3 together cost <=0.13, adding flattening costs a further
       ~0.30); a flatten-only arm would settle it and has been verified to work on
       all 144 held-out programs, so this is scheduled rather than hypothetical.
-      The two models were probed on DIFFERENT layer grids (8 vs 10 layers)
-      because ModelConfig computes its own default and configs/models.yaml
-      probe_layers are not read by anything - a pre-existing repo defect this
-      track surfaced. Its consequence here is FIXED rather than outstanding:
-      relative_depth is a column on every row and the cross-model numbers above
-      are read at matched depth. Synthetic programs, one language, four flow
-      structures. Nothing causal is claimed or tested.
+      The models were probed on DIFFERENT layer grids (8 layers for 1.3b, 10 for
+      the other two) because ModelConfig computes its own default and
+      configs/models.yaml probe_layers are not read by anything - a pre-existing
+      repo defect this track surfaced. Its consequence here is FIXED rather than
+      outstanding: relative_depth is a column on every row and the cross-model
+      numbers above are read at matched depth; the residual mismatch is
+      starcoder2-3b at 52% (its grid has nothing between 38% and 52%), and its
+      neighbours give the same reading. The embedding control is one measurement
+      rather than three (see controls). The COMPANION E9 run on starcoder2-3b has
+      not landed, so "the ladder breaks this readout in three models" is
+      supported while "security representations are SPECIFICALLY fragile" is not.
+      Synthetic programs, one language, four flow structures. Nothing causal is
+      claimed or tested.
     status_note: >
-      RUN at canonical scale on both models (git_sha f4ce3b9 for the forward
-      passes). All four gates pass with no overrides. The aggregate CSVs were
-      regenerated from the raw per-program sinkflow_predictions.csv with
-      `--from-predictions` after cluster-bootstrap intervals and the two
-      failure-mode diagnostics were added - the forward passes were not repeated,
-      and the E13 stage-108 rule applies: recompute from the raw rows rather than
-      trusting the aggregate a stage wrote. Activation stores are not in the
-      repository (results/activations/ is gitignored); everything downstream of
-      them is.
+      RUN at canonical scale on all three models - deepseek-coder-1.3b and
+      deepseek-coder-6.7b at git_sha f4ce3b9, starcoder2-3b at git_sha ebf4a2b
+      (the first commit carrying the decode_exact alignment fix; its two earlier
+      extraction attempts, 2510bfe and a2ba258, failed S1 and are superseded).
+      All four gates pass in every run with no overrides. For the two deepseek
+      models the aggregate CSVs were regenerated from the raw per-program
+      sinkflow_predictions.csv with `--from-predictions` after cluster-bootstrap
+      intervals and the failure-mode diagnostics were added - the forward passes
+      were not repeated, and the E13 stage-108 rule applies: recompute from the
+      raw rows rather than trusting the aggregate a stage wrote. starcoder2-3b
+      was measured with those columns already in place. Activation stores are not
+      in the repository (results/activations/ is gitignored); everything
+      downstream of them is.
 
   E6:
     name: behavioral lead time
