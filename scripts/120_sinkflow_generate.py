@@ -7,7 +7,22 @@ Every base seed is a matched unsafe/safe pair holding the same source, the same
 propagation, the same trusted alternative and the same sink; the two members
 differ only at the sink argument. 14 of the 20 seeds per (family, structure) go
 to clean training, 6 are held out — and only the held-out programs are ever put
-through the existing five-level obfuscation ladder.
+through the existing transformations.
+
+Nine transformed conditions, from the same four rewrites the E9 ladder has
+always used, with nothing new implemented and no arbitrary combination added:
+
+    normalize                        ast round-trip only
+    rename_only  opaque_only         each atomic arm applies exactly ONE
+    encode_only  flatten_only        transformation to the clean program
+    rename_cumulative                the cumulative ladder, unchanged:
+    rename_opaque                    each condition is exactly the declared
+    rename_opaque_encode             prefix of (rename, opaque, encode,
+    rename_opaque_encode_flatten     flatten)
+
+The atomic arms are what turns "level 4 breaks the readout" from a marginal
+claim into an attributable one: level 4 contains four transformations, and only
+`flatten_only` can say what the dispatch loop does on its own.
 
     python scripts/120_sinkflow_generate.py --model deepseek-coder-1.3b
 
@@ -17,7 +32,8 @@ sink anchors land exactly on token boundaries.
 Records **S0**. Writes:
     data/synthetic/sinkflow_{model}_train.jsonl        336 clean programs
     data/synthetic/sinkflow_{model}_heldout.jsonl      144 clean programs
-    data/synthetic/sinkflow_{model}_heldout_obf.jsonl  720 verified variants
+    data/synthetic/sinkflow_{model}_heldout_obf.jsonl  1296 verified variants
+                                                       (144 x 9 conditions)
     results/sinkflow/{model}/benchmark.csv, gates.yaml
 
 Refuses (exit 2) on any failed validity gate, naming the gate, the expected and
@@ -53,19 +69,24 @@ def main(
     structures: Optional[str] = typer.Option(None, help="Comma-separated subset (default all four)"),
     n_seeds: int = typer.Option(20, help="Base seeds per (family, structure)"),
     n_train_seeds: int = typer.Option(14, help="Of those, used for clean probe training"),
-    levels: str = typer.Option("0,1,2,3,4", help="Obfuscation levels applied to held-out programs"),
+    conditions: Optional[str] = typer.Option(
+        None, help="Comma-separated conditions applied to held-out programs; "
+                   "default = the four atomic arms plus the four cumulative "
+                   "ones plus normalize"),
     seed: int = typer.Option(42),
 ):
     import pandas as pd
 
     from src.data.sink_flow import (
+        DEFAULT_CONDITIONS,
         FAMILIES,
         STRUCTURES,
         dataset_summary,
         generate_benchmark,
-        obfuscate_heldout,
+        resolve_conditions,
         save_programs,
         sinkflow_paths,
+        transform_heldout,
         validate_benchmark,
     )
     from src.experiments.store_gates import SINKFLOW, record_gate
@@ -78,7 +99,14 @@ def main(
     family_list = [f.strip() for f in families.split(",")] if families else list(FAMILIES)
     structure_list = ([s.strip() for s in structures.split(",")] if structures
                       else list(STRUCTURES))
-    level_list = [int(x) for x in levels.split(",") if x.strip() != ""]
+    condition_list = ([c.strip() for c in conditions.split(",") if c.strip()]
+                      if conditions else list(DEFAULT_CONDITIONS))
+    try:
+        wanted = resolve_conditions(condition_list)
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2)
+    condition_list = [c.name for c in wanted]
 
     rerun = (f"python scripts/120_sinkflow_generate.py --model {model} "
              f"--n-seeds {n_seeds} --n-train-seeds {n_train_seeds} --seed {seed}")
@@ -98,18 +126,21 @@ def main(
         console.print(f"[red]GATE generation FAILED\n  {exc}\n"
                       f"  rerun: {rerun}[/red]")
         raise typer.Exit(2)
-    variants = obfuscate_heldout(bases, levels=level_list, seed=seed)
+    variants = transform_heldout(bases, conditions=condition_list, seed=seed)
 
     violations = validate_benchmark(
         bases, variants, tokenizer=tokenizer, families=family_list,
         structures=structure_list, n_seeds=n_seeds, n_train_seeds=n_train_seeds,
-        levels=level_list, rerun=rerun)
+        conditions=condition_list, rerun=rerun)
 
     summary = dataset_summary(bases, variants)
     console.print(f"  bases {summary['n_bases']}, clean programs "
                   f"{summary['n_clean_programs']}, obfuscated variants "
                   f"{summary['n_obf_variants']}")
     console.print(f"  splits {summary['splits']}, labels {summary['labels']}")
+    console.print(f"  conditions {summary['condition_counts']} "
+                  f"({summary['n_redraws']} variants needed a redraw to carry "
+                  f"exactly their declared transformation)")
 
     # The per-program record of record, written whether or not the gate passes:
     # a failed run must leave enough on disk to see what went wrong.
@@ -118,6 +149,11 @@ def main(
                 "family": program.family, "structure": program.structure,
                 "role": program.role, "label": program.label, "split": program.split,
                 "obf_level": program.obf_level, "obf_name": program.obf_name,
+                "condition": program.metadata.get("condition", "clean_heldout"),
+                "condition_kind": program.metadata.get("condition_kind", "clean"),
+                "condition_steps": program.metadata.get("condition_steps", ""),
+                "detected_steps": program.metadata.get("detected_steps", ""),
+                "n_draws": program.metadata.get("n_draws", 0),
                 "sink": program.metadata.get("sink", ""), "n_chars": len(program.source),
                 "label_preserved": program.metadata.get("label_preserved", True)}
 
@@ -131,8 +167,10 @@ def main(
               f"{len(family_list)} families x {len(structure_list)} structures x 2 "
               f"labels, split {summary['splits']} with no base leakage, all labels "
               f"independently recovered, all anchors token-exact, and "
-              f"{summary['n_obf_variants']} obfuscated variants preserving their "
-              f"security label") if passed else \
+              f"{summary['n_obf_variants']} variants over "
+              f"{len(condition_list)} conditions "
+              f"({summary['condition_counts']}), each carrying exactly its "
+              f"declared transformation and preserving its security label") if passed else \
              " | ".join(f"{v.gate}: expected {v.expected}, observed {v.observed}"
                         for v in violations)
     record_gate(model, "S0", passed, detail, stage="120_sinkflow_generate",
@@ -147,7 +185,7 @@ def main(
             console.print("")
         write_manifest("120_sinkflow_generate", {
             "model": model, "families": family_list, "structures": structure_list,
-            "n_seeds": n_seeds, "n_train_seeds": n_train_seeds, "levels": level_list,
+            "n_seeds": n_seeds, "n_train_seeds": n_train_seeds, "conditions": condition_list,
             "seed": seed, "out_dir": str(out_dir),
         }, t0, extra={"S0": False, "violations": [v.to_dict() for v in violations],
                       **summary})
@@ -166,7 +204,7 @@ def main(
 
     write_manifest("120_sinkflow_generate", {
         "model": model, "families": family_list, "structures": structure_list,
-        "n_seeds": n_seeds, "n_train_seeds": n_train_seeds, "levels": level_list,
+        "n_seeds": n_seeds, "n_train_seeds": n_train_seeds, "conditions": condition_list,
         "seed": seed, "out_dir": str(out_dir),
     }, t0, extra={"S0": True, "outputs": {k: str(v) for k, v in written.items()},
                   **summary})

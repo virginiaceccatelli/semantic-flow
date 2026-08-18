@@ -20,11 +20,18 @@
 #   ── E15, the security audit track: source → sink under obfuscation ──
 #   make sinkflow-generate MODEL=..    stage 120 benchmark + validation — S0 (CPU)
 #   make sinkflow-extract MODEL=...    stage 121 hidden states — S1 (GPU/MPS)
-#   make sinkflow-probe MODEL=...      stage 122 clean readout + controls — S2 (CPU)
-#   make sinkflow-obf MODEL=...        stage 123 frozen ladder evaluation — S3 (CPU)
+#   make sinkflow-probe MODEL=...      stage 122 clean readout + 4 arms — S2 (CPU)
+#   make sinkflow-obf MODEL=...        stage 123 atomic+cumulative frozen eval — S3 (CPU)
 #   make sinkflow-report MODEL=...     stage 124 gated report + figures (CPU)
 #   make sinkflow MODEL=...            stages 120→124; each refuses on a failed gate
-#   make sinkflow-smoke                the tiny 1.3b end-to-end check
+#   make sinkflow-smoke                the tiny 1.3b end-to-end check (A + B)
+#
+#   ── E15-C, the observational vocabulary-space contrast ──
+#   make sinkflow-vocab-discover MODEL=..  stage 125 lenses + frozen tokens — J0 (GPU)
+#   make sinkflow-vocab MODEL=...          stage 126 held-out contrast — J1 (CPU)
+#   make sinkflow-vocab-report MODEL=...   stage 127 tables 6-10 + verdict (CPU)
+#   make sinkflow-vocab-all MODEL=...      stages 125→127 in order
+#   make sinkflow-vocab-smoke              the tiny 1.3b end-to-end check (C)
 #
 #   ── E11, the active direction: J-space binding routing ──
 #   make jspace-pairs MODEL=...     stage 70 counterfactual pairs (CPU)
@@ -87,7 +94,8 @@ PROBES := results/probes/$(MODEL)/core
         binding-decode binding-ceiling binding-interchange binding-report \
         binding-diagnose binding-pilot \
         sinkflow sinkflow-generate sinkflow-extract sinkflow-probe sinkflow-obf \
-        sinkflow-report sinkflow-smoke
+        sinkflow-report sinkflow-smoke sinkflow-vocab sinkflow-vocab-discover \
+        sinkflow-vocab-report sinkflow-vocab-all sinkflow-vocab-smoke
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
 STORE_LAYERS ?= 6,12,18
@@ -298,6 +306,47 @@ sinkflow-smoke:
 	@test -f results/smoke/sinkflow/sinkflow_obfuscation.csv
 	@test -f results/smoke/sinkflow/e15_report.md
 	@echo "SINKFLOW SMOKE OK"
+
+# ── E15-C the observational vocabulary-space contrast (125→127) ──────────────
+# Only stage 125 needs a GPU: it builds the lens vectors and measures their
+# fidelity. Stage 126 scores states against lens vectors already on disk, which
+# is a matrix multiply, so it is CPU-only — and that is also why the freeze of
+# the token set is a filesystem boundary rather than a promise.
+sinkflow-vocab-discover:
+	$(PY) scripts/125_sinkflow_vocab_discover.py --model $(MODEL)
+
+sinkflow-vocab:
+	$(PY) scripts/126_sinkflow_vocab_contrast.py --model $(MODEL)
+
+sinkflow-vocab-report:
+	$(PY) scripts/127_sinkflow_vocab_report.py --model $(MODEL)
+
+sinkflow-vocab-all: sinkflow-vocab-discover sinkflow-vocab sinkflow-vocab-report
+
+# One layer, 8 candidate tokens, 2 lens triples with one readout position each.
+# Assumes `make sinkflow-smoke` has already written results/smoke/act.
+#
+# float32 and these tiny numbers are for MPS: a J/R-lens vector is one backward
+# pass per (candidate, t'), fp16 gradients do not survive that path on MPS (they
+# come back non-finite at every scale in the retry ladder), and fp32 backward on
+# MPS is slow. The canonical runs are CUDA with the stage's defaults; this target
+# exists to prove the pipeline runs end to end, not to produce a number.
+sinkflow-vocab-smoke:
+	$(PY) scripts/125_sinkflow_vocab_discover.py --model $(MODEL) \
+		--activations results/smoke/act --output results/smoke/sinkflow \
+		--layers=11 --dtype float32 --n-corpus 6 --n-build 2 --n-tprime 1 \
+		--lens-max-length 192 --n-pool 4 --n-random 3 \
+		--max-candidates 8 --top-k 2 --n-diagnostic 3 --n-conservation 1 \
+		--n-invariance 1 --no-tables
+	$(PY) scripts/126_sinkflow_vocab_contrast.py --model $(MODEL) \
+		--activations results/smoke/act --output results/smoke/sinkflow \
+		--n-permutations 200 --no-tables
+	$(PY) scripts/127_sinkflow_vocab_report.py --model $(MODEL) \
+		--results results/smoke/sinkflow
+	@test -f results/smoke/sinkflow/vocab/vocab_discovery.json
+	@test -f results/smoke/sinkflow/vocab/vocab_summary.csv
+	@test -f results/smoke/sinkflow/vocab/e15c_report.md
+	@echo "SINKFLOW VOCAB SMOKE OK"
 
 assets:
 	$(PY) scripts/90_make_paper_assets.py

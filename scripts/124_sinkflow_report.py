@@ -6,7 +6,15 @@
 Reads the gate registry and the two tidy CSVs and writes
 results/sinkflow/{model}/e15_report.{yaml,md} plus two figures. It never
 recomputes a number: everything here comes from the CSVs the measuring stages
-wrote, and the verdict is INCOMPLETE unless every gate S0–S3 has passed.
+wrote, and the verdict is INCOMPLETE unless every gate S0–S3 has passed. E15-C's
+J0/J1 appear in the gate table but do not gate this report — the observational
+vocabulary track is reported by stage 127.
+
+Five tables, in the order the design fixes them: atomic robustness (each
+transformation alone), cumulative robustness (with the marginal cost of each
+added step), atomic-versus-cumulative (the interaction), per-class accuracy and
+matched-pair collapse, and the four arms — hidden state against the local
+surface, whole-program lexical and embedding floors.
 
 A report is not a claim. E15 stays `active` in results/STATUS.yaml until the
 gates pass on a real model run, and the report says so in its own verdict line.
@@ -64,7 +72,10 @@ def main(
     payload, markdown = build_report(model, clean, evaluation, gates, site=site,
                                      layer=layer if layer is not None else
                                      best_layer(evaluation, site=site, target_depth=depth))
-    blocking = first_blocking_gate(model, root=root, spec=SINKFLOW)
+    # E15-C's J0/J1 are listed in the table but do not gate THIS report: they
+    # belong to the observational vocabulary track, which is reported by 127.
+    blocking = first_blocking_gate(model, root=root, spec=SINKFLOW,
+                                   names=("S0", "S1", "S2", "S3"))
     payload["first_blocking_gate"] = blocking
 
     layer = layer if layer is not None else best_layer(evaluation, site=site,

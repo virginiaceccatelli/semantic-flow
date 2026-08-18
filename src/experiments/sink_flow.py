@@ -46,8 +46,10 @@ import pandas as pd
 from src.data.activation_store import ActivationStore
 from src.data.sink_flow import (
     ANCHOR_KINDS,
+    CONDITIONS,
+    CONDITIONS_BY_NAME,
     FAMILIES,
-    OBF_NAMES,
+    LEGACY_LEVEL_TO_CONDITION,
     STRUCTURES,
     anchor_token_span,
     base_ids_digest,
@@ -71,12 +73,61 @@ PRIMARY_SITE = "sink_arg"
 
 SURFACE_WINDOW = 3          # tokens each side of the anchor — E2/E3's feature family
 SURFACE_LAYER = -1          # the row label a surface result is written under
+LEXICAL_LAYER = -1          # ditto for the whole-program lexical baseline
 
 CONDITION_CLEAN_HELDOUT = "clean_heldout"
 
+# The four result arms, kept separate everywhere. `features`/`layer` are what
+# the CSV has always been keyed on; `arm` is the name the design speaks in, and
+# it is derived from them rather than stored twice:
+#
+#   local_surface           +-3 token ids at the anchor, no hidden states
+#   whole_program_lexical   token n-grams over the WHOLE program text (E15-B)
+#   embedding               layer -1: token identity before any computation
+#   hidden_state            any layer >= 0
+#
+# The first two are the two shortcut floors, and they answer different
+# questions: the local one bounds "the identifier at the anchor gives it away",
+# the whole-program one bounds "anything the generator left in the text does".
+ARMS: tuple[str, ...] = ("local_surface", "whole_program_lexical", "embedding",
+                         "hidden_state")
 
-def condition_name(obf_level: int) -> str:
-    return CONDITION_CLEAN_HELDOUT if obf_level < 0 else f"obf{obf_level}"
+
+def arm_of(features: str, layer: int) -> str:
+    """Which result arm a (features, layer) row belongs to."""
+    if features == "surface":
+        return "local_surface"
+    if features == "whole_program_lexical":
+        return "whole_program_lexical"
+    return "embedding" if int(layer) < 0 else "hidden_state"
+
+
+def condition_name(obf_level: int, obf_name: str = "") -> str:
+    """The condition a result row belongs to.
+
+    Reads the stored condition NAME when there is one, and falls back to the
+    old five-level ladder's numbering for result files written before the atomic
+    arms existed — so a legacy `sinkflow_predictions.csv` re-aggregates into the
+    same condition vocabulary as a fresh run instead of into `obf3`.
+    """
+    if int(obf_level) < 0:
+        return CONDITION_CLEAN_HELDOUT
+    if obf_name in CONDITIONS_BY_NAME:
+        return obf_name
+    legacy = LEGACY_LEVEL_TO_CONDITION.get(int(obf_level))
+    if legacy is not None:
+        return legacy
+    return obf_name or f"obf{obf_level}"
+
+
+def condition_kind(condition: str) -> str:
+    spec = CONDITIONS_BY_NAME.get(condition)
+    return spec.kind if spec else "unknown"
+
+
+def condition_order(condition: str) -> int:
+    spec = CONDITIONS_BY_NAME.get(condition)
+    return spec.order if spec else 99
 
 
 # ── records ──────────────────────────────────────────────────────────────────
@@ -238,6 +289,191 @@ class SurfaceProbe:
         return surface
 
 
+# ── the second floor: a lexical reader of the WHOLE program ──────────────────
+
+# Code-aware word pattern: identifiers (including dotted attribute pieces),
+# numbers, and the operators/punctuation that carry meaning in Python. The
+# default sklearn pattern drops every one-character token and all punctuation,
+# which would hand this baseline a weaker corpus than the one an adversary's
+# text actually contains.
+LEXICAL_TOKEN_PATTERN = r"[A-Za-z_][A-Za-z_0-9]*|[0-9]+|[^\sA-Za-z_0-9]"
+
+
+class WholeProgramLexicalProbe:
+    """A CPU-only linear reader of the complete program text (E15 Experiment B).
+
+    The local surface baseline answers "does the identifier at the anchor give
+    it away". It does not answer the harder question the E15 limitations have
+    always named: **could something with the whole program text recover the
+    label without any hidden state at all?** A generated corpus can leak through
+    n-grams the generator happens to correlate with the label — a source
+    expression that appears only in unsafe programs, a spacing artifact of the
+    unparser — and no local window would see it.
+
+    So: token unigrams and bigrams (optionally character 3-5-grams) over the
+    whole program, a linear classifier, fitted **only on clean training
+    programs**, frozen, and transferred to every held-out condition exactly like
+    the hidden-state probes. It is deliberately *not* given AST, graph or taint
+    features: the point is to bound the textual shortcut, not to build a
+    competing program analysis.
+
+    What it can and cannot say: a high score here would mean the benchmark is
+    lexically solvable and the hidden-state number needs a caveat; a chance
+    score means the text alone does not carry the label under this feature
+    family. Neither is a claim about what *any* whole-program predictor could
+    do — a reader that ran the taint analysis itself would still score 1.0, and
+    that limitation is unchanged.
+    """
+
+    def __init__(self, config: Optional[ProbeConfig] = None,
+                 char_ngrams: bool = True, min_df: int = 1,
+                 max_features: int = 200_000):
+        self.config = config or ProbeConfig()
+        self.char_ngrams = char_ngrams
+        self.min_df = min_df
+        self.max_features = max_features
+        self.word_vectorizer = None
+        self.char_vectorizer = None
+        self.probe = LinearProbe(config=self.config)
+
+    def _make_vectorizers(self):
+        from sklearn.feature_extraction.text import TfidfVectorizer
+
+        self.word_vectorizer = TfidfVectorizer(
+            analyzer="word", token_pattern=LEXICAL_TOKEN_PATTERN,
+            ngram_range=(1, 2), lowercase=False, min_df=self.min_df,
+            max_features=self.max_features, sublinear_tf=True)
+        self.char_vectorizer = TfidfVectorizer(
+            analyzer="char_wb", ngram_range=(3, 5), lowercase=False,
+            min_df=self.min_df, max_features=self.max_features,
+            sublinear_tf=True) if self.char_ngrams else None
+
+    def _matrix(self, sources: Sequence[str], fit: bool) -> np.ndarray:
+        import scipy.sparse as sp
+
+        blocks = []
+        for vectorizer in (self.word_vectorizer, self.char_vectorizer):
+            if vectorizer is None:
+                continue
+            blocks.append(vectorizer.fit_transform(list(sources)) if fit
+                          else vectorizer.transform(list(sources)))
+        return sp.hstack(blocks).astype(np.float32).toarray()
+
+    def fit(self, sources: Sequence[str], y: np.ndarray) -> "WholeProgramLexicalProbe":
+        self._make_vectorizers()
+        self.probe.fit(self._matrix(sources, fit=True), y)
+        return self
+
+    def transform(self, sources: Sequence[str]) -> np.ndarray:
+        if self.word_vectorizer is None:
+            raise RuntimeError("the lexical vectorizer has not been fitted")
+        return self._matrix(sources, fit=False)
+
+    def predict(self, sources: Sequence[str]) -> np.ndarray:
+        return self.probe.predict(self.transform(sources))
+
+    @property
+    def n_features(self) -> int:
+        n = len(getattr(self.word_vectorizer, "vocabulary_", {}) or {})
+        if self.char_vectorizer is not None:
+            n += len(getattr(self.char_vectorizer, "vocabulary_", {}) or {})
+        return n
+
+    def save(self, path: str | Path) -> Path:
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "wb") as handle:
+            pickle.dump({"word_vectorizer": self.word_vectorizer,
+                         "char_vectorizer": self.char_vectorizer,
+                         "probe": self.probe, "config": self.config,
+                         "char_ngrams": self.char_ngrams}, handle)
+        return path
+
+    @classmethod
+    def load(cls, path: str | Path) -> "WholeProgramLexicalProbe":
+        with open(path, "rb") as handle:
+            state = pickle.load(handle)
+        lexical = cls.__new__(cls)
+        lexical.config = state.get("config") or ProbeConfig()
+        lexical.char_ngrams = state.get("char_ngrams", True)
+        lexical.min_df = 1
+        lexical.max_features = 200_000
+        lexical.word_vectorizer = state["word_vectorizer"]
+        lexical.char_vectorizer = state["char_vectorizer"]
+        lexical.probe = state["probe"]
+        return lexical
+
+
+def cross_validate_lexical(
+    sources: Sequence[str],
+    y: np.ndarray,
+    groups: Sequence,
+    config: Optional[ProbeConfig] = None,
+    char_ngrams: bool = True,
+    tags: Optional[dict] = None,
+) -> "ProbeResultLike":
+    """Grouped CV for the lexical arm, **re-fitting the vectorizer per fold**.
+
+    The vectorizer is part of the model: fitting it on all the training text and
+    then cross-validating only the classifier would let the held-out fold's
+    vocabulary — and its idf weights — into the features, which is precisely the
+    leak this baseline exists to detect elsewhere. Folds split by base, so the
+    two members of a pair never straddle.
+    """
+    from sklearn.model_selection import GroupKFold
+
+    from src.probes.base import ProbeResult
+
+    cfg = config or ProbeConfig()
+    y = np.asarray(y)
+    groups = np.asarray(groups)
+    n_splits = min(cfg.cv_folds, len(np.unique(groups)))
+    if n_splits < 2 or len(np.unique(y)) < 2:
+        return ProbeResult(layer=LEXICAL_LAYER, task="sinkflow_lexical",
+                           notes="too few groups or classes")
+    predictions = np.zeros_like(y)
+    control = np.zeros_like(y)
+    rng = np.random.default_rng(cfg.random_seed)
+    for train_idx, test_idx in GroupKFold(n_splits=n_splits).split(
+            np.zeros(len(y)), y, groups):
+        train_sources = [sources[i] for i in train_idx]
+        test_sources = [sources[i] for i in test_idx]
+        model = WholeProgramLexicalProbe(cfg, char_ngrams=char_ngrams)
+        model.fit(train_sources, y[train_idx])
+        predictions[test_idx] = model.predict(test_sources)
+        # the same selectivity control the hidden arms get: labels shuffled
+        # within each base, so only the within-base signal is destroyed
+        shuffled = y.copy()
+        for group in np.unique(groups[train_idx]):
+            mask = (groups == group) & np.isin(np.arange(len(y)), train_idx)
+            values = shuffled[mask]
+            rng.shuffle(values)
+            shuffled[mask] = values
+        control_model = WholeProgramLexicalProbe(cfg, char_ngrams=char_ngrams)
+        control_model.fit(train_sources, shuffled[train_idx])
+        control[test_idx] = control_model.predict(test_sources)
+
+    accuracy = float((predictions == y).mean())
+    control_accuracy = float((control == y).mean())
+    result = ProbeResult(
+        layer=LEXICAL_LAYER, task="sinkflow_lexical", accuracy=accuracy,
+        control_accuracy=control_accuracy, selectivity=accuracy - control_accuracy,
+        n_test=int(len(y)), n_groups=int(len(np.unique(groups))),
+        pos_frac=float((y == 1).mean()))
+    if tags:
+        result.tag_accuracy = {
+            name: {str(value): float((predictions[np.asarray(values) == value]
+                                      == y[np.asarray(values) == value]).mean())
+                   for value in sorted(set(np.asarray(values).tolist()))}
+            for name, values in tags.items()}
+    return result
+
+
+# `ProbeResult` is imported lazily above; this alias keeps the annotation honest
+# without importing sklearn at module import time.
+ProbeResultLike = object
+
+
 # ── stage 122: fit on clean training programs, with controls ─────────────────
 
 
@@ -265,6 +501,7 @@ def _cell_rows(result, model: str, site: str, features: str, layer: int) -> list
     """A ProbeResult flattened to one pooled row plus one row per family/structure."""
     base = {
         "model": model, "site": site, "features": features, "layer": layer,
+        "arm": arm_of(features, layer),
         "breakdown": "all", "cell": "all", "accuracy": result.accuracy,
         "auc": result.auc, "control_accuracy": result.control_accuracy,
         "selectivity": result.selectivity, "n": result.n_test,
@@ -289,11 +526,15 @@ def run_clean_probes(
     config: Optional[ProbeConfig] = None,
     seed: int = 42,
     sites: Sequence[str] = SITES,
+    with_lexical: bool = True,
+    lexical_char_ngrams: bool = True,
 ) -> tuple[pd.DataFrame, dict]:
     """Fit and freeze the readout on CLEAN TRAINING programs only.
 
-    Returns the tidy CV frame and the provenance record that stage 123 verifies
-    before it is allowed to call anything "frozen".
+    Four arms, all fitted here and all frozen here: the local surface control,
+    the whole-program lexical baseline, the embedding layer and every hidden
+    layer. Returns the tidy CV frame and the provenance record that stage 123
+    verifies before it is allowed to call anything "frozen".
     """
     from src.utils import git_sha
 
@@ -301,6 +542,7 @@ def run_clean_probes(
     output_dir.mkdir(parents=True, exist_ok=True)
     cfg = config or ProbeConfig(random_seed=seed)
     model = store.meta["model"]
+    lexical_provenance: dict[str, dict] = {}
 
     records = build_records(store)
     if records.problems:
@@ -313,6 +555,8 @@ def run_clean_probes(
         raise ValueError(
             f"stage 122 fits on the clean TRAINING split only, but the store holds "
             f"splits {sorted(splits)}. Point --activations at the sinkflow_train store.")
+
+    sources_by_program = {ex.example_id: ex.source for ex in store.iter_examples()}
 
     rows: list[dict] = []
     for site in sites:
@@ -331,6 +575,30 @@ def run_clean_probes(
             logger.info("  %s SURFACE  acc=%.3f sel=%.3f", site, result.accuracy,
                         result.selectivity)
             SurfaceProbe(cfg).fit(features, y).save(output_dir / site / "surface.pkl")
+
+            # the second floor: the WHOLE program text, same folds, same groups.
+            # Its value does not depend on the site (it reads no position at
+            # all) — it is written per site so that every reported cell of the
+            # design has all four arms and the row count stays the design's.
+            if with_lexical:
+                program_sources = [sources_by_program[r.program_id] for r in kept]
+                lexical_result = cross_validate_lexical(
+                    program_sources, y, groups, config=cfg,
+                    char_ngrams=lexical_char_ngrams, tags=tags)
+                rows.extend(_cell_rows(lexical_result, model, site,
+                                       "whole_program_lexical", LEXICAL_LAYER))
+                logger.info("  %s LEXICAL  acc=%.3f sel=%.3f", site,
+                            lexical_result.accuracy, lexical_result.selectivity)
+                lexical = WholeProgramLexicalProbe(
+                    cfg, char_ngrams=lexical_char_ngrams).fit(program_sources, y)
+                lexical.save(output_dir / site / "whole_program_lexical.pkl")
+                lexical_provenance[site] = {
+                    "n_features": lexical.n_features,
+                    "n_train_programs": len(program_sources),
+                    "char_ngrams": lexical_char_ngrams,
+                    "fitted_on": "clean_train_only",
+                    "text_digest": base_ids_digest(sorted(set(program_sources))),
+                }
 
         for layer_pos, layer in enumerate(store.layers):
             X, _, y, groups, kept = _assemble(store, records, site, layer_pos)
@@ -359,6 +627,8 @@ def run_clean_probes(
         "layers": list(store.layers),
         "sites": list(sites),
         "seed": seed,
+        "arms": list(ARMS),
+        "lexical": lexical_provenance,
         "git_sha": git_sha(),
     }
     (output_dir / "provenance.json").write_text(json.dumps(provenance, indent=2))
@@ -429,18 +699,25 @@ def _frozen_predictions(
 
     probes: dict[str, dict[int, LinearProbe]] = {}
     surfaces: dict[str, SurfaceProbe] = {}
+    lexicals: dict[str, WholeProgramLexicalProbe] = {}
     for site in sites:
         probes[site] = load_frozen_probes(probes_dir, site)
         surface_path = probes_dir / site / "surface.pkl"
         if surface_path.exists():
             surfaces[site] = SurfaceProbe.load(surface_path)
+        lexical_path = probes_dir / site / "whole_program_lexical.pkl"
+        if lexical_path.exists():
+            lexicals[site] = WholeProgramLexicalProbe.load(lexical_path)
 
     for example in store.iter_examples():
         for record in by_program.get(example.example_id, []):
             if record.site not in sites or record.pos >= example.hidden.shape[1]:
                 continue
+            condition = condition_name(record.obf_level, record.obf_name)
             common = {
-                "condition": condition_name(record.obf_level),
+                "condition": condition,
+                "condition_kind": condition_kind(condition),
+                "condition_order": condition_order(condition),
                 "obf_level": record.obf_level,
                 "obf_name": record.obf_name, "site": record.site,
                 "family": record.family, "structure": record.structure,
@@ -452,6 +729,11 @@ def _frozen_predictions(
                     [surface_features(example.input_ids, record.pos)])[0])
                 rows.append({**common, "features": "surface", "layer": SURFACE_LAYER,
                              "predicted": predicted,
+                             "correct": int(predicted == record.label)})
+            if record.site in lexicals:
+                predicted = int(lexicals[record.site].predict([example.source])[0])
+                rows.append({**common, "features": "whole_program_lexical",
+                             "layer": LEXICAL_LAYER, "predicted": predicted,
                              "correct": int(predicted == record.label)})
             for layer_pos, layer in enumerate(store.layers):
                 probe = probes[record.site].get(layer)
@@ -490,10 +772,18 @@ def _failure_mode_columns(chunk: pd.DataFrame) -> dict:
     same = (float((pairs["unsafe"] == pairs["safe"]).mean())
             if {"unsafe", "safe"} <= set(pairs.columns) else float("nan"))
     by_role = chunk.groupby("role")["correct"].mean()
+    acc_unsafe = float(by_role.get("unsafe", float("nan")))
+    acc_safe = float(by_role.get("safe", float("nan")))
+    # Named explicitly rather than left as 1 - accuracy: the false-negative rate
+    # is the number an auditor is exposed to (a vulnerable program called safe),
+    # and a table that makes the reader compute it invites quoting the pooled
+    # accuracy instead.
     return {
         "frac_predicted_unsafe": float(chunk["predicted"].mean()),
-        "acc_unsafe": float(by_role.get("unsafe", float("nan"))),
-        "acc_safe": float(by_role.get("safe", float("nan"))),
+        "acc_unsafe": acc_unsafe,
+        "acc_safe": acc_safe,
+        "false_negative_rate": 1.0 - acc_unsafe,
+        "false_positive_rate": 1.0 - acc_safe,
         "pairs_same_label": same,
     }
 
@@ -522,6 +812,9 @@ def aggregate_predictions(raw: pd.DataFrame, model: str,
             return float("nan")
         return round(layer / (n_layers - 1), 4)
 
+    if "condition" not in raw.columns:
+        raw = raw.assign(condition=[condition_name(lv, nm) for lv, nm
+                                    in zip(raw["obf_level"], raw.get("obf_name", ""))])
     keys = ["condition", "obf_level", "obf_name", "site", "features", "layer"]
     rows: list[dict] = []
     for breakdown, column in BREAKDOWNS.items():
@@ -534,6 +827,9 @@ def aggregate_predictions(raw: pd.DataFrame, model: str,
             rows.append({
                 "model": model,
                 **{k: record[k] for k in keys},
+                "condition_kind": condition_kind(str(record["condition"])),
+                "condition_order": condition_order(str(record["condition"])),
+                "arm": arm_of(str(record["features"]), int(record["layer"])),
                 "relative_depth": relative_depth(int(record["layer"])),
                 "breakdown": breakdown,
                 "cell": record.get(column, "all") if column else "all",
@@ -546,8 +842,61 @@ def aggregate_predictions(raw: pd.DataFrame, model: str,
                 "pos_frac": float((chunk["label"] == 1).mean()),
                 **_failure_mode_columns(chunk),
             })
-    return pd.DataFrame(rows).sort_values(
-        ["site", "features", "layer", "condition", "breakdown", "cell"]).reset_index(drop=True)
+    frame = pd.DataFrame(rows).sort_values(
+        ["site", "features", "layer", "condition_order", "breakdown", "cell"]
+    ).reset_index(drop=True)
+    return add_condition_deltas(frame)
+
+
+def add_condition_deltas(frame: pd.DataFrame) -> pd.DataFrame:
+    """The three differences the atomic/cumulative design exists to produce.
+
+    Every row gets, within its own (site, features, layer, breakdown, cell):
+
+      * `delta_clean`      — change from clean held-out. What the transformation
+                             costs, which is the number the ladder always gave.
+      * `delta_previous`   — for a cumulative condition, the MARGINAL change
+                             from the condition one step shorter. This is what
+                             "adding flattening costs 0.30" actually means, and
+                             it is only defined along the cumulative chain.
+      * `delta_atomic`     — cumulative minus its atomic counterpart: the
+                             INTERACTION. `flatten_only` says what dissolving
+                             control flow does on its own; the cumulative
+                             flatten condition says what it does after three
+                             other rewrites. The gap between them is the part
+                             of the failure that composition, not the
+                             transformation, is responsible for.
+
+    A non-zero `delta_atomic` on the rename row is draw noise by construction
+    (the two conditions apply the identical transformation under independent
+    draws) and is the scale against which the other rows should be read.
+    """
+    if frame.empty:
+        return frame
+    cell_keys = ["model", "site", "features", "layer", "breakdown", "cell"]
+    lookup = {(tuple(row[k] for k in cell_keys), row["condition"]): row["accuracy"]
+              for _, row in frame.iterrows()}
+
+    def delta(row, other: Optional[str]) -> float:
+        if not other:
+            return float("nan")
+        key = (tuple(row[k] for k in cell_keys), other)
+        return (float(row["accuracy"] - lookup[key]) if key in lookup
+                else float("nan"))
+
+    def spec(condition: str):
+        return CONDITIONS_BY_NAME.get(str(condition))
+
+    frame = frame.copy()
+    frame["delta_clean"] = [delta(row, CONDITION_CLEAN_HELDOUT)
+                            for _, row in frame.iterrows()]
+    frame["delta_previous"] = [
+        delta(row, getattr(spec(row["condition"]), "predecessor", None))
+        for _, row in frame.iterrows()]
+    frame["delta_atomic"] = [
+        delta(row, getattr(spec(row["condition"]), "atomic_counterpart", None))
+        for _, row in frame.iterrows()]
+    return frame
 
 
 def expected_row_count(
@@ -557,14 +906,17 @@ def expected_row_count(
     families: Sequence[str] = FAMILIES,
     structures: Sequence[str] = STRUCTURES,
     with_surface: bool = True,
+    with_lexical: bool = True,
 ) -> int:
     """How many rows the evaluation must produce, computed from the design.
 
     Every (site, feature set, layer, condition) is reported pooled, once per
     family and once per structure. A missing cell means a condition produced no
     rows somewhere, which is exactly the silent hole this count exists to catch.
+    `n_layers` counts the probed layers including the embedding layer (-1); the
+    two frozen no-hidden-state arms add one feature set each.
     """
-    feature_sets = n_layers + (1 if with_surface else 0)
+    feature_sets = n_layers + (1 if with_surface else 0) + (1 if with_lexical else 0)
     breakdowns = 1 + len(families) + len(structures)
     return len(sites) * feature_sets * n_conditions * breakdowns
 
@@ -654,6 +1006,154 @@ def level_table(frame: pd.DataFrame, site: str = PRIMARY_SITE,
         "n_hidden": "n"}).sort_values("obf_level").reset_index(drop=True)
 
 
+def _condition_axis(frame: pd.DataFrame) -> list[str]:
+    """Condition names present in a frame, in design order (clean first)."""
+    present = set(frame["condition"].astype(str)) if "condition" in frame else set()
+    return [c.name for c in CONDITIONS if c.name in present]
+
+
+def _condition_rows(frame: pd.DataFrame, site: str, layer: Optional[int],
+                    kinds: Sequence[str], features: str = "hidden",
+                    breakdown: str = "all", cell: str = "all") -> pd.DataFrame:
+    """Pooled rows for one arm at one layer, restricted to condition kinds."""
+    if layer is None:
+        return pd.DataFrame()
+    chunk = frame[(frame["site"] == site) & (frame["breakdown"] == breakdown)
+                  & (frame["cell"] == cell) & (frame["features"] == features)]
+    if features == "hidden":
+        chunk = chunk[chunk["layer"] == layer]
+    kinds = list(kinds)
+    if "condition_kind" in chunk.columns:
+        chunk = chunk[chunk["condition_kind"].isin(kinds)]
+    else:                                    # a frame written before the arms
+        chunk = chunk[chunk["condition"].isin(
+            [c.name for c in CONDITIONS if c.kind in kinds])]
+    sort_key = "condition_order" if "condition_order" in chunk.columns else "obf_level"
+    return chunk.sort_values(sort_key).reset_index(drop=True)
+
+
+ROBUSTNESS_COLUMNS = ["condition", "accuracy", "ci_lo", "ci_hi", "delta_clean",
+                      "acc_unsafe", "acc_safe", "false_negative_rate",
+                      "false_positive_rate", "frac_predicted_unsafe",
+                      "pairs_same_label", "n"]
+
+
+def atomic_table(frame: pd.DataFrame, site: str = PRIMARY_SITE,
+                 layer: Optional[int] = None) -> pd.DataFrame:
+    """Table 1 — what each transformation does ON ITS OWN.
+
+    Clean and normalize are included as the two reference rows: `normalize` is
+    an ast round-trip, so anything it costs is an unparse artifact rather than a
+    transformation, and every atomic row should be read against it.
+    """
+    rows = _condition_rows(frame, site, layer, ("clean", "baseline", "atomic"))
+    return rows[[c for c in ROBUSTNESS_COLUMNS if c in rows.columns]] \
+        if not rows.empty else rows
+
+
+def cumulative_table(frame: pd.DataFrame, site: str = PRIMARY_SITE,
+                     layer: Optional[int] = None) -> pd.DataFrame:
+    """Table 2 — the adversary who composes, with the marginal step included."""
+    rows = _condition_rows(frame, site, layer, ("clean", "baseline", "cumulative"))
+    columns = ROBUSTNESS_COLUMNS[:5] + ["delta_previous"] + ROBUSTNESS_COLUMNS[5:]
+    return rows[[c for c in columns if c in rows.columns]] if not rows.empty else rows
+
+
+def interaction_table(frame: pd.DataFrame, site: str = PRIMARY_SITE,
+                      layer: Optional[int] = None) -> pd.DataFrame:
+    """Table 3 — atomic versus the cumulative condition that contains it.
+
+    One row per (atomic, cumulative) pair the design declares. `interaction` is
+    cumulative minus atomic: the part of a cumulative failure that the
+    transformation does NOT explain on its own. The rename row is the
+    draw-noise floor (identical transformations, independent draws) and is
+    labelled as such rather than dropped.
+    """
+    if layer is None:
+        return pd.DataFrame()
+    cumulative = _condition_rows(frame, site, layer, ("cumulative",))
+    atomic = _condition_rows(frame, site, layer, ("atomic",))
+    if cumulative.empty or atomic.empty:
+        return pd.DataFrame()
+    by_atomic = {row["condition"]: row for _, row in atomic.iterrows()}
+    rows = []
+    for _, row in cumulative.iterrows():
+        spec = CONDITIONS_BY_NAME.get(str(row["condition"]))
+        counterpart = getattr(spec, "atomic_counterpart", None)
+        if counterpart is None or counterpart not in by_atomic:
+            continue
+        atom = by_atomic[counterpart]
+        rows.append({
+            "transformation": counterpart.replace("_only", ""),
+            "atomic": counterpart,
+            "atomic_accuracy": float(atom["accuracy"]),
+            "cumulative": row["condition"],
+            "cumulative_accuracy": float(row["accuracy"]),
+            "interaction": float(row["accuracy"] - atom["accuracy"]),
+            "marginal_in_ladder": float(row.get("delta_previous", float("nan"))),
+            "atomic_fnr": float(atom.get("false_negative_rate", float("nan"))),
+            "cumulative_fnr": float(row.get("false_negative_rate", float("nan"))),
+            "note": ("draw-noise floor: identical transformations, independent draws"
+                     if counterpart == "rename_only" else ""),
+        })
+    return pd.DataFrame(rows)
+
+
+def per_class_table(frame: pd.DataFrame, site: str = PRIMARY_SITE,
+                    layer: Optional[int] = None,
+                    breakdown: str = "all") -> pd.DataFrame:
+    """Table 4 — per-class accuracy and matched-pair collapse, every condition.
+
+    The table that exists because pooled accuracy conceals the failure the
+    threat model cares about. A readout can lose 0.07 symmetrically or lose all
+    of it on the unsafe class, and only these columns tell them apart.
+    """
+    rows = _condition_rows(frame, site, layer,
+                           ("clean", "baseline", "atomic", "cumulative"),
+                           breakdown=breakdown, cell="all")
+    columns = ["condition", "condition_kind", "accuracy", "acc_unsafe", "acc_safe",
+               "false_negative_rate", "false_positive_rate",
+               "frac_predicted_unsafe", "pairs_same_label", "n"]
+    return rows[[c for c in columns if c in rows.columns]] if not rows.empty else rows
+
+
+def baseline_table(frame: pd.DataFrame, site: str = PRIMARY_SITE,
+                   layer: Optional[int] = None) -> pd.DataFrame:
+    """Table 5 — the four arms side by side, condition by condition.
+
+    `hidden_state` at the reported layer against the three floors: the local
+    surface window, the whole-program lexical reader, and the embedding layer.
+    A condition where the lexical arm rises with the hidden arm is a condition
+    where the benchmark, not the model, is doing the work.
+    """
+    if layer is None:
+        return pd.DataFrame()
+    pooled = frame[(frame["site"] == site) & (frame["breakdown"] == "all")]
+    arms = {
+        "hidden_state": pooled[(pooled["features"] == "hidden")
+                               & (pooled["layer"] == layer)],
+        "embedding": pooled[(pooled["features"] == "hidden") & (pooled["layer"] == -1)],
+        "local_surface": pooled[pooled["features"] == "surface"],
+        "whole_program_lexical": pooled[pooled["features"] == "whole_program_lexical"],
+    }
+    merged: Optional[pd.DataFrame] = None
+    for name, chunk in arms.items():
+        if chunk.empty:
+            continue
+        columns = ["condition", "accuracy"]
+        if merged is None:
+            sort_key = ("condition_order" if "condition_order" in chunk.columns
+                        else "obf_level")
+            merged = chunk[columns + [sort_key]].rename(
+                columns={"accuracy": name, sort_key: "_order"})
+        else:
+            merged = merged.merge(chunk[columns].rename(columns={"accuracy": name}),
+                                  on="condition", how="left")
+    if merged is None:
+        return pd.DataFrame()
+    return merged.sort_values("_order").drop(columns=["_order"]).reset_index(drop=True)
+
+
 def plot_levels(frame: pd.DataFrame, output_path: str | Path,
                 site: str = PRIMARY_SITE, model: str = "") -> Path:
     """Accuracy against obfuscation level, one line per layer plus the surface arm."""
@@ -665,23 +1165,41 @@ def plot_levels(frame: pd.DataFrame, output_path: str | Path,
     from src.analysis.visualization import PALETTE
 
     pooled = frame[(frame["site"] == site) & (frame["breakdown"] == "all")]
-    figure, axis = plt.subplots(figsize=(8, 5))
+    order = _condition_axis(pooled)
+    position = {name: i for i, name in enumerate(order)}
+    figure, axis = plt.subplots(figsize=(10, 5))
     hidden = pooled[pooled["features"] == "hidden"]
+
+    def line(chunk: pd.DataFrame) -> tuple[list[int], list[float]]:
+        chunk = chunk[chunk["condition"].isin(position)]
+        chunk = chunk.assign(_x=[position[c] for c in chunk["condition"]])
+        chunk = chunk.sort_values("_x")
+        return list(chunk["_x"]), list(chunk["accuracy"])
+
     for index, layer in enumerate(sorted(hidden["layer"].unique())):
-        chunk = hidden[hidden["layer"] == layer].sort_values("obf_level")
-        axis.plot(chunk["obf_level"], chunk["accuracy"], marker="o",
-                  label=f"layer {layer}", color=PALETTE[index % len(PALETTE)],
-                  linewidth=1.6)
-    surface = pooled[pooled["features"] == "surface"].sort_values("obf_level")
-    if not surface.empty:
-        axis.plot(surface["obf_level"], surface["accuracy"], marker="s",
-                  linestyle="--", color="black", linewidth=2.0,
-                  label="surface (token ids only)")
+        xs, ys = line(hidden[hidden["layer"] == layer])
+        axis.plot(xs, ys, marker="o", label=f"layer {layer}",
+                  color=PALETTE[index % len(PALETTE)], linewidth=1.6)
+    for features, style, colour, label in (
+            ("surface", "--", "black", "local surface (token ids only)"),
+            ("whole_program_lexical", "-.", "dimgray", "whole-program lexical")):
+        chunk = pooled[pooled["features"] == features]
+        if chunk.empty:
+            continue
+        xs, ys = line(chunk)
+        axis.plot(xs, ys, marker="s", linestyle=style, color=colour,
+                  linewidth=2.0, label=label)
     axis.axhline(0.5, color="gray", linewidth=0.8, linestyle=":", label="chance")
-    axis.set_xticks(sorted(pooled["obf_level"].unique()))
-    axis.set_xticklabels([("clean" if level < 0 else f"{level}\n{OBF_NAMES.get(level, '')}")
-                          for level in sorted(pooled["obf_level"].unique())], fontsize=9)
-    axis.set_xlabel("obfuscation level (held out)", fontsize=12)
+    # the atomic block and the cumulative block are different questions; the
+    # divider keeps a reader from following one line across both
+    kinds = [condition_kind(name) for name in order]
+    for index in range(1, len(order)):
+        if kinds[index] != kinds[index - 1]:
+            axis.axvline(index - 0.5, color="lightgray", linewidth=0.8)
+    axis.set_xticks(range(len(order)))
+    axis.set_xticklabels([name.replace("_", "\n") for name in order], fontsize=7)
+    axis.set_xlabel("condition (held out) — clean · baseline · atomic · cumulative",
+                    fontsize=11)
     axis.set_ylabel("accuracy: is the sink argument source-derived?", fontsize=11)
     axis.set_title(f"E15 frozen source→sink readout · {site} · {model}", fontsize=12)
     axis.legend(fontsize=8, ncol=2, framealpha=0.7)
@@ -706,16 +1224,20 @@ def plot_cells(frame: pd.DataFrame, output_path: str | Path, layer: int,
 
     selected = frame[(frame["site"] == site) & (frame["features"] == "hidden")
                      & (frame["layer"] == layer)]
-    figure, axes = plt.subplots(1, 2, figsize=(12, 4.5), sharey=True)
+    order = _condition_axis(selected)
+    position = {name: i for i, name in enumerate(order)}
+    figure, axes = plt.subplots(1, 2, figsize=(13, 4.5), sharey=True)
     for axis, breakdown in zip(axes, ("family", "structure")):
         chunk = selected[selected["breakdown"] == breakdown]
         for index, cell in enumerate(sorted(chunk["cell"].unique())):
-            line = chunk[chunk["cell"] == cell].sort_values("obf_level")
-            axis.plot(line["obf_level"], line["accuracy"], marker="o", label=cell,
+            line = chunk[(chunk["cell"] == cell) & chunk["condition"].isin(position)]
+            line = line.assign(_x=[position[c] for c in line["condition"]]).sort_values("_x")
+            axis.plot(line["_x"], line["accuracy"], marker="o", label=cell,
                       color=PALETTE[index % len(PALETTE)], linewidth=1.6)
         axis.axhline(0.5, color="gray", linewidth=0.8, linestyle=":")
-        axis.set_xticks(sorted(selected["obf_level"].unique()))
-        axis.set_xlabel("obfuscation level", fontsize=11)
+        axis.set_xticks(range(len(order)))
+        axis.set_xticklabels([name.replace("_", "\n") for name in order], fontsize=6)
+        axis.set_xlabel("condition", fontsize=11)
         axis.set_title(f"by {breakdown}", fontsize=12)
         axis.legend(fontsize=8, framealpha=0.7)
         sns.despine(ax=axis)
@@ -736,8 +1258,15 @@ def build_report(
     gates: Sequence[dict],
     site: str = PRIMARY_SITE,
     layer: Optional[int] = None,
+    required_gates: Sequence[str] = ("S0", "S1", "S2", "S3"),
 ) -> tuple[dict, str]:
-    """The machine-readable report and its markdown rendering."""
+    """The machine-readable report and its markdown rendering.
+
+    `required_gates` is what the verdict is computed over. Every recorded gate is
+    still listed in the table — including E15-C's J0/J1 — but this report is
+    about the frozen-probe experiments, and it must not read INCOMPLETE because
+    an unrelated observational track has not been run.
+    """
     layer = layer if layer is not None else best_layer(evaluation, site=site)
     table = level_table(evaluation, site=site, layer=layer) if layer is not None \
         else pd.DataFrame()
@@ -745,7 +1274,15 @@ def build_report(
     clean_hidden = clean_pooled[clean_pooled["features"] == "hidden"]
     clean_surface = clean_pooled[clean_pooled["features"] == "surface"]
 
-    all_passed = all(bool(gate.get("passed")) for gate in gates) and len(gates) > 0
+    atomic = atomic_table(evaluation, site=site, layer=layer)
+    cumulative = cumulative_table(evaluation, site=site, layer=layer)
+    interactions = interaction_table(evaluation, site=site, layer=layer)
+    per_class = per_class_table(evaluation, site=site, layer=layer)
+    baselines = baseline_table(evaluation, site=site, layer=layer)
+
+    required = set(required_gates)
+    scored = [gate for gate in gates if gate.get("gate", gate.get("name")) in required]
+    all_passed = all(bool(gate.get("passed")) for gate in scored) and len(scored) > 0
     payload = {
         "experiment": "E15",
         "model": model,
@@ -768,6 +1305,11 @@ def build_report(
         "frozen_evaluation": {
             "reported_layer": layer,
             "by_condition": table.to_dict(orient="records"),
+            "atomic": atomic.to_dict(orient="records"),
+            "cumulative": cumulative.to_dict(orient="records"),
+            "atomic_vs_cumulative": interactions.to_dict(orient="records"),
+            "per_class_and_pairs": per_class.to_dict(orient="records"),
+            "baseline_arms": baselines.to_dict(orient="records"),
         },
         "n_rows": {"clean": int(len(clean)), "evaluation": int(len(evaluation))},
     }
@@ -816,6 +1358,57 @@ def build_report(
             f"{row['accuracy']:.3f}{interval} | {row['surface_accuracy']:.3f} | "
             f"{row.get('pairs_same_label', float('nan')):.3f} | "
             f"{row.get('frac_predicted_unsafe', float('nan')):.3f} | {int(row['n'])} |")
+    def render(title: str, note: str, table: pd.DataFrame, floats: int = 3) -> list[str]:
+        if table is None or table.empty:
+            return ["", f"### {title}", "", "_no rows_", ""]
+        header = list(table.columns)
+        out = ["", f"### {title}", "", note, "",
+               "| " + " | ".join(header) + " |",
+               "|" + "|".join(["---"] * len(header)) + "|"]
+        for row in table.to_dict(orient="records"):
+            cells = []
+            for column in header:
+                value = row[column]
+                cells.append(f"{value:.{floats}f}" if isinstance(value, float)
+                             and pd.notna(value) else
+                             ("" if (isinstance(value, float) and pd.isna(value))
+                              else str(value)))
+            out.append("| " + " | ".join(cells) + " |")
+        return out + [""]
+
+    lines += render(
+        "Table 1 — atomic transformations (each applied alone)",
+        "What each transformation costs **on its own**. `normalize` is an ast "
+        "round-trip, so it is the reference row: anything it costs is an unparse "
+        "artifact, not a transformation.", atomic)
+    lines += render(
+        "Table 2 — cumulative ladder (adversarial composition)",
+        "`delta_previous` is the MARGINAL cost of the step this condition adds to "
+        "the one above it. This is the only column that supports a sentence of the "
+        "form 'adding X costs Y'.", cumulative)
+    lines += render(
+        "Table 3 — atomic versus cumulative (the interaction)",
+        "`interaction` = cumulative − atomic: the part of the cumulative failure "
+        "the transformation does not produce on its own. The `rename` row is a "
+        "draw-noise floor by construction (identical transformations, independent "
+        "draws); read every other row against it. **Attribute a failure to a "
+        "transformation only where its atomic row supports it** — otherwise it is a "
+        "cumulative effect.", interactions)
+    lines += render(
+        "Table 4 — per-class accuracy and matched-pair collapse",
+        "Pooled accuracy conceals the failure the threat model is about. "
+        "`false_negative_rate` is the fraction of genuinely unsafe programs called "
+        "safe; `pairs_same_label` is the fraction of matched pairs given the SAME "
+        "prediction, which rises only when the position has stopped carrying the "
+        "distinction at all.", per_class)
+    lines += render(
+        "Table 5 — the four arms",
+        "`hidden_state` at the reported layer against its three floors. "
+        "`whole_program_lexical` reads the entire program text (token n-grams, no "
+        "hidden states, frozen on clean training programs): it bounds what a "
+        "generator-level textual shortcut could achieve, which the ±3-token "
+        "`local_surface` window cannot see.", baselines)
+
     lines += [
         "",
         "Read the per-family and per-structure rows in `sinkflow_obfuscation.csv` "

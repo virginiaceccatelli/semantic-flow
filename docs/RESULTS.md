@@ -50,7 +50,9 @@ direction dominates it at two-thirds the dose.
 | E11 J-space | is the value causally reused? | ● | ● | **NO-GO** | see below — reported, not claimed |
 | E12 store | text-absent value transfer | ● | ☐ | **parked** | behavioural gate failed at 0.418 |
 | **E13** binding interchange | is the *binding* transported? | ☐ | ● | **H0–H5 pass** | a rank-1 interchange installs the binding's value in BOTH arms (100%/100%), beating a closed-form baseline at two-thirds the dose |
-| **E15** source→sink | does "untrusted data reaches this sink" survive the ladder? | ● | ● | supporting | decodable at 1.000 over a 0.491 floor in **three models**; survives renaming, breaks on flattening |
+| **E15** source→sink | does "untrusted data reaches this sink" survive obfuscation? | ● | ● | supporting | decodable at 1.000 over a 0.491 floor in **three models**; survives renaming, breaks under the cumulative ladder's last rung |
+| E15 atomic arms + lexical floor | which transformation breaks it *alone*, and can whole-program text recover the label? | ☐ | ☐ | built, gated, smoke-tested | not run at scale — no number claimed |
+| E15-C vocabulary contrast | is the safe→unsafe difference in the model's own output basis? | ☐ | ☐ | built, gated, smoke-tested | observational; a null is a reportable result |
 | E6, E10-2, E10-3 | — | — | — | archived | `docs/ARCHIVE.md` |
 
 Legend: ☐ not run · ◐ dev model only · ◑ partially run · ● run
@@ -396,21 +398,51 @@ is harder" account, and three replications make it the open question this track
 raises. By sink family there is no ordering that reproduces, which is the null
 the design wanted: the readout tracks flow, not which API is at the end of it.
 
-**What it does not establish.** The floor is pinned only against the declared
-surface family (±3 token ids at the anchor); something able to read the whole
-program and run the taint analysis itself would score 1.0, so this is an audit of
-a readout's transfer, not a representation claim of E2's kind. Level 4 is
-cumulative, so "flattening breaks it" is a *marginal* claim — levels 1–3 together
-cost ≤0.13 and adding the dispatch loop costs a further ~0.30; a flatten-only arm
-would settle it, and one has been verified to work on all 144 held-out programs.
-The embedding control is a single measurement, not three: at layer −1 the probe
-reduces to a lookup on the anchor token and the benchmark's fixed identifier pool
-induces the same partition under both tokenizers, which is why its predictions are
-identical across models. And the companion E9 run on starcoder2-3b has not landed
-yet, so "the ladder breaks this readout in three models" is supported while
-"security representations are *specifically* fragile" is not. Nothing causal is
-claimed. Full analysis, limitations and next steps:
-`docs/design/E15_SINKFLOW_PLAN.md` §8–§10.
+**What it does not establish.** The floor is pinned only against declared feature
+families; something able to read the whole program and run the taint analysis
+itself would score 1.0, so this is an audit of a readout's transfer, not a
+representation claim of E2's kind. **The table above is cumulative-only**, so
+"flattening breaks it" is a *marginal* claim for these runs — levels 1–3 together
+cost ≤0.13 and adding the dispatch loop costs a further ~0.30. The embedding
+control is a single measurement, not three: at layer −1 the probe reduces to a
+lookup on the anchor token and the benchmark's fixed identifier pool induces the
+same partition under both tokenizers, which is why its predictions are identical
+across models. And the companion E9 run on starcoder2-3b has not landed yet, so
+"the ladder breaks this readout in three models" is supported while "security
+representations are *specifically* fragile" is not. Nothing causal is claimed.
+
+**Three extensions are built, gated and smoke-tested; none has run at canonical
+scale, so nothing below is a number yet.**
+
+* **Atomic arms.** The same four rewrites applied one at a time —
+  `rename_only`, `opaque_only`, `encode_only`, `flatten_only` — beside the
+  cumulative ladder, giving 10 conditions and 1296 held-out variants. Each cell
+  now carries `delta_clean` (independent effect), `delta_previous` (the marginal
+  cost of the step a cumulative condition adds) and `delta_atomic` (the
+  interaction). This is what closes the marginal-claim limitation above:
+  **flattening may be named as the cause only where `flatten_only` supports it**,
+  and otherwise the result is reported as a cumulative effect. S0 verifies that
+  each variant carries *exactly* its declared transformations by reading its own
+  AST, that both pair members share one draw, and that the transformed pair still
+  differs only at the sink argument.
+* **A whole-program lexical baseline.** Token uni/bigrams and character
+  3–5-grams over the entire program, fitted on clean training programs and frozen
+  through every condition, reported as its own arm beside the local window, the
+  embedding layer and the hidden states. It bounds the *textual* shortcut the ±3
+  window cannot see. It does not bound a predictor that runs the taint analysis,
+  and that boundary is unchanged.
+* **E15-C, a vocabulary-space contrast** (observational). Three readouts — logit
+  lens, J-lens, R-lens, with R-lens declared primary in advance — applied to the
+  same sink-site states, asking which vocabulary directions separate an unsafe
+  program from its matched safe counterfactual, with token discovery on training
+  pairs only and frozen to disk before held-out scoring. A **null is a reportable
+  result** there and is compatible with the probe succeeding: "linearly
+  decodable" and "expressed in the model's output-aligned coordinates" are
+  different claims, and E15-C exists to keep them apart. It performs no
+  intervention; E13 remains the causal result.
+
+Full analysis, limitations and next steps: `docs/design/E15_SINKFLOW_PLAN.md`
+§8–§14.
 
 # 5. What this project does not claim
 

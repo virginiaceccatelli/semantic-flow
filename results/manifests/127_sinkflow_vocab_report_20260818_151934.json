@@ -1,0 +1,33 @@
+{
+  "stage": "127_sinkflow_vocab_report",
+  "timestamp": "20260818_151934",
+  "git_sha": "f829254",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/127_sinkflow_vocab_report.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--results",
+    "results/smoke/sinkflow"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "results": "results/smoke/sinkflow",
+    "site": "sink_arg",
+    "lens": "rlens",
+    "layer": "11",
+    "condition": "clean_heldout"
+  },
+  "wall_time_s": 0.1,
+  "extra": {
+    "verdict": "positive_semantic",
+    "checks": {
+      "discovery_train_only_and_frozen": true,
+      "held_out_replication": true,
+      "consistent_orientation": true,
+      "above_permutation_control": true,
+      "above_mismatched_pair_control": true,
+      "stable_across_identifier_roles": true
+    }
+  }
+}

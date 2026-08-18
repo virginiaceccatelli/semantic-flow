@@ -16,9 +16,22 @@ is a real competitor, and the only honest way to say what obfuscation does to it
 is to transfer the *same* frozen lexical model that the hidden-state probes are
 transferred (stage 123).
 
+Four arms are fitted and frozen here, and stage 123 transfers all four:
+
+    local_surface           ±3 token ids at the anchor, no hidden states
+    whole_program_lexical   token uni/bigrams (+ char 3-5-grams) over the WHOLE
+                            program text — the floor the local window cannot
+                            see, bounding what a generator-level textual
+                            shortcut could achieve. No AST, graph or taint
+                            features: this bounds the shortcut, it is not a
+                            competing program analysis
+    embedding               layer -1: token identity before any computation
+    hidden_state            every probed layer >= 0
+
 Requires **S0, S1**. Records **S2**. Writes
 results/sinkflow/{model}/sinkflow_clean.csv and
-results/sinkflow/{model}/probes/{site}/{layer_XX,surface}.pkl + provenance.json.
+results/sinkflow/{model}/probes/{site}/{layer_XX,surface,whole_program_lexical}.pkl
++ provenance.json.
 """
 
 from __future__ import annotations
@@ -52,12 +65,15 @@ def main(
     cv_folds: int = typer.Option(5),
     n_jobs: int = typer.Option(1, help="Parallel CV-fold fits (-1 = all cores)"),
     seed: int = typer.Option(42),
+    lexical: bool = typer.Option(True, help="Fit the whole-program lexical baseline (E15-B)"),
+    lexical_char_ngrams: bool = typer.Option(
+        True, help="Add character 3-5-grams to the lexical baseline"),
     tables: bool = typer.Option(True, help="Copy the tidy CSV into results/tables/"),
     override_gate: Optional[str] = typer.Option(None),
     strict: bool = typer.Option(True, help="Exit non-zero when S2 fails"),
 ):
     from src.data.activation_store import ActivationStore
-    from src.experiments.sink_flow import SITES, run_clean_probes
+    from src.experiments.sink_flow import ARMS, SITES, run_clean_probes
     from src.experiments.store_gates import SINKFLOW, GateFailure, record_gate, require_gates
     from src.probes.base import ProbeConfig
     from src.utils import write_manifest
@@ -86,7 +102,8 @@ def main(
     cfg = ProbeConfig(cv_folds=cv_folds, random_seed=seed, max_iter=max_iter,
                       n_jobs=n_jobs)
     frame, provenance = run_clean_probes(store, root / "probes", config=cfg, seed=seed,
-                                         sites=site_list)
+                                         sites=site_list, with_lexical=lexical,
+                                         lexical_char_ngrams=lexical_char_ngrams)
 
     # ── S2: the controls have to have actually run ───────────────────────────
     problems: list[str] = []
@@ -109,9 +126,28 @@ def main(
                 f"control, so nothing here is decodable")
         if not (root / "probes" / site / "surface.pkl").exists():
             problems.append(f"{site}: no frozen surface model was saved")
+        # the four arms the design reports separately must all exist
+        if "arm" in site_rows.columns:
+            missing_arms = [arm for arm in ARMS
+                            if (arm not in set(site_rows["arm"])
+                                and not (arm == "whole_program_lexical" and not lexical))]
+            if missing_arms:
+                problems.append(f"{site}: result arms missing: {missing_arms}")
+        if lexical:
+            if site_rows[site_rows["features"] == "whole_program_lexical"].empty:
+                problems.append(f"{site}: the whole-program lexical baseline did not run")
+            if not (root / "probes" / site / "whole_program_lexical.pkl").exists():
+                problems.append(f"{site}: no frozen whole-program lexical model was saved")
     if provenance.get("splits_seen") != ["train"]:
         problems.append(f"the probe saw splits {provenance.get('splits_seen')}, "
                         f"not ['train'] alone")
+    if lexical and not provenance.get("lexical"):
+        problems.append("the lexical arm recorded no provenance — its vectorizer's "
+                        "training set is unverifiable")
+    for site, record in (provenance.get("lexical") or {}).items():
+        if record.get("fitted_on") != "clean_train_only":
+            problems.append(f"{site}: the lexical vectorizer was not fitted on the "
+                            f"clean training split alone ({record.get('fitted_on')})")
 
     if tables:
         tables_dir = Path("results/tables")

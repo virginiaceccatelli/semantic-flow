@@ -5,9 +5,19 @@ The probes fitted by stage 122 are loaded and **never refitted**: any change in
 accuracy across the ladder is a change in the model's state, not in the probe.
 Evaluated on
 
-    clean_heldout   the 144 held-out clean programs
-    obf0 .. obf4    the same programs through the existing ladder
-                    (normalize → rename → opaque → encode → flatten)
+    clean_heldout                  the 144 held-out clean programs
+    normalize                      ast round-trip only
+    rename_only  opaque_only       ATOMIC: one transformation each, so a
+    encode_only  flatten_only      failure can be attributed to it
+    rename_cumulative              CUMULATIVE: the declared prefix of the
+    rename_opaque                  ladder, which is what an adversary who
+    rename_opaque_encode           composes actually produces
+    rename_opaque_encode_flatten
+
+The two blocks answer different questions and the report keeps them apart:
+the atomic rows give independent transformation effects, the cumulative rows
+give marginal effects along the ladder, and their difference is the interaction
+that composition — not the transformation — is responsible for.
 
     python scripts/123_sinkflow_obfuscation.py --model deepseek-coder-1.3b
 
@@ -58,11 +68,15 @@ def main(
 ):
     from src.data.activation_store import ActivationStore
     from src.data.sink_flow import base_ids_digest, load_programs, resolve_sinkflow_path
+    from src.data.sink_flow import ATOMIC_CONDITIONS, CUMULATIVE_CONDITIONS
     from src.experiments.sink_flow import (
+        ARMS,
+        CONDITION_CLEAN_HELDOUT,
         SITES,
         aggregate_predictions,
         assert_frozen_on_training_bases,
         check_evaluation_cells,
+        condition_order,
         expected_row_count,
         load_provenance,
         run_frozen_evaluation,
@@ -152,28 +166,67 @@ def main(
 
     # ── S3: the cells and the row count have to be the designed ones ─────────
     problems: list[str] = []
-    conditions = sorted(frame["condition"].unique())
+    conditions = sorted(frame["condition"].unique(),
+                        key=lambda name: condition_order(str(name)))
     n_layers = n_layers_seen
+    has_surface = "surface" in set(frame["features"])
+    has_lexical = "whole_program_lexical" in set(frame["features"])
     expected = expected_row_count(n_layers=n_layers, n_conditions=len(conditions),
-                                  sites=site_list)
+                                  sites=site_list, with_surface=has_surface,
+                                  with_lexical=has_lexical)
     if len(frame) != expected:
         problems.append(
             f"result rows: expected {expected} "
-            f"({len(site_list)} sites x ({n_layers} layers + surface) x "
+            f"({len(site_list)} sites x ({n_layers} layers + "
+            f"{int(has_surface) + int(has_lexical)} no-hidden-state arms) x "
             f"{len(conditions)} conditions x 8 breakdowns), observed {len(frame)}")
-    missing_conditions = sorted(
-        {"clean_heldout", *(f"obf{level}" for level in
-                            sorted(raw[raw["obf_level"] >= 0]["obf_level"].unique()))}
-        - set(conditions))
+
+    # every condition present in the raw predictions must be reported, and every
+    # atomic and cumulative condition the design declares must be present
+    evaluated = {str(c) for c in raw["condition"].unique()} if "condition" in raw \
+        else set(conditions)
+    missing_conditions = sorted(evaluated - set(map(str, conditions)))
     if missing_conditions:
         problems.append(f"conditions absent from the evaluation: {missing_conditions}")
+    absent_design = [name for name in
+                     (CONDITION_CLEAN_HELDOUT, *ATOMIC_CONDITIONS, *CUMULATIVE_CONDITIONS)
+                     if name not in set(map(str, conditions))]
+    if absent_design:
+        problems.append(
+            f"the design's atomic/cumulative conditions are missing from the "
+            f"evaluation: {absent_design}. Regenerate with "
+            f"python scripts/120_sinkflow_generate.py --model {model} and re-extract.")
+
     empty_cells = check_evaluation_cells(frame)
     if empty_cells:
         problems.append(f"{len(empty_cells)} reported cells are missing a class "
                         f"(first: {empty_cells[:3]})")
-    if "surface" not in set(frame["features"]):
+    if not has_surface:
         problems.append("the frozen surface control produced no rows — the "
                         "no-hidden-state baseline was not actually run")
+    if not has_lexical:
+        problems.append("the frozen whole-program lexical baseline produced no rows "
+                        "— refit stage 122 with --lexical")
+    missing_arms = [arm for arm in ARMS if arm not in set(frame.get("arm", []))]
+    if missing_arms:
+        problems.append(f"result arms missing from the evaluation: {missing_arms}")
+    required_metrics = ["acc_unsafe", "acc_safe", "false_negative_rate",
+                        "false_positive_rate", "frac_predicted_unsafe",
+                        "pairs_same_label", "ci_lo", "ci_hi", "delta_clean"]
+    absent_metrics = [c for c in required_metrics if c not in frame.columns]
+    if absent_metrics:
+        problems.append(f"per-class / matched-pair metrics missing: {absent_metrics}")
+    else:
+        hidden_rows = frame[(frame["features"] == "hidden")
+                            & (frame["breakdown"] == "all")]
+        incomplete = hidden_rows[hidden_rows[
+            ["acc_unsafe", "acc_safe", "pairs_same_label"]].isna().any(axis=1)]
+        if not incomplete.empty:
+            problems.append(
+                f"{len(incomplete)} pooled hidden-state cells have no per-class or "
+                f"matched-pair metric (first: "
+                f"{incomplete.iloc[0]['condition']}/{incomplete.iloc[0]['site']}/"
+                f"L{incomplete.iloc[0]['layer']})")
 
     if tables:
         tables_dir = Path("results/tables")
@@ -183,14 +236,14 @@ def main(
         console.print(f"  Table → {tables_dir / f'sinkflow_obfuscation_{model}.csv'}")
 
     passed = not problems
-    detail = (f"{len(frame)} result rows over conditions {conditions}, both classes "
+    detail = (f"{len(frame)} result rows over conditions {list(map(str, conditions))}, both classes "
               f"present in every reported cell, evaluated with a probe frozen on "
               f"{len(provenance['train_base_ids'])} training bases disjoint from all "
               f"{len(evaluated_bases)} evaluated bases" if passed
               else "; ".join(problems))
     record_gate(model, "S3", passed, detail, stage="123_sinkflow_obfuscation",
                 value=float(len(frame)),
-                extra={"conditions": conditions, "n_rows": int(len(frame)),
+                extra={"conditions": list(map(str, conditions)), "n_rows": int(len(frame)),
                        "expected_rows": expected, "problems": problems[:10],
                        "empty_cells": empty_cells[:10], **gate_state},
                 root=root, spec=SINKFLOW)
@@ -202,7 +255,7 @@ def main(
         "model": model, "activations": str(act_root), "probes": str(probes_dir),
         "output": str(root), "sites": site_list, "from_predictions": from_predictions,
     }, t0, extra={"S3": passed, "n_rows": int(len(frame)), "expected_rows": expected,
-                  "conditions": conditions, "problems": problems[:10], **gate_state})
+                  "conditions": list(map(str, conditions)), "problems": problems[:10], **gate_state})
     if strict and not passed:
         console.print(f"[red]Rerun after fixing: python "
                       f"scripts/123_sinkflow_obfuscation.py --model {model}[/red]")

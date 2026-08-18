@@ -113,21 +113,35 @@ BINDING = GateSpec(
 
 SINKFLOW = GateSpec(
     experiment="E15",
-    order=("S0", "S1", "S2", "S3"),
+    order=("S0", "S1", "S2", "S3", "J0", "J1"),
     meaning={
         "S0": "the benchmark is exactly the designed one: counts, balance, splits, "
               "parsing, anchor alignment, independently recovered labels, pair "
-              "invariants, and an obfuscation ladder that preserves every label",
-        "S1": "activations exist for every program, and the source and sink anchors "
-              "land on token boundaries in the encoding that was actually stored",
-        "S2": "the readout is fitted on CLEAN TRAINING programs only, with its "
-              "selectivity control and its no-hidden-state surface baseline both run",
+              "invariants, and atomic/cumulative conditions that each carry exactly "
+              "their declared transformation and preserve every label",
+        "S1": "activations exist for every program in every condition, and the source "
+              "and sink anchors land on token boundaries in the encoding that was "
+              "actually stored",
+        "S2": "the readout is fitted on CLEAN TRAINING programs only, with all four "
+              "arms — local surface, whole-program lexical, embedding, hidden state — "
+              "and the selectivity control actually run",
         "S3": "the frozen readout was evaluated on held-out clean text and on every "
-              "obfuscation level, with both classes present in every reported cell",
+              "atomic and cumulative condition, with both classes and the per-class "
+              "and matched-pair metrics present in every reported cell",
+        # E15-C, the observational vocabulary-space contrast. Both gates are
+        # MECHANICAL: they must pass when the semantic result is null, and no
+        # gate anywhere requires a positive security-token result.
+        "J0": "the lens instrumentation is mechanically sound: the forward logits are "
+              "unchanged, every requested layer has all three lenses, the vocabulary "
+              "rows and model checkpoint match, and nothing is non-finite",
+        "J1": "the contrast is mechanically sound: one matched member of each polarity "
+              "per pair, one recorded orientation, tokens discovered on training pairs "
+              "only and frozen before held-out scoring, controls run, all cells present",
     },
     owner={
         "S0": "120_sinkflow_generate", "S1": "121_sinkflow_extract",
         "S2": "122_sinkflow_probe", "S3": "123_sinkflow_obfuscation",
+        "J0": "125_sinkflow_vocab_discover", "J1": "126_sinkflow_vocab_contrast",
     },
     requirements={
         "120_sinkflow_generate": (),
@@ -135,6 +149,13 @@ SINKFLOW = GateSpec(
         "122_sinkflow_probe": ("S0", "S1"),
         "123_sinkflow_obfuscation": ("S0", "S1", "S2"),
         "124_sinkflow_report": (),
+        # The vocabulary track needs the benchmark and the activations, not the
+        # probes: it is a different readout of the same states, and making it
+        # wait on S2/S3 would tie an observational measurement to a supervised
+        # one it does not use.
+        "125_sinkflow_vocab_discover": ("S0", "S1"),
+        "126_sinkflow_vocab_contrast": ("S0", "S1", "J0"),
+        "127_sinkflow_vocab_report": (),
     },
     default_root="results/sinkflow",
 )
@@ -308,10 +329,20 @@ def gate_table(model: str, root: Optional[Path] = None,
 
 
 def first_blocking_gate(model: str, root: Optional[Path] = None,
-                        spec: GateSpec = STORE) -> Optional[str]:
-    """The earliest gate that has not passed — where the run actually stopped."""
+                        spec: GateSpec = STORE,
+                        names: Optional[Sequence[str]] = None) -> Optional[str]:
+    """The earliest gate that has not passed — where the run actually stopped.
+
+    `names` restricts the question to one sub-track. E15 carries two families of
+    gates over the same benchmark — S0-S3 for the frozen-probe experiments and
+    J0/J1 for the observational vocabulary contrast — and a report on one of them
+    must not be marked incomplete because the other has not been run.
+    """
     gates = load_gates(model, root, spec)
+    wanted = list(names) if names is not None else list(spec.order)
     for name in spec.order:
+        if name not in wanted:
+            continue
         if name not in gates or not gates[name].passed:
             return name
     return None

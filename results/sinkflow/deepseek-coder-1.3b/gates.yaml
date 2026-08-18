@@ -1,6 +1,6 @@
 experiment: E15
 model: deepseek-coder-1.3b
-updated: '2026-08-17 11:13:07'
+updated: '2026-08-18 15:27:11'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -10,16 +10,20 @@ gates:
     value: 480.0
     detail: 'every validity gate passed: 480 clean programs, balanced across 3 families
       x 4 structures x 2 labels, split {''heldout'': 72, ''train'': 168} with no base
-      leakage, all labels independently recovered, all anchors token-exact, and 720
-      obfuscated variants preserving their security label'
+      leakage, all labels independently recovered, all anchors token-exact, and 1296
+      variants over 9 conditions ({''normalize'': 144, ''rename_only'': 144, ''opaque_only'':
+      144, ''encode_only'': 144, ''flatten_only'': 144, ''rename_cumulative'': 144,
+      ''rename_opaque'': 144, ''rename_opaque_encode'': 144, ''rename_opaque_encode_flatten'':
+      144}), each carrying exactly its declared transformation and preserving its
+      security label'
     stage: 120_sinkflow_generate
-    timestamp: '2026-08-16 15:11:19'
+    timestamp: '2026-08-18 15:27:11'
     override: false
     override_reason: ''
     extra:
       n_bases: 240
       n_clean_programs: 480
-      n_obf_variants: 720
+      n_obf_variants: 1296
       families:
       - command_exec
       - dynamic_exec
@@ -60,12 +64,47 @@ gates:
         dynamic_exec/branch_merge/safe: 20
         dynamic_exec/helper/unsafe: 20
         dynamic_exec/helper/safe: 20
+      conditions:
+      - normalize
+      - rename_only
+      - opaque_only
+      - encode_only
+      - flatten_only
+      - rename_cumulative
+      - rename_opaque
+      - rename_opaque_encode
+      - rename_opaque_encode_flatten
+      condition_counts:
+        normalize: 144
+        rename_only: 144
+        opaque_only: 144
+        encode_only: 144
+        flatten_only: 144
+        rename_cumulative: 144
+        rename_opaque: 144
+        rename_opaque_encode: 144
+        rename_opaque_encode_flatten: 144
+      condition_kinds:
+        normalize: baseline
+        rename_only: atomic
+        opaque_only: atomic
+        encode_only: atomic
+        flatten_only: atomic
+        rename_cumulative: cumulative
+        rename_opaque: cumulative
+        rename_opaque_encode: cumulative
+        rename_opaque_encode_flatten: cumulative
+      n_redraws: 44
       obf_levels:
       - 0
-      - 1
-      - 2
-      - 3
-      - 4
+      - 11
+      - 12
+      - 13
+      - 14
+      - 21
+      - 22
+      - 23
+      - 24
       train_digest: 0b5fcb12614bab1e
       heldout_digest: 58fb6d5d5193ec23
       violations: []

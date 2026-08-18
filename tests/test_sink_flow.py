@@ -18,18 +18,29 @@ import pytest
 
 from src.data.activation_store import ActivationStore
 from src.data.alignment import compute_offsets
-from src.data.obfuscation import ObfuscationLadder
+import random
+
+from src.data.obfuscation import STEP_ORDER, ObfuscationLadder
 from src.data.sink_flow import (
     ANCHOR_KINDS,
+    ATOMIC_CONDITIONS,
     CHAIN_NAMES,
+    CONDITIONS,
+    CONDITIONS_BY_NAME,
+    CUMULATIVE_CONDITIONS,
     FAMILIES,
     N_BASE_SEEDS,
     N_TRAIN_SEEDS,
     OBF_LEVELS,
     ROLES,
     STRUCTURES,
+    TRANSFORMED_CONDITIONS,
+    FlowProgram,
     anchor_token_span,
+    condition_for,
+    detect_transformations,
     expected_clean_programs,
+    expected_variant_count,
     find_anchors,
     find_sink_call,
     generate_benchmark,
@@ -37,14 +48,18 @@ from src.data.sink_flow import (
     observe_program,
     pair_diff_is_confined_to_sink_arg,
     recover_label,
+    resolve_conditions,
     save_programs,
     load_programs,
     split_base_ids,
     static_sink_label,
+    transform_heldout,
     validate_benchmark,
 )
 from src.experiments.sink_flow import (
+    ARMS,
     SITES,
+    WholeProgramLexicalProbe,
     assert_frozen_on_training_bases,
     build_records,
     check_evaluation_cells,
@@ -71,6 +86,14 @@ def bases():
 
 @pytest.fixture(scope="module")
 def variants(bases):
+    """Every held-out program under all nine conditions — four atomic, four
+    cumulative, plus normalize."""
+    return transform_heldout(bases, seed=7)
+
+
+@pytest.fixture(scope="module")
+def ladder_variants(bases):
+    """The cumulative ladder alone, for the checks that are about levels."""
     return obfuscate_heldout(bases, seed=7)
 
 
@@ -293,14 +316,75 @@ def test_alignment_check_rejects_a_span_a_token_straddles(bases):
     assert anchor_token_span(program.source, offsets, widened) is None
 
 
-# ── the obfuscation ladder ───────────────────────────────────────────────────
+# ── conditions: atomic arms and the cumulative ladder ────────────────────────
 
-def test_every_level_exists_for_every_heldout_program(bases, variants):
+def test_every_condition_exists_for_every_heldout_program(bases, variants):
+    heldout = {p.program_id for b in bases if b.split == "heldout" for p in b.programs()}
+    wanted = {c.name for c in TRANSFORMED_CONDITIONS}
+    for program_id in heldout:
+        got = {v.obf_name for v in variants
+               if v.program_id.split("__")[0] == program_id}
+        assert got == wanted, f"{program_id} has {sorted(got)}"
+    assert len(variants) == expected_variant_count(
+        len(heldout), resolve_conditions(sorted(wanted)))
+
+
+def test_every_level_exists_for_every_heldout_program(bases, ladder_variants):
     heldout = {p.program_id for b in bases if b.split == "heldout" for p in b.programs()}
     for program_id in heldout:
-        levels = {v.obf_level for v in variants if v.program_id.startswith(program_id + "_obf")}
+        levels = {v.metadata["legacy_level"] for v in ladder_variants
+                  if v.program_id.split("__")[0] == program_id}
         assert levels == set(OBF_LEVELS), f"{program_id} has {sorted(levels)}"
-    assert len(variants) == len(heldout) * len(OBF_LEVELS)
+    assert len(ladder_variants) == len(heldout) * len(OBF_LEVELS)
+
+
+def test_an_atomic_condition_carries_only_its_own_transformation(variants):
+    """`flatten_only` that quietly renamed would make every attribution wrong."""
+    for variant in variants:
+        condition = condition_for(variant.obf_name)
+        if condition.kind != "atomic":
+            continue
+        assert detect_transformations(variant.source) == set(condition.steps), \
+            f"{variant.program_id} carries {detect_transformations(variant.source)}"
+
+
+def test_a_cumulative_condition_carries_exactly_its_declared_prefix(variants):
+    steps_seen = {}
+    for variant in variants:
+        condition = condition_for(variant.obf_name)
+        if condition.kind != "cumulative":
+            continue
+        assert detect_transformations(variant.source) == set(condition.steps)
+        steps_seen[condition.name] = condition.steps
+    # the prefixes really are nested, in the canonical order
+    ordered = [steps_seen[name] for name in CUMULATIVE_CONDITIONS if name in steps_seen]
+    for shorter, longer in zip(ordered, ordered[1:]):
+        assert longer[:len(shorter)] == shorter
+
+
+def test_the_atomic_and_cumulative_arms_are_the_same_transformations(variants):
+    """No new obfuscation algorithm is introduced by the atomic arms: every
+    atomic condition's step set is a subset of the full cumulative ladder's."""
+    full = set(CONDITIONS_BY_NAME[CUMULATIVE_CONDITIONS[-1]].steps)
+    for name in ATOMIC_CONDITIONS:
+        assert set(CONDITIONS_BY_NAME[name].steps) <= full
+
+
+def test_both_members_of_a_pair_share_the_transformation_draw(variants):
+    by_pair = {}
+    for variant in variants:
+        by_pair.setdefault((variant.base_id, variant.obf_name), {})[variant.role] = variant
+    for (base_id, condition), members in by_pair.items():
+        assert set(members) == {"unsafe", "safe"}, f"{base_id}/{condition}"
+        seeds = {m.metadata["transform_seed"] for m in members.values()}
+        assert len(seeds) == 1, f"{base_id}/{condition} drew {seeds}"
+
+
+def test_the_transformed_program_counts_are_exact(bases, variants):
+    heldout = {p.program_id for b in bases if b.split == "heldout" for p in b.programs()}
+    for condition in TRANSFORMED_CONDITIONS:
+        n = sum(1 for v in variants if v.obf_name == condition.name)
+        assert n == len(heldout), f"{condition.name}: {n} != {len(heldout)}"
 
 
 def test_only_heldout_programs_are_obfuscated(bases, variants):
@@ -317,13 +401,55 @@ def test_obfuscation_preserves_the_security_label(variants):
 
 
 def test_obfuscated_pairs_still_differ_only_at_the_sink_argument(variants):
-    by_key = {(v.base_id, v.role, v.obf_level): v for v in variants}
-    for (base_id, role, level), variant in by_key.items():
+    by_key = {(v.base_id, v.role, v.obf_name): v for v in variants}
+    for (base_id, role, condition), variant in by_key.items():
         if role != "unsafe":
             continue
         ok, detail = pair_diff_is_confined_to_sink_arg(
-            variant.source, by_key[(base_id, "safe", level)].source)
-        assert ok, f"{base_id} level {level}: {detail}"
+            variant.source, by_key[(base_id, "safe", condition)].source)
+        assert ok, f"{base_id} {condition}: {detail}"
+
+
+def test_validation_catches_a_pair_that_diverges_outside_the_sink_argument(bases, variants):
+    """Confinement is checked on the TRANSFORMED pair too, not just the clean one."""
+    broken = [FlowProgram(**{**v.to_dict(), "metadata": dict(v.metadata)})
+              for v in variants]
+    victim = next(v for v in broken if v.role == "unsafe"
+                  and v.obf_name == "normalize")
+    # an edit BEFORE the sink argument that no transformation would make: the
+    # two members now differ somewhere the pair invariant does not permit
+    victim.source = victim.source.replace(
+        "    count = count + 1", "    count = count + 1\n    count = count + 0")
+    violations = validate_benchmark(bases, broken, tokenizer=TOK,
+                                    n_seeds=SMALL["n_seeds"],
+                                    n_train_seeds=SMALL["n_train_seeds"])
+    assert "transformed_pair_diff_confined" in {v.gate for v in violations}
+
+
+def test_validation_catches_an_atomic_condition_that_carries_more(bases, variants):
+    """An arm called `flatten_only` that also renamed must be refused."""
+    broken = [FlowProgram(**{**v.to_dict(), "metadata": dict(v.metadata)})
+              for v in variants]
+    ladder = ObfuscationLadder(seed=1)
+    for variant in broken:
+        if variant.obf_name == "flatten_only":
+            variant.source = ladder.apply_steps(variant.source, ("rename",),
+                                                rng=random.Random(5))
+    violations = validate_benchmark(bases, broken, tokenizer=TOK,
+                                    n_seeds=SMALL["n_seeds"],
+                                    n_train_seeds=SMALL["n_train_seeds"])
+    assert "condition_transformation_isolation" in {v.gate for v in violations}
+
+
+def test_validation_catches_a_pair_transformed_under_different_draws(bases, variants):
+    broken = [FlowProgram(**{**v.to_dict(), "metadata": dict(v.metadata)})
+              for v in variants]
+    victim = next(v for v in broken if v.role == "safe")
+    victim.metadata["transform_seed"] = -1
+    violations = validate_benchmark(bases, broken, tokenizer=TOK,
+                                    n_seeds=SMALL["n_seeds"],
+                                    n_train_seeds=SMALL["n_train_seeds"])
+    assert "pair_transformation_seed" in {v.gate for v in violations}
 
 
 def test_validation_catches_a_variant_whose_label_changed(bases, variants):
@@ -337,7 +463,7 @@ def test_validation_catches_a_variant_whose_label_changed(bases, variants):
         violations = validate_benchmark(bases, broken, tokenizer=TOK,
                                         n_seeds=SMALL["n_seeds"],
                                         n_train_seeds=SMALL["n_train_seeds"])
-        assert "obfuscation_label_preserved" in {v.gate for v in violations}
+        assert "transformation_label_preserved" in {v.gate for v in violations}
     finally:
         victim.source, victim.metadata["label_preserved"] = original_source, original_flag
 
@@ -426,8 +552,12 @@ def test_frozen_evaluation_refuses_a_probe_that_saw_the_evaluated_bases():
 # ── row counts and reported cells ────────────────────────────────────────────
 
 def test_expected_row_count_matches_the_design():
-    # 2 sites x (10 layers + surface) x 6 conditions x (1 + 3 + 4) breakdowns
-    assert expected_row_count(n_layers=10, n_conditions=6) == 2 * 11 * 6 * 8
+    # 2 sites x (10 layers + local surface + whole-program lexical)
+    #         x 10 conditions x (1 + 3 + 4) breakdowns
+    assert expected_row_count(n_layers=10, n_conditions=10) == 2 * 12 * 10 * 8
+    # and the design's condition count IS ten: clean + normalize + 4 + 4
+    assert len(CONDITIONS) == 10
+    assert len(ATOMIC_CONDITIONS) == 4 and len(CUMULATIVE_CONDITIONS) == 4
 
 
 def test_failure_mode_diagnostics_separate_collapse_from_mislabelling():
@@ -545,8 +675,17 @@ def test_end_to_end_probe_freeze_and_frozen_transfer(tmp_path, bases, variants):
     frame, raw = run_frozen_evaluation([heldout_store, obf_store],
                                        output / "probes", output)
     conditions = sorted(frame["condition"].unique())
-    assert conditions == ["clean_heldout"] + [f"obf{lv}" for lv in sorted(OBF_LEVELS)]
+    assert conditions == sorted([c.name for c in CONDITIONS])
     assert len(frame) == expected_row_count(n_layers=2, n_conditions=len(conditions))
+    # all four arms transferred, the two floors among them
+    assert set(frame["arm"]) == set(ARMS)
+    # the three difference columns the atomic/cumulative design exists for
+    for column in ("delta_clean", "delta_previous", "delta_atomic"):
+        assert column in frame.columns
+    cumulative = frame[(frame["condition"] == "rename_opaque_encode_flatten")
+                       & (frame["breakdown"] == "all") & (frame["features"] == "hidden")]
+    assert cumulative["delta_previous"].notna().all()
+    assert cumulative["delta_atomic"].notna().all()
     assert check_evaluation_cells(frame) == []
     # every evaluated base is held out — the frozen claim is not in-sample
     assert not set(raw["base_id"]) & set(provenance["train_base_ids"])
@@ -572,3 +711,87 @@ def test_programs_round_trip_through_the_jsonl_contract(tmp_path, bases):
         assert before.source == after.source
         assert after.metadata["anchors"]["sink_arg"] == list(
             find_anchors(after.source)["sink_arg"])
+
+
+# ── the whole-program lexical baseline (E15 experiment B) ────────────────────
+
+def test_the_lexical_vectorizer_is_fitted_on_training_text_only(tmp_path, bases):
+    """Its vocabulary and idf weights are part of the model, so a vectorizer that
+    ever saw a held-out program would make the 'frozen transfer' claim false."""
+    train = [p for b in bases if b.split == "train" for p in b.programs()]
+    heldout = [p for b in bases if b.split == "heldout" for p in b.programs()]
+    store = _fake_store(tmp_path / "train", train)
+    _, provenance = run_clean_probes(
+        store, tmp_path / "probes", config=ProbeConfig(cv_folds=3, max_iter=200))
+
+    record = provenance["lexical"]["sink_arg"]
+    assert record["fitted_on"] == "clean_train_only"
+    assert record["n_train_programs"] == len(train)
+    # the digest is over the training text: a held-out program's text is not in it
+    from src.data.sink_flow import base_ids_digest
+    assert record["text_digest"] == base_ids_digest(sorted({p.source for p in train}))
+    assert record["text_digest"] != base_ids_digest(
+        sorted({p.source for p in train + heldout}))
+
+
+def test_the_frozen_lexical_baseline_transfers_without_refitting(tmp_path, bases):
+    """The saved model predicts on transformed text with the vocabulary it was
+    fitted with — an unseen n-gram is simply out of vocabulary, which is the
+    point: this measures what renaming does to a textual shortcut."""
+    train = [p for b in bases if b.split == "train" for p in b.programs()]
+    y = np.array([p.label for p in train])
+    lexical = WholeProgramLexicalProbe(
+        ProbeConfig(max_iter=200)).fit([p.source for p in train], y)
+    path = lexical.save(tmp_path / "lex.pkl")
+    reloaded = WholeProgramLexicalProbe.load(path)
+
+    vocabulary = dict(reloaded.word_vectorizer.vocabulary_)
+    renamed = ObfuscationLadder(seed=3).apply_steps(
+        train[0].source, ("rename",), rng=random.Random(3))
+    predictions = reloaded.predict([renamed])
+    assert predictions.shape == (1,)
+    # predicting did not change the fitted vocabulary
+    assert dict(reloaded.word_vectorizer.vocabulary_) == vocabulary
+
+
+def test_the_two_floors_answer_different_questions(bases):
+    """The local window cannot see a whole-program shortcut, which is why the
+    lexical arm exists beside it rather than instead of it."""
+    from src.experiments.sink_flow import arm_of
+
+    assert arm_of("surface", -1) == "local_surface"
+    assert arm_of("whole_program_lexical", -1) == "whole_program_lexical"
+    assert arm_of("hidden", -1) == "embedding"
+    assert arm_of("hidden", 7) == "hidden_state"
+
+
+def test_the_probe_report_is_not_marked_incomplete_by_the_vocabulary_gates(tmp_path):
+    """S0-S3 and J0/J1 are two tracks over one benchmark. A frozen-probe report
+    must not read INCOMPLETE because the observational vocabulary experiment has
+    not been run — and must still read INCOMPLETE when one of its OWN gates has
+    not passed."""
+    import pandas as pd
+
+    from src.experiments.sink_flow import build_report
+    from src.experiments.store_gates import first_blocking_gate, gate_table
+
+    model = "fake-model"
+    for name, stage in (("S0", "120_sinkflow_generate"), ("S1", "121_sinkflow_extract"),
+                        ("S2", "122_sinkflow_probe"), ("S3", "123_sinkflow_obfuscation")):
+        record_gate(model, name, True, "passed", stage=stage, root=tmp_path,
+                    spec=SINKFLOW)
+    empty = pd.DataFrame(columns=["site", "breakdown", "features", "layer",
+                                  "condition", "accuracy", "cell"])
+    gates = gate_table(model, root=tmp_path, spec=SINKFLOW)
+    payload, _ = build_report(model, empty, empty, gates)
+    assert payload["all_gates_passed"], "J0/J1 must not gate the probe report"
+    assert first_blocking_gate(model, root=tmp_path, spec=SINKFLOW,
+                               names=("S0", "S1", "S2", "S3")) is None
+    # but its own gates still do
+    record_gate(model, "S3", False, "failed", stage="123_sinkflow_obfuscation",
+                root=tmp_path, spec=SINKFLOW)
+    gates = gate_table(model, root=tmp_path, spec=SINKFLOW)
+    payload, _ = build_report(model, empty, empty, gates)
+    assert not payload["all_gates_passed"]
+    assert first_blocking_gate(model, root=tmp_path, spec=SINKFLOW,
+                               names=("S0", "S1", "S2", "S3")) == "S3"
