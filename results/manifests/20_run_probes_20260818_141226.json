@@ -1,0 +1,26 @@
+{
+  "stage": "20_run_probes",
+  "timestamp": "20260818_141226",
+  "git_sha": "8e547f2",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/20_run_probes.py",
+    "--activations",
+    "results/activations/starcoder2-3b/core"
+  ],
+  "args": {
+    "activations": "results/activations/starcoder2-3b/core",
+    "output": "results/probes/starcoder2-3b/core",
+    "tasks": "['lexical_token_type', 'binding', 'defuse_edge', 'control_dep', 'taint_state']",
+    "max_samples": "20000",
+    "max_iter": "2000",
+    "n_jobs": "-1",
+    "cv_folds": "5",
+    "seed": "42"
+  },
+  "wall_time_s": 94569.7,
+  "extra": {
+    "n_rows": 295,
+    "sanity_problems": []
+  }
+}
