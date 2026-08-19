@@ -1,0 +1,33 @@
+{
+  "stage": "127_sinkflow_vocab_report",
+  "timestamp": "20260819_204756",
+  "git_sha": "0b12ed4",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/127_sinkflow_vocab_report.py",
+    "--model",
+    "starcoder2-3b",
+    "--depth",
+    "0.48"
+  ],
+  "args": {
+    "model": "starcoder2-3b",
+    "results": "results/sinkflow/starcoder2-3b",
+    "site": "sink_arg",
+    "lens": "rlens",
+    "layer": "15",
+    "condition": "clean_heldout"
+  },
+  "wall_time_s": 0.6,
+  "extra": {
+    "verdict": "stable_non_security_vocabulary",
+    "checks": {
+      "discovery_train_only_and_frozen": true,
+      "held_out_replication": false,
+      "consistent_orientation": true,
+      "above_permutation_control": true,
+      "above_mismatched_pair_control": true,
+      "stable_across_identifier_roles": true
+    }
+  }
+}
