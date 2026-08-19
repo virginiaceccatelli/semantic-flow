@@ -289,6 +289,37 @@ half wrong, and the way it is wrong is the useful part.**
 - **identity-rule: it makes conservation WORSE**, at every layer. Not
   predicted, and not noise: monotone across eight layers at n=10.
 
+**Update, 2026-08-19 — a second model, a second dtype, and one retraction.**
+Stage 110 re-run on **deepseek-coder-1.3b in float32** and
+**deepseek-coder-6.7b in float16**, n=10. Median `|ρ−1|`:
+
+| rule removed | 1.3B fp32 | 6.7B fp16 |
+|---|---:|---:|
+| **`no_half`** | **4.4203** | **4.4628** |
+| `no_ln` | 0.9806 | 0.9885 |
+| `no_attn` | 0.5128 | 0.3044 |
+| `no_identity` | 0.2265 | 0.3941 |
+| *(all rules)* | **0.0000** | **0.0001** |
+
+- **The half-rule's dominance replicates**, at essentially the same magnitude, in
+  a model twice the size and a different dtype. §2.1's amended reading holds.
+- **The identity-rule anomaly above does not replicate, and should be retracted.**
+  It was measured in fp16 where the all-rules arm itself wandered to `|ρ−1|` ≈
+  0.86. In float32 the all-rules arm is 0.0000 at every layer and removing the
+  identity rule costs 0.2265 — the rule *helps*, as designed. The August finding
+  was fp16 noise, not a property of SiLU, and the reasoning that follows should be
+  read as an explanation of something that turned out not to need explaining.
+- **Attention's cost is now bounded at 0.30–0.51** across both models — the one
+  path the design deliberately leaves unmodified.
+
+**Not applicable to starcoder2-3b.** Gate R cannot complete there: LayerNorm
+(deliberately unmatched) plus a non-gated MLP means both homogenising rules bind
+to nothing, and stage 110 raises when `no_attn` removes the only rule that did.
+Its `rlens_r0_forward.csv` reports a forward delta of **exactly 0.0**, which is the
+signature of an empty install rather than a passing check. Extending the rules to
+LayerNorm and non-gated MLPs is the open work if the R-lens is to be
+architecture-general.
+
 **Why — and why this must not be "fixed" by dropping the rule.** For SiLU,
 
     <silu'(g), g> − silu(g)  =  σ(g) · g² · (1 − σ(g))  ≥  0

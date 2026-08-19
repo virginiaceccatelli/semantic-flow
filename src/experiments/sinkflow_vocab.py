@@ -534,6 +534,38 @@ def _free_device_memory(device) -> None:
         torch.mps.empty_cache()
 
 
+def lrp_rule_counts(model) -> dict:
+    """How many modules each LRP rule actually binds to on THIS model.
+
+    `lrp_rules` yields these counts, but the lens build enters the context once
+    per sample deep inside `_vjp_one_sample`, so nothing was recording them. That
+    is exactly how an "R-lens" can be built on an architecture the rules do not
+    match: attention hooks register, `strict` is satisfied, and the two rules
+    that make the traversed tail degree-1 homogeneous — the RMSNorm rule and the
+    gated-MLP rule — silently bind to nothing. The result is labelled `rlens` and
+    is arithmetically a J-lens.
+
+    StarCoder2 is that architecture: LayerNorm rather than RMSNorm (different
+    algebra, deliberately not matched) and a non-gated MLP (no
+    `gate_proj`/`up_proj`/`down_proj`), so `ln` and `mlp` both come back 0.
+    """
+    from src.models.lrp import lrp_rules
+
+    with lrp_rules(model, strict=False) as counts:
+        return dict(counts)
+
+
+def homogenising_rules_bound(counts: dict) -> bool:
+    """Did the rules that create the conservation property actually install?
+
+    Attention is left unmodified by design, so `attn` binding on its own is not
+    enough: it is the norm and MLP rules that make the tail homogeneous, and
+    without at least one of them the lens is not an R-lens in any meaningful
+    sense.
+    """
+    return bool(counts.get("ln", 0) or counts.get("mlp", 0))
+
+
 def _output_vocab_size(model) -> int:
     from src.models.lens import get_output_unembedding
 
@@ -1346,6 +1378,7 @@ def j0_lens_checks(
     model_name: str,
     hf_id: str,
     forward_invariance: Optional[dict] = None,
+    lrp_counts: Optional[dict] = None,
     rerun: str = "python scripts/125_sinkflow_vocab_discover.py --model MODEL",
 ) -> list:
     """**J0 — mechanical integrity.** Nothing here is about the hypothesis.
@@ -1415,6 +1448,23 @@ def j0_lens_checks(
              [f"{o['word']}: {o['reason']}" for o in candidates.concepts.omitted])
     if not sites:
         fail("sites_present", "at least one readout site", "none")
+
+    # The R-lens must actually BE an R-lens. Attention hooks alone satisfy
+    # `lrp_rules`' own strict check while the two rules that create the
+    # conservation property bind to nothing — which is how an architecture the
+    # rules do not match (LayerNorm + non-gated MLP) yields a lens labelled
+    # `rlens` that is arithmetically a J-lens.
+    if lrp_counts is not None and "rlens" in lenses and lenses["rlens"] \
+            and not homogenising_rules_bound(lrp_counts):
+        fail("rlens_rules_bound",
+             "the RMSNorm rule or the gated-MLP rule binds to at least one "
+             "module, so the R-lens is not silently a J-lens",
+             f"ln={lrp_counts.get('ln', 0)}, mlp={lrp_counts.get('mlp', 0)}, "
+             f"attn={lrp_counts.get('attn', 0)} — neither homogenising rule "
+             f"installed on this architecture",
+             [f"LayerNorm models (starcoder2) and non-gated MLPs are not matched "
+              f"by is_gated_mlp/norm_eps_attr; build with --lens-kinds logit,jlens "
+              f"or extend the rules"])
     return violations
 
 

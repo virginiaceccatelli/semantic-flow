@@ -118,6 +118,7 @@ def main(
         full_vocab_deltas,
         j0_lens_checks,
         lens_diagnostics,
+        lrp_rule_counts,
         validate_concept_tokens,
     )
     from src.experiments.store_gates import SINKFLOW, GateFailure, record_gate, require_gates
@@ -273,9 +274,14 @@ def main(
         if len(invariance_frame) else float("nan"),
         "detail": invariance_check.detail,
     }
+    # Which LRP rules actually bound on this architecture — recorded so an
+    # "R-lens" built where the homogenising rules matched nothing cannot pass J0.
+    counts = lrp_rule_counts(mdl)
+    console.print(f"  LRP rules bound: {counts}")
     violations = j0_lens_checks(lenses, candidates, layer_list, site_list,
                                 model_name=model, hf_id=cfg.hf_id,
-                                forward_invariance=forward_invariance, rerun=rerun)
+                                forward_invariance=forward_invariance,
+                                lrp_counts=counts, rerun=rerun)
 
     if tables:
         tables_dir = Path("results/tables")
@@ -298,6 +304,7 @@ def main(
                 value=float(len(token_ids)),
                 extra={"layers": list(layer_list), "sites": list(site_list),
                        "concepts": concepts.to_dict(),
+                       "lrp_rule_counts": counts,
                        "forward_invariance": forward_invariance,
                        "n_weak_fidelity": int(weak.shape[0]),
                        "violations": [v.to_dict() for v in violations],
