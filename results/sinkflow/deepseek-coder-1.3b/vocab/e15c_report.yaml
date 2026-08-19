@@ -1,10 +1,10 @@
 experiment: E15-C
 model: deepseek-coder-1.3b
-verdict: positive_security_vocabulary
-verdict_text: "POSITIVE (EXPLICIT SECURITY VOCABULARY) \u2014 the security lexicon's\
-  \ held-out contrast replicates above both controls, with a consistent orientation\
-  \ and stability across identifier roles. Still observational: vocabulary alignment\
-  \ is not causal use."
+verdict: inverted_security_vocabulary
+verdict_text: "INVERTED \u2014 the security lexicon's contrast is strong and consistent\
+  \ but runs OPPOSITE to the hypothesis: unsafe programs score lower on the unsafe\
+  \ pole than their matched safe counterparts. Report the sign; do not report this\
+  \ as the model representing 'unsafe'."
 primary_lens: rlens
 reported:
   lens: rlens
@@ -13,7 +13,7 @@ reported:
   condition: clean_heldout
 checks:
   discovery_train_only_and_frozen: true
-  held_out_replication: true
+  held_out_replication: false
   consistent_orientation: true
   above_permutation_control: true
   above_mismatched_pair_control: true

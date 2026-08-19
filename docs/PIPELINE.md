@@ -289,14 +289,21 @@ and `screen -dmS sinkflow-vocab-6.7b env MODEL=deepseek-coder-6.7b jobs/sinkflow
 the freeze of the discovered token set is a filesystem boundary: the held-out
 contrast reads a file it did not write and could not have influenced.
 
+**Status: run at canonical scale on all three models**, six gates each, no
+overrides recorded. Results in `docs/RESULTS.md`; full analysis in
+`docs/design/E15_SINKFLOW_PLAN.md` §8. **Do not re-run stage 120 to "refresh"
+anything** — regenerating redraws every transformation and changes every number.
+
 **Two gate families, different jobs.** S0–S3 validate the benchmark, the
 activations, the probes and the frozen evaluation. J0/J1 validate the lens
 instrumentation and the contrast, and are **mechanical only** — they must pass
 when the semantic result is null, and no gate anywhere requires a positive
-security-token result. Lens *fidelity* (next-token recovery, agreement with the
-final layer, relevance conservation) is a **diagnostic**: it warns, it never
-blocks, and the report separates "mechanically invalid" from "mechanically valid
-with weak lens fidelity".
+security-token result. In the canonical runs they did exactly that: both passed
+on what turned out to be a null. Lens *fidelity* (next-token recovery, agreement
+with the final layer, relevance conservation) is a **diagnostic**: it warns, it
+never blocks, and the report separates "mechanically invalid" from "mechanically
+valid with weak lens fidelity" — which is the verdict starcoder2-3b's R-lens
+earns, at relevance conservation 0.154 against ~1.000 on both deepseek models.
 
 Two things the gates enforce that are easy to get wrong by hand. **The probed
 layers must include `-1`** — the embedding layer is one of the controls, and S2

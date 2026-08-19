@@ -141,8 +141,14 @@ def main(
     sign = float(row.get("sign_consistency_z", float("nan")))
     checks = {
         "discovery_train_only_and_frozen": mechanically_valid,
+        # ONE-SIDED, deliberately. The orientation is `unsafe - safe`, so a
+        # security-vocabulary claim needs the contrast to run in the
+        # hypothesised direction. A two-sided test would let a contrast that is
+        # consistently REVERSED — unsafe programs scoring lower on the unsafe
+        # pole than their safe counterparts — be reported as a positive result,
+        # which is the opposite of what the label would then say.
         "held_out_replication": bool(np.isfinite(sign)
-                                     and abs(sign - 0.5) >= (SIGN_CONSISTENCY_THRESHOLD - 0.5)),
+                                     and sign >= SIGN_CONSISTENCY_THRESHOLD),
         "consistent_orientation": mechanically_valid,
         "above_permutation_control": bool(
             np.isfinite(row.get("permutation_p", np.nan))
@@ -170,12 +176,22 @@ def main(
         and np.isfinite(row.get("permutation_p", np.nan))
         and row.get("permutation_p", 1.0) < PERMUTATION_P)
 
+    # A contrast that is consistently reversed is a real, reportable phenomenon
+    # and is NOT a null — but it is emphatically not "the model represents
+    # unsafe", so it gets its own verdict rather than being folded into either.
+    inverted = bool(np.isfinite(sign)
+                    and (1.0 - sign) >= SIGN_CONSISTENCY_THRESHOLD
+                    and np.isfinite(row.get("permutation_p", np.nan))
+                    and row.get("permutation_p", 1.0) < PERMUTATION_P)
+
     if not mechanically_valid:
         verdict = "mechanically_invalid"
     elif n_pairs < MIN_HELDOUT_PAIRS:
         verdict = "underpowered"
     elif all(checks.values()):
         verdict = "positive_security_vocabulary"
+    elif inverted:
+        verdict = "inverted_security_vocabulary"
     elif enriched:
         verdict = "stable_non_security_vocabulary"
     elif not weak_here.empty:
@@ -197,6 +213,11 @@ def main(
                          "was found. This is compatible with the probe succeeding: "
                          "linear decodability and output-aligned expression are "
                          "different claims.",
+        "inverted_security_vocabulary":
+            "INVERTED — the security lexicon's contrast is strong and consistent but "
+            "runs OPPOSITE to the hypothesis: unsafe programs score lower on the "
+            "unsafe pole than their matched safe counterparts. Report the sign; do "
+            "not report this as the model representing 'unsafe'.",
         "stable_non_security_vocabulary":
             "STABLE NON-SECURITY VOCABULARY — the training-discovered directions "
             "replicate held out and beat the random-token control, but the security "

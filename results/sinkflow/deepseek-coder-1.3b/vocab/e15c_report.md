@@ -1,13 +1,13 @@
 # E15-C — vocabulary-space contrast (deepseek-coder-1.3b)
 
-**Verdict.** POSITIVE (EXPLICIT SECURITY VOCABULARY) — the security lexicon's held-out contrast replicates above both controls, with a consistent orientation and stability across identifier roles. Still observational: vocabulary alignment is not causal use.
+**Verdict.** INVERTED — the security lexicon's contrast is strong and consistent but runs OPPOSITE to the hypothesis: unsafe programs score lower on the unsafe pole than their matched safe counterparts. Report the sign; do not report this as the model representing 'unsafe'.
 
 Primary lens `rlens` (declared before any result was produced); reported at lens `rlens`, site `sink_arg`, layer 11, condition `clean_heldout`.
 
 | check | holds |
 |---|---|
 | discovery_train_only_and_frozen | yes |
-| held_out_replication | yes |
+| held_out_replication | no |
 | consistent_orientation | yes |
 | above_permutation_control | yes |
 | above_mismatched_pair_control | yes |
