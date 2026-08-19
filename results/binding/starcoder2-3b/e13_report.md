@@ -1,0 +1,31 @@
+# E13 binding interchange — starcoder2-3b
+
+**Verdict: NOT SUPPORTED**
+
+Does a low-rank, magnitude-free interchange at the site where a variable binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token or an answer direction?
+
+## Identification
+
+The same binding flip demands opposite token movements in the two value assignments. The alignment is fitted on arm `ab` and the claim is read on arm `ba`, where an answer direction is refuted rather than confounded.
+
+## Gates
+
+- **PASS** `H0` (the four-program factorial verifies: invariants, alignment, execution truth) — 1.0000 of 400 bases agree with an independent interpreter and satisfy every invariant, including the arm crossing that makes the held-out test a falsification (threshold 0.999). Per check: semantics_agree 1.0000, arms_crossed 1.0000, mutation_distance_ok 1.0000, anchors_ordered 1.0000, values_distinct 1.0000, tokens_distinct 1.0000
+- **PASS** `H1` (the model returns the correctly bound variable (behavioural accuracy)) — overall 0.981 [0.973, 0.988] against 0.85; weakest cell ab_target 0.954 against 0.75
+- **PASS** `H2` (which definition is in scope is decodable at the use anchor) — best layer 7: binding decodable at 1.000 (selectivity 0.519) against a MEASURED surface baseline of 0.500; margin +0.500. Thresholds 0.8 and 0.1. The floor is pinned by construction here: the anchor token is identical across the counterfactual and the mutation is outside the baseline's window.
+- **PASS** `H3` (whole-state interchange flips the answer — the ceiling, per arm) — site use, layer 11 (both chosen on calibration): ab: +1.729 [+1.671, +1.788], flip rate 0.659; ba: +1.762 [+1.704, +1.820], flip rate 0.662 (thresholds: CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says nothing.
+- **FAIL** `H4` (low-rank interchange beats matched controls on the TRAINING arm) — ab @ use L7 r1: +0.764 [+0.726, +0.800] = 46% of the whole-state ceiling +1.670 (threshold 50%); controls cleared: True; edit moved 0.433 of ||h||
+- **FAIL** `H5` (the same subspace transfers to the HELD-OUT value assignment, where an answer direction cannot) — ba @ use L7 r1: das_binding installed 23.9% = 39% of the held-out ceiling (threshold 50%); margin +0.764 [+0.727, +0.800] = 45% of it; discriminator — answer_direction ab +0.919 [+0.813, +1.020], installed 32.5% (passes: True); ba/ab argmax ratio 0.209 against transport's 1.012 (bar 0.506) (fails: True)
+
+## Diagnostic
+
+interchange_contrasts.csv names the control that was not cleared. `random_norm` uncleared means any edit of that size does this; check edit_fraction_treatment against edit_fraction_control. Also read interchange_alignments.csv for convergence and orthogonality error.
+
+Re-run after fixing: `python scripts/106_binding_interchange.py --model starcoder2-3b --ranks 1,2,4,8,16`
+
+## Do not claim
+
+- that the model 'understands' scope — the claim is transport at one site
+- anything about real code, other languages, or other model families
+- that H4 alone supports the conclusion; without H5 it is E11 again
+- a null from H5 without checking that answer_direction failed on `ba` too

@@ -1,0 +1,41 @@
+{
+  "stage": "103_binding_extract",
+  "timestamp": "20260818_192831",
+  "git_sha": "83774b5",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/103_binding_extract.py",
+    "--model",
+    "starcoder2-3b",
+    "--layers",
+    "7,11,15"
+  ],
+  "args": {
+    "model": "starcoder2-3b",
+    "pairs": "data/synthetic/binding_pairs_starcoder2-3b.jsonl",
+    "layers": "[7, 11, 15]",
+    "anchors": "def_source,def_target,mutation,use,answer",
+    "dtype": "float16",
+    "n_bases": "400"
+  },
+  "wall_time_s": 141.0,
+  "extra": {
+    "files": [
+      "results/binding/starcoder2-3b/acts/ab_source_L7.npz",
+      "results/binding/starcoder2-3b/acts/ab_source_L11.npz",
+      "results/binding/starcoder2-3b/acts/ab_source_L15.npz",
+      "results/binding/starcoder2-3b/acts/ab_target_L7.npz",
+      "results/binding/starcoder2-3b/acts/ab_target_L11.npz",
+      "results/binding/starcoder2-3b/acts/ab_target_L15.npz",
+      "results/binding/starcoder2-3b/acts/ba_source_L7.npz",
+      "results/binding/starcoder2-3b/acts/ba_source_L11.npz",
+      "results/binding/starcoder2-3b/acts/ba_source_L15.npz",
+      "results/binding/starcoder2-3b/acts/ba_target_L7.npz",
+      "results/binding/starcoder2-3b/acts/ba_target_L11.npz",
+      "results/binding/starcoder2-3b/acts/ba_target_L15.npz"
+    ],
+    "gates_required": "H0,H1",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

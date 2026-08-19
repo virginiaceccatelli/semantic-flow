@@ -1,0 +1,78 @@
+{
+  "stage": "122_sinkflow_probe",
+  "timestamp": "20260818_204228",
+  "git_sha": "83774b5",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/122_sinkflow_probe.py",
+    "--model",
+    "deepseek-coder-1.3b"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "activations": "results/activations/deepseek-coder-1.3b/sinkflow_train",
+    "output": "results/sinkflow/deepseek-coder-1.3b",
+    "sites": "['sink_arg', 'last_token']",
+    "cv_folds": "5",
+    "max_iter": "2000",
+    "n_jobs": "1",
+    "seed": "42"
+  },
+  "wall_time_s": 371.3,
+  "extra": {
+    "S2": true,
+    "n_rows": 160,
+    "problems": [],
+    "provenance": {
+      "model": "deepseek-coder-1.3b",
+      "dataset": "data/synthetic/sinkflow_deepseek-coder-1.3b_train.jsonl",
+      "activations": "results/activations/deepseek-coder-1.3b/sinkflow_train",
+      "splits_seen": [
+        "train"
+      ],
+      "train_digest": "0b5fcb12614bab1e",
+      "n_train_programs": 336,
+      "layers": [
+        -1,
+        0,
+        3,
+        7,
+        11,
+        15,
+        19,
+        23
+      ],
+      "sites": [
+        "sink_arg",
+        "last_token"
+      ],
+      "seed": 42,
+      "arms": [
+        "local_surface",
+        "whole_program_lexical",
+        "embedding",
+        "hidden_state"
+      ],
+      "lexical": {
+        "sink_arg": {
+          "n_features": 2086,
+          "n_train_programs": 336,
+          "char_ngrams": true,
+          "fitted_on": "clean_train_only",
+          "text_digest": "853772c38bb29dee"
+        },
+        "last_token": {
+          "n_features": 2086,
+          "n_train_programs": 336,
+          "char_ngrams": true,
+          "fitted_on": "clean_train_only",
+          "text_digest": "853772c38bb29dee"
+        }
+      },
+      "git_sha": "83774b5"
+    },
+    "gates_required": "S0,S1",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

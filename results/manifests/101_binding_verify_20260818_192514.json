@@ -1,0 +1,28 @@
+{
+  "stage": "101_binding_verify",
+  "timestamp": "20260818_192514",
+  "git_sha": "83774b5",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/101_binding_verify.py",
+    "--model",
+    "starcoder2-3b"
+  ],
+  "args": {
+    "model": "starcoder2-3b",
+    "pairs": "data/synthetic/binding_pairs_starcoder2-3b.jsonl"
+  },
+  "wall_time_s": 0.1,
+  "extra": {
+    "H0": true,
+    "verified_fraction": 1.0,
+    "checks": {
+      "semantics_agree": 1.0,
+      "arms_crossed": 1.0,
+      "mutation_distance_ok": 1.0,
+      "anchors_ordered": 1.0,
+      "values_distinct": 1.0,
+      "tokens_distinct": 1.0
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "stage": "105_binding_ceiling",
+  "timestamp": "20260818_193907",
+  "git_sha": "83774b5",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/105_binding_ceiling.py",
+    "--model",
+    "starcoder2-3b",
+    "--layers",
+    "7,11,15"
+  ],
+  "args": {
+    "model": "starcoder2-3b",
+    "layers": "[7, 11, 15]",
+    "sites": "def_source,def_target,mutation,use",
+    "dtype": "float16",
+    "seed": "42"
+  },
+  "wall_time_s": 221.6,
+  "extra": {
+    "H3": true,
+    "site": "use",
+    "layer": 11,
+    "structural_zeros": {
+      "noop": {
+        "max_abs_delta_ld": 0.0625,
+        "passed": false,
+        "n": 19200
+      },
+      "pre_mutation_whole_state": {
+        "max_abs_delta_ld": 0.0625,
+        "passed": false,
+        "n": 4800
+      }
+    },
+    "gates_required": "H0,H1,H2",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

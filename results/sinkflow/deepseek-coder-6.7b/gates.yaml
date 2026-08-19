@@ -1,6 +1,6 @@
 experiment: E15
 model: deepseek-coder-6.7b
-updated: '2026-08-18 15:27:25'
+updated: '2026-08-19 11:46:46'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -17,7 +17,7 @@ gates:
       144}), each carrying exactly its declared transformation and preserving its
       security label'
     stage: 120_sinkflow_generate
-    timestamp: '2026-08-18 15:27:25'
+    timestamp: '2026-08-19 07:44:46'
     override: false
     override_reason: ''
     extra:
@@ -111,11 +111,11 @@ gates:
   S1:
     name: S1
     passed: true
-    value: 1200.0
-    detail: 1200 programs extracted across ['train', 'heldout', 'heldout_obf'] with
+    value: 1776.0
+    detail: 1776 programs extracted across ['train', 'heldout', 'heldout_obf'] with
       no skips and every source/sink anchor covered exactly by stored token positions
     stage: 121_sinkflow_extract
-    timestamp: '2026-08-17 08:27:23'
+    timestamp: '2026-08-19 08:10:56'
     override: false
     override_reason: ''
     extra:
@@ -131,8 +131,8 @@ gates:
           n_skipped: 0
           skipped: []
         heldout_obf:
-          n_expected: 720
-          n_saved: 720
+          n_expected: 1296
+          n_saved: 1296
           n_skipped: 0
           skipped: []
       misaligned: []
@@ -147,11 +147,11 @@ gates:
       best hidden accuracy 1.0000 at site sink_arg layer 15 with selectivity 0.4291;
       surface baseline and selectivity control both run
     stage: 122_sinkflow_probe
-    timestamp: '2026-08-17 08:57:47'
+    timestamp: '2026-08-19 08:28:57'
     override: false
     override_reason: ''
     extra:
-      n_rows: 176
+      n_rows: 192
       problems: []
       train_digest: 0b5fcb12614bab1e
       n_train_bases: 168
@@ -161,26 +161,142 @@ gates:
   S3:
     name: S3
     passed: true
-    value: 1056.0
-    detail: 1056 result rows over conditions ['clean_heldout', 'obf0', 'obf1', 'obf2',
-      'obf3', 'obf4'], both classes present in every reported cell, evaluated with
-      a probe frozen on 168 training bases disjoint from all 72 evaluated bases
+    value: 1920.0
+    detail: 1920 result rows over conditions ['clean_heldout', 'normalize', 'rename_only',
+      'opaque_only', 'encode_only', 'flatten_only', 'rename_cumulative', 'rename_opaque',
+      'rename_opaque_encode', 'rename_opaque_encode_flatten'], both classes present
+      in every reported cell, evaluated with a probe frozen on 168 training bases
+      disjoint from all 72 evaluated bases
     stage: 123_sinkflow_obfuscation
-    timestamp: '2026-08-17 11:13:28'
+    timestamp: '2026-08-19 08:38:17'
     override: false
     override_reason: ''
     extra:
       conditions:
       - clean_heldout
-      - obf0
-      - obf1
-      - obf2
-      - obf3
-      - obf4
-      n_rows: 1056
-      expected_rows: 1056
+      - normalize
+      - rename_only
+      - opaque_only
+      - encode_only
+      - flatten_only
+      - rename_cumulative
+      - rename_opaque
+      - rename_opaque_encode
+      - rename_opaque_encode_flatten
+      n_rows: 1920
+      expected_rows: 1920
       problems: []
       empty_cells: []
       gates_required: S0,S1,S2
+      gate_override: false
+      gate_override_reason: ''
+  J0:
+    name: J0
+    passed: true
+    value: 196.0
+    detail: 196 frozen candidate tokens (1 unsafe-oriented, 3 safe-oriented, 3 words
+      omitted by the tokenizer check), three lenses at each of 10 layers, forward
+      logits unchanged within 0.01 relative, 36 weak-fidelity warnings (non-blocking)
+    stage: 125_sinkflow_vocab_discover
+    timestamp: '2026-08-19 10:54:02'
+    override: false
+    override_reason: ''
+    extra:
+      layers:
+      - -1
+      - 0
+      - 3
+      - 7
+      - 11
+      - 15
+      - 19
+      - 23
+      - 27
+      - 31
+      sites:
+      - sink_arg
+      - last_token
+      concepts:
+        unsafe_ids:
+        - 24281
+        unsafe_strings:
+        - ' vulnerable'
+        safe_ids:
+        - 5723
+        - 18532
+        - 3910
+        safe_strings:
+        - ' safe'
+        - ' trusted'
+        - ' clean'
+        omitted:
+        - word: unsafe
+          pole: unsafe
+          reason: ''' unsafe'' -> 2 tokens; ''unsafe'' -> 2 tokens; '' unsafe\n''
+            -> 3 tokens'
+        - word: untrusted
+          pole: unsafe
+          reason: ''' untrusted'' -> 3 tokens; ''untrusted'' -> 3 tokens; '' untrusted\n''
+            -> 4 tokens'
+        - word: tainted
+          pole: unsafe
+          reason: ''' tainted'' -> 2 tokens; ''tainted'' -> 2 tokens; '' tainted\n''
+            -> 3 tokens'
+        usable: true
+      forward_invariance:
+        passed: true
+        tolerance: 0.01
+        max_rel_delta: 0.001490084670231729
+        detail: "max |delta logit| / |logit| = 1.49e-03 over 3 programs (max abs 5.22e-02;\
+          \ tolerance 1e-02 relative for float16). The rules are value-preserving\
+          \ algebraically, not bitwise, so this measures rounding \u2014 an algebra\
+          \ error is O(1)."
+      n_weak_fidelity: 36
+      violations: []
+      gates_required: S0,S1
+      gate_override: false
+      gate_override_reason: ''
+  J1:
+    name: J1
+    passed: true
+    value: 43200.0
+    detail: 43200 pair rows over 3 lenses x 10 layers x 2 sites x 10 conditions on
+      72 held-out bases, oriented unsafe-minus-safe, tokens frozen at 2026-08-19 10:52:50
+      on training digest 0b5fcb12614bab1e; permutation, mismatched-pair, random and
+      Gram-matched controls all ran
+    stage: 126_sinkflow_vocab_contrast
+    timestamp: '2026-08-19 11:46:46'
+    override: false
+    override_reason: ''
+    extra:
+      n_pairs: 43200
+      conditions:
+      - clean_heldout
+      - encode_only
+      - flatten_only
+      - normalize
+      - opaque_only
+      - rename_cumulative
+      - rename_only
+      - rename_opaque
+      - rename_opaque_encode
+      - rename_opaque_encode_flatten
+      layers:
+      - -1
+      - 0
+      - 3
+      - 7
+      - 11
+      - 15
+      - 19
+      - 23
+      - 27
+      - 31
+      sites:
+      - sink_arg
+      - last_token
+      train_digest: 0b5fcb12614bab1e
+      violations: []
+      gates_required: S0,S1,J0
       gate_override: false
       gate_override_reason: ''

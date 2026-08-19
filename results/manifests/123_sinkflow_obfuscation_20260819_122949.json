@@ -1,0 +1,41 @@
+{
+  "stage": "123_sinkflow_obfuscation",
+  "timestamp": "20260819_122949",
+  "git_sha": "83774b5",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/123_sinkflow_obfuscation.py",
+    "--model",
+    "starcoder2-3b"
+  ],
+  "args": {
+    "model": "starcoder2-3b",
+    "activations": "results/activations/starcoder2-3b",
+    "probes": "results/sinkflow/starcoder2-3b/probes",
+    "output": "results/sinkflow/starcoder2-3b",
+    "sites": "['sink_arg', 'last_token']",
+    "from_predictions": "False"
+  },
+  "wall_time_s": 229.4,
+  "extra": {
+    "S3": true,
+    "n_rows": 1920,
+    "expected_rows": 1920,
+    "conditions": [
+      "clean_heldout",
+      "normalize",
+      "rename_only",
+      "opaque_only",
+      "encode_only",
+      "flatten_only",
+      "rename_cumulative",
+      "rename_opaque",
+      "rename_opaque_encode",
+      "rename_opaque_encode_flatten"
+    ],
+    "problems": [],
+    "gates_required": "S0,S1,S2",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

@@ -1,0 +1,123 @@
+experiment: E13
+model: starcoder2-3b
+updated: '2026-08-18 20:05:35'
+note: A passing gate says the measurement works at that step. It is not itself a scientific
+  claim.
+gates:
+  H0:
+    name: H0
+    passed: true
+    value: 1.0
+    detail: '1.0000 of 400 bases agree with an independent interpreter and satisfy
+      every invariant, including the arm crossing that makes the held-out test a falsification
+      (threshold 0.999). Per check: semantics_agree 1.0000, arms_crossed 1.0000, mutation_distance_ok
+      1.0000, anchors_ordered 1.0000, values_distinct 1.0000, tokens_distinct 1.0000'
+    stage: 101_binding_verify
+    timestamp: '2026-08-18 19:25:14'
+    override: false
+    override_reason: ''
+    extra:
+      n_bases: 400
+      n_programs: 1600
+      splits:
+        calib: 120
+        test: 280
+      min_use_minus_mutation: 6
+      n_tokens_mean: 22.0
+      distinct_value_pairs: 30
+  H1:
+    name: H1
+    passed: true
+    value: 0.98125
+    detail: overall 0.981 [0.973, 0.988] against 0.85; weakest cell ab_target 0.954
+      against 0.75
+    stage: 102_binding_behaviour
+    timestamp: '2026-08-18 19:26:03'
+    override: false
+    override_reason: ''
+    extra:
+      override: false
+  H2:
+    name: H2
+    passed: true
+    value: 1.0
+    detail: 'best layer 7: binding decodable at 1.000 (selectivity 0.519) against
+      a MEASURED surface baseline of 0.500; margin +0.500. Thresholds 0.8 and 0.1.
+      The floor is pinned by construction here: the anchor token is identical across
+      the counterfactual and the mutation is outside the baseline''s window.'
+    stage: 104_binding_decode
+    timestamp: '2026-08-18 19:35:19'
+    override: false
+    override_reason: ''
+    extra:
+      best_layer: 7
+      surface: 0.5
+      anchor: use
+      override: false
+  H3:
+    name: H3
+    passed: true
+    value: 1.745535714259105
+    detail: 'site use, layer 11 (both chosen on calibration): ab: +1.729 [+1.671,
+      +1.788], flip rate 0.659; ba: +1.762 [+1.704, +1.820], flip rate 0.662 (thresholds:
+      CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says
+      nothing.'
+    stage: 105_binding_ceiling
+    timestamp: '2026-08-18 19:39:07'
+    override: false
+    override_reason: ''
+    extra:
+      site: use
+      layer: 11
+      structural_zeros:
+        noop:
+          max_abs_delta_ld: 0.0625
+          passed: false
+          n: 19200
+        pre_mutation_whole_state:
+          max_abs_delta_ld: 0.0625
+          passed: false
+          n: 4800
+      override: false
+  H4:
+    name: H4
+    passed: false
+    value: 0.4573515159677648
+    detail: 'ab @ use L7 r1: +0.764 [+0.726, +0.800] = 46% of the whole-state ceiling
+      +1.670 (threshold 50%); controls cleared: True; edit moved 0.433 of ||h||'
+    stage: 106_binding_interchange
+    timestamp: '2026-08-18 20:05:35'
+    override: false
+    override_reason: ''
+    extra:
+      site: use
+      layer: 7
+      rank: 1
+      override: false
+  H5:
+    name: H5
+    passed: false
+    value: 0.3861671469740634
+    detail: "ba @ use L7 r1: das_binding installed 23.9% = 39% of the held-out ceiling\
+      \ (threshold 50%); margin +0.764 [+0.727, +0.800] = 45% of it; discriminator\
+      \ \u2014 answer_direction ab +0.919 [+0.813, +1.020], installed 32.5% (passes:\
+      \ True); ba/ab argmax ratio 0.209 against transport's 1.012 (bar 0.506) (fails:\
+      \ True)"
+    stage: 106_binding_interchange
+    timestamp: '2026-08-18 20:05:35'
+    override: false
+    override_reason: ''
+    extra:
+      site: use
+      layer: 7
+      rank: 1
+      structural_zeros:
+        noop:
+          max_abs_delta_ld: 0.7187501192092896
+          passed: false
+          n: 1360
+        pre_mutation_whole_state:
+          max_abs_delta_ld: 0.40625
+          passed: false
+          n: 240
+      override: false

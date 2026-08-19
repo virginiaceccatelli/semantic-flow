@@ -7,8 +7,9 @@ all_gates_passed: true
 gates:
 - gate: S0
   meaning: 'the benchmark is exactly the designed one: counts, balance, splits, parsing,
-    anchor alignment, independently recovered labels, pair invariants, and an obfuscation
-    ladder that preserves every label'
+    anchor alignment, independently recovered labels, pair invariants, and atomic/cumulative
+    conditions that each carry exactly their declared transformation and preserve
+    every label'
   owner_stage: 120_sinkflow_generate
   recorded: true
   passed: true
@@ -16,21 +17,26 @@ gates:
   override: false
   detail: 'every validity gate passed: 480 clean programs, balanced across 3 families
     x 4 structures x 2 labels, split {''heldout'': 72, ''train'': 168} with no base
-    leakage, all labels independently recovered, all anchors token-exact, and 720
-    obfuscated variants preserving their security label'
+    leakage, all labels independently recovered, all anchors token-exact, and 1296
+    variants over 9 conditions ({''normalize'': 144, ''rename_only'': 144, ''opaque_only'':
+    144, ''encode_only'': 144, ''flatten_only'': 144, ''rename_cumulative'': 144,
+    ''rename_opaque'': 144, ''rename_opaque_encode'': 144, ''rename_opaque_encode_flatten'':
+    144}), each carrying exactly its declared transformation and preserving its security
+    label'
 - gate: S1
-  meaning: activations exist for every program, and the source and sink anchors land
-    on token boundaries in the encoding that was actually stored
+  meaning: activations exist for every program in every condition, and the source
+    and sink anchors land on token boundaries in the encoding that was actually stored
   owner_stage: 121_sinkflow_extract
   recorded: true
   passed: true
-  value: 1200.0
+  value: 1776.0
   override: false
-  detail: 1200 programs extracted across ['train', 'heldout', 'heldout_obf'] with
+  detail: 1776 programs extracted across ['train', 'heldout', 'heldout_obf'] with
     no skips and every source/sink anchor covered exactly by stored token positions
 - gate: S2
-  meaning: the readout is fitted on CLEAN TRAINING programs only, with its selectivity
-    control and its no-hidden-state surface baseline both run
+  meaning: "the readout is fitted on CLEAN TRAINING programs only, with all four arms\
+    \ \u2014 local surface, whole-program lexical, embedding, hidden state \u2014\
+    \ and the selectivity control actually run"
   owner_stage: 122_sinkflow_probe
   recorded: true
   passed: true
@@ -40,23 +46,46 @@ gates:
     best hidden accuracy 1.0000 at site sink_arg layer 15 with selectivity 0.4291;
     surface baseline and selectivity control both run
 - gate: S3
-  meaning: the frozen readout was evaluated on held-out clean text and on every obfuscation
-    level, with both classes present in every reported cell
+  meaning: the frozen readout was evaluated on held-out clean text and on every atomic
+    and cumulative condition, with both classes and the per-class and matched-pair
+    metrics present in every reported cell
   owner_stage: 123_sinkflow_obfuscation
   recorded: true
   passed: true
-  value: 1056.0
+  value: 1920.0
   override: false
-  detail: 1056 result rows over conditions ['clean_heldout', 'obf0', 'obf1', 'obf2',
-    'obf3', 'obf4'], both classes present in every reported cell, evaluated with a
-    probe frozen on 168 training bases disjoint from all 72 evaluated bases
+  detail: 1920 result rows over conditions ['clean_heldout', 'normalize', 'rename_only',
+    'opaque_only', 'encode_only', 'flatten_only', 'rename_cumulative', 'rename_opaque',
+    'rename_opaque_encode', 'rename_opaque_encode_flatten'], both classes present
+    in every reported cell, evaluated with a probe frozen on 168 training bases disjoint
+    from all 72 evaluated bases
+- gate: J0
+  meaning: 'the lens instrumentation is mechanically sound: the forward logits are
+    unchanged, every requested layer has all three lenses, the vocabulary rows and
+    model checkpoint match, and nothing is non-finite'
+  owner_stage: 125_sinkflow_vocab_discover
+  recorded: false
+  passed: false
+  value: null
+  override: false
+  detail: not recorded
+- gate: J1
+  meaning: 'the contrast is mechanically sound: one matched member of each polarity
+    per pair, one recorded orientation, tokens discovered on training pairs only and
+    frozen before held-out scoring, controls run, all cells present'
+  owner_stage: 126_sinkflow_vocab_contrast
+  recorded: false
+  passed: false
+  value: null
+  override: false
+  detail: not recorded
 clean_training_cv:
   best_layer: 15
   best_accuracy: 1.0
   best_selectivity: 0.4290552584670232
   surface_accuracy: 0.4912655971479501
 frozen_evaluation:
-  reported_layer: 15
+  reported_layer: 11
   by_condition:
   - condition: clean_heldout
     obf_level: -1
@@ -68,7 +97,7 @@ frozen_evaluation:
     pairs_same_label: 0.0
     frac_predicted_unsafe: 0.5
     n: 144
-  - condition: obf0
+  - condition: normalize
     obf_level: 0
     obf_name: normalize
     accuracy: 1.0
@@ -78,49 +107,434 @@ frozen_evaluation:
     pairs_same_label: 0.0
     frac_predicted_unsafe: 0.5
     n: 144
-  - condition: obf1
-    obf_level: 1
-    obf_name: rename
-    accuracy: 0.9652777777777778
-    ci_lo: 0.9375
-    ci_hi: 0.9930555555555556
-    surface_accuracy: 0.4791666666666667
-    pairs_same_label: 0.0694444444444444
-    frac_predicted_unsafe: 0.4652777777777778
+  - condition: rename_only
+    obf_level: 11
+    obf_name: rename_only
+    accuracy: 0.9513888888888888
+    ci_lo: 0.9166666666666666
+    ci_hi: 0.9791666666666666
+    surface_accuracy: 0.4861111111111111
+    pairs_same_label: 0.0972222222222222
+    frac_predicted_unsafe: 0.5208333333333334
     n: 144
-  - condition: obf2
-    obf_level: 2
-    obf_name: opaque
-    accuracy: 0.9791666666666666
-    ci_lo: 0.9513888888888888
+  - condition: opaque_only
+    obf_level: 12
+    obf_name: opaque_only
+    accuracy: 0.9861111111111112
+    ci_lo: 0.9652777777777778
     ci_hi: 1.0
-    surface_accuracy: 0.5
-    pairs_same_label: 0.0416666666666666
+    surface_accuracy: 0.4444444444444444
+    pairs_same_label: 0.0277777777777777
+    frac_predicted_unsafe: 0.5
+    n: 144
+  - condition: encode_only
+    obf_level: 13
+    obf_name: encode_only
+    accuracy: 0.9930555555555556
+    ci_lo: 0.9791666666666666
+    ci_hi: 1.0
+    surface_accuracy: 0.4444444444444444
+    pairs_same_label: 0.0138888888888888
     frac_predicted_unsafe: 0.5069444444444444
     n: 144
-  - condition: obf3
-    obf_level: 3
-    obf_name: encode
-    accuracy: 0.9583333333333334
-    ci_lo: 0.9236111111111112
-    ci_hi: 0.9861111111111112
-    surface_accuracy: 0.4791666666666667
-    pairs_same_label: 0.0833333333333333
-    frac_predicted_unsafe: 0.4861111111111111
+  - condition: flatten_only
+    obf_level: 14
+    obf_name: flatten_only
+    accuracy: 0.7152777777777778
+    ci_lo: 0.6527777777777778
+    ci_hi: 0.7777777777777778
+    surface_accuracy: 0.4444444444444444
+    pairs_same_label: 0.5138888888888888
+    frac_predicted_unsafe: 0.6875
     n: 144
-  - condition: obf4
-    obf_level: 4
-    obf_name: flatten
-    accuracy: 0.5625
-    ci_lo: 0.5
-    ci_hi: 0.625
+  - condition: rename_cumulative
+    obf_level: 21
+    obf_name: rename_cumulative
+    accuracy: 0.9097222222222222
+    ci_lo: 0.8611111111111112
+    ci_hi: 0.9583333333333334
     surface_accuracy: 0.5069444444444444
-    pairs_same_label: 0.6527777777777778
-    frac_predicted_unsafe: 0.7291666666666666
+    pairs_same_label: 0.125
+    frac_predicted_unsafe: 0.5208333333333334
     n: 144
+  - condition: rename_opaque
+    obf_level: 22
+    obf_name: rename_opaque
+    accuracy: 0.9027777777777778
+    ci_lo: 0.8611111111111112
+    ci_hi: 0.9444444444444444
+    surface_accuracy: 0.4722222222222222
+    pairs_same_label: 0.1944444444444444
+    frac_predicted_unsafe: 0.5694444444444444
+    n: 144
+  - condition: rename_opaque_encode
+    obf_level: 23
+    obf_name: rename_opaque_encode
+    accuracy: 0.8680555555555556
+    ci_lo: 0.8055555555555556
+    ci_hi: 0.9236111111111112
+    surface_accuracy: 0.5138888888888888
+    pairs_same_label: 0.2083333333333333
+    frac_predicted_unsafe: 0.6041666666666666
+    n: 144
+  - condition: rename_opaque_encode_flatten
+    obf_level: 24
+    obf_name: rename_opaque_encode_flatten
+    accuracy: 0.625
+    ci_lo: 0.5831597222222222
+    ci_hi: 0.6736111111111112
+    surface_accuracy: 0.5138888888888888
+    pairs_same_label: 0.75
+    frac_predicted_unsafe: 0.875
+    n: 144
+  atomic:
+  - condition: clean_heldout
+    accuracy: 1.0
+    ci_lo: 1.0
+    ci_hi: 1.0
+    delta_clean: 0.0
+    acc_unsafe: 1.0
+    acc_safe: 1.0
+    false_negative_rate: 0.0
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.5
+    pairs_same_label: 0.0
+    n: 144
+  - condition: normalize
+    accuracy: 1.0
+    ci_lo: 1.0
+    ci_hi: 1.0
+    delta_clean: 0.0
+    acc_unsafe: 1.0
+    acc_safe: 1.0
+    false_negative_rate: 0.0
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.5
+    pairs_same_label: 0.0
+    n: 144
+  - condition: rename_only
+    accuracy: 0.9513888888888888
+    ci_lo: 0.9166666666666666
+    ci_hi: 0.9791666666666666
+    delta_clean: -0.0486111111111111
+    acc_unsafe: 0.9722222222222222
+    acc_safe: 0.9305555555555556
+    false_negative_rate: 0.0277777777777777
+    false_positive_rate: 0.0694444444444444
+    frac_predicted_unsafe: 0.5208333333333334
+    pairs_same_label: 0.0972222222222222
+    n: 144
+  - condition: opaque_only
+    accuracy: 0.9861111111111112
+    ci_lo: 0.9652777777777778
+    ci_hi: 1.0
+    delta_clean: -0.0138888888888888
+    acc_unsafe: 0.9861111111111112
+    acc_safe: 0.9861111111111112
+    false_negative_rate: 0.0138888888888888
+    false_positive_rate: 0.0138888888888888
+    frac_predicted_unsafe: 0.5
+    pairs_same_label: 0.0277777777777777
+    n: 144
+  - condition: encode_only
+    accuracy: 0.9930555555555556
+    ci_lo: 0.9791666666666666
+    ci_hi: 1.0
+    delta_clean: -0.0069444444444444
+    acc_unsafe: 1.0
+    acc_safe: 0.9861111111111112
+    false_negative_rate: 0.0
+    false_positive_rate: 0.0138888888888888
+    frac_predicted_unsafe: 0.5069444444444444
+    pairs_same_label: 0.0138888888888888
+    n: 144
+  - condition: flatten_only
+    accuracy: 0.7152777777777778
+    ci_lo: 0.6527777777777778
+    ci_hi: 0.7777777777777778
+    delta_clean: -0.2847222222222222
+    acc_unsafe: 0.9027777777777778
+    acc_safe: 0.5277777777777778
+    false_negative_rate: 0.0972222222222222
+    false_positive_rate: 0.4722222222222222
+    frac_predicted_unsafe: 0.6875
+    pairs_same_label: 0.5138888888888888
+    n: 144
+  cumulative:
+  - condition: clean_heldout
+    accuracy: 1.0
+    ci_lo: 1.0
+    ci_hi: 1.0
+    delta_clean: 0.0
+    delta_previous: .nan
+    acc_unsafe: 1.0
+    acc_safe: 1.0
+    false_negative_rate: 0.0
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.5
+    pairs_same_label: 0.0
+    n: 144
+  - condition: normalize
+    accuracy: 1.0
+    ci_lo: 1.0
+    ci_hi: 1.0
+    delta_clean: 0.0
+    delta_previous: .nan
+    acc_unsafe: 1.0
+    acc_safe: 1.0
+    false_negative_rate: 0.0
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.5
+    pairs_same_label: 0.0
+    n: 144
+  - condition: rename_cumulative
+    accuracy: 0.9097222222222222
+    ci_lo: 0.8611111111111112
+    ci_hi: 0.9583333333333334
+    delta_clean: -0.0902777777777777
+    delta_previous: -0.0902777777777777
+    acc_unsafe: 0.9305555555555556
+    acc_safe: 0.8888888888888888
+    false_negative_rate: 0.0694444444444444
+    false_positive_rate: 0.1111111111111111
+    frac_predicted_unsafe: 0.5208333333333334
+    pairs_same_label: 0.125
+    n: 144
+  - condition: rename_opaque
+    accuracy: 0.9027777777777778
+    ci_lo: 0.8611111111111112
+    ci_hi: 0.9444444444444444
+    delta_clean: -0.0972222222222222
+    delta_previous: -0.0069444444444444
+    acc_unsafe: 0.9722222222222222
+    acc_safe: 0.8333333333333334
+    false_negative_rate: 0.0277777777777777
+    false_positive_rate: 0.1666666666666666
+    frac_predicted_unsafe: 0.5694444444444444
+    pairs_same_label: 0.1944444444444444
+    n: 144
+  - condition: rename_opaque_encode
+    accuracy: 0.8680555555555556
+    ci_lo: 0.8055555555555556
+    ci_hi: 0.9236111111111112
+    delta_clean: -0.1319444444444444
+    delta_previous: -0.0347222222222222
+    acc_unsafe: 0.9722222222222222
+    acc_safe: 0.7638888888888888
+    false_negative_rate: 0.0277777777777777
+    false_positive_rate: 0.2361111111111111
+    frac_predicted_unsafe: 0.6041666666666666
+    pairs_same_label: 0.2083333333333333
+    n: 144
+  - condition: rename_opaque_encode_flatten
+    accuracy: 0.625
+    ci_lo: 0.5831597222222222
+    ci_hi: 0.6736111111111112
+    delta_clean: -0.375
+    delta_previous: -0.2430555555555555
+    acc_unsafe: 1.0
+    acc_safe: 0.25
+    false_negative_rate: 0.0
+    false_positive_rate: 0.75
+    frac_predicted_unsafe: 0.875
+    pairs_same_label: 0.75
+    n: 144
+  atomic_vs_cumulative:
+  - transformation: rename
+    atomic: rename_only
+    atomic_accuracy: 0.9513888888888888
+    cumulative: rename_cumulative
+    cumulative_accuracy: 0.9097222222222222
+    interaction: -0.04166666666666663
+    marginal_in_ladder: -0.0902777777777777
+    atomic_fnr: 0.0277777777777777
+    cumulative_fnr: 0.0694444444444444
+    note: 'draw-noise floor: identical transformations, independent draws'
+  - transformation: opaque
+    atomic: opaque_only
+    atomic_accuracy: 0.9861111111111112
+    cumulative: rename_opaque
+    cumulative_accuracy: 0.9027777777777778
+    interaction: -0.08333333333333337
+    marginal_in_ladder: -0.0069444444444444
+    atomic_fnr: 0.0138888888888888
+    cumulative_fnr: 0.0277777777777777
+    note: ''
+  - transformation: encode
+    atomic: encode_only
+    atomic_accuracy: 0.9930555555555556
+    cumulative: rename_opaque_encode
+    cumulative_accuracy: 0.8680555555555556
+    interaction: -0.125
+    marginal_in_ladder: -0.0347222222222222
+    atomic_fnr: 0.0
+    cumulative_fnr: 0.0277777777777777
+    note: ''
+  - transformation: flatten
+    atomic: flatten_only
+    atomic_accuracy: 0.7152777777777778
+    cumulative: rename_opaque_encode_flatten
+    cumulative_accuracy: 0.625
+    interaction: -0.09027777777777779
+    marginal_in_ladder: -0.2430555555555555
+    atomic_fnr: 0.0972222222222222
+    cumulative_fnr: 0.0
+    note: ''
+  per_class_and_pairs:
+  - condition: clean_heldout
+    condition_kind: clean
+    accuracy: 1.0
+    acc_unsafe: 1.0
+    acc_safe: 1.0
+    false_negative_rate: 0.0
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.5
+    pairs_same_label: 0.0
+    n: 144
+  - condition: normalize
+    condition_kind: baseline
+    accuracy: 1.0
+    acc_unsafe: 1.0
+    acc_safe: 1.0
+    false_negative_rate: 0.0
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.5
+    pairs_same_label: 0.0
+    n: 144
+  - condition: rename_only
+    condition_kind: atomic
+    accuracy: 0.9513888888888888
+    acc_unsafe: 0.9722222222222222
+    acc_safe: 0.9305555555555556
+    false_negative_rate: 0.0277777777777777
+    false_positive_rate: 0.0694444444444444
+    frac_predicted_unsafe: 0.5208333333333334
+    pairs_same_label: 0.0972222222222222
+    n: 144
+  - condition: opaque_only
+    condition_kind: atomic
+    accuracy: 0.9861111111111112
+    acc_unsafe: 0.9861111111111112
+    acc_safe: 0.9861111111111112
+    false_negative_rate: 0.0138888888888888
+    false_positive_rate: 0.0138888888888888
+    frac_predicted_unsafe: 0.5
+    pairs_same_label: 0.0277777777777777
+    n: 144
+  - condition: encode_only
+    condition_kind: atomic
+    accuracy: 0.9930555555555556
+    acc_unsafe: 1.0
+    acc_safe: 0.9861111111111112
+    false_negative_rate: 0.0
+    false_positive_rate: 0.0138888888888888
+    frac_predicted_unsafe: 0.5069444444444444
+    pairs_same_label: 0.0138888888888888
+    n: 144
+  - condition: flatten_only
+    condition_kind: atomic
+    accuracy: 0.7152777777777778
+    acc_unsafe: 0.9027777777777778
+    acc_safe: 0.5277777777777778
+    false_negative_rate: 0.0972222222222222
+    false_positive_rate: 0.4722222222222222
+    frac_predicted_unsafe: 0.6875
+    pairs_same_label: 0.5138888888888888
+    n: 144
+  - condition: rename_cumulative
+    condition_kind: cumulative
+    accuracy: 0.9097222222222222
+    acc_unsafe: 0.9305555555555556
+    acc_safe: 0.8888888888888888
+    false_negative_rate: 0.0694444444444444
+    false_positive_rate: 0.1111111111111111
+    frac_predicted_unsafe: 0.5208333333333334
+    pairs_same_label: 0.125
+    n: 144
+  - condition: rename_opaque
+    condition_kind: cumulative
+    accuracy: 0.9027777777777778
+    acc_unsafe: 0.9722222222222222
+    acc_safe: 0.8333333333333334
+    false_negative_rate: 0.0277777777777777
+    false_positive_rate: 0.1666666666666666
+    frac_predicted_unsafe: 0.5694444444444444
+    pairs_same_label: 0.1944444444444444
+    n: 144
+  - condition: rename_opaque_encode
+    condition_kind: cumulative
+    accuracy: 0.8680555555555556
+    acc_unsafe: 0.9722222222222222
+    acc_safe: 0.7638888888888888
+    false_negative_rate: 0.0277777777777777
+    false_positive_rate: 0.2361111111111111
+    frac_predicted_unsafe: 0.6041666666666666
+    pairs_same_label: 0.2083333333333333
+    n: 144
+  - condition: rename_opaque_encode_flatten
+    condition_kind: cumulative
+    accuracy: 0.625
+    acc_unsafe: 1.0
+    acc_safe: 0.25
+    false_negative_rate: 0.0
+    false_positive_rate: 0.75
+    frac_predicted_unsafe: 0.875
+    pairs_same_label: 0.75
+    n: 144
+  baseline_arms:
+  - condition: clean_heldout
+    hidden_state: 1.0
+    embedding: 0.5069444444444444
+    local_surface: 0.4444444444444444
+    whole_program_lexical: 0.4652777777777778
+  - condition: normalize
+    hidden_state: 1.0
+    embedding: 0.5069444444444444
+    local_surface: 0.4444444444444444
+    whole_program_lexical: 0.5
+  - condition: rename_only
+    hidden_state: 0.9513888888888888
+    embedding: 0.5486111111111112
+    local_surface: 0.4861111111111111
+    whole_program_lexical: 0.5347222222222222
+  - condition: opaque_only
+    hidden_state: 0.9861111111111112
+    embedding: 0.5069444444444444
+    local_surface: 0.4444444444444444
+    whole_program_lexical: 0.5069444444444444
+  - condition: encode_only
+    hidden_state: 0.9930555555555556
+    embedding: 0.5069444444444444
+    local_surface: 0.4444444444444444
+    whole_program_lexical: 0.4930555555555556
+  - condition: flatten_only
+    hidden_state: 0.7152777777777778
+    embedding: 0.5069444444444444
+    local_surface: 0.4444444444444444
+    whole_program_lexical: 0.4722222222222222
+  - condition: rename_cumulative
+    hidden_state: 0.9097222222222222
+    embedding: 0.5138888888888888
+    local_surface: 0.5069444444444444
+    whole_program_lexical: 0.4861111111111111
+  - condition: rename_opaque
+    hidden_state: 0.9027777777777778
+    embedding: 0.5694444444444444
+    local_surface: 0.4722222222222222
+    whole_program_lexical: 0.5208333333333334
+  - condition: rename_opaque_encode
+    hidden_state: 0.8680555555555556
+    embedding: 0.5069444444444444
+    local_surface: 0.5138888888888888
+    whole_program_lexical: 0.5
+  - condition: rename_opaque_encode_flatten
+    hidden_state: 0.625
+    embedding: 0.4513888888888889
+    local_surface: 0.5138888888888888
+    whole_program_lexical: 0.4930555555555556
 n_rows:
-  clean: 176
-  evaluation: 1056
+  clean: 192
+  evaluation: 1920
 first_blocking_gate: null
 figures:
 - results/figures/sinkflow_levels_deepseek-coder-6.7b.png

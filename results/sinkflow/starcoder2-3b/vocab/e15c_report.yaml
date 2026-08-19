@@ -1,0 +1,87 @@
+experiment: E15-C
+model: starcoder2-3b
+verdict: stable_non_security_vocabulary
+verdict_text: "STABLE NON-SECURITY VOCABULARY \u2014 the training-discovered directions\
+  \ replicate held out and beat the random-token control, but the security lexicon's\
+  \ own contrast does not carry it. Output-aligned flow information WITHOUT explicit\
+  \ verbalisation; do not call this 'the model represents unsafe'."
+primary_lens: rlens
+reported:
+  lens: rlens
+  site: sink_arg
+  layer: 15
+  condition: clean_heldout
+checks:
+  discovery_train_only_and_frozen: true
+  held_out_replication: false
+  consistent_orientation: true
+  above_permutation_control: true
+  above_mismatched_pair_control: true
+  stable_across_identifier_roles: true
+thresholds:
+  sign_consistency: 0.7
+  permutation_p: 0.05
+  role_stratum_tolerance: 0.2
+gates:
+  J0:
+    passed: true
+    detail: 196 frozen candidate tokens (1 unsafe-oriented, 3 safe-oriented, 3 words
+      omitted by the tokenizer check), three lenses at each of 10 layers, forward
+      logits unchanged within 0.01 relative, 41 weak-fidelity warnings (non-blocking)
+  J1:
+    passed: true
+    detail: 43200 pair rows over 3 lenses x 10 layers x 2 sites x 10 conditions on
+      72 held-out bases, oriented unsafe-minus-safe, tokens frozen at 2026-08-19 13:44:01
+      on training digest 0b5fcb12614bab1e; permutation, mismatched-pair, random and
+      Gram-matched controls all ran
+headline:
+  model: starcoder2-3b
+  arm: main
+  lens: rlens
+  layer: 15
+  site: sink_arg
+  condition: clean_heldout
+  condition_kind: clean
+  condition_order: -1
+  relative_depth: 0.5172
+  n_pairs: 72
+  mean_delta_contrast_z: 0.0939810522581407
+  mean_delta_contrast_prob: 1.581681973273433e-05
+  sign_consistency_z: 0.6944444444444444
+  sign_consistency_prob: 0.5694444444444444
+  mean_contrast_prob_unsafe: -0.0105615003804693
+  mean_contrast_prob_safe: -0.0105773172002021
+  permutation_effect_size: 2.682776308552968
+  permutation_p: 0.008
+  permutation_null_sd: 0.0357281083240357
+  anchor_token_same_frac: 0.75
+  topk_enrichment_positive: 0.875
+  topk_enrichment_negative: 0.75
+  topk_enrichment_random: 0.03125
+  concept_rank_best: 52.0
+mismatched_control:
+  model: starcoder2-3b
+  arm: mismatched_pairs
+  lens: rlens
+  layer: 15
+  site: sink_arg
+  condition: clean_heldout
+  condition_kind: clean
+  condition_order: -1
+  relative_depth: 0.5172
+  n_pairs: 72
+  mean_delta_contrast_z: 0.0897284828162366
+  mean_delta_contrast_prob: 1.5827559545290974e-05
+  sign_consistency_z: 0.6388888888888888
+  sign_consistency_prob: 0.5555555555555556
+  mean_contrast_prob_unsafe: -0.0105615003804693
+  mean_contrast_prob_safe: -0.0105773279400146
+  permutation_effect_size: 2.7585040906298737
+  permutation_p: 0.002
+  permutation_null_sd: 0.0325653112405503
+  anchor_token_same_frac: 0.7638888888888888
+  topk_enrichment_positive: 0.625
+  topk_enrichment_negative: 0.75
+  topk_enrichment_random: 0.0
+  concept_rank_best: 53.0
+n_weak_fidelity_rows: 41

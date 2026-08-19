@@ -1,0 +1,125 @@
+{
+  "stage": "120_sinkflow_generate",
+  "timestamp": "20260819_115044",
+  "git_sha": "83774b5",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/120_sinkflow_generate.py",
+    "--model",
+    "starcoder2-3b"
+  ],
+  "args": {
+    "model": "starcoder2-3b",
+    "families": "['command_exec', 'sql_exec', 'dynamic_exec']",
+    "structures": "['direct', 'assign_chain', 'branch_merge', 'helper']",
+    "n_seeds": "20",
+    "n_train_seeds": "14",
+    "conditions": "['normalize', 'rename_only', 'opaque_only', 'encode_only', 'flatten_only', 'rename_cumulative', 'rename_opaque', 'rename_opaque_encode', 'rename_opaque_encode_flatten']",
+    "seed": "42",
+    "out_dir": "data/synthetic"
+  },
+  "wall_time_s": 6.6,
+  "extra": {
+    "S0": true,
+    "outputs": {
+      "train": "data/synthetic/sinkflow_starcoder2-3b_train.jsonl",
+      "heldout": "data/synthetic/sinkflow_starcoder2-3b_heldout.jsonl",
+      "heldout_obf": "data/synthetic/sinkflow_starcoder2-3b_heldout_obf.jsonl"
+    },
+    "n_bases": 240,
+    "n_clean_programs": 480,
+    "n_obf_variants": 1296,
+    "families": [
+      "command_exec",
+      "dynamic_exec",
+      "sql_exec"
+    ],
+    "structures": [
+      "assign_chain",
+      "branch_merge",
+      "direct",
+      "helper"
+    ],
+    "splits": {
+      "heldout": 72,
+      "train": 168
+    },
+    "labels": {
+      "0": 240,
+      "1": 240
+    },
+    "cells": {
+      "command_exec/direct/unsafe": 20,
+      "command_exec/direct/safe": 20,
+      "command_exec/assign_chain/unsafe": 20,
+      "command_exec/assign_chain/safe": 20,
+      "command_exec/branch_merge/unsafe": 20,
+      "command_exec/branch_merge/safe": 20,
+      "command_exec/helper/unsafe": 20,
+      "command_exec/helper/safe": 20,
+      "sql_exec/direct/unsafe": 20,
+      "sql_exec/direct/safe": 20,
+      "sql_exec/assign_chain/unsafe": 20,
+      "sql_exec/assign_chain/safe": 20,
+      "sql_exec/branch_merge/unsafe": 20,
+      "sql_exec/branch_merge/safe": 20,
+      "sql_exec/helper/unsafe": 20,
+      "sql_exec/helper/safe": 20,
+      "dynamic_exec/direct/unsafe": 20,
+      "dynamic_exec/direct/safe": 20,
+      "dynamic_exec/assign_chain/unsafe": 20,
+      "dynamic_exec/assign_chain/safe": 20,
+      "dynamic_exec/branch_merge/unsafe": 20,
+      "dynamic_exec/branch_merge/safe": 20,
+      "dynamic_exec/helper/unsafe": 20,
+      "dynamic_exec/helper/safe": 20
+    },
+    "conditions": [
+      "normalize",
+      "rename_only",
+      "opaque_only",
+      "encode_only",
+      "flatten_only",
+      "rename_cumulative",
+      "rename_opaque",
+      "rename_opaque_encode",
+      "rename_opaque_encode_flatten"
+    ],
+    "condition_counts": {
+      "normalize": 144,
+      "rename_only": 144,
+      "opaque_only": 144,
+      "encode_only": 144,
+      "flatten_only": 144,
+      "rename_cumulative": 144,
+      "rename_opaque": 144,
+      "rename_opaque_encode": 144,
+      "rename_opaque_encode_flatten": 144
+    },
+    "condition_kinds": {
+      "normalize": "baseline",
+      "rename_only": "atomic",
+      "opaque_only": "atomic",
+      "encode_only": "atomic",
+      "flatten_only": "atomic",
+      "rename_cumulative": "cumulative",
+      "rename_opaque": "cumulative",
+      "rename_opaque_encode": "cumulative",
+      "rename_opaque_encode_flatten": "cumulative"
+    },
+    "n_redraws": 44,
+    "obf_levels": [
+      0,
+      11,
+      12,
+      13,
+      14,
+      21,
+      22,
+      23,
+      24
+    ],
+    "train_digest": "0b5fcb12614bab1e",
+    "heldout_digest": "58fb6d5d5193ec23"
+  }
+}
