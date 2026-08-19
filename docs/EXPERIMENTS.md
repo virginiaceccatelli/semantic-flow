@@ -649,25 +649,31 @@ happening".
 
 Ordered by cost, and each step says what result would justify the next.
 
-**Tier 1 — re-analysis of artifacts already on disk. CPU, hours.**
+**Tier 1 — re-analysis of artifacts already on disk. CPU.**
 
-1. **Report the depth sweep as a first-class result, not a headline cell.** The
-   table above is already computed; it just is not plotted. A by-layer figure with
-   the permutation band behind it turns "we found nothing" into "we found a
-   systematic, family-dependent, depth-organised effect with the wrong sign",
-   which is a much harder result to dismiss.
-2. **Calibrate against the random lens rather than against zero.** In 1.3B the
-   `random` and `gram_random` lens controls also reach p = 0.000 — meaning the
-   permutation test is detecting *that the two states differ at all*, which any
-   direction picks up. Re-express every effect as a z-score against the
-   random-lens distribution. Some currently "significant" cells will stop being
-   significant, and that is the point.
-3. **Test the obvious confound for the inversion.** A systematic difference in the
-   *shape* of the candidate distribution (entropy, or the norm of the score
-   vector) between members would shift a z-scored concept contrast negative
-   regardless of semantics. Stage 126 does not currently save those; adding two
-   columns and re-running it is minutes of CPU, and it either explains the
-   inversion or rules the explanation out.
+1. **Depth sweep as a first-class result** — ✅ *built and run* (stage 127 now
+   writes `results/figures/e15c_depth_{model}.png`).
+2. **Calibrate against the random lens rather than against zero** — ✅ *built and
+   run* (stage 127 writes `vocab/vocab_specificity.csv`). **This immediately
+   qualified the null**, and it is the most important thing Tier 1 produced:
+
+   | primary lens at the reported cell | sign | displacement | best control | **specificity** |
+   |---|---:|---:|---:|---:|
+   | deepseek-coder-1.3b L11 | 0.153 | 0.347 | 0.167 | **2.08** |
+   | deepseek-coder-6.7b L15 | 0.403 | 0.097 | 0.111 | **0.87** |
+   | starcoder2-3b L15 | 0.694 | 0.194 | 0.139 | **1.40** |
+
+   The random and Gram-matched lenses **follow the same depth trajectory** as the
+   real ones (see the figure). So the permutation null was detecting *that the two
+   states differ at all* — which any direction picks up — and the real lenses beat
+   a random direction by a factor of only 0.87–2.08. **On 6.7B the effect is not
+   specific to the lens at all.** Any future positive result in this track has to
+   clear this bar, not the permutation bar.
+3. **Test the confound for the inversion** — ✅ *built*, needs one CPU re-run
+   against the activation stores. Stage 126 now records each member's candidate
+   distribution entropy and score norm, and stage 127 correlates them with the
+   contrast (report table 12). If `corr_contrast_entropy` is large, the sign is a
+   distribution artifact rather than a concept.
 
 **Tier 2 — one GPU stage, per model. This is where a real finding is most likely.**
 

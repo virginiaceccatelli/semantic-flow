@@ -105,6 +105,7 @@ import pandas as pd
 from src.data.sink_flow import base_ids_digest
 from src.experiments.sink_flow import (
     CONDITION_CLEAN_HELDOUT,
+    PRIMARY_SITE,
     SITES,
     build_records,
     condition_kind,
@@ -731,6 +732,16 @@ def evaluate_pairs(
                     scores = lens_scores(lens, np.stack([pair.unsafe[layer_index],
                                                          pair.safe[layer_index]]))
                     probs = softmax(scores)
+                    # Distribution-shape columns (E15-C tier-1 confound check).
+                    # A systematic difference in the SHAPE of a member's candidate
+                    # distribution — its entropy, or the norm of its score vector —
+                    # shifts a z-scored concept contrast in a fixed direction
+                    # regardless of semantics. If `delta_entropy` tracks
+                    # `delta_contrast_z` across pairs, the contrast is a
+                    # distribution artifact and not a concept.
+                    entropy = -np.sum(probs * np.log(np.clip(probs, 1e-12, None)),
+                                      axis=1)
+                    norms = np.linalg.norm(scores, axis=1)
                     deltas_z.append(result.delta_z)
                     deltas_score.append(result.delta_score)
                     deltas_prob.append(result.delta_prob)
@@ -774,6 +785,12 @@ def evaluate_pairs(
                         "contrast_z_unsafe": result.contrast_z_unsafe,
                         "contrast_z_safe": result.contrast_z_safe,
                         "delta_contrast_z": result.delta_contrast_z,
+                        "entropy_unsafe": float(entropy[0]),
+                        "entropy_safe": float(entropy[1]),
+                        "delta_entropy": float(entropy[0] - entropy[1]),
+                        "score_norm_unsafe": float(norms[0]),
+                        "score_norm_safe": float(norms[1]),
+                        "delta_score_norm": float(norms[0] - norms[1]),
                         "top_positive": "|".join(
                             candidates.token_strings[i] for i in top[::-1][:top_tokens]),
                         "top_negative": "|".join(
@@ -975,11 +992,119 @@ def summarize_cells(
             "permutation_p": permutation["p_value"],
             "permutation_null_sd": permutation["null_sd"],
             "anchor_token_same_frac": float(np.nanmean(chunk["anchor_token_same"])),
+            # tier-1 confound: does the contrast track the distribution's SHAPE
+            # rather than its content? A large |r| here means it might.
+            "corr_contrast_entropy": _safe_corr(
+                chunk.get("delta_contrast_z"), chunk.get("delta_entropy")),
+            "corr_contrast_norm": _safe_corr(
+                chunk.get("delta_contrast_z"), chunk.get("delta_score_norm")),
+            "mean_delta_entropy": (float(np.nanmean(chunk["delta_entropy"]))
+                                   if "delta_entropy" in chunk else float("nan")),
             **enrichment,
         })
     frame = pd.DataFrame(rows)
     return frame.sort_values(["lens", "site", "layer", "condition_order"]).reset_index(
         drop=True)
+
+
+def _safe_corr(a, b) -> float:
+    """Pearson r over finite pairs, or NaN — never raises on a missing column."""
+    if a is None or b is None:
+        return float("nan")
+    x = np.asarray(a, dtype=float)
+    y = np.asarray(b, dtype=float)
+    ok = np.isfinite(x) & np.isfinite(y)
+    if ok.sum() < 3 or np.std(x[ok]) == 0 or np.std(y[ok]) == 0:
+        return float("nan")
+    return float(np.corrcoef(x[ok], y[ok])[0, 1])
+
+
+def calibrate_against_lens_controls(summary: pd.DataFrame) -> pd.DataFrame:
+    """Effect size measured against the RANDOM lens, not against zero.
+
+    The permutation null asks whether the safe→unsafe *orientation* carries the
+    effect. It does not ask whether the effect is specific to **this** direction
+    in the residual stream — and when the two members' states differ at all, a
+    random direction picks that up too. On deepseek-coder-1.3b the `random` and
+    `gram_random` control arms reach p = 0.000 in exactly the cells the real lens
+    does, which means significance against the permutation null is necessary and
+    nowhere near sufficient.
+
+    So: for every (lens, layer, site, condition), express the real arm's
+    displacement from chance as a ratio over the largest displacement any control
+    lens achieves in the same cell. `specificity <= 1` means the real lens is not
+    doing anything a norm- or Gram-matched random direction does not.
+    """
+    if summary.empty:
+        return pd.DataFrame()
+    keys = ["layer", "site", "condition"]
+    main = summary[summary["arm"] == "main"].copy()
+    controls = summary[summary["arm"].isin(["random_lens", "gram_random_lens"])]
+    if controls.empty:
+        return pd.DataFrame()
+    control_disp = (controls.assign(_d=(controls["sign_consistency_z"] - 0.5).abs())
+                    .groupby(keys)["_d"].max().rename("control_displacement"))
+    main["displacement"] = (main["sign_consistency_z"] - 0.5).abs()
+    out = main.merge(control_disp, on=keys, how="left")
+    out["specificity"] = out["displacement"] / out["control_displacement"].replace(0, np.nan)
+    out["beats_random_lens"] = out["specificity"] > 1.0
+    return out[["lens", "layer", "relative_depth", "site", "condition",
+                "sign_consistency_z", "permutation_p", "displacement",
+                "control_displacement", "specificity", "beats_random_lens"]] \
+        .sort_values(["lens", "site", "layer", "condition"]).reset_index(drop=True)
+
+
+def plot_depth_sweep(summary: pd.DataFrame, output_path, site: str = PRIMARY_SITE,
+                     condition: str = CONDITION_CLEAN_HELDOUT, model: str = ""):
+    """Sign consistency against relative depth, one line per lens.
+
+    The headline reads one layer; this is the figure that shows the contrast is
+    depth-ORGANISED rather than absent — which is a different and much harder
+    result to dismiss than a single non-significant cell.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    from pathlib import Path as _Path
+
+    from src.analysis.visualization import PALETTE
+
+    chunk = summary[(summary["arm"] == "main") & (summary["site"] == site)
+                    & (summary["condition"] == condition)]
+    figure, axis = plt.subplots(figsize=(8, 5))
+    for index, lens in enumerate(sorted(chunk["lens"].unique())):
+        line = chunk[chunk["lens"] == lens].sort_values("layer")
+        x = line["relative_depth"].fillna(-0.05)
+        axis.plot(x, line["sign_consistency_z"], marker="o",
+                  color=PALETTE[index % len(PALETTE)], linewidth=1.6, label=lens)
+        sig = line[line["permutation_p"] < 0.05]
+        axis.scatter(sig["relative_depth"].fillna(-0.05), sig["sign_consistency_z"],
+                     s=90, facecolors="none",
+                     edgecolors=PALETTE[index % len(PALETTE)], linewidths=1.8)
+    control = summary[(summary["arm"] == "random_lens") & (summary["site"] == site)
+                      & (summary["condition"] == condition)].sort_values("layer")
+    if not control.empty:
+        axis.plot(control["relative_depth"].fillna(-0.05),
+                  control["sign_consistency_z"], linestyle=":", color="gray",
+                  linewidth=1.4, label="random lens")
+    axis.axhline(0.5, color="black", linewidth=0.8, linestyle="--")
+    axis.set_ylim(0, 1)
+    axis.set_xlabel("relative depth (leftmost point = embedding layer)", fontsize=11)
+    axis.set_ylabel("held-out sign consistency (0.5 = chance)", fontsize=11)
+    axis.set_title(f"E15-C vocabulary contrast by depth · {site} · {condition} · {model}",
+                   fontsize=11)
+    axis.legend(fontsize=8, framealpha=0.7)
+    axis.text(0.01, 0.02, "circled = permutation p < 0.05", transform=axis.transAxes,
+              fontsize=8, color="gray")
+    sns.despine(ax=axis)
+    figure.tight_layout()
+    output_path = _Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(output_path, dpi=150, bbox_inches="tight")
+    plt.close(figure)
+    return output_path
 
 
 def _top_k_enrichment(tokens: pd.DataFrame, frozen: dict, lens: str, layer,

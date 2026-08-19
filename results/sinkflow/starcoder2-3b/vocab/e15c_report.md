@@ -119,6 +119,60 @@ Pairwise agreement of the three readouts' mean vocabulary-difference vectors:
 | rename_opaque_encode | cumulative | 0.852 |
 | rename_opaque_encode_flatten | cumulative | 0.643 |
 
+### Table 11 — specificity: is the effect better than a random direction?
+
+The permutation null asks whether the safe→unsafe *orientation* carries the effect. It does not ask whether **this** direction in the residual stream is special. `specificity` is the real arm's displacement from chance over the largest displacement any random or Gram-matched lens reaches in the same cell: **at or below 1.0, the result is not specific to the lens.**
+
+| lens | layer | relative_depth | sign_consistency_z | permutation_p | displacement | control_displacement | specificity | beats_random_lens |
+|---|---|---|---|---|---|---|---|---|
+| jlens | -1 |  | 0.111 | 0.946 | 0.389 | 0.375 | 1.037 | True |
+| jlens | 0 | 0.000 | 0.486 | 0.862 | 0.014 | 0.083 | 0.167 | False |
+| jlens | 3 | 0.103 | 0.500 | 0.522 | 0.000 | 0.097 | 0.000 | False |
+| jlens | 7 | 0.241 | 0.583 | 0.252 | 0.083 | 0.194 | 0.429 | False |
+| jlens | 11 | 0.379 | 0.681 | 0.000 | 0.181 | 0.208 | 0.867 | False |
+| jlens | 15 | 0.517 | 0.681 | 0.010 | 0.181 | 0.139 | 1.300 | True |
+| jlens | 19 | 0.655 | 0.389 | 0.000 | 0.111 | 0.194 | 0.571 | False |
+| jlens | 23 | 0.793 | 0.403 | 0.288 | 0.097 | 0.181 | 0.538 | False |
+| jlens | 27 | 0.931 | 0.514 | 0.764 | 0.014 | 0.125 | 0.111 | False |
+| jlens | 29 | 1.000 | 0.500 | 0.172 | 0.000 | 0.028 | 0.000 | False |
+| logit | -1 |  | 0.125 | 0.718 | 0.375 | 0.375 | 1.000 | False |
+| logit | 0 | 0.000 | 0.542 | 0.874 | 0.042 | 0.083 | 0.500 | False |
+| logit | 3 | 0.103 | 0.569 | 0.726 | 0.069 | 0.097 | 0.714 | False |
+| logit | 7 | 0.241 | 0.500 | 0.934 | 0.000 | 0.194 | 0.000 | False |
+| logit | 11 | 0.379 | 0.389 | 0.118 | 0.111 | 0.208 | 0.533 | False |
+| logit | 15 | 0.517 | 0.431 | 0.482 | 0.069 | 0.139 | 0.500 | False |
+| logit | 19 | 0.655 | 0.236 | 0.000 | 0.264 | 0.194 | 1.357 | True |
+| logit | 23 | 0.793 | 0.222 | 0.000 | 0.278 | 0.181 | 1.538 | True |
+| logit | 27 | 0.931 | 0.431 | 0.384 | 0.069 | 0.125 | 0.556 | False |
+| logit | 29 | 1.000 | 0.486 | 0.172 | 0.014 | 0.028 | 0.500 | False |
+| rlens | -1 |  | 0.125 | 0.710 | 0.375 | 0.375 | 1.000 | False |
+| rlens | 0 | 0.000 | 0.486 | 0.942 | 0.014 | 0.083 | 0.167 | False |
+| rlens | 3 | 0.103 | 0.556 | 0.238 | 0.056 | 0.097 | 0.571 | False |
+| rlens | 7 | 0.241 | 0.583 | 0.240 | 0.083 | 0.194 | 0.429 | False |
+| rlens | 11 | 0.379 | 0.625 | 0.008 | 0.125 | 0.208 | 0.600 | False |
+| rlens | 15 | 0.517 | 0.694 | 0.008 | 0.194 | 0.139 | 1.400 | True |
+| rlens | 19 | 0.655 | 0.389 | 0.002 | 0.111 | 0.194 | 0.571 | False |
+| rlens | 23 | 0.793 | 0.431 | 0.356 | 0.069 | 0.181 | 0.385 | False |
+| rlens | 27 | 0.931 | 0.500 | 0.802 | 0.000 | 0.125 | 0.000 | False |
+| rlens | 29 | 1.000 | 0.500 | 0.172 | 0.000 | 0.028 | 0.000 | False |
+
+### Table 12 — is the contrast a distribution artifact?
+
+`corr_contrast_entropy` and `corr_contrast_norm` correlate the paired contrast against the paired difference in the candidate distribution's entropy and score norm. A large |r| means the contrast tracks the *shape* of the distribution rather than its content, which would explain a consistent sign without any concept being involved.
+
+| condition | mean_delta_contrast_z |
+|---|---|
+| clean_heldout | 0.094 |
+| normalize | 0.095 |
+| rename_only | -0.008 |
+| opaque_only | 0.057 |
+| encode_only | 0.077 |
+| flatten_only | 0.031 |
+| rename_cumulative | -0.029 |
+| rename_opaque | -0.022 |
+| rename_opaque_encode | -0.010 |
+| rename_opaque_encode_flatten | 0.000 |
+
 ### Table 10 — lens fidelity diagnostics (warnings, never blocking)
 
 A weak row does not invalidate its layer. It is the reason the verdict separates *mechanically valid with weak fidelity* from *mechanically invalid*.
