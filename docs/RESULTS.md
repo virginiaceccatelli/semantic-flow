@@ -47,6 +47,7 @@ direction dominates it at two-thirds the dose.
 | E8 real code | CodeSearchNet transfer | ● | ● | supporting | transfers, with a stated limitation |
 | E7 patching | causal, raw | ● | ● | supporting | **preliminary only**; the "isolates use" claim is retired |
 | E10-0 J-lens | instrument validation | ● | ● | supporting | V1 exact; the Jacobian correction is real |
+| **E14** R-lens | is a more faithful backward pass available? | ● | ● | supporting | relevance conservation **1.0001 / 0.9993** on both deepseek models — but **0.154 on starcoder2-3b**, where the LRP rules do not conserve |
 | E11 J-space | is the value causally reused? | ● | ● | **NO-GO** | see below — reported, not claimed |
 | E12 store | text-absent value transfer | ● | ☐ | **parked** | behavioural gate failed at 0.418 |
 | **E13** binding interchange | is the *binding* transported? | ☐ | ● | **H0–H5 pass** | a rank-1 interchange installs the binding's value in BOTH arms (100%/100%), beating a closed-form baseline at two-thirds the dose |
@@ -222,6 +223,33 @@ n=10, too small to carry weight; V1 and V2 are the load-bearing checks.
 
 This is the project's centre of gravity and it is **not settled**. Four designs
 have been attempted. The honest summary of each:
+
+## E14 — the R-lens is more faithful, except on one architecture
+
+The J-lens's backward pass runs through modules that are not degree-1
+homogeneous, so its averaged first-order approximation degrades going backwards.
+**Relevance conservation** measures that directly: `rho = sum_t <ds/dh_l,t,
+h_l,t> / s` is exactly 1 when the tail above layer `l` is homogeneous. Under raw
+autograd `rho` wanders and **inverts sign** with depth (3.15 / −1.99 / 0.67 on a
+reference architecture) — the mechanism behind the non-monotonic J-lens curves.
+The R-lens installs LRP rules that make the traversed tail homogeneous, and they
+are **value-preserving**: they change no activation, only the backward graph,
+which gate J0 verifies against the ordinary forward logits.
+
+Measured on the canonical E15-C runs (stage 125):
+
+| R-lens `rho` (target 1.000) | deepseek-coder-1.3b | deepseek-coder-6.7b | starcoder2-3b |
+|---|---:|---:|---:|
+| | **1.0001** | **0.9993** | **0.154** |
+
+Both deepseek models hit the target essentially exactly. **StarCoder2-3b does
+not** — the rules do not conserve relevance on that architecture, so its R-lens
+numbers carry a fidelity caveat and no single-model claim should rest on them.
+This is why the R-lens is not simply declared "better" and used everywhere, and
+why lens fidelity is measured as a **non-blocking diagnostic** rather than a
+gate: a gate would have silently excluded the layers and models where the
+instrument is uncomfortable, which is exactly the selection an interpretability
+result must not make.
 
 ## E11 — reported, but formally a NO-GO
 

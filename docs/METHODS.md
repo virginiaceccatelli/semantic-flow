@@ -425,7 +425,7 @@ much the output flips.
 
 ---
 
-## 11. The J-lens: decodable vs verbalizable (E10)
+## 11. The lens track: decodable vs verbalizable (E10, E14, E15-C)
 
 **What.** Sections 1–10 all measure whether a *supervised probe* can recover
 a relation from the hidden state. E10 adds an **unsupervised** readout built
@@ -486,6 +486,137 @@ A high drop count is the signal to re-run with `--dtype float32`.
 | **random lens** (norm-matched directions) | that any direction of that magnitude would rank things similarly |
 | **frozen build/eval split** | that the lens was fit to the states it is scored on — lenses are built on a calibration split and frozen, exactly as Section 8 freezes probes |
 | **paired layer comparison** | that a noisy floor won by taking its own maximum over ~10 layers; controls are read at the J-lens's best layer, not at their own |
+
+---
+
+## 11a. From J-lens to R-lens: why there are two, and which to trust where
+
+The J-lens above is an *averaged first-order* readout. That approximation is
+excellent near the output and progressively worse going backwards, because the
+backward pass it relies on is raw autograd through modules that are not
+degree-1 homogeneous. E14 measured exactly how bad, using **relevance
+conservation** — the completeness property a relevance decomposition must have:
+
+> `rho_l = sum_t <ds/dh_l,t , h_l,t> / s`, which is exactly **1** if the tail of
+> the network above layer `l` is degree-1 homogeneous (Euler's identity).
+
+Under raw autograd `rho` wanders — on a reference architecture it runs 3.15 /
+−1.99 / 0.67 across depth, **inverting sign**, which is the mechanism behind the
+non-monotonic J-lens curves in `results/tables/jlens_validation_*.csv`. The
+**R-lens** installs the LRP rules of `src/models/lrp.py` (RMSNorm becomes
+diagonal, SiLU elementwise, the gate splits evenly) so the traversed tail *is*
+homogeneous, and `rho` holds near 1.
+
+The rules are **value-preserving**: they change no activation, only the backward
+graph. That is checked, not assumed — gate R0 / J0 compares the ordinary forward
+logits with and without the rules and requires agreement within a *relative*
+tolerance (deepseek logits reach ~80, where an absolute 1e-4 bound would fail on
+float32 rounding alone).
+
+**Which lens to use where.** Near the last layer they coincide with the logit
+lens by construction. Below that, prefer the R-lens, and say so **before**
+looking at results — E15-C declares `PRIMARY_LENS = "rlens"` in code for exactly
+this reason. Report all three anyway: their *agreement* is itself evidence, and
+their *disagreement* localises an instrument problem rather than a finding.
+
+**Measured conservation, canonical runs (E15-C, stage 125):**
+
+| | deepseek-coder-1.3b | deepseek-coder-6.7b | starcoder2-3b |
+|---|---:|---:|---:|
+| R-lens `rho` | **1.0001** | **0.9993** | **0.154** |
+
+The two deepseek models reproduce E14's target essentially exactly. **StarCoder2-3b
+does not** — the LRP rules do not conserve relevance on that architecture, so its
+R-lens numbers carry a fidelity caveat and any single-model claim resting on them
+would be unsafe. This is an architecture-level finding about the rules, and it is
+the kind of thing a diagnostic exists to surface.
+
+**Diagnostics are not gates, deliberately.** Lens fidelity — next-token recovery,
+agreement with the final-layer distribution, relevance conservation, and the
+random / Gram-matched floors — is measured per (layer, lens), emits warnings, and
+**never blocks execution**. A test asserts that no gate function reads any
+fidelity variable. The reason is selection: refusing to run at low-fidelity
+layers would silently restrict every lens experiment to the layers where the
+instrument is comfortable, and early and middle layers are usually the target.
+The report therefore distinguishes four outcomes — *mechanically invalid*,
+*mechanically valid with weak lens fidelity*, *valid null*, and *positive above
+controls* — rather than collapsing them into pass/fail.
+
+## 11b. Using the lens as a *contrast* (E15-C), and what it cost to do honestly
+
+E10/E11 score one state against a candidate vocabulary. E15-C scores a **matched
+pair** and takes the difference, which introduces four problems the earlier
+lens work never had to face.
+
+**1. Orientation must be fixed once.** Every pair is oriented
+`delta(pair, token) = score_unsafe(token) − score_safe(token)`, recorded on every
+output row, and gate J1 refuses a run whose rows disagree. A per-cell orientation
+choice would make every sign statistic meaningless.
+
+**2. The scale caveat now bites.** `JLens.scores` drops a positive per-position
+factor, and a paired contrast compares *two different positions*. So every
+statistic is carried in three conventions:
+
+| convention | meaning | exactness |
+|---|---|---|
+| `score` | raw lens score | exact for the logit lens, scale-carrying for J/R |
+| `z` | z-scored across the candidate set at that position | **exactly** invariant to the dropped factor — the scale-safe way to compare positions |
+| `prob` | softmax over the candidate set ("probability mass") | exact for the logit lens; inherits the factor for J/R |
+
+Sign consistency is reported in both `z` and `prob`, because for the J/R lenses
+they can disagree and a reader is entitled to see when they do.
+
+**3. The candidate vocabulary cannot be the whole vocabulary.** A J/R lens vector
+is one vector-Jacobian product *per candidate token*, so a 32k-row lens at every
+layer is infeasible, not merely slow. Discovery is therefore two-phase:
+a full-vocabulary **logit-lens** ranking on clean *training* pairs selects a
+candidate pool (196 tokens in the canonical runs), then each lens ranks that pool
+by its own training delta. The limitation this creates is recorded inside the
+frozen artifact itself: *a direction only the J-lens or R-lens would surface, on a
+token outside the pool, cannot be discovered here.*
+
+**4. Discovery must not see the evaluation.** The frozen token set is written to
+`vocab/vocab_discovery.json` by stage 125 and **read back from disk** by stage 126
+— a filesystem boundary rather than a promise. J1 additionally checks that the
+recorded discovery digest is the training split's and differs from the evaluated
+split's.
+
+**Concept tokens are validated per model, and nothing is substituted.** A lexicon
+word is used only if it encodes to exactly one token in one of the prompt-space
+variants (`" word"`, `"word"`, `" word\n"`) *and* that token decodes back to the
+variant that produced it. Every omission is recorded with its reason. Coverage is
+genuinely model-specific: `" vulnerable"` survives on both deepseek models but
+`unsafe`, `untrusted` and `tainted` all split; on starcoder2-3b `" unsafe"`
+survives and `vulnerable` does not. The first token of a split word is a *prefix*,
+not the word, and using it would measure the prefix.
+
+**What the contrast is controlled against.**
+
+| control | what it rules out |
+|---|---|
+| **permutation** — re-orient each base at random | that anything other than the safe→unsafe *direction* carries the effect; keeps every pair and magnitude |
+| **mismatched pairs** — unsafe and safe from different bases | that the effect is any difference between two programs of this kind, rather than the class difference |
+| **embedding layer (−1)** | token identity: at `sink_arg` the state *is* the anchor token's embedding, so this is the token-identity contrast exactly |
+| **`last_token` site** | ditto from the other side — both members carry the *same* token there |
+| **identifier-role strata** | that the generator's tainted/trusted name assignment drives the sign |
+| **random and Gram-matched lenses** | that any direction of that norm — or of that norm *and* those pairwise angles — would separate the pairs |
+
+**What licenses a semantic reading.** All of: train-only discovery frozen before
+scoring; held-out replication in the *hypothesised direction* (the test is
+deliberately one-sided — a two-sided test would report a consistently reversed
+contrast as a positive result); one recorded orientation; an effect above **both**
+the permutation and mismatched-pair controls; stability across identifier roles;
+and evidence not reducible to the differing sink-argument token. Stage 127 decides
+this by explicit checklist and prints the checklist. **"The token `unsafe`
+appeared in a top-k list" is not a result** and is not allowed to become one.
+
+**The finding (three models, canonical scale).** A null. See
+`docs/RESULTS.md` and `docs/design/E15_SINKFLOW_PLAN.md` §8.6: no
+security-vocabulary concept in any model, the direction not even consistent
+across models, 1.3B significantly *inverted*, and the three lenses in agreement —
+so the null is a property of the models, not of the instrument. What the design
+licenses from that is a real and reportable claim: **linear decodability and
+expression in a model's own output vocabulary are different properties.**
 
 ---
 

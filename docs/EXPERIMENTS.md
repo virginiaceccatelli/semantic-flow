@@ -335,6 +335,98 @@ apart* things are and to *what they are called*, fragile when the scope or
 control structure it is a representation *of* becomes harder.
 
 Stage 31 · `obfuscation_levels_*.png`.
+## The safety-relevant track: what is actually being audited, and why these metrics
+
+Three sections follow — E15 (the benchmark and the robustness result), E15-C (the
+vocabulary contrast) — and they are the only part of this project framed around a
+*security* property rather than a graph-theoretic relation. This preamble says
+what the safety framing does and does not commit to, because that is the easiest
+thing in the repository to overstate.
+
+### The one bit under audit
+
+> Is the value passed to this security-sensitive, **code-bearing** argument
+> derived from untrusted input?
+
+That is the whole property. It is **not** vulnerability detection: real
+exploitability depends on path feasibility, the environment, sink semantics, and
+mitigations that live outside this benchmark. It is **not** malware
+classification. What it *is* is the one bit a taint analysis exists to produce,
+posed so that a model's internal states can be asked for it directly.
+
+Three sink families, each with a real CWE behind it: command execution
+(`os.system`, `subprocess.call(..., shell=True)`), SQL execution
+(`cursor.execute`), dynamic execution (`eval`, `exec`).
+
+### The threat model, stated as a threat model
+
+| | |
+|---|---|
+| **Defender** | an auditor using a fixed code model and a frozen linear readout |
+| **Adversary** | controls the program's *surface form*; applies semantics-preserving transformations; does **not** change the weights or the security label |
+| **Protected property** | whether the value at a code-bearing sensitive argument derives from untrusted input |
+| **Attack success** | reducing the readout's ability to separate a matched safe/unsafe pair — **especially by producing false negatives** |
+| **Out of scope** | executable malware, reflection, dynamic loading, heap aliasing, concurrency, and any adaptive white-box attack optimised against this model or this probe |
+
+The adversary here is **the surface form, not the model**. That is what makes the
+matched-pair construction possible and what makes a frozen readout the right
+instrument: if the probe were refitted on each transformation, it could learn a
+*new* shortcut for each one and conceal exactly the representational failure the
+experiment is looking for.
+
+### Why "safe" is a trusted literal and not a sanitizer
+
+The generic sanitizer list used elsewhere in this repository (`html.escape`,
+`shlex.quote`) is deliberately **not** reused. `html.escape` before `exec` and
+`shlex.quote` before `eval` are not mitigations, so a benchmark whose "safe"
+class was built from them would be labelling genuinely vulnerable programs safe —
+and every accuracy number downstream would be measuring the wrong thing. The safe
+member instead passes an **independently trusted literal**: a constant that never
+touches the source, through the same propagation, to the same sink.
+
+### No dangerous API is ever executed
+
+Ground truth is recomputed from every program — including every transformed
+variant — by two independent readings that must agree with each other *and* with
+the intended label. One of them is **instrumented execution**: the module runs
+with `__builtins__ = {}` and every sensitive API (`os.system`, `subprocess.*`,
+`cursor.execute`, `eval`, `exec`) replaced by a recorder, with a provenance-carrying
+`str` subclass standing in for untrusted input. Nothing dangerous is reachable
+even in principle, at any transformation level, even if a generated program were
+wrong.
+
+### The metrics are safety metrics, and pooled accuracy is not one
+
+This is the methodological commitment the track exists to demonstrate. Accuracy
+of 0.5 has at least two very different causes, and the number alone cannot tell
+them apart:
+
+* **the information is gone** — the readout gives both members of a pair the
+  *same* label, because the position no longer distinguishes them.
+  `pairs_same_label` → 1, `frac_predicted_unsafe` collapses toward one class;
+* **the information is there and no longer means taint** — the readout still
+  splits the pair, but the direction is now arbitrary. `pairs_same_label` stays
+  low while accuracy falls to chance.
+
+So every reported cell carries, beside accuracy and its cluster-bootstrap
+interval:
+
+| metric | why an auditor needs it |
+|---|---|
+| `acc_unsafe` / `acc_safe` | a symmetric 0.07 loss and a one-sided 0.24 loss are different failures with the same headline |
+| **`false_negative_rate`** | a vulnerable program called safe — the failure direction that matters, named rather than left as `1 − acc_unsafe` |
+| `false_positive_rate` | the cost side: an auditor drowning in false alarms stops reading them |
+| `frac_predicted_unsafe` | detects collapse onto a class prior |
+| **`pairs_same_label`** | the two members differ *only* at the sink argument, so this rising is the sharpest possible evidence the position stopped carrying the distinction |
+
+And the results below show why this is not pedantry: under the full
+transformation composition all three models land within 0.08 of each other while
+**biasing in opposite directions**, and StarCoder2's entire renaming loss is
+false negatives. A pooled number would have reported all of that as "mostly
+fine".
+
+---
+
 ## E15 — source→sink under obfuscation (the security audit track)
 
 **Question.** E9 asks what the transformations do to *binding* and *def-use*. E15
@@ -495,6 +587,94 @@ instrument, and it covers binding, not this.
 
 Stages 120–127 · design `docs/design/E15_SINKFLOW_PLAN.md` (§8 results, §11 A,
 §12 B, §13 C, §14 commands).
+
+---
+
+## The J-lens / R-lens track, end to end
+
+The lens work is spread over four experiments and it is worth reading as one
+line of argument. Methodology is `docs/METHODS.md` §11–§11b; this is what each
+step asked and what came back.
+
+| | question | verdict |
+|---|---|---|
+| **E10-0** J-lens validation (stage 60) | is the Jacobian-lens machinery correct on code models? | **yes** — at the last decoder layer `J` is the identity, so the J-lens must equal the logit lens; measured cosine 1.0000, a closed-form check of the whole gradient path. Next-token recovery beats a norm-matched floor. |
+| **E10-2/-3** J-lens on taint / control-dependence | does the "verbalizable workspace" framing explain E6's scale split? | **archived.** The behavioural signal it rested on did not survive its own controls (`docs/ARCHIVE.md`). |
+| **E11** J-space binding routing | is the *value* causally reused through J-space coordinates? | **NO-GO**, reported and not claimed. |
+| **E14** R-lens gate R (stage 110) | is a more faithful backward pass available, and how would we know? | **yes, and measurably.** Relevance conservation `rho` is the gate: raw autograd wanders and inverts sign with depth; the LRP rules hold `rho ≈ 1`. |
+| **E15-C** vocabulary contrast (stages 125–127) | is a *security* distinction expressed in the model's own output vocabulary? | **a null, in all three models** — and significantly *inverted* in 1.3B. |
+
+### What the R-lens fixed, and where it fails
+
+The J-lens is an averaged first-order readout whose backward pass runs through
+modules that are not degree-1 homogeneous. Relevance conservation measures the
+damage directly: `rho = 1` exactly when the tail above a layer is homogeneous.
+Under raw autograd `rho` runs 3.15 / −1.99 / 0.67 across depth on a reference
+architecture — it **inverts sign**, which is the mechanism behind the
+non-monotonic J-lens curves. The LRP rules make the traversed tail homogeneous
+and, critically, are **value-preserving**: they change no activation, only the
+backward graph, and gate J0 verifies that by comparing ordinary forward logits
+with and without them.
+
+Measured on the canonical E15-C runs:
+
+| R-lens relevance conservation | deepseek-coder-1.3b | deepseek-coder-6.7b | starcoder2-3b |
+|---|---:|---:|---:|
+| `rho` (target 1.000) | **1.0001** | **0.9993** | **0.154** |
+
+Both deepseek models reproduce E14's target essentially exactly. **StarCoder2-3b
+does not.** The rules do not conserve relevance on that architecture, so its
+R-lens numbers carry a fidelity caveat and no single-model claim should rest on
+them. That is an architecture-level finding about the rules and belongs to E14's
+track, not E15's — but it is the reason the R-lens is not simply declared
+"better" and used everywhere.
+
+### What the lens contrast found, and why the null is trustworthy
+
+E15-C is the first time a lens is used on a **matched pair** rather than a single
+state, and the null it returned is only worth anything because the instrument was
+pinned down first:
+
+* **The primary lens was declared in code before any result** (`PRIMARY_LENS =
+  "rlens"`), because the target includes early and middle layers — exactly where
+  E14 showed the J-lens backward is least faithful. Choosing afterwards would
+  have made every number a selection artifact.
+* **All three lenses agree.** Pairwise cosine of their mean vocabulary-difference
+  vectors is 0.90 / 0.96 / 0.97 (1.3B), 0.91 / 0.96 / 0.97 (6.7B), 0.75 / 0.96 /
+  0.77 (starcoder2-3b). A null on which the logit lens, the J-lens and the R-lens
+  concur is a statement about the models, not about the readout.
+* **It is not token identity.** At the embedding layer the contrast is null
+  (p = 0.71–0.81), and 75% of pairs share the *same* anchor token at `sink_arg`
+  anyway — the sink-argument span's last token is frequently identical between
+  the two members.
+* **Something replicates; it just is not security.** Frozen
+  training-discovered tokens reappear in the held-out top-k at 0.875 / 0.750 /
+  0.875 against 0.000–0.031 for random control tokens, with per-token sign
+  consistency up to 0.99. The tokens are `" ?"`, `"?."`, `"??"` (1.3B),
+  `" liber"`, `"clean"`, `"tbl"` (6.7B), `"OrNull"`, `"displayMode"`,
+  `"fuchsia"` (starcoder2-3b) — reliable, and semantically arbitrary.
+* **Both readouts fail together under flattening.** The vocabulary contrast
+  degrades alongside the probe (sign consistency 0.389 / 0.472 / 0.583), so this
+  is the design's "loss of both trained and output-aligned auditability" outcome
+  rather than a dissociation between them.
+
+**The claim this licenses**, and the reason the null is a contribution rather
+than an absence:
+
+> Linear decodability and expression in a model's own output vocabulary are
+> **different properties**. E15 exhibits the first at ceiling and the second not
+> at all. A probe finding a direction does not mean the model is disposed to say
+> the corresponding word.
+
+**What it does not license.** Any sentence containing "the model represents
+unsafe". Nor the converse over-reading: a null here does not prove the
+information is absent — only that it is not expressed in the candidate
+output-aligned coordinates this design can search, and that search is itself
+bounded (the J/R candidate pool is logit-lens-selected).
+
+**Nothing here is causal.** E15-C performs no intervention of any kind — no
+J-space coordinate edit, no interchange, no swap. E13's interchange is the causal
+instrument in this project, and it covers *binding*, not source-to-sink flow.
 
 ---
 

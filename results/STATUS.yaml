@@ -148,14 +148,27 @@ experiments:
       part of the E10 track that survives.
 
   E14:
-    name: R-lens — the shape of the binding decision across layers
-    status: active
-    stage: "110"
-    tables: [rlens_r2_]
+    name: R-lens — a more faithful backward pass, and where it fails
+    status: supporting
+    stage: "110, and measured again inside 125"
+    tables: [rlens_r2_, vocab_lens_diagnostics_]
     claim: >
-      NOT YET CLAIMED. Stage 110 (gate R) is built and its instrument passes on
-      a reference architecture; nothing has been run at scale, and stage 111
-      (the trajectory experiment) is not built.
+      The LRP backward pass IS more faithful than raw autograd, and it is now
+      measured on real models rather than only on a reference architecture.
+      Relevance conservation (rho, target 1.000) reads 1.0001 on
+      deepseek-coder-1.3b and 0.9993 on deepseek-coder-6.7b - E14's target
+      reproduced essentially exactly - but 0.154 on starcoder2-3b, where the rules
+      do NOT conserve relevance. Measured as a side effect of E15-C's stage 125,
+      which builds an R-lens per model. Stage 111 (the trajectory experiment) is
+      still not built.
+    consequence: >
+      The R-lens is not simply "better" and usable everywhere: it is
+      architecture-dependent, and starcoder2-3b's R-lens numbers carry a fidelity
+      caveat that no single-model claim should rest on. This is also the case
+      study for why lens fidelity is a NON-BLOCKING DIAGNOSTIC rather than a gate
+      - a gate would have silently excluded the model and the layers where the
+      instrument is uncomfortable, which is exactly the selection an
+      interpretability result must not make.
     note: >
       Representational track, observational only. E14 measures where the
       binding becomes readable in the model's OWN output basis, which the
