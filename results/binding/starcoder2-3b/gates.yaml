@@ -1,6 +1,6 @@
 experiment: E13
 model: starcoder2-3b
-updated: '2026-08-18 20:05:35'
+updated: '2026-08-19 19:08:00'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -13,7 +13,7 @@ gates:
       (threshold 0.999). Per check: semantics_agree 1.0000, arms_crossed 1.0000, mutation_distance_ok
       1.0000, anchors_ordered 1.0000, values_distinct 1.0000, tokens_distinct 1.0000'
     stage: 101_binding_verify
-    timestamp: '2026-08-18 19:25:14'
+    timestamp: '2026-08-19 18:42:19'
     override: false
     override_reason: ''
     extra:
@@ -32,7 +32,7 @@ gates:
     detail: overall 0.981 [0.973, 0.988] against 0.85; weakest cell ab_target 0.954
       against 0.75
     stage: 102_binding_behaviour
-    timestamp: '2026-08-18 19:26:03'
+    timestamp: '2026-08-19 18:43:06'
     override: false
     override_reason: ''
     extra:
@@ -46,7 +46,7 @@ gates:
       The floor is pinned by construction here: the anchor token is identical across
       the counterfactual and the mutation is outside the baseline''s window.'
     stage: 104_binding_decode
-    timestamp: '2026-08-18 19:35:19'
+    timestamp: '2026-08-19 18:50:46'
     override: false
     override_reason: ''
     extra:
@@ -63,7 +63,7 @@ gates:
       CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says
       nothing.'
     stage: 105_binding_ceiling
-    timestamp: '2026-08-18 19:39:07'
+    timestamp: '2026-08-19 18:53:50'
     override: false
     override_reason: ''
     extra:
@@ -86,7 +86,7 @@ gates:
     detail: 'ab @ use L7 r1: +0.764 [+0.726, +0.800] = 46% of the whole-state ceiling
       +1.670 (threshold 50%); controls cleared: True; edit moved 0.433 of ||h||'
     stage: 106_binding_interchange
-    timestamp: '2026-08-18 20:05:35'
+    timestamp: '2026-08-19 19:08:00'
     override: false
     override_reason: ''
     extra:
@@ -104,7 +104,7 @@ gates:
       \ True); ba/ab argmax ratio 0.209 against transport's 1.012 (bar 0.506) (fails:\
       \ True)"
     stage: 106_binding_interchange
-    timestamp: '2026-08-18 20:05:35'
+    timestamp: '2026-08-19 19:08:00'
     override: false
     override_reason: ''
     extra:
