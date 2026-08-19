@@ -1,0 +1,31 @@
+{
+  "stage": "126_sinkflow_vocab_contrast",
+  "timestamp": "20260819_211641",
+  "git_sha": "8f552b9",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/126_sinkflow_vocab_contrast.py",
+    "--model",
+    "deepseek-coder-6.7b"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "activations": "results/activations/deepseek-coder-6.7b",
+    "output": "results/sinkflow/deepseek-coder-6.7b",
+    "layers": "[-1, 0, 3, 7, 11, 15, 19, 23, 27, 31]",
+    "sites": "['sink_arg', 'last_token']",
+    "n_permutations": "500",
+    "top_k": "8",
+    "seed": "42"
+  },
+  "wall_time_s": 382.4,
+  "extra": {
+    "J1": true,
+    "n_pair_rows": 43200,
+    "n_token_rows": 117600,
+    "violations": [],
+    "gates_required": "S0,S1,J0",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

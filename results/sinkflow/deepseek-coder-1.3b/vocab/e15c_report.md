@@ -148,18 +148,18 @@ The permutation null asks whether the safe→unsafe *orientation* carries the ef
 
 `corr_contrast_entropy` and `corr_contrast_norm` correlate the paired contrast against the paired difference in the candidate distribution's entropy and score norm. A large |r| means the contrast tracks the *shape* of the distribution rather than its content, which would explain a consistent sign without any concept being involved.
 
-| condition | mean_delta_contrast_z |
-|---|---|
-| clean_heldout | -0.304 |
-| normalize | -0.295 |
-| rename_only | -0.053 |
-| opaque_only | -0.279 |
-| encode_only | -0.231 |
-| flatten_only | -0.140 |
-| rename_cumulative | -0.063 |
-| rename_opaque | -0.111 |
-| rename_opaque_encode | 0.026 |
-| rename_opaque_encode_flatten | -0.194 |
+| condition | mean_delta_contrast_z | corr_contrast_entropy | corr_contrast_norm | mean_delta_entropy |
+|---|---|---|---|---|
+| clean_heldout | -0.304 | -0.286 | -0.044 | 0.000 |
+| normalize | -0.295 | -0.306 | -0.052 | 0.000 |
+| rename_only | -0.053 | -0.010 | -0.342 | 0.001 |
+| opaque_only | -0.279 | -0.267 | 0.098 | 0.000 |
+| encode_only | -0.231 | -0.384 | -0.034 | 0.000 |
+| flatten_only | -0.140 | -0.162 | 0.128 | 0.000 |
+| rename_cumulative | -0.063 | -0.113 | -0.365 | 0.001 |
+| rename_opaque | -0.111 | -0.117 | -0.038 | 0.001 |
+| rename_opaque_encode | 0.026 | -0.256 | -0.101 | 0.001 |
+| rename_opaque_encode_flatten | -0.194 | 0.243 | -0.322 | 0.000 |
 
 ### Table 10 — lens fidelity diagnostics (warnings, never blocking)
 
