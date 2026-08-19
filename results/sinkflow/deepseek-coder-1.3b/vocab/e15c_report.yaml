@@ -1,19 +1,21 @@
 experiment: E15-C
 model: deepseek-coder-1.3b
-verdict: weak_lens_fidelity
-verdict_text: "MECHANICALLY VALID, WEAK LENS FIDELITY \u2014 the numbers stand as\
-  \ measurements, the instrument is the caveat at this layer."
+verdict: positive_security_vocabulary
+verdict_text: "POSITIVE (EXPLICIT SECURITY VOCABULARY) \u2014 the security lexicon's\
+  \ held-out contrast replicates above both controls, with a consistent orientation\
+  \ and stability across identifier roles. Still observational: vocabulary alignment\
+  \ is not causal use."
 primary_lens: rlens
 reported:
   lens: rlens
   site: sink_arg
-  layer: 0
+  layer: 11
   condition: clean_heldout
 checks:
   discovery_train_only_and_frozen: true
-  held_out_replication: false
+  held_out_replication: true
   consistent_orientation: true
-  above_permutation_control: false
+  above_permutation_control: true
   above_mismatched_pair_control: true
   stable_across_identifier_roles: true
 thresholds:
@@ -36,50 +38,50 @@ headline:
   model: deepseek-coder-1.3b
   arm: main
   lens: rlens
-  layer: 0
+  layer: 11
   site: sink_arg
   condition: clean_heldout
   condition_kind: clean
   condition_order: -1
-  relative_depth: 0.0
+  relative_depth: 0.4783
   n_pairs: 72
-  mean_delta_contrast_z: 0.0052015939715528
-  mean_delta_contrast_prob: 1.586457297925575e-05
-  sign_consistency_z: 0.5416666666666666
-  sign_consistency_prob: 0.5972222222222222
-  mean_contrast_prob_unsafe: -0.0094970186282922
-  mean_contrast_prob_safe: -0.0095128832012714
-  permutation_effect_size: 0.0781671002019807
-  permutation_p: 0.94
-  permutation_null_sd: 0.0544319874988107
+  mean_delta_contrast_z: -0.304104683540187
+  mean_delta_contrast_prob: -0.0004320441630098
+  sign_consistency_z: 0.1527777777777778
+  sign_consistency_prob: 0.2638888888888889
+  mean_contrast_prob_unsafe: -0.0109858954343069
+  mean_contrast_prob_safe: -0.010553851271297
+  permutation_effect_size: -5.681513625787421
+  permutation_p: 0.0
+  permutation_null_sd: 0.0532608377997988
   anchor_token_same_frac: 0.75
-  topk_enrichment_positive: 0.0
-  topk_enrichment_negative: 0.0
-  topk_enrichment_random: 0.03125
-  concept_rank_best: 174.0
+  topk_enrichment_positive: 0.875
+  topk_enrichment_negative: 0.625
+  topk_enrichment_random: 0.0
+  concept_rank_best: 104.0
 mismatched_control:
   model: deepseek-coder-1.3b
   arm: mismatched_pairs
   lens: rlens
-  layer: 0
+  layer: 11
   site: sink_arg
   condition: clean_heldout
   condition_kind: clean
   condition_order: -1
-  relative_depth: 0.0
+  relative_depth: 0.4783
   n_pairs: 72
-  mean_delta_contrast_z: 0.0350711934468981
-  mean_delta_contrast_prob: 2.3899646478415715e-05
-  sign_consistency_z: 0.5138888888888888
-  sign_consistency_prob: 0.5416666666666666
-  mean_contrast_prob_unsafe: -0.0094970186282922
-  mean_contrast_prob_safe: -0.0095209182747706
-  permutation_effect_size: 0.5309065985528376
-  permutation_p: 0.588
-  permutation_null_sd: 0.0657717865391288
+  mean_delta_contrast_z: -0.2890032283087167
+  mean_delta_contrast_prob: -0.0004328497177465
+  sign_consistency_z: 0.1666666666666666
+  sign_consistency_prob: 0.1805555555555555
+  mean_contrast_prob_unsafe: -0.0109858954343069
+  mean_contrast_prob_safe: -0.0105530457165604
+  permutation_effect_size: -5.456221259839833
+  permutation_p: 0.0
+  permutation_null_sd: 0.0528199244692505
   anchor_token_same_frac: 0.7638888888888888
-  topk_enrichment_positive: 0.0
-  topk_enrichment_negative: 0.0
+  topk_enrichment_positive: 0.875
+  topk_enrichment_negative: 0.625
   topk_enrichment_random: 0.0
-  concept_rank_best: 128.0
+  concept_rank_best: 101.0
 n_weak_fidelity_rows: 26

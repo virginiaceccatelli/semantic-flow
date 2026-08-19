@@ -1,0 +1,33 @@
+{
+  "stage": "127_sinkflow_vocab_report",
+  "timestamp": "20260819_153254",
+  "git_sha": "f8260f8",
+  "python": "3.13.13",
+  "argv": [
+    "scripts/127_sinkflow_vocab_report.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--depth",
+    "0.48"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "results": "results/sinkflow/deepseek-coder-1.3b",
+    "site": "sink_arg",
+    "lens": "rlens",
+    "layer": "11",
+    "condition": "clean_heldout"
+  },
+  "wall_time_s": 0.3,
+  "extra": {
+    "verdict": "positive_security_vocabulary",
+    "checks": {
+      "discovery_train_only_and_frozen": true,
+      "held_out_replication": true,
+      "consistent_orientation": true,
+      "above_permutation_control": true,
+      "above_mismatched_pair_control": true,
+      "stable_across_identifier_roles": true
+    }
+  }
+}

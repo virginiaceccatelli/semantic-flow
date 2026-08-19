@@ -1,15 +1,15 @@
 # E15-C — vocabulary-space contrast (deepseek-coder-1.3b)
 
-**Verdict.** MECHANICALLY VALID, WEAK LENS FIDELITY — the numbers stand as measurements, the instrument is the caveat at this layer.
+**Verdict.** POSITIVE (EXPLICIT SECURITY VOCABULARY) — the security lexicon's held-out contrast replicates above both controls, with a consistent orientation and stability across identifier roles. Still observational: vocabulary alignment is not causal use.
 
-Primary lens `rlens` (declared before any result was produced); reported at lens `rlens`, site `sink_arg`, layer 0, condition `clean_heldout`.
+Primary lens `rlens` (declared before any result was produced); reported at lens `rlens`, site `sink_arg`, layer 11, condition `clean_heldout`.
 
 | check | holds |
 |---|---|
 | discovery_train_only_and_frozen | yes |
-| held_out_replication | no |
+| held_out_replication | yes |
 | consistent_orientation | yes |
-| above_permutation_control | no |
+| above_permutation_control | yes |
 | above_mismatched_pair_control | yes |
 | stable_across_identifier_roles | yes |
 
@@ -21,26 +21,26 @@ Ranked on CLEAN TRAINING pairs only and frozen before any held-out pair was scor
 
 | token | mean_delta_z | rank | sign_consistency | is_concept_unsafe | is_concept_safe | is_random_control |
 |---|---|---|---|---|---|---|
-| suff | 0.116 | 0 | 0.554 | 0 | 0 | 0 |
-| sel | 0.112 | 1 | 0.536 | 0 | 0 | 0 |
-| ux | 0.093 | 2 | 0.500 | 0 | 0 | 0 |
-| nd | 0.085 | 3 | 0.536 | 0 | 0 | 0 |
-| pled | 0.078 | 4 | 0.476 | 0 | 0 | 0 |
-| anas | 0.070 | 5 | 0.530 | 0 | 0 | 0 |
-| ser | 0.069 | 6 | 0.530 | 0 | 0 | 0 |
-| emor | 0.065 | 7 | 0.565 | 0 | 0 | 0 |
-| нд | 0.062 | 8 | 0.542 | 0 | 0 | 0 |
-| ra | 0.059 | 9 | 0.494 | 0 | 0 | 0 |
-| ponse | -0.055 | 186 | 0.464 | 0 | 0 | 0 |
-| 或是 | -0.055 | 187 | 0.464 | 0 | 0 | 0 |
-|  Poly | -0.055 | 188 | 0.500 | 0 | 0 | 0 |
-| ря | -0.062 | 189 | 0.470 | 0 | 0 | 0 |
-| mb | -0.065 | 190 | 0.506 | 0 | 0 | 0 |
-| DOCTYPE | -0.066 | 191 | 0.518 | 0 | 0 | 0 |
-| чина | -0.069 | 192 | 0.518 | 0 | 0 | 0 |
-|  MB | -0.074 | 193 | 0.488 | 0 | 0 | 0 |
-| ientes | -0.078 | 194 | 0.446 | 0 | 0 | 0 |
-| цо | -0.081 | 195 | 0.470 | 0 | 0 | 0 |
+|  ? | 0.960 | 0 | 0.964 | 0 | 0 | 0 |
+| ?. | 0.887 | 1 | 0.946 | 0 | 0 | 0 |
+| ?? | 0.858 | 2 | 0.929 | 0 | 0 | 0 |
+| ?! | 0.826 | 3 | 0.964 | 0 | 0 | 0 |
+| ected | 0.775 | 4 | 0.940 | 0 | 0 | 0 |
+| ?-- | 0.748 | 5 | 0.810 | 0 | 0 | 0 |
+| mor | 0.665 | 6 | 0.857 | 0 | 0 | 0 |
+|  invested | 0.664 | 7 | 0.952 | 0 | 0 | 0 |
+| bey | 0.663 | 8 | 0.911 | 0 | 0 | 0 |
+| anas | 0.661 | 9 | 0.946 | 0 | 0 | 0 |
+|  lighter | -0.589 | 186 | 0.077 | 0 | 0 | 0 |
+|  associate | -0.603 | 187 | 0.071 | 0 | 0 | 0 |
+|  involving | -0.607 | 188 | 0.196 | 0 | 0 | 0 |
+|  Di | -0.612 | 189 | 0.089 | 0 | 0 | 0 |
+| тва | -0.615 | 190 | 0.107 | 0 | 0 | 0 |
+| 此时 | -0.636 | 191 | 0.006 | 0 | 0 | 0 |
+| ponse | -0.640 | 192 | 0.083 | 0 | 0 | 0 |
+| чина | -0.648 | 193 | 0.077 | 0 | 0 | 0 |
+|  sensation | -0.654 | 194 | 0.089 | 0 | 0 | 0 |
+| 联 | -0.661 | 195 | 0.089 | 0 | 0 | 0 |
 
 ### Table 7 — held-out semantic mass and sign consistency
 
@@ -48,16 +48,16 @@ Ranked on CLEAN TRAINING pairs only and frozen before any held-out pair was scor
 
 | condition | condition_kind | mean_delta_contrast_prob | mean_delta_contrast_z | sign_consistency_z | sign_consistency_prob | permutation_effect_size | permutation_p | topk_enrichment_positive | topk_enrichment_random | n_pairs |
 |---|---|---|---|---|---|---|---|---|---|---|
-| clean_heldout | clean | 0.000 | 0.005 | 0.542 | 0.597 | 0.078 | 0.940 | 0.000 | 0.031 | 72 |
-| normalize | baseline | 0.000 | 0.005 | 0.569 | 0.611 | 0.079 | 0.936 | 0.000 | 0.031 | 72 |
-| rename_only | atomic | -0.000 | -0.049 | 0.417 | 0.444 | -0.858 | 0.356 | 0.250 | 0.031 | 72 |
-| opaque_only | atomic | 0.000 | 0.003 | 0.514 | 0.611 | 0.031 | 0.964 | 0.000 | 0.031 | 72 |
-| encode_only | atomic | 0.000 | 0.009 | 0.514 | 0.611 | 0.156 | 0.884 | 0.000 | 0.031 | 72 |
-| flatten_only | atomic | 0.000 | 0.004 | 0.528 | 0.583 | 0.048 | 0.954 | 0.000 | 0.031 | 72 |
-| rename_cumulative | cumulative | 0.000 | 0.031 | 0.528 | 0.542 | 0.704 | 0.468 | 0.375 | 0.000 | 72 |
-| rename_opaque | cumulative | -0.000 | -0.093 | 0.417 | 0.417 | -1.673 | 0.094 | 0.250 | 0.031 | 72 |
-| rename_opaque_encode | cumulative | -0.000 | -0.051 | 0.486 | 0.500 | -0.859 | 0.396 | 0.125 | 0.000 | 72 |
-| rename_opaque_encode_flatten | cumulative | -0.000 | 0.002 | 0.458 | 0.472 | 0.051 | 0.968 | 0.000 | 0.062 | 72 |
+| clean_heldout | clean | -0.000 | -0.304 | 0.153 | 0.264 | -5.682 | 0.000 | 0.875 | 0.000 | 72 |
+| normalize | baseline | -0.000 | -0.295 | 0.167 | 0.264 | -5.691 | 0.000 | 0.875 | 0.000 | 72 |
+| rename_only | atomic | -0.000 | -0.053 | 0.514 | 0.486 | -1.018 | 0.288 | 0.625 | 0.000 | 72 |
+| opaque_only | atomic | -0.000 | -0.279 | 0.222 | 0.264 | -5.170 | 0.000 | 0.875 | 0.000 | 72 |
+| encode_only | atomic | -0.000 | -0.231 | 0.250 | 0.278 | -4.869 | 0.000 | 0.875 | 0.000 | 72 |
+| flatten_only | atomic | -0.000 | -0.140 | 0.389 | 0.431 | -2.327 | 0.014 | 0.750 | 0.000 | 72 |
+| rename_cumulative | cumulative | -0.000 | -0.063 | 0.444 | 0.444 | -1.231 | 0.210 | 0.625 | 0.000 | 72 |
+| rename_opaque | cumulative | -0.000 | -0.111 | 0.486 | 0.375 | -2.496 | 0.014 | 0.500 | 0.000 | 72 |
+| rename_opaque_encode | cumulative | -0.000 | 0.026 | 0.583 | 0.583 | 0.630 | 0.560 | 0.375 | 0.000 | 72 |
+| rename_opaque_encode_flatten | cumulative | -0.000 | -0.194 | 0.347 | 0.403 | -2.927 | 0.000 | 0.625 | 0.000 | 72 |
 
 ### Table 8 — lens-method comparison by layer
 
@@ -92,9 +92,9 @@ Pairwise agreement of the three readouts' mean vocabulary-difference vectors:
 
 | layer | lens_a | lens_b | cosine | spearman | n_tokens |
 |---|---|---|---|---|---|
-| 0 | jlens | logit | 0.252 | 0.182 | 196 |
-| 0 | jlens | rlens | 0.482 | 0.442 | 196 |
-| 0 | logit | rlens | 0.427 | 0.398 | 196 |
+| 11 | jlens | logit | 0.895 | 0.871 | 196 |
+| 11 | jlens | rlens | 0.960 | 0.954 | 196 |
+| 11 | logit | rlens | 0.966 | 0.946 | 196 |
 
 ### Table 9 — semantic contrast across atomic and cumulative obfuscation
 
@@ -104,14 +104,14 @@ Pairwise agreement of the three readouts' mean vocabulary-difference vectors:
 |---|---|---|
 | clean_heldout | clean | 1.000 |
 | normalize | baseline | 1.000 |
-| rename_only | atomic | 0.307 |
+| rename_only | atomic | 0.964 |
 | opaque_only | atomic | 0.995 |
-| encode_only | atomic | 0.995 |
-| flatten_only | atomic | 0.990 |
-| rename_cumulative | cumulative | -0.023 |
-| rename_opaque | cumulative | 0.139 |
-| rename_opaque_encode | cumulative | 0.074 |
-| rename_opaque_encode_flatten | cumulative | -0.136 |
+| encode_only | atomic | 0.997 |
+| flatten_only | atomic | 0.891 |
+| rename_cumulative | cumulative | 0.969 |
+| rename_opaque | cumulative | 0.969 |
+| rename_opaque_encode | cumulative | 0.964 |
+| rename_opaque_encode_flatten | cumulative | 0.855 |
 
 ### Table 10 — lens fidelity diagnostics (warnings, never blocking)
 
@@ -164,24 +164,24 @@ A weak row does not invalidate its layer. It is the reason the verdict separates
 
 | arm | lens | mean_delta_contrast_z | sign_consistency_z | permutation_p | n_pairs |
 |---|---|---|---|---|---|
-| mismatched_pairs | jlens | -0.020 | 0.389 | 0.300 | 72 |
-| mismatched_pairs | logit | 0.133 | 0.542 | 0.170 | 72 |
-| mismatched_pairs | rlens | 0.035 | 0.514 | 0.588 | 72 |
-| random_lens | random | 0.019 | 0.472 | 0.800 | 72 |
-| gram_random_lens | gram_random | 0.004 | 0.556 | 0.972 | 72 |
-| role_swap_0 | jlens | 0.006 | 0.378 | 0.808 | 37 |
-| role_swap_0 | logit | -0.076 | 0.541 | 0.380 | 37 |
-| role_swap_0 | rlens | 0.049 | 0.622 | 0.566 | 37 |
-| role_swap_1 | jlens | -0.035 | 0.429 | 0.244 | 35 |
-| role_swap_1 | logit | 0.211 | 0.486 | 0.182 | 35 |
-| role_swap_1 | rlens | -0.041 | 0.457 | 0.656 | 35 |
+| mismatched_pairs | jlens | -0.256 | 0.250 | 0.000 | 72 |
+| mismatched_pairs | logit | -0.402 | 0.153 | 0.000 | 72 |
+| mismatched_pairs | rlens | -0.289 | 0.167 | 0.000 | 72 |
+| random_lens | random | -0.278 | 0.347 | 0.000 | 72 |
+| gram_random_lens | gram_random | 0.327 | 0.667 | 0.000 | 72 |
+| role_swap_0 | jlens | -0.215 | 0.351 | 0.002 | 37 |
+| role_swap_0 | logit | -0.390 | 0.189 | 0.000 | 37 |
+| role_swap_0 | rlens | -0.273 | 0.216 | 0.000 | 37 |
+| role_swap_1 | jlens | -0.324 | 0.114 | 0.000 | 35 |
+| role_swap_1 | logit | -0.478 | 0.200 | 0.000 | 35 |
+| role_swap_1 | rlens | -0.337 | 0.086 | 0.000 | 35 |
 
 ### Concept tokens at the reported cell
 
 | token | mean_delta_z | rank | sign_consistency | mean_prob_unsafe | mean_prob_safe |
 |---|---|---|---|---|---|
-|  vulnerable | -0.046 | 174 | 0.375 | 0.005 | 0.005 |
-|  safe | -0.057 | 186 | 0.375 | 0.005 | 0.005 |
-|  trusted | -0.043 | 171 | 0.500 | 0.005 | 0.005 |
-|  clean | -0.055 | 184 | 0.389 | 0.005 | 0.005 |
+|  vulnerable | -0.105 | 104 | 0.361 | 0.005 | 0.005 |
+|  safe | 0.009 | 93 | 0.472 | 0.005 | 0.005 |
+|  trusted | 0.348 | 58 | 0.833 | 0.005 | 0.005 |
+|  clean | 0.242 | 74 | 0.708 | 0.006 | 0.006 |
 
