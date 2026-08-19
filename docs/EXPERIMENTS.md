@@ -52,13 +52,15 @@ The flow, and why each step followed the last:
                                 │
                                 │  E15 the same transformations, on the security
                                 │  property: does "untrusted data reaches this
-                                │  sink" survive them?
-                                │  → 1.000 clean over a 0.491 floor, renaming cheap,
-                                │    the cumulative ladder's last rung breaks it —
-                                │    at 1.3B, 6.7B AND starcoder2-3b. Atomic arms,
-                                │    a whole-program lexical floor and a
-                                │    vocabulary-space contrast (E15-C) are built
-                                │    and gated; not yet run at scale
+                                │  sink" survive them, and WHICH ONE breaks it?
+                                │  → 1.000 clean over TWO chance floors; opaque
+                                │    predicates and arithmetic rewriting are free;
+                                │    FLATTENING ALONE causes the whole collapse,
+                                │    with the interaction inside draw noise — at
+                                │    1.3B, 6.7B AND starcoder2-3b.
+                                │  E15-C the same states in the model's OWN
+                                │  vocabulary: a null, and inverted at 1.3B.
+                                │  Decodable is not verbalised.
                                 ↓
   Phase III  "decodable" is not "used". Four attempts:
              E7  whole-state patch      → transports the tokens too       [claim retired]
@@ -306,8 +308,19 @@ curves compare identical program sets.
 | 3 | + mixed boolean-arithmetic rewriting (`a+b → (a^b)+((a&b)<<1)`) |
 | 4 | + control-flow flattening into a dispatch loop |
 
-**Found** (6.7B binding, best layer per level): 1.000 → **0.897** (rename) →
-0.857 → 0.846 → **0.750** (flatten).
+**Found**, now on all three models (best layer per task, cumulative levels):
+
+| | rename | opaque | encode | flatten |
+|---|---:|---:|---:|---:|
+| binding — 1.3B / 6.7B / starcoder2-3b | 0.783 / 0.883 / 0.708 | 0.801 / 0.862 / 0.743 | 0.834 / 0.857 / 0.790 | **0.555 / 0.615 / 0.527** |
+| def–use — 1.3B / 6.7B / starcoder2-3b | 0.819 / 0.864 / 0.689 | 0.799 / 0.846 / 0.731 | 0.800 / 0.833 / 0.747 | **0.461 / 0.545 / 0.402** |
+
+**This is E15's companion control, and it is now complete.** The same
+transformations break binding and def–use the same way they break the security
+readout — and the security readout is *at least as robust* as either (0.882–0.986
+under renaming, 0.660–0.688 under flattening). So the boundary is a general limit
+of frozen linear readouts of program relations, **not** a security-specific
+fragility. That distinction was open for a year; it is now closed on evidence.
 
 **Reading — the layer breakdown is the finding.** Renaming pushes the
 *embedding and block-0* probes below chance (0.29–0.33): those layers keyed on
@@ -322,153 +335,98 @@ apart* things are and to *what they are called*, fragile when the scope or
 control structure it is a representation *of* becomes harder.
 
 Stage 31 · `obfuscation_levels_*.png`.
-
 ## E15 — source→sink under obfuscation (the security audit track)
 
-**Question.** E9 asks what the ladder does to *binding* and *def-use*. E15 asks
-the question the ladder was built for: **is the value that reaches a
-code-bearing, security-sensitive argument derived from untrusted input**, and
-does a readout of that fact, frozen on clean programs, survive obfuscation?
+**Question.** E9 asks what the transformations do to *binding* and *def-use*. E15
+asks the question they were built for: **is the value that reaches a code-bearing,
+security-sensitive argument derived from untrusted input**, does a readout of that
+fact, frozen on clean programs, survive obfuscation — and **which transformation
+breaks it, on its own**?
 
-**Why it exists.** Binding and def-use are the mechanism; "untrusted data
-reaches `os.system`" is the property an auditor actually wants, and it is the
-one an adversary has an interest in hiding. It is also the first place in this
-project where the corpus is built around a security label rather than a
-graph-theoretic relation.
+**Why it exists.** Binding and def-use are the mechanism; "untrusted data reaches
+`os.system`" is the property an auditor actually wants, and the one an adversary
+has an interest in hiding.
 
-**Method.** 3 sink families (command execution, SQL execution, dynamic code
-execution) × 4 flow structures (direct, assignment chain, branch/merge, one
-helper boundary) × 20 base seeds × 2 labels = **480 clean programs**. Each base
-is a matched unsafe/safe pair holding the same source, propagation, trusted
-alternative and sink, differing **only at the sink argument** — checked
-character-exactly, not asserted. 14 seeds per cell train the readout, 6 are held
-out, and **only held-out programs are transformed**, with E9's rewrites
-unchanged. The readout is fitted once on clean training programs and frozen,
-exactly as in E5/E9.
+**Method.** 3 sink families × 4 flow structures × 20 base seeds × 2 labels =
+**480 clean programs**. Each base is a matched unsafe/safe pair holding the same
+source, propagation, trusted alternative and sink, differing **only at the sink
+argument** — checked character-exactly. 14 seeds per cell train the readout, 6 are
+held out, and **only held-out programs are transformed**. The readout is fitted
+once on clean training programs and frozen.
 
-**Ten conditions: four atomic, four cumulative.** The first runs (the table
-below) evaluated the cumulative ladder only, which is why "flattening breaks it"
-was a *marginal* claim — level 4 bundles four transformations. The same four
-rewrites are now also applied **one at a time**:
+**Ten conditions — four atomic, four cumulative.** The same four rewrites are
+applied one at a time *and* composed:
 
 | kind | conditions |
 |---|---|
 | baseline | `normalize` (ast round-trip only) |
-| atomic | `rename_only`, `opaque_only`, `encode_only`, `flatten_only` |
-| cumulative | `rename_cumulative`, `rename_opaque`, `rename_opaque_encode`, `rename_opaque_encode_flatten` |
+| **atomic** | `rename_only`, `opaque_only`, `encode_only`, `flatten_only` |
+| **cumulative** | `rename_cumulative` → `rename_opaque` → `rename_opaque_encode` → `rename_opaque_encode_flatten` |
 
-No new obfuscation algorithm, and no arbitrary pairwise combinations: the atomic
-arms make the existing rewrites individually addressable, nothing more. Each
-variant's transformations are **read off its own AST** and must equal exactly
-what its condition declares, both members of a pair share one draw, and the
-transformed pair is re-checked for sink-argument confinement — all inside S0.
+No new obfuscation algorithm and no arbitrary combinations — the atomic arms make
+the existing rewrites individually addressable. 1296 held-out variants per model.
+Each variant's transformations are **read off its own AST** and must equal exactly
+what its condition declares; both pair members share one draw; the transformed
+pair is re-checked for sink-argument confinement — all inside gate S0.
 
-Three differences are computed on every cell: `delta_clean` (what a condition
-costs), `delta_previous` (the **marginal** cost of the step a cumulative
-condition adds — the only column that licenses "adding X costs Y"), and
-`delta_atomic` (cumulative minus its atomic counterpart: the **interaction**).
-Flattening is named as a cause only where `flatten_only` supports it; otherwise
-the result is reported as a cumulative effect. `rename_only` and
-`rename_cumulative` are the same transformation under independent draws, so
-their difference is a measured draw-noise floor for the interaction column.
+**Four control arms, all frozen and all transferred**: `local_surface` (±3 token
+ids at the anchor), `whole_program_lexical` (token n-grams + char 3–5-grams over
+the **entire** program), `embedding` (layer −1) and `hidden_state`. The two lexical
+arms answer different questions — the local one bounds "the identifier gives it
+away", the whole-program one bounds "the generator left a shortcut in the text".
 
-**No sanitizers.** `html.escape` before `exec` and `shlex.quote` before `eval`
-are not mitigations, so the generic sanitizer list used in E6/E7 is deliberately
-not reused: the safe member carries an independently trusted literal instead.
-Labels are recomputed from each program by two independent readings — a static
-taint fixpoint matched on call shapes, and instrumented execution under stubs
-where every dangerous API is a recorder and builtins are empty — which must
-agree with each other and with the stored label.
+**Found** (site `sink_arg`, 144 held-out programs / 72 bases per row, cluster
+bootstrap, read at the layer nearest 48% depth: 1.3B L11, 6.7B L15, starcoder2-3b
+L15). All six gates pass on all three models with no overrides.
 
-**Controls — four arms, all frozen and all transferred.** `local_surface` (±3
-token ids at the anchor, no hidden states), `whole_program_lexical` (token
-uni/bigrams and char 3–5-grams over the **entire** program text, no hidden
-states), `embedding` (layer −1: token identity before any computation) and
-`hidden_state`. The two lexical arms answer different questions: the local one
-bounds "the identifier at the anchor gives it away", the whole-program one bounds
-"the generator left something in the text" — the floor the ±3 window structurally
-cannot see, and the one E15's headline limitation has always been about. Both are
-fitted on clean training programs only and transferred without refitting, so
-"renaming kills the lexical shortcut" is a measurement rather than an argument.
-Plus the selectivity control and grouped CV by base. The generator alternates
-which chain name carries the tainted value across bases, which is what keeps
-those baselines near chance on clean text. The whole-program arm is given no AST,
-graph or taint features: it bounds the textual shortcut, it is not a competing
-program analysis, and a chance score there still does not rule out a predictor
-that runs the taint analysis itself.
-
-**Found** (site `sink_arg`, 144 held-out programs from 72 bases per row, cluster
-bootstrap over bases, **three models**). Read at the layer nearest 48% of
-network depth — 1.3B L11 (48%), 6.7B L15 (48%), starcoder2-3b L15 (52%) — which
-in all three is also the argmax of clean-training CV. Comparing layer *index* to
-layer index (6.7B's L11 is only 35% depth) reverses the rename ordering and is
-how a cross-model claim goes wrong; `relative_depth` is a column in every row for
-exactly that reason.
-
-| | 1.3B | 6.7B | starcoder2-3b |
+| condition | 1.3B | 6.7B | starcoder2-3b |
 |---|---:|---:|---:|
-| measured surface baseline, every condition | 0.444–0.507 | 0.444–0.507 | 0.451–0.521 |
+| local surface floor, every condition | 0.431–0.514 | 0.431–0.514 | 0.431–0.521 |
+| **whole-program lexical floor**, every condition | 0.465–0.535 | 0.465–0.535 | 0.465–0.535 |
 | embedding layer (−1), clean | 0.482 | 0.482 | 0.482 |
 | **clean held-out** | **1.000** | **1.000** | **1.000** |
-| rename | 0.931 | **0.965** | 0.868 |
-| opaque predicates | 0.951 | 0.979 | 0.938 |
-| MBA encoding | 0.938 | 0.958 | 0.924 |
-| **control-flow flattening** | **0.632** | **0.562** | **0.569** |
+| `rename_only` | 0.938 | 0.986 | 0.882 |
+| `opaque_only` | **1.000** | **1.000** | **1.000** |
+| `encode_only` | **1.000** | **1.000** | **1.000** |
+| **`flatten_only`** | **0.688** | **0.667** | **0.660** |
+| full ladder | 0.729 | 0.653 | 0.674 |
 
-**Reading.** Chance at the input (0.482), built inside the first quarter of the
-network, at ceiling near half depth and held to the output — E2's profile on a
-security label, now replicated across scale *and* across architecture family and
-pretraining corpus. The frozen surface arm never leaves chance in any condition
-or any model, so this is not the identifier: at level 1 renaming destroys every
-identifier and the hidden-state readout loses 0.03–0.13. E9's boundary reappears
-exactly where E9 put it, three times. (Starcoder2-3b builds the property
-noticeably earlier — 0.896 already at 10% depth against 0.76–0.78 for both
-deepseek models.)
+**Reading — the atomic arms are the finding.** Chance at the input against *two*
+measured floors, ceiling by half depth, held to the output. Then: opaque
+predicates and arithmetic rewriting are **exactly free**; renaming costs 0.01–0.12;
+and **flattening alone costs 0.31–0.34**, within 0.03 of what the entire
+four-transformation composition costs. The interaction (cumulative − atomic) is
++0.042 / −0.014 / +0.014 against a *measured* draw-noise floor of 0.021 / 0.035 /
+0.028 — indistinguishable from noise. **Composition is not the threat; one
+transformation is.** The model is reading control structure, and when the
+structure is dissolved the readout goes with it.
 
-**The level-4 number is worse than it looks, and the third model is what proves
-it.** The three accuracies sit within 0.07 of each other and are produced three
-different ways: 1.3B half-loses the distinction (51% of matched pairs get the
-same label, no class preference), 6.7B **skews toward "unsafe"** (positive rate
-0.729, 0.792 on unsafe against 0.333 on safe), and starcoder2-3b **skews the
-opposite way, toward "safe"** (positive rate 0.347, 0.417 on unsafe against
-0.722 on safe). A constant predictor of either class scores 0.500 on this
-balanced set, so residual accuracy that biases in *opposite directions* across
-models is each model's prior, not retained flow information. At `last_token` the
-collapse is total: outside a narrow band around half depth, all three models
-return a constant answer at exactly 0.500 with a **zero-width** interval.
-Reporting the two sites separately, and `pairs_same_label` beside accuracy, is
-what keeps this from being read as "60% retained".
+**The flattening number is worse than it looks.** At `flatten_only` about half the
+matched pairs collapse to one label (0.514 / 0.556 / 0.458), and under the full
+ladder the class biases run in *opposite* directions across models — 6.7B toward
+"unsafe" (0.861/0.444), starcoder2-3b toward "safe" (0.569/0.778). A constant
+predictor of either class scores exactly 0.500 on this balanced set.
 
-**The errors run the dangerous way.** Starcoder2-3b's renaming loss is entirely
-false negatives — 0.750 on unsafe against 0.986 on safe — and in the
-`assign_chain` structure it misses **78% of the vulnerable programs** (0.222 on
-unsafe, 0.944 on safe) after nothing but consistent identifier renaming. 1.3B
-loses the same 0.07 symmetrically. Same headline number, different failure; an
-audit readout has to be quoted per class.
+**The dangerous errors arrive first, and before any structural change.** Under
+renaming alone starcoder2-3b is 0.882 pooled but **0.764 on unsafe against 1.000
+on safe** — the whole loss is false negatives. By structure the **assignment chain
+is the fragile one under renaming** in all three models (0.778 / 0.972 / 0.639)
+while `branch_merge` is untouched at 1.000; by sink family nothing reproduces.
 
-**Where it breaks.** By structure, the ordering now reproduces in three models:
-`direct` and `branch_merge` are untouched or nearly untouched by renaming, the
-**assignment chain is the fragile one** (1.3B 0.806, 6.7B 0.861, starcoder2-3b
-0.583) with the helper boundary next. A merge point being at least as robust as
-a two-step alias chain is backwards from "longer chain is harder" and, after
-three replications, is the open question this track raises. By sink family:
-nothing that reproduces across models — the readout tracks flow, not which API
-sits at the end.
+**The boundary is general.** The companion E9 run is complete on all three models:
+the same transformations take binding from 1.000 to 0.708–0.883 (rename) and
+0.527–0.615 (flatten), and def–use to 0.689–0.864 and 0.402–0.545. The security
+readout is **at least as robust** as the primitives it rests on. So the supported
+claim is "structural obfuscation breaks frozen linear readouts of program
+relations, security ones included" — *not* "security representations are
+specifically fragile".
 
-**Limitation, stated up front.** Unlike E2, the floor is *not* pinned to chance
-against every predictor — only against declared feature families. Two are now
-measured (the local window and the whole-program lexical reader), but something
-able to read the whole program and run the taint analysis itself would still
-score 1.0. **The table above is cumulative-only**: level 4 there bundles four
-transformations, so "flattening breaks it" remains a marginal claim for those
-runs (levels 1–3 together cost ≤0.13, the dispatch loop a further ~0.30) until
-the atomic arms have run at canonical scale. The embedding control is
-model-*independent* by construction here — at layer −1 the probe reduces to a
-lookup on the anchor token, and the benchmark's fixed identifier pool induces the
-same partition under both tokenizers, so the three −1 rows are one measurement,
-not three. And the companion E9 run on starcoder2-3b is still outstanding, so
-"the ladder breaks this readout in three models" is established while "security
-representations are *specifically* fragile" is not. Nothing causal is claimed.
+**Limitations, stated up front.** The floor is pinned only against *declared*
+feature families: both measured floors sit at chance, but a reader that ran the
+taint analysis itself would score 1.0. Eight arms, not the full 15-combination
+lattice. "Flattening breaks the readout" is a claim about a **frozen linear
+readout at one position**, not proof the model lost the information. The embedding
+control is one measurement, not three. Nothing causal is claimed.
 
 ## E15-C — is the difference in the model's own vocabulary? (observational)
 
@@ -480,48 +438,63 @@ from its matched safe counterfactual?
 
 **Method.** Three readouts on the same states — the logit lens, E10/E11's J-lens
 and E14's R-lens — with **R-lens declared primary in code before any result was
-produced**, because the target includes early and middle layers, exactly where
-E14's gate R showed raw autograd is least faithful. For every matched pair the
-orientation is fixed once, `delta(pair, token) = score_unsafe − score_safe`, and
-recorded on every row.
+produced**. Orientation fixed once: `delta = score_unsafe − score_safe`. Discovery
+is two-phase and training-only (a full-vocabulary logit-lens ranking on clean
+*training* pairs gives a 196-token candidate pool; each lens then ranks the pool
+by its own training delta) and is **frozen to disk before stage 126 reads it
+back**. A small security lexicon is fixed in advance and validated per model, with
+every omission recorded and nothing substituted.
 
-Discovery is two-phase and training-only: the **full vocabulary** is ranked by
-mean paired delta under the logit lens on clean *training* pairs (the only
-readout that can afford 32k rows — a J/R vector is one VJP per token), the top
-±k become the candidate pool, and each lens then ranks the pool by its own
-training delta. The frozen sets are written to disk **before** stage 126 reads
-them back, so the freeze is a filesystem boundary rather than a promise. A small
-security lexicon (`unsafe/untrusted/tainted/vulnerable` vs
-`safe/trusted/clean`) is fixed in advance and validated per model: a word is used
-only if it is one stable vocabulary token that decodes back to itself, every
-omission is recorded, and nothing is substituted. The omissions differ by model —
-on deepseek-coder-1.3b only `" vulnerable"` survives on the unsafe pole; on
-starcoder2-3b `" unsafe"` does and `vulnerable` does not.
+**Controls.** Permutation of the orientation within bases; mismatched pairs from
+different bases; the embedding layer, which at `sink_arg` *is* the token-identity
+contrast; the `last_token` site, where both members carry the same token;
+identifier-role strata; and random and Gram-matched lenses.
 
-**Controls.** Permutation of the orientation within bases (keeps the pairs,
-destroys the alignment); mismatched pairs from different bases (keeps the
-alignment, destroys the pairing); the embedding layer, which at `sink_arg` *is*
-the token-identity contrast; the `last_token` site, where both members carry the
-same token; the identifier-role strata; and random and Gram-matched lenses.
+**Found — a null, in all three models.**
 
-**What it is not.** Observational. No J-space intervention, no interchange. A
-vocabulary direction that separates the two members is not evidence the model
-uses it — E13 is the causal result. **"The token `unsafe` appeared in a top-k
-list" is not a finding**: a semantic reading requires train-only discovery,
-held-out replication, a consistent orientation, an effect above both controls,
-stability across identifier roles, and evidence not reducible to the differing
-sink-argument token. Stage 127 decides that by checklist and reports a **valid
-null** when it does not hold — which is compatible with the probe succeeding,
-since "linearly decodable" and "expressed in output-aligned coordinates" are
-different claims.
+| clean held-out, R-lens | 1.3B | 6.7B | starcoder2-3b |
+|---|---:|---:|---:|
+| concept token surviving the tokenizer | `" vulnerable"` | `" vulnerable"` | `" unsafe"` |
+| held-out sign consistency | **0.153** | 0.403 | 0.694 |
+| permutation p | 0.000 | 0.004 | 0.008 |
+| verdict | **inverted** | stable non-security | stable non-security |
 
-**Lens quality is a diagnostic, never a gate.** Every layer is measured with
-every lens; weak next-token recovery, weak agreement with the final-layer
-distribution or poor relevance conservation produce warnings and the layer stays
-in. The report distinguishes *mechanically invalid*, *mechanically valid with
-weak lens fidelity*, *valid null*, and *positive above controls*.
+The security lexicon carries the contrast in no model, and the direction is not
+even consistent: 1.3B is significantly **inverted** — 85% of pairs put *less*
+unsafe-pole mass on the unsafe member — while starcoder2-3b leans the hypothesised
+way without reaching the pre-declared 0.70 threshold.
 
-Stages 120–127 · design `docs/design/E15_SINKFLOW_PLAN.md` (§11 A, §12 B, §13 C).
+**Why this is a real null and not a failed measurement.** (i) The three lenses
+**agree** — pairwise cosine of their mean vocabulary-difference vectors is
+0.75–0.97 — so the null is not an artifact of the primary-lens choice. (ii) It is
+not token identity: the embedding-layer contrast is null (p = 0.71–0.81) and 75%
+of pairs share the *same* anchor token at `sink_arg` anyway. (iii) Something does
+replicate — frozen training-discovered tokens reappear in the held-out top-k at
+0.875 / 0.750 / 0.875 against 0.000–0.031 for random control tokens — but the
+tokens are semantically arbitrary (`" ?"`, `"?."`, `"??"`; `" liber"`, `"clean"`,
+`"tbl"`; `"OrNull"`, `"displayMode"`, `"fuchsia"`). (iv) Under flattening the
+vocabulary contrast degrades alongside the probe (sign consistency 0.389 / 0.472 /
+0.583), so **both trained and output-aligned auditability are lost together**.
+
+**What this licenses:** *linear decodability and expression in the model's own
+output vocabulary are different properties, and E15 exhibits the first without the
+second.* It does not license any sentence containing "the model represents
+unsafe".
+
+**Diagnostics, which warn but never block.** R-lens relevance conservation is
+1.0001 (1.3B) and 0.9993 (6.7B) — essentially exact — but **0.154 on
+starcoder2-3b**, so the LRP rules do not conserve relevance on that architecture
+and its R-lens numbers carry a fidelity caveat. Final-layer rank agreement runs
+0.18–0.47. Next-token recovery is unmeasurable (a 196-token candidate vocabulary
+rarely coincides with the true next token). The experiment is mechanically valid
+throughout; the report separates *mechanically invalid* from *mechanically valid
+with weak lens fidelity*.
+
+**Not causal.** No intervention of any kind. E13's interchange is the causal
+instrument, and it covers binding, not this.
+
+Stages 120–127 · design `docs/design/E15_SINKFLOW_PLAN.md` (§8 results, §11 A,
+§12 B, §13 C, §14 commands).
 
 ---
 

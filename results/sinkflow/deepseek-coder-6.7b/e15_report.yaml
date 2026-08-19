@@ -64,28 +64,33 @@ gates:
     unchanged, every requested layer has all three lenses, the vocabulary rows and
     model checkpoint match, and nothing is non-finite'
   owner_stage: 125_sinkflow_vocab_discover
-  recorded: false
-  passed: false
-  value: null
+  recorded: true
+  passed: true
+  value: 196.0
   override: false
-  detail: not recorded
+  detail: 196 frozen candidate tokens (1 unsafe-oriented, 3 safe-oriented, 3 words
+    omitted by the tokenizer check), three lenses at each of 10 layers, forward logits
+    unchanged within 0.01 relative, 36 weak-fidelity warnings (non-blocking)
 - gate: J1
   meaning: 'the contrast is mechanically sound: one matched member of each polarity
     per pair, one recorded orientation, tokens discovered on training pairs only and
     frozen before held-out scoring, controls run, all cells present'
   owner_stage: 126_sinkflow_vocab_contrast
-  recorded: false
-  passed: false
-  value: null
+  recorded: true
+  passed: true
+  value: 43200.0
   override: false
-  detail: not recorded
+  detail: 43200 pair rows over 3 lenses x 10 layers x 2 sites x 10 conditions on 72
+    held-out bases, oriented unsafe-minus-safe, tokens frozen at 2026-08-19 10:52:50
+    on training digest 0b5fcb12614bab1e; permutation, mismatched-pair, random and
+    Gram-matched controls all ran
 clean_training_cv:
   best_layer: 15
   best_accuracy: 1.0
   best_selectivity: 0.4290552584670232
   surface_accuracy: 0.4912655971479501
 frozen_evaluation:
-  reported_layer: 11
+  reported_layer: 15
   by_condition:
   - condition: clean_heldout
     obf_level: -1
@@ -110,82 +115,82 @@ frozen_evaluation:
   - condition: rename_only
     obf_level: 11
     obf_name: rename_only
-    accuracy: 0.9513888888888888
-    ci_lo: 0.9166666666666666
-    ci_hi: 0.9791666666666666
+    accuracy: 0.9861111111111112
+    ci_lo: 0.9652777777777778
+    ci_hi: 1.0
     surface_accuracy: 0.4861111111111111
-    pairs_same_label: 0.0972222222222222
-    frac_predicted_unsafe: 0.5208333333333334
+    pairs_same_label: 0.0277777777777777
+    frac_predicted_unsafe: 0.4861111111111111
     n: 144
   - condition: opaque_only
     obf_level: 12
     obf_name: opaque_only
-    accuracy: 0.9861111111111112
-    ci_lo: 0.9652777777777778
+    accuracy: 1.0
+    ci_lo: 1.0
     ci_hi: 1.0
     surface_accuracy: 0.4444444444444444
-    pairs_same_label: 0.0277777777777777
+    pairs_same_label: 0.0
     frac_predicted_unsafe: 0.5
     n: 144
   - condition: encode_only
     obf_level: 13
     obf_name: encode_only
-    accuracy: 0.9930555555555556
-    ci_lo: 0.9791666666666666
+    accuracy: 1.0
+    ci_lo: 1.0
     ci_hi: 1.0
     surface_accuracy: 0.4444444444444444
-    pairs_same_label: 0.0138888888888888
-    frac_predicted_unsafe: 0.5069444444444444
+    pairs_same_label: 0.0
+    frac_predicted_unsafe: 0.5
     n: 144
   - condition: flatten_only
     obf_level: 14
     obf_name: flatten_only
-    accuracy: 0.7152777777777778
-    ci_lo: 0.6527777777777778
-    ci_hi: 0.7777777777777778
+    accuracy: 0.6666666666666666
+    ci_lo: 0.5972222222222222
+    ci_hi: 0.7293402777777775
     surface_accuracy: 0.4444444444444444
-    pairs_same_label: 0.5138888888888888
-    frac_predicted_unsafe: 0.6875
+    pairs_same_label: 0.5555555555555556
+    frac_predicted_unsafe: 0.6666666666666666
     n: 144
   - condition: rename_cumulative
     obf_level: 21
     obf_name: rename_cumulative
-    accuracy: 0.9097222222222222
-    ci_lo: 0.8611111111111112
-    ci_hi: 0.9583333333333334
+    accuracy: 0.9513888888888888
+    ci_lo: 0.9164930555555556
+    ci_hi: 0.9791666666666666
     surface_accuracy: 0.5069444444444444
-    pairs_same_label: 0.125
-    frac_predicted_unsafe: 0.5208333333333334
+    pairs_same_label: 0.0972222222222222
+    frac_predicted_unsafe: 0.4513888888888889
     n: 144
   - condition: rename_opaque
     obf_level: 22
     obf_name: rename_opaque
-    accuracy: 0.9027777777777778
-    ci_lo: 0.8611111111111112
-    ci_hi: 0.9444444444444444
+    accuracy: 0.9652777777777778
+    ci_lo: 0.9305555555555556
+    ci_hi: 0.986284722222222
     surface_accuracy: 0.4722222222222222
-    pairs_same_label: 0.1944444444444444
-    frac_predicted_unsafe: 0.5694444444444444
+    pairs_same_label: 0.0694444444444444
+    frac_predicted_unsafe: 0.5208333333333334
     n: 144
   - condition: rename_opaque_encode
     obf_level: 23
     obf_name: rename_opaque_encode
-    accuracy: 0.8680555555555556
-    ci_lo: 0.8055555555555556
-    ci_hi: 0.9236111111111112
+    accuracy: 0.9652777777777778
+    ci_lo: 0.9305555555555556
+    ci_hi: 0.9930555555555556
     surface_accuracy: 0.5138888888888888
-    pairs_same_label: 0.2083333333333333
-    frac_predicted_unsafe: 0.6041666666666666
+    pairs_same_label: 0.0694444444444444
+    frac_predicted_unsafe: 0.5069444444444444
     n: 144
   - condition: rename_opaque_encode_flatten
     obf_level: 24
     obf_name: rename_opaque_encode_flatten
-    accuracy: 0.625
-    ci_lo: 0.5831597222222222
-    ci_hi: 0.6736111111111112
+    accuracy: 0.6527777777777778
+    ci_lo: 0.5902777777777778
+    ci_hi: 0.7152777777777778
     surface_accuracy: 0.5138888888888888
-    pairs_same_label: 0.75
-    frac_predicted_unsafe: 0.875
+    pairs_same_label: 0.5833333333333334
+    frac_predicted_unsafe: 0.7083333333333334
     n: 144
   atomic:
   - condition: clean_heldout
@@ -213,52 +218,52 @@ frozen_evaluation:
     pairs_same_label: 0.0
     n: 144
   - condition: rename_only
-    accuracy: 0.9513888888888888
-    ci_lo: 0.9166666666666666
-    ci_hi: 0.9791666666666666
-    delta_clean: -0.0486111111111111
-    acc_unsafe: 0.9722222222222222
-    acc_safe: 0.9305555555555556
-    false_negative_rate: 0.0277777777777777
-    false_positive_rate: 0.0694444444444444
-    frac_predicted_unsafe: 0.5208333333333334
-    pairs_same_label: 0.0972222222222222
-    n: 144
-  - condition: opaque_only
     accuracy: 0.9861111111111112
     ci_lo: 0.9652777777777778
     ci_hi: 1.0
     delta_clean: -0.0138888888888888
-    acc_unsafe: 0.9861111111111112
-    acc_safe: 0.9861111111111112
-    false_negative_rate: 0.0138888888888888
-    false_positive_rate: 0.0138888888888888
-    frac_predicted_unsafe: 0.5
+    acc_unsafe: 0.9722222222222222
+    acc_safe: 1.0
+    false_negative_rate: 0.0277777777777777
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.4861111111111111
     pairs_same_label: 0.0277777777777777
     n: 144
-  - condition: encode_only
-    accuracy: 0.9930555555555556
-    ci_lo: 0.9791666666666666
+  - condition: opaque_only
+    accuracy: 1.0
+    ci_lo: 1.0
     ci_hi: 1.0
-    delta_clean: -0.0069444444444444
+    delta_clean: 0.0
     acc_unsafe: 1.0
-    acc_safe: 0.9861111111111112
+    acc_safe: 1.0
     false_negative_rate: 0.0
-    false_positive_rate: 0.0138888888888888
-    frac_predicted_unsafe: 0.5069444444444444
-    pairs_same_label: 0.0138888888888888
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.5
+    pairs_same_label: 0.0
+    n: 144
+  - condition: encode_only
+    accuracy: 1.0
+    ci_lo: 1.0
+    ci_hi: 1.0
+    delta_clean: 0.0
+    acc_unsafe: 1.0
+    acc_safe: 1.0
+    false_negative_rate: 0.0
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.5
+    pairs_same_label: 0.0
     n: 144
   - condition: flatten_only
-    accuracy: 0.7152777777777778
-    ci_lo: 0.6527777777777778
-    ci_hi: 0.7777777777777778
-    delta_clean: -0.2847222222222222
-    acc_unsafe: 0.9027777777777778
-    acc_safe: 0.5277777777777778
-    false_negative_rate: 0.0972222222222222
-    false_positive_rate: 0.4722222222222222
-    frac_predicted_unsafe: 0.6875
-    pairs_same_label: 0.5138888888888888
+    accuracy: 0.6666666666666666
+    ci_lo: 0.5972222222222222
+    ci_hi: 0.7293402777777775
+    delta_clean: -0.3333333333333333
+    acc_unsafe: 0.8333333333333334
+    acc_safe: 0.5
+    false_negative_rate: 0.1666666666666666
+    false_positive_rate: 0.5
+    frac_predicted_unsafe: 0.6666666666666666
+    pairs_same_label: 0.5555555555555556
     n: 144
   cumulative:
   - condition: clean_heldout
@@ -288,97 +293,97 @@ frozen_evaluation:
     pairs_same_label: 0.0
     n: 144
   - condition: rename_cumulative
-    accuracy: 0.9097222222222222
-    ci_lo: 0.8611111111111112
-    ci_hi: 0.9583333333333334
-    delta_clean: -0.0902777777777777
-    delta_previous: -0.0902777777777777
-    acc_unsafe: 0.9305555555555556
-    acc_safe: 0.8888888888888888
-    false_negative_rate: 0.0694444444444444
-    false_positive_rate: 0.1111111111111111
-    frac_predicted_unsafe: 0.5208333333333334
-    pairs_same_label: 0.125
+    accuracy: 0.9513888888888888
+    ci_lo: 0.9164930555555556
+    ci_hi: 0.9791666666666666
+    delta_clean: -0.0486111111111111
+    delta_previous: -0.0486111111111111
+    acc_unsafe: 0.9027777777777778
+    acc_safe: 1.0
+    false_negative_rate: 0.0972222222222222
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.4513888888888889
+    pairs_same_label: 0.0972222222222222
     n: 144
   - condition: rename_opaque
-    accuracy: 0.9027777777777778
-    ci_lo: 0.8611111111111112
-    ci_hi: 0.9444444444444444
-    delta_clean: -0.0972222222222222
-    delta_previous: -0.0069444444444444
-    acc_unsafe: 0.9722222222222222
-    acc_safe: 0.8333333333333334
-    false_negative_rate: 0.0277777777777777
-    false_positive_rate: 0.1666666666666666
-    frac_predicted_unsafe: 0.5694444444444444
-    pairs_same_label: 0.1944444444444444
+    accuracy: 0.9652777777777778
+    ci_lo: 0.9305555555555556
+    ci_hi: 0.986284722222222
+    delta_clean: -0.0347222222222222
+    delta_previous: 0.0138888888888889
+    acc_unsafe: 0.9861111111111112
+    acc_safe: 0.9444444444444444
+    false_negative_rate: 0.0138888888888888
+    false_positive_rate: 0.0555555555555555
+    frac_predicted_unsafe: 0.5208333333333334
+    pairs_same_label: 0.0694444444444444
     n: 144
   - condition: rename_opaque_encode
-    accuracy: 0.8680555555555556
-    ci_lo: 0.8055555555555556
-    ci_hi: 0.9236111111111112
-    delta_clean: -0.1319444444444444
-    delta_previous: -0.0347222222222222
+    accuracy: 0.9652777777777778
+    ci_lo: 0.9305555555555556
+    ci_hi: 0.9930555555555556
+    delta_clean: -0.0347222222222222
+    delta_previous: 0.0
     acc_unsafe: 0.9722222222222222
-    acc_safe: 0.7638888888888888
+    acc_safe: 0.9583333333333334
     false_negative_rate: 0.0277777777777777
-    false_positive_rate: 0.2361111111111111
-    frac_predicted_unsafe: 0.6041666666666666
-    pairs_same_label: 0.2083333333333333
+    false_positive_rate: 0.0416666666666666
+    frac_predicted_unsafe: 0.5069444444444444
+    pairs_same_label: 0.0694444444444444
     n: 144
   - condition: rename_opaque_encode_flatten
-    accuracy: 0.625
-    ci_lo: 0.5831597222222222
-    ci_hi: 0.6736111111111112
-    delta_clean: -0.375
-    delta_previous: -0.2430555555555555
-    acc_unsafe: 1.0
-    acc_safe: 0.25
-    false_negative_rate: 0.0
-    false_positive_rate: 0.75
-    frac_predicted_unsafe: 0.875
-    pairs_same_label: 0.75
+    accuracy: 0.6527777777777778
+    ci_lo: 0.5902777777777778
+    ci_hi: 0.7152777777777778
+    delta_clean: -0.3472222222222222
+    delta_previous: -0.3125
+    acc_unsafe: 0.8611111111111112
+    acc_safe: 0.4444444444444444
+    false_negative_rate: 0.1388888888888888
+    false_positive_rate: 0.5555555555555556
+    frac_predicted_unsafe: 0.7083333333333334
+    pairs_same_label: 0.5833333333333334
     n: 144
   atomic_vs_cumulative:
   - transformation: rename
     atomic: rename_only
-    atomic_accuracy: 0.9513888888888888
+    atomic_accuracy: 0.9861111111111112
     cumulative: rename_cumulative
-    cumulative_accuracy: 0.9097222222222222
-    interaction: -0.04166666666666663
-    marginal_in_ladder: -0.0902777777777777
+    cumulative_accuracy: 0.9513888888888888
+    interaction: -0.03472222222222232
+    marginal_in_ladder: -0.0486111111111111
     atomic_fnr: 0.0277777777777777
-    cumulative_fnr: 0.0694444444444444
+    cumulative_fnr: 0.0972222222222222
     note: 'draw-noise floor: identical transformations, independent draws'
   - transformation: opaque
     atomic: opaque_only
-    atomic_accuracy: 0.9861111111111112
+    atomic_accuracy: 1.0
     cumulative: rename_opaque
-    cumulative_accuracy: 0.9027777777777778
-    interaction: -0.08333333333333337
-    marginal_in_ladder: -0.0069444444444444
-    atomic_fnr: 0.0138888888888888
-    cumulative_fnr: 0.0277777777777777
+    cumulative_accuracy: 0.9652777777777778
+    interaction: -0.03472222222222221
+    marginal_in_ladder: 0.0138888888888889
+    atomic_fnr: 0.0
+    cumulative_fnr: 0.0138888888888888
     note: ''
   - transformation: encode
     atomic: encode_only
-    atomic_accuracy: 0.9930555555555556
+    atomic_accuracy: 1.0
     cumulative: rename_opaque_encode
-    cumulative_accuracy: 0.8680555555555556
-    interaction: -0.125
-    marginal_in_ladder: -0.0347222222222222
+    cumulative_accuracy: 0.9652777777777778
+    interaction: -0.03472222222222221
+    marginal_in_ladder: 0.0
     atomic_fnr: 0.0
     cumulative_fnr: 0.0277777777777777
     note: ''
   - transformation: flatten
     atomic: flatten_only
-    atomic_accuracy: 0.7152777777777778
+    atomic_accuracy: 0.6666666666666666
     cumulative: rename_opaque_encode_flatten
-    cumulative_accuracy: 0.625
-    interaction: -0.09027777777777779
-    marginal_in_ladder: -0.2430555555555555
-    atomic_fnr: 0.0972222222222222
-    cumulative_fnr: 0.0
+    cumulative_accuracy: 0.6527777777777778
+    interaction: -0.01388888888888884
+    marginal_in_ladder: -0.3125
+    atomic_fnr: 0.1666666666666666
+    cumulative_fnr: 0.1388888888888888
     note: ''
   per_class_and_pairs:
   - condition: clean_heldout
@@ -403,83 +408,83 @@ frozen_evaluation:
     n: 144
   - condition: rename_only
     condition_kind: atomic
-    accuracy: 0.9513888888888888
+    accuracy: 0.9861111111111112
     acc_unsafe: 0.9722222222222222
-    acc_safe: 0.9305555555555556
+    acc_safe: 1.0
     false_negative_rate: 0.0277777777777777
-    false_positive_rate: 0.0694444444444444
-    frac_predicted_unsafe: 0.5208333333333334
-    pairs_same_label: 0.0972222222222222
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.4861111111111111
+    pairs_same_label: 0.0277777777777777
     n: 144
   - condition: opaque_only
     condition_kind: atomic
-    accuracy: 0.9861111111111112
-    acc_unsafe: 0.9861111111111112
-    acc_safe: 0.9861111111111112
-    false_negative_rate: 0.0138888888888888
-    false_positive_rate: 0.0138888888888888
+    accuracy: 1.0
+    acc_unsafe: 1.0
+    acc_safe: 1.0
+    false_negative_rate: 0.0
+    false_positive_rate: 0.0
     frac_predicted_unsafe: 0.5
-    pairs_same_label: 0.0277777777777777
+    pairs_same_label: 0.0
     n: 144
   - condition: encode_only
     condition_kind: atomic
-    accuracy: 0.9930555555555556
+    accuracy: 1.0
     acc_unsafe: 1.0
-    acc_safe: 0.9861111111111112
+    acc_safe: 1.0
     false_negative_rate: 0.0
-    false_positive_rate: 0.0138888888888888
-    frac_predicted_unsafe: 0.5069444444444444
-    pairs_same_label: 0.0138888888888888
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.5
+    pairs_same_label: 0.0
     n: 144
   - condition: flatten_only
     condition_kind: atomic
-    accuracy: 0.7152777777777778
-    acc_unsafe: 0.9027777777777778
-    acc_safe: 0.5277777777777778
-    false_negative_rate: 0.0972222222222222
-    false_positive_rate: 0.4722222222222222
-    frac_predicted_unsafe: 0.6875
-    pairs_same_label: 0.5138888888888888
+    accuracy: 0.6666666666666666
+    acc_unsafe: 0.8333333333333334
+    acc_safe: 0.5
+    false_negative_rate: 0.1666666666666666
+    false_positive_rate: 0.5
+    frac_predicted_unsafe: 0.6666666666666666
+    pairs_same_label: 0.5555555555555556
     n: 144
   - condition: rename_cumulative
     condition_kind: cumulative
-    accuracy: 0.9097222222222222
-    acc_unsafe: 0.9305555555555556
-    acc_safe: 0.8888888888888888
-    false_negative_rate: 0.0694444444444444
-    false_positive_rate: 0.1111111111111111
-    frac_predicted_unsafe: 0.5208333333333334
-    pairs_same_label: 0.125
+    accuracy: 0.9513888888888888
+    acc_unsafe: 0.9027777777777778
+    acc_safe: 1.0
+    false_negative_rate: 0.0972222222222222
+    false_positive_rate: 0.0
+    frac_predicted_unsafe: 0.4513888888888889
+    pairs_same_label: 0.0972222222222222
     n: 144
   - condition: rename_opaque
     condition_kind: cumulative
-    accuracy: 0.9027777777777778
-    acc_unsafe: 0.9722222222222222
-    acc_safe: 0.8333333333333334
-    false_negative_rate: 0.0277777777777777
-    false_positive_rate: 0.1666666666666666
-    frac_predicted_unsafe: 0.5694444444444444
-    pairs_same_label: 0.1944444444444444
+    accuracy: 0.9652777777777778
+    acc_unsafe: 0.9861111111111112
+    acc_safe: 0.9444444444444444
+    false_negative_rate: 0.0138888888888888
+    false_positive_rate: 0.0555555555555555
+    frac_predicted_unsafe: 0.5208333333333334
+    pairs_same_label: 0.0694444444444444
     n: 144
   - condition: rename_opaque_encode
     condition_kind: cumulative
-    accuracy: 0.8680555555555556
+    accuracy: 0.9652777777777778
     acc_unsafe: 0.9722222222222222
-    acc_safe: 0.7638888888888888
+    acc_safe: 0.9583333333333334
     false_negative_rate: 0.0277777777777777
-    false_positive_rate: 0.2361111111111111
-    frac_predicted_unsafe: 0.6041666666666666
-    pairs_same_label: 0.2083333333333333
+    false_positive_rate: 0.0416666666666666
+    frac_predicted_unsafe: 0.5069444444444444
+    pairs_same_label: 0.0694444444444444
     n: 144
   - condition: rename_opaque_encode_flatten
     condition_kind: cumulative
-    accuracy: 0.625
-    acc_unsafe: 1.0
-    acc_safe: 0.25
-    false_negative_rate: 0.0
-    false_positive_rate: 0.75
-    frac_predicted_unsafe: 0.875
-    pairs_same_label: 0.75
+    accuracy: 0.6527777777777778
+    acc_unsafe: 0.8611111111111112
+    acc_safe: 0.4444444444444444
+    false_negative_rate: 0.1388888888888888
+    false_positive_rate: 0.5555555555555556
+    frac_predicted_unsafe: 0.7083333333333334
+    pairs_same_label: 0.5833333333333334
     n: 144
   baseline_arms:
   - condition: clean_heldout
@@ -493,42 +498,42 @@ frozen_evaluation:
     local_surface: 0.4444444444444444
     whole_program_lexical: 0.5
   - condition: rename_only
-    hidden_state: 0.9513888888888888
+    hidden_state: 0.9861111111111112
     embedding: 0.5486111111111112
     local_surface: 0.4861111111111111
     whole_program_lexical: 0.5347222222222222
   - condition: opaque_only
-    hidden_state: 0.9861111111111112
+    hidden_state: 1.0
     embedding: 0.5069444444444444
     local_surface: 0.4444444444444444
     whole_program_lexical: 0.5069444444444444
   - condition: encode_only
-    hidden_state: 0.9930555555555556
+    hidden_state: 1.0
     embedding: 0.5069444444444444
     local_surface: 0.4444444444444444
     whole_program_lexical: 0.4930555555555556
   - condition: flatten_only
-    hidden_state: 0.7152777777777778
+    hidden_state: 0.6666666666666666
     embedding: 0.5069444444444444
     local_surface: 0.4444444444444444
     whole_program_lexical: 0.4722222222222222
   - condition: rename_cumulative
-    hidden_state: 0.9097222222222222
+    hidden_state: 0.9513888888888888
     embedding: 0.5138888888888888
     local_surface: 0.5069444444444444
     whole_program_lexical: 0.4861111111111111
   - condition: rename_opaque
-    hidden_state: 0.9027777777777778
+    hidden_state: 0.9652777777777778
     embedding: 0.5694444444444444
     local_surface: 0.4722222222222222
     whole_program_lexical: 0.5208333333333334
   - condition: rename_opaque_encode
-    hidden_state: 0.8680555555555556
+    hidden_state: 0.9652777777777778
     embedding: 0.5069444444444444
     local_surface: 0.5138888888888888
     whole_program_lexical: 0.5
   - condition: rename_opaque_encode_flatten
-    hidden_state: 0.625
+    hidden_state: 0.6527777777777778
     embedding: 0.4513888888888889
     local_surface: 0.5138888888888888
     whole_program_lexical: 0.4930555555555556

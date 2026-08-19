@@ -64,21 +64,26 @@ gates:
     unchanged, every requested layer has all three lenses, the vocabulary rows and
     model checkpoint match, and nothing is non-finite'
   owner_stage: 125_sinkflow_vocab_discover
-  recorded: false
-  passed: false
-  value: null
+  recorded: true
+  passed: true
+  value: 196.0
   override: false
-  detail: not recorded
+  detail: 196 frozen candidate tokens (1 unsafe-oriented, 3 safe-oriented, 3 words
+    omitted by the tokenizer check), three lenses at each of 8 layers, forward logits
+    unchanged within 0.01 relative, 26 weak-fidelity warnings (non-blocking)
 - gate: J1
   meaning: 'the contrast is mechanically sound: one matched member of each polarity
     per pair, one recorded orientation, tokens discovered on training pairs only and
     frozen before held-out scoring, controls run, all cells present'
   owner_stage: 126_sinkflow_vocab_contrast
-  recorded: false
-  passed: false
-  value: null
+  recorded: true
+  passed: true
+  value: 34560.0
   override: false
-  detail: not recorded
+  detail: 34560 pair rows over 3 lenses x 8 layers x 2 sites x 10 conditions on 72
+    held-out bases, oriented unsafe-minus-safe, tokens frozen at 2026-08-18 21:27:52
+    on training digest 0b5fcb12614bab1e; permutation, mismatched-pair, random and
+    Gram-matched controls all ran
 clean_training_cv:
   best_layer: 11
   best_accuracy: 1.0

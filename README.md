@@ -62,21 +62,34 @@ identifier leaves middle layers at 0.85–0.90 while pushing the embedding layer
 *below* chance. Control-flow flattening is the real limit (0.750). The same
 boundary holds for a security property an auditor would actually ask for: E15
 reads "is the value at this `os.system` / `cursor.execute` / `eval` argument
-source-derived?" at **1.000** on held-out programs over a measured 0.491 floor,
-loses only 0.03–0.13 when every identifier is renamed, and breaks under the
-cumulative ladder's last rung — in **all three models**, across two architecture
-families. (Those runs applied the transformations cumulatively, so the last rung
-bundles four of them. The **atomic** arms that make "flattening" an attribution
-rather than a marginal claim are built, gated and smoke-tested; they have not yet
-run at canonical scale.)
+source-derived?" at **1.000** on held-out programs over *two* measured chance
+floors — a ±3-token window and a reader of the whole program text.
 
-That last result also shows why a pooled accuracy is not enough. At level 4 the
-three models score within 0.07 of each other while biasing in *opposite*
-directions (1.3B symmetric, 6.7B toward "unsafe", starcoder2 toward "safe"), so
-the residual is each model's prior, not retained flow information. And
-starcoder2's renaming loss is entirely **false negatives** — it misses 78% of
-the vulnerable programs in the assignment-chain structure after nothing but
-consistent identifier renaming, which the pooled 0.868 hides completely.
+**And it says which transformation does the damage.** Applying each rewrite on
+its own, in all three models: opaque dead branches and arithmetic rewriting cost
+**exactly nothing**, renaming costs 0.01–0.12, and **control-flow flattening
+alone costs 0.31–0.34** — within 0.03 of what the entire four-transformation
+composition costs. The interaction sits inside the measured draw-noise floor, so
+composition adds nothing: one transformation carries the failure. The companion
+E9 run shows binding and def–use break the same way, so this is a general limit
+of frozen linear readouts, not a security-specific fragility.
+
+That last result also shows why a pooled accuracy is not enough. Under flattening
+the three models score within 0.03 of each other while about half the matched
+pairs collapse to one label and the class biases run in *opposite* directions
+(6.7B toward "unsafe" at 0.861/0.444, starcoder2 toward "safe" at 0.569/0.778),
+so the residual is each model's prior, not retained flow information. And
+starcoder2's renaming loss is entirely **false negatives** — 0.764 on unsafe
+against 1.000 on safe, and 0.639 in the assignment-chain structure, after nothing
+but consistent identifier renaming, which the pooled 0.882 hides completely.
+
+**Verbalised? No.** Mapping the same states into each model's own output
+vocabulary — logit lens, J-lens and R-lens, with R-lens declared primary in
+advance — finds no security concept in any of the three. The direction is not
+even consistent across models, and in 1.3B it is significantly *inverted*. All
+three lenses agree, so this is a real null: **linear decodability and expression
+in a model's own vocabulary are different properties, and E15 has the first
+without the second.**
 
 **Causal use — open, after four attempts.** This is where the work is:
 
@@ -165,12 +178,13 @@ is CPU and re-runnable.
                               clean frozen readout (4 arms) → ten held-out
                               conditions, four ATOMIC and four CUMULATIVE → report
                               Four gates (S0–S3), all passing at 1.3B, 6.7B and
-                              starcoder2-3b on the cumulative ladder, no overrides.
+                              starcoder2-3b, no overrides. FLATTENING ALONE
+                              accounts for the whole collapse.
 125–127 vocabulary contrast   E15-C: build + freeze logit/J/R lenses and the
                               discovered token set on TRAINING pairs (GPU) →
                               held-out contrast and controls (CPU) → report
-                              Two mechanical gates (J0, J1) that must pass even
-                              when the semantic result is null.
+                              Two mechanical gates (J0, J1). Result is a NULL in
+                              all three models — they passed on it, as designed.
 ```
 
 Stage status lives in `results/STATUS.yaml`; stage 90 reads it and skips
@@ -237,7 +251,7 @@ make binding-pilot            # then read results/binding/*/e13_report.md
 |---|---|---|
 | `deepseek-coder-1.3b-base` | development, smoke, pilots | runs on Apple-Silicon MPS; full pipeline in minutes |
 | `deepseek-coder-6.7b-base` | main results | strong open code model; one cluster GPU in fp16 |
-| `starcoder2-3b` | architecture replication | different corpus and architecture family; E15 complete, E1–E9 running |
+| `starcoder2-3b` | architecture replication | different corpus and architecture family; E15, E15-C and the E9 companion all complete |
 
 Base (non-instruct) models on purpose: the object of study is the representation
 built during code pretraining, not chat behaviour.

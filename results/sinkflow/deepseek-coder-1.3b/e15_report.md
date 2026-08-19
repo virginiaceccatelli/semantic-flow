@@ -10,8 +10,8 @@
 | S1 | PASS | 1776.0000 | 1776 programs extracted across ['train', 'heldout', 'heldout_obf'] with no skips and every source/sink anchor covered exactly by stored token positions |
 | S2 | PASS | 1.0000 | fitted on 336 clean training programs (168 bases, digest 0b5fcb12614bab1e); best hidden accuracy 1.0000 at site sink_arg layer 11 with selectivity 0.3874; surfa |
 | S3 | PASS | 1600.0000 | 1600 result rows over conditions ['clean_heldout', 'normalize', 'rename_only', 'opaque_only', 'encode_only', 'flatten_only', 'rename_cumulative', 'rename_opaque |
-| J0 | FAIL |  | not recorded |
-| J1 | FAIL |  | not recorded |
+| J0 | PASS | 196.0000 | 196 frozen candidate tokens (1 unsafe-oriented, 3 safe-oriented, 3 words omitted by the tokenizer check), three lenses at each of 8 layers, forward logits uncha |
+| J1 | PASS | 34560.0000 | 34560 pair rows over 3 lenses x 8 layers x 2 sites x 10 conditions on 72 held-out bases, oriented unsafe-minus-safe, tokens frozen at 2026-08-18 21:27:52 on tra |
 
 ## Clean training programs (grouped CV, site `sink_arg`)
 
