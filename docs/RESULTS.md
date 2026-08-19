@@ -17,44 +17,47 @@ Three rules for reading this file:
 
 ## The one-paragraph version
 
-Variable binding and def–use structure **are** represented in DeepSeek-Coder
-1.3B and 6.7B, above a floor that is pinned to exactly 0.500 by construction
-rather than estimated. That representation is **built** in the first few
-transformer blocks, **robust** to distance and to identifier renaming in the
-middle layers, and **fragile** exactly where the underlying scope or control
-structure gets harder. Whether the model **causally uses** it now has its
-first affirmative answer: in E13 a rank-1, magnitude-free interchange transports
-*which definition is in scope* into both value assignments of a 2x2 — including
-the one it was never fitted on, where a token or answer-direction account demands
-the opposite movement. Three earlier intervention designs were retired or parked
-for nameable reasons, and those retirements are not incidental: they are the
-project's methodological content, and E13's design is what survived them. The
-closed-form difference-in-means baseline transports too, at 76%, and the learned
-direction dominates it at two-thirds the dose.
+Variable binding and def–use structure **are** represented in DeepSeek-Coder 1.3B
+and 6.7B, above a floor pinned to exactly 0.500 by construction rather than
+estimated. That representation is **built** in the first few transformer blocks,
+**robust** to distance and to identifier renaming in the middle layers, and
+**fragile** exactly where the underlying scope or control structure gets harder.
+The same holds for a property an auditor would actually ask for: E15 reads
+"is the value at this dangerous argument source-derived?" at 1.000 over *two*
+measured floors in three models — and, applying each transformation on its own,
+shows that **control-flow flattening alone destroys the readout** while opaque
+predicates and arithmetic rewriting cost exactly nothing and composition adds no
+measurable interaction. What survives flattening is each model's class prior, not
+flow information. Whether the model **causally uses** any of this has its first
+affirmative answer in E13, where a rank-1, magnitude-free interchange transports
+*which definition is in scope* into both value assignments of a 2×2 — including
+the one it was never fitted on. And E15-C establishes a boundary in the other
+direction: mapped into the models' own output vocabulary, the security
+distinction is **not there** — decodable is not verbalised.
 
 ---
 
 ## Status at a glance
 
-| Exp | What it tests | 1.3B | 6.7B | Status | Verdict |
-|---|---|:--:|:--:|---|---|
-| **E2** binding | binding, surface-proof | ● | ● | **foundation** | decodable from mid layers over a 0.500 floor |
-| **E3** def-use | def→use edges | ● | ● | **foundation** | decodable, mild distance decay |
-| E1 token type | lexical baseline | ● | ● | supporting | ceiling at the embeddings, as designed |
-| E4 control dep | guard→statement | ● | ● | supporting, **not central** | decodable, but its surface floor is already 0.927 |
-| E5 context | robustness to filler | ● | ● | supporting | survives length; collapses under interference |
-| E9 obfuscation | semantics-preserving edits | ◐ | ● | supporting | robust to renaming mid-layer; breaks on flattening |
-| E8 real code | CodeSearchNet transfer | ● | ● | supporting | transfers, with a stated limitation |
-| E7 patching | causal, raw | ● | ● | supporting | **preliminary only**; the "isolates use" claim is retired |
-| E10-0 J-lens | instrument validation | ● | ● | supporting | V1 exact; the Jacobian correction is real |
-| E11 J-space | is the value causally reused? | ● | ● | **NO-GO** | see below — reported, not claimed |
-| E12 store | text-absent value transfer | ● | ☐ | **parked** | behavioural gate failed at 0.418 |
-| **E13** binding interchange | is the *binding* transported? | ☐ | ● | **H0–H5 pass** | a rank-1 interchange installs the binding's value in BOTH arms (100%/100%), beating a closed-form baseline at two-thirds the dose |
-| **E15** source→sink | which transformation breaks a frozen security readout, *on its own*? | ● | ● | **validated foundation** | decodable at 1.000 over **two** chance floors in three models; **flattening alone accounts for the whole collapse**, opaque predicates and MBA encoding cost exactly nothing, and the interaction is inside draw noise |
-| **E15-C** vocabulary contrast | is the safe→unsafe difference in the model's own output basis? | ● | ● | supporting | **null in all three models** — and significantly *inverted* in 1.3B. Decodable ≠ verbalised |
-| E6, E10-2, E10-3 | — | — | — | archived | `docs/ARCHIVE.md` |
+| Exp | What it tests | 1.3B | 6.7B | SC2 | Status | Finding |
+|---|---|:--:|:--:|:--:|---|---|
+| **E2** binding | which definition an identifier refers to | ● | ● | ◑ | **foundation** | decodable from mid layers over a construction-pinned 0.500 floor |
+| **E3** def–use | directed def→use edges | ● | ● | ◑ | **foundation** | decodable, mild distance decay, same floor |
+| **E15** source→sink | which transformation breaks a frozen *security* readout, on its own? | ● | ● | ● | **foundation** | 1.000 over **two** chance floors; **flattening alone** causes the whole collapse; opaque predicates and MBA encoding cost exactly nothing |
+| **E13** binding interchange | is the binding *causally* transported? | ☐ | ● | ☐ | **H0–H5 pass** | a rank-1 interchange installs the binding's value in both arms (100%/100%), beating a closed-form baseline at two-thirds the dose |
+| **E5** context | robustness to distance vs interference | ● | ● | ☐ | supporting | survives 1000 tokens of filler; collapses under interference |
+| **E9** obfuscation | the same transformations on binding and def–use | ● | ● | ● | supporting | **E15's companion control** — same boundary, so the failure is not security-specific |
+| **E15-C** vocabulary contrast | is the safe→unsafe difference in the model's own output basis? | ● | ● | ● | supporting | **null in all three**, significantly *inverted* in 1.3B. Decodable ≠ verbalised |
+| **E14** R-lens | is a more faithful backward pass available? | ● | ● | ● | supporting | relevance conservation **1.0001 / 0.9993** on both deepseek models, **0.154 on starcoder2-3b** |
+| E10-0 J-lens | instrument validation for the lens track | ● | ● | ● | supporting | V1 exact (cosine 1.0000); the Jacobian correction is real |
+| E4 control dep | guard→statement | ● | ● | ☐ | contrast only | decodable, but its surface floor is already 0.927 — the contrast that makes E2 mean something |
 
-Legend: ☐ not run · ◐ dev model only · ◑ partially run · ● run
+**Retired, parked and superseded** — E1, E6, E7, E8, E10-2, E10-3, E11, E12 — are
+not listed above because none of them carries a claim this project stands on.
+Their data, code and the reason each was retired are in `docs/ARCHIVE.md`; every
+one is still runnable.
+
+Legend: ☐ not run · ◑ partially run · ● run
 
 ---
 
@@ -159,7 +162,7 @@ representations should not be trusted.
 
 ---
 
-# 3. Supporting, with limitations stated
+# 3. The instrument track: what we can and cannot read with
 
 ## E4 — control dependence is decodable, but largely local syntax
 
@@ -178,33 +181,6 @@ This is reported as **the contrast that makes E2's isolation meaningful**, not
 as a finding about representation. It is also the evidence that the project's
 criterion for "semantic" excludes things.
 
-## E8 — transfers to real code, but does not transfer the isolation
-
-| 6.7B, aggregate AUC | surface | embedding | peak | last |
-|---|---:|---:|---:|---:|
-| binding | 0.673 | 0.962 | **0.978** (L7) | 0.913 |
-| def-use | 0.590 | 0.958 | **0.979** (L3) | 0.907 |
-
-Hidden states beat the surface baseline by +0.31/+0.39 AUC at the same relative
-depth as synthetic, which rules out a pure generator-template explanation.
-
-**The limitation, stated plainly.** In real code identifiers are genuinely
-informative, so the embedding layer starts at 0.96 and no stratum pins the floor
-to chance. E8 shows *the whole decoder transfers to naturalistic inputs*; it
-does **not** show that the semantic component specifically transfers. E2's
-isolation still rests on synthetic programs.
-
-## E7 — preliminary causal evidence only
-
-6.7B mean recovery: `sink_arg` 0.99 at layer 0 → 0.00 at layer 31;
-`last_token` −0.01 → 1.00; `sanitizer_def` 0.000 everywhere.
-
-**Supported:** the causal locus of the decision migrates from the sink-argument
-token to the last-token position across the middle of the network, crossing over
-near where E2's binding curve plateaus.
-
-**Retired:** that it isolates *semantic use*. See `docs/ARCHIVE.md`.
-
 ## E10-0 — the J-lens implementation is correct
 
 | check | 1.3B | 6.7B | reading |
@@ -218,49 +194,37 @@ n=10, too small to carry weight; V1 and V2 are the load-bearing checks.
 
 ---
 
-# 4. The open question: is the representation causally used?
+# 4. Causal use: answered for binding, open for flow
 
 This is the project's centre of gravity and it is **not settled**. Four designs
 have been attempted. The honest summary of each:
 
-## E11 — reported, but formally a NO-GO
+## E14 — the R-lens is more faithful, except on one architecture
 
-`results/jspace/6.7b-5fam/go_no_go.md` and `go_no_go_answer.md` both read
-**Verdict: NO-GO**:
+The J-lens's backward pass runs through modules that are not degree-1
+homogeneous, so its averaged first-order approximation degrades going backwards.
+**Relevance conservation** measures that directly: `rho = sum_t <ds/dh_l,t,
+h_l,t> / s` is exactly 1 when the tail above layer `l` is homogeneous. Under raw
+autograd `rho` wanders and **inverts sign** with depth (3.15 / −1.99 / 0.67 on a
+reference architecture) — the mechanism behind the non-monotonic J-lens curves.
+The R-lens installs LRP rules that make the traversed tail homogeneous, and they
+are **value-preserving**: they change no activation, only the backward graph,
+which gate J0 verifies against the ordinary forward logits.
 
-| check | use position | answer position |
-|---|---|---|
-| behavioural balanced accuracy (≥ 0.75) | FAIL 0.706 | FAIL 0.706 |
-| readout beats the random control | FAIL | PASS +0.257 |
-| swap moves logits toward the swapped value | FAIL +0.001 | PASS +0.141 |
-| **swap is specific to the value subspace** | FAIL | **FAIL −0.016 [−0.024, −0.009]** |
-| cross-operation, all families positive | False | False |
+Measured on the canonical E15-C runs (stage 125):
 
-**What can be said.** At the readout position the value-coordinate swap reaches
-46% of the efficiency of an ideal same-norm push while two matched-norm controls
-reach zero, and it is positive in both operation families the model computes
-reliably. Something output-aligned is causally reused near the output.
+| R-lens `rho` (target 1.000) | deepseek-coder-1.3b | deepseek-coder-6.7b | starcoder2-3b |
+|---|---:|---:|---:|
+| | **1.0001** | **0.9993** | **0.154** |
 
-**What cannot.** That it is the Jacobian correction — the plain logit lens is
-*more* efficient at the same site, and the specificity check fails. And the
-use-position null is **retracted**: a dose-matched control showed the site's
-response to small edits is 18× convex, so no two-dimensional edit is large
-enough to test the question there.
-
-E11's numbers are reported in the paper because the *failure* is informative.
-They are not claimed as a positive result.
-
-## E12 — parked, and why
-
-The behavioural gate failed at **0.418 balanced accuracy on 1.3B — below
-chance** — with the correct answer as argmax on 6.3% of prompts against a 10%
-uniform floor. Two of four operation families sat at *exactly* 0.500, which a
-simulation showed a model doing **no computation at all** reproduces by picking
-whichever candidate is numerically closer to the head literal.
-
-The design coupled a question about program state to two chained arithmetic
-steps. That is a design error, not a finding about code models. Code and gates
-are kept and runnable; nothing is claimed.
+Both deepseek models hit the target essentially exactly. **StarCoder2-3b does
+not** — the rules do not conserve relevance on that architecture, so its R-lens
+numbers carry a fidelity caveat and no single-model claim should rest on them.
+This is why the R-lens is not simply declared "better" and used everywhere, and
+why lens fidelity is measured as a **non-blocking diagnostic** rather than a
+gate: a gate would have silently excluded the layers and models where the
+instrument is uncomfortable, which is exactly the selection an interpretability
+result must not make.
 
 ## E13 — H0–H5 all pass (6.7B)
 
@@ -473,30 +437,30 @@ Withdrawn claims, with reasons: `docs/ARCHIVE.md`.
 
 # 6. Open items
 
+Ordered by what would most change what this project can claim.
+
 1. **Explain, or bound, the rank-1 edit beating the whole-state patch**
    (100% vs 86% at 60% of the edit norm). The available account — the full patch
    installs components that fight the driving one — is plausible and untested. A
    reviewer will ask; better to answer it first.
-2. **A second model and a second site for E13.** The result is currently one
-   cell: `use`, layer 8, rank 1, 6.7B. 1.3b is cheap now that stage 106 runs in
-   minutes.
-3. **Context-matched pairs on real code** — the highest-value follow-up for the
-   foundation. It would upgrade E8 from a transfer check to a like-for-like
-   replication of E2's isolation. Build by mutating real functions; 150
-   candidate sites already exist in the CodeSearchNet corpus.
-4. **A cross-position string-equality surface baseline** in stage 20. The
-   current baseline cannot represent "the inner definition's name equals the
-   use's name", which is the feature a lexical adversary would use. CPU-only,
-   about an hour. Better to build it than to have a reviewer build it.
-5. **E8 stratum sizes** — `static_probes.csv` records per-stratum accuracy but
-   not per-stratum *n*. If `same_name_diff_binding` on real code is a handful of
-   pairs, the claim weakens from "fails" to "underpowered".
-6. **Report E5/E9 at peak rather than layer-averaged** — the averages hide the
-   strongest findings (renaming fools layer 0 but not layer 11).
-7. **E4 re-anchoring** — guard variable and statement target instead of the
-   span's trailing literal. CPU-only re-run.
-
-Raw data of record: `results/tables/*.csv` (one row per measurement). Rendered
-summaries: `results/tables/md/*.md`. Figures: `results/figures/`. Regenerate
-with `python scripts/90_make_paper_assets.py` (`--include-archived` rebuilds the
-retired ones too).
+2. **A second model and a second site for E13.** The causal result is currently
+   one cell: `use`, layer 8, rank 1, 6.7B. 1.3b is cheap now that stage 106 runs
+   in minutes.
+3. **Explain the `assign_chain` fragility** (E15 §8.5). It has now replicated in
+   three models under renaming *alone* — starcoder2-3b drops to 0.639 there while
+   `branch_merge` stays at 1.000. Diagnose on the existing
+   `sinkflow_predictions.csv` before spending any GPU.
+4. **Decide whether the R-lens is usable on starcoder2-3b at all.** Relevance
+   conservation 0.154 against ~1.000 on both deepseek models is an
+   architecture-level finding about the LRP rules, and it belongs to E14's track.
+   See the lens roadmap in `docs/EXPERIMENTS.md`.
+5. **Context-matched pairs on real code** — the highest-value follow-up for the
+   foundation, and the one thing that would let E15's floor argument extend
+   beyond synthetic programs. Build by mutating real functions.
+6. **Fix `configs/models.yaml` ↔ `MODEL_REGISTRY`** so declared `probe_layers` are
+   the ones that actually run. Repo-wide; it is why the three models sit on
+   different layer grids and why every cross-model number has to be read at
+   matched relative depth.
+7. **A cross-position string-equality surface baseline** in stage 20. The current
+   baseline cannot represent "the inner definition's name equals the use's name",
+   which is the feature a lexical adversary would use. CPU-only.

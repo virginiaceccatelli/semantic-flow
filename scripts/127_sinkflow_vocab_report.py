@@ -71,6 +71,7 @@ def main(
     model: str = typer.Option(...),
     results: Optional[Path] = typer.Option(None, help="Default results/sinkflow/{model}"),
     site: str = typer.Option("sink_arg", help="The site the headline is read at"),
+    figures: Path = typer.Option(Path("results/figures"), help="Where the depth-sweep figure goes"),
     lens: Optional[str] = typer.Option(None, help="Default = the declared primary lens"),
     layer: Optional[int] = typer.Option(None, help="Report at this layer"),
     depth: Optional[float] = typer.Option(None, help="…or at the layer closest to this relative depth"),
@@ -81,7 +82,11 @@ def main(
     import pandas as pd
     import yaml
 
-    from src.experiments.sinkflow_vocab import PRIMARY_LENS
+    from src.experiments.sinkflow_vocab import (
+        PRIMARY_LENS,
+        calibrate_against_lens_controls,
+        plot_depth_sweep,
+    )
     from src.experiments.store_gates import SINKFLOW, gate_table
     from src.utils import write_manifest
 
@@ -99,6 +104,13 @@ def main(
         raise typer.Exit(2)
 
     frames = {name[:-4]: pd.read_csv(vocab_dir / name) for name in needed}
+    summary = pd.concat([frames["vocab_summary"], frames["vocab_controls"]],
+                        ignore_index=True)
+    specificity = calibrate_against_lens_controls(summary)
+    if not specificity.empty:
+        specificity.to_csv(vocab_dir / "vocab_specificity.csv", index=False)
+    depth_figure = plot_depth_sweep(summary, figures / f"e15c_depth_{model}.png",
+                                    site=site, model=model)
     summary = frames["vocab_summary"]
     lens_kind = lens or PRIMARY_LENS
     gates = {row["gate"]: row for row in gate_table(model, root=root, spec=SINKFLOW)}
@@ -338,6 +350,34 @@ def main(
         "",
         table(similarity, ["condition", "condition_kind", "cosine_to_clean"]),
         "",
+        "### Table 11 — specificity: is the effect better than a random direction?",
+        "",
+        "The permutation null asks whether the safe→unsafe *orientation* carries "
+        "the effect. It does not ask whether **this** direction in the residual "
+        "stream is special. `specificity` is the real arm's displacement from "
+        "chance over the largest displacement any random or Gram-matched lens "
+        "reaches in the same cell: **at or below 1.0, the result is not specific "
+        "to the lens.**",
+        "",
+        table(specificity[(specificity["site"] == site)
+                          & (specificity["condition"] == condition)]
+              if not specificity.empty else pd.DataFrame(),
+              ["lens", "layer", "relative_depth", "sign_consistency_z",
+               "permutation_p", "displacement", "control_displacement",
+               "specificity", "beats_random_lens"], limit=40),
+        "",
+        "### Table 12 — is the contrast a distribution artifact?",
+        "",
+        "`corr_contrast_entropy` and `corr_contrast_norm` correlate the paired "
+        "contrast against the paired difference in the candidate distribution's "
+        "entropy and score norm. A large |r| means the contrast tracks the "
+        "*shape* of the distribution rather than its content, which would explain "
+        "a consistent sign without any concept being involved.",
+        "",
+        table(by_condition, ["condition", "mean_delta_contrast_z",
+                             "corr_contrast_entropy", "corr_contrast_norm",
+                             "mean_delta_entropy"]),
+        "",
         "### Table 10 — lens fidelity diagnostics (warnings, never blocking)",
         "",
         "A weak row does not invalidate its layer. It is the reason the verdict "
@@ -384,6 +424,17 @@ def main(
         "headline": {k: _plain(v) for k, v in row.items()},
         "mismatched_control": {k: _plain(v) for k, v in mismatched.items()},
         "n_weak_fidelity_rows": int((diagnostics["weak_fidelity"] == 1).sum()),
+        "depth_figure": str(depth_figure),
+        "specificity_at_reported_cell": (
+            _plain(specificity[(specificity["lens"] == lens_kind)
+                               & (specificity["site"] == site)
+                               & (specificity["condition"] == condition)
+                               & (specificity["layer"] == layer)]["specificity"].iloc[0])
+            if not specificity.empty and layer is not None
+            and len(specificity[(specificity["lens"] == lens_kind)
+                                & (specificity["site"] == site)
+                                & (specificity["condition"] == condition)
+                                & (specificity["layer"] == layer)]) else None),
     }
     (vocab_dir / "e15c_report.yaml").write_text(yaml.safe_dump(payload, sort_keys=False))
     (vocab_dir / "e15c_report.md").write_text(markdown + "\n")
