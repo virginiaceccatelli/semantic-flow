@@ -91,15 +91,13 @@ three lenses agree, so this is a real null: **linear decodability and expression
 in a model's own vocabulary are different properties, and E15 has the first
 without the second.**
 
-**Causal use — open, after four attempts.** This is where the work is:
-
-```
-E7  whole-state patching   → transports the input too          [claim retired]
-E10 output-aligned readout → instrument fine, both uses failed  [archived]
-E11 rank-2 coordinate swap → below the site's causal dose       [NO-GO, retracted]
-E12 latent store transfer  → bottlenecked on arithmetic         [parked]
-E13 binding interchange    → H0–H3 pass; H4/H5 running
-```
+**Causal use — answered for binding.** E13's rank-1, magnitude-free interchange
+transports *which definition is in scope* into both value assignments of a 2×2,
+including the arm it was never fitted on, where a token- or answer-direction
+account demands the opposite movement. All six gates H0–H5 pass on 6.7B. Three
+earlier intervention designs were retired or parked first, each for a different
+nameable reason, and those reasons are what produced E13's design
+(`docs/ARCHIVE.md`).
 
 Each failed for a *different, nameable* reason, and each reason constrained the
 next design. That sequence is the project's methodological content, not an
@@ -158,19 +156,18 @@ is CPU and re-runnable.
 ```
 00 generate data      CPU   programs + context variants + minimal pairs + obfuscation ladder + real sample
 10 extract            GPU   one forward pass per (model, dataset) → activation store
-20 static probes      CPU   E1–E4 (+E8): grouped CV, controls, frozen probe checkpoints
+20 static probes      CPU   E2–E4: grouped CV, controls, frozen probe checkpoints
 30 context            CPU   E5: frozen probes on filler variants
-31 obfuscation        CPU   E9: frozen probes on the execution-verified ladder
-50 causal patching    GPU   E7: patch clean→corrupted, layer × position
+31 obfuscation        CPU   E9: frozen probes on the execution-verified transformations
 60 J-lens validation  GPU   E10-0: instrument check — a GATE
-70–74 J-space         CPU/GPU  E11: counterfactual pairs → frozen lens → readout → swap → go/no-go
+110 R-lens validation GPU   E14: relevance conservation — a GATE
 90 paper assets       CPU   every table and figure, regenerated from CSVs alone
 
-── archived tracks, still runnable ──
-40 lead time          GPU   E6         · 61/62 J-lens taint / control-dep   E10-2, E10-3
-80–89 store           mixed E12 — parked at its behavioural gate
+── retired / parked, still runnable; see docs/ARCHIVE.md ──
+40 lead time (E6) · 50 patching (E7) · 61–62 J-lens uses (E10-2/-3)
+70–74 J-space (E11) · 80–89 store (E12)
 
-── the active experiments ──
+── the experiments that carry findings ──
 100–108 binding interchange   E13: factorial → verify → behaviour → extract → decode
                               → ceiling → interchange → report → diagnose
                               Six gates (H0–H5); each stage refuses to run on a failed one.

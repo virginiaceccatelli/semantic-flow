@@ -15,9 +15,13 @@ itself reads is `results/STATUS.yaml`.
 ## Contents
 
 - [§0 The research question, and the flow](#0-the-research-question-and-the-flow)
-- [§1 Phase I — Is the relation there?](#1-phase-i--is-the-relation-there) — E1, E2, E3, E4, E8
-- [§2 Phase II — What is it made of?](#2-phase-ii--what-is-it-made-of) — E5, E9
-- [§3 Phase III — Is it causally used?](#3-phase-iii--is-it-causally-used) — E7, E10, E11, E12, E13
+- [§1 Phase I — Is the relation there?](#1-phase-i--is-the-relation-there) — E2, E3, E4
+- [§2 Phase II — What is it made of?](#2-phase-ii--what-is-it-made-of) — E5, E9, **E15**, **E15-C**
+- [§3 Phase III — Is it causally used?](#3-phase-iii--is-it-causally-used) — E13
+
+This document maps **only the experiments that carry a finding**. Work that was
+retired, parked or superseded — E1, E6, E7, E8, E10-2, E10-3, E11, E12 — lives in
+`docs/ARCHIVE.md` with the reason for each. All of it is still runnable.
 - [§4 Shared conventions](#4-shared-conventions)
 - [§5 Models and replication](#5-models-and-replication)
 
@@ -41,11 +45,11 @@ conflate them, and most of this project's retractions come from doing so.
 The flow, and why each step followed the last:
 
 ```
-  Phase I    E1 machinery ─→ E2 binding ─→ E3 def-use ─→ E8 real code
-             (sanity)        THE FLOOR      same floor    transfer
+  Phase I    E2 binding ─────→ E3 def-use
+             THE FLOOR         same floor
                                 │
                                 │  E4 control dependence: floor is 0.927, not 0.500
-                                │  → demoted; kept as the CONTRAST that makes E2 mean something
+                                │  → kept only as the CONTRAST that makes E2 mean something
                                 ↓
   Phase II   E5 context: distance is cheap, interference is not
              E9 obfuscation: renaming survives mid-layer, flattening does not
@@ -102,28 +106,6 @@ E4 was demoted.
 ---
 
 # 1. Phase I — Is the relation there?
-
-## E1 — lexical token type (machinery check, not a finding)
-
-**Question.** Can a linear probe recover a token's syntactic class (keyword /
-identifier / literal / operator) from a single hidden state?
-
-**Why it exists.** It is a smoke test for the whole extraction chain. Token type
-is a pure surface property, so it must be near-ceiling at the embedding layer.
-If it is not, the tokenizer, the AST→token alignment or the activation store is
-broken, and every other number in the project is meaningless.
-
-**Method.** Multiclass linear probe on single positions, labels from
-`classify_token`, grouped cross-validation by source program.
-
-**Found.** Accuracy **1.000 at the embedding layer**, selectivity 0.88–0.90, in
-both models. Exactly as designed.
-
-**Reading.** Not a result about code models. It is the contrast that makes E2
-interpretable: lexical features are readable *before* any computation happens;
-semantic relations are not, and only appear after it.
-
-Stage 20 · rows `task=lexical_token_type` in `static_probes_*.csv`.
 
 ## E2 — variable binding (the foundation)
 
@@ -215,43 +197,6 @@ integer literals. Re-anchoring on the guard variable and statement target is a
 CPU-only re-run and remains open.
 
 Stage 20.
-
-## E8 — does any of this transfer to real code?
-
-**Question.** Are E2/E3 artifacts of a synthetic generator?
-
-**Method.** Stages 10 and 20 re-run unchanged on ~200 `ast`-parseable
-CodeSearchNet Python functions, fixed seed.
-
-**Found** (6.7B, aggregate AUC — read AUC, not accuracy, since accuracy is
-threshold-dependent and peaks at the embedding layer here):
-
-| | surface | embedding | peak | last |
-|---|---:|---:|---:|---:|
-| binding | 0.673 | 0.962 | **0.978** (L7) | 0.913 |
-| def-use | 0.590 | 0.958 | **0.979** (L3) | 0.907 |
-
-**Reading, with the limitation stated in the same breath.** Hidden states beat
-the surface baseline by +0.31/+0.39 AUC and the layer profile matches synthetic
-at the same relative depth, which rules out a pure generator-template
-explanation. But **real identifiers are genuinely informative** — `self._cache`
-and `result` look different — so the embedding layer starts at 0.96 and no
-stratum pins the floor to chance. E8 shows *the decoder transfers to
-naturalistic input*; it does **not** show that the semantic component
-specifically transfers. E2's isolation still rests on synthetic programs.
-
-Stages 10, 20 on `data/real/csn_python_200.jsonl`.
-
----
-
-# 2. Phase II — What is it made of?
-
-Phase I says a relation is present. It does not say what the representation is
-built from. Phase II breaks it in controlled ways: **the probes are fitted once
-on the base programs and then frozen**, never refitted on a perturbed variant,
-so any change in accuracy is a change in the model's state rather than in the
-probe. Ground truth is recomputed from each variant's own source, so a
-perturbation that genuinely changes the answer is scored against the new answer.
 
 ## E5 — context degradation: distance versus interference
 
@@ -593,7 +538,7 @@ Stages 120–127 · design `docs/design/E15_SINKFLOW_PLAN.md` (§8 results, §11
 ## The J-lens / R-lens track, end to end
 
 The lens work is spread over four experiments and it is worth reading as one
-line of argument. Methodology is `docs/METHODS.md` §11–§11b; this is what each
+line of argument. Methodology is `docs/METHODS.md` §10–§10b; this is what each
 step asked and what came back.
 
 | | question | verdict |
@@ -676,6 +621,109 @@ bounded (the J/R candidate pool is logit-lens-selected).
 J-space coordinate edit, no interchange, no swap. E13's interchange is the causal
 instrument in this project, and it covers *binding*, not source-to-sink flow.
 
+### What the null actually looks like by depth — and why it is not noise
+
+The headline reads one layer. The full layer sweep (`vocab_summary.csv`) shows the
+contrast is **systematic and depth-structured**, which is a stronger statement
+than "no effect":
+
+| R-lens sign consistency, `sink_arg`, clean held-out | embedding | ~10% | ~25% | ~35–48% | ~65% | last |
+|---|---:|---:|---:|---:|---:|---:|
+| deepseek-coder-1.3b | 0.12 (ns) | 0.53 | 0.36 | **0.15** | 0.14 | 0.25 |
+| deepseek-coder-6.7b | 0.11 (ns) | 0.54 | 0.53 | **0.40** | 0.21 | 0.26 |
+| starcoder2-3b | 0.12 (ns) | 0.56 | 0.58 | **0.62** | 0.39 | 0.50 |
+
+Read down the columns: both deepseek models start at chance and drift
+*monotonically below* 0.5 with depth, reaching significance from roughly a third
+of the way in and staying there. StarCoder2 does the opposite — it rises above 0.5
+through mid-depth, peaks at 0.69, and falls back. The embedding row is
+non-significant everywhere, which is the token-identity control passing.
+
+So there **is** a reliable, depth-organised difference between the two members in
+output-aligned coordinates. What there is not is a difference whose *sign* matches
+the security hypothesis, or even agrees between model families. That is why the
+verdict is a null on the security question and not a null on "anything is
+happening".
+
+### Roadmap — how to turn this into a significant finding
+
+Ordered by cost, and each step says what result would justify the next.
+
+**Tier 1 — re-analysis of artifacts already on disk. CPU, hours.**
+
+1. **Report the depth sweep as a first-class result, not a headline cell.** The
+   table above is already computed; it just is not plotted. A by-layer figure with
+   the permutation band behind it turns "we found nothing" into "we found a
+   systematic, family-dependent, depth-organised effect with the wrong sign",
+   which is a much harder result to dismiss.
+2. **Calibrate against the random lens rather than against zero.** In 1.3B the
+   `random` and `gram_random` lens controls also reach p = 0.000 — meaning the
+   permutation test is detecting *that the two states differ at all*, which any
+   direction picks up. Re-express every effect as a z-score against the
+   random-lens distribution. Some currently "significant" cells will stop being
+   significant, and that is the point.
+3. **Test the obvious confound for the inversion.** A systematic difference in the
+   *shape* of the candidate distribution (entropy, or the norm of the score
+   vector) between members would shift a z-scored concept contrast negative
+   regardless of semantics. Stage 126 does not currently save those; adding two
+   columns and re-running it is minutes of CPU, and it either explains the
+   inversion or rules the explanation out.
+
+**Tier 2 — one GPU stage, per model. This is where a real finding is most likely.**
+
+4. **Add a positive control — the single highest-value next step.** The design
+   currently cannot distinguish "the models do not verbalise this" from "this
+   machinery could not detect verbalisation if it were there". Run the identical
+   pipeline on a property the models demonstrably *do* verbalise and that has a
+   single-token answer — the E6/E7 forced-choice taint prompt (`" yes"` / `" no"`)
+   is already built and tokenizer-validated in `jlens_validate.choice_token_ids`.
+   If the machinery finds that and not the security lexicon, the null becomes
+   strong evidence about the models. If it finds neither, the null is about the
+   method and should be reported that way.
+5. **Anchor the lens to behaviour.** Ask each model directly whether the value is
+   tainted (forced choice, the E6 prompt) and correlate its answer with the lens
+   contrast pair by pair. Three informative outcomes: the model answers correctly
+   and the lens misses it (the lens is blind); the model cannot answer either (the
+   null is coherent and the property is genuinely not output-aligned); or the model
+   answers and the lens tracks it (the null was an artifact of the candidate pool).
+6. **De-bias the candidate pool.** It is currently 196 tokens chosen by a
+   full-vocabulary *logit-lens* ranking, which is the one limitation recorded
+   inside the frozen artifact itself. Two fixes worth the GPU: widen it, and add a
+   pool selected under a random lens so "top-k enrichment" has a matched null
+   rather than a uniform-random one.
+
+**Tier 3 — instrument work, and the most publishable single result here.**
+
+7. **Diagnose StarCoder2's relevance conservation of 0.154.** Stage 110 has never
+   been run on that model — only on deepseek-coder-1.3b — and it already ships the
+   ablation arms (`no_attn`, `no_ln`, `no_identity`, `no_half`, `none`) that
+   attribute the conservation gap to individual rules. One GPU stage answers
+   *which rule fails on this architecture*:
+   ```bash
+   python scripts/110_rlens_validate.py --model starcoder2-3b
+   python scripts/110_rlens_validate.py --model deepseek-coder-6.7b   # never run either
+   ```
+8. **If the gap is attention-dominated, extend the rules to it.** The LRP rules
+   deliberately leave attention unmodified, following the R-lens post, which makes
+   `|rho − 1|` a *measurement of what attention costs* rather than an unknown.
+   0.154 is a large enough cost to justify building the AttnLRP arm — as an
+   ablation arm beside the current rules, never as a silent replacement.
+9. **Relax "vocabulary token" to "output-aligned direction".** The sharpest
+   limitation of E15-C is that it can only find a concept if some *single token*
+   carries it. Fit a probe constrained to the row space of `W_U` — output-aligned
+   by construction, but not required to be one token — and ask whether it
+   separates the pairs and replicates held out. That closes the gap between the
+   probe result (1.000) and the lens result (null), and it would say whether the
+   distinction is output-aligned but *distributed*, which is the one hypothesis
+   the current design cannot test.
+
+**What would count as a significant finding at the end of this.** Either: the
+positive control fires and the security contrast does not, which turns the null
+into a claim about what code models verbalise; or the `W_U`-constrained probe
+separates the pairs, which turns it into a claim that the property *is*
+output-aligned but distributed across tokens rather than lexicalised. Both are
+publishable; the current state supports neither, and says so.
+
 ---
 
 # 3. Phase III — Is it causally used?
@@ -687,130 +735,25 @@ Phase III needs an intervention.
 The requirement is harder than it sounds. A useful intervention must change
 **the relation and nothing else** — which means acting at a position where the
 programs are token-identical, editing a nameable part of the state rather than
-replacing it, and doing so at a magnitude the site can actually register. No
-attempt so far has had all three at once. What follows is four attempts, in
-order, and what each established.
+replacing it, and doing so at a magnitude the site can actually register. Three
+designs failed to have all three at once before one succeeded.
 
-## E7 — activation patching (attempt 1: too coarse)
+## Three attempts that did not survive their own controls
 
-**Question.** Does patching a clean program's state into a corrupted one move
-the answer?
+Before E13, three intervention designs were built, run and retired. They are not
+in this document any more because none of them carries a claim — but the *reasons*
+they failed are the methodological content that produced E13, and they are written
+up in full in `docs/ARCHIVE.md`:
 
-**Method.** Length-matched taint minimal pairs, identical except the sink
-argument. Patch the clean run's residual stream into the corrupted run at one
-(layer, position) at a time; measure logit-difference recovery.
+| attempt | why it failed | what E13 took from it |
+|---|---|---|
+| **E7** whole-state activation patching | the patched state transports the *input difference* as well as any semantic state; the design cannot separate them | intervene where the two programs are token-identical |
+| **E10-2 / E10-3** J-lens taint and control-dependence | rested on a behavioural signal that did not survive its own controls | the lens is an instrument, not a result — keep E10-0's validation, drop the uses |
+| **E11** J-space rank-2 coordinate swap | the edit was below the site's causal dose; a control (`probe_basis`) was silently skipped rather than refused | hard gates that refuse to run, and a dose that is measured rather than assumed |
+| **E12** latent store transitions | parked at its behavioural gate (0.418) — the model could not solve the task the instrument needed it to solve | check the model can do the task *before* building an instrument on top of it |
 
-**Found** (6.7B mean recovery):
-
-| layer | `sink_arg` | `last_token` | `sanitizer_def` |
-|---:|---:|---:|---:|
-| 0 | **0.99** | −0.01 | 0.00 |
-| 15 | 0.24 | 0.31 | 0.00 |
-| 31 | 0.00 | **1.00** | 0.00 |
-
-**What survives.** A reproducible description of *where the decision becomes
-committed*: the causal locus migrates from the sink-argument token to the
-last-token position across the middle of the network, crossing over near where
-E2's binding curve plateaus.
-
-**What was retired, and why.** The claim that it *isolates semantic use*.
-`sink_arg` is the only place the two programs differ — that is how the pair is
-built — so patching there transports the surface difference along with any
-semantic state, and ~1.0 recovery at layer 0 is exactly what pure input
-restoration would produce. The `sanitizer_def` null has no positive control at
-that position, so it is absence of evidence at one hand-picked token. And
-late-layer `last_token` recovery forces the answer trivially.
-
-**Lesson carried forward.** *Intervene only where the inputs agree.*
-
-Stage 50 · `docs/ARCHIVE.md` for the full retirement.
-
-## E10 — the J-lens track (attempt 2: instrument fine, uses failed)
-
-**E10-0 (kept, supporting).** Validation of a Jacobian-corrected output-aligned
-readout: at the last decoder layer the Jacobian is provably the identity, so the
-J-lens must reproduce the logit lens exactly — measured cosine **1.0000**, a
-closed-form check of the entire gradient path. Next-token recovery beats a
-norm-matched floor, and the correction adds +0.15/+0.18 top-1 over the plain
-logit lens pre-final. This is a statement about the *instrument*, and it is the
-only part of the track that survives.
-
-**E10-2 and E10-3 (archived).** Two attempts to use that readout — for taint
-"verbalizability" and for a control-dependence probe/lens dissociation. Both are
-retired: E10-2 inherits a metric that was itself shown to be broken, and E10-3's
-positive control was an *identity* control where the test was *relational*, so
-"the model cannot report this" and "this readout cannot express relations here"
-remain indistinguishable. Full reasoning in `docs/ARCHIVE.md`.
-
-**Lesson carried forward.** *A null needs a positive control matched in kind —
-same type of question, same site, same states.*
-
-Stages 60, 61, 62.
-
-## E11 — the J-space coordinate swap (attempt 3: too fine)
-
-**Question.** When the model resolves a binding, does it route the *selected
-value* into output-aligned coordinates that downstream computation reuses?
-
-**Method.** Token-aligned counterfactual pairs where a one-token mutation of an
-inner definition's name flips which value a marked use selects, with both values
-present in both programs and the answer computed by five different downstream
-operations. The intervention exchanges just two coordinates,
-`h ← h + V(swap(c) − c)`, leaving the orthogonal complement untouched. The
-falsification: one edit must produce a *different correct answer* in each
-operation family, which answer-steering cannot do.
-
-**Found.** At the readout position (L24) the swap reaches 46% of the efficiency
-of an ideal same-norm push while two matched-norm controls reach zero. But:
-
-- **The pre-registered gate reads NO-GO at both positions.** Behavioural
-  balanced accuracy 0.706 against a 0.75 threshold, and
-  `swap_is_specific_to_the_value_subspace` **fails** — the plain logit lens is
-  more efficient than the Jacobian-corrected one (−0.016 [−0.024, −0.009]).
-- **The use-position null was retracted.** A dose-matched control showed the
-  site's response to small edits is strongly convex: efficiency rises 18× from
-  the smallest dose to the largest, and a push along the *known-correct*
-  direction at 2% of ‖h‖ yields 0.002 nats with an interval covering zero — the
-  same as the value swap at 3.7%. No two-dimensional edit is large enough to
-  test the question there.
-
-**Reading.** Without the dose control this would have been reported as a clean
-null, with a passing readout positive control, four subspace controls at the
-same magnitude, and a site potent enough to flip 22% of answers when replaced
-wholesale. It is the most instructive failure in the project.
-
-**Lesson carried forward.** *A positive control must be matched in **scale** as
-well as in kind. A low-rank edit may sit below a site's effective causal dose,
-and whether it does is a measured property of the site, not an assumption.*
-
-Stages 70–74 · `results/jspace/6.7b-5fam/go_no_go*.md`.
-
-## E12 — latent store transitions (attempt 4: parked)
-
-**Question.** Does the model hold a computed value that appears *nowhere in the
-program text*, and apply the program's own transition function to it?
-
-**Why it was tried.** E11's swapped values are literals in the text, so its
-surviving claim is about output-aligned *token* directions. Tracking a
-text-absent value removes that escape route.
-
-**Why it is parked.** Text-absent-because-computed forces arithmetic, and the
-design made *two chained arithmetic steps* the load-bearing capability for a
-question about program state. The 1.3B behavioural gate returned **0.418 —
-below chance** — with the correct answer as argmax on 6.3% of prompts against a
-10% uniform floor. Two of four operation families sat at exactly 0.500, which a
-simulation showed is reproduced by a model doing **no computation at all** and
-picking whichever candidate is numerically closer to the head literal.
-
-**Reading.** Not a finding about code models; a design error. The published
-prediction was available in advance: arithmetic in language models is
-implemented by heuristic neurons that do not chain. Code, gates and diagnostics
-are kept and still run; nothing is claimed.
-
-**Lesson carried forward.** *Do not couple the semantic question to a capability
-that is not the phenomenon of interest.*
-
-Stages 80–89 · `docs/design/archive/E12_PLAN.md`.
+Every one is still runnable and every CSV is preserved. What changed is the
+claim, not the data.
 
 ## E13 — binding interchange, falsified by the value assignment (current)
 

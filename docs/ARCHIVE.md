@@ -406,3 +406,47 @@ value, and a genuine capability limit. Design and full post-mortem:
 the semantic question to a capability that is not the phenomenon of interest.
 E13 requires *no arithmetic anywhere* — the model returns a variable — and gets
 its falsification from a value-assignment factorial instead.
+
+
+---
+
+## 2026-08-19 — retired from the main documents (data and code untouched)
+
+The main documents (`README.md`, `docs/EXPERIMENTS.md`, `docs/RESULTS.md`,
+`docs/METHODS.md`) now map **only the experiments that carry a finding**. Two
+more were moved here, and the four already described above stopped occupying
+space in them. Nothing was deleted: every CSV, every stage and every gate file
+remains, and each is still runnable.
+
+### E1 — lexical token type
+
+**What it was.** A probe for token type (identifier / keyword / literal /
+operator), decodable at ceiling from the embedding layer onwards.
+
+**Why retired from the main docs.** It was never a finding and the document said
+so in its own heading — "machinery check, not a finding". Its purpose was to
+prove the extraction and probing pipeline worked at all, and once E2 and E3 ran
+with construction-pinned floors, that job was done by better evidence. Ceiling
+accuracy on a property the tokenizer already encodes constrains nothing.
+
+**Still true, still runnable.** `scripts/20_run_probes.py`, rows in
+`results/tables/static_probes_*.csv`.
+
+### E8 — real-code transfer
+
+**What it was.** E2/E3 probes evaluated on CodeSearchNet Python: accuracy
+transfers with the same layer signature.
+
+**Why retired from the main docs.** The transfer number is an **upper bound on
+what transfers semantically**, not a finding about representation. Ground truth
+on real code comes from the same static analysis the synthetic corpus uses, and
+real functions have no context-matched stratum — so the surface floor that makes
+E2 mean anything is *not* pinned there. Reporting it beside the pinned results
+invited exactly the conflation the project is trying to avoid.
+
+**What would revive it.** Context-matched pairs built by mutating real functions,
+which would make it a like-for-like replication of E2's isolation rather than a
+transfer check. That is listed as an open item in `docs/RESULTS.md` §6.
+
+**Still true, still runnable.** `scripts/00_generate_data.py --real`, then stages
+10 and 20; rows in `results/tables/static_probes_*.csv`.

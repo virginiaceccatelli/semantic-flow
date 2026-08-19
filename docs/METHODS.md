@@ -363,11 +363,23 @@ why that stratum is the clean one.
 
 ---
 
-## 8. Frozen-probe evaluation (E5 context degradation, E9 obfuscation)
+## 8. Frozen-probe evaluation (E5 context, E9 obfuscation, E15 security flow)
 
 **What.** For robustness experiments we take the probes trained in stage 20 and
 **evaluate them, unchanged, on transformed programs** — we never retrain per
 condition.
+
+**Atomic vs cumulative conditions (E15).** A transformation ladder applied only
+cumulatively cannot attribute a failure: its last rung contains every earlier
+one. E15 therefore applies the same four rewrites **both** individually and
+composed, giving three differences per reported cell — `delta_clean` (what a
+condition costs), `delta_previous` (the marginal cost of the step a cumulative
+condition adds) and `delta_atomic` (cumulative minus its atomic counterpart: the
+interaction). The interaction is read against a **measured** draw-noise floor
+rather than assumed to be zero: two conditions apply the *identical*
+transformation under independent draws, and their difference is that floor.
+Each variant's transformations are read off its own AST and must equal exactly
+what its condition declares, so an arm cannot quietly contain more than it says.
 
 **Why not retrain.** Retraining on each condition would measure how *learnable*
 the relation is under that condition, which is a different and easier question.
@@ -387,45 +399,36 @@ always hold the set of base programs fixed.
 
 ---
 
-## 9. Calibration and signal independence (E6 lead time)
+## 9. Causal claims (E13 interchange)
 
-E6 compares *when the model's internal taint state goes wrong* against *when its
-behavior goes wrong*, to ask whether the latent failure comes first.
+Probes show a fact is *present*; they cannot show it is *used*. The requirement
+for an intervention that shows use is strict, and three earlier designs failed it
+(`docs/ARCHIVE.md`). What E13 does differently:
 
-- **Threshold calibration.** The taint probe's decision threshold is chosen on a
-  held-out calibration split (the cutoff that maximizes balanced accuracy) and
-  **fixed before any test example is seen** — so the threshold cannot be tuned to
-  manufacture a lead time.
-- **Independent signals.** The **latent** signal (the probe's linear readout) and
-  the **behavioral** signal (the model's own forced-choice log-probabilities)
-  come from different mechanisms, and the latent signal is **never derived from
-  the behavioral one**. This independence is what makes a lead time meaningful
-  rather than circular.
+- **Intervene where the programs are token-identical.** The 2×2 factorial crosses
+  binding structure with value assignment, and the edit is applied at a position
+  whose tokens are the same in both members — so a patched state cannot transport
+  the input difference along with the semantic one. This is the failure that
+  retired E7.
+- **Edit a nameable part of the state, not the state.** A rank-1 subspace fitted
+  by DAS, rather than a whole-state swap, so what was installed is specifiable.
+- **Measure the dose.** The edit norm is reported beside the effect; an
+  intervention below the site's causal dose produces a null that means nothing,
+  which is what retired E11.
+- **Test on the arm it was never fitted on.** H5 evaluates on the value
+  assignment requiring the *opposite* answer-token movement, where a token- or
+  answer-direction account predicts failure. Passing there is what separates
+  "transported the binding" from "pushed the output".
+- **Beat a closed-form baseline.** The difference-in-means direction transports
+  too (76%); the learned direction must dominate it, and does, at two-thirds the
+  intervention norm.
 
----
-
-## 10. Causal claims (E7 activation patching)
-
-Probes show a fact is *present*; they cannot show it is *used*. E7 tests use by
-**activation patching**: run the model on one program, swap in the hidden state
-from a minimally different program at a chosen (layer, position), and measure how
-much the output flips.
-
-- **Minimal pairs** are verified **token-length-matched with the only difference
-  confined to the sink argument**, so a patched position in one program
-  corresponds exactly to the same position in the other — no misalignment.
-- **Recovery** is the fraction of the output logit-difference restored by the
-  patch, reported per (layer, position).
-- The **last-token position** is quarantined as the trivial case (patching the
-  final position can force the answer mechanically), so it is never counted as
-  evidence of an internal mechanism.
-- A relation counts as **"used"** when recovery of the answer logit-diff exceeds
-  0.5 at a **non-readout** position *while the frozen probe still decodes the
-  relation on both sides* — i.e. the information is both present and causal.
+Gates H0–H5 are recorded per model in `results/binding/{model}/gates.yaml`, and a
+stage refuses to run on a failed prerequisite.
 
 ---
 
-## 11. The lens track: decodable vs verbalizable (E10, E14, E15-C)
+## 10. The lens track: decodable vs verbalizable (E10-0, E14, E15-C)
 
 **What.** Sections 1–10 all measure whether a *supervised probe* can recover
 a relation from the hidden state. E10 adds an **unsupervised** readout built
@@ -489,7 +492,7 @@ A high drop count is the signal to re-run with `--dtype float32`.
 
 ---
 
-## 11a. From J-lens to R-lens: why there are two, and which to trust where
+## 10a. From J-lens to R-lens: why there are two, and which to trust where
 
 The J-lens above is an *averaged first-order* readout. That approximation is
 excellent near the output and progressively worse going backwards, because the
@@ -542,7 +545,7 @@ The report therefore distinguishes four outcomes — *mechanically invalid*,
 *mechanically valid with weak lens fidelity*, *valid null*, and *positive above
 controls* — rather than collapsing them into pass/fail.
 
-## 11b. Using the lens as a *contrast* (E15-C), and what it cost to do honestly
+## 10b. Using the lens as a *contrast* (E15-C), and what it cost to do honestly
 
 E10/E11 score one state against a candidate vocabulary. E15-C scores a **matched
 pair** and takes the difference, which introduces four problems the earlier
@@ -620,7 +623,7 @@ expression in a model's own output vocabulary are different properties.**
 
 ---
 
-## 12. Reproducibility
+## 11. Reproducibility
 
 - **Seed 42 everywhere** by default (generator, CV splits, subsampling,
   bootstrap).

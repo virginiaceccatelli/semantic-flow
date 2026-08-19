@@ -161,6 +161,15 @@ experiments:
       do NOT conserve relevance. Measured as a side effect of E15-C's stage 125,
       which builds an R-lens per model. Stage 111 (the trajectory experiment) is
       still not built.
+    next_steps: >
+      Stage 110 has only ever been run on deepseek-coder-1.3b. It already ships
+      ablation arms (no_attn, no_ln, no_identity, no_half, none) that attribute
+      the conservation gap to individual rules, so running it on starcoder2-3b
+      and deepseek-coder-6.7b would say WHICH rule fails on that architecture -
+      one GPU stage each. If the gap is attention-dominated, extending the rules
+      to the softmax and AV product (AttnLRP) becomes worth building, as an
+      ablation arm beside the current rules rather than a silent replacement.
+      Full roadmap in docs/EXPERIMENTS.md.
     consequence: >
       The R-lens is not simply "better" and usable everywhere: it is
       architecture-dependent, and starcoder2-3b's R-lens numbers carry a fidelity
