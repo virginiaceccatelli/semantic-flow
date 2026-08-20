@@ -256,7 +256,7 @@ Outputs land under `results/jspace/{model}/`: `lenses/*.pkl`,
 `swap/jspace_swap{,_summary,_by_operation,_contrasts}.csv`, and
 `go_no_go.{yaml,md}`. Design: `docs/EXPERIMENTS.md` §2.
 
-## Stages 120–127 — E15 source→sink under obfuscation (gated)
+## Stages 120–131 — E15 source→sink under obfuscation (gated)
 
 Is the value at a code-bearing, security-sensitive argument source-derived, does
 a **frozen** readout of that survive obfuscation, and is the difference expressed
@@ -278,9 +278,13 @@ and limitations: `docs/design/E15_SINKFLOW_PLAN.md`.
 | 125 | `125_sinkflow_vocab_discover.py --model M` | **GPU**, hours | **J0** | `vocab/vocab_discovery.json`, `vocab/vocab_train_deltas.csv`, `vocab/vocab_lens_diagnostics.csv`, `vocab/lenses/*.pkl` |
 | 126 | `126_sinkflow_vocab_contrast.py --model M` | CPU, minutes | **J1** | `vocab/vocab_{pairs,pair_tokens,tokens,summary,controls,condition_similarity,lens_agreement}.csv` |
 | 127 | `127_sinkflow_vocab_report.py --model M` | CPU, seconds | — | `vocab/e15c_report.{md,yaml}` |
+| 128 | `128_sinkflow_align.py --model M` | **GPU**, ~15 min | **J2** | `align/align_{direction.json,summary,loadings,restricted}.csv` |
+| 129 | `129_sinkflow_positive.py --model M` | **GPU**, ~1 h | **J3** | `positive/positive_{behaviour,behaviour_summary,pairs,summary}.csv`, `positive/lenses/*.pkl` |
+| 130 | `130_sinkflow_relevance.py --model M` | **GPU**, ~30 min | **J4** | `relevance/relevance_{readings,pairs,summary,conservation}.csv` |
+| 131 | `131_sinkflow_lens_report.py --model M` | CPU, seconds | — | `e15d_report.{md,yaml}` |
 
-Everything else lands under `results/sinkflow/{model}/`. Stages 121 and 125 are
-the only GPU stages; on the GPU host run
+Everything else lands under `results/sinkflow/{model}/`. Stages 121, 125 and
+128–130 are the GPU stages; on the GPU host run
 `screen -dmS sinkflow-extract-6.7b env MODEL=deepseek-coder-6.7b jobs/sinkflow_extract.csh`
 and `screen -dmS sinkflow-vocab-6.7b env MODEL=deepseek-coder-6.7b jobs/sinkflow_vocab.csh`.
 
@@ -293,6 +297,25 @@ contrast reads a file it did not write and could not have influenced.
 overrides recorded. Results in `docs/RESULTS.md`; full analysis in
 `docs/design/E15_SINKFLOW_PLAN.md` §8. **Do not re-run stage 120 to "refresh"
 anything** — regenerating redraws every transformation and changes every number.
+
+### Stages 128–131 — E15-D, the three follow-ups to the E15-C null
+
+E15-C returned a null and could not say whether it was about the models or about
+the instrument. These three stages address that, in the order their cost and
+their informativeness dictate. Design and pre-declared thresholds:
+`docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`.
+
+| Stage | Question | Why it is not E15-C again |
+|---|---|---|
+| 128 | Do the per-pair differences agree over the **whole vocabulary**? | No candidate pool is chosen, so a null cannot be blamed on one. The statistic is *concentration* (`sv1_share`), not the mean — a large mean is compatible with every pair pointing somewhere different, which is the one thing E15-C could not distinguish. |
+| 129 | Can this readout detect verbalisation **at all**? | The **positive control**. Same function, same convention, same orientation, one candidate basis carrying both the taint poles (`" yes"`/`" no"`) and the E15-C security lexicon. If the machinery finds a property the models demonstrably answer and not the security one, the null becomes a claim about the models; if it finds neither, the null is about the method. |
+| 130 | Where does **relevance** move when only the semantics change? | Needs no lexicalisation. Under the LRP rules `sum_t R_t = s`, so `R_t/s` is a partition of the answer and a paired difference is a genuine redistribution. Aggregated by AST role, and **only `sink_arg` differs in tokens between the two members**, so a shift among the other roles has no surface account. |
+
+**Stage 130 refuses on StarCoder2**, records `J4` as *not applicable*, and says
+why: LayerNorm plus a non-gated MLP means both homogenising LRP rules bind to
+nothing, so there is no conservation to read (see E14 in `results/STATUS.yaml`).
+That is a fact about the architecture, not a failed measurement, which is why
+`make sinkflow-lens-all` tolerates a non-zero exit from that stage alone.
 
 **Two gate families, different jobs.** S0–S3 validate the benchmark, the
 activations, the probes and the frozen evaluation. J0/J1 validate the lens
@@ -315,7 +338,8 @@ current benchmark, is refused rather than reported as "frozen held-out".
 
 `make sinkflow-smoke` runs stages 120–124 at 96 programs and 3 layers into
 `results/smoke/`, in a few minutes on a laptop; `make sinkflow-vocab-smoke` then
-runs 125–127 over 2 layers and 24 candidate tokens on the same activations.
+runs 125–127 over 2 layers and 24 candidate tokens on the same activations, and
+`make sinkflow-lens-smoke` runs 128–131 over 2 layers and 6 bases on both.
 
 **Stage 125's cost is `n_candidates × n_build × n_tprime` backward passes per
 (layer, lens)**, so the knobs are `--max-candidates`, `--n-build`, `--n-tprime`

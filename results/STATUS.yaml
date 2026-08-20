@@ -443,6 +443,67 @@ experiments:
       benchmark was regenerated with the atomic conditions, which redraws every
       transformation, so figures moved (e.g. 1.3b's flattening result 0.632 ->
       0.729 for the cumulative condition). Do not mix the two generations.
+  E15-D:
+    name: three follow-ups to the E15-C null (alignment, positive control, relevance)
+    status: active
+    stage: "128,129,130,131"
+    tables: [align_summary_, positive_summary_, positive_behaviour_summary_,
+             relevance_summary_, relevance_conservation_]
+    claim: >
+      NOTHING YET. Built and smoke-tested on 2026-08-20; not run at canonical
+      scale, so no number here is claimed. What the three stages are FOR:
+      E15-C's null cannot distinguish "the models do not verbalise this" from
+      "this machinery could not detect verbalisation if it were there", because
+      every control it runs is negative and negative controls are silent about a
+      null. Stage 128 (J2) removes the candidate pool entirely and asks whether
+      the per-pair differences CONCENTRATE over the whole vocabulary, measured as
+      the leading Gram eigenvalue's share rather than as a mean - a large mean is
+      compatible with every pair pointing somewhere different, which is the one
+      thing E15-C could not distinguish. Stage 129 (J3) is the POSITIVE CONTROL:
+      the identical readout, one candidate basis, on the E6/E7 forced-choice
+      taint property the models demonstrably answer. Stage 130 (J4) reads the
+      R-lens as a conserving attribution instead, which needs no lexicalisation
+      at all, and aggregates by AST role where only sink_arg differs in tokens.
+    declared_in_advance: >
+      Every threshold is in code before any canonical run: ALIGN_SIGN_CONSISTENCY
+      0.70, SV1_MARGIN 2.0, MIN_PAIRS_ALIGN 24, PRIMARY_SITE_ALIGN last_token
+      (the only site where both members carry the same token id in 100% of
+      pairs); SIGN_CONSISTENCY_THRESHOLD 0.70 and BEHAVIOUR_FLOOR 0.50 for the
+      positive control; REDISTRIBUTION_SIGN_CONSISTENCY 0.70 and
+      CONSERVATION_TOLERANCE 0.25 for the relevance readout. The four positive-
+      control outcomes and what each licenses are written down in
+      docs/design/E15D_LENS_FOLLOWUPS_PLAN.md section 4, INCLUDING the one that
+      retires the track: if the models answer the forced choice and the identical
+      readout misses it, E15-C's null is about the METHOD and no claim about what
+      code models represent survives that track.
+    corrects: >
+      A DEFECT IN E15-C'S OWN CONTROLS, found while building this and fixed.
+      sinkflow_vocab.mismatched_pairs redraws the SAFE partner from the same safe
+      pool, so the label difference survives it: the arm averages over the very
+      set the main arm averages over, its expected mean is the main arm's
+      exactly, and on the canonical runs the two agree to four decimal places on
+      all three models (-0.3041/-0.3041, -0.1998/-0.1998, +0.0940/+0.0940). Its
+      docstring claimed it separated "tracks the safe/unsafe difference" from
+      "tracks any difference between two programs" - it cannot, and never could.
+      above_mismatched_pair_control passed by margins of 0.014, 0.014 and 0.056
+      against a comparison with no noise band, and on deepseek-coder-6.7b the
+      control is MORE sign-consistent than the main arm (0.417 vs 0.403). The
+      replacement (same_label_pairs, arms same_label_unsafe/same_label_safe in
+      stage 126) takes BOTH members from one pole, so the expected contrast is
+      zero. NO E15-C RESULT CHANGES; an uninterpretable check is replaced by an
+      interpretable one, and stage 127 now reports pairing_gain as a number.
+    not_applicable: >
+      Stage 130 REFUSES on starcoder2-3b and records J4 as not applicable with
+      the rule counts: LayerNorm plus a non-gated MLP means both homogenising LRP
+      rules bind to nothing, so there is no conservation and the role fractions
+      are not a partition of anything. Same architecture fact as E14's gate R.
+      Stages 128 and 129 run there normally.
+    next_steps: >
+      Run at canonical scale on all three models: make sinkflow-lens-all
+      MODEL=... (128 and 129 on all three, 130 on the two DeepSeeks). Then stage
+      131 prints three verdicts and the consequence for E15-C. Until that has
+      run, docs/RESULTS.md's E15-C section stands unchanged.
+
   E6:
     name: behavioral lead time
     status: archived

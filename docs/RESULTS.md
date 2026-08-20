@@ -49,7 +49,8 @@ distinction is **not there** — decodable is not verbalised.
 | **E9** obfuscation | the same transformations on binding and def–use | ● | ● | ● | supporting | **E15's companion control** — same boundary, so the failure is not security-specific |
 | **E15-C** vocabulary contrast | is the safe→unsafe difference in the model's own output basis? | ● | ● | ● | supporting | **null in all three**, significantly *inverted* in 1.3B. Decodable ≠ verbalised |
 | **E14** R-lens | is a more faithful backward pass available? | ● | ● | n/a | supporting | **gate R passes on both deepseek models** (ρ within 1e-4 at every layer; LRP beats autograd 7/7 and 9/9). The **gated-MLP rule dominates by 4.5×**, falsifying the plan's prediction that the LN-rule would. **Does not apply to starcoder2-3b** — LayerNorm + non-gated MLP, so the rules never install |
-| E10-0 J-lens | instrument validation for the lens track | ● | ● | ● | supporting | V1 exact (cosine 1.0000); the Jacobian correction is real |
+| E10-0 J-lens | instrument validation for the lens track | ● | ● | ● | supporting | V1 exact (cosine 1.0000) on all three; the Jacobian correction is real. On starcoder2-3b every required check passes (V2 top-1 0.633 vs 0.000 random), so that model's E15-C **J-lens** numbers have instrument validation behind them even though its R-lens does not exist |
+| **E15-D** what the null is about | is E15-C's null about the models or the method? | ☐ | ☐ | ☐ | **built, not run** | stages 128–131, gates J2–J4. A full-vocabulary alignment measurement with no pool to blame, the **positive control**, and a relevance readout needing no lexicalisation. Nothing claimed |
 | E4 control dep | guard→statement | ● | ● | ☐ | contrast only | decodable, but its surface floor is already 0.927 — the contrast that makes E2 mean something |
 
 **Retired, parked and superseded** — E1, E6, E7, E8, E10-2, E10-3, E11, E12 — are
@@ -435,6 +436,34 @@ together.
 vocabulary are **different properties**, and E15 exhibits the first without the
 second. It does not license any sentence containing "the model represents unsafe".
 
+**What it does not yet license, and the correction that goes with it.** Every
+control above is a *negative* control, and negative controls are silent about a
+null: nothing here separates "the models do not verbalise this" from "this readout
+could not detect verbalisation if it were there". Until a positive control has run,
+the honest form of the claim is **"the security lexicon's contrast does not
+replicate under this readout"**, not "the distinction is absent from output-aligned
+coordinates".
+
+One of those negative controls is also weaker than it was described as being.
+`mismatched_pairs` redraws the *safe* partner from the same safe pool, so the label
+difference survives it: the arm averages over the very set the main arm averages
+over, its expected mean is the main arm's exactly, and measured over 200 redraws
+the two agree to four decimal places on all three models
+(−0.3041/−0.3041, −0.1998/−0.1998, +0.0940/+0.0940). It falsifies "specific to this
+pairing", not "about the label" — and on 6.7B it is *more* sign-consistent than the
+main arm (0.417 vs 0.403). Stage 126 now also runs a **same-label** arm, taking both
+members from one pole, whose expected contrast is zero; stage 127 reports
+`pairing_gain`, what base matching actually buys, as a number. **No result above
+changes** — an uninterpretable check is replaced by an interpretable one.
+
+Three stages now exist to close both gaps (E15-D, stages 128–131; **built,
+smoke-tested, not yet run at canonical scale, nothing claimed**): a
+full-vocabulary alignment measurement with no candidate pool to blame, the
+**positive control** on the E6/E7 forced-choice taint property, and a relevance
+readout that needs no lexicalisation at all. Design and the pre-declared outcome
+table — including the one that would retire this track — are in
+`docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`.
+
 ### The boundary is general, not security-specific
 
 The companion E9 run is now complete on all three models, which settles a question
@@ -453,10 +482,11 @@ arms, not the full 15-combination lattice. "Flattening breaks the readout" is a
 statement about a **frozen linear readout at one position** — a failing probe does
 not prove the model lost the information, though §8.6's parallel failure is
 consistent with real loss. The embedding control is one measurement, not three.
-E15-C is observational, its candidate pool is logit-lens-selected, and R-lens
-the LRP rules never install on starcoder2-3b at all (LayerNorm plus a non-gated
+E15-C is observational, its candidate pool is logit-lens-selected, and the LRP
+rules never install on starcoder2-3b at all (LayerNorm plus a non-gated
 MLP), so its `rlens` artifact is arithmetically a J-lens and that model's E15-C
-lens agreement is two lenses, not three. Nothing causal is
+lens agreement is two lenses, not three. **E15-C has no positive control**, so its
+null is not yet falsifiable in the direction that matters. Nothing causal is
 claimed or tested for the security property. Full analysis, gates and limitations:
 `docs/design/E15_SINKFLOW_PLAN.md` §8–§14.
 

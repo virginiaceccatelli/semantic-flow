@@ -33,6 +33,13 @@
 #   make sinkflow-vocab-all MODEL=...      stages 125→127 in order
 #   make sinkflow-vocab-smoke              the tiny 1.3b end-to-end check (C)
 #
+#   make sinkflow-align MODEL=...          stage 128 full-vocab direction — J2 (GPU)
+#   make sinkflow-positive MODEL=...       stage 129 the POSITIVE CONTROL — J3 (GPU)
+#   make sinkflow-relevance MODEL=...      stage 130 relevance by AST role — J4 (GPU)
+#   make sinkflow-lens-report MODEL=...    stage 131 tables 13-20 + verdicts (CPU)
+#   make sinkflow-lens-all MODEL=...       stages 128→131 in order
+#   make sinkflow-lens-smoke               the tiny 1.3b end-to-end check (D)
+#
 #   ── E11, the active direction: J-space binding routing ──
 #   make jspace-pairs MODEL=...     stage 70 counterfactual pairs (CPU)
 #   make jspace-lens MODEL=...      stage 71 frozen lenses — GATE (GPU/MPS)
@@ -95,7 +102,9 @@ PROBES := results/probes/$(MODEL)/core
         binding-diagnose binding-pilot \
         sinkflow sinkflow-generate sinkflow-extract sinkflow-probe sinkflow-obf \
         sinkflow-report sinkflow-smoke sinkflow-vocab sinkflow-vocab-discover \
-        sinkflow-vocab-report sinkflow-vocab-all sinkflow-vocab-smoke
+        sinkflow-vocab-report sinkflow-vocab-all sinkflow-vocab-smoke \
+        sinkflow-align sinkflow-positive sinkflow-relevance \
+        sinkflow-lens-report sinkflow-lens-all sinkflow-lens-smoke
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
 STORE_LAYERS ?= 6,12,18
@@ -347,6 +356,60 @@ sinkflow-vocab-smoke:
 	@test -f results/smoke/sinkflow/vocab/vocab_summary.csv
 	@test -f results/smoke/sinkflow/vocab/e15c_report.md
 	@echo "SINKFLOW VOCAB SMOKE OK"
+
+# ── E15-D the three follow-ups to the E15-C null (128→131) ───────────────────
+# 128 asks whether a shared direction exists over the WHOLE vocabulary, so its
+# null cannot be blamed on a candidate pool. 129 is the POSITIVE CONTROL, and it
+# is what turns E15-C's null from unfalsifiable into a claim: it runs the
+# identical readout on a property the models demonstrably answer. 130 reads the
+# R-lens as a conserving attribution rather than as a vocabulary projection,
+# which needs no lexicalisation at all.
+#
+# All three need a GPU. 131 recomputes nothing and is CPU-only.
+#
+# 130 REFUSES on architectures where the homogenising LRP rules bind to nothing
+# (starcoder2: LayerNorm + non-gated MLP). That is a fact about the
+# architecture, not a failure; `sinkflow-lens-all` therefore tolerates it.
+sinkflow-align:
+	$(PY) scripts/128_sinkflow_align.py --model $(MODEL)
+
+sinkflow-positive:
+	$(PY) scripts/129_sinkflow_positive.py --model $(MODEL)
+
+sinkflow-relevance:
+	$(PY) scripts/130_sinkflow_relevance.py --model $(MODEL)
+
+sinkflow-lens-report:
+	$(PY) scripts/131_sinkflow_lens_report.py --model $(MODEL)
+
+sinkflow-lens-all:
+	$(PY) scripts/128_sinkflow_align.py --model $(MODEL)
+	$(PY) scripts/129_sinkflow_positive.py --model $(MODEL)
+	-$(PY) scripts/130_sinkflow_relevance.py --model $(MODEL)
+	$(PY) scripts/131_sinkflow_lens_report.py --model $(MODEL)
+
+# Two layers, six bases, tiny lens builds. float32 for the same MPS reason as
+# `sinkflow-vocab-smoke`: fp16 gradients come back non-finite on that backend.
+# Assumes `make sinkflow-smoke` and `make sinkflow-vocab-smoke` have run.
+sinkflow-lens-smoke:
+	$(PY) scripts/128_sinkflow_align.py --model $(MODEL) \
+		--activations results/smoke/act --output results/smoke/sinkflow \
+		--layers=-1,11 --dtype float32 --n-boot 200 --n-loadings 5 --no-tables
+	$(PY) scripts/129_sinkflow_positive.py --model $(MODEL) \
+		--data-dir $(SMOKE_DATA)/synthetic --output results/smoke/sinkflow \
+		--layers=11,23 --dtype float32 --n-random 12 --n-corpus 6 --n-build 2 \
+		--n-tprime 1 --lens-max-length 192 --n-permutations 200 --n-bases 6 \
+		--no-tables
+	$(PY) scripts/130_sinkflow_relevance.py --model $(MODEL) \
+		--data-dir $(SMOKE_DATA)/synthetic --output results/smoke/sinkflow \
+		--layers=11 --dtype float32 --n-permutations 200 --n-bases 6 --no-tables
+	$(PY) scripts/131_sinkflow_lens_report.py --model $(MODEL) \
+		--results results/smoke/sinkflow
+	@test -f results/smoke/sinkflow/align/align_summary.csv
+	@test -f results/smoke/sinkflow/positive/positive_summary.csv
+	@test -f results/smoke/sinkflow/relevance/relevance_summary.csv
+	@test -f results/smoke/sinkflow/e15d_report.md
+	@echo "SINKFLOW LENS SMOKE OK"
 
 assets:
 	$(PY) scripts/90_make_paper_assets.py

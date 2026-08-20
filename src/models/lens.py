@@ -468,6 +468,45 @@ def compute_lens_vectors(
 
 # ── faithfulness diagnostic (E14 gate R2) ────────────────────────────────────
 
+def relevance_by_position(
+    model,
+    layer: int,
+    sample: LensSample,
+    cotangent: torch.Tensor,        # (d_model,) float32, on model device
+    t_prime: Optional[int] = None,
+    lrp: bool = False,
+    lrp_flags: Optional[dict] = None,
+) -> Optional[tuple[np.ndarray, float]]:
+    """`R_t = <ds/dh_l,t , h_l,t>` for EVERY position t, and the score `s`.
+
+    The per-position relevance decomposition itself, before it is summed. Under
+    the LRP rules the traversed tail is degree-1 homogeneous, so the Euler
+    identity gives `sum_t R_t = s` exactly — which means these numbers are a
+    *partition* of the score across input positions rather than a set of
+    unnormalised saliencies, and `R_t / s` is the fraction of the answer that
+    position t is responsible for.
+
+    That property is what makes a paired comparison meaningful. Two programs
+    produce different scores `s`, so raw relevances are not comparable; the
+    fractions are, and because they sum to (approximately) 1 in both members,
+    a difference between them is a genuine REDISTRIBUTION and not a change of
+    scale. `conservation_ratio` below is `sum_t R_t / s` and measures how well
+    that holds on this architecture, which is the validity condition for
+    reading the fractions at all.
+
+    Returns `(relevance, score)` with `relevance` of shape (seq_len,), or None
+    under exactly the same guards as `conservation_ratio` — a score too small
+    to divide by, or a non-finite gradient — so callers can drop rather than
+    poison a mean.
+    """
+    result = _relevance_and_score(model, layer, sample, cotangent, t_prime,
+                                  lrp, lrp_flags)
+    if result is None:
+        return None
+    relevance, score = result
+    return relevance.detach().cpu().numpy().astype(np.float64), float(score)
+
+
 def conservation_ratio(
     model,
     layer: int,
@@ -504,6 +543,30 @@ def conservation_ratio(
 
     Returns None when the score is too small to divide by, or when the
     gradient is not finite, so callers can drop rather than poison a mean.
+    """
+    result = _relevance_and_score(model, layer, sample, cotangent, t_prime,
+                                  lrp, lrp_flags)
+    if result is None:
+        return None
+    relevance, score = result
+    # Sum over EVERY position: h_l,* jointly is the input to the tail network.
+    return float(relevance.sum() / score)
+
+
+def _relevance_and_score(
+    model,
+    layer: int,
+    sample: LensSample,
+    cotangent: torch.Tensor,
+    t_prime: Optional[int] = None,
+    lrp: bool = False,
+    lrp_flags: Optional[dict] = None,
+) -> "Optional[tuple[torch.Tensor, torch.Tensor]]":
+    """One backward pass: `(R_t)_t` and `s`, shared by both readouts above.
+
+    Kept as one function because the two differ only in what they do with the
+    result, and a second copy of the hook/context bookkeeping is a second place
+    for the LRP context to be entered incorrectly.
     """
     use_lrp = lrp or bool(lrp_flags)
     device = next(model.parameters()).device
@@ -549,9 +612,8 @@ def conservation_ratio(
         return None
     if score.abs() < 1e-6:
         return None
-    # Sum over EVERY position: h_l,* jointly is the input to the tail network.
-    relevance = (grad[0].float() * source[0].detach().float()).sum()
-    return float(relevance / score)
+    relevance = (grad[0].float() * source[0].detach().float()).sum(dim=-1)
+    return relevance, score
 
 
 # ── controls ─────────────────────────────────────────────────────────────────

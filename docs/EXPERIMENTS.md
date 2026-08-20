@@ -714,28 +714,69 @@ Ordered by cost, and each step says what result would justify the next.
    distribution artifact**, so the inverted 1.3B sign is a real and currently
    unexplained property. **Tier 1 is complete.**
 
-**Tier 2 — one GPU stage, per model. This is where a real finding is most likely.**
+**Tier 2 — ✅ *built as E15-D, stages 128–131; smoke-tested, not yet run at
+canonical scale*.** Design and pre-declared thresholds:
+`docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`. Run with
+`make sinkflow-lens-all MODEL=...`.
 
-4. **Add a positive control — the single highest-value next step.** The design
-   currently cannot distinguish "the models do not verbalise this" from "this
-   machinery could not detect verbalisation if it were there". Run the identical
-   pipeline on a property the models demonstrably *do* verbalise and that has a
-   single-token answer — the E6/E7 forced-choice taint prompt (`" yes"` / `" no"`)
-   is already built and tokenizer-validated in `jlens_validate.choice_token_ids`.
-   If the machinery finds that and not the security lexicon, the null becomes
-   strong evidence about the models. If it finds neither, the null is about the
-   method and should be reported that way.
-5. **Anchor the lens to behaviour.** Ask each model directly whether the value is
-   tainted (forced choice, the E6 prompt) and correlate its answer with the lens
-   contrast pair by pair. Three informative outcomes: the model answers correctly
-   and the lens misses it (the lens is blind); the model cannot answer either (the
-   null is coherent and the property is genuinely not output-aligned); or the model
-   answers and the lens tracks it (the null was an artifact of the candidate pool).
-6. **De-bias the candidate pool.** It is currently 196 tokens chosen by a
-   full-vocabulary *logit-lens* ranking, which is the one limitation recorded
-   inside the frozen artifact itself. Two fixes worth the GPU: widen it, and add a
-   pool selected under a random lens so "top-k enrichment" has a matched null
-   rather than a uniform-random one.
+4. **A positive control — the single highest-value next step.** ✅ *built:
+   stage 129, gate J3.* The design could not distinguish "the models do not
+   verbalise this" from "this machinery could not detect verbalisation if it were
+   there", and no negative control can: they establish that a positive result is
+   not an artifact, and are silent about a null. Stage 129 runs the identical
+   readout on the E6/E7 forced-choice taint property, whose answer is a single
+   token. **Same** function (`sinkflow_vocab.pair_contrast`), **same** z-score
+   convention, **same** orientation, and **one** candidate basis carrying both the
+   taint poles and the E15-C security lexicon — J3 refuses the run if the two
+   bases ever differ, so "the identical pipeline" is checkable rather than
+   asserted. Two prompt styles run (`e6` verbatim, and one naming the sink), so
+   prompt sensitivity is measured rather than assumed.
+5. **Anchor the lens to behaviour.** ✅ *built: the same stage.* Each model's own
+   forced-choice margin is recorded per program, and `taint_lens_tracks_model` is
+   the fraction of pairs where the lens's paired margin has the same sign as the
+   model's. The behavioural statistic the verdict uses is `pair_separation`, not
+   raw accuracy: a model that answers "no" to everything scores 0.5 accuracy for
+   free, while pair separation has a chance level of 0.5 that no answer bias can
+   move.
+6. **De-bias the candidate pool.** ✅ *superseded by stage 128, which does better
+   than de-biasing it — it removes it.* Instead of choosing a better 196 tokens,
+   V1 forms each pair's difference over the **whole vocabulary** and asks whether
+   those differences agree. A null there cannot be blamed on a pool, because there
+   is no pool. Its statistic is *concentration* (`sv1_share`), not the mean —
+   which is the distinction E15-C could not make, since a large mean is
+   compatible with every pair pointing somewhere different.
+
+**Tier 2b — a defect found in E15-C's own controls while building the above, and
+fixed.** ✅ *`sinkflow_vocab.same_label_pairs`, run by stage 126.*
+`mismatched_pairs` redraws the **safe** partner from the same safe pool, so the
+label difference survives it intact: the arm averages over the very set the main
+arm averages over, its expected mean is the main arm's **exactly**, and on the
+canonical runs the two agree to four decimal places on all three models. Its
+docstring claimed it separated "tracks the safe/unsafe difference" from "tracks
+any difference between two programs" — it cannot, and could never have. The
+`above_mismatched_pair_control` check passed by margins of 0.014, 0.014 and 0.056
+against a comparison with no noise band, and on deepseek-coder-6.7b the control
+is *more* sign-consistent than the main arm (0.417 vs 0.403). The replacement arm
+takes **both** members from one pole: everything a matched pair differs in is
+still there, the label difference is gone, so the expected contrast is zero and
+the expected sign consistency 0.5. That is the arm a label claim has to clear.
+This overturns no E15-C result; it replaces an uninformative check with an
+informative one.
+
+**Tier 2c — a readout that needs no lexicalisation at all.** ✅ *built: stage 130,
+gate J4.* E15-C and V1 both read the state through the vocabulary, so both can
+only find a distinction that some token or combination of tokens carries. Under
+the LRP rules `Σ_t R_t = s` (E14 gate R: |ρ−1| within 1e-4 at every layer on both
+DeepSeeks), so `R_t/s` is a **partition** of the model's own answer and a paired
+difference is a genuine redistribution rather than a change of scale. Aggregated
+by AST role, recomputed from each variant's own source. The control comes free:
+**only `sink_arg` differs in tokens between the two members** — enforced at
+generation time for every condition, and verified across all 1440 held-out
+programs to give identical per-role token counts within every pair, including
+under full cumulative obfuscation. A shift among the token-identical roles
+therefore has no surface account. Stage 130 **refuses on StarCoder2** and records
+J4 as *not applicable*: LayerNorm plus a non-gated MLP means both homogenising
+rules bind to nothing, so there is no conservation to read.
 
 **Tier 3 — instrument work, and the most publishable single result here.**
 
@@ -763,10 +804,20 @@ Ordered by cost, and each step says what result would justify the next.
 
 **What would count as a significant finding at the end of this.** Either: the
 positive control fires and the security contrast does not, which turns the null
-into a claim about what code models verbalise; or the `W_U`-constrained probe
-separates the pairs, which turns it into a claim that the property *is*
-output-aligned but distributed across tokens rather than lexicalised. Both are
-publishable; the current state supports neither, and says so.
+into a claim about what code models verbalise; or the full-vocabulary direction
+concentrates above its same-label null, which turns it into a claim that the
+property *is* output-aligned but distributed across tokens rather than
+lexicalised; or a token-identical AST role's relevance share shifts consistently,
+which is a claim about routing that needs no vocabulary at all. All three are
+now built and none has been run at canonical scale, so the current state supports
+none of them, and says so.
+
+**And the outcome that would retire the track, declared in advance.** If the
+models answer the forced choice and the identical readout misses it
+(`machinery_blind`), then E15-C's null is about the *method*, every number in
+that track keeps its caveat, and no claim about what code models represent
+survives it. Stage 131 will print exactly that sentence if that is what the data
+says.
 
 ---
 

@@ -905,9 +905,21 @@ def mismatched_pairs(pairs: Sequence[PairState], seed: int = 42) -> list[PairSta
     """Unsafe and safe members drawn from DIFFERENT bases.
 
     The permutation control keeps the pairing and destroys the orientation; this
-    one keeps the orientation and destroys the pairing. Together they separate
-    "the contrast tracks the safe/unsafe difference" from "the contrast tracks
-    any difference between two programs of this kind at all".
+    one keeps the orientation and destroys the BASE MATCHING. What it can
+    therefore falsify is "the contrast is specific to this pairing" — and that
+    is all.
+
+    **It cannot falsify "the contrast tracks the safe/unsafe difference", and an
+    earlier version of this docstring claimed it could.** The partner is redrawn
+    from the same *safe* pool at the same (condition, site), so the label
+    structure is untouched and the arm averages over the very set the main arm
+    averages over: its EXPECTED mean is the main arm's exactly, and only
+    resampling noise separates the two — there is no systematic component for a
+    real effect to show up in. On the canonical runs the two agree to four
+    decimal places. Only per-pair statistics can move at all, and because the
+    partner also matches family and structure, in practice they barely do.
+
+    `same_label_pairs` below is the arm that does bite. Both are run.
 
     Partners are drawn from the same (condition, site), **preferring** one that
     also shares the family and the flow structure so the mismatch is the base and
@@ -947,6 +959,66 @@ def mismatched_pairs(pairs: Sequence[PairState], seed: int = 42) -> list[PairSta
                 unsafe_token=pair.unsafe_token, safe_token=partner.safe_token,
                 unsafe=pair.unsafe, safe=partner.safe,
                 matched_on=matched_on))
+    return out
+
+
+def same_label_pairs(pairs: Sequence[PairState], pole: str,
+                     seed: int = 42) -> list[PairState]:
+    """Two programs of the SAME label, from different bases, as a "pair".
+
+    This is the control the design needed and did not have. `mismatched_pairs`
+    redraws the safe partner from the safe pool, so the safe/unsafe difference
+    survives it intact and the mean cannot move; here BOTH members carry the
+    same label, so everything a matched pair differs in — family, identifier
+    draw, flow structure, program identity — is still present and the label
+    difference is gone.
+
+    Its expected contrast is therefore zero, and its expected sign consistency
+    0.5. A main arm that does not exceed it has not been shown to be about the
+    label at all. `pole` selects which side supplies both members
+    ("unsafe" or "safe"); both are run, because a class-level offset that
+    appeared on only one of them would be a property of that class rather than
+    of the contrast.
+
+    Partner selection is `mismatched_pairs`', unchanged, so the two controls
+    differ in exactly one thing: which member the partner replaces.
+    """
+    if pole not in ("unsafe", "safe"):
+        raise ValueError(f"pole must be 'unsafe' or 'safe', not {pole!r}")
+    rng = np.random.default_rng(seed)
+    by_cell: dict[tuple, list[PairState]] = {}
+    for pair in pairs:
+        by_cell.setdefault((pair.condition, pair.site), []).append(pair)
+
+    out: list[PairState] = []
+    for _, group in sorted(by_cell.items()):
+        if len(group) < 2:
+            continue
+        for pair in group:
+            same_cell = [other for other in group
+                         if other.base_id != pair.base_id
+                         and other.family == pair.family
+                         and other.structure == pair.structure]
+            any_other = [other for other in group if other.base_id != pair.base_id]
+            pool, matched_on = ((same_cell, "family+structure") if same_cell
+                                else (any_other, "condition+site"))
+            if not pool:
+                continue
+            partner = pool[int(rng.integers(len(pool)))]
+            state = (lambda p: p.unsafe) if pole == "unsafe" else (lambda p: p.safe)
+            program = ((lambda p: p.unsafe_program) if pole == "unsafe"
+                       else (lambda p: p.safe_program))
+            token = ((lambda p: p.unsafe_token) if pole == "unsafe"
+                     else (lambda p: p.safe_token))
+            out.append(PairState(
+                base_id=f"{pair.base_id}|{partner.base_id}",
+                condition=pair.condition, site=pair.site,
+                family=pair.family, structure=pair.structure,
+                role_swap=pair.role_swap,
+                unsafe_program=program(pair), safe_program=program(partner),
+                unsafe_token=token(pair), safe_token=token(partner),
+                unsafe=state(pair), safe=state(partner),
+                matched_on=f"same_label_{pole}/{matched_on}"))
     return out
 
 
@@ -1582,7 +1654,7 @@ def j1_contrast_checks(
              f"safe={candidates.concepts.safe_strings}")
 
     # the controls ran
-    for name in ("permutation", "mismatched"):
+    for name in ("permutation", "mismatched", "same_label"):
         if not controls_ran.get(name):
             fail(f"{name}_control_ran",
                  f"the {name} control ran on the held-out pairs", "it did not")

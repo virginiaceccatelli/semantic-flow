@@ -182,6 +182,18 @@ is CPU and re-runnable.
                               held-out contrast and controls (CPU) → report
                               Two mechanical gates (J0, J1). Result is a NULL in
                               all three models — they passed on it, as designed.
+
+── built, not yet run at scale ──
+128–131 what the null is about E15-D: three ways E15-C's null could be wrong.
+                              128 drops the candidate pool and asks whether the
+                              per-pair differences CONCENTRATE over the whole
+                              vocabulary. 129 is the POSITIVE CONTROL — the
+                              identical readout on a property the models
+                              demonstrably answer, which is what turns the null
+                              from unfalsifiable into a claim. 130 reads the
+                              R-lens as a conserving attribution instead, which
+                              needs no lexicalisation at all.
+                              Three mechanical gates (J2, J3, J4).
 ```
 
 Stage status lives in `results/STATUS.yaml`; stage 90 reads it and skips
@@ -248,7 +260,7 @@ make binding-pilot            # then read results/binding/*/e13_report.md
 |---|---|---|
 | `deepseek-coder-1.3b-base` | development, smoke, pilots | runs on Apple-Silicon MPS; full pipeline in minutes |
 | `deepseek-coder-6.7b-base` | main results | strong open code model; one cluster GPU in fp16 |
-| `starcoder2-3b` | architecture replication | different corpus and architecture family; E15, E15-C and the E9 companion all complete |
+| `starcoder2-3b` | architecture replication | different corpus and architecture family; E15, E15-C and the E9 companion all complete. E15-D stages 128–129 apply; **130 does not** — LayerNorm plus a non-gated MLP means the homogenising LRP rules bind to nothing, so there is no relevance conservation to read, and the stage records that rather than producing numbers |
 
 Base (non-instruct) models on purpose: the object of study is the representation
 built during code pretraining, not chat behaviour.

@@ -113,7 +113,7 @@ BINDING = GateSpec(
 
 SINKFLOW = GateSpec(
     experiment="E15",
-    order=("S0", "S1", "S2", "S3", "J0", "J1"),
+    order=("S0", "S1", "S2", "S3", "J0", "J1", "J2", "J3", "J4"),
     meaning={
         "S0": "the benchmark is exactly the designed one: counts, balance, splits, "
               "parsing, anchor alignment, independently recovered labels, pair "
@@ -137,11 +137,29 @@ SINKFLOW = GateSpec(
         "J1": "the contrast is mechanically sound: one matched member of each polarity "
               "per pair, one recorded orientation, tokens discovered on training pairs "
               "only and frozen before held-out scoring, controls run, all cells present",
+        # E15-D, the three follow-ups to E15-C's null. All three gates are
+        # MECHANICAL for the same reason J0/J1 are: the informative outcome of a
+        # positive control is that it FAILS to fire, and no gate may make that
+        # hard to report.
+        "J2": "the full-vocabulary alignment measurement is mechanically sound: the "
+              "direction was estimated on training bases disjoint from the evaluated "
+              "ones, every declared cell exists, both same-label nulls ran, and the "
+              "concentration statistic is a share in [0, 1]",
+        "J3": "the positive control is mechanically sound: both properties are read in "
+              "ONE frozen candidate basis, the prompt is identical within every matched "
+              "pair, both prompt styles ran, every program has a scored forced-choice "
+              "answer, and no contrast is non-finite",
+        "J4": "the relevance readout is mechanically sound: the LRP rules actually "
+              "installed so relevance conserves, the AST roles partition every token "
+              "exactly once, the per-role deltas close to the difference of the two "
+              "conservation ratios, and every declared cell exists",
     },
     owner={
         "S0": "120_sinkflow_generate", "S1": "121_sinkflow_extract",
         "S2": "122_sinkflow_probe", "S3": "123_sinkflow_obfuscation",
         "J0": "125_sinkflow_vocab_discover", "J1": "126_sinkflow_vocab_contrast",
+        "J2": "128_sinkflow_align", "J3": "129_sinkflow_positive",
+        "J4": "130_sinkflow_relevance",
     },
     requirements={
         "120_sinkflow_generate": (),
@@ -156,6 +174,16 @@ SINKFLOW = GateSpec(
         "125_sinkflow_vocab_discover": ("S0", "S1"),
         "126_sinkflow_vocab_contrast": ("S0", "S1", "J0"),
         "127_sinkflow_vocab_report": (),
+        # E15-D. Stage 128 reuses the E15-C lens artifacts for its
+        # restricted-basis comparison, hence J0; its own full-vocabulary
+        # measurement needs only the benchmark and the activations. Stages 129
+        # and 130 build their own artifacts from the programs and need neither,
+        # which is deliberate: a positive control that inherited E15-C's
+        # candidate pool would inherit the limitation it exists to test.
+        "128_sinkflow_align": ("S0", "S1", "J0"),
+        "129_sinkflow_positive": ("S0",),
+        "130_sinkflow_relevance": ("S0",),
+        "131_sinkflow_lens_report": (),
     },
     default_root="results/sinkflow",
 )

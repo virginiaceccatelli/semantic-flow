@@ -21,7 +21,14 @@ Controls, all of them run here and all of them written out:
   * **permutation** — re-orient each base at random. Keeps every pair and every
     magnitude, destroys only the safe→unsafe alignment.
   * **mismatched pairs** — unsafe and safe members from DIFFERENT bases, matched
-    on family and structure. Keeps the orientation, destroys the pairing.
+    on family and structure. Keeps the orientation, destroys the base matching.
+    Note what it can and cannot do: the partner is redrawn from the same SAFE
+    pool, so the label difference survives it and its expected mean is the main
+    arm's exactly. It falsifies "specific to this pairing", nothing more.
+  * **same-label pairs** — BOTH members from the same pole, different bases.
+    Everything a matched pair differs in is still there and the label difference
+    is gone, so the expected contrast is zero and the expected sign consistency
+    0.5. This is the arm a label claim has to clear.
   * **embedding layer** — layer -1 is scored like any other, and at `sink_arg`
     it is exactly the token-identity contrast, since the state there IS the
     anchor token's embedding.
@@ -102,6 +109,7 @@ def main(
         j1_contrast_checks,
         lens_agreement,
         mismatched_pairs,
+        same_label_pairs,
         summarize_cells,
     )
     from src.experiments.store_gates import SINKFLOW, GateFailure, record_gate, require_gates
@@ -206,6 +214,24 @@ def main(
         mismatched_rows, mismatched_tokens, candidates, frozen=candidates.discovered,
         top_k=top_k, n_permutations=n_permutations, seed=seed, arm="mismatched_pairs"))
 
+    # The control that can actually falsify a label claim. `mismatched_pairs`
+    # redraws the SAFE partner from the safe pool, so the label difference
+    # survives it and its expected mean is the main arm's; here both members
+    # carry the same label, so the expected contrast is zero.
+    same_label_ran = {}
+    for pole in ("unsafe", "safe"):
+        same_label = same_label_pairs(pairs, pole, seed=seed)
+        same_label_ran[pole] = bool(same_label)
+        if not same_label:
+            continue
+        rows_pole, tokens_pole, _ = evaluate_pairs(
+            lenses, same_label, candidates, layer_list,
+            n_layers_total=n_layers_total)
+        control_frames.append(summarize_cells(
+            rows_pole, tokens_pole, candidates, frozen=candidates.discovered,
+            top_k=top_k, n_permutations=n_permutations, seed=seed,
+            arm=f"same_label_{pole}"))
+
     random_lenses = control_lenses(lenses[PRIMARY_LENS], seed=seed)
     for kind, by_layer in random_lenses.items():
         if not by_layer:
@@ -254,7 +280,8 @@ def main(
         conditions=conditions,
         controls_ran={"permutation": bool(len(summary)
                                           and summary["permutation_p"].notna().any()),
-                      "mismatched": bool(len(mismatched_rows))},
+                      "mismatched": bool(len(mismatched_rows)),
+                      "same_label": all(same_label_ran.values())},
         rerun=rerun)
 
     if tables:
@@ -271,7 +298,7 @@ def main(
               f"oriented unsafe-minus-safe, tokens frozen at "
               f"{provenance.get('frozen_at')} on training digest "
               f"{provenance.get('train_digest')}; permutation, mismatched-pair, "
-              f"random and Gram-matched controls all ran"
+              f"same-label (both poles), random and Gram-matched controls all ran"
               if passed else
               " | ".join(f"{v.gate}: expected {v.expected}, observed {v.observed}"
                          for v in violations))

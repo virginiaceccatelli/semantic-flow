@@ -139,6 +139,7 @@ def main(
         return chunk.iloc[0].to_dict() if not chunk.empty else {}
 
     mismatched = control("mismatched_pairs")
+    same_label = {pole: control(f"same_label_{pole}") for pole in ("unsafe", "safe")}
     role_strata = [control(f"role_swap_{s}") for s in (0, 1)]
     role_values = [r.get("sign_consistency_z") for r in role_strata
                    if r.get("sign_consistency_z") is not None]
@@ -165,9 +166,22 @@ def main(
         "above_permutation_control": bool(
             np.isfinite(row.get("permutation_p", np.nan))
             and row.get("permutation_p", 1.0) < PERMUTATION_P),
+        # Kept, but see `pairing_diagnostics` below and the docstring of
+        # `sinkflow_vocab.mismatched_pairs`: this arm redraws the SAFE partner
+        # from the safe pool, so the label difference survives it and its
+        # EXPECTED mean is the main arm's exactly. It falsifies "specific to
+        # this pairing", not "about the label" — which is what
+        # `above_same_label_control` is for.
         "above_mismatched_pair_control": bool(
             np.isfinite(mismatched.get("sign_consistency_z", np.nan))
             and abs(sign - 0.5) > abs(mismatched.get("sign_consistency_z", 0.5) - 0.5)),
+        "above_same_label_control": bool(
+            all(np.isfinite(arm.get("sign_consistency_z", np.nan)) for arm in
+                same_label.values())
+            and same_label
+            and abs(sign - 0.5) > max(
+                abs(arm.get("sign_consistency_z", 0.5) - 0.5)
+                for arm in same_label.values())),
         "stable_across_identifier_roles": bool(
             len(role_values) == 2 and abs(role_values[0] - role_values[1])
             <= ROLE_STRATUM_TOLERANCE),
@@ -390,6 +404,13 @@ def main(
         "",
         "### Controls at the reported cell",
         "",
+        "`mismatched_pairs` redraws the SAFE partner from the safe pool, so the "
+        "label difference survives it and its mean is invariant by construction; "
+        "it can only move the per-pair statistics. `same_label_unsafe` and "
+        "`same_label_safe` take BOTH members from one pole, so the label "
+        "difference is gone and the expected contrast is zero — that is the arm a "
+        "label claim has to clear.",
+        "",
         table(frames["vocab_controls"][
             (frames["vocab_controls"]["site"] == site)
             & (frames["vocab_controls"]["condition"] == condition)
@@ -423,6 +444,26 @@ def main(
         # rather than discovering it as a crash in the report stage.
         "headline": {k: _plain(v) for k, v in row.items()},
         "mismatched_control": {k: _plain(v) for k, v in mismatched.items()},
+        "same_label_control": {pole: {k: _plain(v) for k, v in arm.items()}
+                               for pole, arm in same_label.items()},
+        # What the matched design actually buys, stated as a number rather than
+        # left implicit: the main arm's displacement from chance minus each
+        # control's. A `pairing_gain` near zero means base matching contributed
+        # nothing and the effect is a class-level offset.
+        "pairing_diagnostics": {
+            "main_displacement": _plain(abs(sign - 0.5)) if np.isfinite(sign) else None,
+            "mismatched_displacement": _plain(
+                abs(mismatched.get("sign_consistency_z", np.nan) - 0.5)),
+            "pairing_gain": _plain(
+                abs(sign - 0.5) - abs(mismatched.get("sign_consistency_z", np.nan) - 0.5)),
+            "same_label_displacement": {
+                pole: _plain(abs(arm.get("sign_consistency_z", np.nan) - 0.5))
+                for pole, arm in same_label.items()},
+            "note": ("the mismatched arm cannot systematically move the MEAN — "
+                     "it resamples from the same safe pool, so its expected mean "
+                     "is the main arm's — which is why only these "
+                     "sign-consistency displacements are informative about it"),
+        },
         "n_weak_fidelity_rows": int((diagnostics["weak_fidelity"] == 1).sum()),
         "depth_figure": str(depth_figure),
         "specificity_at_reported_cell": (

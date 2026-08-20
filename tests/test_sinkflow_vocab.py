@@ -17,6 +17,7 @@ import json
 import zlib
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from src.data.activation_store import ActivationStore
@@ -32,6 +33,7 @@ from src.experiments.sinkflow_vocab import (
     SECURITY_LEXICON,
     WEAK_FIDELITY_TOP1,
     ConceptTokens,
+    PairState,
     VocabCandidates,
     collect_pair_states,
     condition_similarity,
@@ -43,6 +45,7 @@ from src.experiments.sinkflow_vocab import (
     lens_agreement,
     mismatched_pairs,
     pair_contrast,
+    same_label_pairs,
     permutation_null,
     summarize_cells,
     validate_concept_tokens,
@@ -397,7 +400,8 @@ def test_j1_passes_on_a_null_result():
         rows, tokens, candidates, {"rlens": {"3": {}}}, train_bases=["train_00"],
         heldout_bases=[p.base_id for p in pairs], layers=[3], sites=["sink_arg"],
         conditions=["clean_heldout"],
-        controls_ran={"permutation": True, "mismatched": True})
+        controls_ran={"permutation": True, "mismatched": True,
+                      "same_label": True})
     assert violations == []
 
 
@@ -596,3 +600,106 @@ def test_j0_refuses_an_rlens_whose_homogenising_rules_never_bound():
             v.gate for v in j0_lens_checks(lenses, candidates, [3], ["sink_arg"],
                                            model_name="fake-model", hf_id="fake",
                                            lrp_counts=counts)}
+
+
+# ── the control that can actually falsify a label claim ──────────────────────
+
+def test_the_mismatched_control_cannot_move_the_mean_and_the_same_label_one_can():
+    """The defect and its fix, pinned together.
+
+    `mismatched_pairs` redraws the SAFE partner from the same safe pool, so its
+    EXPECTED mean is the main arm's exactly — the safe members it averages over
+    are the same set. Only resampling noise separates them, with no systematic
+    component, so the arm can never falsify "the contrast is about the label".
+    `same_label_pairs` takes BOTH members from one pole, so the label difference
+    is gone and the expected contrast is zero.
+    """
+    rng = np.random.default_rng(5)
+    pairs = []
+    for i in range(24):
+        shared = rng.normal(scale=0.2, size=D_MODEL).astype(np.float32)
+        unsafe = shared.copy(); unsafe[0] += 3.0
+        safe = shared.copy(); safe[0] -= 3.0
+        pairs.append(PairState(
+            base_id=f"b{i}", condition="clean_heldout", site="sink_arg",
+            family="f", structure="direct", role_swap=False,
+            unsafe_program=f"b{i}_u", safe_program=f"b{i}_s",
+            unsafe_token=1, safe_token=2,
+            unsafe=unsafe[None, :], safe=safe[None, :]))
+
+    candidates = _candidates()
+    lens = _fake_lens(3, candidates.token_ids)
+
+    def mean_delta(group):
+        return float(np.mean([
+            pair_contrast(lens, p.unsafe[0], p.safe[0],
+                          candidates.positions(candidates.concepts.unsafe_ids),
+                          candidates.positions(candidates.concepts.safe_ids)
+                          ).delta_contrast_z
+            for p in group]))
+
+    main = mean_delta(pairs)
+    # the cross-label control keeps essentially all of it, at every seed
+    for seed in (1, 7, 99):
+        retained = mean_delta(mismatched_pairs(pairs, seed=seed)) / main
+        assert retained > 0.9, (seed, retained)
+    # …and the same-label control collapses it, at every seed and both poles
+    for pole in ("unsafe", "safe"):
+        for seed in (1, 7, 99):
+            same = same_label_pairs(pairs, pole, seed=seed)
+            assert same, pole
+            assert abs(mean_delta(same)) < 0.05 * abs(main), (pole, seed)
+
+
+def test_same_label_pairs_never_pairs_a_program_with_itself():
+    pairs = [PairState(base_id=f"b{i}", condition="clean_heldout", site="sink_arg",
+                       family="f", structure="direct", role_swap=False,
+                       unsafe_program=f"b{i}_u", safe_program=f"b{i}_s",
+                       unsafe_token=1, safe_token=2,
+                       unsafe=np.zeros((1, D_MODEL), dtype=np.float32),
+                       safe=np.zeros((1, D_MODEL), dtype=np.float32))
+             for i in range(6)]
+    for pole in ("unsafe", "safe"):
+        for pair in same_label_pairs(pairs, pole, seed=3):
+            assert pair.unsafe_program != pair.safe_program
+            assert pair.matched_on.startswith(f"same_label_{pole}/")
+
+
+def test_same_label_pairs_takes_both_members_from_the_named_pole():
+    pairs = [PairState(base_id=f"b{i}", condition="clean_heldout", site="sink_arg",
+                       family="f", structure="direct", role_swap=False,
+                       unsafe_program=f"b{i}_u", safe_program=f"b{i}_s",
+                       unsafe_token=10 + i, safe_token=90 + i,
+                       unsafe=np.full((1, D_MODEL), float(i), dtype=np.float32),
+                       safe=np.full((1, D_MODEL), -float(i), dtype=np.float32))
+             for i in range(6)]
+    for pair in same_label_pairs(pairs, "unsafe", seed=3):
+        assert pair.unsafe_program.endswith("_u") and pair.safe_program.endswith("_u")
+        assert pair.unsafe_token >= 10 and pair.safe_token >= 10
+    for pair in same_label_pairs(pairs, "safe", seed=3):
+        assert pair.unsafe_program.endswith("_s") and pair.safe_program.endswith("_s")
+        assert pair.unsafe_token >= 90 and pair.safe_token >= 90
+
+
+def test_same_label_pairs_refuses_an_unknown_pole():
+    with pytest.raises(ValueError, match="pole must be"):
+        same_label_pairs([], "neither")
+
+
+def test_j1_requires_the_same_label_control_to_have_run():
+    """It is not enough that the arm exists in the code."""
+    from src.experiments.sinkflow_vocab import j1_contrast_checks
+
+    frame = pd.DataFrame([{
+        "lens": "rlens", "layer": 3, "site": "sink_arg", "condition": "clean_heldout",
+        "base_id": "b0", "orientation": "unsafe_minus_safe",
+        "unsafe_program": "u", "safe_program": "s",
+        "delta_contrast_z": 0.1, "delta_contrast_prob": 0.01}])
+    candidates = _candidates()
+    candidates.provenance = {"discovery_split": "train", "train_digest": "abc"}
+    violations = j1_contrast_checks(
+        frame, pd.DataFrame(), candidates, frozen={"rlens": {}},
+        train_bases=["t"], heldout_bases=["b0"], layers=[3], sites=["sink_arg"],
+        conditions=["clean_heldout"],
+        controls_ran={"permutation": True, "mismatched": True, "same_label": False})
+    assert "same_label_control_ran" in {v.gate for v in violations}

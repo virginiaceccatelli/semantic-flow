@@ -654,6 +654,83 @@ so the null is a property of the models, not of the instrument. What the design
 licenses from that is a real and reportable claim: **linear decodability and
 expression in a model's own output vocabulary are different properties.**
 
+**One correction to the controls above.** The mismatched-pair arm named in "what
+licenses a semantic reading" is weaker than it was described as being, and §10c
+replaces it. It redraws the *safe* partner from the same safe pool, so the label
+difference survives it and its expected mean is the main arm's exactly — it
+falsifies "specific to this pairing", not "about the label".
+
+---
+
+## 10c. Three ways the E15-C null could be wrong, and how each is tested (E15-D)
+
+A null needs different evidence from a positive result. Every control in §10b is
+*negative*: permutation, mismatched pairs, random and Gram-matched lenses. Those
+establish that a positive result is not an artifact. **They are silent about a
+null**, and nothing in §10b separates "the models do not verbalise this" from
+"this readout could not detect verbalisation if it were there". §10c is the three
+measurements that address that, built as stages 128–131 with gates J2/J3/J4. Full
+design and pre-declared thresholds: `docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`.
+
+**The candidate pool could have missed it (stage 128).** §10b's readout can only
+find a concept that some token in a 196-token, logit-lens-selected pool carries,
+and that pool is ranked by the *mean* paired delta. A large mean is compatible
+with every pair's difference pointing somewhere different. So: form each pair's
+difference over the **whole vocabulary**, z-scored per member exactly as in §10b,
+and measure **concentration** rather than the mean —
+
+    sv1_share = lambda_max(U Uᵀ) / trace(U Uᵀ),   U the unit-normalised differences
+
+which is 1/n for unrelated differences and 1 for identical ones, and is
+*sign-invariant*, which is what lets it be compared against a null whose members
+have no canonical orientation. The direction is estimated on the training split
+and projected onto held-out pairs. A null here cannot be blamed on a pool,
+because there is no pool. The primary site is `last_token`, not `sink_arg`,
+because it is the only site where both members carry the same token id in 100% of
+pairs; layer −1 is the explicit surface floor, and at `last_token` that floor is
+exactly zero, since identical tokens give identical embeddings.
+
+**The readout could be blind (stage 129) — the positive control.** Run the
+identical measurement on a property the models demonstrably answer: the E6/E7
+forced-choice taint question, whose answer is a single token. One candidate basis
+carries both properties, and both contrasts go through the same
+`pair_contrast` call in the same convention with the same orientation, so the two
+readouts differ *only* in which token positions are named as poles — J3 refuses
+the run otherwise. The model's own forced-choice margin is recorded per program,
+so `lens_tracks_model` can separate "the lens sees what the model says" from "the
+lens sees something". The behavioural statistic is `pair_separation` rather than
+accuracy, because a model that always answers "no" scores 0.5 accuracy for free
+while pair separation's chance level of 0.5 is immune to answer bias. Four
+outcomes are declared in advance, including the one that would retire the track:
+if the model answers and the lens does not see it, the null is about the method.
+
+**The distinction might not be lexicalised at all (stage 130).** Both readouts
+above require the concept to live in vocabulary space. Under the LRP rules of
+§10a the tail is degree-1 homogeneous, so `Σ_t R_t = s` and `R_t/s` is a
+*partition* of the model's own answer across input positions. Two programs give
+different scores, so raw relevances are not comparable — but fractions are, and
+because they sum to one in both members, a difference is a genuine
+**redistribution** rather than a change of scale. That is a property §10b's
+readout never had: its z-score convention exists because `JLens.scores` drops an
+unknown positive factor, and here conservation fixes the total instead.
+Relevance is aggregated by AST role recomputed from each variant's own source,
+and the control is free: **only `sink_arg` differs in tokens between the two
+members**, enforced at generation time in every condition and verified across all
+1440 held-out programs to give identical per-role token counts within every pair.
+A shift among the token-identical roles has no surface account. Conservation is
+measured per (pair, layer) and the reading is refused where it does not hold —
+including outright on architectures where the homogenising rules bind to nothing.
+
+**A better negative control, retrofitted to §10b.** The mismatched-pair arm
+cannot falsify a label claim: its partner is still a *safe* program, so it
+averages over the very set the main arm averages over and its expected mean is
+the main arm's exactly — measured, the two agree to four decimal places on all
+three models, and on deepseek-coder-6.7b the control is *more* sign-consistent
+than the main arm. The replacement takes **both** members from one pole:
+everything a matched pair differs in is still present, the label difference is
+gone, so the expected contrast is zero. Stage 126 now runs both, and stage 127
+reports `pairing_gain` — what base matching actually buys — as a number.
+
 ---
 
 ## 11. Reproducibility
