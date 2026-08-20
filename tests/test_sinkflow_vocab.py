@@ -569,3 +569,30 @@ def test_the_mismatched_control_still_runs_when_no_cell_mate_exists():
                  for i in range(3)]
     assert {p.matched_on for p in mismatched_pairs(same_cell, seed=1)} == \
         {"family+structure"}
+
+
+def test_j0_refuses_an_rlens_whose_homogenising_rules_never_bound():
+    """StarCoder2 has LayerNorm and a non-gated MLP, so neither the RMSNorm rule
+    nor the gated-MLP rule matches. Attention hooks alone satisfy `lrp_rules`'
+    own strict check, so a lens labelled `rlens` gets built that is
+    arithmetically a J-lens — and its relevance conservation is whatever raw
+    autograd happens to give. J0 must catch that."""
+    from src.experiments.sinkflow_vocab import homogenising_rules_bound
+
+    candidates = _candidates()
+    lenses = {kind: {3: _fake_lens(3, candidates.token_ids, kind=kind)}
+              for kind in LENS_KINDS}
+    only_attention = {"ln": 0, "mlp": 0, "attn": 30}
+    assert not homogenising_rules_bound(only_attention)
+    violations = j0_lens_checks(lenses, candidates, [3], ["sink_arg"],
+                                model_name="fake-model", hf_id="fake",
+                                lrp_counts=only_attention)
+    assert "rlens_rules_bound" in {v.gate for v in violations}
+
+    # and it passes when either homogenising rule bound
+    for counts in ({"ln": 24, "mlp": 0, "attn": 30}, {"ln": 0, "mlp": 24, "attn": 30}):
+        assert homogenising_rules_bound(counts)
+        assert "rlens_rules_bound" not in {
+            v.gate for v in j0_lens_checks(lenses, candidates, [3], ["sink_arg"],
+                                           model_name="fake-model", hf_id="fake",
+                                           lrp_counts=counts)}

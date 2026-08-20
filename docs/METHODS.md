@@ -522,17 +522,39 @@ looking at results — E15-C declares `PRIMARY_LENS = "rlens"` in code for exact
 this reason. Report all three anyway: their *agreement* is itself evidence, and
 their *disagreement* localises an instrument problem rather than a finding.
 
-**Measured conservation, canonical runs (E15-C, stage 125):**
+**Measured, gate R (stage 110) on both Llama-family models:** `rho` holds within
+**1e-4 at every layer**, and LRP beats raw autograd at 7/7 (1.3B) and 9/9 (6.7B)
+testable layers. E14's reference-architecture target reproduces on real models.
 
-| | deepseek-coder-1.3b | deepseek-coder-6.7b | starcoder2-3b |
-|---|---:|---:|---:|
-| R-lens `rho` | **1.0001** | **0.9993** | **0.154** |
+**Which rule does the work.** §2.1 of the plan predicted the LN-rule; an early
+fp16 run recorded that as half wrong, and these two runs settle it across models
+and dtypes:
+
+| rule removed | 1.3B | 6.7B |
+|---|---:|---:|
+| **`no_half`** (gated-MLP split) | **4.4203** | **4.4628** |
+| `no_ln` (RMSNorm → diagonal) | 0.9806 | 0.9885 |
+| `no_identity` (SiLU → elementwise) | 0.2265 | 0.3941 |
+| `no_attn` (attention, unmodified by design) | 0.5128 | 0.3044 |
+
+The gated-MLP split carries the faithfulness gain by ~4.5×. Attention's cost,
+the one path left alone by design, is 0.30–0.51 — bounded and measured rather
+than unknown.
 
 The two deepseek models reproduce E14's target essentially exactly. **StarCoder2-3b
-does not** — the LRP rules do not conserve relevance on that architecture, so its
-R-lens numbers carry a fidelity caveat and any single-model claim resting on them
-would be unsafe. This is an architecture-level finding about the rules, and it is
-the kind of thing a diagnostic exists to surface.
+does not** — and the reason is not that the rules conserve badly there, it is
+that **they never install**. StarCoder2 uses LayerNorm (deliberately unmatched:
+it subtracts the mean, so the rule's algebra differs) and a non-gated MLP, so
+`norm_eps_attr` and `is_gated_mlp` both decline and the two homogenising rules
+bind to nothing. Only the attention hooks register, which is enough to satisfy
+`lrp_rules`' own `strict` check — so a lens labelled `rlens` gets built that is
+arithmetically a J-lens, and 0.154 is just what raw autograd gives.
+
+**J0 now refuses this** (`rlens_rules_bound`, added 2026-08-19): stage 125 records
+how many modules each rule bound to and the gate fails an R-lens where neither
+homogenising rule matched. The gate did not exist when the canonical runs were
+made, which is why the artifact exists at all — the diagnostic surfaced it, and
+the gate now prevents it.
 
 **Diagnostics are not gates, deliberately.** Lens fidelity — next-token recovery,
 agreement with the final-layer distribution, relevance conservation, and the
@@ -568,6 +590,17 @@ statistic is carried in three conventions:
 
 Sign consistency is reported in both `z` and `prob`, because for the J/R lenses
 they can disagree and a reader is entitled to see when they do.
+
+**And the convention is checked, not assumed.** Z-scoring removes a *shared*
+scale factor, but it does not remove a systematic difference in the distribution's
+*shape* between the two members — and such a difference would move the contrast in
+a fixed direction with no concept involved. Stage 126 therefore records each
+member's candidate-distribution entropy and score-vector norm, and stage 127
+correlates them with the contrast per pair. In the canonical E15-C runs the
+correlations never exceed |r| = 0.39 and sit at ≤ 0.29 in the reported cells, so
+the measured contrast is not a distribution artifact. This check exists because
+the alternative — asserting that z-scoring handles it — is exactly the kind of
+claim this repository does not make without a measurement.
 
 **3. The candidate vocabulary cannot be the whole vocabulary.** A J/R lens vector
 is one vector-Jacobian product *per candidate token*, so a 32k-row lens at every

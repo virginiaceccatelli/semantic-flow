@@ -48,7 +48,7 @@ distinction is **not there** — decodable is not verbalised.
 | **E5** context | robustness to distance vs interference | ● | ● | ☐ | supporting | survives 1000 tokens of filler; collapses under interference |
 | **E9** obfuscation | the same transformations on binding and def–use | ● | ● | ● | supporting | **E15's companion control** — same boundary, so the failure is not security-specific |
 | **E15-C** vocabulary contrast | is the safe→unsafe difference in the model's own output basis? | ● | ● | ● | supporting | **null in all three**, significantly *inverted* in 1.3B. Decodable ≠ verbalised |
-| **E14** R-lens | is a more faithful backward pass available? | ● | ● | ● | supporting | relevance conservation **1.0001 / 0.9993** on both deepseek models, **0.154 on starcoder2-3b** |
+| **E14** R-lens | is a more faithful backward pass available? | ● | ● | n/a | supporting | **gate R passes on both deepseek models** (ρ within 1e-4 at every layer; LRP beats autograd 7/7 and 9/9). The **gated-MLP rule dominates by 4.5×**, falsifying the plan's prediction that the LN-rule would. **Does not apply to starcoder2-3b** — LayerNorm + non-gated MLP, so the rules never install |
 | E10-0 J-lens | instrument validation for the lens track | ● | ● | ● | supporting | V1 exact (cosine 1.0000); the Jacobian correction is real |
 | E4 control dep | guard→statement | ● | ● | ☐ | contrast only | decodable, but its surface floor is already 0.927 — the contrast that makes E2 mean something |
 
@@ -199,33 +199,71 @@ n=10, too small to carry weight; V1 and V2 are the load-bearing checks.
 This is the project's centre of gravity and it is **not settled**. Four designs
 have been attempted. The honest summary of each:
 
-## E14 — the R-lens is more faithful, except on one architecture
+## E14 — the R-lens is more faithful, and the rule that matters is not the predicted one
 
-The J-lens's backward pass runs through modules that are not degree-1
-homogeneous, so its averaged first-order approximation degrades going backwards.
-**Relevance conservation** measures that directly: `rho = sum_t <ds/dh_l,t,
-h_l,t> / s` is exactly 1 when the tail above layer `l` is homogeneous. Under raw
-autograd `rho` wanders and **inverts sign** with depth (3.15 / −1.99 / 0.67 on a
-reference architecture) — the mechanism behind the non-monotonic J-lens curves.
-The R-lens installs LRP rules that make the traversed tail homogeneous, and they
-are **value-preserving**: they change no activation, only the backward graph,
-which gate J0 verifies against the ordinary forward logits.
+Gate R passes on **both** DeepSeek models. Every required check, both models:
 
-Measured on the canonical E15-C runs (stage 125):
+| check | 1.3B (float32) | 6.7B (float16) |
+|---|---|---|
+| **R0** forward invariance — the rules change no activation | 1.62e-06 relative (tol 1e-04) | 1.21e-03 relative (tol 1e-02) |
+| **R1** last layer equals the logit lens | cosine **1.0000** | cosine **1.0000** |
+| **R2** LRP beats raw autograd at every testable layer | **7/7** | **9/9** |
+| **R2** conservation in early layers, median &#124;ρ−1&#124; | **0.0000** | **0.0001** |
 
-| R-lens `rho` (target 1.000) | deepseek-coder-1.3b | deepseek-coder-6.7b | starcoder2-3b |
-|---|---:|---:|---:|
-| | **1.0001** | **0.9993** | **0.154** |
+The `all` arm holds `ρ ≈ 1` to within 1e-4 at *every* layer including the
+embedding — so the estimator the R-lens rests on is sound on Llama-family
+architectures, and E14's reference-architecture target reproduces on real models.
 
-Both deepseek models hit the target essentially exactly. **StarCoder2-3b does
-not** — the rules do not conserve relevance on that architecture, so its R-lens
-numbers carry a fidelity caveat and no single-model claim should rest on them.
-This is why the R-lens is not simply declared "better" and used everywhere, and
-why lens fidelity is measured as a **non-blocking diagnostic** rather than a
-gate: a gate would have silently excluded the layers and models where the
-instrument is uncomfortable, which is exactly the selection an interpretability
-result must not make.
+### The ablation replicates across models and dtypes
 
+`docs/design/E14_RLENS_PLAN.md` §2.1 predicted the **LN-rule** would dominate;
+a 1.3B fp16 run in August already recorded that prediction as half wrong. These
+runs settle it, in a second model and a second dtype:
+
+| rule removed | 1.3B | 6.7B |
+|---|---:|---:|
+| **`no_half`** (gated-MLP split) | **4.4203** | **4.4628** |
+| `no_ln` (RMSNorm → diagonal) | 0.9806 | 0.9885 |
+| `no_identity` (SiLU → elementwise) | 0.2265 | 0.3941 |
+| `no_attn` (attention hooks) | 0.5128 | 0.3044 |
+
+The **half-rule dominates by ~4.5×**, and the ordering is near-identical across
+two models and two dtypes. What makes the traversed tail homogeneous is
+overwhelmingly the gated-MLP split, not the norm; without it, the conservation
+error is larger than the quantity being conserved.
+
+One earlier anomaly also resolves. The August fp16 run reported the
+*identity-rule making conservation worse*. In float32 the all-rules arm sits at
+|ρ−1| = 0.0000 at every layer, against 0.2265 without the identity rule — so the
+rule helps, and the earlier inversion looks like fp16 noise rather than a
+property of SiLU. `no_identity` is the smallest of the four effects in both
+models.
+
+`no_ln` is the second-order effect and a total one — removing it drives `ρ` to
+~0.01, i.e. the relevance essentially vanishes. Attention, deliberately left
+unmodified, costs 0.30–0.51: real, bounded, and the honest answer to "what does
+the unmodified softmax path cost".
+
+### It does not apply to StarCoder2 at all
+
+Gate R **cannot complete** on starcoder2-3b, and the reason is architectural
+rather than numerical: StarCoder2 uses LayerNorm (deliberately unmatched — it
+subtracts the mean, so the rule's algebra differs) and a non-gated MLP, so
+`norm_eps_attr` and `is_gated_mlp` both decline and the two homogenising rules
+bind to **nothing**. Stage 110 raises when its `no_attn` arm removes the only
+rule that did bind.
+
+The tell is in the one file it did produce: `rlens_r0_forward.csv` reports a
+forward delta of **exactly 0.0**. Rules that are value-preserving still perturb
+float arithmetic; rules that were never installed do not. An R0 that passes
+*perfectly* is the signature of an empty install.
+
+**Consequence for E15-C.** The starcoder2-3b artifact labelled `rlens` was built
+with neither homogenising rule and is arithmetically a J-lens; its conservation of
+0.154 is simply what raw autograd gives. J0 now refuses this case
+(`rlens_rules_bound`). The E15-C null is unaffected — it rests on the logit and
+J-lens results there, and on genuine R-lenses in both DeepSeek models — but
+"three lenses agree" is, for that model, two lenses measured three ways.
 ## E13 — H0–H5 all pass (6.7B)
 
 **Gates passed so far** (6.7B, 400 base programs):
@@ -371,7 +409,19 @@ result**) returns **a null**:
 
 The security lexicon carries the contrast in no model, and the direction is not
 consistent — 1.3B is significantly **inverted** (85% of pairs put *less*
-unsafe-pole mass on the unsafe member). Four facts make this a real null rather
+unsafe-pole mass on the unsafe member).
+
+**The obvious confound is ruled out.** A systematic difference in the *shape* of a
+member's candidate distribution — its entropy, or the norm of its score vector —
+would shift a z-scored contrast in a fixed direction with no concept involved.
+Measured per pair, it does not: at the reported cells the contrast correlates with
+the paired entropy difference at r = −0.29 / +0.16 / +0.14 and with the score-norm
+difference at −0.04 / −0.10 / +0.10, no cell anywhere exceeds |r| = 0.39, and the
+mean paired entropy difference is ≈ 0 (+0.0003 / +0.0045 / +0.0000 nats). At most
+8% of the variance is distributional, so **1.3B's inverted sign is a real property
+of the contrast** — an unexplained phenomenon rather than a measurement error.
+
+Four further facts make this a real null rather
 than a failed measurement: the three lenses **agree** (pairwise cosine 0.75–0.97);
 it is not token identity (embedding-layer contrast null at p = 0.71–0.81, and 75%
 of pairs share the same anchor token); something *does* replicate but is
@@ -404,8 +454,9 @@ statement about a **frozen linear readout at one position** — a failing probe 
 not prove the model lost the information, though §8.6's parallel failure is
 consistent with real loss. The embedding control is one measurement, not three.
 E15-C is observational, its candidate pool is logit-lens-selected, and R-lens
-relevance conservation is 0.154 on starcoder2-3b (against ~1.000 on both deepseek
-models), so that model's lens numbers carry a fidelity caveat. Nothing causal is
+the LRP rules never install on starcoder2-3b at all (LayerNorm plus a non-gated
+MLP), so its `rlens` artifact is arithmetically a J-lens and that model's E15-C
+lens agreement is two lenses, not three. Nothing causal is
 claimed or tested for the security property. Full analysis, gates and limitations:
 `docs/design/E15_SINKFLOW_PLAN.md` §8–§14.
 
@@ -450,10 +501,12 @@ Ordered by what would most change what this project can claim.
    three models under renaming *alone* — starcoder2-3b drops to 0.639 there while
    `branch_merge` stays at 1.000. Diagnose on the existing
    `sinkflow_predictions.csv` before spending any GPU.
-4. **Decide whether the R-lens is usable on starcoder2-3b at all.** Relevance
-   conservation 0.154 against ~1.000 on both deepseek models is an
-   architecture-level finding about the LRP rules, and it belongs to E14's track.
-   See the lens roadmap in `docs/EXPERIMENTS.md`.
+4. **Make the R-lens architecture-general, or bound it.** It does not apply to
+   starcoder2-3b at all: LayerNorm plus a non-gated MLP means neither
+   homogenising rule installs. Extending `norm_eps_attr` to LayerNorm and
+   `is_gated_mlp` to non-gated MLPs is the open work; the LayerNorm half is the
+   harder one, since the mean-subtraction term is what the current algebra assumes
+   away. See the lens roadmap in `docs/EXPERIMENTS.md`.
 5. **Context-matched pairs on real code** — the highest-value follow-up for the
    foundation, and the one thing that would let E15's floor argument extend
    beyond synthetic programs. Build by mutating real functions.

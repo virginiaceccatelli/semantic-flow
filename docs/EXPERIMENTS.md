@@ -501,6 +501,15 @@ even consistent: 1.3B is significantly **inverted** — 85% of pairs put *less*
 unsafe-pole mass on the unsafe member — while starcoder2-3b leans the hypothesised
 way without reaching the pre-declared 0.70 threshold.
 
+**The distribution confound is ruled out.** A systematic difference in the shape
+of a member's candidate distribution would shift a z-scored contrast in a fixed
+direction with no concept involved. Per pair, it does not: at the reported cells
+the contrast correlates with the paired entropy difference at r = −0.29 / +0.16 /
++0.14 and with the score-norm difference at −0.04 / −0.10 / +0.10, with no cell
+anywhere above |r| = 0.39 and a mean paired entropy difference of ≈ 0. At most 8%
+of the variance is distributional, so **the inverted 1.3B sign is real** — an
+unexplained phenomenon rather than an artifact.
+
 **Why this is a real null and not a failed measurement.** (i) The three lenses
 **agree** — pairwise cosine of their mean vocabulary-difference vectors is
 0.75–0.97 — so the null is not an artifact of the primary-lens choice. (ii) It is
@@ -520,8 +529,9 @@ unsafe".
 
 **Diagnostics, which warn but never block.** R-lens relevance conservation is
 1.0001 (1.3B) and 0.9993 (6.7B) — essentially exact — but **0.154 on
-starcoder2-3b**, so the LRP rules do not conserve relevance on that architecture
-and its R-lens numbers carry a fidelity caveat. Final-layer rank agreement runs
+starcoder2-3b**, where the LRP rules never installed at all (LayerNorm plus a
+non-gated MLP match neither homogenising rule), so that model's `rlens` artifact
+is arithmetically a J-lens. Final-layer rank agreement runs
 0.18–0.47. Next-token recovery is unmeasurable (a 196-token candidate vocabulary
 rarely coincides with the true next token). The experiment is mechanically valid
 throughout; the report separates *mechanically invalid* from *mechanically valid
@@ -546,33 +556,60 @@ step asked and what came back.
 | **E10-0** J-lens validation (stage 60) | is the Jacobian-lens machinery correct on code models? | **yes** — at the last decoder layer `J` is the identity, so the J-lens must equal the logit lens; measured cosine 1.0000, a closed-form check of the whole gradient path. Next-token recovery beats a norm-matched floor. |
 | **E10-2/-3** J-lens on taint / control-dependence | does the "verbalizable workspace" framing explain E6's scale split? | **archived.** The behavioural signal it rested on did not survive its own controls (`docs/ARCHIVE.md`). |
 | **E11** J-space binding routing | is the *value* causally reused through J-space coordinates? | **NO-GO**, reported and not claimed. |
-| **E14** R-lens gate R (stage 110) | is a more faithful backward pass available, and how would we know? | **yes, and measurably.** Relevance conservation `rho` is the gate: raw autograd wanders and inverts sign with depth; the LRP rules hold `rho ≈ 1`. |
+| **E14** R-lens gate R (stage 110) | is a more faithful backward pass available, and how would we know? | **yes, and measurably** — on Llama-family architectures. Gate R passes on both deepseek models: `rho` within 1e-4 at every layer, LRP beating raw autograd at 7/7 and 9/9 testable layers. The ablation says the **gated-MLP rule** carries it (4.46 vs 0.99 for the norm rule), falsifying the plan's prediction. **Not applicable to starcoder2-3b**: LayerNorm plus a non-gated MLP means the rules never install. |
 | **E15-C** vocabulary contrast (stages 125–127) | is a *security* distinction expressed in the model's own output vocabulary? | **a null, in all three models** — and significantly *inverted* in 1.3B. |
 
-### What the R-lens fixed, and where it fails
+### What the R-lens fixed, where it fails, and which rule does the work
 
 The J-lens is an averaged first-order readout whose backward pass runs through
 modules that are not degree-1 homogeneous. Relevance conservation measures the
 damage directly: `rho = 1` exactly when the tail above a layer is homogeneous.
-Under raw autograd `rho` runs 3.15 / −1.99 / 0.67 across depth on a reference
-architecture — it **inverts sign**, which is the mechanism behind the
-non-monotonic J-lens curves. The LRP rules make the traversed tail homogeneous
-and, critically, are **value-preserving**: they change no activation, only the
-backward graph, and gate J0 verifies that by comparing ordinary forward logits
-with and without them.
+Under raw autograd `rho` wanders and **inverts sign** with depth. The LRP rules
+make the traversed tail homogeneous and are **value-preserving** — they change no
+activation, only the backward graph, which gate R0 / J0 verifies against the
+ordinary forward logits.
 
-Measured on the canonical E15-C runs:
+**Gate R, both deepseek models, every required check passing:**
 
-| R-lens relevance conservation | deepseek-coder-1.3b | deepseek-coder-6.7b | starcoder2-3b |
-|---|---:|---:|---:|
-| `rho` (target 1.000) | **1.0001** | **0.9993** | **0.154** |
+| | 1.3B (float32) | 6.7B (float16) |
+|---|---|---|
+| R0 forward invariance | 1.62e-06 relative (tol 1e-04) | 1.21e-03 relative (tol 1e-02) |
+| R1 last layer = logit lens | cosine 1.0000 | cosine 1.0000 |
+| R2 LRP beats autograd | **7/7** layers | **9/9** layers |
+| R2 conservation, median &#124;ρ−1&#124; | **0.0000** | **0.0001** |
 
-Both deepseek models reproduce E14's target essentially exactly. **StarCoder2-3b
-does not.** The rules do not conserve relevance on that architecture, so its
-R-lens numbers carry a fidelity caveat and no single-model claim should rest on
-them. That is an architecture-level finding about the rules and belongs to E14's
-track, not E15's — but it is the reason the R-lens is not simply declared
-"better" and used everywhere.
+**The rule ablation now replicates.** §2.1 of the plan predicted the LN-rule
+would dominate; a 1.3B fp16 run already recorded that as half wrong. A second
+model and a second dtype settle it:
+
+| rule removed | 1.3B | 6.7B |
+|---|---:|---:|
+| **`no_half`** (gated-MLP split) | **4.4203** | **4.4628** |
+| `no_ln` (RMSNorm → diagonal) | 0.9806 | 0.9885 |
+| `no_identity` (SiLU → elementwise) | 0.2265 | 0.3941 |
+| `no_attn` (attention, unmodified by design) | 0.5128 | 0.3044 |
+
+The gated-MLP split dominates by ~4.5× and the ordering is near-identical across
+both. Attention's cost — the one path the design deliberately leaves alone — is
+0.30–0.51, the bounded answer to "what does the unmodified softmax cost". The
+August fp16 anomaly where the identity-rule appeared to *hurt* conservation does
+not survive float32: `all` sits at 0.0000 against 0.2265 for `no_identity`, so it
+was fp16 noise.
+
+**Where it fails: StarCoder2, and not for a numerical reason.** Gate R cannot
+complete there. StarCoder2 uses LayerNorm (deliberately unmatched: it subtracts
+the mean, so the algebra differs) and a non-gated MLP, so both homogenising rules
+bind to **nothing**; only attention hooks register, which satisfies `lrp_rules`'
+own strict check, and stage 110 then raises when its `no_attn` arm removes the
+only rule that bound. The tell is in the one file it produced: a forward delta of
+**exactly 0.0**. Value-preserving rules still perturb float arithmetic; rules that
+were never installed do not.
+
+**Consequence for E15-C**: the starcoder2-3b artifact labelled `rlens` is
+arithmetically a J-lens, and its 0.154 conservation is simply raw autograd. J0 now
+refuses this (`rlens_rules_bound`). The null is unaffected — it rests on logit and
+J-lens results there, and on genuine R-lenses in both deepseek models — but
+"three lenses agree" is, for that model, two lenses measured three ways.
 
 ### What the lens contrast found, and why the null is trustworthy
 
@@ -669,11 +706,13 @@ Ordered by cost, and each step says what result would justify the next.
    a random direction by a factor of only 0.87–2.08. **On 6.7B the effect is not
    specific to the lens at all.** Any future positive result in this track has to
    clear this bar, not the permutation bar.
-3. **Test the confound for the inversion** — ✅ *built*, needs one CPU re-run
-   against the activation stores. Stage 126 now records each member's candidate
-   distribution entropy and score norm, and stage 127 correlates them with the
-   contrast (report table 12). If `corr_contrast_entropy` is large, the sign is a
-   distribution artifact rather than a concept.
+3. **Test the confound for the inversion** — ✅ *built and run; it came back
+   negative*. Stage 126 records each member's candidate-distribution entropy and
+   score norm; stage 127 correlates them with the contrast (report table 12).
+   |r| ≤ 0.39 in every cell across all three models, ≤ 0.29 at the reported cells,
+   with a mean paired entropy difference of ≈ 0. **The contrast is not a
+   distribution artifact**, so the inverted 1.3B sign is a real and currently
+   unexplained property. **Tier 1 is complete.**
 
 **Tier 2 — one GPU stage, per model. This is where a real finding is most likely.**
 
@@ -700,20 +739,19 @@ Ordered by cost, and each step says what result would justify the next.
 
 **Tier 3 — instrument work, and the most publishable single result here.**
 
-7. **Diagnose StarCoder2's relevance conservation of 0.154.** Stage 110 has never
-   been run on that model — only on deepseek-coder-1.3b — and it already ships the
-   ablation arms (`no_attn`, `no_ln`, `no_identity`, `no_half`, `none`) that
-   attribute the conservation gap to individual rules. One GPU stage answers
-   *which rule fails on this architecture*:
-   ```bash
-   python scripts/110_rlens_validate.py --model starcoder2-3b
-   python scripts/110_rlens_validate.py --model deepseek-coder-6.7b   # never run either
-   ```
-8. **If the gap is attention-dominated, extend the rules to it.** The LRP rules
-   deliberately leave attention unmodified, following the R-lens post, which makes
-   `|rho − 1|` a *measurement of what attention costs* rather than an unknown.
-   0.154 is a large enough cost to justify building the AttnLRP arm — as an
-   ablation arm beside the current rules, never as a silent replacement.
+7. **Diagnose StarCoder2's conservation of 0.154** — ✅ *done, and it was not what
+   the number suggested*. Stage 110 on starcoder2-3b **raises**: the rules never
+   install there (LayerNorm + non-gated MLP), so 0.154 was raw autograd and the
+   `rlens` artifact is arithmetically a J-lens. J0 now refuses that case. The same
+   stage on **deepseek-coder-6.7b passes gate R outright** and replicates the
+   ablation ordering. No further diagnosis needed.
+8. **~~If the gap is attention-dominated, extend the rules to it.~~** Answered and
+   dropped: attention's cost is 0.30–0.51 in both models, while the gated-MLP rule
+   carries 4.46. AttnLRP is not where the leverage is. **The replacement item is
+   architecture generality**: extend `norm_eps_attr` to LayerNorm and
+   `is_gated_mlp` to non-gated MLPs, which is what would make the R-lens usable on
+   StarCoder2 at all. The LayerNorm half is the harder one — the mean-subtraction
+   term is exactly what the current algebra assumes away.
 9. **Relax "vocabulary token" to "output-aligned direction".** The sharpest
    limitation of E15-C is that it can only find a concept if some *single token*
    carries it. Fit a probe constrained to the row space of `W_U` — output-aligned
