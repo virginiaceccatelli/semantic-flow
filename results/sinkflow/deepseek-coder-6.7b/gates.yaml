@@ -1,6 +1,6 @@
 experiment: E15
 model: deepseek-coder-6.7b
-updated: '2026-08-19 21:16:41'
+updated: '2026-08-20 11:29:01'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -262,10 +262,10 @@ gates:
     value: 43200.0
     detail: 43200 pair rows over 3 lenses x 10 layers x 2 sites x 10 conditions on
       72 held-out bases, oriented unsafe-minus-safe, tokens frozen at 2026-08-19 10:52:50
-      on training digest 0b5fcb12614bab1e; permutation, mismatched-pair, random and
-      Gram-matched controls all ran
+      on training digest 0b5fcb12614bab1e; permutation, mismatched-pair, same-label
+      (both poles), random and Gram-matched controls all ran
     stage: 126_sinkflow_vocab_contrast
-    timestamp: '2026-08-19 21:16:41'
+    timestamp: '2026-08-20 10:15:24'
     override: false
     override_reason: ''
     extra:
@@ -296,6 +296,49 @@ gates:
       - sink_arg
       - last_token
       train_digest: 0b5fcb12614bab1e
+      violations: []
+      gates_required: S0,S1,J0
+      gate_override: false
+      gate_override_reason: ''
+  J2:
+    name: J2
+    passed: true
+    value: 200.0
+    detail: 200 cells over 10 layers x 2 sites x 10 conditions on 72 held-out bases;
+      direction estimated on 168 training bases (digest 0b5fcb12614bab1e), both same-label
+      nulls ran in every cell
+    stage: 128_sinkflow_align
+    timestamp: '2026-08-20 11:29:01'
+    override: false
+    override_reason: ''
+    extra:
+      layers:
+      - -1
+      - 0
+      - 3
+      - 7
+      - 11
+      - 15
+      - 19
+      - 23
+      - 27
+      - 31
+      sites:
+      - sink_arg
+      - last_token
+      conditions:
+      - clean_heldout
+      - encode_only
+      - flatten_only
+      - normalize
+      - opaque_only
+      - rename_cumulative
+      - rename_only
+      - rename_opaque
+      - rename_opaque_encode
+      - rename_opaque_encode_flatten
+      train_digest: 0b5fcb12614bab1e
+      n_heldout_bases: 72
       violations: []
       gates_required: S0,S1,J0
       gate_override: false

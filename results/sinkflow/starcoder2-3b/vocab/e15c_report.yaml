@@ -17,6 +17,7 @@ checks:
   consistent_orientation: true
   above_permutation_control: true
   above_mismatched_pair_control: true
+  above_same_label_control: true
   stable_across_identifier_roles: true
 thresholds:
   sign_consistency: 0.7
@@ -32,8 +33,8 @@ gates:
     passed: true
     detail: 43200 pair rows over 3 lenses x 10 layers x 2 sites x 10 conditions on
       72 held-out bases, oriented unsafe-minus-safe, tokens frozen at 2026-08-19 13:44:01
-      on training digest 0b5fcb12614bab1e; permutation, mismatched-pair, random and
-      Gram-matched controls all ran
+      on training digest 0b5fcb12614bab1e; permutation, mismatched-pair, same-label
+      (both poles), random and Gram-matched controls all ran
 headline:
   model: starcoder2-3b
   arm: main
@@ -90,6 +91,73 @@ mismatched_control:
   topk_enrichment_negative: 0.75
   topk_enrichment_random: 0.0
   concept_rank_best: 53.0
+same_label_control:
+  unsafe:
+    model: starcoder2-3b
+    arm: same_label_unsafe
+    lens: rlens
+    layer: 15
+    site: sink_arg
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    relative_depth: 0.5172
+    n_pairs: 72
+    mean_delta_contrast_z: 0.0275725658980185
+    mean_delta_contrast_prob: -7.903743879728652e-06
+    sign_consistency_z: 0.5277777777777778
+    sign_consistency_prob: 0.5138888888888888
+    mean_contrast_prob_unsafe: -0.0105615003804693
+    mean_contrast_prob_safe: -0.0105535966365896
+    permutation_effect_size: 0.8870761509858719
+    permutation_p: 0.424
+    permutation_null_sd: 0.035107586415762
+    anchor_token_same_frac: 0.75
+    corr_contrast_entropy: 0.1858481999069144
+    corr_contrast_norm: -0.1410563482473066
+    mean_delta_entropy: -3.852801895101423e-06
+    topk_enrichment_positive: 0.0
+    topk_enrichment_negative: 0.0
+    topk_enrichment_random: 0.03125
+    concept_rank_best: 4.0
+  safe:
+    model: starcoder2-3b
+    arm: same_label_safe
+    lens: rlens
+    layer: 15
+    site: sink_arg
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    relative_depth: 0.5172
+    n_pairs: 72
+    mean_delta_contrast_z: -0.0042525694419041
+    mean_delta_contrast_prob: 1.0739812556642692e-08
+    sign_consistency_z: 0.5277777777777778
+    sign_consistency_prob: 0.4722222222222222
+    mean_contrast_prob_unsafe: -0.0105773172002021
+    mean_contrast_prob_safe: -0.0105773279400146
+    permutation_effect_size: -0.2041887688051652
+    permutation_p: 0.886
+    permutation_null_sd: 0.0294775188991283
+    anchor_token_same_frac: 0.7777777777777778
+    corr_contrast_entropy: 0.1627497316275144
+    corr_contrast_norm: 0.1126157693125913
+    mean_delta_entropy: 5.302964885471144e-06
+    topk_enrichment_positive: 0.0
+    topk_enrichment_negative: 0.25
+    topk_enrichment_random: 0.0
+    concept_rank_best: 111.0
+pairing_diagnostics:
+  main_displacement: 0.19444444444444442
+  mismatched_displacement: 0.13888888888888884
+  pairing_gain: 0.05555555555555558
+  same_label_displacement:
+    unsafe: 0.02777777777777779
+    safe: 0.02777777777777779
+  note: "the mismatched arm cannot systematically move the MEAN \u2014 it resamples\
+    \ from the same safe pool, so its expected mean is the main arm's \u2014 which\
+    \ is why only these sign-consistency displacements are informative about it"
 n_weak_fidelity_rows: 41
 depth_figure: results/figures/e15c_depth_starcoder2-3b.png
 specificity_at_reported_cell: 1.4000000000000004

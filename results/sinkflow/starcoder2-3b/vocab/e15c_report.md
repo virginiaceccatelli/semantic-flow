@@ -11,6 +11,7 @@ Primary lens `rlens` (declared before any result was produced); reported at lens
 | consistent_orientation | yes |
 | above_permutation_control | yes |
 | above_mismatched_pair_control | yes |
+| above_same_label_control | yes |
 | stable_across_identifier_roles | yes |
 
 This experiment is **observational**. A vocabulary direction that separates the two members is not evidence that the model uses it; E13's interchange is the causal instrument.
@@ -232,11 +233,19 @@ A weak row does not invalidate its layer. It is the reason the verdict separates
 
 ### Controls at the reported cell
 
+`mismatched_pairs` redraws the SAFE partner from the safe pool, so the label difference survives it and its mean is invariant by construction; it can only move the per-pair statistics. `same_label_unsafe` and `same_label_safe` take BOTH members from one pole, so the label difference is gone and the expected contrast is zero — that is the arm a label claim has to clear.
+
 | arm | lens | mean_delta_contrast_z | sign_consistency_z | permutation_p | n_pairs |
 |---|---|---|---|---|---|
 | mismatched_pairs | jlens | 0.082 | 0.597 | 0.010 | 72 |
 | mismatched_pairs | logit | -0.037 | 0.375 | 0.490 | 72 |
 | mismatched_pairs | rlens | 0.090 | 0.639 | 0.002 | 72 |
+| same_label_unsafe | jlens | 0.027 | 0.542 | 0.422 | 72 |
+| same_label_unsafe | logit | -0.025 | 0.458 | 0.652 | 72 |
+| same_label_unsafe | rlens | 0.028 | 0.528 | 0.424 | 72 |
+| same_label_safe | jlens | -0.002 | 0.514 | 0.936 | 72 |
+| same_label_safe | logit | 0.004 | 0.542 | 0.930 | 72 |
+| same_label_safe | rlens | -0.004 | 0.528 | 0.886 | 72 |
 | random_lens | random | 0.117 | 0.611 | 0.066 | 72 |
 | gram_random_lens | gram_random | 0.098 | 0.639 | 0.022 | 72 |
 | role_swap_0 | jlens | 0.047 | 0.622 | 0.296 | 37 |

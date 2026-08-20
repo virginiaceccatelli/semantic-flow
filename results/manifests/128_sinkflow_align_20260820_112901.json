@@ -1,0 +1,33 @@
+{
+  "stage": "128_sinkflow_align",
+  "timestamp": "20260820_112901",
+  "git_sha": "649a6ab",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/128_sinkflow_align.py",
+    "--model",
+    "deepseek-coder-6.7b"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "activations": "results/activations/deepseek-coder-6.7b",
+    "output": "results/sinkflow/deepseek-coder-6.7b",
+    "layers": "[-1, 0, 3, 7, 11, 15, 19, 23, 27, 31]",
+    "sites": "['sink_arg', 'last_token']",
+    "conditions": "['clean_heldout', 'encode_only', 'flatten_only', 'normalize', 'opaque_only', 'rename_cumulative', 'rename_only', 'rename_opaque', 'rename_opaque_encode', 'rename_opaque_encode_flatten']",
+    "n_loadings": "25",
+    "n_boot": "2000",
+    "dtype": "float16",
+    "device": "cuda",
+    "seed": "42"
+  },
+  "wall_time_s": 407.5,
+  "extra": {
+    "J2": true,
+    "n_cells": 200,
+    "violations": [],
+    "gates_required": "S0,S1,J0",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

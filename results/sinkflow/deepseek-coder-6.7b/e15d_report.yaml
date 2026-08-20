@@ -1,0 +1,159 @@
+experiment: E15-D
+model: deepseek-coder-6.7b
+verdicts:
+  v1_alignment: no_shared_direction
+  positive_control: mechanically_invalid
+  v3_relevance: mechanically_invalid
+consequence_for_e15c: J3 did not pass; nothing may be read.
+gates:
+  J0:
+    passed: true
+    detail: 196 frozen candidate tokens (1 unsafe-oriented, 3 safe-oriented, 3 words
+      omitted by the tokenizer check), three lenses at each of 10 layers, forward
+      logits unchanged within 0.01 relative, 36 weak-fidelity warnings (non-blocking)
+  J1:
+    passed: true
+    detail: 43200 pair rows over 3 lenses x 10 layers x 2 sites x 10 conditions on
+      72 held-out bases, oriented unsafe-minus-safe, tokens frozen at 2026-08-19 10:52:50
+      on training digest 0b5fcb12614bab1e; permutation, mismatched-pair, same-label
+      (both poles), random and Gram-matched controls all ran
+  J2:
+    passed: true
+    detail: 200 cells over 10 layers x 2 sites x 10 conditions on 72 held-out bases;
+      direction estimated on 168 training bases (digest 0b5fcb12614bab1e), both same-label
+      nulls ran in every cell
+  J3:
+    passed: false
+    detail: not recorded
+  J4:
+    passed: false
+    detail: not recorded
+v1:
+  verdict_text: "NO SHARED DIRECTION \u2014 the per-pair differences do not agree,\
+    \ over the WHOLE vocabulary. This is strictly stronger than E15-C's null: no candidate\
+    \ pool was chosen, so no pool can be blamed."
+  reported:
+    site: last_token
+    layer: 15
+    condition: clean_heldout
+  thresholds:
+    sign_consistency: 0.7
+    sv1_margin: 2.0
+    min_pairs: 24
+  checks:
+    direction_frozen_on_train: true
+    heldout_projection_replicates: true
+    above_same_label_null: false
+    above_surface_floor: true
+  headline:
+    model: deepseek-coder-6.7b
+    layer: 15
+    site: last_token
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    n: 72
+    sv1_share: 0.1967076360611087
+    sv1_floor: 0.0138888888888888
+    mean_pairwise_cosine: 0.147458516291002
+    resultant_length: 0.3991232519302838
+    mean_norm: 106.146474917599
+    dropped_zero_norm: 0
+    same_label_unsafe_n: 72
+    same_label_unsafe_sv1_share: 0.2035090691379137
+    same_label_unsafe_sv1_floor: 0.0138888888888888
+    same_label_unsafe_mean_pairwise_cosine: -0.0138599478030584
+    same_label_unsafe_resultant_length: 0.01488087231559
+    same_label_unsafe_mean_norm: 156.55922053476627
+    same_label_unsafe_dropped_zero_norm: 0
+    same_label_safe_n: 72
+    same_label_safe_sv1_share: 0.1967864975447893
+    same_label_safe_sv1_floor: 0.0138888888888888
+    same_label_safe_mean_pairwise_cosine: -0.0137916909442901
+    same_label_safe_resultant_length: 0.0169926221553317
+    same_label_safe_mean_norm: 159.09261364918825
+    same_label_safe_dropped_zero_norm: 0
+    n_pairs: 72
+    same_label_sv1_share: 0.2035090691379137
+    sv1_ratio: 0.9665792138619838
+    proj_mean: 0.3795849102738715
+    proj_sign_consistency: 1.0
+    proj_ci_lo: 0.3577020519268885
+    proj_ci_hi: 0.4007110000967003
+    same_label_proj_mean: -0.0008590232553913
+    same_label_proj_sign_consistency: 0.4652777777777778
+  embedding_floor:
+    model: deepseek-coder-6.7b
+    layer: -1
+    site: last_token
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    n: 0
+    sv1_share: null
+    sv1_floor: null
+    mean_pairwise_cosine: null
+    resultant_length: null
+    mean_norm: null
+    dropped_zero_norm: 72
+    same_label_unsafe_n: 0
+    same_label_unsafe_sv1_share: null
+    same_label_unsafe_sv1_floor: null
+    same_label_unsafe_mean_pairwise_cosine: null
+    same_label_unsafe_resultant_length: null
+    same_label_unsafe_mean_norm: null
+    same_label_unsafe_dropped_zero_norm: 72
+    same_label_safe_n: 0
+    same_label_safe_sv1_share: null
+    same_label_safe_sv1_floor: null
+    same_label_safe_mean_pairwise_cosine: null
+    same_label_safe_resultant_length: null
+    same_label_safe_mean_norm: null
+    same_label_safe_dropped_zero_norm: 72
+    n_pairs: 0
+    same_label_sv1_share: null
+    sv1_ratio: null
+    proj_mean: null
+    proj_sign_consistency: null
+    proj_ci_lo: null
+    proj_ci_hi: null
+    same_label_proj_mean: null
+    same_label_proj_sign_consistency: null
+positive_control:
+  verdict_text: "MECHANICALLY INVALID \u2014 J3 did not pass."
+  reported:
+    prompt_style: sink
+    lens: rlens
+    layer: null
+    condition: clean_heldout
+  thresholds:
+    sign_consistency: 0.7
+    permutation_p: 0.05
+    behaviour_floor: 0.5
+  checks:
+    behaviour_above_chance: false
+    lens_detects_the_property: false
+    lens_tracks_the_model: false
+    security_contrast_at_same_cell: false
+  behaviour: {}
+  headline: {}
+v3:
+  verdict_text: "MECHANICALLY INVALID \u2014 J4 did not pass."
+  thresholds:
+    sign_consistency: 0.7
+    permutation_p: 0.05
+    conservation_tolerance: 0.25
+  checks:
+    rules_installed_and_conserving: false
+    redistribution_consistent: false
+    above_permutation_control: false
+    role_token_counts_matched: false
+  conserving_layers: []
+  token_identical_roles:
+  - source_expr
+  - trusted_expr
+  - taint_chain
+  - trust_chain
+  - sink_call
+  - signature
+  headline: {}

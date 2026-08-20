@@ -17,6 +17,7 @@ checks:
   consistent_orientation: true
   above_permutation_control: true
   above_mismatched_pair_control: true
+  above_same_label_control: true
   stable_across_identifier_roles: true
 thresholds:
   sign_consistency: 0.7
@@ -32,8 +33,8 @@ gates:
     passed: true
     detail: 34560 pair rows over 3 lenses x 8 layers x 2 sites x 10 conditions on
       72 held-out bases, oriented unsafe-minus-safe, tokens frozen at 2026-08-18 21:27:52
-      on training digest 0b5fcb12614bab1e; permutation, mismatched-pair, random and
-      Gram-matched controls all ran
+      on training digest 0b5fcb12614bab1e; permutation, mismatched-pair, same-label
+      (both poles), random and Gram-matched controls all ran
 headline:
   model: deepseek-coder-1.3b
   arm: main
@@ -90,6 +91,73 @@ mismatched_control:
   topk_enrichment_negative: 0.625
   topk_enrichment_random: 0.0
   concept_rank_best: 101.0
+same_label_control:
+  unsafe:
+    model: deepseek-coder-1.3b
+    arm: same_label_unsafe
+    lens: rlens
+    layer: 11
+    site: sink_arg
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    relative_depth: 0.4783
+    n_pairs: 72
+    mean_delta_contrast_z: 0.0039593679640699
+    mean_delta_contrast_prob: -1.1946110064672168e-05
+    sign_consistency_z: 0.4583333333333333
+    sign_consistency_prob: 0.5
+    mean_contrast_prob_unsafe: -0.0109858954343069
+    mean_contrast_prob_safe: -0.0109739493242422
+    permutation_effect_size: 0.13927372755409
+    permutation_p: 0.912
+    permutation_null_sd: 0.0320799704378875
+    anchor_token_same_frac: 0.75
+    corr_contrast_entropy: -0.0749529332556192
+    corr_contrast_norm: -0.1180443702295876
+    mean_delta_entropy: 8.680888716874582e-05
+    topk_enrichment_positive: 0.0
+    topk_enrichment_negative: 0.0
+    topk_enrichment_random: 0.0
+    concept_rank_best: 43.0
+  safe:
+    model: deepseek-coder-1.3b
+    arm: same_label_safe
+    lens: rlens
+    layer: 11
+    site: sink_arg
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    relative_depth: 0.4783
+    n_pairs: 72
+    mean_delta_contrast_z: 0.0151014552314702
+    mean_delta_contrast_prob: -8.05554736663809e-07
+    sign_consistency_z: 0.5277777777777778
+    sign_consistency_prob: 0.5138888888888888
+    mean_contrast_prob_unsafe: -0.010553851271297
+    mean_contrast_prob_safe: -0.0105530457165604
+    permutation_effect_size: 0.4343420517442727
+    permutation_p: 0.654
+    permutation_null_sd: 0.0331650614770156
+    anchor_token_same_frac: 0.7777777777777778
+    corr_contrast_entropy: -0.2865057223312011
+    corr_contrast_norm: -0.1137420236271619
+    mean_delta_entropy: 2.9345075111603733e-06
+    topk_enrichment_positive: 0.0
+    topk_enrichment_negative: 0.0
+    topk_enrichment_random: 0.0625
+    concept_rank_best: 36.0
+pairing_diagnostics:
+  main_displacement: 0.3472222222222222
+  mismatched_displacement: 0.33333333333333337
+  pairing_gain: 0.01388888888888884
+  same_label_displacement:
+    unsafe: 0.041666666666666685
+    safe: 0.02777777777777779
+  note: "the mismatched arm cannot systematically move the MEAN \u2014 it resamples\
+    \ from the same safe pool, so its expected mean is the main arm's \u2014 which\
+    \ is why only these sign-consistency displacements are informative about it"
 n_weak_fidelity_rows: 26
 depth_figure: results/figures/e15c_depth_deepseek-coder-1.3b.png
 specificity_at_reported_cell: 2.083333333333334
