@@ -338,3 +338,77 @@ def test_the_precedence_puts_the_edited_span_ahead_of_its_container():
     assert ROLES.index("sink_arg") < ROLES.index("sink_call")
     assert ROLES.index("source_expr") < ROLES.index("taint_chain")
     assert ROLES[-1] == "other"
+
+
+# ── the two nulls, and the degenerate cell ───────────────────────────────────
+
+def test_a_consistent_shift_in_a_heavy_tailed_distribution_fires_the_sign_test_only():
+    """The situation the canonical 1.3B run landed in, pinned as a property.
+
+    Relevance deltas are heavy-tailed — one position can carry many times the
+    whole score — so a handful of outliers widen the MEAN's permutation null
+    past significance while the sign stays overwhelmingly consistent. Both nulls
+    are reported and neither is allowed to stand in for the other.
+    """
+    rows = []
+    for i in range(72):
+        unsafe = {role: 1.0 / len(ROLES) for role in ROLES}
+        safe = dict(unsafe)
+        # 65 small consistent negatives, 7 large positive outliers
+        shift = -0.01 if i < 65 else +0.9
+        unsafe["taint_chain"] += shift
+        unsafe["trust_chain"] -= shift
+        rows += [_reading(f"b{i}", "unsafe", fractions=unsafe),
+                 _reading(f"b{i}", "safe", fractions=safe)]
+    summary = summarize_redistribution(pair_redistribution(pd.DataFrame(rows)),
+                                       "fake", n_permutations=500)
+    row = summary[summary["ast_role"] == "taint_chain"].iloc[0]
+    assert row["sign_consistency"] == pytest.approx(7 / 72)
+    # the sign is decisive; the mean is orders of magnitude less so
+    assert row["sign_test_p"] < 1e-9
+    assert row["permutation_p"] > row["sign_test_p"] * 1e6
+    # and the median is the summary that survives the tails while the mean is
+    # flipped outright by seven pairs out of seventy-two
+    assert row["median_delta_frac"] == pytest.approx(-0.01)
+    assert row["mean_delta_frac"] > 0
+
+
+def test_the_sign_test_is_the_exact_null_of_the_declared_statistic():
+    """Not a second test picked after the fact: flipping each base's orientation
+    at random — the same scheme the permutation null uses — makes the positive
+    count Binomial(n, 1/2)."""
+    from scipy.stats import binomtest
+
+    rows = []
+    for i in range(40):
+        unsafe = {role: 1.0 / len(ROLES) for role in ROLES}
+        safe = dict(unsafe)
+        unsafe["source_expr"] += (0.02 if i < 30 else -0.02)
+        unsafe["sink_call"] -= (0.02 if i < 30 else -0.02)
+        rows += [_reading(f"b{i}", "unsafe", fractions=unsafe),
+                 _reading(f"b{i}", "safe", fractions=safe)]
+    summary = summarize_redistribution(pair_redistribution(pd.DataFrame(rows)),
+                                       "fake", n_permutations=200)
+    row = summary[summary["ast_role"] == "source_expr"].iloc[0]
+    assert row["n_nonzero"] == 40
+    assert row["sign_test_p"] == pytest.approx(binomtest(30, 40, 0.5).pvalue)
+
+
+def test_a_cell_where_nothing_moved_is_marked_degenerate_not_perfectly_consistent():
+    """At the LAST decoder layer the tail is the final norm and the unembedding
+    at one position, so every other position's relevance is identically zero.
+    `0 > 0` is false for every pair, so a naive sign consistency would read 0.0 —
+    maximal displacement from chance — and that cell would win any "largest
+    effect" search outright."""
+    unsafe = {role: 0.0 for role in ROLES}
+    unsafe["other"] = 1.0
+    rows = []
+    for i in range(30):
+        rows += [_reading(f"b{i}", "unsafe", fractions=unsafe),
+                 _reading(f"b{i}", "safe", fractions=unsafe)]
+    summary = summarize_redistribution(pair_redistribution(pd.DataFrame(rows)),
+                                       "fake", n_permutations=100)
+    for _, row in summary.iterrows():
+        assert row["degenerate"] == 1
+        assert row["n_nonzero"] == 0
+        assert np.isnan(row["sign_consistency"])

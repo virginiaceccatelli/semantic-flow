@@ -429,7 +429,33 @@ def summarize_redistribution(pairs_frame: pd.DataFrame, model: str,
     The permutation null is `sinkflow_vocab.permutation_null`, unchanged — it
     re-orients each base at random, which destroys the safe->unsafe alignment
     while keeping every pair and every magnitude.
+
+    **Two nulls, because two statistics.** `permutation_p` is
+    `sinkflow_vocab.permutation_null` on the MEAN. `sign_test_p` is the exact
+    null of `sign_consistency` under the very same random-orientation scheme:
+    flipping each base's orientation at random makes the count of positive
+    deltas Binomial(n, 1/2), so the two-sided binomial test IS the permutation
+    test for that statistic — it is not a second test chosen after the fact.
+    They are reported side by side because they can disagree sharply, and when
+    they do it is diagnostic rather than ambiguous: relevance deltas are
+    heavy-tailed (a single position can carry many times the whole score), so a
+    handful of outliers can widen the mean's null past significance while the
+    median and the sign stay stable. A cell with high `sign_consistency` and a
+    non-significant `permutation_p` is a consistent shift in a heavy-tailed
+    distribution, and `median_delta_frac` is the summary to read there.
+
+    `degenerate` marks a cell where every paired delta is EXACTLY zero. That is
+    not a null result, it is the absence of a measurement, and it has a
+    structural cause worth naming: at the LAST decoder layer the tail network is
+    the final norm and the unembedding at the readout position alone, so the
+    score depends on one position and every other position's relevance is
+    identically zero. Such a cell must be excluded from any "largest effect"
+    search — `(sign_consistency - 0.5).abs()` is maximal there, because
+    `0 > 0` is false for every pair, which would otherwise make the most
+    degenerate cell look like the strongest one.
     """
+    from scipy.stats import binomtest
+
     from src.experiments.sinkflow_vocab import permutation_null
 
     if pairs_frame.empty:
@@ -441,6 +467,12 @@ def summarize_redistribution(pairs_frame: pd.DataFrame, model: str,
         for role in ROLES:
             delta = chunk[f"delta_frac_{role}"].to_numpy(dtype=float)
             permutation = permutation_null(delta, n_permutations, seed)
+            finite = delta[np.isfinite(delta)]
+            degenerate = bool(finite.size == 0 or np.all(finite == 0.0))
+            nonzero = finite[finite != 0.0]
+            positive = int((nonzero > 0).sum())
+            sign_p = (float(binomtest(positive, nonzero.size, 0.5).pvalue)
+                      if nonzero.size else float("nan"))
             rows.append({
                 "model": model, "condition": condition,
                 "condition_kind": condition_kind(str(condition)),
@@ -450,7 +482,16 @@ def summarize_redistribution(pairs_frame: pd.DataFrame, model: str,
                 "token_identical": int(role in TOKEN_IDENTICAL_ROLES),
                 "n_pairs": int(len(chunk)),
                 "mean_delta_frac": float(np.nanmean(delta)),
-                "sign_consistency": float(np.nanmean(delta > 0)),
+                # over the pairs that moved at all, so a cell where nothing
+                # moved reads as "no measurement" rather than as "perfectly
+                # consistent in the negative direction"
+                "sign_consistency": (float(np.mean(nonzero > 0)) if nonzero.size
+                                     else float("nan")),
+                "n_nonzero": int(nonzero.size),
+                "degenerate": int(degenerate),
+                # robust to the heavy tails the mean is not
+                "median_delta_frac": float(np.nanmedian(delta)),
+                "sign_test_p": sign_p,
                 "permutation_p": permutation["p_value"],
                 "permutation_effect_size": permutation["effect_size"],
                 "mean_frac_unsafe": float(np.nanmean(

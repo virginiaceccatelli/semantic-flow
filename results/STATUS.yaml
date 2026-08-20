@@ -444,65 +444,104 @@ experiments:
       transformation, so figures moved (e.g. 1.3b's flattening result 0.632 ->
       0.729 for the cumulative condition). Do not mix the two generations.
   E15-D:
-    name: three follow-ups to the E15-C null (alignment, positive control, relevance)
-    status: active
+    name: the full-vocabulary direction, the positive control, and relevance routing
+    status: validated_foundation
     stage: "128,129,130,131"
-    tables: [align_summary_, positive_summary_, positive_behaviour_summary_,
+    tables: [align_summary_, align_loadings_, align_restricted_,
              relevance_summary_, relevance_conservation_]
     claim: >
-      NOTHING YET. Built and smoke-tested on 2026-08-20; not run at canonical
-      scale, so no number here is claimed. What the three stages are FOR:
-      E15-C's null cannot distinguish "the models do not verbalise this" from
-      "this machinery could not detect verbalisation if it were there", because
-      every control it runs is negative and negative controls are silent about a
-      null. Stage 128 (J2) removes the candidate pool entirely and asks whether
-      the per-pair differences CONCENTRATE over the whole vocabulary, measured as
-      the leading Gram eigenvalue's share rather than as a mean - a large mean is
-      compatible with every pair pointing somewhere different, which is the one
-      thing E15-C could not distinguish. Stage 129 (J3) is the POSITIVE CONTROL:
-      the identical readout, one candidate basis, on the E6/E7 forced-choice
-      taint property the models demonstrably answer. Stage 130 (J4) reads the
-      R-lens as a conserving attribution instead, which needs no lexicalisation
-      at all, and aggregates by AST role where only sink_arg differs in tokens.
-    declared_in_advance: >
-      Every threshold is in code before any canonical run: ALIGN_SIGN_CONSISTENCY
-      0.70, SV1_MARGIN 2.0, MIN_PAIRS_ALIGN 24, PRIMARY_SITE_ALIGN last_token
-      (the only site where both members carry the same token id in 100% of
-      pairs); SIGN_CONSISTENCY_THRESHOLD 0.70 and BEHAVIOUR_FLOOR 0.50 for the
-      positive control; REDISTRIBUTION_SIGN_CONSISTENCY 0.70 and
-      CONSERVATION_TOLERANCE 0.25 for the relevance readout. The four positive-
-      control outcomes and what each licenses are written down in
-      docs/design/E15D_LENS_FOLLOWUPS_PLAN.md section 4, INCLUDING the one that
-      retires the track: if the models answer the forced choice and the identical
-      readout misses it, E15-C's null is about the METHOD and no claim about what
-      code models represent survives that track.
+      THE SAFE/UNSAFE DISTINCTION IS IN THE MODELS' OWN OUTPUT COORDINATES, AND
+      IT IS NOT A WORD. Stage 128 forms each matched pair's difference over the
+      WHOLE 32k vocabulary, freezes the mean direction on the training split, and
+      projects held-out pairs onto it. On all three models, at mid depth and at
+      the last_token site, 72/72 held-out pairs project POSITIVELY, mean cosine
+      0.383 / 0.380 / 0.390 with cluster-bootstrap CIs [0.360,0.406],
+      [0.358,0.401], [0.351,0.429]. A random direction in 32256 dimensions gives
+      ~0.006, so this is roughly sixty standard deviations out. The
+      token-identity floor is EXACTLY ZERO - at last_token both members carry the
+      same token id, so all 72 embedding-layer differences vanish - and the
+      same-label control sits at chance on the same direction (0.507 / 0.465 /
+      0.549). On the 44 of 72 pairs with identical token counts the last-token
+      position index is identical too, and 100% sign consistency over all 72
+      entails 100% over those 44, so it is not a length or position effect.
+      DEPTH: nothing at layers -1/0/3 (0.46-0.50), onset at layer 7, sustained
+      0.96-1.00 from layer 11 to the output. One curve, two architecture
+      families, three scales.
+      OBFUSCATION: projection sign consistency 1.000 clean -> 0.889-0.986
+      rename, 0.903-0.917 opaque, 0.972-1.000 encode, 0.681-0.819 FLATTEN,
+      0.625-0.722 full cumulative; mean projection falls ~93% under flattening
+      alone. This INDEPENDENTLY REPLICATES E15's headline with an unsupervised
+      readout in which nothing is fitted.
+      BUT IT IS NOT LEXICALISED: the top loadings are ' Lemmon', 'egraphics',
+      'idir', 'women/son' CJK fragments, 'bootstrapcdn', '%%%%%%%%%%' - flat at
+      0.019-0.027 across the top twelve, i.e. spread thinly over thousands of
+      tokens. Output-aligned, distributed, and carried by no word for it.
+    declared_criterion_that_failed: >
+      sv1_ratio >= 2.0, declared in code before the run: the pairs' differences
+      must concentrate on one direction at least twice as much as SAME-LABEL
+      differences do. Measured 0.76 / 0.97 / 0.76 - FAILED ON ALL THREE. It fails
+      because two programs of the same label already differ along a dominant
+      shared axis of comparable size, so the label axis is not the largest axis
+      of variation among the difference vectors. That is compatible with the
+      projection result and both are reported: the projection asks whether a
+      label-defined direction GENERALISES (yes, decisively), the concentration
+      asks whether it DOMINATES (no). The verdict label is
+      direction_replicates_but_not_dominant, and the two axes are shown to be
+      different ones by the frozen direction's top-100 loadings overlapping the
+      same-label direction's at a Jaccard index of 0.005 / 0.005 / 0.000.
+    relevance_routing: >
+      Stage 130, deepseek-coder-1.3b ONLY. Relevance conserves at median
+      |rho-1| = 0.0000, worst case 5e-5, at every layer, so R_t/s is a genuine
+      partition of the model's own answer and a paired difference is a
+      redistribution. Aggregated by AST role; under the real tokenizer every
+      token-identical role matches at 1.000 within every pair and sink_arg at
+      0.611 (the 44/72 length-matched pairs), so a shift among the other roles is
+      the model routing its answer through IDENTICAL TEXT. It shifts: whichever
+      data-flow chain feeds the sink LOSES relevance share and the other GAINS.
+      taint_chain 65/72 down and trust_chain 63/72 up at layer 0 (sign-test
+      p = 7e-13 and 4e-11), holding at layer 3, decaying with depth, gone for
+      taint_chain by layer 11 while trust_chain survives to layer 19. It holds
+      separately in both role_swap strata and both order_swap strata at p <= 2e-2
+      in all eight cells at layers 0 and 3, so it is neither an identifier-name
+      nor a position-in-program effect. MAGNITUDE IS SMALL: median shift 1-2% of
+      the answer. The pre-declared above_permutation_control check, which tests
+      the MEAN, FAILS (p = 0.39-0.62): relevance deltas are heavy-tailed enough
+      that seven outlier pairs of seventy-two flip the mean's sign while the
+      median and the sign stay put. The statistic that survives is the sign, and
+      its exact null under the same random-orientation scheme is binomial - which
+      is the test quoted above. Verdict:
+      redistribution_consistent_but_not_in_mean.
+    not_run: >
+      THE POSITIVE CONTROL (stage 129, gate J3) HAS NOT BEEN RUN ON ANY MODEL.
+      It is the only measurement that separates "the models do not verbalise
+      this" from "this readout could not detect verbalisation if it were there",
+      and until it runs the E15-C NULL keeps that ambiguity. It does not touch
+      the E15-D results above, which are positive findings resting on their own
+      controls. Stage 130 has not run on deepseek-coder-6.7b, so the relevance
+      routing result is one model. Stage 130 is NOT APPLICABLE to starcoder2-3b
+      and records J4 as such: LayerNorm plus a non-gated MLP means both
+      homogenising LRP rules bind to nothing, so there is no conservation to read.
     corrects: >
-      A DEFECT IN E15-C'S OWN CONTROLS, found while building this and fixed.
-      sinkflow_vocab.mismatched_pairs redraws the SAFE partner from the same safe
-      pool, so the label difference survives it: the arm averages over the very
-      set the main arm averages over, its expected mean is the main arm's
-      exactly, and on the canonical runs the two agree to four decimal places on
-      all three models (-0.3041/-0.3041, -0.1998/-0.1998, +0.0940/+0.0940). Its
-      docstring claimed it separated "tracks the safe/unsafe difference" from
-      "tracks any difference between two programs" - it cannot, and never could.
-      above_mismatched_pair_control passed by margins of 0.014, 0.014 and 0.056
-      against a comparison with no noise band, and on deepseek-coder-6.7b the
-      control is MORE sign-consistent than the main arm (0.417 vs 0.403). The
-      replacement (same_label_pairs, arms same_label_unsafe/same_label_safe in
-      stage 126) takes BOTH members from one pole, so the expected contrast is
-      zero. NO E15-C RESULT CHANGES; an uninterpretable check is replaced by an
-      interpretable one, and stage 127 now reports pairing_gain as a number.
-    not_applicable: >
-      Stage 130 REFUSES on starcoder2-3b and records J4 as not applicable with
-      the rule counts: LayerNorm plus a non-gated MLP means both homogenising LRP
-      rules bind to nothing, so there is no conservation and the role fractions
-      are not a partition of anything. Same architecture fact as E14's gate R.
-      Stages 128 and 129 run there normally.
+      A DEFECT IN E15-C'S OWN CONTROLS, found while building this and fixed, now
+      run on all three models. sinkflow_vocab.mismatched_pairs redraws the SAFE
+      partner from the same safe pool, so the label difference survives it: its
+      expected mean is the main arm's exactly, the two agree to four decimal
+      places on the canonical runs, and on deepseek-coder-6.7b the control is
+      MORE sign-consistent than the main arm (0.417 vs 0.403). It falsifies
+      "specific to this pairing" and nothing more. The replacement same-label arm
+      takes BOTH members from one pole. It behaves as designed and RETROACTIVELY
+      STRENGTHENS E15-C: main mean contrast -0.304 / -0.200 / +0.094 against
+      same-label +0.004,+0.015 / -0.031,+0.050 / +0.028,-0.004. The contrast
+      collapses to nothing without the label, so 1.3B's inverted contrast is
+      genuinely about the label rather than a program-to-program artifact.
+      pairing_gain - what base matching buys - is 0.014 / 0.014 / 0.056.
+      NO E15-C NUMBER CHANGED.
     next_steps: >
-      Run at canonical scale on all three models: make sinkflow-lens-all
-      MODEL=... (128 and 129 on all three, 130 on the two DeepSeeks). Then stage
-      131 prints three verdicts and the consequence for E15-C. Until that has
-      run, docs/RESULTS.md's E15-C section stands unchanged.
+      1. Run stage 129 on all three models (--conditions all). 2. Run stage 130
+      on deepseek-coder-6.7b. 3. The direction's top loadings are uninterpretable
+      and that is reported as a fact, not solved; whether the direction is
+      causally used is untested and would need an intervention, which the E15
+      extension's scope prohibits.
 
   E6:
     name: behavioral lead time

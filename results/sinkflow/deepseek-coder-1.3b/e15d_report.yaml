@@ -1,10 +1,11 @@
 experiment: E15-D
 model: deepseek-coder-1.3b
 verdicts:
-  v1_alignment: no_shared_direction
-  positive_control: mechanically_invalid
-  v3_relevance: no_redistribution
-consequence_for_e15c: J3 did not pass; nothing may be read.
+  v1_alignment: direction_replicates_but_not_dominant
+  positive_control: not_run
+  v3_relevance: redistribution_consistent_but_not_in_mean
+consequence_for_e15c: The positive control has not run, so E15-C's null remains unfalsifiable
+  in exactly the way it was.
 gates:
   J0:
     passed: true
@@ -31,9 +32,12 @@ gates:
       x 1 conditions; median |rho-1| 0.0000; LRP rules bound {''ln'': 49, ''mlp'':
       24, ''attn'': 24}'
 v1:
-  verdict_text: "NO SHARED DIRECTION \u2014 the per-pair differences do not agree,\
-    \ over the WHOLE vocabulary. This is strictly stronger than E15-C's null: no candidate\
-    \ pool was chosen, so no pool can be blamed."
+  verdict_text: "DIRECTION REPLICATES, BUT DOES NOT DOMINATE \u2014 a direction defined\
+    \ by the label on the training split generalises to held-out programs, above the\
+    \ token-identity floor; but the label axis is not the largest axis of variation\
+    \ among the difference vectors, so the declared `sv1_ratio >= 2.0` criterion is\
+    \ NOT met. The two statements are compatible and both are reported: the projection\
+    \ asks whether the direction generalises, the concentration asks whether it dominates."
   reported:
     site: last_token
     layer: 11
@@ -122,7 +126,7 @@ v1:
     same_label_proj_mean: null
     same_label_proj_sign_consistency: null
 positive_control:
-  verdict_text: "MECHANICALLY INVALID \u2014 J3 did not pass."
+  verdict_text: "NOT RUN \u2014 stage 129 has not written a summary."
   reported:
     prompt_style: sink
     lens: rlens
@@ -140,8 +144,12 @@ positive_control:
   behaviour: {}
   headline: {}
 v3:
-  verdict_text: "NO REDISTRIBUTION \u2014 relevance conserves, so the fractions are\
-    \ a genuine partition, and no token-identical role's share shifts consistently."
+  verdict_text: "REDISTRIBUTION IN SIGN, NOT IN MEAN \u2014 a token-identical role's\
+    \ share of the model's own answer shifts in the same direction in the large majority\
+    \ of matched pairs, significantly under the exact null of that statistic; but\
+    \ the shift is small and the delta distribution is heavy-tailed, so the MEAN's\
+    \ permutation null does not fire. Read `median_delta_frac`, not `mean_delta_frac`,\
+    \ and treat the magnitude as small."
   thresholds:
     sign_consistency: 0.7
     permutation_p: 0.05
@@ -150,6 +158,7 @@ v3:
     rules_installed_and_conserving: true
     redistribution_consistent: true
     above_permutation_control: false
+    above_sign_test: true
     role_token_counts_matched: true
   conserving_layers:
   - 0
@@ -171,17 +180,21 @@ v3:
     condition: clean_heldout
     condition_kind: clean
     condition_order: -1
-    layer: 23
-    target_token: 5723
-    target: ' safe'
-    ast_role: signature
+    layer: 0
+    target_token: 24281
+    target: ' vulnerable'
+    ast_role: taint_chain
     token_identical: 1
     n_pairs: 72
-    mean_delta_frac: 0.0
-    sign_consistency: 0.0
-    permutation_p: 1.0
-    permutation_effect_size: null
-    mean_frac_unsafe: 0.0
-    mean_frac_safe: 0.0
+    mean_delta_frac: -0.0154950291628
+    sign_consistency: 0.0972222222222222
+    n_nonzero: 72
+    degenerate: 0
+    median_delta_frac: -0.0135655193632113
+    sign_test_p: 6.9644370929921e-13
+    permutation_p: 0.57
+    permutation_effect_size: -0.7707422028731806
+    mean_frac_unsafe: 0.0397383920521538
+    mean_frac_safe: 0.0552334212149539
     token_count_matched_frac: 1.0
-    median_abs_rho_minus_one: 0.0
+    median_abs_rho_minus_one: 8.736952172849756e-08

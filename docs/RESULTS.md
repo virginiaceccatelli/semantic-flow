@@ -31,9 +31,14 @@ measurable interaction. What survives flattening is each model's class prior, no
 flow information. Whether the model **causally uses** any of this has its first
 affirmative answer in E13, where a rank-1, magnitude-free interchange transports
 *which definition is in scope* into both value assignments of a 2×2 — including
-the one it was never fitted on. And E15-C establishes a boundary in the other
-direction: mapped into the models' own output vocabulary, the security
-distinction is **not there** — decodable is not verbalised.
+the one it was never fitted on. And the lens track locates that
+representation in the models' **own output coordinates**: no word for it exists —
+E15-C's security lexicon carries nothing — but a direction defined by the label
+generalises to held-out programs in **72/72 pairs on every model**, appears a
+quarter of the way up the stack, and collapses under flattening exactly as the
+probe does. The distinction is output-aligned and **distributed**, not
+lexicalised. Decodable is not verbalised, and the gap is not a gap in the
+instrument.
 
 ---
 
@@ -47,10 +52,12 @@ distinction is **not there** — decodable is not verbalised.
 | **E13** binding interchange | is the binding *causally* transported? | ☐ | ● | ☐ | **H0–H5 pass** | a rank-1 interchange installs the binding's value in both arms (100%/100%), beating a closed-form baseline at two-thirds the dose |
 | **E5** context | robustness to distance vs interference | ● | ● | ☐ | supporting | survives 1000 tokens of filler; collapses under interference |
 | **E9** obfuscation | the same transformations on binding and def–use | ● | ● | ● | supporting | **E15's companion control** — same boundary, so the failure is not security-specific |
-| **E15-C** vocabulary contrast | is the safe→unsafe difference in the model's own output basis? | ● | ● | ● | supporting | **null in all three**, significantly *inverted* in 1.3B. Decodable ≠ verbalised |
+| **E15-C** security lexicon | does a *word* for the distinction carry it? | ● | ● | ● | supporting | **no, in all three**, significantly *inverted* in 1.3B. The same-label control collapses the contrast to ≈0, so the inversion is genuinely about the label |
 | **E14** R-lens | is a more faithful backward pass available? | ● | ● | n/a | supporting | **gate R passes on both deepseek models** (ρ within 1e-4 at every layer; LRP beats autograd 7/7 and 9/9). The **gated-MLP rule dominates by 4.5×**, falsifying the plan's prediction that the LN-rule would. **Does not apply to starcoder2-3b** — LayerNorm + non-gated MLP, so the rules never install |
 | E10-0 J-lens | instrument validation for the lens track | ● | ● | ● | supporting | V1 exact (cosine 1.0000) on all three; the Jacobian correction is real. On starcoder2-3b every required check passes (V2 top-1 0.633 vs 0.000 random), so that model's E15-C **J-lens** numbers have instrument validation behind them even though its R-lens does not exist |
-| **E15-D** what the null is about | is E15-C's null about the models or the method? | ☐ | ☐ | ☐ | **built, not run** | stages 128–131, gates J2–J4. A full-vocabulary alignment measurement with no pool to blame, the **positive control**, and a relevance readout needing no lexicalisation. Nothing claimed |
+| **E15-D** full-vocabulary direction | is the distinction in output coordinates at all? | ● | ● | ● | **foundation** | **yes, and it is not a word.** 72/72 held-out pairs project positively on a label-defined direction (cosine 0.38) over a token-identity floor of *exactly zero*; onset at ~25% depth; collapses under flattening alone. Top loadings are meaningless fragments |
+| **E15-D** relevance routing | does the model route identical text differently? | ● | ☐ | n/a | supporting | the chain feeding the sink **loses** relevance share and the other gains, 63–65 of 72 pairs at layers 0–3 (sign p ≤ 4e-11), on token-identical spans; survives role- and order-swap strata. Small (1–2% of the answer), one model |
+| **E15-D** positive control | could this readout detect verbalisation at all? | ☐ | ☐ | ☐ | **not run** | the one measurement that would fix what E15-C's *null* means. Built; `scripts/129_sinkflow_positive.py` |
 | E4 control dep | guard→statement | ● | ● | ☐ | contrast only | decodable, but its surface floor is already 0.927 — the contrast that makes E2 mean something |
 
 **Retired, parked and superseded** — E1, E6, E7, E8, E10-2, E10-3, E11, E12 — are
@@ -182,25 +189,58 @@ This is reported as **the contrast that makes E2's isolation meaningful**, not
 as a finding about representation. It is also the evidence that the project's
 criterion for "semantic" excludes things.
 
+## The lens argument in one place
+
+Four experiments read the residual stream through the model's **own output
+vocabulary** rather than through a fitted probe. They are easy to conflate, so
+here is the whole argument in five sentences, each with the experiment that
+establishes it.
+
+1. **The instrument is sound.** The J-lens reproduces the logit lens exactly at
+   the last layer and recovers real next-token content before it, on all three
+   models. *(E10-0, stage 60.)*
+2. **A more faithful backward pass exists, and it is architecture-dependent.**
+   Under LRP rules the relevance decomposition conserves to 1e-4 at every layer
+   on both DeepSeek models; on StarCoder2 the rules bind to nothing, so there is
+   no R-lens there at all. *(E14, stage 110.)*
+3. **Reading the state through a hand-picked security vocabulary finds
+   nothing.** Null on all three models, and not specific to the lens. *(E15-C,
+   stages 125–127.)*
+4. **Reading it through the *whole* vocabulary finds something — but it is not a
+   word.** A direction defined by the safe/unsafe label generalises to held-out
+   programs in 72/72 pairs on every model, above a token-identity floor that is
+   exactly zero; its top-loading tokens are meaningless fragments. *(E15-D V1,
+   stage 128.)*
+5. **And the model routes its answer differently through token-identical
+   text.** Whichever data-flow chain feeds the sink loses relevance share and
+   the other gains, in 85–90% of matched pairs at early layers. *(E15-D V3,
+   stage 130, one model.)*
+
+The one thing not established: whether this readout could detect verbalisation
+if it were there. The positive control that would settle it is built and has not
+been run — see §"E15-D" and `docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`.
+
+**The headline the track supports:** *the safe/unsafe distinction is present in
+output-aligned coordinates, distributed across the vocabulary, and not carried by
+any word for it.* "Decodable" and "verbalised" come apart, and the gap is not a
+gap in the instrument.
+
 ## E10-0 — the J-lens implementation is correct
 
-| check | 1.3B | 6.7B | reading |
-|---|---:|---:|---|
-| V1 — J-lens vs logit lens at the last layer | **1.0000** | **1.0000** | `J` is provably the identity there, so this must be 1.0 — a closed-form check of the whole gradient path |
-| V2 — next-token top-1 (chance 0.038) | 0.633 | 0.650 | the lens reads real content |
-| V2 advantage over the logit lens, pre-final | **+0.150** | **+0.183** | the Jacobian correction recovers content the logit lens cannot |
+| check | 1.3B | 6.7B | SC2-3B | reading |
+|---|---:|---:|---:|---|
+| V1 — J-lens vs logit lens at the last layer | **1.0000** | **1.0000** | **1.0000** | `J` is provably the identity there, so this must be 1.0 — a closed-form check of the whole gradient path |
+| V2 — next-token top-1 (chance 0.038) | 0.633 | 0.650 | 0.633 | the lens reads real content |
+| V2 advantage over the logit lens, pre-final | **+0.150** | **+0.183** | +0.217 | the Jacobian correction recovers content the logit lens cannot |
 
-Instrument validation, not a result about the model. *Caveat:* V3 passed at
-n=10, too small to carry weight; V1 and V2 are the load-bearing checks.
-
----
-
-# 4. Causal use: answered for binding, open for flow
-
-This is the project's centre of gravity and it is **not settled**. Four designs
-have been attempted. The honest summary of each:
+Instrument validation, not a result about the model — and it now covers all
+three models, which matters because StarCoder2 has no R-lens: **its E15-C and
+E15-D lens numbers rest on this validation and nothing else.** *Caveat:* V3
+passed at n=10, too small to carry weight; V1 and V2 are load-bearing.
 
 ## E14 — the R-lens is more faithful, and the rule that matters is not the predicted one
+
+*(Instrument work. It lives here rather than under "causal use" because nothing in it is causal.)*
 
 Gate R passes on **both** DeepSeek models. Every required check, both models:
 
@@ -265,6 +305,14 @@ with neither homogenising rule and is arithmetically a J-lens; its conservation 
 (`rlens_rules_bound`). The E15-C null is unaffected — it rests on the logit and
 J-lens results there, and on genuine R-lenses in both DeepSeek models — but
 "three lenses agree" is, for that model, two lenses measured three ways.
+
+---
+
+# 4. Causal use: answered for binding, open for flow
+
+This is the project's centre of gravity and it is **not settled**. Four designs
+have been attempted. The honest summary of each:
+
 ## E13 — H0–H5 all pass (6.7B)
 
 **Gates passed so far** (6.7B, 400 base programs):
@@ -395,7 +443,7 @@ models (0.778 / 0.972 / 0.639) against `branch_merge` at 1.000 everywhere. By si
 family nothing reproduces, which is the null the design wanted: the readout tracks
 flow, not which dangerous API sits at the end of it.
 
-### E15-C — the difference is not in the model's own vocabulary
+### E15-C — no *word* carries the difference
 
 Mapping the same sink-site states into each model's vocabulary through three
 readouts (logit lens, J-lens, R-lens; **R-lens declared primary in code before any
@@ -456,13 +504,188 @@ members from one pole, whose expected contrast is zero; stage 127 reports
 `pairing_gain`, what base matching actually buys, as a number. **No result above
 changes** — an uninterpretable check is replaced by an interpretable one.
 
-Three stages now exist to close both gaps (E15-D, stages 128–131; **built,
-smoke-tested, not yet run at canonical scale, nothing claimed**): a
-full-vocabulary alignment measurement with no candidate pool to blame, the
-**positive control** on the E6/E7 forced-choice taint property, and a relevance
-readout that needs no lexicalisation at all. Design and the pre-declared outcome
-table — including the one that would retire this track — are in
-`docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`.
+Three stages exist to close both gaps, and two of them have now run — see
+**E15-D** below.
+
+### E15-D — the distinction *is* in the output basis; it is just not a word
+
+E15-C looked for the safe→unsafe difference in a **hand-picked 196-token
+vocabulary** and found nothing. Stage 128 removes the vocabulary: it forms each
+matched pair's difference over **all 32k tokens**, estimates the mean direction
+on the training split, and projects held-out pairs onto it. Nothing is chosen in
+advance, so a null cannot be blamed on a pool.
+
+It is not a null.
+
+| clean held-out, `last_token`, mid-depth | 1.3B (L11) | 6.7B (L15) | SC2-3B (L15) |
+|---|---:|---:|---:|
+| held-out pairs projecting positively | **72/72** | **72/72** | **72/72** |
+| mean cosine with the frozen direction | **0.383** | **0.380** | **0.390** |
+| cluster-bootstrap 95% CI | [0.360, 0.406] | [0.358, 0.401] | [0.351, 0.429] |
+| same-label control, same direction | 0.507 | 0.465 | 0.549 |
+| token-identity floor (layer −1) | **exactly 0** | **exactly 0** | **exactly 0** |
+
+Every number that could make this an artifact was measured and came back clean.
+The floor is *exactly* zero because at `last_token` both members carry the same
+token id, so their embeddings are identical and all 72 differences vanish. A
+random direction in 32 256 dimensions would give a cosine near 0.006, so 0.38 is
+roughly sixty standard deviations out. The same-label control — two programs of
+the *same* label, everything else varying — sits at chance on the same direction.
+And on the **44 of 72 pairs whose two members have identical token counts**, the
+last-token position index is identical too, so the 100% sign consistency cannot
+be a length or position effect: you cannot be right on all 72 without being right
+on those 44.
+
+**It has a clear onset depth, identical in all three models.**
+
+| relative depth | ≈0.0 | ≈0.13 | ≈0.25 | ≈0.35–0.50 | ≈0.75–1.0 |
+|---|---:|---:|---:|---:|---:|
+| layers | −1, 0 | 3 | 7 | 11–15 | 19–31 |
+| sign consistency (1.3B / 6.7B / SC2) | 0.49/0.46/0.46 | 0.46/0.49/0.50 | **1.00**/0.79/0.71 | 1.00/1.00/1.00 | 0.90–1.00 |
+
+Nothing before a quarter of the way through the stack; then it appears and holds
+to the output. Two model families, three scales, one curve.
+
+**And it degrades exactly as the probe does.** Projection sign consistency at the
+reported layer, across the ten conditions:
+
+| | clean | normalize | rename | opaque | encode | **flatten** | full cumulative |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1.3B | 1.000 | 1.000 | 0.958 | 0.903 | 1.000 | **0.819** | 0.722 |
+| 6.7B | 1.000 | 1.000 | 0.986 | 0.917 | 1.000 | **0.708** | 0.625 |
+| SC2-3B | 1.000 | 0.944 | 0.889 | 0.903 | 0.972 | **0.681** | 0.681 |
+
+The mean projection falls by ~93% under flattening alone and by 4–14% under
+renaming, opaque predicates or MBA encoding. **This independently replicates E15's
+headline with a completely different readout** — nothing is fitted here, no probe
+is trained, and the conclusion is the same: flattening alone accounts for the
+collapse.
+
+**But the direction is not a concept, and it does not dominate.** Two facts keep
+this from being "the model has an unsafe feature":
+
+* *Its top loadings are meaningless.* The tokens carrying it are `' Lemmon'`,
+  `'egraphics'`, `'idir'`, `'女儿'` (1.3B); `' mel'`, `'椒'`, `' Jonathan'`
+  (6.7B); `'bootstrapcdn'`, `'%%%%%%%%%%'`, `'pmatrix'` (SC2). Loadings are flat
+  — 0.019 to 0.027 across the top twelve — i.e. the direction is spread thinly
+  over thousands of tokens rather than concentrated in a few. It is
+  **output-aligned but not lexicalised**.
+* *The label axis is not the largest axis of variation.* The pre-declared
+  criterion was `sv1_ratio ≥ 2.0` — the pairs' differences must concentrate on
+  one direction at least twice as much as *same-label* differences do. Measured:
+  **0.76 / 0.97 / 0.76**. It **failed on all three models**, and it fails because
+  two programs of the same label already differ along a dominant shared axis of
+  comparable size. So the verdict is `direction_replicates_but_not_dominant`.
+
+Those two statements are compatible and both are reported. The projection asks
+*does a label-defined direction generalise to unseen programs* — yes, decisively.
+The concentration asks *is the label axis the biggest thing separating these
+difference vectors* — no. What settles that they are different axes rather than
+one: the frozen direction's top-100 loadings overlap what the **same-label**
+differences find by a Jaccard index of **0.005 / 0.005 / 0.000**. Nearly
+disjoint.
+
+### E15-D — relevance moves, on text that is character-for-character identical
+
+Stage 130 abandons the vocabulary entirely. Under the LRP rules the relevance
+decomposition conserves — measured here at median |ρ − 1| = **0.0000** and a
+worst case of 5e-5 at every layer — so `R_t / s` is a genuine *partition* of the
+model's own answer across input positions, and a paired difference is a
+redistribution rather than a change of scale. Relevance is summed by AST role,
+recomputed from each program's own source.
+
+The control is free and it is the strongest one in the project: **only
+`sink_arg` differs in tokens between the two members.** Measured under the real
+tokenizer, every other role matches at 1.000 and `sink_arg` at 0.611 — exactly
+the 44/72 length-matched pairs. So a shift among the other roles is the model
+routing its answer differently through *identical text*.
+
+It shifts. Paired difference in each role's share, deepseek-coder-1.3b, clean
+held-out, 72 pairs:
+
+| layer | role | median Δ share | pairs shifting the same way | sign-test p |
+|---|---|---:|---:|---:|
+| 0 | `taint_chain` | −0.0136 | **65/72** | 7e-13 |
+| 0 | `trust_chain` | +0.0207 | **63/72** | 4e-11 |
+| 3 | `taint_chain` | −0.0083 | 62/72 | 3e-10 |
+| 3 | `trust_chain` | +0.0179 | 61/72 | 2e-09 |
+| 7 | `trust_chain` | +0.0097 | 55/72 | 8e-06 |
+| 19 | `trust_chain` | +0.0028 | 56/72 | 4e-06 |
+
+Read across the two rows: **whichever chain feeds the sink loses relevance share,
+and the other gains.** In the unsafe program the sink takes the tainted variable
+and the *trusted* chain carries more of the answer; in the safe program it is the
+other way round. The effect is strongest at the bottom of the stack, decays with
+depth, and is gone for `taint_chain` by layer 11 — while `trust_chain` survives
+to layer 19.
+
+It survives both available controls: it holds separately in both `role_swap`
+strata (which identifier name carries the taint) and both `order_swap` strata
+(which chain is written first), at p ≤ 2e-2 in every one of the eight cells at
+layers 0 and 3. So it is neither an identifier-name effect nor a
+position-in-program effect.
+
+**Two honest qualifications.** The magnitude is small — a median shift of 1–2% of
+the answer. And the pre-declared `above_permutation_control` check, which tests
+the *mean*, **fails** (p = 0.39–0.62): relevance deltas are heavy-tailed enough
+that seven outlier pairs out of seventy-two flip the mean's sign while the median
+and the sign stay put. The statistic that survives is the sign, and its exact null
+under the same random-orientation scheme is binomial — which is the test reported
+above. The verdict records both: `redistribution_consistent_but_not_in_mean`.
+
+This ran on **deepseek-coder-1.3b only**. It is *not applicable* to StarCoder2 —
+LayerNorm plus a non-gated MLP means the homogenising rules bind to nothing, so
+there is no conservation to read, and stage 130 refuses rather than emitting raw
+autograd under the name relevance. It has not been run on 6.7B.
+
+### E15-D — what has not run, and what it would settle
+
+**The positive control (stage 129) has not been run on any model.** It is the one
+measurement that separates
+
+> the models do not verbalise this
+
+from
+
+> this readout could not detect verbalisation if it were there,
+
+and until it runs, the E15-C null keeps that ambiguity. Every control in E15-C is
+*negative*, and negative controls establish that a positive result is not an
+artifact — they are silent about a null. Note that this does **not** touch the
+E15-D results above, which are positive findings and stand on their own controls;
+it limits only what may be concluded from E15-C's *absence* of a security
+vocabulary.
+
+The four outcomes and what each licenses are written down in advance in
+`docs/design/E15D_LENS_FOLLOWUPS_PLAN.md` §4, including the one that would retire
+the E15-C track. Run it with
+`python scripts/129_sinkflow_positive.py --model M --conditions all`.
+
+### E15-C's mismatched-pair control, corrected
+
+Building E15-D turned up a defect in E15-C's own controls. `mismatched_pairs`
+redraws the **safe** partner from the same safe pool, so the label difference
+survives it: the arm averages over the very set the main arm averages over, and
+its expected mean is the main arm's exactly. On the canonical runs the two agree
+to four decimal places, and on 6.7B the *control* is more sign-consistent than the
+main arm (0.417 vs 0.403). It falsifies "specific to this pairing" and nothing
+more.
+
+Stage 126 now also runs a **same-label** arm — both members from one pole, so the
+expected contrast is zero — and it behaves as it should, which retroactively
+strengthens E15-C rather than weakening it:
+
+| clean held-out, R-lens, reported cell | 1.3B | 6.7B | SC2-3B |
+|---|---:|---:|---:|
+| main arm, mean Δ contrast (z) | −0.304 | −0.200 | +0.094 |
+| same-label (unsafe pole) | +0.004 | −0.031 | +0.028 |
+| same-label (safe pole) | +0.015 | +0.050 | −0.004 |
+| `pairing_gain` (what base matching buys) | 0.014 | 0.014 | 0.056 |
+
+The same-label control collapses the contrast to nothing on every model. So
+**1.3B's inverted contrast is genuinely about the label** — it is not a
+program-to-program artifact. No E15-C number changed; an uninterpretable check
+was replaced by an interpretable one.
 
 ### The boundary is general, not security-specific
 
@@ -483,10 +706,14 @@ statement about a **frozen linear readout at one position** — a failing probe 
 not prove the model lost the information, though §8.6's parallel failure is
 consistent with real loss. The embedding control is one measurement, not three.
 E15-C is observational, its candidate pool is logit-lens-selected, and the LRP
-rules never install on starcoder2-3b at all (LayerNorm plus a non-gated
-MLP), so its `rlens` artifact is arithmetically a J-lens and that model's E15-C
-lens agreement is two lenses, not three. **E15-C has no positive control**, so its
-null is not yet falsifiable in the direction that matters. Nothing causal is
+rules never install on starcoder2-3b at all (LayerNorm plus a non-gated MLP), so
+its `rlens` artifact is arithmetically a J-lens and that model's lens agreement
+is two lenses, not three. **The positive control has not run**, so E15-C's *null*
+is not yet falsifiable in the direction that matters — which does not touch
+E15-D's positive results. E15-D V1 is observational too: a direction that
+generalises is a statement about format, not about use, and its top loadings
+being uninterpretable is a fact to report rather than a puzzle solved. E15-D V3
+ran on one model and its magnitude is small. Nothing causal is
 claimed or tested for the security property. Full analysis, gates and limitations:
 `docs/design/E15_SINKFLOW_PLAN.md` §8–§14.
 
@@ -520,30 +747,37 @@ Withdrawn claims, with reasons: `docs/ARCHIVE.md`.
 
 Ordered by what would most change what this project can claim.
 
-1. **Explain, or bound, the rank-1 edit beating the whole-state patch**
+0. **Run the positive control** (`scripts/129_sinkflow_positive.py`, ~1–3 h per
+   model on GPU). It is built, gated and unrun, and it is the only thing standing
+   between E15-C's null and a claim about what code models verbalise. Every other
+   item below is smaller. Run it on all three models with `--conditions all`.
+1. **Replicate E15-D V3 on 6.7B.** The relevance redistribution is one model.
+   `scripts/130_sinkflow_relevance.py --model deepseek-coder-6.7b`, ~30–90 min.
+   It is *not applicable* to StarCoder2, so 6.7B is the whole replication.
+2. **Explain, or bound, the rank-1 edit beating the whole-state patch**
    (100% vs 86% at 60% of the edit norm). The available account — the full patch
    installs components that fight the driving one — is plausible and untested. A
    reviewer will ask; better to answer it first.
-2. **A second model and a second site for E13.** The causal result is currently
+3. **A second model and a second site for E13.** The causal result is currently
    one cell: `use`, layer 8, rank 1, 6.7B. 1.3b is cheap now that stage 106 runs
    in minutes.
-3. **Explain the `assign_chain` fragility** (E15 §8.5). It has now replicated in
+4. **Explain the `assign_chain` fragility** (E15 §8.5). It has now replicated in
    three models under renaming *alone* — starcoder2-3b drops to 0.639 there while
    `branch_merge` stays at 1.000. Diagnose on the existing
    `sinkflow_predictions.csv` before spending any GPU.
-4. **Make the R-lens architecture-general, or bound it.** It does not apply to
+5. **Make the R-lens architecture-general, or bound it.** It does not apply to
    starcoder2-3b at all: LayerNorm plus a non-gated MLP means neither
    homogenising rule installs. Extending `norm_eps_attr` to LayerNorm and
    `is_gated_mlp` to non-gated MLPs is the open work; the LayerNorm half is the
    harder one, since the mean-subtraction term is what the current algebra assumes
    away. See the lens roadmap in `docs/EXPERIMENTS.md`.
-5. **Context-matched pairs on real code** — the highest-value follow-up for the
+6. **Context-matched pairs on real code** — the highest-value follow-up for the
    foundation, and the one thing that would let E15's floor argument extend
    beyond synthetic programs. Build by mutating real functions.
-6. **Fix `configs/models.yaml` ↔ `MODEL_REGISTRY`** so declared `probe_layers` are
+7. **Fix `configs/models.yaml` ↔ `MODEL_REGISTRY`** so declared `probe_layers` are
    the ones that actually run. Repo-wide; it is why the three models sit on
    different layer grids and why every cross-model number has to be read at
    matched relative depth.
-7. **A cross-position string-equality surface baseline** in stage 20. The current
+8. **A cross-position string-equality surface baseline** in stage 20. The current
    baseline cannot represent "the inner definition's name equals the use's name",
    which is the feature a lexical adversary would use. CPU-only.

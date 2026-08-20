@@ -4,17 +4,17 @@ Each section states a verdict decided by a checklist declared in code before the
 
 | stage | gate | verdict |
 |---|---|---|
-| V1 full-vocabulary alignment | J2 PASS | `no_shared_direction` |
-| positive control | J3 FAIL | `mechanically_invalid` |
-| V3 relevance redistribution | J4 FAIL | `mechanically_invalid` |
+| V1 full-vocabulary alignment | J2 PASS | `direction_replicates_but_not_dominant` |
+| positive control | J3 FAIL | `not_run` |
+| V3 relevance redistribution | J4 FAIL | `not_run` |
 
-**What this means for E15-C.** J3 did not pass; nothing may be read.
+**What this means for E15-C.** The positive control has not run, so E15-C's null remains unfalsifiable in exactly the way it was.
 
 ---
 
 ## V1 — is there a shared full-vocabulary direction?
 
-**Verdict.** NO SHARED DIRECTION — the per-pair differences do not agree, over the WHOLE vocabulary. This is strictly stronger than E15-C's null: no candidate pool was chosen, so no pool can be blamed.
+**Verdict.** DIRECTION REPLICATES, BUT DOES NOT DOMINATE — a direction defined by the label on the training split generalises to held-out programs, above the token-identity floor; but the label axis is not the largest axis of variation among the difference vectors, so the declared `sv1_ratio >= 2.0` criterion is NOT met. The two statements are compatible and both are reported: the projection asks whether the direction generalises, the concentration asks whether it dominates.
 
 Read at site `last_token` (declared before any result: it is the only site where both members carry the same token id), layer 15, condition `clean_heldout`.
 
@@ -145,7 +145,7 @@ If concentration is high over the full vocabulary and low inside the pool, the p
 
 ## Positive control — can this machinery detect verbalisation at all?
 
-**Verdict.** MECHANICALLY INVALID — J3 did not pass.
+**Verdict.** NOT RUN — stage 129 has not written a summary.
 
 Prompt style `sink`, lens `rlens`, condition `clean_heldout`, layer None — chosen as the layer that best detects the TAINT property, with the security contrast then read at that same cell.
 
@@ -172,13 +172,14 @@ _not run_
 
 ## V3 — where does relevance move?
 
-**Verdict.** MECHANICALLY INVALID — J4 did not pass.
+**Verdict.** NOT RUN — stage 130 has not written a summary.
 
 | check | holds |
 |---|---|
 | rules_installed_and_conserving | no |
 | redistribution_consistent | no |
 | above_permutation_control | no |
+| above_sign_test | no |
 | role_token_counts_matched | no |
 
 Token-identical roles: `['source_expr', 'trusted_expr', 'taint_chain', 'trust_chain', 'sink_call', 'signature']`. `sink_arg` is excluded from the verdict because it is the span the design edits — it is reported below, separately, as the role where a surface account is available.

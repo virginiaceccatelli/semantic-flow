@@ -30,7 +30,8 @@ is mechanical only: disjoint splits, all cells present, both nulls run, the
 concentration statistic a share. J2 must pass when the result is null.
 
 Writes results/sinkflow/{model}/align/:
-    align_direction.json      the frozen per-(layer, site) direction + provenance
+    align_direction.npz       the frozen per-(layer, site) direction vectors
+    align_direction.json      their provenance and per-cell statistics
     align_summary.csv         one row per (layer, site, condition), all arms
     align_loadings.csv        the tokens that load on the frozen direction
     align_restricted.csv      the same concentration inside E15-C's frozen pool
@@ -199,10 +200,23 @@ def main(
                       "direction has no free parameters to overfit the split"),
         "frozen_at": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
-    (align_dir / "align_direction.json").write_text(
-        json.dumps({"provenance": provenance, "directions": directions}, indent=2))
+    # The vectors go to a compressed .npz and the metadata to JSON. One
+    # direction is a full 32k-float row per (layer, site) cell; serialising
+    # those as JSON text costs 15-29 MB per model and nothing downstream reads
+    # them back, so the JSON keeps only what a reader needs and the .npz keeps
+    # what a re-analysis needs.
+    np.savez_compressed(
+        align_dir / "align_direction.npz",
+        **{key.replace("/", "__"): np.asarray(entry.pop("direction"),
+                                              dtype=np.float32)
+           for key, entry in directions.items()})
+    (align_dir / "align_direction.json").write_text(json.dumps({
+        "provenance": provenance,
+        "vectors": "align_direction.npz, keys 'L{layer}__{site}', float32",
+        "cells": directions,
+    }, indent=2))
     console.print(f"  frozen direction written for {len(directions)} (layer, site) "
-                  f"cells → {align_dir / 'align_direction.json'}")
+                  f"cells → {align_dir / 'align_direction.npz'}")
 
     # ── 3. held-out: concentration, projection, and both same-label nulls ────
     heldout_pairs, heldout_problems = [], []
@@ -232,9 +246,8 @@ def main(
     summary_rows: list[dict] = []
     for layer_index, layer in enumerate(layer_list):
         for site in site_list:
-            direction_entry = directions.get(f"L{layer}/{site}")
-            direction = (np.asarray(direction_entry["direction"], dtype=np.float64)
-                         if direction_entry else None)
+            block = train_blocks.get((layer, site))
+            direction = block.mean_direction() if block is not None else None
             for condition in condition_list:
                 selected = grouped.get((site, condition), [])
                 blocks = cell_blocks(rows_matrix, selected, layer, layer_index,
@@ -249,16 +262,15 @@ def main(
 
     # ── 5. the direction, read back out as tokens ────────────────────────────
     loading_frames = []
-    for key, entry in directions.items():
-        vector = np.asarray(entry["direction"], dtype=np.float64)
+    for (layer, site), block in sorted(train_blocks.items()):
+        vector = block.mean_direction()
         frame = top_loadings(vector, tokenizer, k=n_loadings)
         if frame.empty:
             continue
-        layer_text, site = key.split("/", 1)
         frame.insert(0, "model", model)
-        frame.insert(1, "layer", int(layer_text[1:]))
+        frame.insert(1, "layer", int(layer))
         frame.insert(2, "site", site)
-        same = train_same_label.get((int(layer_text[1:]), site))
+        same = train_same_label.get((layer, site))
         frame["overlap_with_same_label_direction"] = (
             loading_overlap(vector, same.mean_direction()) if same is not None
             else float("nan"))

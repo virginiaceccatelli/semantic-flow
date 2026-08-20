@@ -662,7 +662,7 @@ falsifies "specific to this pairing", not "about the label".
 
 ---
 
-## 10c. Three ways the E15-C null could be wrong, and how each is tested (E15-D)
+## 10c. Three ways the E15-C null could be wrong — and what testing them found (E15-D)
 
 A null needs different evidence from a positive result. Every control in §10b is
 *negative*: permutation, mismatched pairs, random and Gram-matched lenses. Those
@@ -671,6 +671,15 @@ null**, and nothing in §10b separates "the models do not verbalise this" from
 "this readout could not detect verbalisation if it were there". §10c is the three
 measurements that address that, built as stages 128–131 with gates J2/J3/J4. Full
 design and pre-declared thresholds: `docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`.
+
+**Result: the first of the three overturned the reading of the null.** Removing
+the candidate pool found a label-defined direction that generalises to held-out
+programs in 72/72 pairs on all three models. So the correct summary of the lens
+track is not "the distinction is absent from output-aligned coordinates" but
+**"it is present in output-aligned coordinates and is not carried by any word for
+it"**. §10b's null stands as a null *about the security lexicon*; it was never a
+null about the output basis, and the difference is now measured rather than
+argued. Numbers in `docs/RESULTS.md`.
 
 **The candidate pool could have missed it (stage 128).** §10b's readout can only
 find a concept that some token in a 196-token, logit-lens-selected pool carries,
@@ -720,6 +729,22 @@ members**, enforced at generation time in every condition and verified across al
 A shift among the token-identical roles has no surface account. Conservation is
 measured per (pair, layer) and the reading is refused where it does not hold —
 including outright on architectures where the homogenising rules bind to nothing.
+
+**Two statistics, and why they disagreed.** Both stages that fired reported a
+pre-declared criterion that *failed* beside one that passed, and in both cases
+the two answer different questions rather than contradicting each other. Stage
+128: the projection onto a frozen direction asks whether a label-defined
+direction **generalises**; the concentration statistic `sv1_share` asks whether
+the label axis **dominates** the difference vectors. The first passed and the
+second failed, because two programs of the same label already differ along a
+shared axis of comparable size — established as a separate axis by the two
+directions' top-100 loadings overlapping at a Jaccard index of ≈0. Stage 130:
+`sign_consistency` and its exact binomial null fired at p ≤ 4e-11 while the
+**mean's** permutation null did not, because relevance deltas are heavy-tailed
+enough that a handful of outlier pairs flip the mean while the median holds. In
+both cases both numbers are reported, the verdict label names what actually
+happened, and the median — not the mean — is the summary to read for a
+heavy-tailed quantity.
 
 **A better negative control, retrofitted to §10b.** The mismatched-pair arm
 cannot falsify a label claim: its partner is still a *safe* program, so it

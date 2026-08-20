@@ -83,13 +83,35 @@ starcoder2's renaming loss is entirely **false negatives** — 0.764 on unsafe
 against 1.000 on safe, and 0.639 in the assignment-chain structure, after nothing
 but consistent identifier renaming, which the pooled 0.882 hides completely.
 
-**Verbalised? No.** Mapping the same states into each model's own output
-vocabulary — logit lens, J-lens and R-lens, with R-lens declared primary in
-advance — finds no security concept in any of the three. The direction is not
-even consistent across models, and in 1.3B it is significantly *inverted*. All
-three lenses agree, so this is a real null: **linear decodability and expression
-in a model's own vocabulary are different properties, and E15 has the first
-without the second.**
+**Verbalised? Not as a word — but it is in the output basis, and distributed.**
+Two experiments, and they say different things.
+
+Reading the states through a **hand-picked security lexicon** finds nothing in
+any of the three models: no security concept, the direction not even consistent
+across models, and in 1.3B significantly *inverted*. All three lenses agree, so
+that null is not an instrument failure.
+
+Reading them through the **whole 32k-token vocabulary** finds something. Take
+each matched pair's full-vocabulary difference, freeze the mean direction on the
+training programs, and project held-out pairs onto it: **72 of 72 pairs project
+positively, on every model** (cosine 0.38, against ~0.006 for a random
+direction). The comparison site is the last token, where both members carry the
+*same token id* — so the token-identity floor is **exactly zero**, and a
+same-label control sits at chance on the same direction. The effect is absent
+below a quarter of the way up the stack, appears at layer 7, and holds to the
+output in both architecture families. It also **collapses under flattening
+alone** — reproducing E15's headline with nothing fitted.
+
+The tokens that load on that direction are `' Lemmon'`, `'egraphics'`,
+`'bootstrapcdn'`, `'%%%%%%%%%%'` — arbitrary fragments, flat in magnitude. So:
+**the distinction is present in the model's own output coordinates, spread across
+the vocabulary, and carried by no word for it.** Decodable and verbalised come
+apart, and the gap is not a gap in the instrument.
+
+*One caveat stated plainly:* the positive control that would say whether this
+readout could detect a genuinely verbalised property is **built and has not been
+run**. It bounds what the security-lexicon *null* means; it does not touch the
+result above.
 
 **Causal use — answered for binding.** E13's rank-1, magnitude-free interchange
 transports *which definition is in scope* into both value assignments of a 2×2,
@@ -183,17 +205,18 @@ is CPU and re-runnable.
                               Two mechanical gates (J0, J1). Result is a NULL in
                               all three models — they passed on it, as designed.
 
-── built, not yet run at scale ──
-128–131 what the null is about E15-D: three ways E15-C's null could be wrong.
-                              128 drops the candidate pool and asks whether the
-                              per-pair differences CONCENTRATE over the whole
-                              vocabulary. 129 is the POSITIVE CONTROL — the
-                              identical readout on a property the models
-                              demonstrably answer, which is what turns the null
-                              from unfalsifiable into a claim. 130 reads the
-                              R-lens as a conserving attribution instead, which
-                              needs no lexicalisation at all.
-                              Three mechanical gates (J2, J3, J4).
+128–131 the output basis        E15-D: drop the 196-token pool and difference each
+                              pair over the WHOLE vocabulary → freeze the
+                              direction on train → project held-out pairs.
+                              72/72 pairs project positively on every model,
+                              over a token-identity floor of EXACTLY zero;
+                              onset at ~25% depth; collapses under flattening
+                              alone. Top loadings are meaningless fragments, so
+                              the distinction is output-aligned and DISTRIBUTED,
+                              not lexicalised. 130 adds relevance routing on
+                              token-identical text (1.3B). Gates J2, J4.
+                              ⚠ 129, the POSITIVE CONTROL, is built and NOT RUN —
+                              it is what fixes the meaning of E15-C's null.
 ```
 
 Stage status lives in `results/STATUS.yaml`; stage 90 reads it and skips

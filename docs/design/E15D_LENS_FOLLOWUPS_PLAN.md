@@ -1,9 +1,12 @@
 # E15-D — three follow-ups to the E15-C null
 
-**Status: built and smoke-tested; not yet run at canonical scale.**
+**Status: 128 run on all three models; 130 run on deepseek-coder-1.3b and not
+applicable to starcoder2-3b; 129 (the positive control) NOT RUN.**
 Stages 128–131, gates J2/J3/J4. Every threshold in this document is declared in
 code (`src/experiments/sinkflow_{align,positive,relevance}.py`) and was written
-before any canonical number was produced.
+before any canonical number was produced. Results are in `docs/RESULTS.md`; §7
+below records what happened to each pre-declared criterion, including the two
+that failed.
 
 ---
 
@@ -288,3 +291,87 @@ arithmetic that makes a difference of fractions a redistribution at all.
   distinct question — V1 asks whether the *observed* differences concentrate,
   the probe would ask whether a *fitted* output-aligned direction separates the
   classes. Both are worth having; only the first is built.
+
+---
+
+## 7. What happened to each pre-declared criterion
+
+Recorded here rather than in `docs/RESULTS.md` because the point is the
+*bookkeeping*: which criteria were written before the run, which passed, which
+failed, and what was done about the failures.
+
+### V1 (stage 128), all three models
+
+| declared check | outcome |
+|---|---|
+| `direction_frozen_on_train` | **pass** — J2 passes on all three; train and evaluated bases disjoint |
+| `heldout_projection_replicates` (sign ≥ 0.70 **and** bootstrap CI excludes 0) | **pass** — 1.000 / 1.000 / 1.000, CIs [0.360,0.406] / [0.358,0.401] / [0.351,0.429] |
+| `above_surface_floor` | **pass** — the layer −1 floor is *exactly* zero at `last_token`; all 72 embedding differences vanish |
+| `above_same_label_null` (`sv1_ratio ≥ 2.0`) | **FAIL** — 0.76 / 0.97 / 0.76 |
+
+The declared verdict space had three outcomes and the data landed outside all of
+them: the strict criterion for `shared_direction_found` was not met, but calling
+the result `no_shared_direction` would misdescribe a direction that 72 of 72
+held-out pairs project onto. A fourth label,
+`direction_replicates_but_not_dominant`, was added **after** the run, and the
+reasoning is worth stating because it is the kind of change that can hide a
+moved goalpost:
+
+* the criterion itself was **not** changed, relaxed, or re-tuned — `sv1_ratio ≥
+  2.0` still appears in the checks table, still reads *no*, and still blocks
+  `shared_direction_found`;
+* what was added is a *name* for an outcome the original three-way space could
+  not express, because the two statistics answer different questions.
+  `proj_sign_consistency` asks whether a label-defined direction **generalises**
+  to unseen programs; `sv1_share` asks whether the label axis **dominates** the
+  difference vectors. A direction can generalise perfectly while being a modest
+  component of a cloud whose largest axis is program-to-program variation;
+* that the two are genuinely different axes rather than one is not an assumption:
+  the frozen direction's top-100 loadings overlap the same-label direction's at a
+  Jaccard index of 0.005 / 0.005 / 0.000.
+
+`sv1_share` was chosen as primary because the same-label null has no orientation,
+which makes any oriented comparison against it vacuous. That reasoning was
+correct and is unchanged. What it did not anticipate is that the *unoriented*
+comparison is dominated by a shared axis both arms possess, so it tests a
+stronger claim than the design intended. Both numbers are reported.
+
+### V3 (stage 130), deepseek-coder-1.3b
+
+| declared check | outcome |
+|---|---|
+| `rules_installed_and_conserving` | **pass** — median \|ρ−1\| = 0.0000, max 5e-5, at every layer |
+| `role_token_counts_matched` | **pass** — every token-identical role at 1.000; `sink_arg` at 0.611, the 44/72 length-matched pairs |
+| `redistribution_consistent` (sign ≥ 0.70) | **pass** — 0.097 for `taint_chain` and 0.875 for `trust_chain` at layer 0 |
+| `above_permutation_control` (mean's null, p < 0.05) | **FAIL** — 0.39–0.62 |
+
+Same shape, same treatment. `permutation_null` tests the **mean**, and relevance
+deltas are heavy-tailed enough that seven outlier pairs out of seventy-two flip
+the mean's sign while the median and the sign stay put. The statistic that
+survives is `sign_consistency`, which was itself pre-declared — and its exact
+null under the *same* random-orientation scheme is Binomial(n, ½), because
+flipping each base's orientation at random is exactly what makes the positive
+count binomial. So `sign_test_p` is the permutation test **for the pre-declared
+statistic**, not a second test chosen after seeing the data; it was added, the
+mean-based check was kept and still reads *no*, and the verdict label
+`redistribution_consistent_but_not_in_mean` says both.
+
+Two defects in the reporting were also found and fixed by the same data:
+
+* at the **last decoder layer** the tail network is the final norm and the
+  unembedding at the readout position alone, so the score depends on one position
+  and every other role's relevance is identically zero. `0 > 0` is false for
+  every pair, so a naive sign consistency read 0.0 — maximal displacement from
+  chance — and that structurally empty cell won the "largest effect" search
+  outright. Such cells are now marked `degenerate`, excluded from the headline,
+  and the last layer is dropped from the default layer list;
+* `align_direction.json` serialised a full 32k-float row per (layer, site) cell
+  as JSON text: 15–29 MB per model, 63 MB in total, that nothing downstream read.
+  The vectors now go to a compressed `.npz` (7.9 MB total) and the JSON keeps
+  provenance and per-cell statistics.
+
+### The positive control (stage 129)
+
+Not run. No manifest, no artifacts, J3 unrecorded on all three models. §4's
+outcome table stands unused, and every sentence in it is still binding on
+whatever it eventually returns.

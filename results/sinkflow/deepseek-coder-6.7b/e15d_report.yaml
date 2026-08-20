@@ -1,10 +1,11 @@
 experiment: E15-D
 model: deepseek-coder-6.7b
 verdicts:
-  v1_alignment: no_shared_direction
-  positive_control: mechanically_invalid
-  v3_relevance: mechanically_invalid
-consequence_for_e15c: J3 did not pass; nothing may be read.
+  v1_alignment: direction_replicates_but_not_dominant
+  positive_control: not_run
+  v3_relevance: not_run
+consequence_for_e15c: The positive control has not run, so E15-C's null remains unfalsifiable
+  in exactly the way it was.
 gates:
   J0:
     passed: true
@@ -29,9 +30,12 @@ gates:
     passed: false
     detail: not recorded
 v1:
-  verdict_text: "NO SHARED DIRECTION \u2014 the per-pair differences do not agree,\
-    \ over the WHOLE vocabulary. This is strictly stronger than E15-C's null: no candidate\
-    \ pool was chosen, so no pool can be blamed."
+  verdict_text: "DIRECTION REPLICATES, BUT DOES NOT DOMINATE \u2014 a direction defined\
+    \ by the label on the training split generalises to held-out programs, above the\
+    \ token-identity floor; but the label axis is not the largest axis of variation\
+    \ among the difference vectors, so the declared `sv1_ratio >= 2.0` criterion is\
+    \ NOT met. The two statements are compatible and both are reported: the projection\
+    \ asks whether the direction generalises, the concentration asks whether it dominates."
   reported:
     site: last_token
     layer: 15
@@ -120,7 +124,7 @@ v1:
     same_label_proj_mean: null
     same_label_proj_sign_consistency: null
 positive_control:
-  verdict_text: "MECHANICALLY INVALID \u2014 J3 did not pass."
+  verdict_text: "NOT RUN \u2014 stage 129 has not written a summary."
   reported:
     prompt_style: sink
     lens: rlens
@@ -138,7 +142,7 @@ positive_control:
   behaviour: {}
   headline: {}
 v3:
-  verdict_text: "MECHANICALLY INVALID \u2014 J4 did not pass."
+  verdict_text: "NOT RUN \u2014 stage 130 has not written a summary."
   thresholds:
     sign_consistency: 0.7
     permutation_p: 0.05
@@ -147,6 +151,7 @@ v3:
     rules_installed_and_conserving: false
     redistribution_consistent: false
     above_permutation_control: false
+    above_sign_test: false
     role_token_counts_matched: false
   conserving_layers: []
   token_identical_roles:

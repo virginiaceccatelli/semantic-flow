@@ -4,17 +4,17 @@ Each section states a verdict decided by a checklist declared in code before the
 
 | stage | gate | verdict |
 |---|---|---|
-| V1 full-vocabulary alignment | J2 PASS | `no_shared_direction` |
-| positive control | J3 FAIL | `mechanically_invalid` |
-| V3 relevance redistribution | J4 PASS | `no_redistribution` |
+| V1 full-vocabulary alignment | J2 PASS | `direction_replicates_but_not_dominant` |
+| positive control | J3 FAIL | `not_run` |
+| V3 relevance redistribution | J4 PASS | `redistribution_consistent_but_not_in_mean` |
 
-**What this means for E15-C.** J3 did not pass; nothing may be read.
+**What this means for E15-C.** The positive control has not run, so E15-C's null remains unfalsifiable in exactly the way it was.
 
 ---
 
 ## V1 — is there a shared full-vocabulary direction?
 
-**Verdict.** NO SHARED DIRECTION — the per-pair differences do not agree, over the WHOLE vocabulary. This is strictly stronger than E15-C's null: no candidate pool was chosen, so no pool can be blamed.
+**Verdict.** DIRECTION REPLICATES, BUT DOES NOT DOMINATE — a direction defined by the label on the training split generalises to held-out programs, above the token-identity floor; but the label axis is not the largest axis of variation among the difference vectors, so the declared `sv1_ratio >= 2.0` criterion is NOT met. The two statements are compatible and both are reported: the projection asks whether the direction generalises, the concentration asks whether it dominates.
 
 Read at site `last_token` (declared before any result: it is the only site where both members carry the same token id), layer 11, condition `clean_heldout`.
 
@@ -143,7 +143,7 @@ If concentration is high over the full vocabulary and low inside the pool, the p
 
 ## Positive control — can this machinery detect verbalisation at all?
 
-**Verdict.** MECHANICALLY INVALID — J3 did not pass.
+**Verdict.** NOT RUN — stage 129 has not written a summary.
 
 Prompt style `sink`, lens `rlens`, condition `clean_heldout`, layer None — chosen as the layer that best detects the TAINT property, with the security contrast then read at that same cell.
 
@@ -170,13 +170,14 @@ _not run_
 
 ## V3 — where does relevance move?
 
-**Verdict.** NO REDISTRIBUTION — relevance conserves, so the fractions are a genuine partition, and no token-identical role's share shifts consistently.
+**Verdict.** REDISTRIBUTION IN SIGN, NOT IN MEAN — a token-identical role's share of the model's own answer shifts in the same direction in the large majority of matched pairs, significantly under the exact null of that statistic; but the shift is small and the delta distribution is heavy-tailed, so the MEAN's permutation null does not fire. Read `median_delta_frac`, not `mean_delta_frac`, and treat the magnitude as small.
 
 | check | holds |
 |---|---|
 | rules_installed_and_conserving | yes |
 | redistribution_consistent | yes |
 | above_permutation_control | no |
+| above_sign_test | yes |
 | role_token_counts_matched | yes |
 
 Token-identical roles: `['source_expr', 'trusted_expr', 'taint_chain', 'trust_chain', 'sink_call', 'signature']`. `sink_arg` is excluded from the verdict because it is the span the design edits — it is reported below, separately, as the role where a surface account is available.
@@ -199,14 +200,14 @@ The fraction reading is licensed only where median |rho - 1| is within 0.25.
 
 `mean_delta_frac` is the paired change in a role's share of the model's answer. The column sums to ~0 by conservation: whatever one role gains, another loses.
 
-| ast_role | token_identical | n_pairs | mean_frac_unsafe | mean_frac_safe | mean_delta_frac | sign_consistency | permutation_p | token_count_matched_frac |
-|---|---|---|---|---|---|---|---|---|
-| other | 0 | 72 | 1.0000 | 1.0000 | -0.0000 | 0.1944 | 0.0840 | 1.0000 |
-| signature | 1 | 72 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 1.0000 | 1.0000 |
-| sink_arg | 0 | 72 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 1.0000 | 0.6111 |
-| sink_call | 1 | 72 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 1.0000 | 1.0000 |
-| source_expr | 1 | 72 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 1.0000 | 1.0000 |
-| taint_chain | 1 | 72 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 1.0000 | 1.0000 |
-| trust_chain | 1 | 72 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 1.0000 | 1.0000 |
-| trusted_expr | 1 | 72 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 1.0000 | 1.0000 |
+| ast_role | token_identical | n_pairs | mean_frac_unsafe | mean_frac_safe | median_delta_frac | mean_delta_frac | sign_consistency | sign_test_p | permutation_p | token_count_matched_frac |
+|---|---|---|---|---|---|---|---|---|---|---|
+| other | 0 | 72 | 0.6481 | 0.6784 | 0.0075 | -0.0304 | 0.7639 | 0.0000 | 0.9420 | 1.0000 |
+| trusted_expr | 1 | 72 | 0.0162 | 0.0372 | -0.0057 | -0.0210 | 0.3056 | 0.0013 | 0.0180 | 1.0000 |
+| taint_chain | 1 | 72 | 0.0397 | 0.0552 | -0.0136 | -0.0155 | 0.0972 | 0.0000 | 0.5700 | 1.0000 |
+| sink_arg | 0 | 72 | 0.0068 | 0.0027 | 0.0016 | 0.0042 | 0.6250 | 0.0444 | 0.5280 | 0.6111 |
+| trust_chain | 1 | 72 | 0.0616 | 0.0488 | 0.0207 | 0.0128 | 0.8750 | 0.0000 | 0.3860 | 1.0000 |
+| sink_call | 1 | 72 | -0.0002 | -0.0144 | -0.0060 | 0.0142 | 0.3194 | 0.0029 | 0.9420 | 1.0000 |
+| signature | 1 | 72 | 0.1935 | 0.1763 | 0.0006 | 0.0172 | 0.5278 | 0.7239 | 0.9520 | 1.0000 |
+| source_expr | 1 | 72 | 0.0342 | 0.0157 | -0.0006 | 0.0185 | 0.4583 | 0.5560 | 0.1420 | 1.0000 |
 

@@ -1,0 +1,30 @@
+{
+  "stage": "131_sinkflow_lens_report",
+  "timestamp": "20260820_150618",
+  "git_sha": "60495fa",
+  "python": "3.13.13",
+  "argv": [
+    "scripts/131_sinkflow_lens_report.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--depth",
+    "0.48"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "results": "results/sinkflow/deepseek-coder-1.3b",
+    "depth": "0.48",
+    "layer": "11",
+    "condition": "clean_heldout",
+    "lens": "rlens",
+    "prompt_style": "sink"
+  },
+  "wall_time_s": 0.1,
+  "extra": {
+    "verdicts": {
+      "v1_alignment": "direction_replicates_but_not_dominant",
+      "positive_control": "not_run",
+      "v3_relevance": "redistribution_consistent_but_not_in_mean"
+    }
+  }
+}

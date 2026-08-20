@@ -145,7 +145,7 @@ def main(
         TOKEN_IDENTICAL_ROLES,
     )
     from src.experiments.sinkflow_vocab import PRIMARY_LENS
-    from src.experiments.store_gates import SINKFLOW, gate_table
+    from src.experiments.store_gates import SINKFLOW, gate_table, load_gates
     from src.utils import write_manifest
 
     t0 = time.time()
@@ -172,9 +172,21 @@ def main(
         raise typer.Exit(2)
 
     gates = {row["gate"]: row for row in gate_table(model, root=root, spec=SINKFLOW)}
+    # `gate_table` is the human-readable view and drops `extra`; the raw record
+    # is what carries "this stage refused because the architecture cannot
+    # support the measurement", which is a different outcome from a failure.
+    raw_gates = load_gates(model, root=root, spec=SINKFLOW)
 
     def passed(name: str) -> bool:
         return bool(gates.get(name, {}).get("passed"))
+
+    def recorded(name: str) -> bool:
+        """A gate that was never recorded is a stage that never ran, which is a
+        different thing from a stage that ran and failed. Conflating them would
+        report an unrun positive control as `mechanically_invalid` — i.e. as
+        though something had gone wrong rather than as though nothing had
+        happened."""
+        return name in gates
 
     # ── V1 ───────────────────────────────────────────────────────────────────
     v1_checks: dict = {}
@@ -210,10 +222,10 @@ def main(
             "above_surface_floor": _above_floor(v1_row, v1_floor_row),
         }
     n_v1 = int(v1_row.get("n_pairs", 0) or 0)
-    if not passed("J2"):
-        v1_verdict = "mechanically_invalid"
-    elif not v1_row:
+    if not recorded("J2") or not v1_row:
         v1_verdict = "not_run"
+    elif not passed("J2"):
+        v1_verdict = "mechanically_invalid"
     elif n_v1 < MIN_PAIRS_ALIGN:
         v1_verdict = "underpowered"
     elif all(v1_checks.values()):
@@ -221,6 +233,18 @@ def main(
     elif v1_checks.get("heldout_projection_replicates") and \
             not v1_checks.get("above_surface_floor"):
         v1_verdict = "surface_direction_only"
+    elif v1_checks.get("heldout_projection_replicates") and \
+            v1_checks.get("above_surface_floor"):
+        # The outcome the original three-way verdict space had no name for, and
+        # the one the data actually landed on. The two failing and passing
+        # checks answer DIFFERENT questions and both answers are informative:
+        # `heldout_projection_replicates` asks whether a direction DEFINED by the
+        # label generalises to unseen programs, and `above_same_label_null` asks
+        # whether the label axis DOMINATES the difference vectors. A direction
+        # can generalise perfectly while being a small component of a cloud whose
+        # largest axis is program-to-program variation, and calling that
+        # `no_shared_direction` would misdescribe it.
+        v1_verdict = "direction_replicates_but_not_dominant"
     else:
         v1_verdict = "no_shared_direction"
 
@@ -264,10 +288,10 @@ def main(
             np.isfinite(security_sign) and security_sign >= SIGN_CONSISTENCY_THRESHOLD
             and np.isfinite(security_p) and security_p < PERMUTATION_P),
     }
-    if not passed("J3"):
-        pc_verdict = "mechanically_invalid"
-    elif not pc_best:
+    if not recorded("J3") or not pc_best:
         pc_verdict = "not_run"
+    elif not passed("J3"):
+        pc_verdict = "mechanically_invalid"
     elif not pc_checks["behaviour_above_chance"]:
         pc_verdict = "property_not_verbalised"
     elif pc_checks["lens_detects_the_property"] and \
@@ -290,6 +314,12 @@ def main(
         readable = relevance[(relevance["condition"] == condition)
                              & (relevance["token_identical"] == 1)
                              & (relevance["layer"].isin(conserving_layers))]
+        # A cell where every paired delta is exactly zero is the ABSENCE of a
+        # measurement, not a perfectly consistent one — and it would otherwise
+        # win any "largest displacement from chance" search outright.
+        if "degenerate" in readable.columns:
+            readable = readable[readable["degenerate"] == 0]
+        readable = readable[readable["sign_consistency"].notna()]
         if not readable.empty:
             v3_best = readable.loc[
                 (readable["sign_consistency"] - 0.5).abs().idxmax()].to_dict()
@@ -299,25 +329,36 @@ def main(
         "redistribution_consistent": bool(
             np.isfinite(v3_sign)
             and max(v3_sign, 1.0 - v3_sign) >= REDISTRIBUTION_SIGN_CONSISTENCY),
+        # The MEAN's null. Relevance deltas are heavy-tailed, so this can fail
+        # while the shift is highly consistent — see `above_sign_test`.
         "above_permutation_control": bool(
             np.isfinite(v3_best.get("permutation_p", np.nan))
             and v3_best.get("permutation_p", 1.0) < PERMUTATION_P),
+        # The SIGN's null, under the same random-orientation scheme: flipping
+        # each base at random makes the positive count Binomial(n, 1/2). This is
+        # the exact permutation test for `sign_consistency`, which is itself
+        # pre-declared — not a second test chosen after the fact.
+        "above_sign_test": bool(
+            np.isfinite(v3_best.get("sign_test_p", np.nan))
+            and v3_best.get("sign_test_p", 1.0) < PERMUTATION_P),
         "role_token_counts_matched": bool(
             np.isfinite(v3_best.get("token_count_matched_frac", np.nan))
             and v3_best.get("token_count_matched_frac", 0.0) >= 0.95),
     }
-    not_applicable = bool(gates.get("J4", {}).get("extra", {}).get("not_applicable")) \
-        if isinstance(gates.get("J4", {}).get("extra"), dict) else False
+    j4 = raw_gates.get("J4")
+    not_applicable = bool((getattr(j4, "extra", None) or {}).get("not_applicable"))
     if not_applicable:
         v3_verdict = "not_applicable"
+    elif not recorded("J4") or relevance is None or relevance.empty:
+        v3_verdict = "not_run"
     elif not passed("J4"):
         v3_verdict = "mechanically_invalid"
-    elif relevance is None or relevance.empty:
-        v3_verdict = "not_run"
     elif not conserving_layers:
         v3_verdict = "conservation_failed"
     elif all(v3_checks.values()):
         v3_verdict = "redistribution_found"
+    elif v3_checks["redistribution_consistent"] and v3_checks["above_sign_test"]:
+        v3_verdict = "redistribution_consistent_but_not_in_mean"
     else:
         v3_verdict = "no_redistribution"
 
@@ -363,6 +404,15 @@ def main(
             "NO SHARED DIRECTION — the per-pair differences do not agree, over "
             "the WHOLE vocabulary. This is strictly stronger than E15-C's null: "
             "no candidate pool was chosen, so no pool can be blamed.",
+        "direction_replicates_but_not_dominant":
+            "DIRECTION REPLICATES, BUT DOES NOT DOMINATE — a direction defined by "
+            "the label on the training split generalises to held-out programs, "
+            "above the token-identity floor; but the label axis is not the "
+            "largest axis of variation among the difference vectors, so the "
+            "declared `sv1_ratio >= " f"{SV1_MARGIN}" "` criterion is NOT met. "
+            "The two statements are compatible and both are reported: the "
+            "projection asks whether the direction generalises, the "
+            "concentration asks whether it dominates.",
         "underpowered": f"UNDERPOWERED — fewer than {MIN_PAIRS_ALIGN} held-out "
                         f"pairs at the reported cell.",
         "mechanically_invalid": "MECHANICALLY INVALID — J2 did not pass.",
@@ -399,6 +449,14 @@ def main(
             "NO REDISTRIBUTION — relevance conserves, so the fractions are a "
             "genuine partition, and no token-identical role's share shifts "
             "consistently.",
+        "redistribution_consistent_but_not_in_mean":
+            "REDISTRIBUTION IN SIGN, NOT IN MEAN — a token-identical role's share "
+            "of the model's own answer shifts in the same direction in the large "
+            "majority of matched pairs, significantly under the exact null of that "
+            "statistic; but the shift is small and the delta distribution is "
+            "heavy-tailed, so the MEAN's permutation null does not fire. Read "
+            "`median_delta_frac`, not `mean_delta_frac`, and treat the magnitude "
+            "as small.",
         "conservation_failed":
             f"CONSERVATION FAILED — no layer has median |rho - 1| within "
             f"{CONSERVATION_TOLERANCE}, so the fractions are not a partition and "
@@ -573,7 +631,8 @@ def main(
         "",
         _table(relevance_here, ["ast_role", "token_identical", "n_pairs",
                                 "mean_frac_unsafe", "mean_frac_safe",
-                                "mean_delta_frac", "sign_consistency",
+                                "median_delta_frac", "mean_delta_frac",
+                                "sign_consistency", "sign_test_p",
                                 "permutation_p", "token_count_matched_frac"],
                limit=20),
         "",

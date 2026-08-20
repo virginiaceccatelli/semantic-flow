@@ -714,13 +714,22 @@ Ordered by cost, and each step says what result would justify the next.
    distribution artifact**, so the inverted 1.3B sign is a real and currently
    unexplained property. **Tier 1 is complete.**
 
-**Tier 2 — ✅ *built as E15-D, stages 128–131; smoke-tested, not yet run at
-canonical scale*.** Design and pre-declared thresholds:
-`docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`. Run with
-`make sinkflow-lens-all MODEL=...`.
+**Tier 2 — ✅ *built and run as E15-D, stages 128–131*, except the positive
+control, which is built and has **not** run. Design and pre-declared thresholds:
+`docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`; results in `docs/RESULTS.md`.
 
-4. **A positive control — the single highest-value next step.** ✅ *built:
-   stage 129, gate J3.* The design could not distinguish "the models do not
+> **The headline it produced.** Removing the candidate pool turned E15-C's null
+> into a positive finding: a direction defined by the safe/unsafe label,
+> estimated on the training split, is projected onto by **72 of 72 held-out
+> pairs on every model** (cosine 0.38, token-identity floor exactly zero). It
+> appears a quarter of the way up the stack, holds to the output, and collapses
+> under flattening alone — independently replicating E15's headline with nothing
+> fitted. Its top-loading tokens are meaningless fragments. **Output-aligned,
+> distributed, not lexicalised.**
+
+4. **A positive control — the single highest-value next step.** ⚠️ *built, and
+   still the single highest-value next step, because it has **not been run**.*
+   Stage 129, gate J3, unrecorded on all three models. The design could not distinguish "the models do not
    verbalise this" from "this machinery could not detect verbalisation if it were
    there", and no negative control can: they establish that a positive result is
    not an artifact, and are silent about a null. Stage 129 runs the identical
@@ -738,8 +747,9 @@ canonical scale*.** Design and pre-declared thresholds:
    raw accuracy: a model that answers "no" to everything scores 0.5 accuracy for
    free, while pair separation has a chance level of 0.5 that no answer bias can
    move.
-6. **De-bias the candidate pool.** ✅ *superseded by stage 128, which does better
-   than de-biasing it — it removes it.* Instead of choosing a better 196 tokens,
+6. **De-bias the candidate pool.** ✅ *superseded by stage 128, which did better
+   than de-biasing it — it removed it, and that is what turned the null into a
+   result.* Instead of choosing a better 196 tokens,
    V1 forms each pair's difference over the **whole vocabulary** and asks whether
    those differences agree. A null there cannot be blamed on a pool, because there
    is no pool. Its statistic is *concentration* (`sv1_share`), not the mean —
@@ -763,8 +773,14 @@ the expected sign consistency 0.5. That is the arm a label claim has to clear.
 This overturns no E15-C result; it replaces an uninformative check with an
 informative one.
 
-**Tier 2c — a readout that needs no lexicalisation at all.** ✅ *built: stage 130,
-gate J4.* E15-C and V1 both read the state through the vocabulary, so both can
+**Tier 2c — a readout that needs no lexicalisation at all.** ✅ *built and run on
+deepseek-coder-1.3b: stage 130, gate J4. Not applicable to starcoder2-3b; not yet
+run on 6.7B.* It found a consistent shift: whichever data-flow chain feeds the
+sink loses relevance share and the other gains, in 63–65 of 72 pairs at layers
+0–3 (sign-test p ≤ 4e-11), on spans that are token-identical between the two
+members, surviving both role- and order-swap strata. Small — a median 1–2% of the
+answer — and the mean-based permutation null does not fire because the deltas are
+heavy-tailed. E15-C and V1 both read the state through the vocabulary, so both can
 only find a distinction that some token or combination of tokens carries. Under
 the LRP rules `Σ_t R_t = s` (E14 gate R: |ρ−1| within 1e-4 at every layer on both
 DeepSeeks), so `R_t/s` is a **partition** of the model's own answer and a paired
@@ -812,12 +828,20 @@ which is a claim about routing that needs no vocabulary at all. All three are
 now built and none has been run at canonical scale, so the current state supports
 none of them, and says so.
 
-**And the outcome that would retire the track, declared in advance.** If the
-models answer the forced choice and the identical readout misses it
-(`machinery_blind`), then E15-C's null is about the *method*, every number in
-that track keeps its caveat, and no claim about what code models represent
-survives it. Stage 131 will print exactly that sentence if that is what the data
-says.
+**Where that leaves it.** Two of the three fired. The full-vocabulary direction
+is the strongest result in the lens track and it is a *positive* one, resting on
+its own controls. The relevance routing is real, small and single-model. What is
+still open is what E15-C's **null** means, and only the positive control settles
+that: if the models answer the forced choice and the identical readout misses it
+(`machinery_blind`), E15-C's null is about the *method*, every number in that
+track keeps its caveat, and no claim about what code models represent survives
+it. Stage 131 will print exactly that sentence if that is what the data says.
+
+**Tier 3 items 8 and 9 are now differently urgent.** Item 9 — the
+`W_U`-constrained probe — asked whether the distinction is "output-aligned but
+distributed". **Stage 128 answered that directly and affirmatively**, without
+fitting anything, so item 9 is superseded. Item 8 (architecture generality of the
+R-lens) is unchanged and is what would make stage 130 runnable on StarCoder2.
 
 ---
 

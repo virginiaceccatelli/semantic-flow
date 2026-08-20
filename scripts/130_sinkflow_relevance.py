@@ -151,12 +151,28 @@ def main(
     mdl, tokenizer = loader.model, loader.tokenizer
     freeze_parameters(mdl)
     # Layer -1 is the embedding and has no decoder module to hook, so the
-    # relevance readout starts at layer 0.
+    # readout starts at layer 0. The LAST decoder layer is dropped for a
+    # different and structural reason: above it the tail network is the final
+    # norm and the unembedding at the readout position alone, so the score
+    # depends on exactly one position and every other position's relevance is
+    # identically zero. Conservation still holds there — trivially — but there
+    # is no distribution across positions to compare, so the cell is not a null
+    # result, it is the absence of a measurement. Pass --layers to override.
+    from src.models.lens import last_layer_index
+
+    final_layer = int(last_layer_index(mdl))
     layer_list = ([int(x) for x in layers.split(",")] if layers
-                  else [layer for layer in cfg.probe_layers if layer >= 0])
+                  else [layer for layer in cfg.probe_layers
+                        if 0 <= layer < final_layer])
     if not layer_list:
-        console.print("[red]no layers >= 0 to read[/red]")
+        console.print("[red]no readable layers: the relevance readout needs "
+                      f"0 <= layer < {final_layer}[/red]")
         raise typer.Exit(2)
+    if final_layer in layer_list:
+        console.print(f"[yellow]  layer {final_layer} is the last decoder layer: "
+                      f"all relevance sits on the readout position there by "
+                      f"construction, so its role deltas are identically zero and "
+                      f"are marked degenerate[/yellow]")
 
     # ── the validity condition, checked BEFORE any number is produced ────────
     counts = lrp_rule_counts(mdl)

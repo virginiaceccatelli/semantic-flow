@@ -311,6 +311,11 @@ their informativeness dictate. Design and pre-declared thresholds:
 | 129 | Can this readout detect verbalisation **at all**? | The **positive control**. Same function, same convention, same orientation, one candidate basis carrying both the taint poles (`" yes"`/`" no"`) and the E15-C security lexicon. If the machinery finds a property the models demonstrably answer and not the security one, the null becomes a claim about the models; if it finds neither, the null is about the method. |
 | 130 | Where does **relevance** move when only the semantics change? | Needs no lexicalisation. Under the LRP rules `sum_t R_t = s`, so `R_t/s` is a partition of the answer and a paired difference is a genuine redistribution. Aggregated by AST role, and **only `sink_arg` differs in tokens between the two members**, so a shift among the other roles has no surface account. |
 
+**Status: 128 has run at canonical scale on all three models (J2 passes
+everywhere). 130 has run on deepseek-coder-1.3b (J4 passes) and is not
+applicable to starcoder2-3b. 129, the positive control, has NOT been run on any
+model.** Results in `docs/RESULTS.md`.
+
 **Stage 130 refuses on StarCoder2**, records `J4` as *not applicable*, and says
 why: LayerNorm plus a non-gated MLP means both homogenising LRP rules bind to
 nothing, so there is no conservation to read (see E14 in `results/STATUS.yaml`).
