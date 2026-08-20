@@ -268,6 +268,7 @@ def answer_states(
     from src.models.hooks import extract_hidden_states
 
     device = next(model.parameters()).device
+    d_model = int(model.get_input_embeddings().weight.shape[1])
     out: list[AnswerState] = []
     for index, program in enumerate(programs):
         if progress is not None:
@@ -281,9 +282,19 @@ def answer_states(
             position = int(encoded.shape[1]) - 1
             with torch.no_grad():
                 hidden = extract_hidden_states(model, encoded.to(device), list(layers))
+            # `ActivationCache.store` squeezes the batch dimension, so
+            # `get(layer)` is (seq_len, d_model) and the readout position is a
+            # SINGLE index. Indexing it as [0, position] silently yields a
+            # scalar rather than raising, and the failure then surfaces an hour
+            # later as a matmul shape error — hence the explicit check below.
             block = np.stack([
-                hidden.get(layer)[0, position].float().cpu().numpy().astype(np.float32)
+                hidden.get(layer)[position].float().cpu().numpy().astype(np.float32)
                 for layer in layers])
+            if block.ndim != 2 or block.shape != (len(layers), d_model):
+                raise RuntimeError(
+                    f"answer states for {program.program_id}/{style} came out "
+                    f"{block.shape}, expected {(len(layers), d_model)} — the "
+                    f"activation cache's shape contract changed")
             margin, says = forced_choice_margin(model, tokenizer, prompt, device,
                                                 max_length=max_length)
             out.append(AnswerState(
