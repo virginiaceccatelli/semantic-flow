@@ -1,6 +1,6 @@
 experiment: E15
 model: deepseek-coder-1.3b
-updated: '2026-08-20 11:03:24'
+updated: '2026-08-20 18:24:24'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -335,6 +335,37 @@ gates:
       n_heldout_bases: 72
       violations: []
       gates_required: S0,S1,J0
+      gate_override: false
+      gate_override_reason: ''
+  J3:
+    name: J3
+    passed: true
+    value: 34560.0
+    detail: 34560 pair rows over 3 lenses x 8 layers x 2 prompt styles on 72 held-out
+      bases; both properties read in one 102-token basis; forced-choice answer scored
+      for every program
+    stage: 129_sinkflow_positive
+    timestamp: '2026-08-20 18:24:24'
+    override: false
+    override_reason: ''
+    extra:
+      layers:
+      - -1
+      - 0
+      - 3
+      - 7
+      - 11
+      - 15
+      - 19
+      - 23
+      styles:
+      - sink
+      - e6
+      conditions: all
+      n_candidates: 102
+      n_pairs: 72
+      violations: []
+      gates_required: S0
       gate_override: false
       gate_override_reason: ''
   J4:

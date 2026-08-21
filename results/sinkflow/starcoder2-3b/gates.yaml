@@ -1,6 +1,6 @@
 experiment: E15
 model: starcoder2-3b
-updated: '2026-08-20 13:34:29'
+updated: '2026-08-21 07:42:52'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -341,6 +341,39 @@ gates:
       n_heldout_bases: 72
       violations: []
       gates_required: S0,S1,J0
+      gate_override: false
+      gate_override_reason: ''
+  J3:
+    name: J3
+    passed: true
+    value: 43200.0
+    detail: 43200 pair rows over 3 lenses x 10 layers x 2 prompt styles on 72 held-out
+      bases; both properties read in one 102-token basis; forced-choice answer scored
+      for every program
+    stage: 129_sinkflow_positive
+    timestamp: '2026-08-21 07:42:52'
+    override: false
+    override_reason: ''
+    extra:
+      layers:
+      - -1
+      - 0
+      - 3
+      - 7
+      - 11
+      - 15
+      - 19
+      - 23
+      - 27
+      - 29
+      styles:
+      - sink
+      - e6
+      conditions: all
+      n_candidates: 102
+      n_pairs: 72
+      violations: []
+      gates_required: S0
       gate_override: false
       gate_override_reason: ''
   J4:
