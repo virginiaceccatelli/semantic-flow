@@ -2,10 +2,12 @@ experiment: E15-D
 model: deepseek-coder-1.3b
 verdicts:
   v1_alignment: direction_replicates_but_not_dominant
-  positive_control: not_run
+  positive_control: machinery_validated
   v3_relevance: redistribution_consistent_but_not_in_mean
-consequence_for_e15c: The positive control has not run, so E15-C's null remains unfalsifiable
-  in exactly the way it was.
+consequence_for_e15c: E15-C's null becomes a claim about the MODELS. The identical
+  readout detects a property these models verbalise and does not detect the security
+  distinction, so 'not expressed in output-aligned coordinates' is now a supported
+  statement rather than an unfalsifiable one.
 gates:
   J0:
     passed: true
@@ -24,8 +26,10 @@ gates:
       direction estimated on 168 training bases (digest 0b5fcb12614bab1e), both same-label
       nulls ran in every cell
   J3:
-    passed: false
-    detail: not recorded
+    passed: true
+    detail: 34560 pair rows over 3 lenses x 8 layers x 2 prompt styles on 72 held-out
+      bases; both properties read in one 102-token basis; forced-choice answer scored
+      for every program
   J4:
     passed: true
     detail: '2016 readings and 1008 paired redistributions over 7 layers x 2 targets
@@ -126,23 +130,63 @@ v1:
     same_label_proj_mean: null
     same_label_proj_sign_consistency: null
 positive_control:
-  verdict_text: "NOT RUN \u2014 stage 129 has not written a summary."
+  verdict_text: "MACHINERY VALIDATED \u2014 the model answers the forced choice, the\
+    \ identical readout detects it, and the security contrast at the same cell does\
+    \ not replicate."
   reported:
     prompt_style: sink
     lens: rlens
-    layer: null
+    layer: 19
     condition: clean_heldout
   thresholds:
     sign_consistency: 0.7
     permutation_p: 0.05
     behaviour_floor: 0.5
   checks:
-    behaviour_above_chance: false
-    lens_detects_the_property: false
-    lens_tracks_the_model: false
+    behaviour_above_chance: true
+    lens_detects_the_property: true
+    lens_tracks_the_model: true
     security_contrast_at_same_cell: false
-  behaviour: {}
-  headline: {}
+  behaviour:
+    model: deepseek-coder-1.3b
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    prompt_style: sink
+    n_pairs: 72
+    accuracy: 0.5
+    accuracy_unsafe: 0.0
+    accuracy_safe: 1.0
+    says_tainted_rate: 0.0
+    pair_separation: 0.6944444444444444
+    pair_separation_p: 0.0012935849626762
+    mean_model_delta: 0.0226779513888888
+    model_delta_ci_lo: 0.0158420147167311
+    model_delta_ci_hi: 0.0292968741928537
+  headline:
+    model: deepseek-coder-1.3b
+    lens: rlens
+    layer: 19
+    relative_depth: 0.8261
+    prompt_style: sink
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    n_pairs: 72
+    taint_mean_delta_z: 0.0178165473094014
+    taint_sign_consistency: 0.8888888888888888
+    taint_permutation_p: 0.0
+    taint_permutation_effect_size: 6.165780779614888
+    taint_corr_model_delta: 0.5533733384239397
+    taint_lens_tracks_model: 0.7083333333333334
+    security_mean_delta_z: -0.0047117017206252
+    security_sign_consistency: 0.3472222222222222
+    security_permutation_p: 0.0
+    security_permutation_effect_size: -3.2417529559489635
+    security_corr_model_delta: 0.171221518856827
+    security_lens_tracks_model: 0.375
+    mean_model_delta_margin: 0.0226779513888888
+    model_pair_separation: 0.6944444444444444
 v3:
   verdict_text: "REDISTRIBUTION IN SIGN, NOT IN MEAN \u2014 a token-identical role's\
     \ share of the model's own answer shifts in the same direction in the large majority\

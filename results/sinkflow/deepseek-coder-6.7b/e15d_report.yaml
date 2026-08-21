@@ -2,10 +2,11 @@ experiment: E15-D
 model: deepseek-coder-6.7b
 verdicts:
   v1_alignment: direction_replicates_but_not_dominant
-  positive_control: not_run
+  positive_control: both_properties_detected
   v3_relevance: not_run
-consequence_for_e15c: The positive control has not run, so E15-C's null remains unfalsifiable
-  in exactly the way it was.
+consequence_for_e15c: 'E15-C''s CANDIDATE POOL was the limitation, not its readout:
+  the same machinery over a different basis finds the security contrast E15-C missed.
+  The E15-C null should be re-reported as a pool artifact.'
 gates:
   J0:
     passed: true
@@ -24,8 +25,10 @@ gates:
       direction estimated on 168 training bases (digest 0b5fcb12614bab1e), both same-label
       nulls ran in every cell
   J3:
-    passed: false
-    detail: not recorded
+    passed: true
+    detail: 43200 pair rows over 3 lenses x 10 layers x 2 prompt styles on 72 held-out
+      bases; both properties read in one 102-token basis; forced-choice answer scored
+      for every program
   J4:
     passed: false
     detail: not recorded
@@ -124,23 +127,62 @@ v1:
     same_label_proj_mean: null
     same_label_proj_sign_consistency: null
 positive_control:
-  verdict_text: "NOT RUN \u2014 stage 129 has not written a summary."
+  verdict_text: "BOTH DETECTED \u2014 the readout finds the taint contrast AND the\
+    \ security contrast in this basis, which E15-C's pool did not."
   reported:
     prompt_style: sink
     lens: rlens
-    layer: null
+    layer: 27
     condition: clean_heldout
   thresholds:
     sign_consistency: 0.7
     permutation_p: 0.05
     behaviour_floor: 0.5
   checks:
-    behaviour_above_chance: false
-    lens_detects_the_property: false
-    lens_tracks_the_model: false
-    security_contrast_at_same_cell: false
-  behaviour: {}
-  headline: {}
+    behaviour_above_chance: true
+    lens_detects_the_property: true
+    lens_tracks_the_model: true
+    security_contrast_at_same_cell: true
+  behaviour:
+    model: deepseek-coder-6.7b
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    prompt_style: sink
+    n_pairs: 72
+    accuracy: 0.5
+    accuracy_unsafe: 1.0
+    accuracy_safe: 0.0
+    says_tainted_rate: 1.0
+    pair_separation: 0.75
+    pair_separation_p: 2.568720337924735e-05
+    mean_model_delta: 0.0307074611385663
+    model_delta_ci_lo: 0.0210476239936219
+    model_delta_ci_hi: 0.0406928125768899
+  headline:
+    model: deepseek-coder-6.7b
+    lens: rlens
+    layer: 27
+    relative_depth: 0.871
+    prompt_style: sink
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    n_pairs: 72
+    taint_mean_delta_z: 0.0346755056848354
+    taint_sign_consistency: 0.8472222222222222
+    taint_permutation_p: 0.0
+    taint_permutation_effect_size: 5.744739117251228
+    taint_corr_model_delta: 0.722573608766784
+    taint_lens_tracks_model: 0.8055555555555556
+    security_mean_delta_z: 0.0166983585883532
+    security_sign_consistency: 0.7638888888888888
+    security_permutation_p: 0.0
+    security_permutation_effect_size: 4.2535747265990365
+    security_corr_model_delta: 0.1872686368148478
+    security_lens_tracks_model: 0.7083333333333334
+    mean_model_delta_margin: 0.0307074611385663
+    model_pair_separation: 0.75
 v3:
   verdict_text: "NOT RUN \u2014 stage 130 has not written a summary."
   thresholds:

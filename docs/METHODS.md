@@ -672,7 +672,16 @@ null**, and nothing in §10b separates "the models do not verbalise this" from
 measurements that address that, built as stages 128–131 with gates J2/J3/J4. Full
 design and pre-declared thresholds: `docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`.
 
-**Result: the first of the three overturned the reading of the null.** Removing
+**Result: the first overturned the reading of the null, and the second removed
+its ambiguity.** The positive control fired on all three models — the identical
+readout detects a property the models express (sign consistency 0.85–0.94,
+tracking the model's own forced-choice margin at 0.71–0.92), so §10b's null
+cannot be blamed on the instrument. One qualification: on deepseek-coder-6.7b the
+security lexicon *also* separates the pair at the answer position of a prompt
+that asks the question, so §10b's null is a null about the **unprompted** state
+at the sink argument.
+
+**And the first of the three overturned the reading of the null.** Removing
 the candidate pool found a label-defined direction that generalises to held-out
 programs in 72/72 pairs on all three models. So the correct summary of the lens
 track is not "the distinction is absent from output-aligned coordinates" but

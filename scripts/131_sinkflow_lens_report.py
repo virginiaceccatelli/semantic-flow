@@ -259,7 +259,14 @@ def main(
     if positive is not None and not positive.empty:
         pool = positive[(positive["lens"] == lens_kind)
                         & (positive["prompt_style"] == prompt_style)
-                        & (positive["condition"] == condition)]
+                        & (positive["condition"] == condition)
+                        # The embedding layer is degenerate at this site: both
+                        # members end on the same prompt token, so their layer -1
+                        # states are identical and every contrast is exactly
+                        # zero. `0 > 0` is false for every pair, so its sign
+                        # consistency reads 0.0 — maximal displacement from
+                        # chance — and it would win the search below outright.
+                        & (positive["layer"] >= 0)]
         if not pool.empty:
             # The layer that best detects the taint property, chosen on the
             # POSITIVE property only — the security contrast is then read at

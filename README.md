@@ -108,10 +108,20 @@ The tokens that load on that direction are `' Lemmon'`, `'egraphics'`,
 the vocabulary, and carried by no word for it.** Decodable and verbalised come
 apart, and the gap is not a gap in the instrument.
 
-*One caveat stated plainly:* the positive control that would say whether this
-readout could detect a genuinely verbalised property is **built and has not been
-run**. It bounds what the security-lexicon *null* means; it does not touch the
-result above.
+**And the readout is not blind.** The positive control runs the identical
+measurement on a property the models *do* express — the forced-choice taint
+question — and finds it: sign consistency 0.89 / 0.85 / 0.94, converging on the
+model's own answer margin (0.95–0.98 at the final layer, where the lens *is* the
+output head). On 1.3B and StarCoder2 the security lexicon at that same cell is
+significantly *inverted*. So decodable-but-not-verbalised is a fact about the
+models, not a limitation of the instrument.
+
+Two details worth carrying: by **accuracy** none of the three models can answer
+the question at all — every one scores 0.500, because each has a fixed answer
+bias whose argmax never moves. The property shows up only in the *graded* margin
+(the unsafe member is ranked higher in 69–92% of pairs). And on 6.7B the
+`sink` and `e6` prompt wordings give opposite answers (0.750 vs 0.222), so any
+behavioural claim from a single prompt is worth less than it looks.
 
 **Causal use — answered for binding.** E13's rank-1, magnitude-free interchange
 transports *which definition is in scope* into both value assignments of a 2×2,
@@ -213,10 +223,12 @@ is CPU and re-runnable.
                               onset at ~25% depth; collapses under flattening
                               alone. Top loadings are meaningless fragments, so
                               the distinction is output-aligned and DISTRIBUTED,
-                              not lexicalised. 130 adds relevance routing on
-                              token-identical text (1.3B). Gates J2, J4.
-                              ⚠ 129, the POSITIVE CONTROL, is built and NOT RUN —
-                              it is what fixes the meaning of E15-C's null.
+                              not lexicalised. 129 is the POSITIVE CONTROL: the
+                              same readout on a property the models DO express,
+                              found at 0.85-0.94 — so the null is about the
+                              models, not the instrument. 130 adds relevance
+                              routing on token-identical text (1.3B).
+                              Gates J2, J3, J4.
 ```
 
 Stage status lives in `results/STATUS.yaml`; stage 90 reads it and skips

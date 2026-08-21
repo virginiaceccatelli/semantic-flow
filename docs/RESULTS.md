@@ -37,8 +37,10 @@ E15-C's security lexicon carries nothing — but a direction defined by the labe
 generalises to held-out programs in **72/72 pairs on every model**, appears a
 quarter of the way up the stack, and collapses under flattening exactly as the
 probe does. The distinction is output-aligned and **distributed**, not
-lexicalised. Decodable is not verbalised, and the gap is not a gap in the
-instrument.
+lexicalised. And the readout is demonstrably not blind: run on a property these
+models *do* express, it finds it at 0.85–0.94 sign consistency and converges on
+the model's own answer margin — so decodable-but-not-verbalised is a fact about
+the models rather than a limitation of the instrument.
 
 ---
 
@@ -57,7 +59,7 @@ instrument.
 | E10-0 J-lens | instrument validation for the lens track | ● | ● | ● | supporting | V1 exact (cosine 1.0000) on all three; the Jacobian correction is real. On starcoder2-3b every required check passes (V2 top-1 0.633 vs 0.000 random), so that model's E15-C **J-lens** numbers have instrument validation behind them even though its R-lens does not exist |
 | **E15-D** full-vocabulary direction | is the distinction in output coordinates at all? | ● | ● | ● | **foundation** | **yes, and it is not a word.** 72/72 held-out pairs project positively on a label-defined direction (cosine 0.38) over a token-identity floor of *exactly zero*; onset at ~25% depth; collapses under flattening alone. Top loadings are meaningless fragments |
 | **E15-D** relevance routing | does the model route identical text differently? | ● | ☐ | n/a | supporting | the chain feeding the sink **loses** relevance share and the other gains, 63–65 of 72 pairs at layers 0–3 (sign p ≤ 4e-11), on token-identical spans; survives role- and order-swap strata. Small (1–2% of the answer), one model |
-| **E15-D** positive control | could this readout detect verbalisation at all? | ☐ | ☐ | ☐ | **not run** | the one measurement that would fix what E15-C's *null* means. Built; `scripts/129_sinkflow_positive.py` |
+| **E15-D** positive control | could this readout detect verbalisation at all? | ● | ● | ● | **foundation** | **it is not blind.** The identical readout finds the forced-choice taint property at 0.85–0.94 sign consistency (p = 0.000) and tracks the model's own margin at 0.71–0.92. On 1.3B and SC2 the security lexicon at the same cell is *inverted*, so **E15-C's null is about the models**; on 6.7B the lexicon also fires, but only in the *prompted* setting |
 | E4 control dep | guard→statement | ● | ● | ☐ | contrast only | decodable, but its surface floor is already 0.927 — the contrast that makes E2 mean something |
 
 **Retired, parked and superseded** — E1, E6, E7, E8, E10-2, E10-3, E11, E12 — are
@@ -216,14 +218,20 @@ establishes it.
    the other gains, in 85–90% of matched pairs at early layers. *(E15-D V3,
    stage 130, one model.)*
 
-The one thing not established: whether this readout could detect verbalisation
-if it were there. The positive control that would settle it is built and has not
-been run — see §"E15-D" and `docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`.
+6. **And the readout is not blind, which is what makes (3) mean anything.** Run
+   on a property the models *do* express — the forced-choice taint question — the
+   identical readout finds it at 0.85–0.94 sign consistency and converges on the
+   model's own answer margin. *(E15-D positive control, stage 129.)*
 
 **The headline the track supports:** *the safe/unsafe distinction is present in
 output-aligned coordinates, distributed across the vocabulary, and not carried by
-any word for it.* "Decodable" and "verbalised" come apart, and the gap is not a
-gap in the instrument.
+any word for it.* "Decodable" and "verbalised" come apart, and — because the
+positive control fired — **the gap is a fact about the models, not a limitation
+of the instrument.**
+
+For the full answer to *"so what is actually verbalised?"* — the three grades,
+the tokens that really load, and the depth sequence — see
+§"So what *is* verbalised in these models?" below.
 
 ## E10-0 — the J-lens implementation is correct
 
@@ -638,28 +646,196 @@ LayerNorm plus a non-gated MLP means the homogenising rules bind to nothing, so
 there is no conservation to read, and stage 130 refuses rather than emitting raw
 autograd under the name relevance. It has not been run on 6.7B.
 
-### E15-D — what has not run, and what it would settle
+### E15-D — the positive control: the readout is not blind
 
-**The positive control (stage 129) has not been run on any model.** It is the one
-measurement that separates
+E15-C's null had one ambiguity nothing in that experiment could resolve: *the
+models do not verbalise this* versus *this readout could not detect
+verbalisation if it were there*. Every E15-C control is negative, and negative
+controls are silent about a null. Stage 129 supplies the positive one — the
+**identical** measurement (same `pair_contrast` call, same z-score convention,
+same orientation, one candidate basis carrying both token sets) on the E6/E7
+forced-choice taint question, which has a single-token answer.
 
-> the models do not verbalise this
+**Step 1 — can the models answer it at all?** By accuracy, no. Every model
+scores **0.500**, and the reason is visible in one column: each has a fixed
+answer bias and its argmax never moves. 1.3B answers "no" to every program
+(`says_tainted_rate` 0.000); 6.7B and StarCoder2 answer "yes" to every program
+(1.000).
 
-from
+But the *graded* margin does separate the pair. `pair_separation` — the fraction
+of bases where the unsafe member draws a higher yes-margin than its matched safe
+counterpart — has a chance level of 0.5 that no answer bias can move, and that is
+what the verdict reads:
 
-> this readout could not detect verbalisation if it were there,
+| clean held-out, `sink` prompt | 1.3B | 6.7B | SC2-3B |
+|---|---:|---:|---:|
+| accuracy | 0.500 | 0.500 | 0.500 |
+| says "tainted" for every program | yes ("no") | yes ("yes") | yes ("yes") |
+| **pair separation** | **0.694** | **0.750** | **0.917** |
+| sign-test p | 0.0013 | 0.0000 | 0.0000 |
 
-and until it runs, the E15-C null keeps that ambiguity. Every control in E15-C is
-*negative*, and negative controls establish that a positive result is not an
-artifact — they are silent about a null. Note that this does **not** touch the
-E15-D results above, which are positive findings and stand on their own controls;
-it limits only what may be concluded from E15-C's *absence* of a security
-vocabulary.
+So the property *is* expressed behaviourally, as a ranking rather than as a
+decision. This is precisely why the design fixed on the paired statistic in
+advance: a model that always answers "no" earns 0.500 accuracy for free.
 
-The four outcomes and what each licenses are written down in advance in
-`docs/design/E15D_LENS_FOLLOWUPS_PLAN.md` §4, including the one that would retire
-the E15-C track. Run it with
-`python scripts/129_sinkflow_positive.py --model M --conditions all`.
+**Step 2 — does the readout find it?** Yes, decisively, on all three models:
+
+| best taint cell, `rlens`, `sink` prompt | 1.3B (L19) | 6.7B (L27) | SC2-3B (L29) |
+|---|---:|---:|---:|
+| relative depth | 0.83 | 0.87 | 0.93 |
+| taint sign consistency | **0.889** | **0.847** | **0.944** |
+| permutation p | 0.000 | 0.000 | 0.000 |
+| lens tracks the model's own margin | 0.708 | 0.806 | 0.917 |
+| **security lexicon at the same cell** | **0.347** | 0.764 | **0.389** |
+| its permutation p | 0.000 | 0.000 | 0.006 |
+
+The readout's agreement with the model's own forced-choice margin rises
+monotonically with depth and reaches **0.95 / 0.98 / 0.98** at the final layer —
+which it must, because there the lens *is* the output head. That is the internal
+validity check on the whole instrument, and it passes.
+
+**What this licenses.** On **1.3B and StarCoder2** the outcome is
+`machinery_validated`, the strongest one declared in advance: the identical
+readout detects a property these models express and does *not* detect the
+security lexicon at the same cell — where the security contrast is in fact
+significantly **inverted** (0.347 and 0.389, both p < 0.01). **E15-C's null is
+therefore about the models, not about the instrument.** The sentence
+"linear decodability and expression in a model's own vocabulary are different
+properties" is now a supported claim rather than an unfalsifiable one.
+
+**On 6.7B the outcome differs and must be reported as such.** There the security
+lexicon *also* fires at the same deep cell (0.764, p = 0.000), which is the
+`both_properties_detected` outcome. Read it precisely: this is at the **answer
+position of a prompt that asks the question**, at 87% depth — not at the sink
+argument in unprompted code at mid-depth, which is where E15-C read and found
+nothing. The two contrasts are only weakly correlated (r = +0.26), so the
+security signal is not merely the taint signal wearing another name; but
+"vulnerable/safe" moving with "yes/no" where a model is about to answer a
+security question is close to what one would expect. **The narrow conclusion:
+6.7B's security lexicon separates the pair when the model is asked, and does not
+when it is not asked.** E15-C's null is a null about the *unprompted* state.
+
+**Prompt sensitivity is large, and measuring it was not optional.** Both prompt
+styles ran — `e6` verbatim from the E6/E7 track, and `sink`, which names the sink
+the label is actually about. On 6.7B they disagree outright: pair separation is
+**0.750 under `sink` and 0.222 under `e6`** (p = 0.000 both ways), i.e. under the
+E6 wording 78% of pairs give the *safe* member the higher yes-margin. Same model,
+same programs, opposite answer. 1.3B (0.694 vs 0.722) and StarCoder2 (0.917 vs
+0.806) agree across the two. Any behavioural claim from a single prompt is worth
+less than it looks.
+
+**And behaviour breaks where everything else does.** Pair separation under the
+`sink` prompt across conditions:
+
+| | clean | rename | opaque | encode | **flatten** | full cumulative |
+|---|---:|---:|---:|---:|---:|---:|
+| 1.3B | 0.694 | 0.625 | 0.708 | 0.722 | **0.514** | 0.472 |
+| 6.7B | 0.750 | 0.597 | 0.653 | 0.486 | **0.597** | 0.556 |
+| SC2-3B | 0.917 | 0.708 | 0.764 | 0.833 | **0.694** | 0.653 |
+
+Flattening takes 1.3B to chance (0.514) and costs the other two 0.15–0.22. This
+is now the **third independent readout** — a fitted probe (E15), an unsupervised
+full-vocabulary direction (E15-D V1) and the model's own forced-choice margin —
+that shows the same boundary, and the last of the three involves no probe and no
+lens at all.
+
+### So what *is* verbalised in these models?
+
+The lens track answers this in one sentence: **the answer to a question is
+verbalised; the property it is an answer about is not.** Three distinct grades
+come out of the data, and they should not be collapsed.
+
+#### 1. Verbalised — the yes/no lean, late, and as a ranking
+
+When the model is *asked* ("is the value passed to `os.system`
+attacker-controlled?"), the lean toward `" yes"` over `" no"` is readable in
+vocabulary space:
+
+| best cell, `sink` prompt | 1.3B (L19) | 6.7B (L27) | SC2-3B (L29) |
+|---|---:|---:|---:|
+| sign consistency | 0.889 | 0.847 | 0.944 |
+| tracks the model's own margin | 0.708 | 0.806 | 0.917 |
+| first significant layer (relative depth) | L15 (0.65) | L15 (0.48) | L11 (0.38) |
+
+Two qualifications that matter. It arrives **late** — nothing before roughly
+40–65% depth. And it is verbalised as a **ranking, not a decision**: accuracy is
+0.500 on all three models, because each has a fixed answer bias whose argmax
+never moves. What sits in vocabulary space is a graded lean the model never acts
+on.
+
+#### 2. Output-aligned but not lexicalised — the safe/unsafe distinction itself
+
+The full-vocabulary direction of stage 128 is projected onto positively by
+**72/72 held-out pairs on every model** (cosine 0.38, token-identity floor
+exactly zero), and it appears at ~25% depth — *earlier* than the verbalised
+answer. But its loadings are flat (0.019–0.027) and spread over thousands of
+tokens: `' Lemmon'`, `'egraphics'`, `'bootstrapcdn'`, `'%%%%%%%%%%'`. It is a
+direction in vocabulary space that corresponds to no word.
+
+#### 3. Not verbalised — the security words, and they are *scrambled*, not inert
+
+This is sharper than a null. At E15-C's reported cell, out of 196 candidate
+tokens:
+
+* **1.3B** — `' vulnerable'` ranks **104/196** with a *negative* delta (−0.105):
+  below the median and pointing the wrong way. `' trusted'` ranks 58, i.e.
+  *higher* in the unsafe member.
+* **6.7B** — the most elevated concept token in the unsafe member is `' clean'`
+  (rank 28, +0.637), then `' safe'` (rank 45, +0.565). The *safe* words are the
+  ones that go up when the program is unsafe.
+* **SC2-3B** — `' unsafe'` rank 52 (+0.117) and `' safe'` rank 62 (+0.084):
+  indistinguishable from each other.
+
+#### What actually loads, concretely
+
+* **1.3B** — the five strongest tokens are all question-mark variants: `' ?'`,
+  `'?.'`, `'??'`, `'?!'`, `'?--'`, and after that it degenerates into noise
+  (`'ected'`, `'mor'`, `'ibly'`). If anything is being expressed there it is
+  **uncertainty**, not danger.
+* **6.7B** — `' liber'`, `'clean'`, `'Clean'`, `'tbl'`, **`' injection'`**,
+  `'break'`. One genuinely security-relevant token, sitting beside the inverted
+  `clean`/`Clean`.
+* **SC2-3B** — `'OrNull'`, `'displayMode'`, `' or'`, `'fuchsia'`, `'ásá'`,
+  `' CORS'`: two validation-adjacent, the rest noise.
+
+#### The depth sequence, which is the cleanest way to say all of this
+
+| relative depth | what is happening |
+|---|---|
+| 0–13% | relevance **routing** already differs (V3: the chain feeding the sink loses share, 65/72 pairs) while vocabulary space is empty |
+| ~25% | a **distributed output-aligned direction** appears and holds to the output (V1) |
+| 40–65% | the **answer becomes sayable** (the positive control) |
+
+The property is routed differently before it is representable in output
+coordinates, and representable long before it is sayable. It never becomes a
+word.
+
+#### On the J-lens and R-lens specifically
+
+They agree with each other **and with the plain logit lens**, essentially
+exactly: 0.889 / 0.889 / 0.889 across logit, J-lens and R-lens at 1.3B's best
+cell, 0.944 across all three at StarCoder2's; E15-C's three-lens agreement is
+cosine 0.75–0.97.
+
+That is worth saying plainly: **for this task the expensive lenses buy nothing
+over the logit lens.** The Jacobian correction and the LRP rules are validated
+instruments — E10-0 exact at the last layer, E14 conservation within 1e-4 — and
+they change none of the conclusions above. Where the R-lens *did* earn its keep
+is stage 130, which uses it as a conserving attribution over input positions
+rather than as a vocabulary projection.
+
+#### Bottom line
+
+These models **compute** the distinction (probe 1.000), **express** it in
+output-aligned coordinates from a quarter of the way up the stack, and
+**report** it when asked — but they do not **name** it. There is no "unsafe
+feature" in the sense of a direction aligned with the word *unsafe*; on two of
+three models the security lexicon runs backwards.
+
+Two caveats. On **6.7B** the lexicon does separate the pair (0.764) at the answer
+position of a prompt that asks the question, so "not lexicalised" holds for the
+*unprompted* state at the sink argument — which is where E15-C read. And all of
+this is observational: none of it shows the model *uses* any of these directions.
 
 ### E15-C's mismatched-pair control, corrected
 
@@ -708,9 +884,12 @@ consistent with real loss. The embedding control is one measurement, not three.
 E15-C is observational, its candidate pool is logit-lens-selected, and the LRP
 rules never install on starcoder2-3b at all (LayerNorm plus a non-gated MLP), so
 its `rlens` artifact is arithmetically a J-lens and that model's lens agreement
-is two lenses, not three. **The positive control has not run**, so E15-C's *null*
-is not yet falsifiable in the direction that matters — which does not touch
-E15-D's positive results. E15-D V1 is observational too: a direction that
+is two lenses, not three. The positive control has now run and fired, so E15-C's
+*null* is falsifiable in the direction that matters — but on **6.7B** the security
+lexicon does separate the pair at the answer position of a prompt that asks the
+question, so E15-C's null is a null about the *unprompted* state at the sink
+argument and should be stated that way. The forced-choice accuracy is 0.500 on
+every model — the behavioural result is a ranking, not a decision. E15-D V1 is observational too: a direction that
 generalises is a statement about format, not about use, and its top loadings
 being uninterpretable is a fact to report rather than a puzzle solved. E15-D V3
 ran on one model and its magnitude is small. Nothing causal is
@@ -747,10 +926,11 @@ Withdrawn claims, with reasons: `docs/ARCHIVE.md`.
 
 Ordered by what would most change what this project can claim.
 
-0. **Run the positive control** (`scripts/129_sinkflow_positive.py`, ~1–3 h per
-   model on GPU). It is built, gated and unrun, and it is the only thing standing
-   between E15-C's null and a claim about what code models verbalise. Every other
-   item below is smaller. Run it on all three models with `--conditions all`.
+0. **Explain 6.7B's prompted security contrast.** The one asymmetry left in the
+   lens track: the security lexicon separates the pair at the answer position
+   under the `sink` prompt (0.764, p = 0.000) and not at the sink argument in
+   unprompted code. Cheapest next step is to read the same cell under the `e6`
+   prompt — which inverts that model's *behaviour* — from CSVs already on disk.
 1. **Replicate E15-D V3 on 6.7B.** The relevance redistribution is one model.
    `scripts/130_sinkflow_relevance.py --model deepseek-coder-6.7b`, ~30–90 min.
    It is *not applicable* to StarCoder2, so 6.7B is the whole replication.

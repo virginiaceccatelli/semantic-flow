@@ -5,10 +5,10 @@ Each section states a verdict decided by a checklist declared in code before the
 | stage | gate | verdict |
 |---|---|---|
 | V1 full-vocabulary alignment | J2 PASS | `direction_replicates_but_not_dominant` |
-| positive control | J3 FAIL | `not_run` |
+| positive control | J3 PASS | `machinery_validated` |
 | V3 relevance redistribution | J4 FAIL | `not_applicable` |
 
-**What this means for E15-C.** The positive control has not run, so E15-C's null remains unfalsifiable in exactly the way it was.
+**What this means for E15-C.** E15-C's null becomes a claim about the MODELS. The identical readout detects a property these models verbalise and does not detect the security distinction, so 'not expressed in output-aligned coordinates' is now a supported statement rather than an unfalsifiable one.
 
 ---
 
@@ -145,28 +145,60 @@ If concentration is high over the full vocabulary and low inside the pool, the p
 
 ## Positive control — can this machinery detect verbalisation at all?
 
-**Verdict.** NOT RUN — stage 129 has not written a summary.
+**Verdict.** MACHINERY VALIDATED — the model answers the forced choice, the identical readout detects it, and the security contrast at the same cell does not replicate.
 
-Prompt style `sink`, lens `rlens`, condition `clean_heldout`, layer None — chosen as the layer that best detects the TAINT property, with the security contrast then read at that same cell.
+Prompt style `sink`, lens `rlens`, condition `clean_heldout`, layer 29 — chosen as the layer that best detects the TAINT property, with the security contrast then read at that same cell.
 
 | check | holds |
 |---|---|
-| behaviour_above_chance | no |
-| lens_detects_the_property | no |
-| lens_tracks_the_model | no |
+| behaviour_above_chance | yes |
+| lens_detects_the_property | yes |
+| lens_tracks_the_model | yes |
 | security_contrast_at_same_cell | no |
 
 ### Table 17 — behaviour: can the model answer at all?
 
 `pair_separation` is the fraction of bases where the unsafe member draws a higher yes-margin than its matched safe counterpart. Its chance level is 0.5 and no answer bias can move it, which is why it is the statistic the verdict uses rather than raw accuracy.
 
-_not run_
+| prompt_style | condition | n_pairs | accuracy | accuracy_unsafe | accuracy_safe | says_tainted_rate | pair_separation | pair_separation_p | mean_model_delta |
+|---|---|---|---|---|---|---|---|---|---|
+| e6 | clean_heldout | 72 | 0.5000 | 0.7361 | 0.2639 | 0.7361 | 0.8056 | 0.0000 | 0.0293 |
+| e6 | normalize | 72 | 0.5139 | 0.7361 | 0.2917 | 0.7222 | 0.8472 | 0.0000 | 0.0377 |
+| e6 | rename_only | 72 | 0.5069 | 0.7083 | 0.3056 | 0.7014 | 0.6250 | 0.0444 | 0.0149 |
+| e6 | opaque_only | 72 | 0.5139 | 0.8333 | 0.1944 | 0.8194 | 0.7083 | 0.0005 | 0.0329 |
+| e6 | encode_only | 72 | 0.5347 | 0.7917 | 0.2778 | 0.7569 | 0.7778 | 0.0000 | 0.0425 |
+| e6 | flatten_only | 72 | 0.5139 | 0.8194 | 0.2083 | 0.8056 | 0.6111 | 0.0764 | 0.0095 |
+| e6 | rename_cumulative | 72 | 0.5000 | 0.6944 | 0.3056 | 0.6944 | 0.6667 | 0.0063 | 0.0177 |
+| e6 | rename_opaque | 72 | 0.5069 | 1.0000 | 0.0139 | 0.9931 | 0.7361 | 0.0001 | 0.0153 |
+| e6 | rename_opaque_encode | 72 | 0.5000 | 0.9861 | 0.0139 | 0.9861 | 0.5833 | 0.1945 | 0.0136 |
+| e6 | rename_opaque_encode_flatten | 72 | 0.5069 | 0.8750 | 0.1389 | 0.8681 | 0.5556 | 0.4096 | 0.0040 |
+| sink | clean_heldout | 72 | 0.5000 | 1.0000 | 0.0000 | 1.0000 | 0.9167 | 0.0000 | 0.0386 |
+| sink | normalize | 72 | 0.5000 | 1.0000 | 0.0000 | 1.0000 | 0.8889 | 0.0000 | 0.0440 |
+| sink | rename_only | 72 | 0.5069 | 0.8750 | 0.1389 | 0.8681 | 0.7083 | 0.0005 | 0.0162 |
+| sink | opaque_only | 72 | 0.5000 | 0.9861 | 0.0139 | 0.9861 | 0.7639 | 0.0000 | 0.0353 |
+| sink | encode_only | 72 | 0.5000 | 0.9722 | 0.0278 | 0.9722 | 0.8333 | 0.0000 | 0.0414 |
+| sink | flatten_only | 72 | 0.5000 | 1.0000 | 0.0000 | 1.0000 | 0.6944 | 0.0013 | 0.0173 |
+| sink | rename_cumulative | 72 | 0.5139 | 0.8889 | 0.1389 | 0.8750 | 0.6667 | 0.0063 | 0.0178 |
+| sink | rename_opaque | 72 | 0.5000 | 0.9028 | 0.0972 | 0.9028 | 0.7361 | 0.0001 | 0.0167 |
+| sink | rename_opaque_encode | 72 | 0.5000 | 0.9861 | 0.0139 | 0.9861 | 0.6806 | 0.0029 | 0.0148 |
+| sink | rename_opaque_encode_flatten | 72 | 0.5000 | 0.9722 | 0.0278 | 0.9722 | 0.6528 | 0.0128 | 0.0088 |
 
 ### Table 18 — the two properties, one basis, one lens, by layer
 
 `taint_*` and `security_*` differ only in which token positions are named as the poles. `taint_lens_tracks_model` is the fraction of pairs where the lens's paired margin has the same sign as the model's own.
 
-_not run_
+| layer | relative_depth | n_pairs | taint_sign_consistency | taint_permutation_p | taint_lens_tracks_model | taint_corr_model_delta | security_sign_consistency | security_permutation_p |
+|---|---|---|---|---|---|---|---|---|
+| -1 |  | 72 | 0.0000 | 1.0000 | 0.0417 |  | 0.0000 | 1.0000 |
+| 0 | 0.0000 | 72 | 0.5833 | 0.1740 | 0.5417 | 0.0386 | 0.4861 | 0.3060 |
+| 3 | 0.1034 | 72 | 0.4167 | 0.3140 | 0.3889 | 0.1082 | 0.5694 | 0.7880 |
+| 7 | 0.2414 | 72 | 0.3750 | 0.0840 | 0.3750 | 0.0369 | 0.5278 | 0.1880 |
+| 11 | 0.3793 | 72 | 0.5833 | 0.0220 | 0.5556 | -0.0397 | 0.6806 | 0.0000 |
+| 15 | 0.5172 | 72 | 0.4583 | 0.1560 | 0.5000 | 0.4301 | 0.6667 | 0.0820 |
+| 19 | 0.6552 | 72 | 0.7500 | 0.0000 | 0.7222 | 0.6968 | 0.4861 | 0.7020 |
+| 23 | 0.7931 | 72 | 0.7500 | 0.0000 | 0.7917 | 0.6979 | 0.4028 | 0.0600 |
+| 27 | 0.9310 | 72 | 0.8056 | 0.0000 | 0.7917 | 0.8113 | 0.3333 | 0.0120 |
+| 29 | 1.0000 | 72 | 0.9444 | 0.0000 | 0.9167 | 0.9784 | 0.3889 | 0.0060 |
 
 ---
 

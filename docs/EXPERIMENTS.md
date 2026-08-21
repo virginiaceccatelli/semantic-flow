@@ -714,8 +714,8 @@ Ordered by cost, and each step says what result would justify the next.
    distribution artifact**, so the inverted 1.3B sign is a real and currently
    unexplained property. **Tier 1 is complete.**
 
-**Tier 2 — ✅ *built and run as E15-D, stages 128–131*, except the positive
-control, which is built and has **not** run. Design and pre-declared thresholds:
+**Tier 2 — ✅ *built and run as E15-D, stages 128–131, on all three models*.
+Design and pre-declared thresholds:
 `docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`; results in `docs/RESULTS.md`.
 
 > **The headline it produced.** Removing the candidate pool turned E15-C's null
@@ -727,9 +727,17 @@ control, which is built and has **not** run. Design and pre-declared thresholds:
 > fitted. Its top-loading tokens are meaningless fragments. **Output-aligned,
 > distributed, not lexicalised.**
 
-4. **A positive control — the single highest-value next step.** ⚠️ *built, and
-   still the single highest-value next step, because it has **not been run**.*
-   Stage 129, gate J3, unrecorded on all three models. The design could not distinguish "the models do not
+4. **A positive control — the single highest-value step, and it fired.** ✅ *run
+   on all three models; J3 passes everywhere.* The identical readout finds the
+   forced-choice taint property at 0.889 / 0.847 / 0.944 sign consistency
+   (p = 0.000) and tracks the model's own answer margin at 0.708 / 0.806 / 0.917,
+   converging to 0.95–0.98 at the final layer where the lens *is* the output
+   head. On 1.3B and StarCoder2 the security lexicon at that same cell is
+   significantly **inverted** (0.347 and 0.389), so **E15-C's null is about the
+   models, not the instrument** — the strongest outcome the plan declared. On
+   6.7B the lexicon also fires (0.764), but at the *answer position of a prompt
+   asking the question*, not at the sink argument in unprompted code; that
+   asymmetry is stated as such rather than folded into either verdict. The design could not distinguish "the models do not
    verbalise this" from "this machinery could not detect verbalisation if it were
    there", and no negative control can: they establish that a positive result is
    not an artifact, and are silent about a null. Stage 129 runs the identical
@@ -740,7 +748,16 @@ control, which is built and has **not** run. Design and pre-declared thresholds:
    bases ever differ, so "the identical pipeline" is checkable rather than
    asserted. Two prompt styles run (`e6` verbatim, and one naming the sink), so
    prompt sensitivity is measured rather than assumed.
-5. **Anchor the lens to behaviour.** ✅ *built: the same stage.* Each model's own
+5. **Anchor the lens to behaviour.** ✅ *run: the same stage, and it changed the
+   reading.* By **accuracy** none of the three models can answer — all score
+   0.500, because each has a fixed answer bias whose argmax never moves (1.3B
+   says "no" to everything, 6.7B and StarCoder2 say "yes" to everything). The
+   **paired** statistic shows the property is expressed anyway: `pair_separation`
+   is 0.694 / 0.750 / 0.917 at p ≤ 0.0013. Had the verdict read accuracy, every
+   model would have returned `property_not_verbalised` and the stage would have
+   concluded nothing. Prompt sensitivity is large and was worth measuring: on
+   6.7B `sink` gives 0.750 and `e6` gives 0.222 — same model, same programs,
+   opposite answers, both p = 0.000. Each model's own
    forced-choice margin is recorded per program, and `taint_lens_tracks_model` is
    the fraction of pairs where the lens's paired margin has the same sign as the
    model's. The behavioural statistic the verdict uses is `pair_separation`, not
@@ -828,14 +845,14 @@ which is a claim about routing that needs no vocabulary at all. All three are
 now built and none has been run at canonical scale, so the current state supports
 none of them, and says so.
 
-**Where that leaves it.** Two of the three fired. The full-vocabulary direction
-is the strongest result in the lens track and it is a *positive* one, resting on
-its own controls. The relevance routing is real, small and single-model. What is
-still open is what E15-C's **null** means, and only the positive control settles
-that: if the models answer the forced choice and the identical readout misses it
-(`machinery_blind`), E15-C's null is about the *method*, every number in that
-track keeps its caveat, and no claim about what code models represent survives
-it. Stage 131 will print exactly that sentence if that is what the data says.
+**Where that leaves it.** All three fired, and the track now closes. The
+full-vocabulary direction is its strongest result and it is a *positive* one.
+The positive control rules out the interpretation that would have retired the
+track — `machinery_blind` did not happen on any model — so the E15-C null is a
+statement about what these models verbalise. The relevance routing is real,
+small and single-model. One asymmetry is left open and is item 0 in
+`docs/RESULTS.md` §6: 6.7B's security lexicon separates the pair when the model
+is *asked* and not when it is not.
 
 **Tier 3 items 8 and 9 are now differently urgent.** Item 9 — the
 `W_U`-constrained probe — asked whether the distinction is "output-aligned but

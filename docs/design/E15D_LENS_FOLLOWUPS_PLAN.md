@@ -1,7 +1,7 @@
 # E15-D — three follow-ups to the E15-C null
 
-**Status: 128 run on all three models; 130 run on deepseek-coder-1.3b and not
-applicable to starcoder2-3b; 129 (the positive control) NOT RUN.**
+**Status: 128 and 129 run on all three models; 130 run on deepseek-coder-1.3b
+and not applicable to starcoder2-3b. All gates recorded.**
 Stages 128–131, gates J2/J3/J4. Every threshold in this document is declared in
 code (`src/experiments/sinkflow_{align,positive,relevance}.py`) and was written
 before any canonical number was produced. Results are in `docs/RESULTS.md`; §7
@@ -370,8 +370,55 @@ Two defects in the reporting were also found and fixed by the same data:
   The vectors now go to a compressed `.npz` (7.9 MB total) and the JSON keeps
   provenance and per-cell statistics.
 
-### The positive control (stage 129)
+### The positive control (stage 129), all three models
 
-Not run. No manifest, no artifacts, J3 unrecorded on all three models. §4's
-outcome table stands unused, and every sentence in it is still binding on
-whatever it eventually returns.
+| declared check | 1.3B | 6.7B | SC2-3B |
+|---|---|---|---|
+| `behaviour_above_chance` (`pair_separation` > 0.5, p < 0.05) | **pass** 0.694, p=0.0013 | **pass** 0.750, p=0.0000 | **pass** 0.917, p=0.0000 |
+| `lens_detects_the_property` (sign ≥ 0.70, p < 0.05) | **pass** 0.889, p=0.000 | **pass** 0.847, p=0.000 | **pass** 0.944, p=0.000 |
+| `lens_tracks_the_model` (≥ 0.70) | **pass** 0.708 | **pass** 0.806 | **pass** 0.917 |
+| `security_contrast_at_same_cell` | fail 0.347 (inverted) | **pass** 0.764 | fail 0.389 (inverted) |
+| **verdict** | `machinery_validated` | `both_properties_detected` | `machinery_validated` |
+
+Every check behaved as §4 said it would, and no criterion was changed. Three
+things are worth recording because the design anticipated them and they happened:
+
+* **`pair_separation`, not accuracy, was the right statistic — by a wide
+  margin.** Accuracy is 0.500 on *every* model, because each has a fixed answer
+  bias whose argmax never moves: 1.3B answers "no" to every program, 6.7B and
+  StarCoder2 answer "yes" to every program. Had the verdict read accuracy, all
+  three would have come back `property_not_verbalised` and the whole stage would
+  have concluded nothing. The paired statistic — chance 0.5, immune to answer
+  bias — is what showed the property *is* expressed, as a ranking rather than as
+  a decision.
+* **Running both prompts was not optional.** On 6.7B `sink` gives 0.750 and `e6`
+  gives 0.222 — the same model, the same programs, opposite answers, both at
+  p = 0.000. A single-prompt behavioural claim would have been arbitrary.
+* **The instrument check passed on its own terms.** The lens's agreement with
+  the model's own forced-choice margin rises monotonically with depth to
+  0.95 / 0.98 / 0.98 at the final layer, where the lens *is* the output head and
+  therefore must agree. Nothing in the design forced that; it is the strongest
+  available evidence that the readout is measuring the model.
+
+**The one outcome §4 did not anticipate in detail** is that the four verdicts
+would not be unanimous. 6.7B's `both_properties_detected` says the security
+lexicon *does* separate the pair at the answer position of a prompt asking the
+question. §4 phrased that outcome as "E15-C's pool was the limitation", which is
+too strong here: E15-C read the **unprompted** state at the sink argument at mid
+depth, and this reads the **prompted** state at the answer position at 87% depth.
+Those are different measurements, and the correct conclusion is the narrower one
+— on 6.7B the lexicon fires when the model is asked and not when it is not.
+The two contrasts correlate at only r = +0.26, so this is not the taint contrast
+under another name; but a security lexicon moving with `yes`/`no` at a position
+where the model is about to answer a security question is close to expected, and
+the sentence in §4 is corrected here rather than left to be read as satisfied.
+
+### One reporting defect, fixed
+
+The headline picker chose the cell with the largest `|sign_consistency − 0.5|`,
+and at the answer position **layer −1 is degenerate**: both members end on the
+same prompt token, so their embeddings are identical, every contrast is exactly
+zero, `0 > 0` is false for all 72 pairs, and the sign consistency reads 0.0 —
+maximal displacement. That cell won the search on every model and every prompt
+style. It is now excluded (`layer >= 0`), the same class of fix as the one V3
+needed at the *last* layer for the mirror-image reason.

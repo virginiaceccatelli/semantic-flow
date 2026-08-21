@@ -511,16 +511,62 @@ experiments:
       its exact null under the same random-orientation scheme is binomial - which
       is the test quoted above. Verdict:
       redistribution_consistent_but_not_in_mean.
+    positive_control: >
+      THE READOUT IS NOT BLIND, AND THAT IS WHAT MAKES E15-C'S NULL MEAN
+      SOMETHING. Stage 129 runs the IDENTICAL measurement - same pair_contrast
+      call, same z-score convention, same orientation, one 102-token basis
+      carrying both the yes/no poles and the E15-C security lexicon - on the
+      E6/E7 forced-choice taint question. J3 passes on all three models.
+      BEHAVIOUR: accuracy is 0.500 on every model, because each has a fixed
+      answer bias whose argmax never moves - 1.3B answers "no" to every program
+      (says_tainted_rate 0.000), 6.7B and starcoder2-3b answer "yes" to every
+      program (1.000). The GRADED margin does separate the pair: pair_separation,
+      the fraction of bases where the unsafe member draws a higher yes-margin
+      than its matched safe counterpart, is 0.694 / 0.750 / 0.917 with sign-test
+      p = 0.0013 / 0.0000 / 0.0000 under the `sink` prompt. Chance is 0.5 and no
+      answer bias can move it, which is exactly why the design fixed on the
+      paired statistic in advance.
+      LENS: the readout finds it. Best taint cell 0.889 (1.3B L19) / 0.847
+      (6.7B L27) / 0.944 (SC2 L29), permutation p = 0.000 on all three, tracking
+      the model's own forced-choice margin at 0.708 / 0.806 / 0.917. Agreement
+      with that margin rises monotonically with depth to 0.95 / 0.98 / 0.98 at
+      the final layer, which it must because the lens IS the output head there -
+      the internal validity check on the whole instrument, passed.
+      SECURITY LEXICON AT THE SAME CELL: 0.347 (p=0.000) on 1.3B and 0.389
+      (p=0.006) on starcoder2-3b, i.e. significantly INVERTED. Verdict
+      machinery_validated on both: the identical readout detects a property these
+      models express and does not detect the security lexicon, so E15-C'S NULL IS
+      ABOUT THE MODELS AND NOT ABOUT THE INSTRUMENT.
+      ONE ASYMMETRY, REPORTED AS SUCH: on deepseek-coder-6.7b the security
+      lexicon ALSO fires at that cell (0.764, p=0.000), the
+      both_properties_detected outcome. Read it narrowly - this is at the ANSWER
+      POSITION of a prompt that asks the question, at 87% depth, not at the sink
+      argument in unprompted code at mid depth where E15-C read. The two
+      contrasts correlate only weakly (r = +0.26), so the security signal is not
+      merely the taint signal renamed, but "vulnerable/safe" moving with
+      "yes/no" where a model is about to answer a security question is close to
+      expected. E15-C's null is a null about the UNPROMPTED state.
+    prompt_sensitivity: >
+      LARGE, AND MEASURING IT WAS NOT OPTIONAL. Both declared prompt styles ran.
+      On deepseek-coder-6.7b they disagree outright: pair_separation is 0.750
+      under `sink` and 0.222 under `e6` (p = 0.000 both ways), i.e. under the E6
+      wording 78% of pairs give the SAFE member the higher yes-margin. Same
+      model, same programs, opposite answer. 1.3B (0.694 vs 0.722) and
+      starcoder2-3b (0.917 vs 0.806) agree across the two. Any behavioural claim
+      resting on a single prompt is worth less than it looks.
+    behaviour_under_obfuscation: >
+      Pair separation under the `sink` prompt, clean -> flatten_only -> full
+      cumulative: 0.694 -> 0.514 -> 0.472 (1.3B), 0.750 -> 0.597 -> 0.556 (6.7B),
+      0.917 -> 0.694 -> 0.653 (starcoder2-3b). Flattening takes 1.3B to chance.
+      This is the THIRD independent readout showing the same boundary - a fitted
+      probe (E15), an unsupervised full-vocabulary direction (E15-D V1), and the
+      model's own forced-choice margin - and the last involves no probe and no
+      lens at all.
     not_run: >
-      THE POSITIVE CONTROL (stage 129, gate J3) HAS NOT BEEN RUN ON ANY MODEL.
-      It is the only measurement that separates "the models do not verbalise
-      this" from "this readout could not detect verbalisation if it were there",
-      and until it runs the E15-C NULL keeps that ambiguity. It does not touch
-      the E15-D results above, which are positive findings resting on their own
-      controls. Stage 130 has not run on deepseek-coder-6.7b, so the relevance
-      routing result is one model. Stage 130 is NOT APPLICABLE to starcoder2-3b
-      and records J4 as such: LayerNorm plus a non-gated MLP means both
-      homogenising LRP rules bind to nothing, so there is no conservation to read.
+      Stage 130 has not run on deepseek-coder-6.7b, so the relevance routing
+      result is one model. Stage 130 is NOT APPLICABLE to starcoder2-3b and
+      records J4 as such: LayerNorm plus a non-gated MLP means both homogenising
+      LRP rules bind to nothing, so there is no conservation to read.
     corrects: >
       A DEFECT IN E15-C'S OWN CONTROLS, found while building this and fixed, now
       run on all three models. sinkflow_vocab.mismatched_pairs redraws the SAFE
@@ -537,8 +583,10 @@ experiments:
       pairing_gain - what base matching buys - is 0.014 / 0.014 / 0.056.
       NO E15-C NUMBER CHANGED.
     next_steps: >
-      1. Run stage 129 on all three models (--conditions all). 2. Run stage 130
-      on deepseek-coder-6.7b. 3. The direction's top loadings are uninterpretable
+      1. Explain 6.7B's prompted security contrast - the one asymmetry left. The
+      cheapest step reads the same cell under the `e6` prompt, which inverts that
+      model's behaviour, from CSVs already on disk. 2. Run stage 130 on
+      deepseek-coder-6.7b. 3. The direction's top loadings are uninterpretable
       and that is reported as a fact, not solved; whether the direction is
       causally used is untested and would need an intervention, which the E15
       extension's scope prohibits.

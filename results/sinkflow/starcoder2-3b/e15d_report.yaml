@@ -2,10 +2,12 @@ experiment: E15-D
 model: starcoder2-3b
 verdicts:
   v1_alignment: direction_replicates_but_not_dominant
-  positive_control: not_run
+  positive_control: machinery_validated
   v3_relevance: not_applicable
-consequence_for_e15c: The positive control has not run, so E15-C's null remains unfalsifiable
-  in exactly the way it was.
+consequence_for_e15c: E15-C's null becomes a claim about the MODELS. The identical
+  readout detects a property these models verbalise and does not detect the security
+  distinction, so 'not expressed in output-aligned coordinates' is now a supported
+  statement rather than an unfalsifiable one.
 gates:
   J0:
     passed: true
@@ -24,8 +26,10 @@ gates:
       direction estimated on 168 training bases (digest 0b5fcb12614bab1e), both same-label
       nulls ran in every cell
   J3:
-    passed: false
-    detail: not recorded
+    passed: true
+    detail: 43200 pair rows over 3 lenses x 10 layers x 2 prompt styles on 72 held-out
+      bases; both properties read in one 102-token basis; forced-choice answer scored
+      for every program
   J4:
     passed: false
     detail: "NOT APPLICABLE on this architecture: ln=0, mlp=0, attn=30 \u2014 neither\
@@ -126,23 +130,63 @@ v1:
     same_label_proj_mean: null
     same_label_proj_sign_consistency: null
 positive_control:
-  verdict_text: "NOT RUN \u2014 stage 129 has not written a summary."
+  verdict_text: "MACHINERY VALIDATED \u2014 the model answers the forced choice, the\
+    \ identical readout detects it, and the security contrast at the same cell does\
+    \ not replicate."
   reported:
     prompt_style: sink
     lens: rlens
-    layer: null
+    layer: 29
     condition: clean_heldout
   thresholds:
     sign_consistency: 0.7
     permutation_p: 0.05
     behaviour_floor: 0.5
   checks:
-    behaviour_above_chance: false
-    lens_detects_the_property: false
-    lens_tracks_the_model: false
+    behaviour_above_chance: true
+    lens_detects_the_property: true
+    lens_tracks_the_model: true
     security_contrast_at_same_cell: false
-  behaviour: {}
-  headline: {}
+  behaviour:
+    model: starcoder2-3b
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    prompt_style: sink
+    n_pairs: 72
+    accuracy: 0.5
+    accuracy_unsafe: 1.0
+    accuracy_safe: 0.0
+    says_tainted_rate: 1.0
+    pair_separation: 0.9166666666666666
+    pair_separation_p: 7.255748219519503e-14
+    mean_model_delta: 0.0385742212335268
+    model_delta_ci_lo: 0.031792537185053
+    model_delta_ci_hi: 0.046143936821156
+  headline:
+    model: starcoder2-3b
+    lens: rlens
+    layer: 29
+    relative_depth: 1.0
+    prompt_style: sink
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    n_pairs: 72
+    taint_mean_delta_z: 0.0121304455053867
+    taint_sign_consistency: 0.9444444444444444
+    taint_permutation_p: 0.0
+    taint_permutation_effect_size: 6.314335787427243
+    taint_corr_model_delta: 0.9784409512166252
+    taint_lens_tracks_model: 0.9166666666666666
+    security_mean_delta_z: -0.0058457060343674
+    security_sign_consistency: 0.3888888888888889
+    security_permutation_p: 0.006
+    security_permutation_effect_size: -2.8014390748064684
+    security_corr_model_delta: -0.152866002960241
+    security_lens_tracks_model: 0.3611111111111111
+    mean_model_delta_margin: 0.0385742212335268
+    model_pair_separation: 0.9166666666666666
 v3:
   verdict_text: "NOT APPLICABLE \u2014 the homogenising LRP rules bind to nothing\
     \ on this architecture (LayerNorm and/or a non-gated MLP), so there is no conservation\
