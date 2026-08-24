@@ -161,6 +161,23 @@ def main(
 
     frames, select_frames, fits = [], [], []
     lens_rows: list[dict] = []
+    # Everything the post-loop test grid consumes is keyed BY LAYER. The first
+    # version bound `states_test`, `lens_vectors`, `mean_direction` and `fitted`
+    # as plain locals inside this loop, so a multi-layer run evaluated the
+    # claim-bearing grid at `chosen_layer` while holding the LAST layer's
+    # states, J-lens and subspace. A single-layer run cannot show it — first and
+    # last are the same layer — which is why the 6.7B result is unaffected. On
+    # starcoder2-3b (`--layers 7,11,15`) it put layer-15 states through a
+    # layer-7 intervention: the `noop` structural zero read 7.19e-01 instead of
+    # 0, and calibration says_installed 1.000 collapsed to 0.239 on test at the
+    # identical cell.
+    states_test_by_layer: dict = {}
+    lens_by_layer: dict = {}
+    mean_direction_by_layer: dict = {}
+    fitted_by_layer: dict = {}
+    if len(layer_list) > 1:
+        console.print(f"  [yellow]fitting at layers {layer_list}; the test grid "
+                      f"runs ONCE, at layer {int(layer_list[0])}[/yellow]")
     for layer in layer_list:
         # One J-lens per intervention layer, built on the CALIBRATION programs
         # only, over the answer-token vocabulary.
@@ -174,14 +191,15 @@ def main(
                                     samples=lens_samples, token_ids=needed)
         lens_vectors = {int(t): np.asarray(v, dtype=np.float64)
                         for t, v in zip(lens.token_ids, lens.vectors)}
+        lens_by_layer[int(layer)] = lens_vectors
         lens_rows.append({"layer": int(layer), "n_samples": len(lens_samples),
                           "n_tokens": len(needed)})
         console.print(f"  layer {layer}: J-lens built over {len(needed)} answer "
                       f"tokens from {len(lens_samples)} calibration programs")
         states_calib = collect_states(loader.model, loader.tokenizer, calib, layer,
                                       sites=site_list)
-        states_test = collect_states(loader.model, loader.tokenizer, test, layer,
-                                     sites=site_list)
+        states_test_by_layer[int(layer)] = collect_states(
+            loader.model, loader.tokenizer, test, layer, sites=site_list)
         states_select = collect_states(loader.model, loader.tokenizer, calib_select,
                                        layer, sites=site_list)
 
@@ -214,6 +232,7 @@ def main(
         mean_direction = mean_difference_subspace(
             binding_difference_vectors(states_calib, calib, chosen_site, TRAIN_ARM))
         np.save(root / f"mean_difference_L{layer}.npy", mean_direction)
+        mean_direction_by_layer[int(layer)] = mean_direction
         console.print(f"  layer {layer}: difference-in-means baseline from "
                       f"{len(calib)} calibration bases")
 
@@ -247,6 +266,7 @@ def main(
                 provenance=provenance, batch_size=grid_batch_size, progress_every=0))
             console.print(f"  layer {layer} rank {rank}: alignment fitted, "
                           f"{len(select_frames[-1])} calibration rows")
+        fitted_by_layer[int(layer)] = fitted
 
     # ── select the rank on calibration, THEN run the test grid once ─────────
     if not select_frames:
@@ -265,6 +285,27 @@ def main(
                       f"fail — that is the honest outcome, not a fallback[/yellow]")
     console.print(f"  [bold]selected on calibration:[/bold] site {chosen_site}, "
                   f"layer {chosen_layer}, rank {chosen_rank}")
+
+    # Resolve every per-layer object AT the chosen layer. Indexing by
+    # `chosen_layer` rather than inheriting whatever the loop left behind is the
+    # whole point: a KeyError here is a bug in layer_list, not a silent mismatch.
+    states_test = states_test_by_layer[chosen_layer]
+    lens_vectors = lens_by_layer[chosen_layer]
+    mean_direction = mean_direction_by_layer[chosen_layer]
+    fitted = fitted_by_layer[chosen_layer]
+
+    # The invariant the mix-up violated, restated as a check. `AlignedSubspace`
+    # records the layer it was fitted at, so this is free, deterministic, and —
+    # unlike the structural-zero check below — cannot be confused with
+    # floating-point noise.
+    for fitted_rank, fitted_subspace in fitted.items():
+        if int(fitted_subspace.layer) != chosen_layer:
+            console.print(f"[red]rank {fitted_rank} subspace was fitted at layer "
+                          f"{fitted_subspace.layer}, but the test grid runs at "
+                          f"layer {chosen_layer}. Refusing: an interchange with a "
+                          f"subspace from another layer is not an interchange."
+                          f"[/red]")
+            raise typer.Exit(2)
 
     # The claim-bearing grid: every variant, at the pre-committed cell. The
     # structural-zero site needs only enough rows to verify a provable identity.
@@ -286,6 +327,23 @@ def main(
 
     frame = pd.concat(frames, ignore_index=True)
     frame.to_csv(root / "interchange.csv", index=False)
+
+    # Arithmetic, not statistics: the no-op edit IS the zero vector and at
+    # `def_source` host and donor are the same state, so both are provable
+    # zeros. They are already recorded in H5's extra, but recorded is not the
+    # same as noticed — on starcoder2-3b they failed at 7.19e-01 and the run
+    # still printed a verdict. Say it where it cannot be missed.
+    zeros = verify_structural_zeros(frame)
+    broken = {name: check for name, check in zeros.items() if not check["passed"]}
+    if broken:
+        console.print("[red]STRUCTURAL ZEROS FAILED: " + "; ".join(
+            f"{name} max |delta_ld| = {check['max_abs_delta_ld']:.2e} over "
+            f"{check['n']} rows" for name, check in broken.items()) + "[/red]")
+        console.print("[red]A provable zero that is not zero means the states, "
+                      "hooks or anchors do not belong to the layer being "
+                      "intervened at. Every number below is suspect, including "
+                      "the ones that look good.[/red]")
+
     pd.DataFrame(fits).to_csv(root / "interchange_alignments.csv", index=False)
     pd.DataFrame(lens_rows).to_csv(root / "interchange_lens.csv", index=False)
     summary = interchange_summary(frame, split="test", n_boot=n_boot, seed=seed)
@@ -328,7 +386,9 @@ def main(
         "test_all_ranks": test_all_ranks}, t0,
         extra={"H4": passed4, "H5": passed5, "train_arm_fraction": value4,
                "held_out_fraction": value5, **provenance})
-    if strict and not (passed4 and passed5):
+    # `broken` fails the run too: a gate that passed on numbers taken from the
+    # wrong layer is worse than a gate that failed, because it reads as a result.
+    if strict and (broken or not (passed4 and passed5)):
         raise typer.Exit(1)
 
 
