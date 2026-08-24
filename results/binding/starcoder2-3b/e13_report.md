@@ -1,10 +1,6 @@
 # E13 binding interchange — starcoder2-3b
 
-## What this experiment asks
-
-This report tests whether a learned rank-1, magnitude-free interchange transports which definition is in scope. Read the gates in order: data validity and baseline behavior come first, then decodability and a whole-state ceiling, followed by training-arm and held-out-arm intervention tests. Only the complete gate pattern licenses a causal conclusion.
-
-**Verdict: NOT SUPPORTED**
+**Verdict: BINDING TRANSPORTED**
 
 Does a low-rank, magnitude-free interchange at the site where a variable binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token or an answer direction?
 
@@ -18,14 +14,8 @@ The same binding flip demands opposite token movements in the two value assignme
 - **PASS** `H1` (the model returns the correctly bound variable (behavioural accuracy)) — overall 0.981 [0.973, 0.988] against 0.85; weakest cell ab_target 0.954 against 0.75
 - **PASS** `H2` (which definition is in scope is decodable at the use anchor) — best layer 7: binding decodable at 1.000 (selectivity 0.519) against a MEASURED surface baseline of 0.500; margin +0.500. Thresholds 0.8 and 0.1. The floor is pinned by construction here: the anchor token is identical across the counterfactual and the mutation is outside the baseline's window.
 - **PASS** `H3` (whole-state interchange flips the answer — the ceiling, per arm) — site use, layer 11 (both chosen on calibration): ab: +1.729 [+1.671, +1.788], flip rate 0.659; ba: +1.762 [+1.704, +1.820], flip rate 0.662 (thresholds: CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says nothing.
-- **FAIL** `H4` (low-rank interchange beats matched controls on the TRAINING arm) — ab @ use L7 r1: +0.764 [+0.726, +0.800] = 46% of the whole-state ceiling +1.670 (threshold 50%); controls cleared: True; edit moved 0.433 of ||h||
-- **FAIL** `H5` (the same subspace transfers to the HELD-OUT value assignment, where an answer direction cannot) — ba @ use L7 r1: das_binding installed 23.9% = 39% of the held-out ceiling (threshold 50%); margin +0.764 [+0.727, +0.800] = 45% of it; discriminator — answer_direction ab +0.919 [+0.813, +1.020], installed 32.5% (passes: True); ba/ab argmax ratio 0.209 against transport's 1.012 (bar 0.506) (fails: True)
-
-## Diagnostic
-
-interchange_contrasts.csv names the control that was not cleared. `random_norm` uncleared means any edit of that size does this; check edit_fraction_treatment against edit_fraction_control. Also read interchange_alignments.csv for convergence and orthogonality error.
-
-Re-run after fixing: `python scripts/106_binding_interchange.py --model starcoder2-3b --ranks 1,2,4,8,16`
+- **PASS** `H4` (low-rank interchange beats matched controls on the TRAINING arm) — ab @ use L11 r1: +7.512 [+7.437, +7.586] = 434% of the whole-state ceiling +1.731 (threshold 50%); controls cleared: True; edit moved 0.478 of ||h||
+- **PASS** `H5` (the same subspace transfers to the HELD-OUT value assignment, where an answer direction cannot) — ba @ use L11 r1: das_binding installed 100.0% = 149% of the held-out ceiling (threshold 50%); margin +7.528 [+7.454, +7.597] = 427% of it; discriminator — answer_direction ab +1.674 [+1.512, +1.827], installed 44.8% (passes: True); ba/ab argmax ratio 0.410 against transport's 0.979 (bar 0.490) (fails: True)
 
 ## Do not claim
 

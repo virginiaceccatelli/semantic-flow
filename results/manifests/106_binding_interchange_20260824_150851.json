@@ -1,0 +1,39 @@
+{
+  "stage": "106_binding_interchange",
+  "timestamp": "20260824_150851",
+  "git_sha": "afeb248",
+  "python": "3.11.15",
+  "argv": [
+    "scripts/106_binding_interchange.py",
+    "--model",
+    "starcoder2-3b",
+    "--ranks",
+    "1,2,4,8,16",
+    "--dtype",
+    "float16"
+  ],
+  "args": {
+    "model": "starcoder2-3b",
+    "layers": "[11]",
+    "ranks": "1,2,4,8,16",
+    "site": "use",
+    "selected_layer": "11",
+    "selected_rank": "1",
+    "steps": "200",
+    "dtype": "float16",
+    "seed": "42",
+    "batch_size": "8",
+    "grid_batch_size": "32",
+    "test_all_ranks": "False"
+  },
+  "wall_time_s": 443.8,
+  "extra": {
+    "H4": true,
+    "H5": true,
+    "train_arm_fraction": 4.3397114556449745,
+    "held_out_fraction": 1.4854111405835542,
+    "gates_required": "H0,H1,H2,H3",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

@@ -1,6 +1,6 @@
 experiment: E13
 model: starcoder2-3b
-updated: '2026-08-19 19:08:00'
+updated: '2026-08-24 15:08:51'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -81,43 +81,43 @@ gates:
       override: false
   H4:
     name: H4
-    passed: false
-    value: 0.4573515159677648
-    detail: 'ab @ use L7 r1: +0.764 [+0.726, +0.800] = 46% of the whole-state ceiling
-      +1.670 (threshold 50%); controls cleared: True; edit moved 0.433 of ||h||'
+    passed: true
+    value: 4.3397114556449745
+    detail: 'ab @ use L11 r1: +7.512 [+7.437, +7.586] = 434% of the whole-state ceiling
+      +1.731 (threshold 50%); controls cleared: True; edit moved 0.478 of ||h||'
     stage: 106_binding_interchange
-    timestamp: '2026-08-19 19:08:00'
+    timestamp: '2026-08-24 15:08:51'
     override: false
     override_reason: ''
     extra:
       site: use
-      layer: 7
+      layer: 11
       rank: 1
       override: false
   H5:
     name: H5
-    passed: false
-    value: 0.3861671469740634
-    detail: "ba @ use L7 r1: das_binding installed 23.9% = 39% of the held-out ceiling\
-      \ (threshold 50%); margin +0.764 [+0.727, +0.800] = 45% of it; discriminator\
-      \ \u2014 answer_direction ab +0.919 [+0.813, +1.020], installed 32.5% (passes:\
-      \ True); ba/ab argmax ratio 0.209 against transport's 1.012 (bar 0.506) (fails:\
+    passed: true
+    value: 1.4854111405835542
+    detail: "ba @ use L11 r1: das_binding installed 100.0% = 149% of the held-out\
+      \ ceiling (threshold 50%); margin +7.528 [+7.454, +7.597] = 427% of it; discriminator\
+      \ \u2014 answer_direction ab +1.674 [+1.512, +1.827], installed 44.8% (passes:\
+      \ True); ba/ab argmax ratio 0.410 against transport's 0.979 (bar 0.490) (fails:\
       \ True)"
     stage: 106_binding_interchange
-    timestamp: '2026-08-19 19:08:00'
+    timestamp: '2026-08-24 15:08:51'
     override: false
     override_reason: ''
     extra:
       site: use
-      layer: 7
+      layer: 11
       rank: 1
       structural_zeros:
         noop:
-          max_abs_delta_ld: 0.7187501192092896
+          max_abs_delta_ld: 0.0625
           passed: false
           n: 1360
         pre_mutation_whole_state:
-          max_abs_delta_ld: 0.40625
+          max_abs_delta_ld: 0.031250059604644775
           passed: false
           n: 240
       override: false
