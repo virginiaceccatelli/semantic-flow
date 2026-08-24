@@ -1,5 +1,25 @@
 # Results
 
+## How each result is explained
+
+Every result below follows the same reading order: the question being tested,
+why it matters, the expected outcome, the experimental comparison, the exact
+result, and the conclusion that result supports. Read “represented” as
+*recoverable from a hidden state*. Read “used” only where an intervention changes
+the downstream computation. Those are different claims, and the experiments
+keep them separate.
+
+The overall picture is simple. The models construct binding and data-flow
+information as hidden states pass through the network. That information is not
+explained by the local words or token distances used in the controls. It usually
+survives renaming and irrelevant context, but it degrades sharply when the same
+names create interference or when control flow is flattened. The security
+property has a reliable distributed direction in output space, although no
+single security word carries it. Finally, the binding intervention shows that
+the tested model uses the learned subspace at the tested site. Exact model-,
+layer-, sample-, accuracy-, interval-, and control-specific results remain in
+the sections below.
+
 Every result in this file **completed at canonical scale, passed its own
 controls, and clears the floor it set for itself**. Each is stated in the same
 four-part form — *research question*, *hypothesis*, *method*, *result* —

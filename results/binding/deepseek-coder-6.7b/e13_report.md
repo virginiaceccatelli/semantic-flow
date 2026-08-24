@@ -1,5 +1,9 @@
 # E13 binding interchange — deepseek-coder-6.7b
 
+## What this experiment asks
+
+This report tests whether a learned rank-1, magnitude-free interchange transports which definition is in scope. Read the gates in order: data validity and baseline behavior come first, then decodability and a whole-state ceiling, followed by training-arm and held-out-arm intervention tests. Only the complete gate pattern licenses a causal conclusion.
+
 **Verdict: NOT SUPPORTED**
 
 Does a low-rank, magnitude-free interchange at the site where a variable binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token or an answer direction?

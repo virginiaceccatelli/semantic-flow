@@ -1,5 +1,9 @@
 # J-lens validation — deepseek-coder-1.3b
 
+## What this experiment asks
+
+This table validates the J-lens approximation by comparing its prediction with the model’s actual downstream change. Treat it as an instrument check: strong agreement makes later J-lens measurements readable, but is not itself evidence for a semantic representation.
+
 | check                |   layer | lens   |    top1 |     mrr |   n |   agree_model |   agree_truth |
 |:---------------------|--------:|:-------|--------:|--------:|----:|--------------:|--------------:|
 | V2_next_token        |      -1 | jlens  |   0.150 |   0.270 |  60 |       nan     |       nan     |

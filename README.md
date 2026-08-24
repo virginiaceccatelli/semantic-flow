@@ -1,5 +1,39 @@
 # Semantic Flow
 
+## Start here: the project in plain language
+
+This repository tests whether code language models keep track of what a program
+*means*, rather than only recognizing familiar-looking text. In particular, the
+experiments ask whether a model can track which definition a variable refers
+to, how a value moves from its definition to its uses, and whether a dangerous
+function receives attacker-controlled data.
+
+The key experimental trick is to compare programs that look almost identical
+but have different meanings. Because the relevant token, its nearby text, and
+its position stay the same, those surface clues cannot solve the task. A score
+above the resulting `0.500` floor therefore reflects information computed from
+the program, not a lucky correlation with spelling or distance.
+
+The project then asks four increasingly demanding questions:
+
+1. **Is the semantic relation present?** A linear probe reads the model's hidden
+   state.
+2. **What changes make it disappear?** The same frozen probe is tested after
+   meaning-preserving rewrites.
+3. **Is it expressed in the model's output coordinates?** Vocabulary and
+   relevance readouts test the form of the representation.
+4. **Does the model actually use it?** A controlled interchange edits a learned
+   one-dimensional subspace and measures whether the answer changes as
+   predicted.
+
+The short result is: binding and source-to-sink flow are strongly represented;
+ordinary renaming and long irrelevant context are mostly survivable;
+control-flow flattening is the main failure; the security distinction is
+output-aligned but is not represented by an obvious security word; and the
+binding interchange provides causal evidence at the tested model, layer, and
+program construction. The sections below give the exact measurements and the
+limits of each conclusion.
+
 **Do code language models build representations of program *semantics* — which
 definition a name refers to, where a value flows, whether a dangerous argument
 is attacker-controlled — that are distinct from lexical and syntactic

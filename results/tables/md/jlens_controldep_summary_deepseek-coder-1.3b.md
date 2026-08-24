@@ -1,5 +1,9 @@
 # J-lens control dependence — deepseek-coder-1.3b
 
+## What this experiment asks
+
+This table applies the J-lens to control dependence. Compare it with the strong model-free surface result documented in the archive: high model scores are not sufficient when indentation and nearby syntax already reveal the answer.
+
 |   layer | lens   | comparison   | stratum            |   accuracy |   mean_margin |   n |
 |--------:|:-------|:-------------|:-------------------|-----------:|--------------:|----:|
 |      -1 | jlens  | control_dep  | all                |      0.496 |        -0.002 | 917 |

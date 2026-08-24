@@ -1,5 +1,9 @@
 # Def-use accuracy by token distance — deepseek-coder-6.7b_csn_python_200
 
+## What this experiment asks
+
+This table tests whether a linear classifier can recover a program relation from frozen model hidden states. Read the model score against the measured surface baseline and shuffled-label control: a higher hidden-state score supports representation of the relation, but does not by itself show that the model uses it.
+
 |   layer |   dist_0_10 |   dist_10_50 |   dist_200_100000 |   dist_50_200 |
 |--------:|------------:|-------------:|------------------:|--------------:|
 |  -1.000 |       0.843 |        0.906 |             0.932 |         0.910 |

@@ -1,5 +1,9 @@
 # E15-C — vocabulary-space contrast (deepseek-coder-6.7b)
 
+## What this experiment asks
+
+This report asks whether the safe/unsafe difference appears in vocabulary coordinates, especially in a predeclared security-word set. It is an observational readout: direction, sign, held-out replication, and controls must all be read together, and an inverted sign must not be described as an unsafe concept.
+
 **Verdict.** STABLE NON-SECURITY VOCABULARY — the training-discovered directions replicate held out and beat the random-token control, but the security lexicon's own contrast does not carry it. Output-aligned flow information WITHOUT explicit verbalisation; do not call this 'the model represents unsafe'.
 
 Primary lens `rlens` (declared before any result was produced); reported at lens `rlens`, site `sink_arg`, layer 15, condition `clean_heldout`.

@@ -1,5 +1,9 @@
 # Def-use accuracy by token distance — starcoder2-3b_core
 
+## What this experiment asks
+
+This table tests whether a linear classifier can recover a program relation from frozen model hidden states. Read the model score against the measured surface baseline and shuffled-label control: a higher hidden-state score supports representation of the relation, but does not by itself show that the model uses it.
+
 |   layer |   dist_0_10 |   dist_10_50 |   dist_50_200 |
 |--------:|------------:|-------------:|--------------:|
 |  -1.000 |       0.861 |        0.852 |         0.963 |

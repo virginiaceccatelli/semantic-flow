@@ -1,5 +1,9 @@
 # E11 coordinate swap — deepseek-coder-1.3b
 
+## What this experiment asks
+
+This table summarizes the J-space coordinate-swap intervention and its controls. The go/no-go decision depends on all declared gates, not on a large value in one row; the archive explains why this design was ultimately retired.
+
 | split   | position   | site_kind   | site      | variant         |   layer |   delta_ld |   ci_lo |   ci_hi |   n_rows |   n_bases |   flip_rate | moves_toward_target   |   mean_delta_norm_ratio |
 |:--------|:-----------|:------------|:----------|:----------------|--------:|-----------:|--------:|--------:|---------:|----------:|------------:|:----------------------|------------------------:|
 | calib   | pre_def    | band        | L12+18+23 | gram_random     |      12 |     -0.003 |  -0.006 |   0.001 |      120 |        30 |       0.000 | False                 |                   0.036 |

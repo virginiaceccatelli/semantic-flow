@@ -1,5 +1,9 @@
 # E11 lens validation — deepseek-coder-1.3b
 
+## What this experiment asks
+
+This table checks whether the low-rank J-space used by the intervention retains the relevant lens signal and whether that readout is stable. These are prerequisite diagnostics, not standalone causal results.
+
 | check                     |   layer | lens        |    top1 |     mrr |       n |   cosine_to_logit_lens |   is_last_layer |
 |:--------------------------|--------:|:------------|--------:|--------:|--------:|-----------------------:|----------------:|
 | V2_next_token             |       6 | jlens       |   0.385 |   0.608 |  52.000 |                nan     |         nan     |

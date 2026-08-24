@@ -1,5 +1,9 @@
 # E11 readout — deepseek-coder-6.7b
 
+## What this experiment asks
+
+This table measures how the candidate low-rank J-space relates to output behavior before intervention. It helps identify a usable subspace and its controls, but observational readout alone cannot show that the model uses the subspace.
+
 | split   | subset       |   layer | position   | lens        |   accuracy |   accuracy_ci_lo |   accuracy_ci_hi |   n_rows |   n_bases |   mean_bound_rank |   reversal_rate |   reversal_ci_lo |   reversal_ci_hi |   paired_gap |   paired_gap_ci_lo |   paired_gap_ci_hi |   n_pairs |
 |:--------|:-------------|--------:|:-----------|:------------|-----------:|-----------------:|-----------------:|---------:|----------:|------------------:|----------------:|-----------------:|-----------------:|-------------:|-------------------:|-------------------:|----------:|
 | calib   | all          |       8 | answer     | gram_random |      0.500 |            0.500 |            0.500 |      120 |        30 |             3.992 |           0.000 |            0.000 |            0.000 |       -0.000 |             -0.001 |              0.000 |        60 |

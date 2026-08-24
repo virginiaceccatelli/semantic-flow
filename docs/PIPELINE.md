@@ -1,5 +1,21 @@
 # Pipeline
 
+## What this pipeline does
+
+The pipeline turns a controlled program into an interpretable experiment in
+four steps. First it generates programs whose binding, data-flow, or security
+label is known exactly. Next it runs a frozen language model once and stores the
+hidden states at specific token positions. CPU analysis then applies probes,
+controls, and statistical summaries to those saved states. Finally, the lens
+and causal stages test how the representation is expressed and whether the
+model uses it.
+
+Each numbered stage below states where it runs, what earlier artifacts it
+requires, what command launches it, and what files it produces. A **gate** is a
+precondition for interpreting later output: if the gate fails, the dependent
+stage refuses to make the claim. Commands marked GPU perform model inference or
+back-propagation; most probe fitting and reporting stages are CPU-only.
+
 Setup, then every stage: its command, where it runs, which gate it writes, and
 what it produces. Every stage is one CLI in `scripts/`, writes under `results/`,
 and records a manifest (git SHA, args, wall time) in `results/manifests/`.

@@ -1,5 +1,9 @@
 # Causal patching — deepseek-coder-6.7b
 
+## What this experiment asks
+
+This table summarizes an activation-patching experiment: hidden states from one matched program are inserted into another and the recovery of the target answer is measured. Patching can localize influential states, but the archived interpretation explains why whole-state replacement does not isolate a semantic subspace.
+
 |   layer | position      |   mean_recovery | causal_class                                                         |
 |--------:|:--------------|----------------:|:---------------------------------------------------------------------|
 |      -1 | last_token    |           0.000 | {'not_encoded': 40}                                                  |

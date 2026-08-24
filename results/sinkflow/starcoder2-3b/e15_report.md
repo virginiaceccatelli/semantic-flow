@@ -1,5 +1,9 @@
 # E15 — source→sink readout under obfuscation (starcoder2-3b)
 
+## What this experiment asks
+
+This report tests whether a frozen hidden-state readout distinguishes source-derived from safe sink arguments, and how that distinction survives meaning-preserving rewrites. Atomic rows isolate one rewrite; cumulative rows test compositions; false-negative rate is the security-critical error measure.
+
 **Verdict.** GATES PASS — the track is measurable; the numbers below are reported, not yet claimed
 
 ## Gates

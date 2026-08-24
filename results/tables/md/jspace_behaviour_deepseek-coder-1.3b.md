@@ -1,5 +1,9 @@
 # E11 behavioural accuracy — deepseek-coder-1.3b
 
+## What this experiment asks
+
+This table records model behavior for the programs used in the J-space experiment. It verifies that the underlying task is measurable before interpreting a hidden-state intervention.
+
 | split   | variant   | op_family   |   accuracy |   argmax_accuracy |   n |
 |:--------|:----------|:------------|-----------:|------------------:|----:|
 | calib   | source    | affine      |      0.800 |             0.567 |  30 |

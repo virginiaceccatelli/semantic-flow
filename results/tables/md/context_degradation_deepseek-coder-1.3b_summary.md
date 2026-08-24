@@ -1,5 +1,9 @@
 # Context degradation — deepseek-coder-1.3b
 
+## What this experiment asks
+
+This table asks what happens when more context is inserted between semantically related program elements. Compare each condition with the clean condition: inert filler tests distance alone, while name-reusing filler tests semantic interference. The comparison separates a long-context problem from confusion caused by competing references.
+
 | task        | filler_type      |   filler_target |   accuracy |       n |
 |:------------|:-----------------|----------------:|-----------:|--------:|
 | binding     | comment_prose    |               0 |      0.967 |   15768 |

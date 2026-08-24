@@ -1,5 +1,9 @@
 # E11 swap by operation family — deepseek-coder-6.7b
 
+## What this experiment asks
+
+This table breaks the J-space swap down by operation and site. A successful causal result would require the predicted change on held-out examples while matched controls remain small; see the corresponding summary and archive for the final gate decision.
+
 | split   | position   | site_kind   | site      | variant         |   n_families |   min_family_delta |   max_family_delta | all_families_positive   | all_families_ci_positive   |   delta_affine |   ci_lo_affine |   delta_threshold |   ci_lo_threshold |
 |:--------|:-----------|:------------|:----------|:----------------|-------------:|-------------------:|-------------------:|:------------------------|:---------------------------|---------------:|---------------:|------------------:|------------------:|
 | calib   | answer     | band        | L16+24+31 | gram_random     |            2 |             -0.001 |              0.010 | False                   | False                      |          0.010 |          0.002 |            -0.001 |            -0.003 |

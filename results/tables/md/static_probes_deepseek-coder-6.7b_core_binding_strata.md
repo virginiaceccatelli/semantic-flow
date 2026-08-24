@@ -1,5 +1,9 @@
 # Binding per-stratum accuracy — deepseek-coder-6.7b_core
 
+## What this experiment asks
+
+This table tests whether a linear classifier can recover a program relation from frozen model hidden states. Read the model score against the measured surface baseline and shuffled-label control: a higher hidden-state score supports representation of the relation, but does not by itself show that the model uses it.
+
 |   layer |   context_matched |   diff_name |   distance_matched |   positive |   same_name_diff_binding |
 |--------:|------------------:|------------:|-------------------:|-----------:|-------------------------:|
 |  -1.000 |             0.500 |       1.000 |              0.929 |      1.000 |                    0.001 |

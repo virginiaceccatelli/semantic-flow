@@ -1,5 +1,9 @@
 # J-lens taint lead time — deepseek-coder-6.7b
 
+## What this experiment asks
+
+This table applies the J-lens to the source-to-sink security distinction. It asks whether that distinction is visible in output-aligned coordinates at different layers; it is observational and therefore does not establish causal use.
+
 |   layer | readout   |   n_test |   n_model_wrong |   latent_first |   early_warning_rate |   readout_never_wrong |   n_both_fail |   mean_lead |
 |--------:|:----------|---------:|----------------:|---------------:|---------------------:|----------------------:|--------------:|------------:|
 |      -1 | jlens     |       70 |              19 |             17 |                0.895 |                     0 |            19 |       0.895 |

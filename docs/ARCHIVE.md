@@ -1,5 +1,16 @@
 # Archive — what was retired, and what each failure produced
 
+## Why unsuccessful experiments are kept
+
+This file records experiments that were tried but no longer support a main
+claim. “Retired” does not mean that the run was useless or that its numbers were
+deleted. It means that a control exposed an alternative explanation, a gate was
+not satisfied, or a later design asked the same question more cleanly. Each
+section explains the original question, what was changed or measured, the exact
+outcome, why that outcome was insufficient, and what the next experiment learned
+from it. Keeping these failures visible prevents the final narrative from hiding
+the design decisions that produced it.
+
 Everything tried here that did not survive its own controls. **Nothing is
 deleted**: every raw CSV is still in `results/tables/`, every figure in
 `results/figures/`, every manifest in `results/manifests/`, and every stage

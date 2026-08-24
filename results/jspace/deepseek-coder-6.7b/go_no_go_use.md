@@ -1,5 +1,9 @@
 # E11 pilot go/no-go — deepseek-coder-6.7b (position: use)
 
+## What this experiment asks
+
+This is a gate decision for the archived J-space intervention. “GO” or “NO-GO” summarizes whether every predeclared requirement was met; the individual checks explain which inference is or is not licensed. It should be read with the J-space section of `docs/ARCHIVE.md`.
+
 **Verdict: NO-GO**
 
 - **PASS** `behavioural_balanced_accuracy` — test balanced accuracy 0.771 (all pairs 0.758); per variant {'source': 0.807, 'target': 0.736}; threshold 0.75

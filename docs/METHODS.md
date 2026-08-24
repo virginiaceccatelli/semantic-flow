@@ -1,5 +1,28 @@
 # Methods
 
+## How to read this document
+
+This document explains exactly how each experiment was run. It starts by
+defining what counts as a semantic representation, then explains how program
+structure becomes exact token-level labels, and finally describes the four
+measurement instruments. Each instrument answers a different question:
+
+- a **linear probe** asks whether information is present in a hidden state;
+- **frozen transfer** asks whether the same representation survives a program
+  rewrite;
+- the **lens stack** asks whether the information is aligned with the model's
+  own output vocabulary and where relevance is routed; and
+- **DAS interchange** asks the causal question: whether changing only the
+  learned subspace changes the model's downstream answer.
+
+The controls are part of the method, not optional checks. Grouped splits prevent
+nearly identical rows from leaking across train and test; shuffled labels test
+selectivity; model-free readers measure what the text alone can reveal; and
+cluster bootstraps keep uncertainty at the level of independent programs.
+Whenever a later section says that a gate “passes,” it means these predeclared
+requirements were satisfied. A pass makes the corresponding measurement
+interpretable; it does not automatically prove the broadest possible claim.
+
 How every number in `results/` is produced, and what each measurement is
 entitled to conclude. Each section states **what** is done, **why** it is
 necessary, and **how** it works, so the claims in

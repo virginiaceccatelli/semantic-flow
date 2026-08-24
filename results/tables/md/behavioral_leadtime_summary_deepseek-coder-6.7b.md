@@ -1,5 +1,9 @@
 # E6 lead time — deepseek-coder-6.7b
 
+## What this experiment asks
+
+This table measures the model’s own generated answer, rather than what a separate probe can decode. It is used as a behavioral check and, where applicable, to compare when hidden-state evidence appears with when the output becomes correct.
+
 |   layer | readout   |   n_model_wrong |   per_prefix_error_rate |   early_warning_rate |   analytic_null |   early_warning_excess | constant_readout   | beats_position_floor   |   readout_never_wrong |   mean_lead |
 |--------:|:----------|----------------:|------------------------:|---------------------:|----------------:|-----------------------:|:-------------------|:-----------------------|----------------------:|------------:|
 |      -1 | position  |              19 |                   0.233 |                0.842 |           0.729 |                  0.113 | False              | False                  |                     3 |       2.375 |

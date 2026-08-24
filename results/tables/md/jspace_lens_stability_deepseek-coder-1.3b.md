@@ -1,5 +1,9 @@
 # E11 lens stability — deepseek-coder-1.3b
 
+## What this experiment asks
+
+This table checks whether the low-rank J-space used by the intervention retains the relevant lens signal and whether that readout is stable. These are prerequisite diagnostics, not standalone causal results.
+
 |   layer |   n_seeds |   cosine_mean |   cosine_min |   margin_sign_agreement |   pooled_vs_seed_cosine |   n_build_per_seed |   n_probe_states |
 |--------:|----------:|--------------:|-------------:|------------------------:|------------------------:|-------------------:|-----------------:|
 |   6.000 |     3.000 |         0.246 |        0.214 |                   0.662 |                   0.704 |            150.000 |           52.000 |

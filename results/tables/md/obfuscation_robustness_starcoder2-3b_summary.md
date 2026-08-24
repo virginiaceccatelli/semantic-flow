@@ -1,5 +1,9 @@
 # Obfuscation robustness — starcoder2-3b
 
+## What this experiment asks
+
+This table tests a frozen probe on meaning-preserving program rewrites. Because the probe is not retrained, a lower score means the original readout no longer transfers cleanly; it does not prove that all semantic information has vanished from the model.
+
 | task        |   obf_level | obf_name   |   accuracy |      n |
 |:------------|------------:|:-----------|-----------:|-------:|
 | binding     |           0 | normalize  |      0.972 |  27770 |
