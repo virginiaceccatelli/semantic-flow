@@ -61,12 +61,15 @@ above that floor is something the model computed rather than read off the page.
 
 Two consequences make the definition usable rather than rhetorical.
 
-**It is falsifiable, and it has already falsified something.** Control
+**It is falsifiable, and it has already excluded something.** Control
 dependence has a *measured* surface floor of **0.927** — a statement's guard is
 usually its nearest enclosing `if`, so token windows plus indentation recover
 most of the relation with no model at all. By this criterion control dependence
-is *mostly syntactic*, and it is reported as a contrast rather than as a
-finding. A definition that never excludes anything is not doing work.
+is *mostly syntactic*, so decoding it at ceiling (which the models do:
+AUC 0.999) constrains nothing about semantic representation. It is therefore
+**not reported as a result at all**; the measurement and the reasoning are in
+[ARCHIVE.md §4.3](ARCHIVE.md#43-control-dependence). A definition that never
+excludes anything is not doing work, and this is the exclusion.
 
 **"Surface" is relative to a stated reader.** The floor is pinned against the
 baselines in §3.4 (a ±3-token-id window plus bucketed distance; and, in E15, a
@@ -562,6 +565,19 @@ that gap is the finding the lens track exists to test.
 
 Three lenses are used, in increasing order of faithfulness and cost.
 
+> **The verdict up front, because it is not the expected one.** As *vocabulary
+> projections* the three are interchangeable on this task: at every cell where a
+> readout actually fires they agree to within noise (0.889 across all three at
+> 1.3B's best cell, 0.944 at StarCoder2's, pairwise cosine 0.75–0.97 elsewhere),
+> so the Jacobian correction and the LRP rules change none of the conclusions in
+> [RESULTS.md](RESULTS.md) that come from projecting onto tokens. **The R-lens
+> earns its cost in one role only, and it is not as a lens**: because its rules
+> restore conservation, `R_t / s` is a *partition* of the model's answer over
+> input positions, which is an attribution no logit lens can produce (§7.3c).
+> Sections 6.2–6.4 describe all three anyway, because knowing *why* the
+> expensive ones were built and *that* they were validated is what licenses
+> saying they were unnecessary here.
+
 ## 6.2 The logit lens
 
 The baseline: score a hidden state `h_l,t` against candidate token `w` by
@@ -706,11 +722,17 @@ where neither homogenising rule matched (`rlens_rules_bound`).
 ### Which lens to use where
 
 Near the last layer all three coincide by construction. Below that, prefer the
-R-lens — and **say so before looking at results**: E15-C declares
-`PRIMARY_LENS = "rlens"` in code for exactly this reason, because the target
-includes early and middle layers, which is where the J-lens backward is least
-faithful. Report all three anyway: their *agreement* is itself evidence, and
-their *disagreement* localises an instrument problem rather than a finding.
+R-lens — and **say so before looking at results**: the vocabulary-contrast stages
+declare `PRIMARY_LENS = "rlens"` in code for exactly this reason, because the
+target includes early and middle layers, which is where the J-lens backward is
+least faithful. Report all three anyway: their *agreement* is itself evidence,
+and their *disagreement* localises an instrument problem rather than a finding.
+
+**What that discipline actually bought, measured.** The three agreed everywhere
+it mattered, so the primary-lens declaration cost nothing and changed nothing —
+which is itself the useful outcome: it means the reported nulls and positives are
+properties of the models rather than of a lens choice. The R-lens's one
+irreplaceable use is as the conserving attribution of §7.3(c).
 
 ## 6.5 Lens fidelity is a diagnostic, never a gate
 

@@ -1,11 +1,14 @@
 # Results
 
-Every result in this file **completed at canonical scale and passed its own
-controls**. Each is stated in the same four-part form — *research question*,
-*hypothesis*, *method*, *result* — followed by what it does and does not mean.
-Designs that were retired, parked or failed their controls are not here; they
-are in [ARCHIVE.md](ARCHIVE.md), with the reason each one failed and the lesson
-it produced. Methodology for everything below is [METHODS.md](METHODS.md).
+Every result in this file **completed at canonical scale, passed its own
+controls, and clears the floor it set for itself**. Each is stated in the same
+four-part form — *research question*, *hypothesis*, *method*, *result* —
+followed by what it does and does not mean. Methodology is
+[METHODS.md](METHODS.md).
+
+Work that was retired, parked, superseded, or that failed a bar it later set is
+in [ARCHIVE.md](ARCHIVE.md), with the reason in each case. The data behind all of
+it is preserved and every stage still runs.
 
 Nothing here is a summary of intent. Every row is a measurement that exists in
 `results/tables/*.csv` or in a per-run report under `results/`, and every claim
@@ -15,10 +18,10 @@ is paired with the control that could have falsified it.
 
 - [The argument in one page](#the-argument-in-one-page)
 - [Status at a glance](#status-at-a-glance)
-- [Part I — The relation is represented](#part-i--the-relation-is-represented) — R1 binding, R2 def–use, R3 the syntactic contrast
-- [Part II — What the representation is made of](#part-ii--what-the-representation-is-made-of) — R4 interference, R5 atomic attribution, R6 the security audit
-- [Part III — What form it is in](#part-iii--what-form-it-is-in) — R7 J-lens, R8 R-lens, R9 the lexicon null, R10 the output-basis direction, R11 the positive control, R12 relevance routing
-- [Part IV — Whether the model uses it](#part-iv--whether-the-model-uses-it) — R13 the DAS interchange
+- [Part I — The relation is represented](#part-i--the-relation-is-represented) — R1 binding, R2 def–use
+- [Part II — What the representation is made of](#part-ii--what-the-representation-is-made-of) — R3 interference, R4 atomic attribution, R5 the security audit
+- [Part III — What form it is in](#part-iii--what-form-it-is-in) — which lens does the work; R6 the R-lens, R7 the output-basis direction, R8 the positive control, R9 relevance routing
+- [Part IV — Whether the model uses it](#part-iv--whether-the-model-uses-it) — R10 the DAS interchange
 - [Synthesis](#synthesis-what-this-says-about-semantic-understanding)
 - [Boundaries](#boundaries-what-this-project-does-not-claim)
 - [Open items](#open-items)
@@ -55,14 +58,14 @@ fails under exactly the same one transformation. What survives flattening is eac
 model's class prior, not retained flow information.
 
 **4. The distinction is in the models' own output coordinates — and no word
-carries it.** A hand-picked security lexicon finds nothing in any model, and is
-significantly *inverted* in one. Removing the lexicon and differencing each
-matched pair over the **whole 32k vocabulary** finds a direction that **72 of 72
-held-out pairs project positively onto, on every model**, over a token-identity
-floor of *exactly zero*. Its top-loading tokens are meaningless fragments. A
-positive control — the identical readout on a property these models *do* express
-— fires at 0.85–0.94, so the gap between *decodable* and *verbalised* is a fact
-about the models, not a limitation of the instrument.
+carries it.** Differencing each matched pair over the **whole 32k-token
+vocabulary** finds a direction that **72 of 72 held-out pairs project positively
+onto, in every model**, over a token-identity floor of *exactly zero*. Its
+top-loading tokens are meaningless fragments. At the one cell where a readout
+*does* fire on a property these models express (0.85–0.94, tracking the model's
+own answer margin), the security lexicon at that same cell is significantly
+**inverted** — so the gap between *decodable* and *verbalised* is a fact about
+the models, not a limitation of the instrument.
 
 **5. And for binding, the model's own computation reads it.** A rank-1,
 magnitude-free **DAS interchange** at the binding-resolution site, fitted on one
@@ -79,19 +82,21 @@ movement.
 |---|---|:--:|:--:|:--:|---|
 | **R1** variable binding | probe | ● | ● | ◑ | decodable from mid layers over a construction-pinned 0.500 floor |
 | **R2** def–use edges | probe | ● | ● | ◑ | same floor, same profile, mild distance decay |
-| **R3** control dependence | probe | ● | ● | ☐ | decodable — but its surface floor is already 0.927. The contrast that makes R1 mean something |
-| **R4** context interference | frozen probe | ● | ● | ☐ | survives 1000 tokens of filler; collapses under scope interference |
-| **R5** atomic obfuscation | frozen probe | ● | ● | ● | flattening alone breaks binding and def–use; the boundary is general |
-| **R6** source→sink audit | frozen probe | ● | ● | ● | 1.000 over **two** floors; **flattening alone** causes the whole collapse |
-| **R7** J-lens validation | lens | ● | ● | ● | exact at the last layer (cosine 1.0000); the Jacobian correction is real |
-| **R8** R-lens validation | lens | ● | ● | n/a | conservation within 1e-4 at every layer; the **gated-MLP rule dominates by 4.5×**. Does not apply to StarCoder2 |
-| **R9** security lexicon | lens contrast | ● | ● | ● | **null in all three**, significantly *inverted* in 1.3B |
-| **R10** full-vocabulary direction | lens contrast | ● | ● | ● | **72/72** held-out pairs project positively; onset ~25% depth; collapses under flattening alone |
-| **R11** positive control | lens contrast | ● | ● | ● | the readout is **not blind** — 0.85–0.94 on a property the models express |
-| **R12** relevance routing | R-lens attribution | ● | ☐ | n/a | the chain feeding the sink loses relevance share, 63–65 of 72 pairs, on token-identical text |
-| **R13** binding interchange | DAS | ☐ | ● | ☐ | rank-1 transport at 100% in both arms, beating a closed-form baseline at two-thirds the dose |
+| **R3** context interference | frozen probe | ● | ● | ☐ | survives 1000 tokens of filler; collapses under scope interference |
+| **R4** atomic obfuscation | frozen probe | ● | ● | ● | flattening alone breaks binding and def–use; the boundary is general |
+| **R5** source→sink audit | frozen probe | ● | ● | ● | 1.000 over **two** floors; **flattening alone** causes the whole collapse |
+| **R6** R-lens conservation | lens instrument | ● | ● | n/a | conservation within 1e-4 at every layer; the **gated-MLP rule dominates by 4.5×**, falsifying the pre-registered prediction. Does not apply to StarCoder2 |
+| **R7** full-vocabulary direction | vocabulary contrast | ● | ● | ● | **72/72** held-out pairs project positively; onset ~25% depth; collapses under flattening alone; loadings are meaningless |
+| **R8** positive control | vocabulary contrast | ● | ● | ● | the readout is **not blind** — 0.85–0.94 on a property the models express, while the security lexicon at the same cell is *inverted* |
+| **R9** relevance routing | R-lens attribution | ● | ☐ | n/a | the chain feeding the sink loses relevance share, 63–65 of 72 pairs, on token-identical text |
+| **R10** binding interchange | DAS | ☐ | ● | ☐ | rank-1 transport at 100% in both arms, beating a closed-form baseline at two-thirds the dose |
 
-Legend: ☐ not run · ◑ partially run · ●  run at canonical scale
+Legend: ☐ not run · ◑ partially run · ● run at canonical scale
+
+**Recently moved to [ARCHIVE.md](ARCHIVE.md):** control dependence (its surface
+floor is 0.927, so it was never a representational result) and the security-lexicon
+vocabulary contrast (at the reported cell it does not beat a random direction on
+one of three models, and both halves of its reading were superseded by R7 and R8).
 
 ---
 
@@ -219,55 +224,16 @@ The model tracks def–use links across real distance rather than adjacency. Tak
 with R1, the two foundational CPG relations are decodable over floors that no
 surface feature can exceed.
 
----
-
-## R3 — Control dependence: the contrast that makes R1 mean something
-
-### Research question
-
-Does the model represent whether a statement executes under a given guard?
-
-### Hypothesis
-
-If the project's criterion for "semantic" is a real criterion, it must be able to
-**exclude** relations. Control dependence is the natural test case: it is a
-genuine CFG relation, but a statement's guard is usually its nearest enclosing
-`if`, so a surface reader may already have it.
-
-### Method
-
-Pairs of (guard-expression anchor, statement anchor) from the CFG with join
-points resolved exactly. Negatives are statements in the *same* program outside
-the guard, including an `indent_matched` hard stratum — a statement in a
-*sibling* guard's body at the same nesting depth. Same probe, same controls, and
-the same model-free surface baseline.
-
-### Result
-
-| control_dep, best layer | positive recall | hard-negative recall |
-|---|---:|---:|
-| surface baseline (no model) | 0.959 | 0.676 |
-| hidden — 1.3B (L11) | 0.981 | 0.873 |
-| hidden — 6.7B (L15) | **0.995** | **0.923** |
-
-The hidden state dominates on both classes at once, so the gap is not a
-threshold artifact (aggregate AUC 0.990 → 0.999). **But the model-free surface
-floor is already 0.927** — unlike binding and def–use, whose floors are pinned to
-exactly 0.500 by construction.
-
-### What it means
-
-Control dependence is **mostly syntactic** by this project's criterion, and is
-therefore reported as the syntactic end of a spectrum whose semantic end is
-binding — not as a representational finding.
-
-**This demotion is load-bearing.** It shows the criterion excludes things, which
-is what makes it a criterion rather than a slogan. Any reading of R1 that would
-also license a claim from R3 is reading R1 too generously.
-
-*Open caveat:* the probing anchors fall on each span's last token, which here are
-integer literals. Re-anchoring on the guard variable and the statement target is
-a CPU-only re-run and remains open.
+> **Why control dependence is not R3.** The natural third CPG relation — does
+> this statement execute under that guard? — was measured and is **not reported
+> as a result**. Its model-free surface floor is **0.927**, because a statement's
+> guard is usually its nearest enclosing `if`, so token windows plus indentation
+> recover most of it with no model at all. By this project's criterion
+> (METHODS §0.2) that relation is *mostly syntactic*, and no representational
+> conclusion follows from decoding it. The measurement, its numbers and the
+> reason it was demoted are in [ARCHIVE.md §4.3](ARCHIVE.md#43-control-dependence).
+> That the criterion **excludes** something is what makes it a criterion rather
+> than a slogan.
 
 ---
 
@@ -277,7 +243,7 @@ a CPU-only re-run and remains open.
 ([METHODS §4](METHODS.md#4-instrument-2--frozen-transfer-and-the-obfuscation-ladder)).
 A change in accuracy here is a change in the model's state, not in the probe.*
 
-## R4 — Distance is cheap; interference is not
+## R3 — Distance is cheap; interference is not
 
 ### Research question
 
@@ -333,7 +299,7 @@ positional heuristic.
 
 ---
 
-## R5 — Atomic obfuscation: renaming is survivable mid-layer, flattening is not
+## R4 — Atomic obfuscation: renaming is survivable mid-layer, flattening is not
 
 ### Research question
 
@@ -381,19 +347,19 @@ they do not change which definition reaches which use.
 
 ### What it means
 
-Together, R4 and R5 describe **one failure surface**: the representation is
+Together, R3 and R4 describe **one failure surface**: the representation is
 robust to *how far apart* things are and to *what things are called*, and it
 fails when the scope or control structure it is a representation *of* becomes
 harder. That is the signature of a computed relation, and it is a first, coarse
 map of when a tool built on these representations should not be trusted.
 
-R5 is also the **companion control** for R6: it establishes that this boundary is
-a general limit of frozen linear readouts of program relations, so R6's failure
+R4 is also the **companion control** for R5: it establishes that this boundary is
+a general limit of frozen linear readouts of program relations, so R5's failure
 cannot be read as a security-specific fragility.
 
 ---
 
-## R6 — The source→sink security audit
+## R5 — The source→sink security audit
 
 ### Research question
 
@@ -410,7 +376,7 @@ Three, tested simultaneously:
 
 1. The property is decodable well above any lexical floor — including one that
    reads the **entire program text**, not just a token window.
-2. If R5's account is right, the *same* transformation that breaks binding —
+2. If R4's account is right, the *same* transformation that breaks binding —
    control-flow flattening — breaks this too, and the ones that do not change
    flow cost nothing.
 3. Residual accuracy after a damaging transformation is **not** retained flow
@@ -497,7 +463,7 @@ sits at the end of it.
 An auditor's property behaves exactly like the graph relations underneath it. The
 frozen readout is not reading text — two independently measured lexical floors say
 so — and it fails under exactly one of four semantics-preserving rewrites. Since
-R5 shows binding and def–use break the same way, the supported claim is
+R4 shows binding and def–use break the same way, the supported claim is
 *"structural obfuscation breaks frozen linear readouts of program relations,
 security ones included"* — **not** "security representations are specifically
 fragile".
@@ -515,40 +481,75 @@ which is the failure direction an auditor cares about most.
 - Eight transformation arms, not the full 15-combination lattice.
 - "Flattening breaks the readout" is a statement about a **frozen linear readout
   at one position**. A failing probe does not prove the model lost the
-  information — though R12's parallel failure is consistent with real loss.
+  information — though R7's and R8's parallel failures are consistent with real
+  loss.
 - Nothing causal is claimed or tested for the security property.
 
 ---
 
 # Part III — What form it is in
 
-*Instrument 3: output-basis lenses
+*Instrument 3: output-basis readouts
 ([METHODS §6–§7](METHODS.md#6-instrument-3--the-lens-stack-logit-j-lens-r-lens)).
-Everything in this part is observational: a projection, never an edit.*
+Everything in this part is observational: a projection or an attribution, never
+an edit.*
 
-The five results below are easy to conflate, so here is the whole argument first,
-each sentence with the result that establishes it.
+## Which lens is doing the work — the short answer
 
-1. **The instrument is sound.** The J-lens reproduces the logit lens exactly at
-   the last layer and recovers real next-token content before it, on all three
-   models. *(R7)*
-2. **A more faithful backward pass exists, and it is architecture-dependent.**
-   Under LRP rules the relevance decomposition conserves to 1e-4 at every layer
-   on both DeepSeek models; on StarCoder2 the rules bind to nothing, so there is
-   no R-lens there at all. *(R8)*
-3. **Reading the state through a hand-picked security vocabulary finds
-   nothing.** Null on all three models, and not an artifact of which lens is
-   used. *(R9)*
-4. **Reading it through the *whole* vocabulary finds something — but it is not a
-   word.** A label-defined direction generalises to held-out programs in 72/72
-   pairs on every model, above a token-identity floor that is exactly zero; its
-   top-loading tokens are meaningless fragments. *(R10)*
-5. **And the readout is not blind, which is what makes (3) mean anything.** Run
-   on a property the models *do* express, the identical readout finds it at
-   0.85–0.94 and converges on the model's own answer margin. *(R11)*
-6. **Below vocabulary space entirely, the model routes identical text
+Three lenses exist in this repository (logit, J-lens, R-lens), and it is worth
+saying plainly which of them earns its cost, because the answer is not the one
+the track was built expecting.
+
+**As a vocabulary projection, none of them beats the plain logit lens.** At the
+one cell where a vocabulary readout actually fires (R8), the three are
+interchangeable:
+
+| taint sign consistency, `sink` prompt, clean held-out | logit | J-lens | R-lens |
+|---|---:|---:|---:|
+| 1.3B (L19) | 0.889 | 0.889 | 0.889 |
+| 6.7B (L27) | 0.847 | 0.792 | 0.847 |
+| SC2-3B (L29) | 0.944 | 0.944 | 0.944 |
+
+Their mean vocabulary-difference vectors agree at pairwise cosine 0.75–0.97
+elsewhere. **The Jacobian correction and the LRP rules change none of the
+conclusions in this file that come from projecting onto tokens.** They are
+validated instruments — the J-lens is provably exact at the last layer and
+recovers next-token content the logit lens cannot (+0.15 to +0.22 top-1
+pre-final; METHODS §6.3) — but for *this* task that fidelity buys nothing, and
+saying so is more useful than defending the expense.
+
+**The R-lens earns its keep in exactly one role, and it is not as a lens.**
+Because its rules make the traversed tail degree-1 homogeneous, `Σ_t R_t = s`
+holds, so `R_t / s` is a genuine **partition of the model's own answer across
+input positions**. That is an attribution, not a projection, and no logit lens
+can produce it. It is what makes **R9** possible at all, and R9 is the only
+result in this file that could not have been obtained with a logit lens.
+
+**The J-lens produces no surviving result.** Its validation is correct instrument
+work and lives in METHODS §6.3; its two intended uses were archived when their
+controls failed, and where it was used as a coordinate system the plain logit
+lens was *more* efficient at the same site ([ARCHIVE.md §1.2–§1.3](ARCHIVE.md)).
+
+So Part III contains one instrument result whose *finding* is about LRP itself
+(**R6**), two results obtained with an ordinary output-basis projection (**R7**,
+**R8**), and one that requires the R-lens as a conserving attribution (**R9**).
+
+## The argument of Part III, in four sentences
+
+1. **A conserving backward pass exists on gated-MLP transformers, and the rule
+   that makes it work is not the one that was predicted.** *(R6)*
+2. **The safe/unsafe distinction is present in the models' own output
+   coordinates** — a label-defined direction generalises to held-out programs in
+   72/72 pairs on every model, above a token-identity floor that is exactly zero
+   — **but it is carried by no word**: its top loadings are meaningless
+   fragments. *(R7)*
+3. **The readout is not blind, which is what makes (2)'s second half mean
+   something.** Run on a property the models *do* express, the identical readout
+   finds it at 0.85–0.94 and converges on the model's own answer margin — while
+   the security lexicon at that same cell is significantly *inverted*. *(R8)*
+4. **Below vocabulary space entirely, the model routes identical text
    differently.** Whichever data-flow chain feeds the sink loses relevance share
-   and the other gains, in 85–90% of matched pairs at early layers. *(R12)*
+   and the other gains, in 85–90% of matched pairs at early layers. *(R9)*
 
 **The headline the track supports:** *the safe/unsafe distinction is present in
 output-aligned coordinates, distributed across the vocabulary, and not carried by
@@ -558,63 +559,33 @@ of the instrument.**
 
 ---
 
-## R7 — The J-lens implementation is correct
+## R6 — A conserving backward pass, and the rule that carries it
 
 ### Research question
 
-Before any lens is used to make a claim about a model: is the Jacobian-lens
-machinery correct on code models?
+An ordinary gradient lens transports raw autograd through modules that are **not
+degree-1 homogeneous**, so relevance is not conserved and a mid-layer reading has
+no fixed interpretation. **Is a more faithful backward pass available on real
+code models, how would we know, and which algebraic fix actually does the work?**
+
+### Why this is a result and not only instrument validation
+
+Two of its three findings are transferable claims that hold beyond this project:
+*which* rule carries the faithfulness gain on a gated-MLP transformer (the
+pre-registered prediction was wrong), and a general diagnostic for detecting that
+LRP rules silently failed to install. The validation itself is the prerequisite
+for R9.
 
 ### Hypothesis
 
-At the last decoder layer the Jacobian `J` is provably the identity, so a correct
-J-lens **must** equal the logit lens there, exactly. That is a closed-form check
-of the entire gradient path rather than a plausibility argument. Before the final
-layer, if the Jacobian correction is real, the J-lens must recover next-token
-content the plain logit lens cannot.
+Installing the LRP rules — RMSNorm → diagonal, SiLU → elementwise, gate split
+50/50, attention pattern frozen — makes the traversed tail degree-1 homogeneous,
+so relevance conservation
 
-### Method
+> `ρ = Σ_t ⟨∂s/∂h_t , h_t⟩ / s`
 
-Stage 60, on all three models. V1 compares J-lens and logit-lens vectors at the
-last layer. V2 measures next-token top-1 recovery against chance and against the
-logit lens at pre-final layers. Lenses are built on a calibration split and
-frozen.
-
-### Result
-
-| check | 1.3B | 6.7B | SC2-3B |
-|---|---:|---:|---:|
-| **V1** — J-lens vs logit lens at the last layer | **1.0000** | **1.0000** | **1.0000** |
-| **V2** — next-token top-1 (chance 0.038) | 0.633 | 0.650 | 0.633 |
-| **V2** advantage over the logit lens, pre-final | **+0.150** | **+0.183** | **+0.217** |
-
-### What it means
-
-Instrument validation, not a result about the model — and it now covers all three
-models, which matters because StarCoder2 has **no R-lens**: that model's lens
-numbers rest on this validation and nothing else.
-
-*Caveat:* a third check, V3, passed only at n=10 and is too small to carry
-weight; V1 and V2 are the load-bearing ones.
-
----
-
-## R8 — The R-lens is more faithful, and the rule that matters is not the predicted one
-
-### Research question
-
-The J-lens transports a raw gradient through modules that are not degree-1
-homogeneous, so relevance is not conserved and mid-layer readings have no fixed
-interpretation. **Is a more faithful backward pass available, and how would we
-know?**
-
-### Hypothesis
-
-Pre-registered in the design: installing the LRP rules (RMSNorm → diagonal, SiLU
-→ elementwise, gate split 50/50, attention pattern frozen) makes the traversed
-tail degree-1 homogeneous, so relevance conservation `ρ = Σ_t ⟨∂s/∂h_t, h_t⟩ / s`
-should hold near 1 at every layer. The design **predicted the LN-rule would
-dominate** the ablation.
+should hold near 1 at every layer by Euler's identity. The design **predicted the
+LN-rule would dominate** the ablation.
 
 ### Method
 
@@ -634,10 +605,10 @@ reported, not gated.
 | **R2a** LRP beats raw autograd at every testable layer | **7/7** | **9/9** |
 | **R2b** conservation, median \|ρ−1\| over early/mid layers | **0.0000** | **0.0001** |
 
-The `all` arm holds `ρ ≈ 1` to within 1e-4 at *every* layer including the
+The all-rules arm holds `ρ ≈ 1` to within 1e-4 at *every* layer including the
 embedding (measured `median_rho` 1.0003 at layer −1 through 0.99996 at layer 31
-on 6.7B). The estimator the R-lens rests on is sound on Llama-family
-architectures.
+on 6.7B). Under raw autograd, by contrast, `ρ` wanders and inverts sign with
+depth.
 
 ### Result — the ablation falsifies the prediction, and replicates
 
@@ -663,166 +634,48 @@ making conservation worse*. In float32 the all-rules arm sits at |ρ−1| = 0.00
 at every layer against 0.2265 without the identity rule — so the rule helps, and
 the inversion was fp16 noise rather than a property of SiLU.
 
-### Result — it does not apply to StarCoder2 at all
+### Result — it does not apply to StarCoder2 at all, and the tell is general
 
-Gate R **cannot complete** on starcoder2-3b, and the reason is **architectural
-rather than numerical**. StarCoder2 uses LayerNorm (deliberately unmatched: it
+Gate R **cannot complete** on starcoder2-3b, for an **architectural rather than
+numerical** reason. StarCoder2 uses LayerNorm (deliberately unmatched: it
 subtracts the mean, so the rule's algebra differs) and a non-gated MLP, so
 `norm_eps_attr` and `is_gated_mlp` both decline and the two homogenising rules
-bind to **nothing**. Only the attention hooks register; stage 110 then raises when
-its `no_attn` arm removes the only rule that bound.
+bind to **nothing**. Only the attention hooks register; stage 110 then raises
+when its `no_attn` arm removes the only rule that bound.
 
-**The tell is diagnostic and general**: the one file it produced reports a forward
-delta of **exactly 0.0**. Value-preserving rules still perturb float arithmetic;
-rules that were never installed do not. An R0 that passes *perfectly* is the
-signature of an empty install. Gate J0 now refuses this case
+**The diagnostic is worth carrying elsewhere**: the one file it produced reports a
+forward delta of **exactly 0.0**. Value-preserving rules still perturb float
+arithmetic; rules that were never installed do not. **An R0 that passes
+*perfectly* is the signature of an empty install.** Gate J0 now refuses this case
 (`rlens_rules_bound`).
 
 ### What it means
 
-Two things, and both matter downstream.
-
-**For the instrument:** there is a measurably more faithful backward pass for
-mid-layer readings on Llama-family models, and *which* algebraic fix does the
-work is now known and replicated. That matters for anyone building an
-attribution method on a gated-MLP transformer: the gate's bilinearity, not the
-norm, is where autograd's double-counting lives.
-
-**For the results below:** R12's relevance partition is only meaningful because
-conservation holds. Where it does not hold — StarCoder2 — stage 130 refuses to
-run rather than emitting raw autograd under the name *relevance*. And the
-consequence for R9: the starcoder2-3b artifact labelled `rlens` was built with
-neither homogenising rule and is arithmetically a J-lens, so for that model
-"three lenses agree" is two lenses measured three ways. R9's null is unaffected —
-it rests on genuine R-lenses in both DeepSeek models.
+For anyone building an attribution method on a gated-MLP transformer, the gate's
+**bilinearity — not the norm — is where autograd's double-counting lives**, and
+that now has a number attached to it in two models and two dtypes. For this
+project, conservation holding to 1e-4 is the precondition that makes R9's
+relevance *partition* a partition rather than an uninterpretable ratio, and where
+it does not hold the stage refuses to run rather than emitting raw autograd under
+the name relevance.
 
 ---
 
-## R9 — No *word* carries the security distinction
+## R7 — The distinction is in the output basis, and it is not a word
 
 ### Research question
 
-The probe (R6) says what a *fitted* direction can recover, in a basis of its own
+The probe (R5) says what a *fitted* direction can recover, in a basis of its own
 choosing. It cannot say whether the model's **output-aligned** coordinates carry
-the distinction. So: after mapping the sink-site state into the model's
-vocabulary space, which vocabulary directions separate an unsafe program from its
-matched safe counterfactual?
+the distinction. So: **is the safe/unsafe distinction present in output-aligned
+coordinates at all — and is it carried by any single token?**
 
-### Hypothesis
-
-If the models represent this distinction the way a human auditor would describe
-it, security-lexicon tokens (`" vulnerable"`, `" unsafe"`, `" trusted"`, …)
-should separate the two members of a matched pair, consistently and in the
-hypothesised direction, on held-out programs.
-
-### Method
-
-Three readouts on the same states — logit lens, J-lens and R-lens — with
-**`PRIMARY_LENS = "rlens"` declared in code before any result was produced**,
-because the target includes early and middle layers where the J-lens backward is
-least faithful. Orientation fixed once: `delta = score_unsafe − score_safe`.
-
-Discovery is two-phase and training-only: a full-vocabulary logit-lens ranking on
-clean *training* pairs gives a 196-token candidate pool; each lens then ranks
-that pool by its own training delta. The pool is **frozen to disk** before the
-scoring stage reads it back. A small security lexicon is fixed in advance and
-validated per model, with every omission recorded and nothing substituted
-(METHODS §7.1).
-
-Controls: permutation of orientation within bases; a **same-label** arm (both
-members from one pole, expected contrast zero); the embedding layer, which at
-`sink_arg` *is* the token-identity contrast; the `last_token` site; identifier-role
-strata; and random and Gram-matched lenses.
-
-### Result — a null, in all three models
-
-| clean held-out, R-lens | 1.3B | 6.7B | starcoder2-3b |
-|---|---:|---:|---:|
-| concept token surviving the tokenizer | `" vulnerable"` | `" vulnerable"` | `" unsafe"` |
-| held-out sign consistency | **0.153** | 0.403 | 0.694 |
-| permutation p | 0.000 | 0.004 | 0.008 |
-| verdict | **inverted** | stable non-security | stable non-security |
-
-The security lexicon carries the contrast in no model, and the direction is not
-even consistent: 1.3B is significantly **inverted** — 85% of pairs put *less*
-unsafe-pole mass on the unsafe member — while starcoder2-3b leans the hypothesised
-way without reaching the pre-declared 0.70 threshold.
-
-### Why this is a real null rather than a failed measurement
-
-- **The three lenses agree** — pairwise cosine of their mean vocabulary-difference
-  vectors is 0.75–0.97 — so the null is not an artifact of the primary-lens
-  choice.
-- **It is not token identity.** The embedding-layer contrast is null (p =
-  0.71–0.81), and 75% of pairs share the *same* anchor token at `sink_arg`
-  anyway.
-- **Something does replicate — it is just not security.** Frozen
-  training-discovered tokens reappear in the held-out top-k at 0.875 / 0.750 /
-  0.875 against 0.000–0.031 for random control tokens. The tokens are `" ?"`,
-  `" liber"`, `"OrNull"` — reliable, and semantically arbitrary.
-- **The distribution confound is ruled out.** A systematic difference in the
-  *shape* of a member's candidate distribution would shift a z-scored contrast in
-  a fixed direction with no concept involved. Measured per pair, it does not: the
-  contrast correlates with the paired entropy difference at r = −0.29 / +0.16 /
-  +0.14 and with the score-norm difference at −0.04 / −0.10 / +0.10, no cell
-  anywhere exceeds |r| = 0.39, and the mean paired entropy difference is ≈ 0. At
-  most 8% of the variance is distributional, so **1.3B's inverted sign is a real
-  property of the contrast**.
-- **The same-label control behaves as it must.** Taking both members from one
-  pole collapses the contrast to +0.004 / −0.031 / +0.028 (unsafe pole) and
-  +0.015 / +0.050 / −0.004 (safe pole) against main-arm means of −0.304 / −0.200
-  / +0.094. So the effect the main arm measures is genuinely **about the label**.
-- **Both readouts fail together under flattening.** The vocabulary contrast
-  degrades alongside the probe (sign consistency 0.389 / 0.472 / 0.583), so this
-  is a joint loss of trained and output-aligned auditability rather than a
-  dissociation between them.
-
-### One qualification the depth sweep adds
-
-Reading a single layer understates what is happening. Across depth:
-
-| R-lens sign consistency, `sink_arg`, clean held-out | embedding | ~10% | ~25% | ~35–48% | ~65% | last |
-|---|---:|---:|---:|---:|---:|---:|
-| deepseek-coder-1.3b | 0.12 (ns) | 0.53 | 0.36 | **0.15** | 0.14 | 0.25 |
-| deepseek-coder-6.7b | 0.11 (ns) | 0.54 | 0.53 | **0.40** | 0.21 | 0.26 |
-| starcoder2-3b | 0.12 (ns) | 0.56 | 0.58 | **0.62** | 0.39 | 0.50 |
-
-Both DeepSeek models start at chance and drift *monotonically below* 0.5 with
-depth; StarCoder2 does the opposite. The embedding row is non-significant
-everywhere, which is the token-identity control passing. So there **is** a
-reliable, depth-organised difference between the two members in output-aligned
-coordinates. What there is not is a difference whose *sign* matches the security
-hypothesis, or even agrees between model families.
-
-**And it must be calibrated against a random lens, not against zero.** Random and
-Gram-matched lenses follow the *same depth trajectory* as the real ones, so the
-permutation null was detecting "the two states differ at all", which any
-direction picks up. Specificity — the real lens's displacement over the best
-control's — is **2.08 / 0.87 / 1.40**. On 6.7B the effect is **not specific to the
-lens at all**. Any future positive result in this track has to clear that bar,
-not the permutation bar.
-
-### What it means
-
-Linear decodability and expression in a model's own output vocabulary are
-**different properties**, and R6 exhibits the first at ceiling while R9 does not
-find the second. This does **not** license any sentence containing "the model
-represents unsafe".
-
-It also does not, on its own, license the converse: every control listed above is
-a *negative* control, and negative controls are silent about a null. That gap is
-what R10 and R11 close.
-
----
-
-## R10 — The distinction *is* in the output basis; it is just not a word
-
-### Research question
-
-R9 looked for the difference in a **hand-picked 196-token vocabulary**. Is the
-null a fact about the models, or about the pool? Put positively: **is the
-safe/unsafe distinction present in output-aligned coordinates at all, if we stop
-choosing which coordinates to look at?**
+An earlier attempt asked this against a hand-picked 196-token security lexicon
+and returned a null. That attempt is archived
+([ARCHIVE.md §4.4](ARCHIVE.md#44-the-security-lexicon-vocabulary-contrast)),
+because at its reported cell the effect does not beat a random direction on one
+of three models, and because it can only find a concept that some token *in its
+pool* carries. This result removes the pool.
 
 ### Hypothesis
 
@@ -837,9 +690,9 @@ Two pre-declared and separable predictions:
 ### Method
 
 Stage 128. Form each matched pair's difference over **all ~32k tokens**, z-scored
-per member exactly as in R9; estimate the mean direction on the training split;
-project held-out pairs onto it. Nothing is chosen in advance, so a null cannot be
-blamed on a pool.
+per member; estimate the mean direction on the training split; project held-out
+pairs onto it. Nothing is chosen in advance, so a null cannot be blamed on a
+pool.
 
 The primary site is **`last_token`**, not `sink_arg`, because it is the only site
 where both members carry the same token id in 100% of pairs — which makes the
@@ -848,7 +701,7 @@ embeddings. Concentration is measured with the sign-invariant
 `sv1_share = λ_max(UUᵀ)/trace(UUᵀ)` against both a random floor (`1/n`) and a
 same-label null.
 
-### Result — it is not a null
+### Result — the direction generalises, decisively
 
 | clean held-out, `last_token`, mid-depth | 1.3B (L11) | 6.7B (L15) | SC2-3B (L15) |
 |---|---:|---:|---:|
@@ -888,7 +741,7 @@ Projection sign consistency at the reported layer, across the ten conditions:
 | SC2-3B | 1.000 | 0.944 | 0.889 | 0.903 | 0.972 | **0.681** | 0.681 |
 
 The mean projection falls by ~93% under flattening alone and by 4–14% under
-renaming, opaque predicates or MBA encoding. **This independently replicates R6's
+renaming, opaque predicates or MBA encoding. **This independently replicates R5's
 headline with a completely different readout** — nothing is fitted here, no probe
 is trained, and the conclusion is the same.
 
@@ -901,8 +754,9 @@ reported.
 `'egraphics'`, `'ateral'`, `'uta'` (1.3B); `' mel'`, `'椒'`, `' Jonathan'` (6.7B);
 `'bootstrapcdn'`, `'%%%%%%%%%%'`, `'pmatrix'` (SC2). Loadings are **flat** —
 0.019 to 0.027 across the top twelve — i.e. the direction is spread thinly over
-thousands of tokens rather than concentrated in a few. It is **output-aligned but
-not lexicalised**.
+thousands of tokens rather than concentrated in a few. **It is output-aligned but
+not lexicalised**, and this is the direct evidence for that claim: it needs no
+hand-picked vocabulary and no null.
 
 *The label axis is not the largest axis of variation.* The pre-declared criterion
 `sv1_ratio ≥ 2.0` measured **0.76 / 0.97 / 0.76**. It **failed on all three
@@ -919,31 +773,34 @@ differences find at a Jaccard index of **0.005 / 0.005 / 0.000**. Nearly disjoin
 
 ### What it means
 
-R9's null was a null **about the security lexicon**; it was never a null about the
-output basis. The distinction lives in the model's own output coordinates from a
-quarter of the way up the stack, spread across the vocabulary, and no word carries
-it. This is a claim about **representational format**, which is stronger than
-"a probe can find it" and weaker than "the model uses it" — it remains
-observational.
+The distinction lives in the model's own output coordinates from a quarter of the
+way up the stack, spread across the vocabulary, and no word carries it. This is a
+claim about **representational format**, which is stronger than "a probe can find
+it" and weaker than "the model uses it" — it remains observational.
+
+It also carries a methodological warning: an interpretability method that looks
+for concepts by asking *which token lights up* would have concluded this property
+is absent. It is not absent; it is distributed.
 
 ---
 
-## R11 — The positive control: the readout is not blind
+## R8 — The positive control: the readout is not blind, and the security words run backwards
 
 ### Research question
 
-R9's null had one ambiguity that nothing in R9 could resolve: *the models do not
-verbalise this* versus *this readout could not detect verbalisation if it were
-there*. Every R9 control is negative, and negative controls are silent about a
-null. So: **can this readout detect verbalisation at all?**
+Any claim of the form "the model does not verbalise X" has an ambiguity that no
+negative control can resolve: *the model does not verbalise it* versus *this
+readout could not detect verbalisation if it were there*. So: **can this readout
+detect verbalisation at all — and when it demonstrably can, what do the security
+words do at that same cell?**
 
 ### Hypothesis
 
 Four outcomes were declared in advance, including the one that would retire the
 track. If the identical readout finds a property the models demonstrably express
-and does *not* find the security lexicon at the same cell, the null is about the
-models (`machinery_validated`). If it finds neither, the null is about the method
-(`machinery_blind`).
+and does *not* find the security lexicon at the same cell, the "not verbalised"
+reading is about the models (`machinery_validated`). If it finds neither, it is
+about the method (`machinery_blind`).
 
 ### Method
 
@@ -978,7 +835,7 @@ decision**. This is precisely why the design fixed on the paired statistic in
 advance: had the verdict read accuracy, every model would have returned
 `property_not_verbalised` and the stage would have concluded nothing.
 
-### Result — step 2: does the readout find it? Yes, decisively
+### Result — step 2: the readout finds it, and the security words invert
 
 | best taint cell, R-lens, `sink` prompt | 1.3B (L19) | 6.7B (L27) | SC2-3B (L29) |
 |---|---:|---:|---:|
@@ -993,6 +850,24 @@ The readout's agreement with the model's own forced-choice margin rises
 monotonically with depth and reaches **0.95 / 0.98 / 0.98** at the final layer —
 which it must, because there the lens *is* the output head. That is the internal
 validity check on the whole instrument, and it passes.
+
+**This is the strongest form the "not lexicalised" claim takes anywhere in the
+project**, because it is a within-cell dissociation on one instrument at one
+position: on 1.3B and StarCoder2, the taint poles separate the pair at
+0.889/0.944 while the security words separate it at 0.347/0.389 — *significantly
+in the wrong direction*, both p < 0.01. The readout is demonstrably alive at that
+cell. The security vocabulary is not merely silent there; it is inverted.
+
+### Result — 6.7B differs, and it must be reported as such
+
+There the security lexicon *also* fires (0.764, p = 0.000) — the
+`both_properties_detected` outcome. Read it precisely: this is at the **answer
+position of a prompt that asks the question**, at 87% depth, not at a sink
+argument in unprompted code. The two contrasts are only weakly correlated
+(r = +0.26), so the security signal is not merely the taint signal wearing another
+name; but "vulnerable/safe" moving with "yes/no" where a model is about to answer
+a security question is close to what one would expect. **The narrow conclusion:
+6.7B's security lexicon separates the pair when the model is asked.**
 
 ### Result — prompt sensitivity is large, and measuring it was not optional
 
@@ -1016,52 +891,36 @@ Flattening takes 1.3B to chance (0.514) and costs the other two 0.15–0.22.
 
 ### What it means
 
-On **1.3B and StarCoder2** the outcome is `machinery_validated`, the strongest
-one declared in advance: the identical readout detects a property these models
-express and does *not* detect the security lexicon at the same cell — where the
-security contrast is in fact significantly **inverted** (0.347 and 0.389, both
-p < 0.01). **R9's null is therefore about the models, not about the instrument**,
-and "linear decodability and expression in a model's own vocabulary are different
-properties" is now a supported claim rather than an unfalsifiable one.
+Three things. **The instrument is not blind**, so R7's "carried by no word" is a
+statement about the models. **The security vocabulary is inverted, not inert**, on
+two of three models, at a cell where the same readout demonstrably works.
+And this is the **third independent readout** — a fitted probe (R5), an
+unsupervised full-vocabulary direction (R7) and the model's own forced-choice
+margin — showing the same transformation boundary, the last of the three
+involving no probe and no lens at all.
 
-**On 6.7B the outcome differs and must be reported as such.** There the security
-lexicon *also* fires at the same deep cell (0.764, p = 0.000) — the
-`both_properties_detected` outcome. Read it precisely: this is at the **answer
-position of a prompt that asks the question**, at 87% depth, not at the sink
-argument in unprompted code at mid-depth, which is where R9 read. The two
-contrasts are only weakly correlated (r = +0.26), so the security signal is not
-merely the taint signal wearing another name; but "vulnerable/safe" moving with
-"yes/no" where a model is about to answer a security question is close to what
-one would expect. **The narrow conclusion: 6.7B's security lexicon separates the
-pair when the model is asked, and does not when it is not asked.** R9's null is a
-null about the *unprompted* state.
-
-Two further readings follow. First, the behavioural table above is the **third
-independent readout** — a fitted probe (R6), an unsupervised full-vocabulary
-direction (R10) and the model's own forced-choice margin — showing the same
-transformation boundary, and the last of the three involves no probe and no lens
-at all. Second, any behavioural claim drawn from a single prompt is worth less
-than it looks.
+Two cautions. Any behavioural claim drawn from a single prompt is worth less than
+it looks. And on 6.7B "not lexicalised" holds for the *unprompted* state only.
 
 ---
 
-## R12 — Relevance moves, on text that is character-for-character identical
+## R9 — Relevance moves, on text that is character-for-character identical
 
 ### Research question
 
-R9 and R10 both read the state through the vocabulary, so both can only find a
+R7 and R8 both read the state through the vocabulary, so both can only find a
 distinction that some token or combination of tokens carries. **Does the model
 route its answer differently through the two members of a matched pair, in a way
 that needs no lexicalisation at all?**
 
 ### Hypothesis
 
-Under the LRP rules of R8 the relevance decomposition conserves, so `R_t / s` is a
-genuine **partition** of the model's own answer across input positions, and a
-paired difference is a *redistribution* rather than a change of scale. If the
-model resolves the flow question by tracing the chain that feeds the sink, then
-the relevance share of that chain should differ systematically between the unsafe
-and safe members — at positions whose tokens are identical.
+Under the LRP rules validated in R6 the relevance decomposition conserves, so
+`R_t / s` is a genuine **partition** of the model's own answer across input
+positions, and a paired difference is a *redistribution* rather than a change of
+scale. If the model resolves the flow question by tracing the chain that feeds the
+sink, then the relevance share of that chain should differ systematically between
+the unsafe and safe members — at positions whose tokens are identical.
 
 ### Method
 
@@ -1114,74 +973,54 @@ verdict records both: `redistribution_consistent_but_not_in_mean`.
 This ran on **deepseek-coder-1.3b only**. It is *not applicable* to StarCoder2 —
 the homogenising rules bind to nothing there, so there is no conservation to read,
 and stage 130 refuses rather than emitting raw autograd under the name relevance
-(R8). It has not been run on 6.7B.
+(R6). It has not been run on 6.7B.
 
 ### What it means
 
 The distinction shows up in *routing* before it is representable in output
 coordinates: the relevance shift is already present at layers 0–3, while the
-output-basis direction of R10 does not appear until ~25% depth. This is also
-where the R-lens earns its keep — used as a conserving attribution over input
-positions rather than as a vocabulary projection, it answers a question neither
-the probe nor the lens contrast can pose.
+output-basis direction of R7 does not appear until ~25% depth. This is the one
+result in the file that the R-lens makes possible and a logit lens cannot
+produce.
 
 ---
 
 ## What is actually verbalised: three grades
 
-The lens track answers this in one sentence: **the answer to a question is
-verbalised; the property it is an answer about is not.** Three distinct grades
-come out of the data and should not be collapsed.
+Read together, R7, R8 and R9 answer this in one sentence: **the answer to a
+question is verbalised; the property it is an answer about is not.** Three
+distinct grades come out of the data and should not be collapsed.
 
 **1. Verbalised — the yes/no lean, late, and as a ranking.** When the model is
 *asked*, the lean toward `" yes"` over `" no"` is readable in vocabulary space
 (0.889 / 0.847 / 0.944), tracks the model's own margin (0.708 / 0.806 / 0.917),
 and first becomes significant at 38–65% depth. It is verbalised as a **ranking,
-not a decision**: accuracy is 0.500 on all three models.
+not a decision**: accuracy is 0.500 on all three models, because each has a fixed
+answer bias whose argmax never moves. *(R8)*
 
-**2. Output-aligned but not lexicalised — the safe/unsafe distinction itself.**
-Projected onto positively by 72/72 held-out pairs on every model at cosine 0.38
-over a floor of exactly zero, appearing at ~25% depth — *earlier* than the
-verbalised answer. But its loadings are flat and spread over thousands of
-meaningless tokens.
+**2. Output-aligned but not lexicalised — the distinction itself.** Projected
+onto positively by 72/72 held-out pairs on every model at cosine 0.38 over a floor
+of exactly zero, appearing at ~25% depth — *earlier* than the verbalised answer.
+Its loadings are flat (0.019–0.027) and spread over thousands of meaningless
+tokens. *(R7)*
 
-**3. Not verbalised — the security words, and they are *scrambled*, not inert.**
-This is sharper than a null. At R9's reported cell, out of 196 candidate tokens:
-
-- **1.3B** — `' vulnerable'` ranks **104/196** with a *negative* delta (−0.105):
-  below the median and pointing the wrong way. `' trusted'` ranks 58, i.e.
-  *higher* in the unsafe member.
-- **6.7B** — the most elevated concept token in the unsafe member is `' clean'`
-  (rank 28, +0.637), then `' safe'` (rank 45, +0.565). The *safe* words go up when
-  the program is unsafe.
-- **SC2-3B** — `' unsafe'` rank 52 (+0.117) and `' safe'` rank 62 (+0.084):
-  indistinguishable from each other.
-
-What loads instead: question-mark variants at 1.3B (`' ?'`, `'?.'`, `'??'`) — if
-anything is being expressed there it is **uncertainty**, not danger; `' liber'`,
-`'clean'`, `' injection'`, `'break'` at 6.7B — one genuinely security-relevant
-token beside the inverted `clean`; `'OrNull'`, `' CORS'`, `'fuchsia'` at SC2 — two
-validation-adjacent, the rest noise.
+**3. Not lexicalised — and the security words are *inverted*, not inert.** At the
+cell where the taint poles separate the pair at 0.889 and 0.944, the security
+lexicon separates it at **0.347 and 0.389** — significantly in the wrong
+direction, on the same instrument, at the same position, with p < 0.01. The
+readout is demonstrably alive there. *(R8)*
 
 **The depth sequence is the cleanest way to say all of this:**
 
 | relative depth | what is happening |
 |---|---|
-| 0–13% | relevance **routing** already differs (R12: the chain feeding the sink loses share, 65/72 pairs) while vocabulary space is empty |
-| ~25% | a **distributed output-aligned direction** appears and holds to the output (R10) |
-| 40–65% | the **answer becomes sayable** (R11) |
+| 0–13% | relevance **routing** already differs (R9: the chain feeding the sink loses share, 65/72 pairs) while vocabulary space is empty |
+| ~25% | a **distributed output-aligned direction** appears and holds to the output (R7) |
+| 40–65% | the **answer becomes sayable** (R8) |
 
 The property is routed differently before it is representable in output
 coordinates, and representable long before it is sayable. It never becomes a
 word.
-
-**One more thing worth saying plainly: for this task the expensive lenses buy
-nothing over the logit lens.** Sign consistency is 0.889 across logit, J- and
-R-lens at 1.3B's best cell, and 0.944 across all three at StarCoder2's; R9's
-three-lens agreement is cosine 0.75–0.97. The Jacobian correction and the LRP
-rules are validated instruments (R7, R8) and they change none of the conclusions
-above. Where the R-lens *did* earn its keep is R12, which uses it as a conserving
-attribution over input positions rather than as a vocabulary projection.
 
 ---
 
@@ -1193,7 +1032,7 @@ Everything in Parts I–III is correlational: a representation can be a faithful
 shadow of a computation happening somewhere else. This part is the only causal
 evidence in the project.*
 
-## R13 — A rank-1 interchange transports which definition is in scope
+## R10 — A rank-1 interchange transports which definition is in scope
 
 ### Research question
 
@@ -1251,8 +1090,8 @@ replication of R1's isolation than R1 itself, on a corpus built for intervention
 > 2026-08-13. **The underlying rows are unchanged** — every number in the table
 > below is read directly from `interchange_summary.csv` — and the full record of
 > the rule change, including the verdicts under both rules, is in
-> [ARCHIVE.md](ARCHIVE.md). Re-running stages 106–107 would regenerate the gate
-> file; nothing else changes.
+> [ARCHIVE.md §5](ARCHIVE.md). Re-running stages 106–107 would regenerate the
+> gate file; nothing else changes.
 
 ### Result — the transport, and every control
 
@@ -1327,13 +1166,13 @@ Read across the four instruments, the results compose into a single account with
 a definite shape.
 
 **Program structure is the right level of description, and it is available in the
-model.** All four relations tested here are drawn from the code property graph —
-binding and def–use from the DFG, control dependence from the CFG, source→sink
-reachability from the PDG. Three of the four are linearly decodable from
-mid-network states well above what any bounded surface reader achieves, and the
-fourth (control dependence) fails the criterion in exactly the way a syntactic
-relation should. The models are not merely tracking text; they are tracking a
+model.** The relations tested here are drawn from the code property graph —
+binding and def–use from the DFG, source→sink reachability from the PDG. They are
+linearly decodable from mid-network states well above what any bounded surface
+reader achieves. The models are not merely tracking text; they are tracking a
 structure over the text that has an independent, exactly computable definition.
+And the criterion excludes things: control dependence, whose surface floor is
+0.927, does not qualify and is not reported as a result.
 
 **The representation is built, layered, and shaped like a computation.** Binding
 is exactly absent at the input, appears within a few blocks, peaks mid-network and
@@ -1365,13 +1204,11 @@ consequences are legible.
 
 **Format and content come apart.** The distinction the probe reads at 1.000 is
 present in the model's **own output coordinates** — 72/72 held-out pairs on every
-model, over a floor of exactly zero — and yet is carried by **no word**. The
-security lexicon does not merely fail to fire; it fires *backwards* in one model
-and elevates the *safe* words in the unsafe program in another. Because the
-positive control fired on the same instrument at the same cell, this is a fact
-about the models rather than about the readout. Interpretability that looks for
-concepts by asking "which token lights up" would have concluded the property is
-absent. It is not absent; it is distributed.
+model, over a floor of exactly zero — and yet is carried by **no word**. Where a
+readout demonstrably fires on a property these models express, the security
+lexicon at that same cell runs *backwards* on two of three models. Interpretability
+that looks for concepts by asking "which token lights up" would have concluded the
+property is absent. It is not absent; it is distributed.
 
 **There is an order of operations, and it is legible.** Relevance routing differs
 between the two members at 0–13% depth, an output-aligned direction appears at
@@ -1384,6 +1221,14 @@ interchange settles for binding what probing structurally cannot: a rank-1,
 dose-free edit at the resolution site installs *which definition is in scope*, in
 both arms of a factorial where a token account and an answer account each demand
 the opposite movement. The model reads that subspace.
+
+**One methodological result about the tools themselves.** Of three
+output-basis readouts, the two expensive ones change no conclusion when used as
+vocabulary projections — the plain logit lens matches them wherever a result
+actually fires. The R-lens pays for itself only in a different role, as a
+*conserving attribution* over input positions, and that role produced the
+earliest-depth evidence in the depth sequence. A validated instrument that turns
+out to be unnecessary for the question at hand is worth reporting as such.
 
 **What the whole thing licenses, stated conservatively.** These models compute
 program-structural relations, build them with depth, anchor them to control
@@ -1400,32 +1245,33 @@ would discard exactly the distinctions the project exists to draw.
 
 - **Not that code models "understand" programs.** Every claim is a decoding,
   format or intervention result at named sites under named controls.
-- **Not that binding is causally used *in general*.** R13 shows a rank-1
+- **Not that binding is causally used *in general*.** R10 shows a rank-1
   interchange transports the binding at one site, one layer, one model, one
   synthetic construction. Four earlier designs failed to establish even that, each
   for a different recorded reason ([ARCHIVE.md](ARCHIVE.md)).
-- **Not that the R13 subspace is the *only* direction that transports.** The
+- **Not that the R10 subspace is the *only* direction that transports.** The
   closed-form difference-in-means direction reaches 76% in both arms; the learned
   one reaches 100% at two-thirds the dose. The claim is that it dominates that
   baseline, not that the baseline is inert.
 - **Not that the isolation transfers to real code.** The 0.500 floor exists only
   in synthetic programs; a real-code transfer number is an upper bound on what
   transfers semantically, not a representational finding.
-- **Not that control dependence is a semantic result.** Its surface floor is
-  0.927.
-- **Not that the model "represents unsafe".** R9 forbids that sentence, and R10
-  replaces it with a weaker and more precise one about output-aligned distributed
-  format.
-- **Not that a failing frozen probe proves the model lost the information.** R6's
+- **Not anything about control dependence.** Its surface floor is 0.927; it is
+  archived, not reported.
+- **Not that the model "represents unsafe".** R7 and R8 replace that sentence with
+  a weaker and more precise one about output-aligned distributed format.
+- **Not that the security lexicon is silent everywhere.** On 6.7B it separates the
+  pair at the answer position of a prompt that asks the question.
+- **Not that a failing frozen probe proves the model lost the information.** R4's
   and R5's flattening results are statements about a frozen linear readout at one
   position.
 - **Not that anything about the security property is causal.** No intervention of
-  any kind was run on it. R13's interchange covers binding.
+  any kind was run on it. R10's interchange covers binding.
 - **Not that the 0.500 floor is pinned against *every* computable text feature.**
   It is pinned against the stated surface baselines. A cross-position
   string-equality baseline is outside the ±3 window and is an open item.
-- **Not that R12's routing effect is large.** Median 1–2% of the answer, one
-  model, and its mean-based permutation control does not fire.
+- **Not that R9's routing effect is large.** Median 1–2% of the answer, one model,
+  and its mean-based permutation control does not fire.
 
 ---
 
@@ -1433,39 +1279,35 @@ would discard exactly the distinctions the project exists to draw.
 
 Ordered by what would most change what this project can claim.
 
-1. **Re-run stages 106–107 to regenerate E13's gate file** under the
+1. **Re-run stages 106–107 to regenerate R10's gate file** under the
    `says_installed` discriminator, so the on-disk verdict matches the reported
    one. No number changes; this is bookkeeping that a reader will check.
-2. **Explain 6.7B's prompted security contrast.** The one asymmetry left in the
-   lens track: the security lexicon separates the pair at the answer position
-   under the `sink` prompt (0.764) and not at the sink argument in unprompted
-   code. Cheapest next step is to read the same cell under the `e6` prompt —
-   which inverts that model's *behaviour* — from CSVs already on disk.
-3. **Replicate R12 on 6.7B.** The relevance redistribution is one model.
+2. **Replicate R9 on 6.7B.** The relevance redistribution is one model, and it is
+   the only result the R-lens makes possible.
    `scripts/130_sinkflow_relevance.py --model deepseek-coder-6.7b`, ~30–90 min.
    It is not applicable to StarCoder2, so 6.7B is the whole replication.
-4. **Explain, or bound, the rank-1 edit beating the whole-state patch** (100% vs
+3. **Explain, or bound, the rank-1 edit beating the whole-state patch** (100% vs
    86% at 60% of the edit norm). The available account is plausible and untested,
    and a reviewer will ask.
-5. **A second model and a second site for R13.** The causal result is currently
+4. **A second model and a second site for R10.** The causal result is currently
    one cell: `use`, layer 8, rank 1, 6.7B. 1.3B is cheap now that stage 106 runs
    in minutes.
-6. **Explain the `assign_chain` fragility.** It has replicated in three models
+5. **Explain the `assign_chain` fragility.** It has replicated in three models
    under renaming *alone* — starcoder2-3b drops to 0.639 there while
    `branch_merge` stays at 1.000. Diagnose on the existing
    `sinkflow_predictions.csv` before spending any GPU.
-7. **Make the R-lens architecture-general, or bound it.** It does not apply to
-   starcoder2-3b at all. Extending `norm_eps_attr` to LayerNorm and
-   `is_gated_mlp` to non-gated MLPs is the open work; the LayerNorm half is
-   harder, since the mean-subtraction term is what the current algebra assumes
-   away.
-8. **Context-matched pairs on real code** — the highest-value follow-up for the
-   foundation, and the one thing that would let R6's floor argument extend beyond
+6. **Make the R-lens architecture-general, or bound it.** It does not apply to
+   starcoder2-3b at all, which is what confines R9 to one model family. Extending
+   `norm_eps_attr` to LayerNorm and `is_gated_mlp` to non-gated MLPs is the open
+   work; the LayerNorm half is harder, since the mean-subtraction term is what the
+   current algebra assumes away.
+7. **Context-matched pairs on real code** — the highest-value follow-up for the
+   foundation, and the one thing that would let R5's floor argument extend beyond
    synthetic programs. Build by mutating real functions.
-9. **A cross-position string-equality surface baseline** in the probe stage. The
+8. **A cross-position string-equality surface baseline** in the probe stage. The
    current baseline cannot represent "the inner definition's name equals the
    use's name", which is the feature a lexical adversary would use. CPU-only.
-10. **Reconcile `configs/models.yaml` with `MODEL_REGISTRY`** so declared
-    `probe_layers` are the ones that actually run. It is why the three models sit
-    on different layer grids and why every cross-model number must be read at
-    matched relative depth.
+9. **Reconcile `configs/models.yaml` with `MODEL_REGISTRY`** so declared
+   `probe_layers` are the ones that actually run. It is why the three models sit
+   on different layer grids and why every cross-model number must be read at
+   matched relative depth.

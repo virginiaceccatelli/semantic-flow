@@ -50,13 +50,20 @@ labeller. It is computed from the program's own structure, by the extractors in
 | layer | module | what it provides | relation it grounds |
 |---|---|---|---|
 | **AST** | `ast_extractor.py` | character-offset-aware syntax nodes | token alignment for every label |
-| **CFG** | `cfg_extractor.py` | statement-level control flow, join points | control dependence (E4) |
-| **DFG** | `dfg_extractor.py` | definitions, uses, reaching-definition edges | binding (E2), def–use (E3) |
-| **PDG** | `pdg_extractor.py` | union of def–use and control-dependence edges | source→sink taint paths (E15) |
+| **CFG** | `cfg_extractor.py` | statement-level control flow, join points | control dependence — *measured and archived*, see below |
+| **DFG** | `dfg_extractor.py` | definitions, uses, reaching-definition edges | **binding (R1)**, **def–use (R2)** |
+| **PDG** | `pdg_extractor.py` | union of def–use and control-dependence edges | **source→sink taint paths (R5)** |
 
 The graph is what makes the labels *exact*, and exactness is what makes the
 floor argument possible: an approximate label becomes label noise, and label
 noise becomes the finding.
+
+The criterion also **excludes** a CPG relation, which is what makes it a
+criterion rather than a slogan. Control dependence is decodable at ceiling
+(AUC 0.999) — but a model-free reader of token windows and indentation already
+scores **0.927** on it, because a statement's guard is usually its nearest
+enclosing `if`. It is therefore not reported as a result; the numbers and the
+reasoning are in [docs/ARCHIVE.md §4.3](docs/ARCHIVE.md#43-control-dependence).
 
 ### Axis 2 — how hard the question is asked: four instruments
 
@@ -67,7 +74,7 @@ them is the source of every claim this project has withdrawn.
 |---|---|---|---|
 | 1 | **Linear probe** against a construction-pinned floor | the relation is linearly *present* in the state | that the model uses it |
 | 2 | **Frozen probe** transferred across meaning-preserving rewrites | what the representation is *made of*; which rewrite destroys it | that the model lost the information (a probe can fail where a model does not) |
-| 3 | **Output-basis lenses** — logit lens, J-lens, **R-lens** | whether the distinction lives in the model's *own output coordinates*, and whether any *word* carries it | anything causal; the readout is a projection, not an edit |
+| 3 | **Output-basis readouts** — a vocabulary projection, and the **R-lens** as a conserving attribution | whether the distinction lives in the model's *own output coordinates*, whether any *word* carries it, and where relevance is routed | anything causal; a projection is not an edit |
 | 4 | **DAS interchange** — a learned, magnitude-free rank-1 edit | that the model's downstream computation *reads* the subspace | generality beyond the site, layer, model and construction tested |
 
 Instruments 1–2 are correlational by nature. Instrument 3 is still
@@ -99,15 +106,16 @@ of what the entire four-transformation composition costs. Composition adds no
 interaction distinguishable from measured draw noise. **One transformation
 carries the whole failure.**
 
-**Decodable and verbalised come apart.** A hand-picked security lexicon carries
-nothing in any of the three models — and is significantly *inverted* in 1.3B.
-But dropping the lexicon and differencing each matched pair over the **whole
-32k-token vocabulary** finds a direction that **72 of 72 held-out pairs project
-positively onto, in every model**, over a token-identity floor of *exactly
-zero*. Its top-loading tokens are meaningless fragments. The distinction is
-**output-aligned and distributed, and carried by no word for it** — and a
-positive control on a property these models *do* express fires at 0.85–0.94, so
-the null is about the models rather than the instrument.
+**Decodable and verbalised come apart.** Differencing each matched pair over the
+**whole 32k-token vocabulary** finds a direction that **72 of 72 held-out pairs
+project positively onto, in every model**, over a token-identity floor of
+*exactly zero* — appearing at a quarter of the way up the stack and collapsing
+under flattening alone. Its top-loading tokens are meaningless fragments, so the
+distinction is **output-aligned, distributed, and carried by no word for it**.
+That is not an instrument failure: at the cell where the same readout fires on a
+property these models *do* express (0.85–0.94, tracking the model's own answer
+margin), the security lexicon separates the pair at **0.347 / 0.389** —
+significantly in the *wrong* direction.
 
 **And for binding, the causal question has an affirmative answer.** A rank-1,
 magnitude-free **DAS interchange** at the site where the binding is resolved
@@ -238,11 +246,20 @@ representation built during code pretraining, not chat behaviour.
    **control-flow flattening alone**.
 3. **A format result**: the security distinction is present in output-aligned
    coordinates and distributed across the vocabulary, carried by no word for it
-   — established with a positive control that rules out instrument blindness.
+   — established with a positive control that rules out instrument blindness,
+   and with the security words running *backwards* at the cell where that
+   control fires.
 4. **A causal result** at the site where a binding is resolved, whose
    falsification refutes an answer-direction account rather than assuming it
    away.
-5. **Methodology**, from four failed interventions: floors pinned by
+5. **An instrument result about the tools themselves**: on a gated-MLP
+   transformer it is the **gate's bilinearity, not the norm**, that carries the
+   faithfulness gain of LRP (4.5×, replicated across two models and two dtypes,
+   falsifying the pre-registered prediction) — and, separately, that the
+   expensive lenses buy nothing over a plain logit lens when used as vocabulary
+   projections. Reporting a validated instrument as unnecessary is part of the
+   result.
+6. **Methodology**, from four failed interventions: floors pinned by
    construction; positive controls matched in kind *and* in scale;
    magnitude-free interventions; and hard gates so a missing control is refused
    rather than skipped.

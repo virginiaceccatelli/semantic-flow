@@ -116,18 +116,18 @@ FOUNDATION — representation and robustness (Instruments 1 and 2)
 
 INSTRUMENT VALIDATION — the lens stack (Instrument 3)
 
-  60   J-lens validation   GPU   R7   — a GATE
-  110  R-lens gate R       GPU   R8   — a GATE
+  60   J-lens validation   GPU        — a GATE (instrument only)
+  110  R-lens gate R       GPU   R6   — a GATE
 
 SECURITY TRACK — the audit, the vocabulary, the output basis
 
-  120 → 121 → 122 → 123 → 124            R6      S0-S3
-  125 → 126 → 127                        R9      J0, J1
-  128 → 129 → 130 → 131                  R10-R12 J2, J3, J4
+  120 → 121 → 122 → 123 → 124            R5      S0-S3
+  125 → 126 → 127                        archived  J0, J1
+  128 → 129 → 130 → 131                  R7-R9   J2, J3, J4
 
 CAUSAL TRACK — DAS interchange (Instrument 4)
 
-  100 → 101 → … → 108                    R13     H0-H5
+  100 → 101 → … → 108                    R10     H0-H5
 
 RETIRED / PARKED — still runnable; see ARCHIVE.md
   40 lead time · 50 patching · 61-62 J-lens uses · 70-74 J-space · 80-89 store
@@ -159,7 +159,7 @@ python scripts/00_generate_data.py --model deepseek-coder-1.3b --real   # + Code
 
 | Output | Contents | Used by |
 |---|---|---|
-| `data/synthetic/core.jsonl` | binding programs (50% with branches), taint programs with per-line labels, shadowing programs — with CPG ground truth | R1–R3 |
+| `data/synthetic/core.jsonl` | binding programs (50% with branches), taint programs with per-line labels, shadowing programs — with CPG ground truth | R1, R2 |
 | `data/synthetic/context.jsonl` | filler variants: 5 filler types × sizes [0,50,100,200,500,1000], token counts measured with the real tokenizer | R4 |
 | `data/synthetic/obfuscation.jsonl` | 5 cumulative obfuscation levels per base, each execution-verified equivalent | R5 |
 | `data/synthetic/minimal_pairs.jsonl` | length-matched clean/corrupted taint pairs, verified token-identical except the sink argument | retired patching stage |
@@ -188,7 +188,7 @@ On the GPU host: `screen -dmS extract-core-6.7b env MODEL=deepseek-coder-6.7b
 jobs/extract_core.csh` (and `extract_context.csh` / `extract_obfuscation.csh` /
 `extract_real.csh`).
 
-## Stage 20 — static probes, R1–R3 (CPU, minutes–1h)
+## Stage 20 — static probes, R1–R2 (CPU, minutes–1h)
 
 ```bash
 python scripts/20_run_probes.py --activations results/activations/deepseek-coder-1.3b/core
@@ -205,7 +205,7 @@ model-free surface baseline, and a convergence check. Saves:
 
 `--strict` turns the built-in sanity assertions into failures.
 
-## Stage 30 — context degradation, R4 (CPU)
+## Stage 30 — context degradation, R3 (CPU)
 
 ```bash
 python scripts/30_context_degradation.py \
@@ -216,7 +216,7 @@ python scripts/30_context_degradation.py \
 Frozen binding/def–use probes evaluated — never retrained — on the filler
 variants, with ground truth recomputed per variant.
 
-## Stage 31 — obfuscation robustness, R5 (CPU)
+## Stage 31 — obfuscation robustness, R4 (CPU)
 
 ```bash
 python scripts/31_obfuscation.py \
@@ -243,7 +243,7 @@ reappear in a figure by accident.
 
 # Part D — The lens stages (60, 110)
 
-## Stage 60 — J-lens validation, R7 (GPU; MPS ok for 1.3b)
+## Stage 60 — J-lens validation (GPU; MPS ok for 1.3b) — a gate, not a result
 
 ```bash
 python scripts/60_jlens_validate.py --model deepseek-coder-1.3b
@@ -255,7 +255,7 @@ at the last layer), V2 (next-token recovery vs chance and vs the logit lens) and
 V3. Exits non-zero if a required check fails. Outputs
 `results/tables/jlens_validation_{,checks_}{model}.csv`.
 
-## Stage 110 — R-lens gate R, R8 (GPU)
+## Stage 110 — R-lens gate R, R6 (GPU)
 
 ```bash
 python scripts/110_rlens_validate.py --model deepseek-coder-6.7b
@@ -296,7 +296,7 @@ Construction, threat model and metrics: [METHODS §5](METHODS.md#5-the-security-
 | 124 | `124_sinkflow_report.py --model M --depth 0.48` | CPU, seconds | — | `e15_report.{yaml,md}`, `results/figures/sinkflow_*.png` |
 | 125 | `125_sinkflow_vocab_discover.py --model M` | **GPU**, hours | **J0** | `vocab/vocab_discovery.json`, `vocab/vocab_train_deltas.csv`, `vocab/vocab_lens_diagnostics.csv`, `vocab/lenses/*.pkl` |
 | 126 | `126_sinkflow_vocab_contrast.py --model M` | CPU, minutes | **J1** | `vocab/vocab_{pairs,pair_tokens,tokens,summary,controls,condition_similarity,lens_agreement}.csv` |
-| 127 | `127_sinkflow_vocab_report.py --model M` | CPU, seconds | — | `vocab/e15c_report.{md,yaml}`, `results/figures/e15c_depth_{model}.png` |
+| 127 | `127_sinkflow_vocab_report.py --model M` | CPU, seconds | — | `vocab/e15c_report.{md,yaml}`, `vocab/vocab_specificity.csv`, `results/figures/e15c_depth_{model}.png` |
 | 128 | `128_sinkflow_align.py --model M` | **GPU**, ~15 min | **J2** | `align/align_{direction.json,summary,loadings,restricted}.csv` |
 | 129 | `129_sinkflow_positive.py --model M` | **GPU**, ~1 h | **J3** | `positive/positive_{behaviour,behaviour_summary,pairs,summary}.csv`, `positive/lenses/*.pkl` |
 | 130 | `130_sinkflow_relevance.py --model M` | **GPU**, ~30 min | **J4** | `relevance/relevance_{readings,pairs,summary,conservation}.csv` |
@@ -426,7 +426,7 @@ non-finite.
 shell `$MODEL` is how a stage ends up reading another model's data.
 
 **H4 without H5 proves nothing about transport** — that combination is the earlier
-design that was retracted. Read [RESULTS.md R13](RESULTS.md#r13--a-rank-1-interchange-transports-which-definition-is-in-scope)
+design that was retracted. Read [RESULTS.md R10](RESULTS.md#r10--a-rank-1-interchange-transports-which-definition-is-in-scope)
 before interpreting either.
 
 **Current state on disk:** the 6.7b `gates.yaml` and `e13_report.md` still record

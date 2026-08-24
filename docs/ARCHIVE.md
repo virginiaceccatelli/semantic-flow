@@ -21,6 +21,14 @@ they are an argument about what a causal claim in interpretability requires.
 Current status per experiment: `results/STATUS.yaml`.
 Currently supported findings: [RESULTS.md](RESULTS.md).
 
+**Sections 1–3** are designs that failed their own controls. **Section 4** is
+work that is sound but does not carry a claim — including two results that were
+in the main document until 2026-08-24 and were demoted on evidence: control
+dependence (§4.3, surface floor 0.927) and the security-lexicon vocabulary
+contrast (§4.4, does not beat a random direction at its reported cell on one of
+three models). **Section 5** records a gate criterion that was changed after
+seeing data, with the numbers under both rules.
+
 ---
 
 # 1. The four intervention attempts
@@ -58,7 +66,9 @@ whole-state replacement, which changes everything the position encodes at once.
 ## 1.2 J-lens readout uses (archived)
 
 Two uses of the validated J-lens, both archived. **The instrument validation
-itself survives and is [RESULTS.md R7](RESULTS.md#r7--the-j-lens-implementation-is-correct).**
+itself survives; it is instrument work and lives in
+[METHODS §6.3](METHODS.md#63-the-j-lens-a-first-order-causal-correction), with §4.5
+below recording why it is no longer listed as a result.**
 
 **Taint / lead time.** Built to explain a behavioural effect that did not survive
 its own floors (§2), and it inherits that metric wholesale. It also produced the
@@ -91,13 +101,14 @@ Archived anyway, for two reasons that are not about execution:
    control, "not verbalizable" and "this readout cannot express relations at
    these positions" remain indistinguishable.
 2. **The relation is the wrong one to build on.** Control dependence's own surface
-   baseline is 0.927 ([RESULTS.md R3](RESULTS.md#r3--control-dependence-the-contrast-that-makes-r1-mean-something)).
+   baseline is 0.927 (§4.3).
    A dissociation between "decodable" and "verbalizable" is least interesting
    exactly where decodability is mostly syntactic.
 
 **This is the failure that produced the positive-control discipline of
 [METHODS §7.3](METHODS.md#73-three-ways-a-null-could-be-wrong-and-the-measurement-for-each)** — and
-[R11](RESULTS.md#r11--the-positive-control-the-readout-is-not-blind) is what a
+[R8](RESULTS.md#r8--the-positive-control-the-readout-is-not-blind-and-the-security-words-run-backwards)
+is what a
 positive control matched *in kind* looks like when it is done right.
 
 **Preserved:** `jlens_taint{,_summary,_prefixes,_sanity}_{model}.csv`,
@@ -302,6 +313,12 @@ and none of them requires the retired frame.
 
 # 4. Retired from the main documents, data untouched
 
+Nothing in this section failed. Each entry is a measurement that is sound and
+still reproducible, removed from [RESULTS.md](RESULTS.md) because it does not
+carry a claim: either its floor was never pinned (§4.1, §4.2, §4.3), or its own
+later calibration showed the effect does not clear a random-direction control
+(§4.4), or it is instrument validation with no finding attached (§4.5).
+
 ## 4.1 Lexical token type
 
 A probe for token type (identifier / keyword / literal / operator), decodable at
@@ -325,6 +342,158 @@ exists to avoid.
 **What would revive it:** context-matched pairs built by *mutating* real
 functions, which would make it a like-for-like replication of the isolation rather
 than a transfer check. That is open item 8 in [RESULTS.md](RESULTS.md#open-items).
+
+
+## 4.3 Control dependence
+
+**What it was.** A pairwise probe for "does this statement execute under that
+guard?" — the third natural CPG relation, read off the CFG with join points
+resolved exactly. Negatives were statements in the *same* program outside the
+guard, including an `indent_matched` hard stratum (a statement in a *sibling*
+guard's body at the same nesting depth).
+
+**The measurement, which is sound.** The hidden state dominates on both classes
+at once, so the gap is not a threshold artifact:
+
+| control_dep, best layer | positive recall | hard-negative recall |
+|---|---:|---:|
+| surface baseline (no model) | 0.959 | 0.676 |
+| hidden — 1.3B (L11) | 0.981 | 0.873 |
+| hidden — 6.7B (L15) | **0.995** | **0.923** |
+
+Aggregate AUC rises 0.990 → 0.999.
+
+**Why it is not a result.** The model-free surface baseline is already **0.927**.
+A statement's guard is usually its nearest enclosing `if`, so token windows plus
+indentation recover most of the relation with no model at all. Unlike binding and
+def–use, **no construction pins this floor to chance** — there is no
+context-matched stratum for control dependence, and building one would require
+program pairs that are token-identical while the guard relation flips.
+
+By the criterion in [METHODS §0.2](METHODS.md#02-the-working-definition), the
+relation is *mostly syntactic*, so decoding it at ceiling constrains nothing about
+semantic representation. It was carried in the main documents for a while as "the
+contrast that makes binding mean something" — the evidence that the criterion
+excludes things. That argument is worth keeping, and it now lives in METHODS §0.2
+as a point about the *definition*, with the numbers here. It does not need to
+occupy a slot in the results.
+
+**A second, independent reason not to build on it.** The probing anchors fall on
+each span's last token, which in this corpus are integer literals (`> 50`, `+ K`).
+Re-anchoring on the guard variable and the statement target is a CPU-only re-run
+and was never done, so even the measured numbers describe a slightly odd position.
+
+**What would revive it.** Context-matched control-dependence pairs — two
+token-identical programs in which the guard relation flips — which would pin the
+floor the way binding's is pinned. Until then there is no honest headline number.
+
+**Still runnable, data preserved.** `scripts/20_run_probes.py`; rows in
+`results/tables/static_probes_*.csv` under `task=control_dep`. `results/STATUS.yaml`
+records the demotion.
+
+## 4.4 The security-lexicon vocabulary contrast
+
+**What it was.** The first attempt to ask whether the safe/unsafe distinction is
+expressed in the models' own output vocabulary. Sink-site states were mapped into
+vocabulary space through three readouts (logit lens, J-lens, R-lens, with
+`PRIMARY_LENS = "rlens"` declared in code before any result), against a 196-token
+candidate pool discovered on the *training* split and frozen to disk, containing a
+per-model-validated security lexicon. Orientation fixed once as
+`score_unsafe − score_safe`.
+
+**What it returned.** A null, in all three models — and an *inverted* one in 1.3B:
+
+| clean held-out, R-lens, reported cell | 1.3B (L11) | 6.7B (L15) | SC2-3B (L15) |
+|---|---:|---:|---:|
+| concept token surviving the tokenizer | `" vulnerable"` | `" vulnerable"` | `" unsafe"` |
+| held-out sign consistency | 0.153 | 0.403 | 0.694 |
+| permutation p | 0.000 | 0.004 | 0.008 |
+
+It was carefully controlled — three lenses agreeing at pairwise cosine 0.75–0.97,
+a same-label arm collapsing the contrast to ≈0, the embedding-layer token-identity
+contrast null at p = 0.71–0.81, and a measured distribution-shape confound never
+exceeding |r| = 0.39.
+
+**Why it was retired as a main result.** Three reasons, in order of weight.
+
+**1. At the reported cell it does not beat a random direction, on one of three
+models.** The specificity check added later — displacement of the real lens over
+the best random/Gram-matched control — reads, from
+`vocab/vocab_specificity.csv`:
+
+| reported cell, clean held-out `sink_arg` | logit | J-lens | R-lens | beats random? |
+|---|---:|---:|---:|---|
+| 1.3B, L11 | 1.83 | 1.58 | 2.08 | yes |
+| **6.7B, L15** | **0.875** | **0.875** | **0.875** | **no, all three** |
+| SC2-3B, L15 | 0.50 | 1.30 | 1.40 | logit no; J/R yes |
+
+Random and Gram-matched lenses follow the *same depth trajectory* as the real
+ones, so the permutation null was detecting "the two states differ at all", which
+any direction picks up. A null whose instrument does not clear a random direction
+on a third of the evidence is uninformative in both directions.
+
+**2. Both halves of its reading were superseded by measurements that do clear
+their bars.** The "distributed, not lexicalised" half is established directly by
+[R7](RESULTS.md#r7--the-distinction-is-in-the-output-basis-and-it-is-not-a-word)'s
+loadings — flat, spread over thousands of meaningless tokens — with no pool and no
+null involved. The "the security words do not carry it" half is established far
+more sharply by [R8](RESULTS.md#r8--the-positive-control-the-readout-is-not-blind-and-the-security-words-run-backwards),
+as a *within-cell dissociation*: at the cell where the taint poles separate the
+pair at 0.889 / 0.944, the same lexicon in the same basis separates it at
+0.347 / 0.389 — significantly in the wrong direction, on an instrument that is
+demonstrably alive.
+
+**3. The search it performs cannot be characterised.** The candidate pool is
+selected by a full-vocabulary *logit-lens* ranking, so a direction only the J- or
+R-lens would surface, on a token outside the pool, cannot be discovered. That
+limitation is recorded inside the frozen artifact, and it is exactly what stage
+128 removed.
+
+**What was worth learning from it, and is kept.** Three things, all now stated
+elsewhere. That the *unprompted* sink-argument state is where the security words
+fail, which is what makes 6.7B's prompted 0.764 a narrow rather than a general
+result (R8). That something replicates in that pool but is semantically arbitrary
+— frozen training-discovered tokens reappear in the held-out top-k at
+0.875 / 0.750 / 0.875 against 0.000–0.031 for random controls, and the tokens are
+`" ?"`, `" liber"`, `"OrNull"`. And that under flattening the vocabulary contrast
+degrades alongside the probe, so trained and output-aligned auditability are lost
+together.
+
+**One control it taught the project to stop trusting.** The original
+`mismatched_pairs` arm redrew the *safe* partner from the same safe pool, so the
+label difference survived it: its expected mean is the main arm's exactly, and on
+the canonical runs the two agree to four decimal places on all three models — on
+6.7B the *control* is more sign-consistent than the main arm (0.417 vs 0.403). It
+falsifies "specific to this pairing", not "about the label". The same-label arm
+that replaced it is now standard ([METHODS §7.2](METHODS.md#72-what-the-contrast-is-controlled-against)).
+
+**Still runnable, data preserved.** Stages 125–127; everything under
+`results/sinkflow/{model}/vocab/`, including `e15c_report.md`, the depth figures
+`results/figures/e15c_depth_{model}.png`, and `vocab_specificity.csv`.
+
+## 4.5 J-lens validation as a reported result
+
+**Not retired — relocated.** The J-lens validation is correct and still gates the
+lens track: at the last decoder layer `J` is provably the identity, so the J-lens
+must equal the logit lens exactly, and it measures **cosine 1.0000** on all three
+models — a closed-form check of the entire gradient path. Next-token top-1
+recovery is 0.633–0.650 against chance 0.038, beating the plain logit lens by
++0.15 to +0.22 at pre-final layers.
+
+It stopped being listed as a *result* because it is instrument validation with no
+finding attached, and because the instrument it validates turned out to change no
+conclusion: at every cell where a vocabulary readout actually fires, the logit
+lens, J-lens and R-lens agree to within noise, and where the J-lens was used as a
+coordinate system the plain logit lens was *more* efficient at the same site
+(§1.3). It now lives in [METHODS §6.3](METHODS.md#63-the-j-lens-a-first-order-causal-correction),
+where instrument validation belongs.
+
+One caveat that travelled with it and still applies: StarCoder2 has no R-lens
+(§ the architecture note in METHODS §6.4), so that model's vocabulary-contrast
+numbers rest on this validation and nothing else.
+
+**Still runnable, data preserved.** `scripts/60_jlens_validate.py`;
+`results/tables/jlens_validation{,_checks}_{model}.csv`.
 
 ---
 

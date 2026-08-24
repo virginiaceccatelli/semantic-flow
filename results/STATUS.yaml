@@ -61,15 +61,37 @@ experiments:
 
   E4:
     name: control dependence
-    status: supporting
+    status: archived
     central: false
     stage: "20"
-    tables: [static_probes_]
+    tables: []
+    tables_note: >
+      Deliberately EMPTY, and not an oversight. Stage 90 blacklists every table
+      prefix owned by an archived experiment, and E4's rows live inside the
+      SHARED `static_probes_*.csv` that E1/E2/E3/E8 also write — so declaring
+      that prefix here would silently stop the binding and def-use figures from
+      regenerating. E4 has no asset of its own to suppress; what is retired is
+      the claim, and the rows stay in the CSV. A test pins this
+      (tests/test_jspace.py::test_stage90_skips_archived_experiments_by_default).
     claim: >
-      Control dependence is decodable at ceiling by mid layers — but its
-      surface baseline is already 0.927, so the result mostly says the relation
-      is locally syntactic. Reported as a contrast to E2/E3, not as a finding
-      about representation.
+      RETIRED 2026-08-24 from the reported results. Control dependence is
+      decodable at ceiling by mid layers (AUC 0.999, hard-negative recall 0.923
+      at 6.7b) — but its MODEL-FREE surface baseline is already 0.927, because a
+      statement's guard is usually its nearest enclosing `if`. No construction
+      pins that floor to chance the way E2/E3's context-matched pairs pin
+      theirs, so decoding it constrains nothing about semantic representation.
+      It was carried for a while as "the contrast that makes E2 mean something";
+      that argument is now a point about the DEFINITION and lives in
+      docs/METHODS.md §0.2, with the numbers in docs/ARCHIVE.md §4.3.
+    retirement_reason: >
+      Surface floor 0.927, unpinnable without context-matched control-dependence
+      pairs. Secondary issue: probing anchors fall on each span's last token,
+      which in this corpus are integer literals; re-anchoring on the guard
+      variable and statement target is a CPU-only re-run that was never done.
+    what_would_revive_it: >
+      Context-matched control-dependence pairs — two token-identical programs in
+      which the guard relation flips — which would pin the floor the way binding's
+      is pinned. Data, code and every CSV are preserved and stage 20 still runs.
 
   E5:
     name: context degradation
@@ -297,7 +319,22 @@ experiments:
       appear BEFORE any structural change: starcoder2-3b under renaming alone is
       0.882 pooled but 0.764 on unsafe and 0.639 on assignment chains.
     e15c_vocabulary_contrast: >
-      OBSERVATIONAL, AND A NULL. Mapping the same sink-site states into each
+      RETIRED 2026-08-24 from the reported results; see docs/ARCHIVE.md §4.4. The
+      measurement stands and every artifact is preserved, but it cannot carry a
+      claim, for three reasons. (1) SPECIFICITY: at the reported cell the real
+      lenses do not beat a norm-matched random direction on deepseek-coder-6.7b -
+      specificity 0.875 for all three lenses (vocab/vocab_specificity.csv,
+      beats_random_lens False), and 0.50 for the logit lens on starcoder2-3b.
+      Random and Gram-matched lenses follow the SAME depth trajectory, so the
+      permutation null was detecting only that the two states differ at all.
+      (2) SUPERSEDED: stage 128 establishes "distributed, not lexicalised"
+      directly from the loadings with no pool and no null, and stage 129
+      establishes "the security words do not carry it" as a within-cell
+      dissociation against a readout that demonstrably fires (taint 0.889/0.944
+      vs security 0.347/0.389). (3) BOUNDED SEARCH: the 196-token pool is selected
+      by a full-vocabulary LOGIT-lens ranking, so a direction only the J- or
+      R-lens would surface, on a token outside the pool, cannot be discovered.
+      The original null, kept for the record: OBSERVATIONAL, AND A NULL. Mapping the same sink-site states into each
       model's own vocabulary space through three readouts (logit lens, J-lens,
       R-lens; R-lens declared primary in code before any result) finds NO stable
       security-vocabulary concept in any model. Held-out sign consistency of the
