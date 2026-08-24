@@ -558,669 +558,187 @@ which is the failure direction an auditor cares about most.
 
 # Part III — What form it is in
 
-*Instrument 3: output-basis readouts
-([METHODS §6–§7](METHODS.md#6-instrument-3--the-lens-stack-logit-j-lens-r-lens)).
-Everything in this part is observational: a projection or an attribution, never
-an edit.*
+*These experiments are observational. They describe what can be read from the
+model, not what the model causally needs.*
 
-## Part III in plain language
+## Current status in plain language
 
-Parts I and II established that a semantic distinction can be read from hidden
-states. That still leaves a harder question: **what form does the distinction
-take inside the model?** Part III tests three possibilities:
+The lens experiments support one strong representational result and one weaker
+attribution result:
 
-- It might already resemble a particular output token, such as `unsafe`,
-  `safe`, `yes`, or `no`.
-- It might be aligned with the output vocabulary but spread across many tokens,
-  so that no single word names it.
-- It might appear in how the model routes relevance through positions in the
-  input, even before it becomes visible in output-vocabulary coordinates.
+1. **Strong, but obtained with the simple logit lens:** safe and unsafe programs
+   differ along a repeatable direction in the model's output vocabulary space.
+   The direction generalises to every held-out pair, but it is spread over many
+   unrelated token dimensions rather than concentrated in words such as
+   `unsafe`. This is evidence for a distributed, output-aligned representation,
+   not for an explicit semantic label.
+2. **Suggestive, obtained with the R-lens:** the model usually redistributes a
+   small amount of answer relevance between the two data-flow chains even where
+   their text is identical. However, the preregistered permutation control on
+   the mean fails because of several large outliers. This is not a robust
+   positive result.
 
-The word **observational** matters. These methods read or attribute an existing
-computation; they do not modify it. Therefore Part III can describe the format
-and location of a signal, but it cannot prove that the model needs that signal
-to produce its answer. The intervention in Part IV is needed for that causal
-claim.
+The **J-lens has no surviving semantic result**. It passes its engineering
+checks and improves generic next-token recovery, but its semantic findings
+either fail the required controls or are reproduced by the cheaper logit lens.
 
-### Terms used throughout Part III
+## Which lens matters here
 
-- **Output basis / vocabulary coordinates:** a coordinate system with one
-  dimension for each possible output token. Projecting a hidden state into this
-  basis asks which tokens it points toward.
-- **Logit lens:** applies the model's ordinary output head to an intermediate
-  hidden state. It gives a simple vocabulary-space reading.
-- **J-lens:** corrects that simple projection using a local Jacobian, which
-  approximates how the remaining network transforms a small change.
-- **R-lens:** propagates a selected output score backward using relevance rules.
-  When relevance is conserved, it can divide that score among input positions.
-- **Output-aligned:** detectable in vocabulary coordinates. This does not mean
-  that a recognizable word carries the signal.
-- **Lexicalised / verbalised:** concentrated in meaningful word tokens that name
-  or directly express the property. A distributed direction can be
-  output-aligned without being lexicalised.
-- **Direction:** a repeatable pattern across many vocabulary dimensions. A pair
-  projects positively when its safe-to-unsafe change points the expected way
-  along that pattern.
-- **Relevance:** an attribution of a chosen output score to earlier positions.
-  It describes where that score is routed; it is not the same as attention and
-  is not by itself a causal intervention.
-
-### The conclusion before the details
-
-- R6 validates the relevance method on the two DeepSeek models and identifies
-  which mathematical rule makes conservation work. It cannot be applied to the
-  tested StarCoder2 architecture.
-- R7 finds a reliable safe/unsafe direction across the full vocabulary. All
-  **72/72** held-out pairs point the expected way in all three models, but the
-  strongest token loadings are meaningless fragments. The signal is therefore
-  distributed rather than represented by a word such as `unsafe`.
-- R8 shows that the readout can detect meaningful answer tokens when the model
-  is explicitly asked a yes/no question. This rules out the simple explanation
-  that R7 failed to find a security word because the measurement was blind.
-- R9 finds a small but consistent redistribution of relevance between the two
-  data-flow chains, even at positions whose text is identical across each
-  matched pair.
-
-## Which lens is doing the work — the short answer
-
-Three lenses exist in this repository (logit, J-lens, R-lens), and it is worth
-saying plainly which of them earns its cost, because the answer is not the one
-the track was built expecting.
-
-The practical answer is:
-
-- Use the **logit lens** for the vocabulary-direction results in R7 and R8. The
-  more elaborate lenses do not change those conclusions.
-- Use the **R-lens** only for R9, where conservation is needed to divide one
-  answer score among input positions.
-- The **J-lens** was validated successfully, but none of its intended substantive
-  results survived the required controls. Those attempts are documented in the
-  archive.
-
-**As a vocabulary projection, none of them beats the plain logit lens.** At the
-one cell where a vocabulary readout actually fires (R8), the three are
-interchangeable:
-
-| taint sign consistency, `sink` prompt, clean held-out | logit | J-lens | R-lens |
-|---|---:|---:|---:|
-| 1.3B (L19) | 0.889 | 0.889 | 0.889 |
-| 6.7B (L27) | 0.847 | 0.792 | 0.847 |
-| SC2-3B (L29) | 0.944 | 0.944 | 0.944 |
-
-Their mean vocabulary-difference vectors agree at pairwise cosine 0.75–0.97
-elsewhere. **The Jacobian correction and the LRP rules change none of the
-conclusions in this file that come from projecting onto tokens.** They are
-validated instruments — the J-lens is provably exact at the last layer and
-recovers next-token content the logit lens cannot (+0.15 to +0.22 top-1
-pre-final; METHODS §6.3) — but for *this* task that fidelity buys nothing, and
-saying so is more useful than defending the expense.
-
-**The R-lens earns its keep in exactly one role, and it is not as a lens.**
-Because its rules make the traversed tail degree-1 homogeneous, `Σ_t R_t = s`
-holds, so `R_t / s` is a genuine **partition of the model's own answer across
-input positions**. That is an attribution, not a projection, and no logit lens
-can produce it. It is what makes **R9** possible at all, and R9 is the only
-result in this file that could not have been obtained with a logit lens.
-
-**The J-lens produces no surviving result.** Its validation is correct instrument
-work and lives in METHODS §6.3; its two intended uses were archived when their
-controls failed, and where it was used as a coordinate system the plain logit
-lens was *more* efficient at the same site ([ARCHIVE.md §1.2–§1.3](ARCHIVE.md)).
-
-So Part III contains one instrument result whose *finding* is about LRP itself
-(**R6**), two results obtained with an ordinary output-basis projection (**R7**,
-**R8**), and one that requires the R-lens as a conserving attribution (**R9**).
-
-## The argument of Part III, in four sentences
-
-1. **A conserving backward pass exists on gated-MLP transformers, and the rule
-   that makes it work is not the one that was predicted.** *(R6)*
-2. **The safe/unsafe distinction is present in the models' own output
-   coordinates** — a label-defined direction generalises to held-out programs in
-   72/72 pairs on every model, above a token-identity floor that is exactly zero
-   — **but it is carried by no word**: its top loadings are meaningless
-   fragments. *(R7)*
-3. **The readout is not blind, which is what makes (2)'s second half mean
-   something.** Run on a property the models *do* express, the identical readout
-   finds it at 0.85–0.94 and converges on the model's own answer margin — while
-   the security lexicon at that same cell is significantly *inverted*. *(R8)*
-4. **Below vocabulary space entirely, the model routes identical text
-   differently.** Whichever data-flow chain feeds the sink loses relevance share
-   and the other gains, in 85–90% of matched pairs at early layers. *(R9)*
-
-**The headline the track supports:** *the safe/unsafe distinction is present in
-output-aligned coordinates, distributed across the vocabulary, and not carried by
-any word for it.* "Decodable" and "verbalised" come apart, and — because the
-positive control fired — **the gap is a fact about the models, not a limitation
-of the instrument.**
-
----
-
-## R6 — A conserving backward pass, and the rule that carries it
-
-### The basic idea
-
-R9 needs to say what fraction of an answer score is associated with each input
-position. For those fractions to be meaningful, they must add back up to the
-original score. This property is called **conservation**. Ordinary gradients do
-not guarantee it because several transformer operations distort or
-double-count the quantity being traced.
-
-R6 therefore tests a modified backward pass. The test has two jobs:
-
-1. verify that the modification leaves the model's forward computation
-   unchanged; and
-2. verify that the relevance assigned to earlier states sums to the selected
-   output score.
-
-The experiment also removes each rule in turn. That ablation identifies which
-rule is actually responsible for conservation.
-
-### Research question
-
-An ordinary gradient lens transports raw autograd through modules that are **not
-degree-1 homogeneous**, so relevance is not conserved and a mid-layer reading has
-no fixed interpretation. **Is a more faithful backward pass available on real
-code models, how would we know, and which algebraic fix actually does the work?**
-
-### Why this is a result and not only instrument validation
-
-Two of its three findings are transferable claims that hold beyond this project:
-*which* rule carries the faithfulness gain on a gated-MLP transformer (the
-pre-registered prediction was wrong), and a general diagnostic for detecting that
-LRP rules silently failed to install. The validation itself is the prerequisite
-for R9.
-
-### Hypothesis
-
-Installing the LRP rules — RMSNorm → diagonal, SiLU → elementwise, gate split
-50/50, attention pattern frozen — makes the traversed tail degree-1 homogeneous,
-so relevance conservation
-
-> `ρ = Σ_t ⟨∂s/∂h_t , h_t⟩ / s`
-
-should hold near 1 at every layer by Euler's identity. The design **predicted the
-LN-rule would dominate** the ablation.
-
-### Method
-
-Gate R (stage 110), described in full in
-[METHODS §6.4](METHODS.md#64-the-r-lens-what-it-is-what-it-fixes-and-how-we-know).
-Four required checks — forward invariance (R0), last-layer equality (R1), LRP
-beating raw autograd at every testable layer (R2a), conservation in early layers
-(R2b) — plus a **rule ablation** (R2c) that removes one rule at a time and is
-reported, not gated.
-
-### Result — gate R passes on both DeepSeek models
-
-| check | 1.3B (float32) | 6.7B (float16) |
+| lens | did it work mechanically? | did it add a semantic result? |
 |---|---|---|
-| **R0** forward invariance — the rules change no activation | 1.62e-06 relative (tol 1e-04) | 1.21e-03 relative (tol 1e-02) |
-| **R1** last layer equals the logit lens | cosine **1.0000** | cosine **1.0000** |
-| **R2a** LRP beats raw autograd at every testable layer | **7/7** | **9/9** |
-| **R2b** conservation, median \|ρ−1\| over early/mid layers | **0.0000** | **0.0001** |
+| **logit lens** | yes | **yes** — R7 and the R8 positive control |
+| **J-lens** | yes | **no** |
+| **R-lens** | yes on DeepSeek; not applicable to StarCoder2 | only the tentative routing pattern in R9 |
 
-The all-rules arm holds `ρ ≈ 1` to within 1e-4 at *every* layer including the
-embedding (measured `median_rho` 1.0003 at layer −1 through 0.99996 at layer 31
-on 6.7B). Under raw autograd, by contrast, `ρ` wanders and inverts sign with
-depth.
+The extra complexity of the J- and R-lenses did not improve the vocabulary-space
+conclusions. At the strongest positive-control cell, all three give essentially
+the same sign consistency: **0.889** for 1.3B, approximately **0.8–0.85** for
+6.7B, and **0.944** for StarCoder2. The plain logit lens is therefore the right
+tool for the main semantic summary.
 
-### Result — the ablation falsifies the prediction, and replicates
-
-| rule removed | 1.3B | 6.7B |
-|---|---:|---:|
-| **`no_half`** (gated-MLP split) | **4.4203** | **4.4628** |
-| `no_ln` (RMSNorm → diagonal) | 0.9806 | 0.9885 |
-| `no_identity` (SiLU → elementwise) | 0.2265 | 0.3941 |
-| `no_attn` (attention hooks) | 0.5128 | 0.3044 |
-
-The **half-rule dominates by ~4.5×**, and the ordering is near-identical across
-two models and two dtypes. What makes the traversed tail homogeneous is
-overwhelmingly the **gated-MLP split**, not the norm; without it the conservation
-error is *larger than the quantity being conserved*.
-
-`no_ln` is the second-order effect and a total one — removing it drives `ρ` to
-~0.01, i.e. the relevance essentially vanishes. Attention, deliberately left
-unmodified in the published formulation, costs 0.30–0.51: real, bounded, and the
-honest answer to "what does the unmodified softmax path cost".
-
-One earlier anomaly resolves here. An fp16 run had reported the *identity-rule
-making conservation worse*. In float32 the all-rules arm sits at |ρ−1| = 0.0000
-at every layer against 0.2265 without the identity rule — so the rule helps, and
-the inversion was fp16 noise rather than a property of SiLU.
-
-### Result — it does not apply to StarCoder2 at all, and the tell is general
-
-Gate R **cannot complete** on starcoder2-3b, for an **architectural rather than
-numerical** reason. StarCoder2 uses LayerNorm (deliberately unmatched: it
-subtracts the mean, so the rule's algebra differs) and a non-gated MLP, so
-`norm_eps_attr` and `is_gated_mlp` both decline and the two homogenising rules
-bind to **nothing**. Only the attention hooks register; stage 110 then raises
-when its `no_attn` arm removes the only rule that bound.
-
-**The diagnostic is worth carrying elsewhere**: the one file it produced reports a
-forward delta of **exactly 0.0**. Value-preserving rules still perturb float
-arithmetic; rules that were never installed do not. **An R0 that passes
-*perfectly* is the signature of an empty install.** Gate J0 now refuses this case
-(`rlens_rules_bound`).
-
-### What it means
-
-For anyone building an attribution method on a gated-MLP transformer, the gate's
-**bilinearity — not the norm — is where autograd's double-counting lives**, and
-that now has a number attached to it in two models and two dtypes. For this
-project, conservation holding to 1e-4 is the precondition that makes R9's
-relevance *partition* a partition rather than an uninterpretable ratio, and where
-it does not hold the stage refuses to run rather than emitting raw autograd under
-the name relevance.
-
----
-
-## R7 — The distinction is in the output basis, and it is not a word
-
-### The basic idea
-
-For each matched safe/unsafe pair, the experiment compares the model's score for
-every token in its approximately 32,000-token vocabulary. It then learns the
-average safe-to-unsafe change from training pairs and asks whether unseen pairs
-change in the same direction.
-
-There are two separate success criteria:
-
-- **Generalisation:** does the learned direction correctly orient unseen
-  safe/unsafe pairs? This succeeds.
-- **Dominance:** is that direction the largest source of variation between
-  programs? This fails.
-
-These are not contradictory. A small but highly repeatable direction can
-generalise to every held-out pair without being the largest difference between
-the programs.
-
-### Research question
-
-The probe (R5) says what a *fitted* direction can recover, in a basis of its own
-choosing. It cannot say whether the model's **output-aligned** coordinates carry
-the distinction. So: **is the safe/unsafe distinction present in output-aligned
-coordinates at all — and is it carried by any single token?**
-
-An earlier attempt asked this against a hand-picked 196-token security lexicon
-and returned a null. That attempt is archived
-([ARCHIVE.md §4.4](ARCHIVE.md#44-the-security-lexicon-vocabulary-contrast)),
-because at its reported cell the effect does not beat a random direction on one
-of three models, and because it can only find a concept that some token *in its
-pool* carries. This result removes the pool.
-
-### Hypothesis
-
-Two pre-declared and separable predictions:
-
-- **generalisation** — a direction estimated from the *training* pairs' full
-  vocabulary differences will be projected onto positively by *held-out* pairs;
-- **dominance** — the label axis will be the largest axis of variation among the
-  difference vectors, operationalised as `sv1_ratio ≥ 2.0` against a same-label
-  null.
+## R6 — Does the R-lens conserve relevance?
 
 ### Method
 
-Stage 128. Form each matched pair's difference over **all ~32k tokens**, z-scored
-per member; estimate the mean direction on the training split; project held-out
-pairs onto it. Nothing is chosen in advance, so a null cannot be blamed on a
-pool.
-
-The primary site is **`last_token`**, not `sink_arg`, because it is the only site
-where both members carry the same token id in 100% of pairs — which makes the
-layer −1 surface floor **exactly zero**, since identical tokens give identical
-embeddings. Concentration is measured with the sign-invariant
-`sv1_share = λ_max(UUᵀ)/trace(UUᵀ)` against both a random floor (`1/n`) and a
-same-label null.
-
-### Result — the direction generalises, decisively
-
-| clean held-out, `last_token`, mid-depth | 1.3B (L11) | 6.7B (L15) | SC2-3B (L15) |
-|---|---:|---:|---:|
-| held-out pairs projecting positively | **72/72** | **72/72** | **72/72** |
-| mean cosine with the frozen direction | **0.383** | **0.380** | **0.390** |
-| cluster-bootstrap 95% CI | [0.360, 0.406] | [0.358, 0.401] | [0.351, 0.429] |
-| same-label control, same direction | 0.507 | 0.465 | 0.549 |
-| token-identity floor (layer −1) | **exactly 0** | **exactly 0** | **exactly 0** |
-
-Every number that could make this an artifact was measured and came back clean. A
-random direction in 32 256 dimensions gives a cosine near 0.006, so 0.38 is
-roughly **sixty standard deviations out**. The same-label control — two programs
-of the *same* label, everything else varying — sits at chance on the same
-direction. And on the **44 of 72 pairs whose two members have identical token
-counts**, the last-token position index is identical too, so 100% sign
-consistency cannot be a length or position effect: you cannot be right on all 72
-without being right on those 44.
-
-### Result — a clear onset depth, identical in all three models
-
-| relative depth | ≈0.0 | ≈0.13 | ≈0.25 | ≈0.35–0.50 | ≈0.75–1.0 |
-|---|---:|---:|---:|---:|---:|
-| layers | −1, 0 | 3 | 7 | 11–15 | 19–31 |
-| sign consistency (1.3B / 6.7B / SC2) | 0.49/0.46/0.46 | 0.46/0.49/0.50 | **1.00**/0.79/0.71 | 1.00/1.00/1.00 | 0.90–1.00 |
-
-Nothing before a quarter of the way through the stack; then it appears and holds
-to the output. Two model families, three scales, one curve.
-
-### Result — it degrades exactly as the probe does
-
-Projection sign consistency at the reported layer, across the ten conditions:
-
-| | clean | normalize | rename | opaque | encode | **flatten** | full cumulative |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| 1.3B | 1.000 | 1.000 | 0.958 | 0.903 | 1.000 | **0.819** | 0.722 |
-| SC2-3B | 1.000 | 0.944 | 0.889 | 0.903 | 0.972 | **0.681** | 0.681 |
-
-The mean projection falls by ~93% under flattening alone and by 4–14% under
-renaming, opaque predicates or MBA encoding. **This independently replicates R5's
-headline with a completely different readout** — nothing is fitted here, no probe
-is trained, and the conclusion is the same.
-
-### Result — but the direction is not a concept, and it does not dominate
-
-Two facts keep this from being "the model has an unsafe feature", and both are
-reported.
-
-*Its top loadings are meaningless.* The tokens carrying it are `' Lemmon'`,
-`'egraphics'`, `'ateral'`, `'uta'` (1.3B); `' mel'`, `'椒'`, `' Jonathan'` (6.7B);
-`'bootstrapcdn'`, `'%%%%%%%%%%'`, `'pmatrix'` (SC2). Loadings are **flat** —
-0.019 to 0.027 across the top twelve — i.e. the direction is spread thinly over
-thousands of tokens rather than concentrated in a few. **It is output-aligned but
-not lexicalised**, and this is the direct evidence for that claim: it needs no
-hand-picked vocabulary and no null.
-
-*The label axis is not the largest axis of variation.* The pre-declared criterion
-`sv1_ratio ≥ 2.0` measured **0.76 / 0.97 / 0.76**. It **failed on all three
-models**, and it fails because two programs of the same label already differ along
-a dominant shared axis of comparable size. The verdict recorded is
-`direction_replicates_but_not_dominant`.
-
-**Those two statements are compatible and both are reported.** The projection asks
-*does a label-defined direction generalise to unseen programs* — yes, decisively.
-The concentration asks *is the label axis the biggest thing separating these
-difference vectors* — no. What settles that they are **different axes** rather
-than one: the frozen direction's top-100 loadings overlap what the *same-label*
-differences find at a Jaccard index of **0.005 / 0.005 / 0.000**. Nearly disjoint.
-
-### What it means
-
-The distinction lives in the model's own output coordinates from a quarter of the
-way up the stack, spread across the vocabulary, and no word carries it. This is a
-claim about **representational format**, which is stronger than "a probe can find
-it" and weaker than "the model uses it" — it remains observational.
-
-It also carries a methodological warning: an interpretability method that looks
-for concepts by asking *which token lights up* would have concluded this property
-is absent. It is not absent; it is distributed.
-
----
-
-## R8 — The positive control: the readout is not blind, and the security words run backwards
-
-### The basic idea
-
-R7 did not find a meaningful token that names the security distinction. That
-negative result is ambiguous unless the same machinery can detect meaningful
-tokens somewhere else. R8 supplies that positive control by explicitly asking
-the model a yes/no taint question.
-
-The models have a fixed yes/no answer bias, so ordinary accuracy is **0.500**:
-one model always selects `no`, while two always select `yes`. The experiment
-therefore also measures the *margin* between `yes` and `no`. Even when the final
-choice does not flip, that margin can be higher for the unsafe member of a pair.
-`pair_separation` is the fraction of pairs ordered correctly by this margin; its
-chance level is **0.500**.
-
-### Research question
-
-Any claim of the form "the model does not verbalise X" has an ambiguity that no
-negative control can resolve: *the model does not verbalise it* versus *this
-readout could not detect verbalisation if it were there*. So: **can this readout
-detect verbalisation at all — and when it demonstrably can, what do the security
-words do at that same cell?**
-
-### Hypothesis
-
-Four outcomes were declared in advance, including the one that would retire the
-track. If the identical readout finds a property the models demonstrably express
-and does *not* find the security lexicon at the same cell, the "not verbalised"
-reading is about the models (`machinery_validated`). If it finds neither, it is
-about the method (`machinery_blind`).
-
-### Method
-
-Stage 129 runs the **identical** measurement — same `pair_contrast` call, same
-z-score convention, same orientation, **one** candidate basis carrying both token
-sets, with gate J3 refusing the run if the two bases ever differ — on a
-forced-choice taint question whose answer is a single token.
-
-The behavioural statistic is **`pair_separation`** (the fraction of bases where
-the unsafe member draws a higher yes-margin than its matched safe counterpart),
-not accuracy, because a model with a fixed answer bias earns 0.5 accuracy for
-free while pair separation's chance level of 0.5 is immune to answer bias. Two
-prompt styles are run so prompt sensitivity is measured rather than assumed.
-
-### Result — step 1: can the models answer it at all?
-
-By **accuracy**, no. Every model scores **0.500**, and the reason is visible in
-one column: each has a fixed answer bias whose argmax never moves. 1.3B answers
-"no" to every program; 6.7B and StarCoder2 answer "yes" to every program.
-
-But the *graded* margin does separate the pair:
-
-| clean held-out, `sink` prompt | 1.3B | 6.7B | SC2-3B |
-|---|---:|---:|---:|
-| accuracy | 0.500 | 0.500 | 0.500 |
-| answers the same token for every program | yes ("no") | yes ("yes") | yes ("yes") |
-| **pair separation** | **0.694** | **0.750** | **0.917** |
-| sign-test p | 0.0013 | 0.0000 | 0.0000 |
-
-So the property *is* expressed behaviourally, **as a ranking rather than as a
-decision**. This is precisely why the design fixed on the paired statistic in
-advance: had the verdict read accuracy, every model would have returned
-`property_not_verbalised` and the stage would have concluded nothing.
-
-### Result — step 2: the readout finds it, and the security words invert
-
-| best taint cell, R-lens, `sink` prompt | 1.3B (L19) | 6.7B (L27) | SC2-3B (L29) |
-|---|---:|---:|---:|
-| relative depth | 0.83 | 0.87 | 0.93 |
-| **taint sign consistency** | **0.889** | **0.847** | **0.944** |
-| permutation p | 0.000 | 0.000 | 0.000 |
-| lens tracks the model's own margin | 0.708 | 0.806 | 0.917 |
-| **security lexicon at the same cell** | **0.347** | 0.764 | **0.389** |
-| its permutation p | 0.000 | 0.000 | 0.006 |
-
-The readout's agreement with the model's own forced-choice margin rises
-monotonically with depth and reaches **0.95 / 0.98 / 0.98** at the final layer —
-which it must, because there the lens *is* the output head. That is the internal
-validity check on the whole instrument, and it passes.
-
-**This is the strongest form the "not lexicalised" claim takes anywhere in the
-project**, because it is a within-cell dissociation on one instrument at one
-position: on 1.3B and StarCoder2, the taint poles separate the pair at
-0.889/0.944 while the security words separate it at 0.347/0.389 — *significantly
-in the wrong direction*, both p < 0.01. The readout is demonstrably alive at that
-cell. The security vocabulary is not merely silent there; it is inverted.
-
-### Result — 6.7B differs, and it must be reported as such
-
-There the security lexicon *also* fires (0.764, p = 0.000) — the
-`both_properties_detected` outcome. Read it precisely: this is at the **answer
-position of a prompt that asks the question**, at 87% depth, not at a sink
-argument in unprompted code. The two contrasts are only weakly correlated
-(r = +0.26), so the security signal is not merely the taint signal wearing another
-name; but "vulnerable/safe" moving with "yes/no" where a model is about to answer
-a security question is close to what one would expect. **The narrow conclusion:
-6.7B's security lexicon separates the pair when the model is asked.**
-
-### Result — prompt sensitivity is large, and measuring it was not optional
-
-Both prompt styles ran. On 6.7B they disagree outright: pair separation is
-**0.750 under `sink` and 0.222 under `e6`** (p = 0.000 both ways) — i.e. under the
-second wording 78% of pairs give the *safe* member the higher yes-margin. Same
-model, same programs, opposite answer. 1.3B (0.694 vs 0.722) and StarCoder2 (0.917
-vs 0.806) agree across the two.
-
-### Result — behaviour breaks where everything else does
-
-Pair separation under the `sink` prompt across conditions:
-
-| | clean | rename | opaque | encode | **flatten** | full cumulative |
-|---|---:|---:|---:|---:|---:|---:|
-| 1.3B | 0.694 | 0.625 | 0.708 | 0.722 | **0.514** | 0.472 |
-| 6.7B | 0.750 | 0.597 | 0.653 | 0.486 | **0.597** | 0.556 |
-| SC2-3B | 0.917 | 0.708 | 0.764 | 0.833 | **0.694** | 0.653 |
-
-Flattening takes 1.3B to chance (0.514) and costs the other two 0.15–0.22.
-
-### What it means
-
-Three things. **The instrument is not blind**, so R7's "carried by no word" is a
-statement about the models. **The security vocabulary is inverted, not inert**, on
-two of three models, at a cell where the same readout demonstrably works.
-And this is the **third independent readout** — a fitted probe (R5), an
-unsupervised full-vocabulary direction (R7) and the model's own forced-choice
-margin — showing the same transformation boundary, the last of the three
-involving no probe and no lens at all.
-
-Two cautions. Any behavioural claim drawn from a single prompt is worth less than
-it looks. And on 6.7B "not lexicalised" holds for the *unprompted* state only.
-
----
-
-## R9 — Relevance moves, on text that is character-for-character identical
-
-### The basic idea
-
-R9 no longer asks which vocabulary tokens the hidden state resembles. Instead,
-it selects an answer score and uses the conserving R-lens from R6 to allocate
-that score across locations in the input program. The allocations are grouped
-by syntactic role, such as the tainted data-flow chain and the trusted chain.
-
-Only the sink argument differs between the safe and unsafe member of a matched
-pair. Therefore, a consistent attribution change at any other role cannot be
-explained by different text at that role. It means the model routes the same
-text differently depending on which chain reaches the sink.
-
-### Research question
-
-R7 and R8 both read the state through the vocabulary, so both can only find a
-distinction that some token or combination of tokens carries. **Does the model
-route its answer differently through the two members of a matched pair, in a way
-that needs no lexicalisation at all?**
-
-### Hypothesis
-
-Under the LRP rules validated in R6 the relevance decomposition conserves, so
-`R_t / s` is a genuine **partition** of the model's own answer across input
-positions, and a paired difference is a *redistribution* rather than a change of
-scale. If the model resolves the flow question by tracing the chain that feeds the
-sink, then the relevance share of that chain should differ systematically between
-the unsafe and safe members — at positions whose tokens are identical.
-
-### Method
-
-Stage 130 (deepseek-coder-1.3b). Conservation is measured per (pair, layer) and
-came back at median |ρ − 1| = **0.0000** with a worst case of 5e-5 at every layer.
-Relevance is summed **by AST role**, recomputed from each program's own source.
-
-**The control is free, and it is the strongest one in the project: only
-`sink_arg` differs in tokens between the two members.** Measured under the real
-tokenizer, every other role matches at 1.000 and `sink_arg` at 0.611 — exactly
-the 44/72 length-matched pairs. So a shift among the other roles is the model
-routing its answer differently through **identical text**.
+R6 is an instrument test. It checks that the modified backward rules leave the
+forward model unchanged and that the relevance assigned to earlier positions
+adds back to the chosen output score. It then removes each rule in turn to see
+which correction matters.
 
 ### Result
 
-Paired difference in each role's share, clean held-out, 72 pairs:
+The gate passes on both DeepSeek models:
 
-| layer | role | median Δ share | pairs shifting the same way | sign-test p |
-|---|---|---:|---:|---:|
-| 0 | `taint_chain` | −0.0136 | **65/72** | 7e-13 |
-| 0 | `trust_chain` | +0.0207 | **63/72** | 4e-11 |
-| 3 | `taint_chain` | −0.0083 | 62/72 | 3e-10 |
-| 3 | `trust_chain` | +0.0179 | 61/72 | 2e-09 |
-| 7 | `trust_chain` | +0.0097 | 55/72 | 8e-06 |
-| 19 | `trust_chain` | +0.0028 | 56/72 | 4e-06 |
+| check | DeepSeek 1.3B | DeepSeek 6.7B |
+|---|---:|---:|
+| final-layer agreement with logit lens | **1.0000** | **1.0000** |
+| median early/middle conservation error | **0.0000** | **0.0001** |
+| layers where R-lens beats raw autograd | **7/7** | **9/9** |
 
-Read across the two rows: **whichever chain feeds the sink loses relevance share,
-and the other gains.** In the unsafe program the sink takes the tainted variable
-and the *trusted* chain carries more of the answer; in the safe program it is the
-other way round. The effect is strongest at the bottom of the stack, decays with
-depth, is gone for `taint_chain` by layer 11, and survives for `trust_chain` to
-layer 19.
+The most important correction is the 50/50 split at the gated MLP. Without it,
+the conservation error is about **4.4**, far larger than the quantity being
+conserved. This falsifies the original expectation that normalization would be
+the dominant issue.
 
-It survives both available controls: it holds separately in both `role_swap`
-strata (which identifier name carries the taint) and both `order_swap` strata
-(which chain is written first), at p ≤ 2e-2 in every one of the eight cells at
-layers 0 and 3. So it is neither an identifier-name effect nor a
-position-in-program effect.
+StarCoder2 is out of scope: its normalization and MLP do not match the implemented
+rules, so the pipeline correctly refuses to treat its backward pass as an
+R-lens.
 
-### Two honest qualifications
+### What this means
 
-The magnitude is **small** — a median shift of 1–2% of the answer. And the
-pre-declared `above_permutation_control` check, which tests the *mean*, **fails**
-(p = 0.39–0.62): relevance deltas are heavy-tailed enough that seven outlier pairs
-out of seventy-two flip the mean's sign while the median and the sign stay put.
-The statistic that survives is the sign, and its exact null under the same
-random-orientation scheme is binomial — which is the test reported above. The
-verdict records both: `redistribution_consistent_but_not_in_mean`.
+The R-lens is a valid attribution instrument for the tested DeepSeek models. R6
+does **not** show semantic understanding; it only makes the later routing test
+interpretable.
 
-This ran on **deepseek-coder-1.3b only**. It is *not applicable* to StarCoder2 —
-the homogenising rules bind to nothing there, so there is no conservation to read,
-and stage 130 refuses rather than emitting raw autograd under the name relevance
-(R6). It has not been run on 6.7B.
+## R7 — The distinction is in the output basis, and it is not a word
 
-### What it means
+### Method
 
-The distinction shows up in *routing* before it is representable in output
-coordinates: the relevance shift is already present at layers 0–3, while the
-output-basis direction of R7 does not appear until ~25% depth. This is the one
-result in the file that the R-lens makes possible and a logit lens cannot
-produce.
+For each matched pair, the ordinary logit lens produces scores for all roughly
+32,000 vocabulary tokens at the final program position. This position contains
+the same token in both programs, eliminating token identity as an explanation.
 
----
+The training pairs define the average unsafe-minus-safe vocabulary direction.
+That direction is frozen. Held-out pairs then test whether the unsafe program
+projects farther along it than its matched safe program. Same-label pairs test
+whether ordinary differences between programs produce the same effect.
 
-## What is actually verbalised: three grades
+### Result
 
-Read together, R7, R8 and R9 answer this in one sentence: **the answer to a
-question is verbalised; the property it is an answer about is not.** Three
-distinct grades come out of the data and should not be collapsed.
+| clean held-out pairs | 1.3B | 6.7B | StarCoder2 3B |
+|---|---:|---:|---:|
+| pairs in the predicted direction | **72/72** | **72/72** | **72/72** |
+| mean cosine with training direction | **0.383** | **0.380** | **0.390** |
+| identical-token embedding floor | **0** | **0** | **0** |
 
-**1. Verbalised — the yes/no lean, late, and as a ranking.** When the model is
-*asked*, the lean toward `" yes"` over `" no"` is readable in vocabulary space
-(0.889 / 0.847 / 0.944), tracks the model's own margin (0.708 / 0.806 / 0.917),
-and first becomes significant at 38–65% depth. It is verbalised as a **ranking,
-not a decision**: accuracy is 0.500 on all three models, because each has a fixed
-answer bias whose argmax never moves. *(R8)*
+Same-label controls remain near chance. The direction first becomes clear about
+one quarter of the way through the network and then persists. Flattening the
+program's control flow weakens it sharply, paralleling the probe results.
 
-**2. Output-aligned but not lexicalised — the distinction itself.** Projected
-onto positively by 72/72 held-out pairs on every model at cosine 0.38 over a floor
-of exactly zero, appearing at ~25% depth — *earlier* than the verbalised answer.
-Its loadings are flat (0.019–0.027) and spread over thousands of meaningless
-tokens. *(R7)*
+The important limitation is what the direction looks like. Its largest token
+loadings are unrelated fragments such as `Lemmon`, `椒`, and `bootstrapcdn`, and
+the weight is spread thinly across thousands of tokens. The direction also fails
+the preregistered dominance test (`0.76 / 0.97 / 0.76`, below the required
+`2.0`): it is repeatable, but it is not the largest difference between programs.
 
-**3. Not lexicalised — and the security words are *inverted*, not inert.** At the
-cell where the taint poles separate the pair at 0.889 and 0.944, the security
-lexicon separates it at **0.347 and 0.389** — significantly in the wrong
-direction, on the same instrument, at the same position, with p < 0.01. The
-readout is demonstrably alive there. *(R8)*
+### What this means
 
-**The depth sequence is the cleanest way to say all of this:**
+The models contain a stable safe/unsafe difference in their own output
+coordinates. But the lens does not reveal a human-readable semantic variable.
+The most defensible description is **distributed output alignment**: the
+distinction is statistically present across the vocabulary without being
+represented by a word that names it.
 
-| relative depth | what is happening |
-|---|---|
-| 0–13% | relevance **routing** already differs (R9: the chain feeding the sink loses share, 65/72 pairs) while vocabulary space is empty |
-| ~25% | a **distributed output-aligned direction** appears and holds to the output (R7) |
-| 40–65% | the **answer becomes sayable** (R8) |
+This is also why vocabulary lenses are limited tools for semantics. They are
+built to ask “which output-token directions does this state resemble?” Abstract
+program relations need not be organised like words. A strong distributed
+direction can demonstrate a consistent internal difference, but it cannot tell
+us that the model represents the human concept *unsafe* or understands data
+flow in the human sense.
 
-The property is routed differently before it is representable in output
-coordinates, and representable long before it is sayable. It never becomes a
-word.
+## R8 — The positive control: the readout is not blind, and the security words run backwards
 
----
+### Method
+
+To check that R7's lack of meaningful security words is not merely a blind
+instrument, the model is explicitly asked a yes/no taint question. The readout
+tests whether the unsafe member receives a larger `yes`-minus-`no` margin than
+the matched safe member.
+
+### Result
+
+All models choose the same answer token for every program, so ordinary accuracy
+is **0.500**. Their graded margins nevertheless order the pairs correctly in
+**0.694 / 0.750 / 0.917** of cases. At the best internal layer, lens sign
+consistency is **0.889 / 0.847 / 0.944**.
+
+Thus the measurement can recover a property when the prompt makes the model
+express it. This makes R7's lack of meaningful token loadings informative rather
+than a simple measurement failure. It does not show reliable task performance:
+the final choices remain biased, and the 6.7B result reverses under another
+prompt wording.
+
+## R9 — The only unique R-lens result is suggestive, not conclusive
+
+### Method
+
+On DeepSeek 1.3B, the conserving R-lens divides an answer score among syntactic
+roles. Only the sink argument differs between each safe/unsafe pair; the two
+data-flow chains are textually identical. The test asks whether relevance moves
+between those unchanged chains when a different chain is connected to the sink.
+
+### Result
+
+At layer 0, **65/72** pairs shift the taint-chain share in the same direction and
+**63/72** shift the trust-chain share in the opposite direction. The median
+change is small, about **1–2%** of the answer score, and it fades with depth.
+
+This pattern is interesting because it occurs on identical text and survives
+identifier/order strata. But the preregistered permutation comparison of the
+**mean** does not pass (`p = 0.39–0.62`). A few large outliers reverse the mean
+even though most pairwise signs agree. The honest verdict is therefore
+`redistribution_consistent_but_not_in_mean`.
+
+### What this means
+
+R9 suggests that the model may route its computation differently depending on
+which data-flow chain reaches the sink. It does not provide strong evidence of a
+semantic mechanism: the effect is small, was measured on one model, depends on
+chosen attribution rules, and fails the strongest preregistered control.
+
+## Bottom line for semantic understanding
+
+- The lens evidence shows a **reliable internal difference** between safe and
+  unsafe programs in output coordinates.
+- It does **not** show a discrete or human-readable “unsafe” concept. The signal
+  is distributed across unrelated token dimensions.
+- The J-lens adds no semantic evidence beyond the simple logit lens.
+- The R-lens routing result is worth keeping as a clue, but not as a confirmed
+  finding.
+- None of these observations proves causal use or semantic understanding. The
+  intervention experiments in Part IV are required for claims about what the
+  model actually uses.
+
 
 # Part IV — Whether the model uses it
 

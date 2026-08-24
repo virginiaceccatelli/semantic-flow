@@ -573,374 +573,214 @@ that as "mostly fine".
 
 # 6. Instrument 3 — the lens stack: logit, J-lens, R-lens
 
-## 6.1 The question a lens asks that a probe cannot
+## 6.1 What a lens is meant to tell us
 
-Sections 3–5 measure whether a *supervised* readout can recover a relation. A
-linear probe can read any direction that happens to correlate with the label,
-including one the model never uses, and it chooses its own basis. A **lens**
-reads the state through the model's **own output head**, so a high score means
-"this state pushes the model toward emitting token `w`".
+A probe asks whether a new classifier can recover a label from a hidden state.
+A lens asks a narrower question: **does the hidden state already point in a
+direction used by the model's own output system?** This is closer to the model's
+computation, but it is still observational. A lens does not show that the model
+needs the signal or uses it causally.
 
-That makes a different question askable: is the relation in a form the model is
-*disposed to act on* — in output-aligned coordinates — not merely one a
-classifier can extract? A relation can be **decodable but not verbalised**, and
-that gap is the finding the lens track exists to test.
+The project tested three versions:
 
-Three lenses are used, in increasing order of faithfulness and cost.
-
-> **The verdict up front, because it is not the expected one.** As *vocabulary
-> projections* the three are interchangeable on this task: at every cell where a
-> readout actually fires they agree to within noise (0.889 across all three at
-> 1.3B's best cell, 0.944 at StarCoder2's, pairwise cosine 0.75–0.97 elsewhere),
-> so the Jacobian correction and the LRP rules change none of the conclusions in
-> [RESULTS.md](RESULTS.md) that come from projecting onto tokens. **The R-lens
-> earns its cost in one role only, and it is not as a lens**: because its rules
-> restore conservation, `R_t / s` is a *partition* of the model's answer over
-> input positions, which is an attribution no logit lens can produce (§7.3c).
-> Sections 6.2–6.4 describe all three anyway, because knowing *why* the
-> expensive ones were built and *that* they were validated is what licenses
-> saying they were unnecessary here.
-
-## 6.2 The logit lens
-
-The baseline: score a hidden state `h_l,t` against candidate token `w` by
-`v_w = g · W_U[w]`, i.e. project the state directly onto the unembedding row.
-Cheap, exact at the last layer, and progressively less meaningful going backwards
-because it ignores everything the remaining blocks would do to the state.
-
-It is also the **decisive control** for the J-lens: the J-lens's only claimed
-value-add is the causal correction, so a J-lens result that the logit lens
-reproduces is not a J-lens result.
-
-## 6.3 The J-lens: a first-order causal correction
-
-For a candidate token `w`, the J-lens vector is
-
-> `v_w = J_l^T (g · W_U[w])`,  where  `J_l = E[ ∂h_final,t' / ∂h_l,t ]`
-
-computed as **one vector–Jacobian product per candidate** — backpropagate the
-scalar `(g · W_U[w]) · h_final,t'` back to `h_l,t` — and averaged over a corpus.
-The `d_model × d_model` Jacobian is never materialised; only the handful of lens
-vectors actually scored against.
-
-Three implementation facts that matter:
-
-- **A small candidate vocabulary is legitimate here** (in the binding track): the
-  generator draws every identifier from a fixed pool, and a forced-choice taint
-  readout needs exactly two tokens. This is a property of the corpus, not an
-  approximation of the method. Where it *is* a limitation — E15-C's 196-token
-  pool — §7 says so and §7.2 removes it.
-- **Identifiers are read space-prefixed.** Under byte-BPE, `    x = 5` tokenizes
-  as `['   ', ' x', ' = ', '5']`, so the token the model actually emits for that
-  variable is `' x'`. A lens on the bare `'x'` row would describe a token that
-  essentially never occurs in Python source.
-- **The scale caveat.** `norm(x) = g·x / rms(x)`, and `rms(x) > 0` does not
-  depend on `w`, so dropping it leaves rankings, argmax and the *sign* of a score
-  difference exact while making raw magnitudes incomparable across positions.
-  Every lens statistic is therefore rank- or sign-based, or z-scored (§7.1).
-
-**How we know the implementation is right.** At the last decoder layer `J` is
-provably the identity, so the J-lens must equal the logit lens exactly. Stage 60
-asserts this and measures **cosine 1.0000** on all three models — a closed-form
-check of the entire gradient path, not a plausibility argument. Next-token top-1
-recovery is 0.633–0.650 against a chance level of 0.038, and the Jacobian
-correction beats the plain logit lens by +0.15 to +0.22 at pre-final layers.
-
-**Numerical care.** The lens stages run the only *backward* passes in the
-pipeline, so they are the only ones exposed to fp16 gradient overflow/underflow.
-Each sample is retried down a ladder of loss scales, and any sample still
-non-finite is dropped and counted rather than averaged in. On Apple silicon the
-fp16 backward through this path returns non-finite gradients at every scale, so
-`--dtype float32` is required there.
-
-## 6.4 The R-lens: what it is, what it fixes, and how we know
-
-### The problem the R-lens solves
-
-The J-lens is an **averaged first-order** readout, and its backward pass is raw
-autograd through modules that are **not degree-1 homogeneous**. The consequence
-is not a vague loss of accuracy — it is measurable, and it has a name.
-
-**Relevance conservation** is the completeness property any relevance
-decomposition must have:
-
-> `ρ_l = Σ_t ⟨ ∂s/∂h_l,t , h_l,t ⟩ / s`
-
-which equals **exactly 1** when the tail of the network above layer `l` is
-degree-1 homogeneous, by Euler's identity for homogeneous functions. Under raw
-autograd `ρ` wanders and **inverts sign** with depth — on a reference
-architecture it runs 3.15 / −1.99 / 0.67 across depth. That is the mechanism
-behind the non-monotonic J-lens curves in `jlens_validation_*.csv`: the backward
-pass is not conserving anything, so a mid-layer reading has no fixed
-interpretation.
-
-### What the R-lens actually does
-
-The R-lens (`src/models/lrp.py`) installs four **layerwise-relevance-propagation
-rules** on module *instances* inside a context manager, and removes them in a
-`finally`. Nothing is monkeypatched at class level — a leaked patch would
-silently change every later stage in the same process.
-
-| rule | what it changes | why |
+| method | plain-language operation | role in the final analysis |
 |---|---|---|
-| **LN-rule** | detach RMSNorm's `1/rms` factor, making the norm a **diagonal** map | RMSNorm's true Jacobian is `(1/rms)(I − h hᵀ/(d·rms²))diag(g)`; the second term subtracts the component *along h itself* — the direction the residual stream actually carries. Applied once it is a mild shrink; composed over 30 blocks it is the "relevance collapse" |
-| **identity-rule** | detach the sigmoid factor of SiLU, making it **elementwise** | `silu(g) = g·sigmoid(g)`; detaching the sigmoid makes the activation degree-1 homogeneous in `g` |
-| **half-rule** | split a gate's relevance **50/50** instead of double-counting | a gated MLP `up(x) * act(gate(x))` is bilinear, and autograd counts the same relevance through both branches |
-| **attn-rule** | detach `q` and `k`, freezing the attention **pattern** | `A(q,k) @ V(x)` is bilinear too — the same failure the half-rule fixes for the MLP, on the one path the original R-lens formulation leaves alone |
+| **logit lens** | apply the model's ordinary output head to an intermediate state | sufficient for every surviving vocabulary-space result |
+| **J-lens** | estimate how the remaining layers would transform a small change at that state | instrument validated, but no unique semantic result survived |
+| **R-lens** | modify the backward calculation so one output score can be divided among earlier token positions | used only for the routing experiment; applicable to the tested DeepSeek architecture, not StarCoder2 |
 
-**Every rule preserves the forward value.** `silu(g) = g·sigmoid(g)`, so
-detaching the sigmoid changes no value; `0.5(ab) + 0.5(ab) = ab`; detaching a
-multiplicative scalar changes nothing. **Only the local derivative moves.** That
-is what licenses reading an R-lens against hidden states extracted *without* the
-rules installed — it is the same model. Preservation is algebraic, not bitwise
-(the half-rule replaces one fused multiply with two multiplies and an add), so
-the verification uses a tolerance rather than exact equality.
+This distinction is central: **R7 and R8 do not need the J- or R-lens.** Their
+conclusions come from the ordinary logit lens. The only question for which the
+R-lens adds a capability is R9: where in the input an answer score is assigned.
 
-### The attention rule is a deliberate deviation, and it costs something
+## 6.2 The logit lens: the baseline that proved sufficient
 
-The published R-lens formulation leaves attention unmodified. On
-deepseek-coder-1.3b that does not conserve: measured in fp32, the three-rule
-configuration overshoots by ~0.07 of relevance per block traversed, reaching
-`ρ = 2.69` across 24 blocks. Detaching `q` and `k` makes the pattern constant,
-the block linear in `x` through `V`, and conservation exact.
+At layer `l` and position `t`, take the hidden state `h_l,t` and pass it through
+the model's normal output head. The result is one score per vocabulary token.
+This lets us ask whether a safe/unsafe pair differs in the model's own output
+coordinates.
 
-**What this costs is real and belongs in any write-up.** With `q` and `k`
-detached, the lens attributes no relevance to *pattern formation* — only to what
-attention moved, not to the decision of where to look. For a binding task, where
-"attend to the right definition" is plausibly the mechanism of interest, that is
-a genuine limitation. `attn=False` reproduces the published configuration, and
-the ablation measures both so the choice stays visible in every run.
+The method is exact at the final layer. Earlier in the network it is only a
+readout: it ignores the transformations still to come. That limitation motivated
+the two more elaborate lenses. In the actual experiments, however, those lenses
+did not alter the vocabulary-space conclusions, so the simpler reading is the
+one reported.
 
-### How the R-lens is validated: gate R
+For the main full-vocabulary experiment (R7), the procedure is:
 
-Four checks, all of which must pass before any R-lens number is read
-(`scripts/110_rlens_validate.py`):
+1. At a position whose token is identical in the safe and unsafe program, score
+   all roughly 32,000 output tokens.
+2. Subtract the safe score vector from the unsafe score vector.
+3. Average these difference vectors on the training pairs to define one
+   safe-to-unsafe direction.
+4. Freeze that direction and test whether held-out pairs point the same way.
+5. Compare with same-label pairs and the embedding-layer floor, where identical
+   tokens must produce an exactly zero difference.
 
-| check | what it asserts | how |
-|---|---|---|
-| **R0** forward invariance | the rules change no activation | compare ordinary forward logits with and without the rules, within a **relative** tolerance (deepseek logits reach ~80, where an absolute 1e-4 bound would fail on float32 rounding alone) |
-| **R1** last layer = logit lens | regression guard | at the final layer the LRP path is not traversed, so cosine must be 1.0000 |
-| **R2a** LRP beats raw autograd | the rules help, at *every* testable layer | median \|ρ−1\| lower under LRP than under autograd, layer by layer |
-| **R2b** conservation in early layers | the estimator is sound where it is used | median \|ρ−1\| over the early/middle layer set below threshold |
-| **R2c** rule ablation | *which* rule does the work | remove one rule at a time and measure the resulting \|ρ−1\| — reported, not gated |
+This tests whether a **repeatable output-aligned direction** exists. It does not
+test whether a particular word such as `unsafe` represents the concept, nor
+whether the direction causes the model's behaviour.
 
-R2c is the one that reports rather than gates, because its purpose is
-attribution rather than validation.
+## 6.3 The J-lens: valid instrument, no useful result here
 
-### Architecture scope, and a diagnostic worth knowing
+The J-lens adds a local, first-order estimate of the remaining network. In plain
+language, it asks: “if this intermediate state changed slightly in this token
+direction, how would the final state change?” The estimate is averaged over a
+separate corpus so it can be reused.
 
-The rules bind by **architecture match**: `norm_eps_attr` identifies RMSNorm,
-`is_gated_mlp` identifies a gated MLP. On a model with **LayerNorm** (which
-subtracts the mean, so the rule's algebra differs) and a **non-gated MLP**, both
-homogenising rules bind to *nothing*. Only the attention hooks register — enough
-to satisfy a naive "rules installed" check — and a lens labelled `rlens` gets
-built that is arithmetically a **J-lens**.
+Two checks show that the implementation works mechanically:
 
-The tell is diagnostic and general: **an R0 forward delta of exactly 0.0.**
-Value-preserving rules still perturb float arithmetic; rules that were never
-installed do not. A perfectly passing R0 is the signature of an empty install.
-Gate `J0` now records how many modules each rule bound to and refuses an R-lens
-where neither homogenising rule matched (`rlens_rules_bound`).
+- At the last layer, where no transformer blocks remain, the J-lens must equal
+  the logit lens. Its cosine with the logit lens is **1.0000** on all three
+  models.
+- Before the final layer it recovers the next token better than the plain logit
+  lens, improving top-1 recovery by about **0.15–0.22**.
 
-### Which lens to use where
+These are validation results, not evidence of semantic understanding. On the
+semantic tasks, the J-lens did not yield a result that both survived the controls
+and was absent from the logit lens. Its earlier J-space intervention also failed
+to isolate a causal value subspace. The J-lens is therefore not used to support
+the final semantic claims.
 
-Near the last layer all three coincide by construction. Below that, prefer the
-R-lens — and **say so before looking at results**: the vocabulary-contrast stages
-declare `PRIMARY_LENS = "rlens"` in code for exactly this reason, because the
-target includes early and middle layers, which is where the J-lens backward is
-least faithful. Report all three anyway: their *agreement* is itself evidence,
-and their *disagreement* localises an instrument problem rather than a finding.
+The likely reason is simple: a single averaged linear approximation is a poor
+summary of many nonlinear, context-dependent layers. Better next-token recovery
+does not guarantee a better readout of an abstract relation such as data flow.
 
-**What that discipline actually bought, measured.** The three agreed everywhere
-it mattered, so the primary-lens declaration cost nothing and changed nothing —
-which is itself the useful outcome: it means the reported nulls and positives are
-properties of the models rather than of a lens choice. The R-lens's one
-irreplaceable use is as the conserving attribution of §7.3(c).
+## 6.4 The R-lens: a conserving attribution method
 
-## 6.5 Lens fidelity is a diagnostic, never a gate
+### The problem it addresses
 
-Next-token recovery, agreement with the final-layer distribution, relevance
-conservation and the random/Gram-matched floors are measured per (layer, lens),
-emit warnings, and **never block execution**. A test asserts that no gate
-function reads any fidelity variable.
+To say that 20% of an answer score belongs to one input position and 10% to
+another, the pieces must add back to the original score. Ordinary gradients do
+not have this property in a transformer: normalization and multiplicative gates
+can shrink or double-count the quantity propagated backward.
 
-The reason is selection: refusing to run at low-fidelity layers would silently
-restrict every lens experiment to the layers where the instrument is
-comfortable, and early and middle layers are usually the target. Reports
-therefore distinguish four outcomes — *mechanically invalid*, *mechanically valid
-with weak lens fidelity*, *valid null*, and *positive above controls* — rather
-than collapsing them into pass/fail.
+The R-lens changes **only the backward calculation**. It leaves the model's
+forward activations and output unchanged, but uses layer-wise relevance rules so
+that the relevance values approximately satisfy
 
----
+> `sum of relevance over positions = selected output score`.
+
+The rules freeze normalization and attention-pattern factors during the backward
+pass, treat SiLU as an elementwise scaling, and split the relevance of a gated
+MLP equally between its two multiplicative branches. Freezing the attention
+pattern means the method attributes what attention moved, not why the model
+chose to attend there; this is an important limitation for a data-flow task.
+
+### How it was validated
+
+Before semantic results are read, four checks are run:
+
+| check | question |
+|---|---|
+| forward invariance | did the rules leave the model's actual output unchanged? |
+| final-layer equality | does the method reduce to the ordinary logit lens when no blocks remain? |
+| improvement over autograd | is conservation closer to 1 at every tested layer? |
+| absolute conservation | is the remaining early/middle-layer error small enough to interpret shares? |
+
+Both DeepSeek models pass: the final-layer cosine is **1.0000**, and median
+conservation error is **0.0000** for 1.3B and **0.0001** for 6.7B. Removing one
+rule at a time shows that the 50/50 split at the gated MLP is the most important
+correction. This is a result about the attribution machinery, not about code
+semantics.
+
+The method is **not valid for the tested StarCoder2 model**. Its LayerNorm and
+non-gated MLP do not match the implemented rules, so the relevant corrections
+never attach. The pipeline detects this and refuses to report R-lens semantics
+for that architecture.
+
+## 6.5 How the R-lens is used for the semantic test
+
+R9 selects the model's answer score, propagates it backward with the validated
+R-lens, and sums relevance by syntactic role: the tainted chain, trusted chain,
+sink argument, and so on. Each relevance value is divided by the selected score,
+so the role shares form an approximately complete partition.
+
+The safe and unsafe members of a pair differ only at the sink argument. All other
+role tokens are identical. A consistent change in relevance at those unchanged
+roles would therefore indicate that the model routes the same text differently
+depending on which chain reaches the sink.
+
+The experiment was run only on DeepSeek-Coder 1.3B. It reports both the median
+paired shift and the preregistered permutation test of the mean. This matters
+because the two statistics disagree: most pairs shift in the same direction,
+but a few large outliers make the mean-based control fail. The result must
+therefore be described as **suggestive routing evidence, not a confirmed
+semantic result**.
+
+## 6.6 What these tools can and cannot establish
+
+- A vocabulary lens can show that a distinction is aligned with the output
+  basis. It cannot by itself show that the model understands the distinction or
+  uses it.
+- A meaningful token loading would support lexicalisation. A direction spread
+  over many unrelated tokens supports only distributed output alignment.
+- A conserving R-lens can describe where an output score is attributed. It does
+  not establish causal necessity, and its answer depends on the chosen backward
+  rules.
+- Agreement between logit, J-, and R-lenses does not make a semantic claim
+  stronger when the plain logit lens already gives the same result.
+
+The practical status is therefore modest: the logit lens reveals a reliable but
+distributed output-space distinction; the J-lens adds no semantic result; and
+the R-lens produces one interesting routing pattern that does not clear its
+strongest preregistered control.
 
 # 7. Reading the lens as a contrast, and the three ways a null can be wrong
 
-## 7.1 Four problems that appear only when a lens scores a *pair*
+## 7.1 Four problems that appear only when a lens scores a pair
 
-Earlier lens work scores one state against a candidate vocabulary. E15-C scores
-a **matched pair** and takes the difference, which introduces four problems.
+Every semantic comparison uses matched safe/unsafe programs and fixes the
+orientation as `unsafe − safe`. Scores are z-scored across candidate tokens
+within each program before the pair is compared. This removes irrelevant
+differences in score scale between positions while preserving which vocabulary
+directions are relatively stronger.
 
-**1. Orientation must be fixed once.** Every pair is oriented
-`delta(pair, token) = score_unsafe(token) − score_safe(token)`, recorded on every
-output row, and gate J1 refuses a run whose rows disagree. A per-cell orientation
-choice would make every sign statistic meaningless.
-
-**2. The scale caveat now bites.** A paired contrast compares *two different
-positions*, and the J/R lenses drop a positive per-position factor (§6.3). Every
-statistic is therefore carried in three conventions:
-
-| convention | meaning | exactness |
-|---|---|---|
-| `score` | raw lens score | exact for the logit lens, scale-carrying for J/R |
-| `z` | z-scored across the candidate set at that position | **exactly** invariant to the dropped factor — the scale-safe way to compare positions |
-| `prob` | softmax over the candidate set | exact for the logit lens; inherits the factor for J/R |
-
-**And the convention is checked, not assumed.** Z-scoring removes a *shared*
-scale factor but not a systematic difference in the distribution's *shape*
-between the two members — and such a difference would move the contrast in a
-fixed direction with no concept involved. Stage 126 therefore records each
-member's candidate-distribution entropy and score-vector norm, and stage 127
-correlates them with the contrast per pair.
-
-**3. The candidate vocabulary cannot be the whole vocabulary.** A J/R lens vector
-is one vector–Jacobian product *per candidate token*, so a 32k-row lens at every
-layer is infeasible, not merely slow. Discovery is two-phase: a full-vocabulary
-**logit-lens** ranking on clean *training* pairs selects a candidate pool (196
-tokens), then each lens ranks that pool by its own training delta. The limitation
-this creates is recorded inside the frozen artifact: *a direction only the J- or
-R-lens would surface, on a token outside the pool, cannot be discovered here.*
-
-**4. Discovery must not see the evaluation.** The frozen token set is written to
-`vocab/vocab_discovery.json` by stage 125 and **read back from disk** by stage
-126 — a filesystem boundary rather than a promise. J1 additionally checks that
-the recorded discovery digest is the training split's and differs from the
-evaluated split's.
-
-**Concept tokens are validated per model, and nothing is substituted.** A lexicon
-word is used only if it encodes to exactly one token in one of the prompt-space
-variants (`" word"`, `"word"`, `" word\n"`) *and* decodes back to the variant
-that produced it. Every omission is recorded with its reason. Coverage is
-genuinely model-specific: `" vulnerable"` survives on both deepseek models but
-`unsafe`, `untrusted` and `tainted` all split; on starcoder2-3b `" unsafe"`
-survives and `vulnerable` does not. The first token of a split word is a
-*prefix*, not the word, and using it would measure the prefix.
+Training data may define a direction or choose a layer; evaluation data may not.
+The selected direction is written to disk and then applied unchanged to the
+held-out pairs.
 
 ## 7.2 What the contrast is controlled against
 
-| control | what it rules out |
-|---|---|
-| **permutation** — re-orient each base at random | that anything other than the safe→unsafe *direction* carries the effect; keeps every pair and magnitude |
-| **same-label pairs** — both members drawn from one pole | that the effect is any difference between two programs of this kind. Expected contrast is exactly zero, so this is the arm a *label* claim must clear |
-| **embedding layer (−1)** | token identity: at `sink_arg` the state *is* the anchor token's embedding, so this is the token-identity contrast exactly |
-| **`last_token` site** | ditto from the other side — both members carry the *same* token there, so the floor is exactly zero |
-| **identifier-role strata** | that the generator's tainted/trusted name assignment drives the sign |
-| **random and Gram-matched lenses** | that any direction of that norm — or of that norm *and* those pairwise angles — would separate the pairs |
+R7 uses the entire output vocabulary, avoiding the main weakness of the earlier
+small security-word experiment. Its important controls are:
 
-**A control that was replaced.** The original `mismatched_pairs` arm redrew the
-*safe* partner from the same safe pool, so the label difference survived it: the
-arm averages over the very set the main arm averages over, and its expected mean
-is the main arm's exactly. Measured, the two agree to four decimal places on all
-three models. It falsifies "specific to this pairing", not "about the label", and
-the same-label arm above replaces it. Stage 127 reports `pairing_gain` — what
-base matching actually buys — as a number.
+- **same-label pairs:** two safe programs or two unsafe programs test whether
+  ordinary program variation aligns with the learned direction;
+- **identical-token floor:** at the chosen position both members have the same
+  token, so their embedding-layer difference must be zero;
+- **held-out direction test:** the direction is learned on training pairs and
+  must orient unseen pairs without refitting;
+- **dominance test:** a separate singular-value statistic asks whether the label
+  direction is the largest difference between programs, rather than merely a
+  consistent one.
 
-**What licenses a semantic reading.** All of: train-only discovery frozen before
-scoring; held-out replication in the *hypothesised direction* (deliberately
-one-sided — a two-sided test would report a consistently reversed contrast as a
-positive result); one recorded orientation; an effect above both the permutation
-and the same-label control; stability across identifier roles; and evidence not
-reducible to the differing sink-argument token. **"The token `unsafe` appeared in
-a top-k list" is not a result** and is not allowed to become one.
+Generalisation and dominance answer different questions. A direction can be
+small but consistent enough to orient every held-out pair while still failing to
+dominate the many other ways two programs differ. That is exactly the observed
+outcome.
 
 ## 7.3 Three ways a null could be wrong, and the measurement for each
 
-A null needs different evidence from a positive result. Every control in §7.2 is
-*negative*: they establish that a positive result is not an artifact and are
-**silent about a null**. Nothing there separates "the models do not verbalise
-this" from "this readout could not detect verbalisation if it were there". Three
-measurements address that.
+For R9, the non-sink roles contain identical tokens across each pair. Identifier
+and source-order swaps test whether a name or location creates the shift. The
+analysis reports a sign test, a median shift, and the preregistered permutation
+test of the mean.
 
-**(a) The candidate pool could have missed it — stage 128.** Remove the pool
-entirely: form each matched pair's difference over the **whole vocabulary**,
-z-scored per member exactly as in §7.1, estimate the mean direction on the
-*training* split, and project held-out pairs onto it. A null here cannot be
-blamed on a pool because there is no pool. Two statistics, answering different
-questions:
-
-- **projection** — does a label-defined direction *generalise* to unseen
-  programs? (sign consistency of held-out projections, cluster-bootstrapped);
-- **concentration** — is the label axis the *dominant* axis of variation?
-
-  `sv1_share = λ_max(U Uᵀ) / trace(U Uᵀ)`, `U` the unit-normalised differences,
-
-  which is `1/n` for unrelated differences and 1 for identical ones, and is
-  *sign-invariant* — which is what lets it be compared against a null whose
-  members have no canonical orientation.
-
-The primary site is **`last_token`**, not `sink_arg`, because it is the only site
-where both members carry the same token id in 100% of pairs; layer −1 is the
-explicit surface floor, and at `last_token` that floor is **exactly zero**, since
-identical tokens give identical embeddings.
-
-**(b) The readout could be blind — stage 129, the positive control.** Run the
-*identical* measurement on a property the models demonstrably answer: a
-forced-choice taint question whose answer is a single token. One candidate basis
-carries both properties, and both contrasts go through the same `pair_contrast`
-call in the same convention with the same orientation, so the two readouts differ
-**only** in which token positions are named as poles — gate J3 refuses the run
-otherwise. The model's own forced-choice margin is recorded per program, so
-`lens_tracks_model` separates "the lens sees what the model says" from "the lens
-sees something".
-
-The behavioural statistic is **`pair_separation`** — the fraction of bases where
-the unsafe member draws a higher yes-margin than its matched safe counterpart —
-not accuracy, because a model that always answers "no" scores 0.5 accuracy for
-free while pair separation's chance level of 0.5 is immune to answer bias. Two
-prompt styles are run, so prompt sensitivity is measured rather than assumed.
-
-Four outcomes are declared in advance, **including the one that would retire the
-track**: if the model answers and the lens does not see it, the null is about the
-method.
-
-**(c) The distinction might not be lexicalised at all — stage 130.** Both
-readouts above require the concept to live in vocabulary space. Under the LRP
-rules the tail is degree-1 homogeneous, so `Σ_t R_t = s` and **`R_t/s` is a
-partition of the model's own answer across input positions**. Two programs give
-different scores, so raw relevances are not comparable — but fractions are, and
-because they sum to one in both members, a paired difference is a genuine
-**redistribution** rather than a change of scale. That is a property the
-vocabulary readout never had.
-
-Relevance is aggregated by **AST role**, recomputed from each variant's own
-source. The control comes free: **only `sink_arg` differs in tokens between the
-two members** — enforced at generation time in every condition, and verified
-across all held-out programs to give identical per-role token counts within every
-pair. A shift among the token-identical roles therefore has no surface account.
-Conservation is measured per (pair, layer) and the reading is refused where it
-does not hold — including outright on architectures where the homogenising rules
-bind to nothing (§6.4).
+The permutation test is decisive for the final status. Although most pairs have
+the same sign, the mean does not beat randomly reoriented pairs. The result is
+kept as a potentially useful pattern but is not promoted to a semantic finding.
 
 ## 7.4 Two statistics that disagreed, and why that is not a contradiction
 
-Both stages that fired reported a pre-declared criterion that *failed* beside one
-that passed. In both cases the two answer different questions.
+A lens null can mean that the semantic signal is absent, that it is not aligned
+with output tokens, or that the lens is unreliable at that layer. Instrument
+validation separates the last possibility from the first two. The positive
+control in R8 then shows that the vocabulary readout can detect an explicitly
+expressed yes/no answer. Together these checks justify the narrow conclusion
+that the unprompted property is not concentrated in meaningful security words;
+they do not justify saying that the model lacks the property altogether.
 
-- **Stage 128**: the projection asks whether a label-defined direction
-  *generalises*; `sv1_share` asks whether the label axis *dominates* the
-  difference vectors. The first passed and the second failed, because two
-  programs of the same label already differ along a shared axis of comparable
-  size. That they are *different axes* is established separately: the two
-  directions' top-100 loadings overlap at a Jaccard index of ≈0.
-- **Stage 130**: `sign_consistency` and its exact binomial null fired at
-  p ≤ 4e-11 while the **mean's** permutation null did not, because relevance
-  deltas are heavy-tailed enough that a handful of outlier pairs flip the mean
-  while the median holds.
-
-In both cases both numbers are reported, the verdict label names what actually
-happened, and **the median — not the mean — is the summary to read for a
-heavy-tailed quantity.**
-
----
 
 # 8. Instrument 4 — DAS: magnitude-free interchange on a learned subspace
 
