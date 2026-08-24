@@ -52,7 +52,7 @@ stage50_patching:                      # E7
   positions: [sink_arg, sanitizer_def, last_token]
   recovery_threshold: 0.5              # encoded_and_used cutoff on logit-diff recovery
 
-# ── E10: J-lens (see docs/design/archive/JLENS_PLAN.md) ──────────────────────────────
+# ── E10: J-lens (see docs/METHODS.md §6) ──────────────────────────────
 # Stage 60 is a GATE: it exits non-zero on a failed required check, and
 # stages 61/62 are not interpretable until it passes.
 
@@ -159,8 +159,8 @@ pilot:                                 # the pre-registered 1.3b pilot
 # Not a research contribution. Causal state interchange is established method
 # (DAS, Othello-GPT, variable-binding work); E12 asks only whether THIS
 # apparatus can identify and interchange a computed, TEXT-ABSENT program value
-# such that downstream computation transforms it. Design: docs/design/archive/E12_PLAN.md.
-# What a pass would license: docs/design/E13_DIRECTIONS.md.
+# such that downstream computation transforms it. Design: docs/ARCHIVE.md §1.4.
+# What a pass would license: docs/RESULTS.md (open items).
 #
 # Stages 80-88 are hard-gated. Each declares its prerequisites in
 # src/experiments/store_gates.py::STAGE_REQUIREMENTS and REFUSES to run (exit 2)
@@ -234,7 +234,7 @@ store_pilot:                           # the cheap 1.3b instrument pilot
 # ── E13: binding interchange, falsified by the value assignment ──────────────
 # The active direction. Asks whether a low-rank, magnitude-free interchange at
 # the binding-resolution site transports WHICH DEFINITION IS IN SCOPE rather
-# than a token or an answer direction. Design: docs/design/E13_PLAN.md.
+# than a token or an answer direction. Design: docs/METHODS.md §8.
 #
 # No arithmetic anywhere — the model returns a variable. That is the coupling
 # E12 got wrong and this design removes.
@@ -298,7 +298,7 @@ binding_pilot:
 # "Do code models see through obfuscation?" — is the value at a code-bearing,
 # security-sensitive argument source-derived, and does a FROZEN linear readout
 # of that fact survive renaming, opaque predicates, MBA encoding and control-flow
-# flattening? Design: docs/design/E15_SINKFLOW_PLAN.md.
+# flattening? Design: docs/METHODS.md §5.
 #
 # Stages 120-124 are hard-gated through the same registry as E12/E13
 # (src/experiments/store_gates.py::SINKFLOW). Each refuses to run (exit 2)

@@ -71,7 +71,7 @@ NEXT_STEP = {
     "H2": "python scripts/105_binding_ceiling.py --model {model}",
     "H3": "python scripts/106_binding_interchange.py --model {model} --ranks 1,2,4,8",
     "H4": "python scripts/106_binding_interchange.py --model {model} --ranks 1,2,4,8,16",
-    "H5": "write it up — both outcomes are reportable; see docs/design/E13_PLAN.md §9",
+    "H5": "write it up — both outcomes are reportable; see docs/RESULTS.md R13",
 }
 
 

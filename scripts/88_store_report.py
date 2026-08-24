@@ -14,7 +14,7 @@ apparatus. Causal state interchange is established method — DAS
 (https://arxiv.org/abs/2303.02536), Othello-GPT
 (https://arxiv.org/abs/2210.13382), variable binding in symbolic programs
 (https://arxiv.org/abs/2505.20896) — so a passing E12 licenses the next
-experiment, not a claim. `docs/design/E13_DIRECTIONS.md` is what it licenses.
+experiment, not a claim. `docs/RESULTS.md (open items)` is what it licenses.
 
     python scripts/88_store_report.py --model deepseek-coder-1.3b
 
@@ -73,7 +73,7 @@ NEXT_STEP = {
     "G2": "python scripts/85_store_transition.py --model {model}",
     "G3": "python scripts/86_store_ceiling.py --model {model}",
     "G4": "python scripts/87_store_interchange.py --model {model} --ranks 1,2,4,8",
-    "G5": "read docs/design/E13_DIRECTIONS.md and choose the semantic extension",
+    "G5": "read docs/RESULTS.md (open items) and choose the semantic extension",
 }
 
 
@@ -123,7 +123,7 @@ def main(
             "Causal state interchange is established method (DAS; Othello-GPT; "
             "variable binding in symbolic programs). A pass validates the "
             "apparatus and licenses the semantic extension in "
-            "docs/design/E13_DIRECTIONS.md — it is not itself a novel result."),
+            "docs/RESULTS.md (open items) — it is not itself a novel result."),
         "first_blocking_gate": blocking,
         "gates_run_under_override": overridden,
         "gates": rows,
@@ -141,7 +141,7 @@ def main(
              f"**Verdict: {verdict}**", "",
              "E12 asks whether the measuring apparatus works, not whether a claim "
              "holds. A passing run licenses the semantic extension "
-             "(`docs/design/E13_DIRECTIONS.md`); it is not a finding.", ""]
+             "(`docs/RESULTS.md (open items)`); it is not a finding.", ""]
     for row in rows:
         if not row["recorded"]:
             mark = "NOT RUN"

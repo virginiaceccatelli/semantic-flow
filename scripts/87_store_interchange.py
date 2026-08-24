@@ -203,7 +203,7 @@ def main(
     console.print(f"\n  G5: {'[green]PASS[/green]' if passed else '[red]FAIL[/red]'} — {detail}")
     console.print("[dim]A pass here validates the instrument. It is not a finding: "
                   "causal state interchange is established method (DAS, Othello-GPT, "
-                  "variable-binding work). See docs/design/E13_DIRECTIONS.md.[/dim]")
+                  "variable-binding work). See docs/RESULTS.md (open items).[/dim]")
 
     write_manifest("87_store_interchange", {
         "model": model, "layers": str(layer_list), "ranks": ranks,

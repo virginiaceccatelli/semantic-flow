@@ -1,53 +1,154 @@
 # Pipeline
 
-Every stage is one CLI in `scripts/`, writes under `results/`, and records a
-manifest (git SHA, args, wall time) in `results/manifests/`. GPU stages are
-marked; everything else runs anywhere.
+Setup, then every stage: its command, where it runs, which gate it writes, and
+what it produces. Every stage is one CLI in `scripts/`, writes under `results/`,
+and records a manifest (git SHA, args, wall time) in `results/manifests/`.
 
-Stages are grouped by the phase of the research they belong to. What each
-experiment asks and found: `docs/EXPERIMENTS.md`.
+What each stage *measures* and why: [METHODS.md](METHODS.md).
+What it *found*: [RESULTS.md](RESULTS.md).
 
-```
-PHASE I + II — representation and robustness  (established)
+### Contents
 
-  00 ─→ 10 ─→ 20 ─→ { 30, 31 } ────────────────→ 90
-  CPU   GPU   CPU     CPU  CPU                    CPU
-  data  extr  probes  E5   E9                     assets
-              E1-E4
-              E8
-
-PHASE III — causal use  (open; four attempts)
-
-  attempt 1   50                       E7  raw patching        [claim retired]
-  attempt 2   60 ─→ { 61, 62 }         E10 J-lens track        [60 kept, 61/62 archived]
-  attempt 3   70 → 71 → 72 → 73 → 74   E11 coordinate swap     [NO-GO]
-  attempt 4   80 → … → 89              E12 store transitions   [parked at G1]
-  current    100 → … → 108             E13 binding interchange [H0-H3 pass]
-
-  archived    40                       E6  behavioural lead time
-```
-
-Two stages are **gates** in the weak sense — they exit non-zero on a failed
-check and later stages are not interpretable until they pass: stage 60 (E10) and
-stage 71 (E11).
-
-Stages 80–89 (E12) and 100–108 (E13) are **hard-gated**, which is stronger: each
-declares its prerequisites in `src/experiments/store_gates.py` and **refuses to
-run** (exit 2) unless they have passed, whoever invokes it and in whatever
-order. `--override-gate REASON` is permitted for diagnostics and is recorded
-permanently in `gates.yaml`, in the run manifest, and in every output row, so a
-number produced under an override cannot later be mistaken for one produced
-under a passing gate.
-
-That mechanism exists because of a specific failure: E11's stage 73 ran without
-stage 72's frozen probes on disk and **silently skipped a control** rather than
-refusing. `results/STATUS.yaml` still records that as outstanding.
-
-Model names come from `configs/models.yaml` (`deepseek-coder-1.3b` for
-development/MPS, `deepseek-coder-6.7b` for main results). Canonical settings:
-`configs/experiments.yaml`. Always run inside the `semflow` conda env.
+- [Part A — Setup](#part-a--setup)
+- [Part B — The stage map](#part-b--the-stage-map)
+- [Part C — Foundation stages (00–31, 90)](#part-c--foundation-stages-0031-90)
+- [Part D — The lens stages (60, 110)](#part-d--the-lens-stages-60-110)
+- [Part E — The security track (120–131)](#part-e--the-security-track-120131)
+- [Part F — The causal track (100–108)](#part-f--the-causal-track-100108)
+- [Part G — Make targets and the GPU-host workflow](#part-g--make-targets-and-the-gpu-host-workflow)
 
 ---
+
+# Part A — Setup
+
+Local Mac (development, MPS) and a shared GPU host (main runs, **no scheduler** —
+jobs run in `screen`). Always work inside the `semflow` conda env locally, or the
+`uq` micromamba env on the GPU host; the base env has a different Python.
+
+## A.1 Environment
+
+```bash
+brew install miniforge                 # if conda is missing (Apple Silicon)
+conda create -n semflow python=3.11 -y
+conda activate semflow
+pip install -e ".[dev]"                # or: pip install -r requirements.txt
+```
+
+Verify:
+
+```bash
+pytest tests/ -v          # 489 tests, CPU-only, no model download
+python -c "import torch; print(torch.backends.mps.is_available())"   # True on M-series
+```
+
+## A.2 Known pitfall: the tokenizer (**important**)
+
+With transformers 5.x, `AutoTokenizer.from_pretrained("deepseek-ai/...")`
+silently loads a broken slow tokenizer that destroys code (`def func` →
+`['de','ff','unc']`, whitespace lost) **without raising**. Every label built with
+it is wrong.
+
+**Never load tokenizers directly.** Use `src.models.loader.load_tokenizer(hf_id)`,
+which loads the fast tokenizer and verifies an exact code round-trip, or
+`ModelLoader`, which does so internally. All pipeline scripts already do.
+
+## A.3 Known pitfall: a network blip kills a cached run
+
+Loading a model with `trust_remote_code=True` fetches `custom_generate/generate.py`
+from the Hub *after* the weights are already in memory, so a DNS hiccup used to
+end a fully-cached run with `RuntimeError: Cannot send a request, as the client
+has been closed.` `ModelLoader` and `load_tokenizer` now detect an unreachable Hub
+and retry against the local cache with a warning. To skip the Hub entirely — the
+right setting for an offline cluster node:
+
+```bash
+export HF_HUB_OFFLINE=1        # or: HF_HUB_OFFLINE=1 make sinkflow MODEL=...
+```
+
+## A.4 First run
+
+```bash
+make smoke                 # tiny end-to-end pass, ~5-15 min on MPS
+```
+
+Downloads deepseek-coder-1.3b (~2.7 GB) into `~/.cache/huggingface/hub/` on first
+use. Then the real thing:
+
+```bash
+make data
+make extract probes context obfuscation assets MODEL=deepseek-coder-1.3b
+```
+
+## A.5 Long local jobs
+
+Background shells die on session reset. Use `nohup` with the **full env python
+path**:
+
+```bash
+nohup /opt/homebrew/Caskroom/miniforge/base/envs/semflow/bin/python \
+    scripts/10_extract_activations.py --model deepseek-coder-1.3b \
+    --dataset data/synthetic/core.jsonl > results/extract.log 2>&1 &
+tail -f results/extract.log
+```
+
+## A.6 Model sizes
+
+| Model | Download | VRAM (fp16) | Where |
+|---|---|---|---|
+| deepseek-coder-1.3b | ~2.7 GB | ~3 GB | Mac MPS ok |
+| deepseek-coder-6.7b | ~13 GB | ~14 GB | cluster GPU |
+| starcoder2-3b | ~6 GB | ~6 GB | cluster GPU |
+
+Model names come from `configs/models.yaml`; canonical per-stage settings from
+`configs/experiments.yaml`.
+
+---
+
+# Part B — The stage map
+
+```
+FOUNDATION — representation and robustness (Instruments 1 and 2)
+
+  00 ─→ 10 ─→ 20 ─→ { 30, 31 } ──────────────────────────→ 90
+  CPU   GPU   CPU     CPU  CPU                              CPU
+  data  extr  probes  R4   R5                               assets
+              R1-R3
+
+INSTRUMENT VALIDATION — the lens stack (Instrument 3)
+
+  60   J-lens validation   GPU   R7   — a GATE
+  110  R-lens gate R       GPU   R8   — a GATE
+
+SECURITY TRACK — the audit, the vocabulary, the output basis
+
+  120 → 121 → 122 → 123 → 124            R6      S0-S3
+  125 → 126 → 127                        R9      J0, J1
+  128 → 129 → 130 → 131                  R10-R12 J2, J3, J4
+
+CAUSAL TRACK — DAS interchange (Instrument 4)
+
+  100 → 101 → … → 108                    R13     H0-H5
+
+RETIRED / PARKED — still runnable; see ARCHIVE.md
+  40 lead time · 50 patching · 61-62 J-lens uses · 70-74 J-space · 80-89 store
+```
+
+**Two gate strengths.** Stages 60 and 110 are gates in the weak sense: they exit
+non-zero on a failed check, and later stages are not *interpretable* until they
+pass. Stages 100–108, 120–131 and 80–89 are **hard-gated**: each declares its
+prerequisites in `src/experiments/store_gates.py` and **refuses to run** (exit 2)
+unless they have passed, whoever invokes it and in whatever order.
+
+`--override-gate REASON` is permitted for diagnostics and is recorded permanently
+in `gates.yaml`, in the run manifest, and in **every output row**, so a number
+produced under an override can never be mistaken for one produced under a passing
+gate. That mechanism exists because a swap stage once ran without its
+predecessor's frozen probes on disk and *silently skipped a control* rather than
+refusing.
+
+---
+
+# Part C — Foundation stages (00–31, 90)
 
 ## Stage 00 — generate data (CPU, ~1 min)
 
@@ -58,22 +159,14 @@ python scripts/00_generate_data.py --model deepseek-coder-1.3b --real   # + Code
 
 | Output | Contents | Used by |
 |---|---|---|
-| `data/synthetic/core.jsonl` | binding (50% with branches) + taint (with per-line taint labels) + shadow programs | E1–E4, E6 |
-| `data/synthetic/context.jsonl` | filler variants: 5 filler types × sizes [0,50,100,200,500,1000], token counts measured with the real tokenizer | E5 |
-| `data/synthetic/minimal_pairs.jsonl` | length-matched clean/corrupted taint pairs (verified token-identical except the sink argument) | E7 |
-| `data/synthetic/obfuscation.jsonl` | obfuscation-ladder variants: 5 cumulative levels (normalize → rename → opaque → encode → flatten), each execution-verified equivalent to its base | E9 |
-| `data/real/csn_python_200.jsonl` | ast-parseable real functions, fixed-seed sample | E8 |
+| `data/synthetic/core.jsonl` | binding programs (50% with branches), taint programs with per-line labels, shadowing programs — with CPG ground truth | R1–R3 |
+| `data/synthetic/context.jsonl` | filler variants: 5 filler types × sizes [0,50,100,200,500,1000], token counts measured with the real tokenizer | R4 |
+| `data/synthetic/obfuscation.jsonl` | 5 cumulative obfuscation levels per base, each execution-verified equivalent | R5 |
+| `data/synthetic/minimal_pairs.jsonl` | length-matched clean/corrupted taint pairs, verified token-identical except the sink argument | retired patching stage |
+| `data/real/csn_python_200.jsonl` | AST-parseable real functions, fixed seed | real-code transfer (see ARCHIVE) |
 
-core.jsonl — the primary training/test set for E1–E4 and E6. Contains binding programs, taint-tracking programs, and variable-shadowing programs. These are standard synthetic programs with their static-analysis ground truth (def-use edges, binding IDs, taint labels per line). The probes are trained on activations extracted from this dataset.
-
-context.jsonl — used only for E5 (context degradation). Takes a subset of base programs from core and generates variants of each by inserting filler code between the tracked definition and its use. Five filler types (prose comment, dead code, lexical decoy, scope shadow, competing update) × six sizes (0–1000 tokens, counted with the real tokenizer). The probes are frozen (trained on core) and just evaluated here — the question is whether probe accuracy drops as the filler grows.
-
-obfuscation.jsonl — used only for E9 (obfuscation robustness). Fresh binding programs, each emitted at all 5 obfuscation levels of `src/data/obfuscation.py` (Tigress-inspired, Python-native). Every variant is executed and verified observationally equivalent to its base before it is kept; all levels of a base are kept or dropped together so level curves compare identical base sets. Frozen probes (trained on core) are evaluated here — the question is whether probe accuracy survives changes of surface form that preserve semantics.
-
-minimal_pairs.jsonl — used only for E7 (causal patching). Each entry is a pair of programs that are token-for-token identical except at the sink argument: one version sinks the sanitized variable (clean), the other sinks the raw tainted variable (corrupted). Length-matching is enforced so the two sequences have the same token count, meaning position indices are comparable across runs. This is required for activation patching — you patch the clean run's residual stream at position X into the corrupted run's forward pass and measure how much it shifts the model's answer.
-
-Needs the tokenizer only (no GPU). Generate the real set locally if the
-cluster has no internet, then rsync.
+Needs the tokenizer only (no GPU). Generate the real set locally if the cluster
+has no internet, then rsync.
 
 ## Stage 10 — extract activations (GPU; MPS ok for 1.3b)
 
@@ -81,35 +174,38 @@ cluster has no internet, then rsync.
 python scripts/10_extract_activations.py --model deepseek-coder-1.3b --dataset data/synthetic/core.jsonl
 python scripts/10_extract_activations.py --model deepseek-coder-1.3b --dataset data/synthetic/context.jsonl --max-length 2048
 python scripts/10_extract_activations.py --model deepseek-coder-1.3b --dataset data/synthetic/obfuscation.jsonl
-# GPU host: screen -dmS extract-core-6.7b env MODEL=deepseek-coder-6.7b jobs/extract_core.csh   (and extract_context.csh / extract_obfuscation.csh / extract_real.csh)
 ```
 
 Writes an **activation store** to `results/activations/{model}/{dataset stem}/`:
 one compressed `.npz` per example — `hidden (n_layers, seq, d_model) float16`,
-`input_ids`, and **verified char offsets** (`src/data/alignment.py`) — plus
-`meta.json` / `index.json`. Layers default to the registry's `probe_layers`.
+`input_ids`, and **verified char offsets** — plus `meta.json` / `index.json`.
+Layers default to the registry's `probe_layers`, and **must include −1** (the
+embedding layer is a control).
 
-Approximate footprint: 1.3b, 500 core examples, 7 layers ≈ 1–2 GB.
+Footprint: 1.3b, 500 core examples, 7 layers ≈ 1–2 GB.
 
-## Stage 20 — static probes E1–E4, E8 (CPU, minutes–1h)
+On the GPU host: `screen -dmS extract-core-6.7b env MODEL=deepseek-coder-6.7b
+jobs/extract_core.csh` (and `extract_context.csh` / `extract_obfuscation.csh` /
+`extract_real.csh`).
+
+## Stage 20 — static probes, R1–R3 (CPU, minutes–1h)
 
 ```bash
 python scripts/20_run_probes.py --activations results/activations/deepseek-coder-1.3b/core
-# E8: same command pointed at the real-code store
 ```
 
-Per (task, layer): grouped CV (`StratifiedGroupKFold` by source example),
-within-group shuffled-label selectivity control, per-stratum and per-distance
-held-out accuracy, convergence check. Saves:
+Per (task, layer): grouped CV by source example, within-group shuffled-label
+selectivity control, per-stratum and per-distance held-out accuracy, the
+model-free surface baseline, and a convergence check. Saves:
 
-- `results/probes/{model}/{dataset}/{task}/layer_XX.pkl` — **frozen probes**
-  (consumed by stages 30/40/50)
+- `results/probes/{model}/{dataset}/{task}/layer_XX.pkl` — **frozen probes**,
+  consumed by stages 30 and 31;
 - `results/probes/{model}/{dataset}/static_probes.csv` → copied to
-  `results/tables/static_probes_{model}_{dataset}.csv`
+  `results/tables/static_probes_{model}_{dataset}.csv`.
 
-Built-in sanity assertions (`--strict`): E1 must peak > 0.9; all fits converged.
+`--strict` turns the built-in sanity assertions into failures.
 
-## Stage 30 — context degradation E5 (CPU)
+## Stage 30 — context degradation, R4 (CPU)
 
 ```bash
 python scripts/30_context_degradation.py \
@@ -117,11 +213,10 @@ python scripts/30_context_degradation.py \
     --probes results/probes/deepseek-coder-1.3b/core
 ```
 
-Frozen binding/def-use probes evaluated (never retrained) on the filler
-variants; ground truth rebuilt from each variant's own source. Output:
-`results/tables/context_degradation_{model}.csv`.
+Frozen binding/def–use probes evaluated — never retrained — on the filler
+variants, with ground truth recomputed per variant.
 
-## Stage 31 — obfuscation robustness E9 (CPU)
+## Stage 31 — obfuscation robustness, R5 (CPU)
 
 ```bash
 python scripts/31_obfuscation.py \
@@ -129,251 +224,7 @@ python scripts/31_obfuscation.py \
     --probes results/probes/deepseek-coder-1.3b/core
 ```
 
-Same frozen-probe contract as stage 30, but the stressor is surface form
-instead of distance: the obfuscation ladder (rename → opaque dead code →
-expression encoding → control-flow flattening), all semantics-verified.
-Output: `results/tables/obfuscation_robustness_{model}.csv`.
-
-## Stage 40 — behavioral lead time E6 (GPU)
-
-```bash
-python scripts/40_behavioral_leadtime.py --model deepseek-coder-1.3b \
-    --probes results/probes/deepseek-coder-1.3b/core
-# GPU host: screen -dmS leadtime-6.7b env MODEL=deepseek-coder-6.7b jobs/leadtime.csh
-# layer sweep: screen -dmS e6-6.7b-L15 env MODEL=deepseek-coder-6.7b LAYER=15 jobs/leadtime.csh
-```
-
-Grows taint programs line by line; the frozen taint-state probe decodes the
-live value's taint at each prefix (threshold calibrated on a held-out split)
-while the model answers the same question as a forced choice. Outputs
-`behavioral_leadtime{,_summary}_{model}.csv` (t_latent, t_failure, lead time,
-bootstrap CI).
-
-## Stage 50 — causal patching E7 (GPU)
-
-```bash
-python scripts/50_causal_patching.py --model deepseek-coder-1.3b \
-    --probes results/probes/deepseek-coder-1.3b/core
-# GPU host: screen -dmS patching-6.7b env MODEL=deepseek-coder-6.7b jobs/patching.csh
-```
-
-Layer × position activation patching (positions: differing sink-arg tokens,
-sanitizer definition, last token — the last reported separately as the trivial
-case). Outputs `causal_patching{,_summary}_{model}.csv` with logit-diff
-recovery and causal classes.
-
-## Stage 60 — J-lens validation gate E10-0 (GPU; MPS ok for 1.3b)
-
-```bash
-python scripts/60_jlens_validate.py --model deepseek-coder-1.3b
-# GPU host: screen -dmS jlens-val-6.7b env MODEL=deepseek-coder-6.7b jobs/jlens_validate.csh
-```
-
-**Run this before 61/62 and check it passed.** It is the gate for the whole
-J-lens track and exits non-zero when a required check fails (`--no-strict`
-to report without failing). Needs no probes. Phase 0 checks applicability
-(tokenization, accessors, autograd); Phase 1 validates the construction —
-including V1, which asserts the J-lens equals the logit lens at the last
-layer, where the Jacobian is provably the identity.
-
-Outputs `jlens_validation{,_checks}_{model}.csv`.
-
-**Cost and numerics.** Stages 60–62 are the only ones that run a *backward*
-pass, so they are the only ones exposed to fp16 gradient over/underflow.
-Each sample is retried down a ladder of loss scales; the log reports
-`N/M samples needed a reduced grad scale` (fine) and warns on any sample
-dropped as non-finite at every scale (not fine). **If drops appear, or many
-samples need rescaling, re-run with `--dtype float32`.**
-
-Measured on MPS / 1.3b: a mid-layer VJP costs ~2.5 s per sample at 26
-candidates and ~0.2 s at the last layer (no blocks to traverse), so the
-default settings put each of stages 60/61/62 in the 30–60 min range on this
-machine. Cost scales with `candidates x samples x layers` — cut `--n-build`
-or `--layers` first if that is too slow.
-
-## Stage 61 — J-lens taint / lead time E10-2 (GPU)
-
-```bash
-python scripts/61_jlens_taint.py --model deepseek-coder-1.3b \
-    --probes results/probes/deepseek-coder-1.3b/core
-# GPU host: screen -dmS jlens-taint-6.7b env MODEL=deepseek-coder-6.7b jobs/jlens_taint.csh
-```
-
-The priority experiment: tests whether the taint state is verbalizable, the
-standing hypothesis for E6's 6.7b-only early warning. `--probes` is optional
-but recommended — it recomputes the frozen probe's lead time on the *same*
-split, so probe / lens / behaviour are directly comparable rather than
-joined across CSVs. Lenses are built on the calibration split only and
-frozen before any test prefix is scored.
-
-Outputs `jlens_taint{,_summary}_{model}.csv`.
-
-## Stage 62 — J-lens control dependence E10-3 (GPU)
-
-```bash
-python scripts/62_jlens_controldep.py --model deepseek-coder-1.3b
-# GPU host: screen -dmS jlens-cd-6.7b env MODEL=deepseek-coder-6.7b jobs/jlens_controldep.csh
-```
-
-Asks whether control dependence is ever promoted into the verbalizable
-workspace or stays automatic, at E4's guard anchors against E4's
-`indent_matched` hard negatives. Chance is exactly 0.5.
-
-Outputs `jlens_controldep{,_summary}_{model}.csv`.
-
-## Stages 70–74 — E11 J-space binding routing (the active direction)
-
-Stage 71 is a GATE: 72 and 73 are not interpretable until it passes.
-
-```bash
-# 70 (CPU): token-aligned counterfactual pairs; needs only the tokenizer
-python scripts/70_jspace_pairs.py --model deepseek-coder-1.3b
-
-# 71 (GPU): frozen per-layer J-lens from a held-out generic corpus + gates
-python scripts/71_jspace_lens.py --model deepseek-coder-1.3b \
-    --pairs data/synthetic/jspace_pairs_deepseek-coder-1.3b.jsonl
-
-# 72 (GPU): bound-value readout, paired counterfactual reversals
-python scripts/72_jspace_readout.py --model deepseek-coder-1.3b \
-    --pairs data/synthetic/jspace_pairs_deepseek-coder-1.3b.jsonl
-
-# 73 (GPU): the coordinate swap and its six controls
-python scripts/73_jspace_swap.py --model deepseek-coder-1.3b \
-    --pairs data/synthetic/jspace_pairs_deepseek-coder-1.3b.jsonl
-
-# 74 (CPU): pre-registered go/no-go
-python scripts/74_jspace_report.py --model deepseek-coder-1.3b
-
-# whole pilot in one screen session:
-#   screen -dmS jspace-pilot env MODEL=deepseek-coder-1.3b jobs/jspace_pilot.csh
-# full run, only after the pilot says GO:
-#   screen -dmS jspace-full  env MODEL=deepseek-coder-6.7b jobs/jspace_full.csh
-```
-
-Outputs land under `results/jspace/{model}/`: `lenses/*.pkl`,
-`lens/jspace_lens_{stability,validation,checks}.csv`,
-`readout/jspace_{readout,readout_summary,behaviour}.csv`,
-`swap/jspace_swap{,_summary,_by_operation,_contrasts}.csv`, and
-`go_no_go.{yaml,md}`. Design: `docs/EXPERIMENTS.md` §2.
-
-## Stages 120–131 — E15 source→sink under obfuscation (gated)
-
-Is the value at a code-bearing, security-sensitive argument source-derived, does
-a **frozen** readout of that survive obfuscation, and is the difference expressed
-in the model's own vocabulary? A controlled benchmark of 3 sink families × 4 flow
-structures × 20 base seeds × 2 labels = **480 clean programs**, transformed on
-the held-out side only, under **ten conditions**: clean, `normalize`, four
-**atomic** arms (`rename_only`, `opaque_only`, `encode_only`, `flatten_only`) and
-four **cumulative** ones (`rename_cumulative` → `rename_opaque` →
-`rename_opaque_encode` → `rename_opaque_encode_flatten`). Design, threat model
-and limitations: `docs/design/E15_SINKFLOW_PLAN.md`.
-
-| Stage | Command | Where | Gate | Output |
-|---|---|---|---|---|
-| 120 | `120_sinkflow_generate.py --model M` | CPU, ~2 min | **S0** | `data/synthetic/sinkflow_M_{train,heldout,heldout_obf}.jsonl` (336 / 144 / **1296**), `benchmark.csv`, `gates.yaml` |
-| 121 | `121_sinkflow_extract.py --model M` | GPU, ~25 min (1.3b) | **S1** | `results/activations/M/sinkflow_{train,heldout,heldout_obf}/` |
-| 122 | `122_sinkflow_probe.py --model M` | CPU, minutes | **S2** | `sinkflow_clean.csv`, `probes/{site}/{layer_XX,surface,whole_program_lexical}.pkl`, `probes/provenance.json` |
-| 123 | `123_sinkflow_obfuscation.py --model M` | CPU, minutes | **S3** | `sinkflow_obfuscation.csv`, `sinkflow_predictions.csv` |
-| 124 | `124_sinkflow_report.py --model M` | CPU, seconds | — | `e15_report.{yaml,md}`, `results/figures/sinkflow_*.png` |
-| 125 | `125_sinkflow_vocab_discover.py --model M` | **GPU**, hours | **J0** | `vocab/vocab_discovery.json`, `vocab/vocab_train_deltas.csv`, `vocab/vocab_lens_diagnostics.csv`, `vocab/lenses/*.pkl` |
-| 126 | `126_sinkflow_vocab_contrast.py --model M` | CPU, minutes | **J1** | `vocab/vocab_{pairs,pair_tokens,tokens,summary,controls,condition_similarity,lens_agreement}.csv` |
-| 127 | `127_sinkflow_vocab_report.py --model M` | CPU, seconds | — | `vocab/e15c_report.{md,yaml}` |
-| 128 | `128_sinkflow_align.py --model M` | **GPU**, ~15 min | **J2** | `align/align_{direction.json,summary,loadings,restricted}.csv` |
-| 129 | `129_sinkflow_positive.py --model M` | **GPU**, ~1 h | **J3** | `positive/positive_{behaviour,behaviour_summary,pairs,summary}.csv`, `positive/lenses/*.pkl` |
-| 130 | `130_sinkflow_relevance.py --model M` | **GPU**, ~30 min | **J4** | `relevance/relevance_{readings,pairs,summary,conservation}.csv` |
-| 131 | `131_sinkflow_lens_report.py --model M` | CPU, seconds | — | `e15d_report.{md,yaml}` |
-
-Everything else lands under `results/sinkflow/{model}/`. Stages 121, 125 and
-128–130 are the GPU stages; on the GPU host run
-`screen -dmS sinkflow-extract-6.7b env MODEL=deepseek-coder-6.7b jobs/sinkflow_extract.csh`
-and `screen -dmS sinkflow-vocab-6.7b env MODEL=deepseek-coder-6.7b jobs/sinkflow_vocab.csh`.
-
-**Stage 126 is CPU-only on purpose.** The lens vectors are already on disk after
-125, and scoring a state against them is a matrix multiply — which is also why
-the freeze of the discovered token set is a filesystem boundary: the held-out
-contrast reads a file it did not write and could not have influenced.
-
-**Status: run at canonical scale on all three models**, six gates each, no
-overrides recorded. Results in `docs/RESULTS.md`; full analysis in
-`docs/design/E15_SINKFLOW_PLAN.md` §8. **Do not re-run stage 120 to "refresh"
-anything** — regenerating redraws every transformation and changes every number.
-
-### Stages 128–131 — E15-D, the three follow-ups to the E15-C null
-
-E15-C returned a null and could not say whether it was about the models or about
-the instrument. These three stages address that, in the order their cost and
-their informativeness dictate. Design and pre-declared thresholds:
-`docs/design/E15D_LENS_FOLLOWUPS_PLAN.md`.
-
-| Stage | Question | Why it is not E15-C again |
-|---|---|---|
-| 128 | Do the per-pair differences agree over the **whole vocabulary**? | No candidate pool is chosen, so a null cannot be blamed on one. The statistic is *concentration* (`sv1_share`), not the mean — a large mean is compatible with every pair pointing somewhere different, which is the one thing E15-C could not distinguish. |
-| 129 | Can this readout detect verbalisation **at all**? | The **positive control**. Same function, same convention, same orientation, one candidate basis carrying both the taint poles (`" yes"`/`" no"`) and the E15-C security lexicon. If the machinery finds a property the models demonstrably answer and not the security one, the null becomes a claim about the models; if it finds neither, the null is about the method. |
-| 130 | Where does **relevance** move when only the semantics change? | Needs no lexicalisation. Under the LRP rules `sum_t R_t = s`, so `R_t/s` is a partition of the answer and a paired difference is a genuine redistribution. Aggregated by AST role, and **only `sink_arg` differs in tokens between the two members**, so a shift among the other roles has no surface account. |
-
-**Status: 128 and 129 have run at canonical scale on all three models (J2 and J3
-pass everywhere). 130 has run on deepseek-coder-1.3b (J4 passes) and is not
-applicable to starcoder2-3b.** Results in `docs/RESULTS.md`.
-
-**Stage 130 refuses on StarCoder2**, records `J4` as *not applicable*, and says
-why: LayerNorm plus a non-gated MLP means both homogenising LRP rules bind to
-nothing, so there is no conservation to read (see E14 in `results/STATUS.yaml`).
-That is a fact about the architecture, not a failed measurement, which is why
-`make sinkflow-lens-all` tolerates a non-zero exit from that stage alone.
-
-**Two gate families, different jobs.** S0–S3 validate the benchmark, the
-activations, the probes and the frozen evaluation. J0/J1 validate the lens
-instrumentation and the contrast, and are **mechanical only** — they must pass
-when the semantic result is null, and no gate anywhere requires a positive
-security-token result. In the canonical runs they did exactly that: both passed
-on what turned out to be a null. Lens *fidelity* (next-token recovery, agreement
-with the final layer, relevance conservation) is a **diagnostic**: it warns, it
-never blocks, and the report separates "mechanically invalid" from "mechanically
-valid with weak lens fidelity" — which is the verdict starcoder2-3b's R-lens
-earns, at relevance conservation 0.154 against ~1.000 on both deepseek models.
-
-Two things the gates enforce that are easy to get wrong by hand. **The probed
-layers must include `-1`** — the embedding layer is one of the controls, and S2
-refuses without it (pass it as `--layers=-1,0,11`, with an `=`, or typer reads
-the leading minus as a flag). And **stage 123 checks the probe's provenance**
-against the training shard on disk before it scores anything: a probe whose
-training bases intersect the evaluated ones, or whose digest does not match the
-current benchmark, is refused rather than reported as "frozen held-out".
-
-`make sinkflow-smoke` runs stages 120–124 at 96 programs and 3 layers into
-`results/smoke/`, in a few minutes on a laptop; `make sinkflow-vocab-smoke` then
-runs 125–127 over 2 layers and 24 candidate tokens on the same activations, and
-`make sinkflow-lens-smoke` runs 128–131 over 2 layers and 6 bases on both.
-
-**Stage 125's cost is `n_candidates × n_build × n_tprime` backward passes per
-(layer, lens)**, so the knobs are `--max-candidates`, `--n-build`, `--n-tprime`
-and `--layers`. Start small and widen; the defaults are sized for a CUDA host,
-not for MPS — on Apple silicon the fp16 backward through this path returns
-non-finite gradients at every scale in the retry ladder, so `--dtype float32` is
-required and the build is slow (~60 s per 8 candidates × 1 t' × 1 sample at layer
-11 on 1.3b).
-
-**Cross-model reading.** Run stage 124 with `--depth 0.48`, never at a common
-layer index: the canonical models have 24, 32 and 30 layers, so index 11 is 48%
-of depth in one and 35% in another, and reading them side by side at the same
-index once produced a claim whose ordering reversed. Every result row carries a
-`relative_depth` column for this.
-
-```bash
-for M in deepseek-coder-1.3b deepseek-coder-6.7b starcoder2-3b; do
-    python scripts/124_sinkflow_report.py --model $M --depth 0.48
-done
-```
-
-The track has run at canonical scale on all three, S0–S3 passing with no
-overrides. One pitfall it surfaced: starcoder2's tokenizer config sets
-`clean_up_tokenization_spaces: True`, which made `compute_offsets`' round-trip
-guard reject 336 of 720 obfuscated variants until `decode_exact()` began forcing
-the flag off. If S1 reports skipped programs with *"Tokenizer round-trip does not
-reproduce the source"*, that is the failure mode — the gate is working, and the
-fix is in `src/data/alignment.py`.
-
----
+Same discipline against the execution-verified ladder.
 
 ## Stage 90 — paper assets (CPU, seconds)
 
@@ -383,52 +234,163 @@ python scripts/90_make_paper_assets.py --include-archived
 ```
 
 Reads only `results/tables/*.csv`; writes every figure (`results/figures/*.png`
-+ `.pdf`) and rendered summary tables (`results/tables/md/*.md`). Safe to run
-at any point; missing inputs are skipped.
-
-Experiments marked `archived` in `results/STATUS.yaml` (E6, E10-2, E10-3) are
-**skipped by default** — their raw CSVs and existing figures are untouched, but
-they no longer regenerate into the default asset set, so a retired claim cannot
-reappear in a figure by accident. `--include-archived` reproduces them in full.
++ `.pdf`) and rendered summary tables (`results/tables/md/*.md`). Safe to run at
+any point; missing inputs are skipped. Experiments marked `archived` in
+`results/STATUS.yaml` are **skipped by default**, so a retired claim cannot
+reappear in a figure by accident.
 
 ---
 
-## Stages 80–88 — E12 instrument validation (gated)
+# Part D — The lens stages (60, 110)
 
-Claims nothing. Validates whether a computed, **text-absent** program value can
-be identified and interchanged such that downstream computation transforms it.
-Exact commands, VRAM, runtimes and per-gate diagnostics: `docs/design/archive/RUNBOOK_E12.md`.
+## Stage 60 — J-lens validation, R7 (GPU; MPS ok for 1.3b)
+
+```bash
+python scripts/60_jlens_validate.py --model deepseek-coder-1.3b
+# GPU host: screen -dmS jlens-val-6.7b env MODEL=deepseek-coder-6.7b jobs/jlens_validate.csh
+```
+
+Builds per-layer J-lenses from a held-out generic corpus and runs V1 (exactness
+at the last layer), V2 (next-token recovery vs chance and vs the logit lens) and
+V3. Exits non-zero if a required check fails. Outputs
+`results/tables/jlens_validation_{,checks_}{model}.csv`.
+
+## Stage 110 — R-lens gate R, R8 (GPU)
+
+```bash
+python scripts/110_rlens_validate.py --model deepseek-coder-6.7b
+```
+
+Installs the LRP rules and runs R0 (forward invariance, **relative** tolerance),
+R1 (last layer equals the logit lens), R2a/R2b (LRP beats autograd; conservation
+in early layers) and the R2c **rule ablation**. Outputs under
+`results/rlens/{model}/validate/`: `rlens_r0_forward.csv`,
+`rlens_r2_conservation.csv`, `rlens_r2_summary.csv`,
+`rlens_validation_checks.csv`.
+
+**It raises on starcoder2-3b, and that is correct behaviour.** LayerNorm plus a
+non-gated MLP means both homogenising rules bind to nothing, so the `no_attn` arm
+removes the only rule that bound. A forward delta of *exactly* 0.0 in
+`rlens_r0_forward.csv` is the signature of an empty install (METHODS §6.4).
+
+**On MPS**, build lenses in `--dtype float32`: the fp16 VJP through this path
+returns non-finite gradients at every scale in the retry ladder. Prefer CUDA for
+any real lens build.
+
+---
+
+# Part E — The security track (120–131)
+
+The benchmark: 3 sink families × 4 flow structures × 20 base seeds × 2 labels =
+**480 clean programs**, transformed on the held-out side only, under **ten
+conditions** — clean, `normalize`, four **atomic** arms (`rename_only`,
+`opaque_only`, `encode_only`, `flatten_only`) and four **cumulative** arms.
+Construction, threat model and metrics: [METHODS §5](METHODS.md#5-the-security-benchmark-e15-construction-threat-model-metrics).
 
 | Stage | Command | Where | Gate | Output |
 |---|---|---|---|---|
-| 80 | `80_store_pairs.py --model M --n-bases 400` | CPU, ~1 min | — | `data/synthetic/store_pairs_M.jsonl` |
-| 81 | `81_store_verify.py --model M --pairs P` | CPU, ~1 min | **G0** | `verification.csv`, `gates.yaml` |
-| 82 | `82_store_behaviour.py --model M --pairs P` | GPU, ~5 min | **G1** | `behaviour{,_summary}.csv` |
-| 83 | `83_store_extract.py --model M --layers L` | GPU, ~15 min | — | `acts/{variant}_L*.npz` |
-| 84 | `84_store_decode.py --model M` | CPU, minutes | **G2** | `decode{,_summary}.csv`, `decoders/*.pkl` |
-| 85 | `85_store_transition.py --model M` | CPU, minutes | **G3** | `transition_{transfer,control,reversal}.csv` |
-| 86 | `86_store_ceiling.py --model M --layers L` | GPU, ~30 min | **G4** | `ceiling{,_summary}.csv` |
-| 87 | `87_store_interchange.py --model M --ranks R` | GPU, 1–3 h | **G5** | `interchange*.csv`, `subspaces/*.pkl` |
-| 88 | `88_store_report.py --model M` | CPU, seconds | — | `e12_report.{yaml,md}`, `e12_gates.csv` |
+| 120 | `120_sinkflow_generate.py --model M` | CPU, ~2 min | **S0** | `data/synthetic/sinkflow_M_{train,heldout,heldout_obf}.jsonl` (336 / 144 / **1296**), `benchmark.csv`, `gates.yaml` |
+| 121 | `121_sinkflow_extract.py --model M` | GPU, ~25 min (1.3b) | **S1** | `results/activations/M/sinkflow_{train,heldout,heldout_obf}/` |
+| 122 | `122_sinkflow_probe.py --model M` | CPU, minutes | **S2** | `sinkflow_clean.csv`, `probes/{site}/{layer_XX,surface,whole_program_lexical}.pkl`, `probes/provenance.json` |
+| 123 | `123_sinkflow_obfuscation.py --model M` | CPU, minutes | **S3** | `sinkflow_obfuscation.csv`, `sinkflow_predictions.csv` |
+| 124 | `124_sinkflow_report.py --model M --depth 0.48` | CPU, seconds | — | `e15_report.{yaml,md}`, `results/figures/sinkflow_*.png` |
+| 125 | `125_sinkflow_vocab_discover.py --model M` | **GPU**, hours | **J0** | `vocab/vocab_discovery.json`, `vocab/vocab_train_deltas.csv`, `vocab/vocab_lens_diagnostics.csv`, `vocab/lenses/*.pkl` |
+| 126 | `126_sinkflow_vocab_contrast.py --model M` | CPU, minutes | **J1** | `vocab/vocab_{pairs,pair_tokens,tokens,summary,controls,condition_similarity,lens_agreement}.csv` |
+| 127 | `127_sinkflow_vocab_report.py --model M` | CPU, seconds | — | `vocab/e15c_report.{md,yaml}`, `results/figures/e15c_depth_{model}.png` |
+| 128 | `128_sinkflow_align.py --model M` | **GPU**, ~15 min | **J2** | `align/align_{direction.json,summary,loadings,restricted}.csv` |
+| 129 | `129_sinkflow_positive.py --model M` | **GPU**, ~1 h | **J3** | `positive/positive_{behaviour,behaviour_summary,pairs,summary}.csv`, `positive/lenses/*.pkl` |
+| 130 | `130_sinkflow_relevance.py --model M` | **GPU**, ~30 min | **J4** | `relevance/relevance_{readings,pairs,summary,conservation}.csv` |
+| 131 | `131_sinkflow_lens_report.py --model M` | CPU, seconds | — | `e15d_report.{md,yaml}` |
 
-Everything lands under `results/store/{model}/`. Stage 84 writes the frozen
-decoders that 86 and 87 load — running 86 or 87 without it is the failure mode
-the gates exist to prevent.
+Everything lands under `results/sinkflow/{model}/`. GPU stages are 121, 125 and
+128–130; on the GPU host use
+`screen -dmS sinkflow-extract-6.7b env MODEL=deepseek-coder-6.7b jobs/sinkflow_extract.csh`
+and `screen -dmS sinkflow-vocab-6.7b env MODEL=deepseek-coder-6.7b jobs/sinkflow_vocab.csh`.
 
-Stage 87 is the only stage in the whole repository that runs a **backward**
-pass (it learns the interchange subspace), so it is the only one exposed to
-fp16 gradient instability. If the loss goes non-finite, re-run with
-`--dtype float32`.
+## What each gate family does
+
+**S0–S3** validate the benchmark, the activations, the probes and the frozen
+evaluation. **J0/J1** validate the lens instrumentation and the contrast, and are
+**mechanical only** — they must pass when the semantic result is null, and no gate
+anywhere requires a positive security-token result. In the canonical runs they
+did exactly that: both passed on what turned out to be a null.
+
+**J2/J3/J4** gate the three follow-ups:
+
+| Stage | Question it asks | Why it is not a repeat of 125–127 |
+|---|---|---|
+| 128 | Do the per-pair differences agree over the **whole vocabulary**? | No candidate pool is chosen, so a null cannot be blamed on one. Two statistics: *generalisation* (projection onto a train-frozen direction) and *dominance* (`sv1_share`). |
+| 129 | Can this readout detect verbalisation **at all**? | The **positive control**. Same function, same convention, same orientation, one candidate basis carrying both token sets — J3 refuses the run if the bases differ. |
+| 130 | Where does **relevance** move when only the semantics change? | Needs no lexicalisation. Under the LRP rules `Σ_t R_t = s`, so `R_t/s` is a partition of the answer and a paired difference is a genuine redistribution. |
+
+**Stage 130 refuses on StarCoder2** and records J4 as *not applicable*: the
+homogenising rules bind to nothing there, so there is no conservation to read.
+That is a fact about the architecture, not a failed measurement, which is why
+`make sinkflow-lens-all` tolerates a non-zero exit from that stage alone.
+
+Lens **fidelity** (next-token recovery, agreement with the final layer, relevance
+conservation) is a *diagnostic*: it warns and never blocks, and the report
+separates "mechanically invalid" from "mechanically valid with weak lens
+fidelity" (METHODS §6.5).
+
+## Things that are easy to get wrong by hand
+
+- **The probed layers must include `-1`.** The embedding layer is a control and
+  S2 refuses without it. Pass it as `--layers=-1,0,11` — with an `=`, or typer
+  reads the leading minus as a flag.
+- **Stage 123 checks probe provenance** against the training shard on disk before
+  it scores anything. A probe whose training bases intersect the evaluated ones,
+  or whose digest does not match the current benchmark, is refused rather than
+  reported as "frozen held-out".
+- **Read cross-model results at matched relative depth, never at a common layer
+  index.** The canonical models have 24, 32 and 30 layers, so index 11 is 48% of
+  depth in one and 35% in another; reading them side by side at the same index
+  once produced a claim whose ordering reversed. Every row carries
+  `relative_depth`:
+
+  ```bash
+  for M in deepseek-coder-1.3b deepseek-coder-6.7b starcoder2-3b; do
+      python scripts/124_sinkflow_report.py --model $M --depth 0.48
+  done
+  ```
+
+- **Do not re-run stage 120 to "refresh" anything.** Regenerating redraws every
+  transformation and changes every downstream number.
+- **Stage 126 is CPU-only on purpose.** The lens vectors are already on disk after
+  125, and scoring a state against them is a matrix multiply — which is also why
+  the freeze of the discovered token set is a filesystem boundary: the held-out
+  contrast reads a file it did not write and could not have influenced.
+- **Stage 125's cost is `n_candidates × n_build × n_tprime` backward passes per
+  (layer, lens).** The knobs are `--max-candidates`, `--n-build`, `--n-tprime`
+  and `--layers`. Defaults are sized for a CUDA host; on MPS `--dtype float32` is
+  required and the build is slow.
+
+## Smoke runs
+
+```bash
+make sinkflow-smoke          # stages 120-124, 96 programs, 3 layers → results/smoke/
+make sinkflow-vocab-smoke    # stages 125-127, 2 layers, 24 candidate tokens
+make sinkflow-lens-smoke     # stages 128-131, 2 layers, 6 bases
+```
+
+## A tokenizer pitfall this track surfaced
+
+starcoder2's tokenizer config sets `clean_up_tokenization_spaces: True`, which
+made the offset round-trip guard reject 336 of 720 obfuscated variants until
+`decode_exact()` began forcing the flag off. If S1 reports skipped programs with
+*"Tokenizer round-trip does not reproduce the source"*, that is the failure mode —
+the gate is working, and the fix is in `src/data/alignment.py`.
 
 ---
 
-## Stages 100–107 — E13 binding interchange (gated, the active direction)
+# Part F — The causal track (100–108)
 
 Does a low-rank, magnitude-free interchange at the binding-resolution site
 transport *which definition is in scope*? Identification is a 2×2: the same
-one-token binding flip demands **opposite token movements** in the two value
-assignments, so the alignment is fitted on arm `ab` and the claim is read on
-arm `ba`. No arithmetic anywhere — the model returns a variable.
+one-token binding flip demands **opposite** token movements in the two value
+assignments, so the alignment is fitted on arm `ab` and the claim is read on arm
+`ba`. **No arithmetic anywhere** — the model returns a variable. Full design:
+[METHODS §8](METHODS.md#8-instrument-4--das-magnitude-free-interchange-on-a-learned-subspace).
 
 | Stage | Command | Where | Gate | Output |
 |---|---|---|---|---|
@@ -438,62 +400,120 @@ arm `ba`. No arithmetic anywhere — the model returns a variable.
 | 103 | `103_binding_extract.py --model M --layers L` | GPU, ~3 min | — | `acts/{arm}_{binding}_L*.npz` |
 | 104 | `104_binding_decode.py --model M` | CPU, minutes | **H2** | `decode.csv`, `decoders/*.pkl` |
 | 105 | `105_binding_ceiling.py --model M --layers L` | GPU, ~15 min | **H3** | `ceiling{,_summary}.csv` |
-| 106 | `106_binding_interchange.py --model M --ranks R` | GPU, 1–2 h | **H4, H5** | `interchange*.csv`, `subspaces/*.pkl` |
-| 107 | `107_binding_report.py --model M` | CPU, seconds | — | `e13_report.{yaml,md}` |
+| 106 | `106_binding_interchange.py --model M --ranks R` | GPU, 1–2 h | **H4, H5** | `interchange{,_summary,_contrasts,_alignments,_rank_selection}.csv`, `subspaces/*.pkl` |
+| 107 | `107_binding_report.py --model M` | CPU, seconds | — | `e13_report.{yaml,md}`, `e13_gates.csv`, `e13_transfer_ratios.csv` |
+| 108 | `108_binding_diagnose.py --model M` | CPU, seconds | — | `e13_diagnosis.csv` |
 
-Everything lands under `results/binding/{model}/`. Prompts are ~21 tokens, so
-the full 6.7b run is ≈ 1.5–3 GPU-hours, dominated by stage 106's backward
-passes (the only backward pass in E13; `--dtype float32` if fp16 goes
-non-finite).
+Everything lands under `results/binding/{model}/`. Prompts are ~21 tokens, so a
+full 6.7b run is ≈ 1.5–3 GPU-hours, dominated by stage 106's backward passes —
+the only backward pass in the track. Use `--dtype float32` if fp16 goes
+non-finite.
 
-**Do not pass `--pairs`** — every stage derives it from `--model`, and
-interpolating a shell `$MODEL` is how a stage ends up reading another model's
-data. `H4` without `H5` is E11 again; read `docs/design/E13_PLAN.md` §8 before
-interpreting either.
+## Reading the gates
+
+| gate | what to inspect if it fails |
+|---|---|
+| **H0** | `verification.csv` — which of the six invariant checks dropped below 0.999. The arm crossing is the one that makes H5 a falsification |
+| **H1** | `behaviour_summary.csv` per cell. If the model cannot return the bound variable, no instrument built on top of it means anything |
+| **H2** | `decode.csv` — the *measured* surface baseline column, not just accuracy |
+| **H3** | `ceiling_summary.csv` — **both arms** must be alive, or a null in either says nothing. Structural zeros must be exactly `0.00e+00` |
+| **H4** | `interchange_contrasts.csv` — all three control contrasts must clear zero, and `edit_fraction` must be comparable across arms |
+| **H5** | Read the `answer_direction` rows **first**. If that control also passes on `ba`, the discriminator is broken and no verdict is licensed |
+
+## Two warnings
+
+**Do not pass `--pairs`.** Every stage derives it from `--model`; interpolating a
+shell `$MODEL` is how a stage ends up reading another model's data.
+
+**H4 without H5 proves nothing about transport** — that combination is the earlier
+design that was retracted. Read [RESULTS.md R13](RESULTS.md#r13--a-rank-1-interchange-transports-which-definition-is-in-scope)
+before interpreting either.
+
+**Current state on disk:** the 6.7b `gates.yaml` and `e13_report.md` still record
+H5 under the superseded logit-margin discriminator and therefore read FAIL. The
+rows in `interchange_summary.csv` are unchanged and pass under the pre-registered
+`says_installed` rule; re-running 106–107 regenerates the gate file. See
+[ARCHIVE.md](ARCHIVE.md) for the full record of that rule change.
 
 ---
 
-## Make targets
+# Part G — Make targets and the GPU-host workflow
+
+## G.1 Make targets
 
 ```bash
+make test                        # 489 CPU-only tests
 make smoke                       # tiny end-to-end run on this machine (1.3b)
-make data / extract / probes / context / obfuscation / leadtime / patching / assets
-make jspace                      # E11 stages 70→74 in order
-make jspace-pilot                # the pre-registered 1.3b pilot
-make store                       # E12 stages 80→88 (instrument validation, gated)
-make store-pilot                 # the cheap 1.3b instrument pilot
+
+# foundation
+make data / data-real / extract / probes / context / obfuscation / assets
+
+# instrument validation
+make jlens-validate / rlens-validate
+
+# the security track
+make sinkflow                    # 120 → 124
+make sinkflow-vocab-all          # 125 → 127
+make sinkflow-lens-all           # 128 → 131
+make sinkflow-smoke / sinkflow-vocab-smoke / sinkflow-lens-smoke
+
+# the causal track
+make binding                     # 100 → 107
+make binding-pilot               # the cheap 1.3b pilot
+make binding-diagnose
+
+# retired / parked, still runnable
+make leadtime / patching / jspace / jspace-pilot / store / store-pilot
 make assets-all                  # stage 90 including archived experiments
-make test
+
 # every target takes MODEL=... and PY=<python path>
 ```
 
-## GPU host workflow (no scheduler — screen)
+## G.2 GPU host (no scheduler — screen)
 
-There is no `qsub`/SGE here. Each GPU stage runs in its own detached `screen`
+There is no `qsub`/SGE on this host. Job scripts are **csh** and the env is
+**micromamba**, not conda. Every long stage goes in its own detached `screen`
 session so it survives disconnects.
 
-1. Locally: `make data-real`, commit/rsync `data/` to
-   `/scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/semantic-flow`.
-2. `cd` there, then one screen session per extraction job:
+```csh
+# once — call micromamba/python by absolute path; the shell hook only recognises
+# "tcsh", not "csh", and is unnecessary since every path below is explicit
+setenv MAMBA_ROOT_PREFIX /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/micromamba-root
+setenv MAMBA_EXE /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/micromamba/bin/micromamba
+$MAMBA_EXE create -n uq python=3.11 -y
+setenv PYTHON /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/envs/uq/bin/python
+$PYTHON -m pip install -r requirements-cluster.txt
+setenv HF_HOME /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/hf-cache
+setenv HF_DATASETS_CACHE $HF_HOME/datasets
+$PYTHON -c "from src.models.loader import load_tokenizer; load_tokenizer('deepseek-ai/deepseek-coder-6.7b-base')"
+
+# per run — one screen session per job
+cd /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/semantic-flow
+screen -dmS extract-core-6.7b env MODEL=deepseek-coder-6.7b jobs/extract_core.csh
+screen -ls                       # list running sessions
+screen -r extract-core-6.7b      # attach; Ctrl-A D to detach again
+```
+
+`jobs/common.csh` centralises `$PYTHON` (the `uq` env's interpreter),
+`HF_HOME`/`HF_DATASETS_CACHE`, `MAMBA_ROOT_PREFIX`/`MAMBA_EXE`, and
+`PYTHONPATH`/`cd` into the repo — edit paths there if the layout changes. Job
+scripts invoke `$PYTHON` directly rather than a bare `python`;
+`env MODEL=... jobs/foo.csh` sets the variable the script reads without needing
+`setenv` in the parent shell.
+
+## G.3 Typical end-to-end order
+
+1. Locally: `make data` (and `make data-real` if needed), rsync `data/` up.
+2. Extraction jobs, one screen session each:
    `screen -dmS extract-core-6.7b env MODEL=deepseek-coder-6.7b jobs/extract_core.csh`
-   (+ `extract_context.csh` / `extract_obfuscation.csh` / `extract_real.csh`).
-3. Once extraction finishes (`screen -ls` to check none are still running):
+   (+ `extract_context.csh` / `extract_obfuscation.csh`).
+3. Once extraction finishes (`screen -ls` shows none running):
    `make probes context obfuscation MODEL=deepseek-coder-6.7b`.
-4. `screen -dmS leadtime-6.7b env MODEL=deepseek-coder-6.7b jobs/leadtime.csh` and
-   `screen -dmS patching-6.7b env MODEL=deepseek-coder-6.7b jobs/patching.csh`.
-5. Anywhere: `make assets`; rsync `results/tables results/figures` back.
+4. Security track: `jobs/sinkflow_extract.csh`, then `make sinkflow-probe
+   sinkflow-obf sinkflow-report`, then `jobs/sinkflow_vocab.csh`.
+5. Causal track: `make binding MODEL=deepseek-coder-6.7b` — hard-gated, so it
+   stops itself at the first failing gate.
+6. Anywhere: `make assets`; rsync `results/tables results/figures` back.
 
-For E11: `screen -dmS jspace-pilot env MODEL=deepseek-coder-1.3b jobs/jspace_pilot.csh`.
-
-For E12 (stages 80–88), the whole gated sequence is one job:
-`screen -dmS e12-pilot env MODEL=deepseek-coder-1.3b jobs/store_pilot.csh`, then
-`jobs/store_full.csh` for 6.7b only once the pilot reports
-`INSTRUMENT VALIDATED`. Per-stage commands, VRAM, runtimes, how to read each
-gate and what to run when one fails: **`docs/design/archive/RUNBOOK_E12.md`**.
-
-`jobs/common.csh` holds the shared env: `$PYTHON` (micromamba `uq` env),
-`HF_HOME`/`HF_DATASETS_CACHE` (Scratch, `NOT_BACKED_UP`), `MAMBA_ROOT_PREFIX`/
-`MAMBA_EXE`, and `PYTHONPATH`/`cd` into the repo. Job scripts invoke `$PYTHON`
-directly rather than a bare `python`; `env VAR=... jobs/foo.csh` sets a
-variable the script reads without needing `setenv` first. Pre-download model
-weights once on a network-enabled node.
+If the cluster has no internet, run `make data-real` locally and rsync `data/`
+(and the HF cache) up. Pre-download model weights once on a network-enabled node.

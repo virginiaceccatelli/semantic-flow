@@ -170,7 +170,7 @@ experiments:
       conservation WORSE does not replicate. In float32 the all-rules arm is
       0.0000 at every layer against 0.2265 without the identity rule, so the rule
       helps as designed and the earlier inversion was fp16 noise. Recorded in
-      docs/design/E14_RLENS_PLAN.md.
+      docs/METHODS.md §6.4.
       NOT APPLICABLE to starcoder2-3b: gate R cannot complete there. StarCoder2
       uses LayerNorm (deliberately unmatched - it subtracts the mean, so the
       rule's algebra differs) and a non-gated MLP (no gate_proj/up_proj/down_proj),
@@ -193,7 +193,7 @@ experiments:
       starcoder2-3b at all. The LayerNorm half is the harder one: the
       mean-subtraction term is exactly what the current algebra assumes away.
       Stage 110 should also record a "not applicable" verdict for such
-      architectures rather than raising. Full roadmap in docs/EXPERIMENTS.md.
+      architectures rather than raising. Full roadmap in docs/RESULTS.md.
     consequence: >
       The R-lens is not simply "better" and usable everywhere: it is
       architecture-dependent, and starcoder2-3b's R-lens numbers carry a fidelity
@@ -211,7 +211,7 @@ experiments:
       binding becomes readable in the model's OWN output basis, which the
       probes cannot say because they choose their own direction. It makes no
       causal claim — E13's interchange does that, and is strictly stronger for
-      the purpose. Design and the four gates: docs/design/E14_RLENS_PLAN.md.
+      the purpose. Design and the four gates: docs/METHODS.md §6.4.
 
   E15:
     name: source-to-sink flow under obfuscation (the security audit track)
@@ -739,7 +739,7 @@ experiments:
       of it. What this project owns that the field does not is the
       construction-pinned surface floor; combining that with a magnitude-free
       interchange is the contribution, and E12 builds only the instrument half.
-      docs/design/E13_DIRECTIONS.md is what a pass licenses.
+      docs/RESULTS.md (open items) is what a pass licenses.
     status_note: >
       PARKED. The 1.3b pilot failed G1 at 0.4125 balanced accuracy on the test
       split — below chance — and the per-family breakdown is conclusive rather

@@ -6,7 +6,7 @@ literals in the text, a direction that pushes toward the token `7` and a
 direction that carries "the inner definition is in scope" are indistinguishable.
 E12 tried to escape that by making the tracked value text-absent, which forced
 the value to be *computed*, which made two-step arithmetic the load-bearing
-capability. It failed there (`docs/design/archive/E12_PLAN.md`, and the 1.3b triage),
+capability. It failed there (`docs/ARCHIVE.md §1.4`, and the 1.3b triage),
 and the failure was about arithmetic rather than about binding.
 
 E13 takes the cheaper escape. It intervenes on the **binding** and lets the

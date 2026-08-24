@@ -15,7 +15,7 @@ chance level:
   * a **Hewitt-Liang control task** — a random-but-fixed value per variable
     *name*, which a decoder reading the model must fail.
 
-  Stated plainly, and repeated in `docs/design/archive/E12_PLAN.md`: this is a
+  Stated plainly, and repeated in `docs/ARCHIVE.md §1.4`: this is a
   precondition, not a result. The value is a deterministic function of the
   visible text, so a baseline that can execute the program scores 1.0. The
   lexical baseline is bounded by its window (the head literal is at least

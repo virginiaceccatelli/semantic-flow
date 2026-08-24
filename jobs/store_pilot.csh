@@ -5,7 +5,7 @@
 # TEXT-ABSENT program value can be identified and interchanged such that
 # downstream computation transforms it. Causal state interchange is established
 # method (DAS, Othello-GPT, variable binding in symbolic programs), so a pass
-# licenses the semantic extension in docs/design/E13_DIRECTIONS.md — it is not
+# licenses the semantic extension in docs/RESULTS.md (open items) — it is not
 # itself a finding, and nothing here should be written up as one.
 #
 # Every stage is hard-gated and exits 2 when a prerequisite gate failed, so the
@@ -64,4 +64,4 @@ $RUN scripts/88_store_report.py --model "$MODEL"
 
 echo ""
 echo "Read $OUT/e12_report.md. A verdict of INSTRUMENT VALIDATED means the"
-echo "apparatus works — it is NOT a result. Next: docs/design/E13_DIRECTIONS.md."
+echo "apparatus works — it is NOT a result. Next: docs/RESULTS.md (open items)."

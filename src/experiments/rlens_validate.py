@@ -228,7 +228,7 @@ def check_conservation(summary: pd.DataFrame, early_layers: Sequence[int],
         name="R2b_rule_ablation", phase="gateR", passed=True, required=False,
         detail=("removing each rule, worst first: "
                 + ", ".join(f"{a} {v:.4f}" for a, v in ranked.items())
-                + ". The LN-rule is predicted to dominate (docs/design/E14_RLENS_PLAN.md §2.1)."),
+                + ". The LN-rule is predicted to dominate (docs/METHODS.md §6.4)."),
     ))
     return checks
 

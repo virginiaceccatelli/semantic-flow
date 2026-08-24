@@ -21,7 +21,7 @@ The same binding flip demands opposite token movements in the two value assignme
 
 The subspace did not transfer to the held-out value assignment. Read the answer_direction rows FIRST: if that control also passes on `ba`, the discriminator is broken and no verdict is licensed. If it fails on `ba` as designed and das_binding fails too, the learned subspace is an answer direction — which is a real, reportable negative and exactly what E11 could not establish.
 
-Re-run after fixing: `write it up — both outcomes are reportable; see docs/design/E13_PLAN.md §9`
+Re-run after fixing: `write it up — both outcomes are reportable; see docs/RESULTS.md R13`
 
 ## Do not claim
 
