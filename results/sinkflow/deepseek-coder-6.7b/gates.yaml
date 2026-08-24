@@ -1,6 +1,6 @@
 experiment: E15
 model: deepseek-coder-6.7b
-updated: '2026-08-20 21:12:50'
+updated: '2026-08-24 14:53:47'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -372,6 +372,40 @@ gates:
       conditions: all
       n_candidates: 102
       n_pairs: 72
+      violations: []
+      gates_required: S0
+      gate_override: false
+      gate_override_reason: ''
+  J4:
+    name: J4
+    passed: true
+    value: 1152.0
+    detail: '2304 readings and 1152 paired redistributions over 8 layers x 2 targets
+      x 1 conditions; median |rho-1| 0.0000; LRP rules bound {''ln'': 65, ''mlp'':
+      32, ''attn'': 32}'
+    stage: 130_sinkflow_relevance
+    timestamp: '2026-08-24 14:53:47'
+    override: false
+    override_reason: ''
+    extra:
+      layers:
+      - 0
+      - 3
+      - 7
+      - 11
+      - 15
+      - 19
+      - 23
+      - 27
+      targets:
+      - ' vulnerable'
+      - ' safe'
+      conditions:
+      - clean_heldout
+      lrp_rule_counts:
+        ln: 65
+        mlp: 32
+        attn: 32
       violations: []
       gates_required: S0
       gate_override: false

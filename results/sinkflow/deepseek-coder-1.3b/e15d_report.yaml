@@ -2,10 +2,11 @@ experiment: E15-D
 model: deepseek-coder-1.3b
 verdicts:
   v1_alignment: direction_replicates_but_not_dominant
-  positive_control: not_run
+  positive_control: machinery_blind
   v3_relevance: redistribution_consistent_but_not_in_mean
-consequence_for_e15c: The positive control has not run, so E15-C's null remains unfalsifiable
-  in exactly the way it was.
+consequence_for_e15c: E15-C's null is about the METHOD. The models answer the forced
+  choice, the identical readout does not see it, so no claim about what code models
+  represent survives that track and every number in it keeps its caveat.
 gates:
   J0:
     passed: true
@@ -24,11 +25,13 @@ gates:
       direction estimated on 168 training bases (digest 0b5fcb12614bab1e), both same-label
       nulls ran in every cell
   J3:
-    passed: false
-    detail: not recorded
+    passed: true
+    detail: 34560 pair rows over 3 lenses x 8 layers x 2 prompt styles on 72 held-out
+      bases; both properties read in one 102-token basis; forced-choice answer scored
+      for every program
   J4:
     passed: true
-    detail: '2016 readings and 1008 paired redistributions over 7 layers x 2 targets
+    detail: '1728 readings and 864 paired redistributions over 6 layers x 2 targets
       x 1 conditions; median |rho-1| 0.0000; LRP rules bound {''ln'': 49, ''mlp'':
       24, ''attn'': 24}'
 v1:
@@ -126,23 +129,63 @@ v1:
     same_label_proj_mean: null
     same_label_proj_sign_consistency: null
 positive_control:
-  verdict_text: "NOT RUN \u2014 stage 129 has not written a summary."
+  verdict_text: "MACHINERY BLIND \u2014 the model answers the forced choice and the\
+    \ identical readout misses it. The instrument, not the model, is what E15-C's\
+    \ null is about."
   reported:
     prompt_style: sink
     lens: rlens
-    layer: null
+    layer: -1
     condition: clean_heldout
   thresholds:
     sign_consistency: 0.7
     permutation_p: 0.05
     behaviour_floor: 0.5
   checks:
-    behaviour_above_chance: false
+    behaviour_above_chance: true
     lens_detects_the_property: false
     lens_tracks_the_model: false
     security_contrast_at_same_cell: false
-  behaviour: {}
-  headline: {}
+  behaviour:
+    model: deepseek-coder-1.3b
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    prompt_style: sink
+    n_pairs: 72
+    accuracy: 0.5
+    accuracy_unsafe: 0.0
+    accuracy_safe: 1.0
+    says_tainted_rate: 0.0
+    pair_separation: 0.6944444444444444
+    pair_separation_p: 0.0012935849626762
+    mean_model_delta: 0.0226779513888888
+    model_delta_ci_lo: 0.0158420147167311
+    model_delta_ci_hi: 0.0292968741928537
+  headline:
+    model: deepseek-coder-1.3b
+    lens: rlens
+    layer: -1
+    relative_depth: null
+    prompt_style: sink
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    n_pairs: 72
+    taint_mean_delta_z: 0.0
+    taint_sign_consistency: 0.0
+    taint_permutation_p: 1.0
+    taint_permutation_effect_size: null
+    taint_corr_model_delta: null
+    taint_lens_tracks_model: 0.1666666666666666
+    security_mean_delta_z: 0.0
+    security_sign_consistency: 0.0
+    security_permutation_p: 1.0
+    security_permutation_effect_size: null
+    security_corr_model_delta: null
+    security_lens_tracks_model: 0.1666666666666666
+    mean_model_delta_margin: 0.0226779513888888
+    model_pair_separation: 0.6944444444444444
 v3:
   verdict_text: "REDISTRIBUTION IN SIGN, NOT IN MEAN \u2014 a token-identical role's\
     \ share of the model's own answer shifts in the same direction in the large majority\
@@ -167,7 +210,6 @@ v3:
   - 11
   - 15
   - 19
-  - 23
   token_identical_roles:
   - source_expr
   - trusted_expr
@@ -193,8 +235,8 @@ v3:
     median_delta_frac: -0.0135655193632113
     sign_test_p: 6.9644370929921e-13
     permutation_p: 0.57
-    permutation_effect_size: -0.7707422028731806
-    mean_frac_unsafe: 0.0397383920521538
+    permutation_effect_size: -0.7707422028731821
+    mean_frac_unsafe: 0.0397383920521539
     mean_frac_safe: 0.0552334212149539
     token_count_matched_frac: 1.0
-    median_abs_rho_minus_one: 8.736952172849756e-08
+    median_abs_rho_minus_one: 8.736952161747524e-08
