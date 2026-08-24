@@ -1,299 +1,233 @@
 # Semantic Flow
 
-## Start here: the project in plain language
+This repository tests whether code language models represent program semantics
+separately from surface patterns in source text. The experiments focus on:
 
-This repository tests whether code language models keep track of what a program
-*means*, rather than only recognizing familiar-looking text. In particular, the
-experiments ask whether a model can track which definition a variable refers
-to, how a value moves from its definition to its uses, and whether a dangerous
-function receives attacker-controlled data.
+- which definition an identifier refers to (**binding**);
+- which definition supplies a later use (**def–use**); and
+- whether untrusted data reaches a security-sensitive function argument
+  (**source-to-sink flow**).
 
-The key experimental trick is to compare programs that look almost identical
-but have different meanings. Because the relevant token, its nearby text, and
-its position stay the same, those surface clues cannot solve the task. A score
-above the resulting `0.500` floor therefore reflects information computed from
-the program, not a lucky correlation with spelling or distance.
+The project also tests whether the model uses a binding representation in its
+downstream computation. Most experiments are observational. The DAS interchange
+experiment is causal at the tested model, layer, site, and program construction.
 
-The project then asks four increasingly demanding questions:
+## Main results
 
-1. **Is the semantic relation present?** A linear probe reads the model's hidden
-   state.
-2. **What changes make it disappear?** The same frozen probe is tested after
-   meaning-preserving rewrites.
-3. **Is it expressed in the model's output coordinates?** Vocabulary and
-   relevance readouts test the form of the representation.
-4. **Does the model actually use it?** A controlled interchange edits a learned
-   one-dimensional subspace and measures whether the answer changes as
-   predicted.
+- Binding is at chance at the input and model-free surface baseline
+  (**0.500**), rises to approximately **0.984** in middle layers, and declines
+  near the output. The pattern replicates at 1.3B and 6.7B at comparable relative
+  depths. Def–use follows a similar pattern, with some decline as distance grows.
+- Adding 1,000 tokens of irrelevant comments has little effect: binding remains
+  at **0.921** in the reported comparison. Filler that reuses the tracked names
+  reduces binding to chance. The main problem is semantic interference, not
+  context length alone.
+- Renaming all identifiers leaves middle-layer accuracy at **0.85–0.90**, while
+  pushing the embedding-layer result below chance. Early layers depend strongly
+  on identifier spelling, while much of the middle-layer representation does
+  not.
+- The source-to-sink readout reaches **1.000** on held-out programs over two
+  measured chance baselines. Opaque branches and arithmetic rewriting have no
+  measured cost when applied alone. Renaming costs **0.01–0.12**.
+  Control-flow flattening alone costs **0.31–0.34**, within **0.03** of the cost
+  of combining all four transformations. No additional interaction is
+  distinguishable from measured draw noise.
+- Across the full approximately 32,000-token vocabulary, **72/72** held-out
+  safe/unsafe pairs point in the expected direction in every model. The largest
+  token loadings are meaningless fragments rather than words such as `unsafe`.
+  The distinction is aligned with the output vocabulary but distributed across
+  many token dimensions.
+- The absence of a clear security word is not caused by a blind readout. On a
+  property that the models express through their own answer margin, the same
+  readout scores **0.85–0.94**. At the same measurement cell, the security-word
+  set scores **0.347 / 0.389** on two models, significantly in the opposite
+  direction.
+- For binding, a rank-1, magnitude-free DAS interchange changes which definition
+  is in scope. It succeeds on **100%** of held-out rows in both arms of the 2×2
+  design while moving **0.479** of `||h||`. The closed-form difference-in-means
+  baseline succeeds on 76% while moving **0.711** of `||h||`; dose-matched
+  random subspaces succeed on 1–2%.
 
-The short result is: binding and source-to-sink flow are strongly represented;
-ordinary renaming and long irrelevant context are mostly survivable;
-control-flow flattening is the main failure; the security distinction is
-output-aligned but is not represented by an obvious security word; and the
-binding interchange provides causal evidence at the tested model, layer, and
-program construction. The sections below give the exact measurements and the
-limits of each conclusion.
+For the complete experiments, controls, qualifications, and model-specific
+results, see [docs/RESULTS.md](docs/RESULTS.md).
 
-**Do code language models build representations of program *semantics* — which
-definition a name refers to, where a value flows, whether a dangerous argument
-is attacker-controlled — that are distinct from lexical and syntactic
-regularity? And does the model's own computation *causally use* them?**
+## Experimental design
 
----
+### Controlled program pairs
 
-## 1. The problem, and the construction that makes it tractable
-
-A code model that tracks only surface form can look competent. Identifiers
-usually keep their meaning, related statements are usually written near each
-other, and indentation usually exposes control structure. So a probe that
-recovers binding or data flow from hidden states may be recovering the model's
-computation — or may be recovering the text, which the hidden states also
-contain.
-
-The usual response is to *estimate* how much a shortcut could explain and
-subtract it. Code allows something better: **make the shortcut carry no
-information at all.** Two programs differing in one character:
+The main construction uses program pairs with nearly identical text but
+different semantics:
 
 ```python
 x = 3                  x = 3
 def f():               def f():
-    y = 7                  x = 7          ← one character
+    y = 7                  x = 7
     return x               return x
-#   → 3                    → 7
+#   returns 3              returns 7
 ```
 
-The token we ask about is at the same index in both. The words around it are
-the same. The distance to everything is unchanged. Only the answer flips. A
-predictor with access to nearby tokens and distances is therefore right
-**exactly 0.500 of the time — by construction, not by estimate.** Everything
-above that floor is something the model computed.
+The queried `x` appears at the same token position in both programs. Its local
+context and distance from other tokens are unchanged. Only the binding changes.
+A reader using only nearby tokens and distances therefore scores exactly
+**0.500 by construction**. A hidden-state score above this floor cannot be
+explained by those features.
 
-That construction is the project's central asset, and it is what lets a
-representational claim be *pinned* rather than argued.
+This exact floor applies to the controlled binding construction. Other
+experiments use their own measured baselines and controls, described in
+[docs/METHODS.md](docs/METHODS.md).
 
-## 2. Two axes: program structure, and evidential strength
+### Ground truth
 
-Every experiment in this repository is located by two coordinates.
+Labels come from program structure, not from the model or a human annotator.
+Extractors under `src/graphs/` build these code-property-graph components:
 
-### Axis 1 — what is asked about: relations from the code property graph
+| Component | Module | Used for |
+|---|---|---|
+| Abstract syntax tree (AST) | `ast_extractor.py` | exact source-span and token alignment |
+| Control-flow graph (CFG) | `cfg_extractor.py` | statement flow, joins, and archived control-dependence measurements |
+| Data-flow graph (DFG) | `dfg_extractor.py` | binding and def–use labels |
+| Program-dependence graph (PDG) | `pdg_extractor.py` | source-to-sink taint paths |
 
-Ground truth is never taken from the model, from a heuristic, or from a
-labeller. It is computed from the program's own structure, by the extractors in
-`src/graphs/`, which build the standard layers of a **code property graph**:
+The labels are cross-checked with `beniget`, instrumented execution, or an
+independent scope-aware interpreter where appropriate.
 
-| layer | module | what it provides | relation it grounds |
-|---|---|---|---|
-| **AST** | `ast_extractor.py` | character-offset-aware syntax nodes | token alignment for every label |
-| **CFG** | `cfg_extractor.py` | statement-level control flow, join points | control dependence — *measured and archived*, see below |
-| **DFG** | `dfg_extractor.py` | definitions, uses, reaching-definition edges | **binding (R1)**, **def–use (R2)** |
-| **PDG** | `pdg_extractor.py` | union of def–use and control-dependence edges | **source→sink taint paths (R5)** |
+Control dependence is not included as a main result. Although the model reaches
+AUC **0.999**, a model-free reader using token windows and indentation already
+reaches **0.927**. The result therefore does not isolate information computed by
+the model. Details are in
+[docs/ARCHIVE.md §4.3](docs/ARCHIVE.md#43-control-dependence).
 
-The graph is what makes the labels *exact*, and exactness is what makes the
-floor argument possible: an approximate label becomes label noise, and label
-noise becomes the finding.
+### Four evidence levels
 
-The criterion also **excludes** a CPG relation, which is what makes it a
-criterion rather than a slogan. Control dependence is decodable at ceiling
-(AUC 0.999) — but a model-free reader of token windows and indentation already
-scores **0.927** on it, because a statement's guard is usually its nearest
-enclosing `if`. It is therefore not reported as a result; the numbers and the
-reasoning are in [docs/ARCHIVE.md §4.3](docs/ARCHIVE.md#43-control-dependence).
+| Method | What it can establish | What it cannot establish |
+|---|---|---|
+| Linear probe with a controlled floor | a relation is linearly recoverable from a hidden state | that the model uses the relation |
+| Frozen-probe transfer across behavior-preserving rewrites | whether the original readout survives a rewrite | that all information is gone when the probe fails |
+| Output-basis and relevance readouts | whether the distinction is aligned with output tokens, represented by a word, or routed through particular input positions | causal use |
+| Rank-1 DAS interchange | whether downstream computation reads the edited subspace at the tested site | generality beyond the tested construction, model, layer, and site |
 
-### Axis 2 — how hard the question is asked: four instruments
+The first three methods are observational. Only the DAS interchange edits the
+model state and supports a causal conclusion.
 
-The instruments differ in what they are *entitled* to conclude, and conflating
-them is the source of every claim this project has withdrawn.
+## Experiment workflow
 
-| # | instrument | licenses | does **not** license |
-|---|---|---|---|
-| 1 | **Linear probe** against a construction-pinned floor | the relation is linearly *present* in the state | that the model uses it |
-| 2 | **Frozen probe** transferred across meaning-preserving rewrites | what the representation is *made of*; which rewrite destroys it | that the model lost the information (a probe can fail where a model does not) |
-| 3 | **Output-basis readouts** — a vocabulary projection, and the **R-lens** as a conserving attribution | whether the distinction lives in the model's *own output coordinates*, whether any *word* carries it, and where relevance is routed | anything causal; a projection is not an edit |
-| 4 | **DAS interchange** — a learned, magnitude-free rank-1 edit | that the model's downstream computation *reads* the subspace | generality beyond the site, layer, model and construction tested |
+1. Generate small Python programs with exact binding, data-flow, or security
+   labels.
+2. Run a frozen model and save hidden states at verified token positions.
+3. Fit low-capacity linear probes and evaluate model-free and shuffled-label
+   controls.
+4. Test the frozen probes on behavior-preserving rewrites.
+5. Project states into vocabulary coordinates or attribute output scores to
+   input positions.
+6. For binding, intervene on a learned rank-1 subspace and measure the resulting
+   answer change.
 
-Instruments 1–2 are correlational by nature. Instrument 3 is still
-observational but asks about *format* rather than mere decodability.
-Instrument 4 is the only causal one.
+Synthetic programs are used because per-token ground truth must be exact. Linear
+probes limit how much work the readout itself can perform. Hidden states are
+saved once so repeated CPU analyses do not require another model run.
 
-## 3. What was found
+## Controls
 
-**The relation is there, and it is built with depth.** Binding is *absent* at
-the input (exactly 0.500 at the embedding layer and at the model-free surface
-baseline), constructed within the first few transformer blocks, peaks near
-**0.984** in the middle of the network, and is partly shed before the output.
-Replicated at 1.3B and 6.7B at matched relative depth. Def–use follows the same
-profile with mild, honest decay by distance.
-
-**It breaks on difficulty, not on distance or spelling.** A thousand tokens of
-inert comments costs almost nothing (0.921); the same length of filler that
-*reuses the tracked names* drives binding to chance. Renaming every identifier
-leaves middle layers at 0.85–0.90 while pushing the embedding layer *below*
-chance. Control-flow flattening is the real limit.
-
-**The same boundary holds for a property an auditor would actually ask for.**
-E15 reads "is the value at this `os.system` / `cursor.execute` / `eval`
-argument source-derived?" at **1.000** on held-out programs, over *two* measured
-chance floors. Applying each rewrite on its own, in three models: opaque dead
-branches and arithmetic rewriting cost **exactly nothing**, renaming costs
-0.01–0.12, and **control-flow flattening alone costs 0.31–0.34** — within 0.03
-of what the entire four-transformation composition costs. Composition adds no
-interaction distinguishable from measured draw noise. **One transformation
-carries the whole failure.**
-
-**Decodable and verbalised come apart.** Differencing each matched pair over the
-**whole 32k-token vocabulary** finds a direction that **72 of 72 held-out pairs
-project positively onto, in every model**, over a token-identity floor of
-*exactly zero* — appearing at a quarter of the way up the stack and collapsing
-under flattening alone. Its top-loading tokens are meaningless fragments, so the
-distinction is **output-aligned, distributed, and carried by no word for it**.
-That is not an instrument failure: at the cell where the same readout fires on a
-property these models *do* express (0.85–0.94, tracking the model's own answer
-margin), the security lexicon separates the pair at **0.347 / 0.389** —
-significantly in the *wrong* direction.
-
-**And for binding, the causal question has an affirmative answer.** A rank-1,
-magnitude-free **DAS interchange** at the site where the binding is resolved
-transports *which definition is in scope* into both value assignments of a 2×2,
-including the arm it was never fitted on — where a token-direction or
-answer-direction account demands the opposite movement. It reaches **100% of
-held-out rows in both arms** while moving 0.479 of ‖h‖, against 76% at 0.711 for
-the closed-form difference-in-means baseline and 1–2% for a dose-matched random
-subspace.
-
-## 4. Where to read what
-
-| Document | Scope |
+| Control | Purpose |
 |---|---|
-| **[docs/METHODS.md](docs/METHODS.md)** | how everything is measured — the CPG ground truth, the floors and controls, the security benchmark, **DAS**, and the **J-/R-lens** stack, in full |
-| **[docs/RESULTS.md](docs/RESULTS.md)** | every completed, successful result, each as *research question → hypothesis → method → result → what it means*; then the synthesis and the boundaries |
-| **[docs/PIPELINE.md](docs/PIPELINE.md)** | setup, every stage, its command, its gates and its outputs |
-| **[docs/ARCHIVE.md](docs/ARCHIVE.md)** | every retired or abandoned design, with the reason and the lesson it produced |
+| Grouped cross-validation by source program | prevents related rows from appearing in both training and test folds |
+| Shuffled-label selectivity control | detects accuracy caused by class balance or program-specific regularities |
+| Separate negative strata | prevents easy negatives from hiding failure on difficult cases |
+| Local and whole-program surface baselines | measures how much the source text reveals without hidden states |
+| Verified AST-span-to-token alignment | prevents incorrect labels for repeated or shadowed names |
+| Independent ground-truth checks | detects extractor errors that could otherwise appear as model signal |
+| Cluster bootstrap over programs | avoids treating correlated rows from one program as independent samples |
+| Hard stage gates | stops dependent experiments when a required control or artifact is missing |
 
-Machine-readable status per experiment: `results/STATUS.yaml`. Auto-generated
-per-run reports live beside their data under `results/{binding,sinkflow,…}/` and
-are regenerated by their report stages; they are outputs, not documentation.
+Tokenizer validation is also required. On Transformers 5.x, `AutoTokenizer` can
+mis-tokenize DeepSeek Coder—for example, `def func` can become
+`['de', 'ff', 'unc']`—without raising an error. The loader in
+`src/models/loader.py` rejects tokenizers that fail an exact code round trip.
 
-## 5. How it works
+## Documentation
 
-```
-generate programs      run the model once     read the state back    intervene
-with exact ground  →   save hidden states  →  linear probes and    → on frozen
-truth (CPG or          at chosen layers       output-basis lenses    artifacts
- execution)                                   + honest controls      (DAS)
-```
-
-Small Python programs whose semantic structure is **known exactly by
-construction**; ground truth from the code property graph or from *executing*
-them; every def/use/guard/sink event mapped to its exact token position through
-verified AST-span→offset alignment. A frozen model reads each program once and
-the hidden states are saved. Then deliberately **low-capacity linear probes**
-decode the relations, with controls that kill the cheap ways to score high.
-
-*Why synthetic, why linear, why one pass:* per-token labels must be exact
-(static analysis on real code is approximate, and its errors become label
-noise); a linear readout is the standard operationalisation of "explicitly
-represented" — a stronger probe would measure the probe, not the model; and one
-GPU pass decouples scarce GPU time from frequent CPU-only analysis. Full
-rationale in [docs/METHODS.md](docs/METHODS.md).
-
-## 6. What every experiment defends against
-
-| Commitment | Shortcut it kills |
+| File | Contents |
 |---|---|
-| **Grouped CV** — folds split by source program | rows from one program share hidden vectors; random folds leak train into test |
-| **Selectivity control** — identical probe on shuffled labels | accuracy from class priors or per-program regularities |
-| **Negative strata reported separately** | a headline averaged over easy negatives |
-| **Measured surface baselines** — a ±3-token reader and a whole-program lexical reader, neither seeing hidden states | claiming a result beats "the text" without checking |
-| **Verified token alignment** — AST spans → offsets, checked against source | string-matching a name silently mislabels shadows, which is what E2 measures |
-| **Cross-validated ground truth** — `beniget`, instrumented execution, an independent scope-aware interpreter | labels wrong the same way in train and test look like signal |
-| **Cluster bootstrap** over programs; controls paired on the same rows | intervals too narrow, in the direction that makes a null look like a finding |
-| **Hard gates** — a stage refuses to run on a failed prerequisite | a control silently skipped, which is how E11 lost `probe_basis` |
+| [docs/METHODS.md](docs/METHODS.md) | complete methods, controls, metrics, and gates |
+| [docs/RESULTS.md](docs/RESULTS.md) | completed results, measurements, interpretations, and limitations |
+| [docs/PIPELINE.md](docs/PIPELINE.md) | setup, stage commands, prerequisites, and outputs |
+| [docs/ARCHIVE.md](docs/ARCHIVE.md) | retired, superseded, or failed designs and why they were not used |
 
-> One non-obvious hazard: `AutoTokenizer` on transformers 5.x silently
-> mis-tokenizes deepseek-coder (`def func` → `['de','ff','unc']`), relabelling
-> *every* example without crashing. `src/models/loader.py::load_tokenizer`
-> refuses any tokenizer that fails an exact code round-trip. See
-> [docs/METHODS.md](docs/METHODS.md) §2.3.
+Machine-readable experiment status is stored in `results/STATUS.yaml`. Markdown
+reports under `results/` are generated outputs, not primary documentation.
 
-## 7. Repository map
+## Repository structure
 
-```
+```text
 src/
-  graphs/      AST / CFG / DFG / PDG extraction — the code property graph, and
-               the source of every label
-  data/        generators (foundation programs, obfuscation ladder, security
-               benchmark, binding factorials), alignment, execution and
-               reference-interpreter ground truth
-  models/      loading (round-trip guard), hooks, J-lens, LRP rules (R-lens),
-               DAS interchange
-  probes/      linear probe, grouped CV + controls, dataset builders
-  experiments/ one module per experiment family
-  analysis/    metrics, tables, figures, cluster bootstrap
-scripts/       numbered stage CLIs (00–131)
-jobs/          csh scripts per GPU stage (run under screen; no scheduler)
-configs/       model registry + canonical experiment settings
-results/       STATUS.yaml + tables, figures, manifests, per-run reports
-docs/          METHODS · RESULTS · PIPELINE · ARCHIVE
-tests/         489 CPU-only tests (alignment exactness, CV leakage, strata,
-               interchange algebra, gate refusal, obfuscation semantics,
-               source→sink label recovery, …)
+  graphs/       AST, CFG, DFG, and PDG extraction
+  data/         program generators, rewrites, alignment, execution, and reference labels
+  models/       model loading, hooks, J-lens, R-lens rules, and DAS interchange
+  probes/       linear probes, grouped cross-validation, controls, and datasets
+  experiments/  experiment implementations
+  analysis/     metrics, tables, figures, and cluster bootstrap
+scripts/        numbered pipeline commands (00–131)
+jobs/           GPU job scripts
+configs/        model registry and experiment settings
+results/        status, tables, figures, manifests, and generated reports
+docs/           methods, results, pipeline, and archive
+tests/          489 CPU-only tests
 ```
 
-## 8. Quickstart
+## Quickstart
 
 ```bash
 conda create -n semflow python=3.11 -y && conda activate semflow
 pip install -e ".[dev]"
 make test                     # 489 CPU-only tests
-make smoke                    # tiny end-to-end run on this machine (~15 min, MPS)
+make smoke                    # small end-to-end MPS run, approximately 15 minutes
 
-# the foundation
+# Foundation experiments
 python scripts/00_generate_data.py --model deepseek-coder-1.3b
 make extract probes context obfuscation assets MODEL=deepseek-coder-1.3b
 
-# the security track (E15 / E15-C / E15-D)
+# Security experiments: E15, E15-C, and E15-D
 make sinkflow MODEL=deepseek-coder-1.3b
 
-# the causal track (E13, DAS)
-make binding-pilot            # then read results/binding/*/e13_report.md
+# Binding intervention: E13 DAS
+make binding-pilot
 ```
 
-## 9. Models
+See [docs/PIPELINE.md](docs/PIPELINE.md) before running the full model suite.
 
-| Model | Role | Why |
-|---|---|---|
-| `deepseek-coder-1.3b-base` | development, smoke, pilots | runs on Apple-Silicon MPS; full pipeline in minutes |
-| `deepseek-coder-6.7b-base` | main results | strong open code model; one cluster GPU in fp16 |
-| `starcoder2-3b` | architecture replication | different corpus and architecture family. E15, E15-C and E15-D stages 128–129 all complete. The **R-lens does not exist there** — LayerNorm plus a non-gated MLP means the homogenising LRP rules bind to nothing, so stage 130 records that rather than producing numbers |
+## Models
 
-Base (non-instruct) models on purpose: the object of study is the
-representation built during code pretraining, not chat behaviour.
+| Model | Use |
+|---|---|
+| `deepseek-coder-1.3b-base` | development, smoke tests, and pilot runs on Apple Silicon MPS |
+| `deepseek-coder-6.7b-base` | main results; run in fp16 on one cluster GPU |
+| `starcoder2-3b` | replication across a different corpus and architecture family |
 
-## 10. Contributions
+The experiments use base models rather than instruction-tuned models because the
+target is the representation learned during code pretraining, not chat behavior.
 
-1. **Layer-resolved maps** of where CPG relations — binding, def–use, taint
-   flow — are linearly decodable, against a floor pinned to chance *by
-   construction* rather than estimated.
-2. **A failure surface** for those representations, attributed to the
-   individual transformation that causes it: robust to distance and to
-   identifier spelling in middle layers, fragile under scope interference and
-   **control-flow flattening alone**.
-3. **A format result**: the security distinction is present in output-aligned
-   coordinates and distributed across the vocabulary, carried by no word for it
-   — established with a positive control that rules out instrument blindness,
-   and with the security words running *backwards* at the cell where that
-   control fires.
-4. **A causal result** at the site where a binding is resolved, whose
-   falsification refutes an answer-direction account rather than assuming it
-   away.
-5. **An instrument result about the tools themselves**: on a gated-MLP
-   transformer it is the **gate's bilinearity, not the norm**, that carries the
-   faithfulness gain of LRP (4.5×, replicated across two models and two dtypes,
-   falsifying the pre-registered prediction) — and, separately, that the
-   expensive lenses buy nothing over a plain logit lens when used as vocabulary
-   projections. Reporting a validated instrument as unnecessary is part of the
-   result.
-6. **Methodology**, from four failed interventions: floors pinned by
-   construction; positive controls matched in kind *and* in scale;
-   magnitude-free interventions; and hard gates so a missing control is refused
-   rather than skipped.
+E15, E15-C, and E15-D stages 128–129 are complete for StarCoder2. The R-lens
+analysis is not applicable to this architecture: its LayerNorm and non-gated MLP
+do not match the homogenising rules, so stage 130 records no result instead of
+reporting an invalid attribution.
+
+## Contributions
+
+1. Layer-by-layer measurements of binding, def–use, and taint-flow decodability
+   against controlled or measured surface baselines.
+2. An attributed failure boundary: the tested representations are comparatively
+   robust to distance and identifier spelling, but fragile under scope
+   interference and control-flow flattening.
+3. Evidence that the safe/unsafe distinction is distributed across output
+   coordinates rather than represented by a single security-related word.
+4. A causal binding result using a rank-1, magnitude-free interchange with a
+   held-out factorial arm that distinguishes binding transport from an answer
+   direction.
+5. An attribution-method result: on gated-MLP transformers, gate bilinearity—not
+   normalization—is the main source of the LRP faithfulness gain. The effect is
+   approximately **4.5×** and replicates across two models and two dtypes. For
+   vocabulary projections in this project, the more expensive lenses do not
+   improve the conclusions over a plain logit lens.
+6. Experimental safeguards developed from four failed interventions, including
+   construction-pinned floors, matched positive controls, magnitude-free edits,
+   and hard prerequisite gates.

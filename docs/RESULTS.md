@@ -263,6 +263,40 @@ surface feature can exceed.
 ([METHODS §4](METHODS.md#4-instrument-2--frozen-transfer-and-the-obfuscation-ladder)).
 A change in accuracy here is a change in the model's state, not in the probe.*
 
+## Part II in plain language
+
+Part I showed that hidden states contain information about binding and data
+flow. Part II asks what that information depends on. The experiments keep the
+program's behavior fixed while changing its presentation. If the same frozen
+probe still works after a rewrite, the original representation survived in a
+form that the probe can still recognize. If its accuracy falls, the rewrite
+changed that representation or changed how it is encoded.
+
+Three distinctions are important:
+
+- **Distance versus interference.** Adding harmless text makes two related
+  tokens farther apart. Reusing the same variable names creates genuinely
+  competing references. R3 tests these separately.
+- **Atomic versus cumulative transformations.** An atomic condition applies one
+  rewrite by itself. A cumulative condition adds several rewrites in sequence.
+  Atomic conditions identify which rewrite causes a failure; cumulative
+  conditions show what happens when the rewrites are combined.
+- **Representation loss versus probe-transfer failure.** These experiments use
+  a probe trained only on clean programs. If that frozen probe fails on a
+  rewritten program, we know its original readout no longer transfers. We do
+  **not** automatically know that the model has lost every possible encoding of
+  the information.
+
+The result of Part II is:
+
+- Long context by itself causes little damage.
+- Context containing confusing uses of the tracked names causes much more
+  damage.
+- Consistent renaming changes early lexical representations, but much of the
+  mid-layer semantic representation survives.
+- Control-flow flattening is the only tested rewrite that causes a large,
+  reproducible collapse across binding, def–use, and source-to-sink flow.
+
 ## R3 — Distance is cheap; interference is not
 
 ### Research question
@@ -282,6 +316,11 @@ Insert filler between the tracked definition and its use, sized by real tokenize
 counts (0 → 1000 tokens), varying only what the filler *does*. Binding and
 def–use probes are **frozen** from the clean corpus and never refitted; ground
 truth is recomputed for every variant.
+
+The comparison is controlled: two conditions can add the same number of tokens
+while differing in whether those tokens create a harder reference-resolution
+problem. This lets the experiment attribute a loss to semantic interference
+rather than merely to sequence length.
 
 | filler | what it adds |
 |---|---|
@@ -339,6 +378,16 @@ rename → opaque predicates → MBA arithmetic → control-flow flattening. Eve
 variant is executed and checked observationally equivalent to its base; all
 levels of a base are kept or dropped together so level curves compare identical
 program sets. Frozen probes, ground truth recomputed per variant.
+
+Here, **normalize** means parsing and printing the program without intending to
+change its structure. **Rename** consistently replaces local identifier names.
+An **opaque predicate** adds a branch whose outcome is known by construction but
+is less obvious from its syntax. **MBA arithmetic** rewrites a simple expression
+as an equivalent mixed Boolean-arithmetic expression. **Control-flow
+flattening** replaces the original structured flow with a dispatcher-like form.
+All of these preserve the observed program result, but flattening most directly
+changes the visible control structure used to determine which definitions reach
+which uses.
 
 ### Result
 
@@ -514,11 +563,79 @@ which is the failure direction an auditor cares about most.
 Everything in this part is observational: a projection or an attribution, never
 an edit.*
 
+## Part III in plain language
+
+Parts I and II established that a semantic distinction can be read from hidden
+states. That still leaves a harder question: **what form does the distinction
+take inside the model?** Part III tests three possibilities:
+
+- It might already resemble a particular output token, such as `unsafe`,
+  `safe`, `yes`, or `no`.
+- It might be aligned with the output vocabulary but spread across many tokens,
+  so that no single word names it.
+- It might appear in how the model routes relevance through positions in the
+  input, even before it becomes visible in output-vocabulary coordinates.
+
+The word **observational** matters. These methods read or attribute an existing
+computation; they do not modify it. Therefore Part III can describe the format
+and location of a signal, but it cannot prove that the model needs that signal
+to produce its answer. The intervention in Part IV is needed for that causal
+claim.
+
+### Terms used throughout Part III
+
+- **Output basis / vocabulary coordinates:** a coordinate system with one
+  dimension for each possible output token. Projecting a hidden state into this
+  basis asks which tokens it points toward.
+- **Logit lens:** applies the model's ordinary output head to an intermediate
+  hidden state. It gives a simple vocabulary-space reading.
+- **J-lens:** corrects that simple projection using a local Jacobian, which
+  approximates how the remaining network transforms a small change.
+- **R-lens:** propagates a selected output score backward using relevance rules.
+  When relevance is conserved, it can divide that score among input positions.
+- **Output-aligned:** detectable in vocabulary coordinates. This does not mean
+  that a recognizable word carries the signal.
+- **Lexicalised / verbalised:** concentrated in meaningful word tokens that name
+  or directly express the property. A distributed direction can be
+  output-aligned without being lexicalised.
+- **Direction:** a repeatable pattern across many vocabulary dimensions. A pair
+  projects positively when its safe-to-unsafe change points the expected way
+  along that pattern.
+- **Relevance:** an attribution of a chosen output score to earlier positions.
+  It describes where that score is routed; it is not the same as attention and
+  is not by itself a causal intervention.
+
+### The conclusion before the details
+
+- R6 validates the relevance method on the two DeepSeek models and identifies
+  which mathematical rule makes conservation work. It cannot be applied to the
+  tested StarCoder2 architecture.
+- R7 finds a reliable safe/unsafe direction across the full vocabulary. All
+  **72/72** held-out pairs point the expected way in all three models, but the
+  strongest token loadings are meaningless fragments. The signal is therefore
+  distributed rather than represented by a word such as `unsafe`.
+- R8 shows that the readout can detect meaningful answer tokens when the model
+  is explicitly asked a yes/no question. This rules out the simple explanation
+  that R7 failed to find a security word because the measurement was blind.
+- R9 finds a small but consistent redistribution of relevance between the two
+  data-flow chains, even at positions whose text is identical across each
+  matched pair.
+
 ## Which lens is doing the work — the short answer
 
 Three lenses exist in this repository (logit, J-lens, R-lens), and it is worth
 saying plainly which of them earns its cost, because the answer is not the one
 the track was built expecting.
+
+The practical answer is:
+
+- Use the **logit lens** for the vocabulary-direction results in R7 and R8. The
+  more elaborate lenses do not change those conclusions.
+- Use the **R-lens** only for R9, where conservation is needed to divide one
+  answer score among input positions.
+- The **J-lens** was validated successfully, but none of its intended substantive
+  results survived the required controls. Those attempts are documented in the
+  archive.
 
 **As a vocabulary projection, none of them beats the plain logit lens.** At the
 one cell where a vocabulary readout actually fires (R8), the three are
@@ -580,6 +697,24 @@ of the instrument.**
 ---
 
 ## R6 — A conserving backward pass, and the rule that carries it
+
+### The basic idea
+
+R9 needs to say what fraction of an answer score is associated with each input
+position. For those fractions to be meaningful, they must add back up to the
+original score. This property is called **conservation**. Ordinary gradients do
+not guarantee it because several transformer operations distort or
+double-count the quantity being traced.
+
+R6 therefore tests a modified backward pass. The test has two jobs:
+
+1. verify that the modification leaves the model's forward computation
+   unchanged; and
+2. verify that the relevance assigned to earlier states sums to the selected
+   output score.
+
+The experiment also removes each rule in turn. That ablation identifies which
+rule is actually responsible for conservation.
 
 ### Research question
 
@@ -683,6 +818,24 @@ the name relevance.
 
 ## R7 — The distinction is in the output basis, and it is not a word
 
+### The basic idea
+
+For each matched safe/unsafe pair, the experiment compares the model's score for
+every token in its approximately 32,000-token vocabulary. It then learns the
+average safe-to-unsafe change from training pairs and asks whether unseen pairs
+change in the same direction.
+
+There are two separate success criteria:
+
+- **Generalisation:** does the learned direction correctly orient unseen
+  safe/unsafe pairs? This succeeds.
+- **Dominance:** is that direction the largest source of variation between
+  programs? This fails.
+
+These are not contradictory. A small but highly repeatable direction can
+generalise to every held-out pair without being the largest difference between
+the programs.
+
 ### Research question
 
 The probe (R5) says what a *fitted* direction can recover, in a basis of its own
@@ -757,7 +910,6 @@ Projection sign consistency at the reported layer, across the ten conditions:
 | | clean | normalize | rename | opaque | encode | **flatten** | full cumulative |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | 1.3B | 1.000 | 1.000 | 0.958 | 0.903 | 1.000 | **0.819** | 0.722 |
-| 6.7B | 1.000 | 1.000 | 0.986 | 0.917 | 1.000 | **0.708** | 0.625 |
 | SC2-3B | 1.000 | 0.944 | 0.889 | 0.903 | 0.972 | **0.681** | 0.681 |
 
 The mean projection falls by ~93% under flattening alone and by 4–14% under
@@ -805,6 +957,20 @@ is absent. It is not absent; it is distributed.
 ---
 
 ## R8 — The positive control: the readout is not blind, and the security words run backwards
+
+### The basic idea
+
+R7 did not find a meaningful token that names the security distinction. That
+negative result is ambiguous unless the same machinery can detect meaningful
+tokens somewhere else. R8 supplies that positive control by explicitly asking
+the model a yes/no taint question.
+
+The models have a fixed yes/no answer bias, so ordinary accuracy is **0.500**:
+one model always selects `no`, while two always select `yes`. The experiment
+therefore also measures the *margin* between `yes` and `no`. Even when the final
+choice does not flip, that margin can be higher for the unsafe member of a pair.
+`pair_separation` is the fraction of pairs ordered correctly by this margin; its
+chance level is **0.500**.
 
 ### Research question
 
@@ -925,6 +1091,18 @@ it looks. And on 6.7B "not lexicalised" holds for the *unprompted* state only.
 ---
 
 ## R9 — Relevance moves, on text that is character-for-character identical
+
+### The basic idea
+
+R9 no longer asks which vocabulary tokens the hidden state resembles. Instead,
+it selects an answer score and uses the conserving R-lens from R6 to allocate
+that score across locations in the input program. The allocations are grouped
+by syntactic role, such as the tainted data-flow chain and the trusted chain.
+
+Only the sink argument differs between the safe and unsafe member of a matched
+pair. Therefore, a consistent attribution change at any other role cannot be
+explained by different text at that role. It means the model routes the same
+text differently depending on which chain reaches the sink.
 
 ### Research question
 
