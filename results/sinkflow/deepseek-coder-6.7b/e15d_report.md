@@ -9,10 +9,10 @@ Each section states a verdict decided by a checklist declared in code before the
 | stage | gate | verdict |
 |---|---|---|
 | V1 full-vocabulary alignment | J2 PASS | `direction_replicates_but_not_dominant` |
-| positive control | J3 PASS | `both_properties_detected` |
-| V3 relevance redistribution | J4 FAIL | `not_run` |
+| positive control | J3 PASS | `machinery_blind` |
+| V3 relevance redistribution | J4 PASS | `redistribution_found` |
 
-**What this means for E15-C.** E15-C's CANDIDATE POOL was the limitation, not its readout: the same machinery over a different basis finds the security contrast E15-C missed. The E15-C null should be re-reported as a pool artifact.
+**What this means for E15-C.** E15-C's null is about the METHOD. The models answer the forced choice, the identical readout does not see it, so no claim about what code models represent survives that track and every number in it keeps its caveat.
 
 ---
 
@@ -149,16 +149,16 @@ If concentration is high over the full vocabulary and low inside the pool, the p
 
 ## Positive control — can this machinery detect verbalisation at all?
 
-**Verdict.** BOTH DETECTED — the readout finds the taint contrast AND the security contrast in this basis, which E15-C's pool did not.
+**Verdict.** MACHINERY BLIND — the model answers the forced choice and the identical readout misses it. The instrument, not the model, is what E15-C's null is about.
 
-Prompt style `sink`, lens `rlens`, condition `clean_heldout`, layer 27 — chosen as the layer that best detects the TAINT property, with the security contrast then read at that same cell.
+Prompt style `sink`, lens `rlens`, condition `clean_heldout`, layer -1 — chosen as the layer that best detects the TAINT property, with the security contrast then read at that same cell.
 
 | check | holds |
 |---|---|
 | behaviour_above_chance | yes |
-| lens_detects_the_property | yes |
-| lens_tracks_the_model | yes |
-| security_contrast_at_same_cell | yes |
+| lens_detects_the_property | no |
+| lens_tracks_the_model | no |
+| security_contrast_at_same_cell | no |
 
 ### Table 17 — behaviour: can the model answer at all?
 
@@ -208,15 +208,15 @@ Prompt style `sink`, lens `rlens`, condition `clean_heldout`, layer 27 — chose
 
 ## V3 — where does relevance move?
 
-**Verdict.** NOT RUN — stage 130 has not written a summary.
+**Verdict.** REDISTRIBUTION FOUND — at a conserving layer, a TOKEN-IDENTICAL role's share of the model's own answer shifts consistently between the two members. Identical text, different routing, because of what the text now means.
 
 | check | holds |
 |---|---|
-| rules_installed_and_conserving | no |
-| redistribution_consistent | no |
-| above_permutation_control | no |
-| above_sign_test | no |
-| role_token_counts_matched | no |
+| rules_installed_and_conserving | yes |
+| redistribution_consistent | yes |
+| above_permutation_control | yes |
+| above_sign_test | yes |
+| role_token_counts_matched | yes |
 
 Token-identical roles: `['source_expr', 'trusted_expr', 'taint_chain', 'trust_chain', 'sink_call', 'signature']`. `sink_arg` is excluded from the verdict because it is the span the design edits — it is reported below, separately, as the role where a surface account is available.
 
@@ -224,11 +224,29 @@ Token-identical roles: `['source_expr', 'trusted_expr', 'taint_chain', 'trust_ch
 
 The fraction reading is licensed only where median |rho - 1| is within 0.25.
 
-_not run_
+| layer | n_readings | median_rho | median_abs_rho_minus_one | max_abs_rho_minus_one | conserving |
+|---|---|---|---|---|---|
+| 0 | 288 | 1.0000 | 0.0000 | 0.0000 | 1 |
+| 3 | 288 | 1.0000 | 0.0000 | 0.0000 | 1 |
+| 7 | 288 | 1.0000 | 0.0000 | 0.0000 | 1 |
+| 11 | 288 | 1.0000 | 0.0000 | 0.0000 | 1 |
+| 15 | 288 | 1.0000 | 0.0000 | 0.0000 | 1 |
+| 19 | 288 | 1.0000 | 0.0000 | 0.0000 | 1 |
+| 23 | 288 | 1.0000 | 0.0000 | 0.0000 | 1 |
+| 27 | 288 | 1.0000 | 0.0000 | 0.0000 | 1 |
 
 ### Table 20 — the redistribution at the reported cell
 
 `mean_delta_frac` is the paired change in a role's share of the model's answer. The column sums to ~0 by conservation: whatever one role gains, another loses.
 
-_not run_
+| ast_role | token_identical | n_pairs | mean_frac_unsafe | mean_frac_safe | median_delta_frac | mean_delta_frac | sign_consistency | sign_test_p | permutation_p | token_count_matched_frac |
+|---|---|---|---|---|---|---|---|---|---|---|
+| taint_chain | 1 | 72 | 0.0409 | 0.0678 | -0.0213 | -0.0269 | 0.1111 | 0.0000 | 0.0000 | 1.0000 |
+| source_expr | 1 | 72 | 0.1149 | 0.1271 | -0.0127 | -0.0122 | 0.2361 | 0.0000 | 0.0000 | 1.0000 |
+| sink_call | 1 | 72 | 0.0931 | 0.1049 | -0.0034 | -0.0118 | 0.4167 | 0.1945 | 0.0300 | 1.0000 |
+| trusted_expr | 1 | 72 | 0.0619 | 0.0723 | -0.0066 | -0.0104 | 0.2778 | 0.0002 | 0.0000 | 1.0000 |
+| signature | 1 | 72 | 0.1829 | 0.1815 | 0.0004 | 0.0015 | 0.5139 | 0.9063 | 0.6020 | 1.0000 |
+| sink_arg | 0 | 72 | 0.0251 | 0.0092 | 0.0128 | 0.0159 | 0.6389 | 0.0245 | 0.0000 | 0.6111 |
+| trust_chain | 1 | 72 | 0.0554 | 0.0372 | 0.0142 | 0.0182 | 0.7917 | 0.0000 | 0.0000 | 1.0000 |
+| other | 0 | 72 | 0.4259 | 0.4000 | 0.0207 | 0.0258 | 0.6389 | 0.0245 | 0.0000 | 1.0000 |
 

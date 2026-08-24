@@ -2,12 +2,11 @@ experiment: E15-D
 model: deepseek-coder-1.3b
 verdicts:
   v1_alignment: direction_replicates_but_not_dominant
-  positive_control: machinery_validated
+  positive_control: machinery_blind
   v3_relevance: redistribution_consistent_but_not_in_mean
-consequence_for_e15c: E15-C's null becomes a claim about the MODELS. The identical
-  readout detects a property these models verbalise and does not detect the security
-  distinction, so 'not expressed in output-aligned coordinates' is now a supported
-  statement rather than an unfalsifiable one.
+consequence_for_e15c: E15-C's null is about the METHOD. The models answer the forced
+  choice, the identical readout does not see it, so no claim about what code models
+  represent survives that track and every number in it keeps its caveat.
 gates:
   J0:
     passed: true
@@ -32,7 +31,7 @@ gates:
       for every program
   J4:
     passed: true
-    detail: '2016 readings and 1008 paired redistributions over 7 layers x 2 targets
+    detail: '1728 readings and 864 paired redistributions over 6 layers x 2 targets
       x 1 conditions; median |rho-1| 0.0000; LRP rules bound {''ln'': 49, ''mlp'':
       24, ''attn'': 24}'
 v1:
@@ -130,13 +129,13 @@ v1:
     same_label_proj_mean: null
     same_label_proj_sign_consistency: null
 positive_control:
-  verdict_text: "MACHINERY VALIDATED \u2014 the model answers the forced choice, the\
-    \ identical readout detects it, and the security contrast at the same cell does\
-    \ not replicate."
+  verdict_text: "MACHINERY BLIND \u2014 the model answers the forced choice and the\
+    \ identical readout misses it. The instrument, not the model, is what E15-C's\
+    \ null is about."
   reported:
     prompt_style: sink
     lens: rlens
-    layer: 19
+    layer: -1
     condition: clean_heldout
   thresholds:
     sign_consistency: 0.7
@@ -144,8 +143,8 @@ positive_control:
     behaviour_floor: 0.5
   checks:
     behaviour_above_chance: true
-    lens_detects_the_property: true
-    lens_tracks_the_model: true
+    lens_detects_the_property: false
+    lens_tracks_the_model: false
     security_contrast_at_same_cell: false
   behaviour:
     model: deepseek-coder-1.3b
@@ -166,25 +165,25 @@ positive_control:
   headline:
     model: deepseek-coder-1.3b
     lens: rlens
-    layer: 19
-    relative_depth: 0.8261
+    layer: -1
+    relative_depth: null
     prompt_style: sink
     condition: clean_heldout
     condition_kind: clean
     condition_order: -1
     n_pairs: 72
-    taint_mean_delta_z: 0.0178165473094014
-    taint_sign_consistency: 0.8888888888888888
-    taint_permutation_p: 0.0
-    taint_permutation_effect_size: 6.165780779614888
-    taint_corr_model_delta: 0.5533733384239397
-    taint_lens_tracks_model: 0.7083333333333334
-    security_mean_delta_z: -0.0047117017206252
-    security_sign_consistency: 0.3472222222222222
-    security_permutation_p: 0.0
-    security_permutation_effect_size: -3.2417529559489635
-    security_corr_model_delta: 0.171221518856827
-    security_lens_tracks_model: 0.375
+    taint_mean_delta_z: 0.0
+    taint_sign_consistency: 0.0
+    taint_permutation_p: 1.0
+    taint_permutation_effect_size: null
+    taint_corr_model_delta: null
+    taint_lens_tracks_model: 0.1666666666666666
+    security_mean_delta_z: 0.0
+    security_sign_consistency: 0.0
+    security_permutation_p: 1.0
+    security_permutation_effect_size: null
+    security_corr_model_delta: null
+    security_lens_tracks_model: 0.1666666666666666
     mean_model_delta_margin: 0.0226779513888888
     model_pair_separation: 0.6944444444444444
 v3:
@@ -211,7 +210,6 @@ v3:
   - 11
   - 15
   - 19
-  - 23
   token_identical_roles:
   - source_expr
   - trusted_expr
@@ -237,8 +235,8 @@ v3:
     median_delta_frac: -0.0135655193632113
     sign_test_p: 6.9644370929921e-13
     permutation_p: 0.57
-    permutation_effect_size: -0.7707422028731806
-    mean_frac_unsafe: 0.0397383920521538
+    permutation_effect_size: -0.7707422028731821
+    mean_frac_unsafe: 0.0397383920521539
     mean_frac_safe: 0.0552334212149539
     token_count_matched_frac: 1.0
-    median_abs_rho_minus_one: 8.736952172849756e-08
+    median_abs_rho_minus_one: 8.736952161747524e-08

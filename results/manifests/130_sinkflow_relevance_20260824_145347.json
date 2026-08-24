@@ -1,0 +1,38 @@
+{
+  "stage": "130_sinkflow_relevance",
+  "timestamp": "20260824_145347",
+  "git_sha": "5b03d71",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/130_sinkflow_relevance.py",
+    "--model",
+    "deepseek-coder-6.7b"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "data_dir": "data/synthetic",
+    "output": "results/sinkflow/deepseek-coder-6.7b",
+    "layers": "[0, 3, 7, 11, 15, 19, 23, 27]",
+    "conditions": "clean_heldout",
+    "targets": "concept",
+    "n_bases": "None",
+    "dtype": "float32",
+    "device": "cuda",
+    "seed": "42"
+  },
+  "wall_time_s": 173.4,
+  "extra": {
+    "J4": true,
+    "n_readings": 2304,
+    "n_pairs": 1152,
+    "lrp_rule_counts": {
+      "ln": 65,
+      "mlp": 32,
+      "attn": 32
+    },
+    "violations": [],
+    "gates_required": "S0",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

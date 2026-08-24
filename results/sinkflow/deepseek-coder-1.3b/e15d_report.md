@@ -9,10 +9,10 @@ Each section states a verdict decided by a checklist declared in code before the
 | stage | gate | verdict |
 |---|---|---|
 | V1 full-vocabulary alignment | J2 PASS | `direction_replicates_but_not_dominant` |
-| positive control | J3 PASS | `machinery_validated` |
+| positive control | J3 PASS | `machinery_blind` |
 | V3 relevance redistribution | J4 PASS | `redistribution_consistent_but_not_in_mean` |
 
-**What this means for E15-C.** E15-C's null becomes a claim about the MODELS. The identical readout detects a property these models verbalise and does not detect the security distinction, so 'not expressed in output-aligned coordinates' is now a supported statement rather than an unfalsifiable one.
+**What this means for E15-C.** E15-C's null is about the METHOD. The models answer the forced choice, the identical readout does not see it, so no claim about what code models represent survives that track and every number in it keeps its caveat.
 
 ---
 
@@ -147,15 +147,15 @@ If concentration is high over the full vocabulary and low inside the pool, the p
 
 ## Positive control — can this machinery detect verbalisation at all?
 
-**Verdict.** MACHINERY VALIDATED — the model answers the forced choice, the identical readout detects it, and the security contrast at the same cell does not replicate.
+**Verdict.** MACHINERY BLIND — the model answers the forced choice and the identical readout misses it. The instrument, not the model, is what E15-C's null is about.
 
-Prompt style `sink`, lens `rlens`, condition `clean_heldout`, layer 19 — chosen as the layer that best detects the TAINT property, with the security contrast then read at that same cell.
+Prompt style `sink`, lens `rlens`, condition `clean_heldout`, layer -1 — chosen as the layer that best detects the TAINT property, with the security contrast then read at that same cell.
 
 | check | holds |
 |---|---|
 | behaviour_above_chance | yes |
-| lens_detects_the_property | yes |
-| lens_tracks_the_model | yes |
+| lens_detects_the_property | no |
+| lens_tracks_the_model | no |
 | security_contrast_at_same_cell | no |
 
 ### Table 17 — behaviour: can the model answer at all?
@@ -228,7 +228,6 @@ The fraction reading is licensed only where median |rho - 1| is within 0.25.
 | 11 | 288 | 1.0000 | 0.0000 | 0.0000 | 1 |
 | 15 | 288 | 1.0000 | 0.0000 | 0.0000 | 1 |
 | 19 | 288 | 1.0000 | 0.0000 | 0.0001 | 1 |
-| 23 | 288 | 1.0000 | 0.0000 | 0.0000 | 1 |
 
 ### Table 20 — the redistribution at the reported cell
 

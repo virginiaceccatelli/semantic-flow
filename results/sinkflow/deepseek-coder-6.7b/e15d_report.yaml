@@ -2,11 +2,11 @@ experiment: E15-D
 model: deepseek-coder-6.7b
 verdicts:
   v1_alignment: direction_replicates_but_not_dominant
-  positive_control: both_properties_detected
-  v3_relevance: not_run
-consequence_for_e15c: 'E15-C''s CANDIDATE POOL was the limitation, not its readout:
-  the same machinery over a different basis finds the security contrast E15-C missed.
-  The E15-C null should be re-reported as a pool artifact.'
+  positive_control: machinery_blind
+  v3_relevance: redistribution_found
+consequence_for_e15c: E15-C's null is about the METHOD. The models answer the forced
+  choice, the identical readout does not see it, so no claim about what code models
+  represent survives that track and every number in it keeps its caveat.
 gates:
   J0:
     passed: true
@@ -30,8 +30,10 @@ gates:
       bases; both properties read in one 102-token basis; forced-choice answer scored
       for every program
   J4:
-    passed: false
-    detail: not recorded
+    passed: true
+    detail: '2304 readings and 1152 paired redistributions over 8 layers x 2 targets
+      x 1 conditions; median |rho-1| 0.0000; LRP rules bound {''ln'': 65, ''mlp'':
+      32, ''attn'': 32}'
 v1:
   verdict_text: "DIRECTION REPLICATES, BUT DOES NOT DOMINATE \u2014 a direction defined\
     \ by the label on the training split generalises to held-out programs, above the\
@@ -127,12 +129,13 @@ v1:
     same_label_proj_mean: null
     same_label_proj_sign_consistency: null
 positive_control:
-  verdict_text: "BOTH DETECTED \u2014 the readout finds the taint contrast AND the\
-    \ security contrast in this basis, which E15-C's pool did not."
+  verdict_text: "MACHINERY BLIND \u2014 the model answers the forced choice and the\
+    \ identical readout misses it. The instrument, not the model, is what E15-C's\
+    \ null is about."
   reported:
     prompt_style: sink
     lens: rlens
-    layer: 27
+    layer: -1
     condition: clean_heldout
   thresholds:
     sign_consistency: 0.7
@@ -140,9 +143,9 @@ positive_control:
     behaviour_floor: 0.5
   checks:
     behaviour_above_chance: true
-    lens_detects_the_property: true
-    lens_tracks_the_model: true
-    security_contrast_at_same_cell: true
+    lens_detects_the_property: false
+    lens_tracks_the_model: false
+    security_contrast_at_same_cell: false
   behaviour:
     model: deepseek-coder-6.7b
     condition: clean_heldout
@@ -162,40 +165,50 @@ positive_control:
   headline:
     model: deepseek-coder-6.7b
     lens: rlens
-    layer: 27
-    relative_depth: 0.871
+    layer: -1
+    relative_depth: null
     prompt_style: sink
     condition: clean_heldout
     condition_kind: clean
     condition_order: -1
     n_pairs: 72
-    taint_mean_delta_z: 0.0346755056848354
-    taint_sign_consistency: 0.8472222222222222
-    taint_permutation_p: 0.0
-    taint_permutation_effect_size: 5.744739117251228
-    taint_corr_model_delta: 0.722573608766784
-    taint_lens_tracks_model: 0.8055555555555556
-    security_mean_delta_z: 0.0166983585883532
-    security_sign_consistency: 0.7638888888888888
-    security_permutation_p: 0.0
-    security_permutation_effect_size: 4.2535747265990365
-    security_corr_model_delta: 0.1872686368148478
-    security_lens_tracks_model: 0.7083333333333334
+    taint_mean_delta_z: 0.0
+    taint_sign_consistency: 0.0
+    taint_permutation_p: 1.0
+    taint_permutation_effect_size: null
+    taint_corr_model_delta: null
+    taint_lens_tracks_model: 0.0833333333333333
+    security_mean_delta_z: 0.0
+    security_sign_consistency: 0.0
+    security_permutation_p: 1.0
+    security_permutation_effect_size: null
+    security_corr_model_delta: null
+    security_lens_tracks_model: 0.0833333333333333
     mean_model_delta_margin: 0.0307074611385663
     model_pair_separation: 0.75
 v3:
-  verdict_text: "NOT RUN \u2014 stage 130 has not written a summary."
+  verdict_text: "REDISTRIBUTION FOUND \u2014 at a conserving layer, a TOKEN-IDENTICAL\
+    \ role's share of the model's own answer shifts consistently between the two members.\
+    \ Identical text, different routing, because of what the text now means."
   thresholds:
     sign_consistency: 0.7
     permutation_p: 0.05
     conservation_tolerance: 0.25
   checks:
-    rules_installed_and_conserving: false
-    redistribution_consistent: false
-    above_permutation_control: false
-    above_sign_test: false
-    role_token_counts_matched: false
-  conserving_layers: []
+    rules_installed_and_conserving: true
+    redistribution_consistent: true
+    above_permutation_control: true
+    above_sign_test: true
+    role_token_counts_matched: true
+  conserving_layers:
+  - 0
+  - 3
+  - 7
+  - 11
+  - 15
+  - 19
+  - 23
+  - 27
   token_identical_roles:
   - source_expr
   - trusted_expr
@@ -203,4 +216,26 @@ v3:
   - trust_chain
   - sink_call
   - signature
-  headline: {}
+  headline:
+    model: deepseek-coder-6.7b
+    condition: clean_heldout
+    condition_kind: clean
+    condition_order: -1
+    layer: 11
+    target_token: 5723
+    target: ' safe'
+    ast_role: taint_chain
+    token_identical: 1
+    n_pairs: 72
+    mean_delta_frac: -0.0268942009290836
+    sign_consistency: 0.1111111111111111
+    n_nonzero: 72
+    degenerate: 0
+    median_delta_frac: -0.0212592719430727
+    sign_test_p: 5.765519304519332e-12
+    permutation_p: 0.0
+    permutation_effect_size: -5.696130574695832
+    mean_frac_unsafe: 0.0408636326688321
+    mean_frac_safe: 0.0677578335979158
+    token_count_matched_frac: 1.0
+    median_abs_rho_minus_one: 3.088113135207849e-07
