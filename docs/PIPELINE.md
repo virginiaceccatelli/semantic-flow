@@ -31,6 +31,7 @@ What it *found*: [RESULTS.md](RESULTS.md).
 - [Part D — The lens stages (60, 110)](#part-d--the-lens-stages-60-110)
 - [Part E — The security track (120–131)](#part-e--the-security-track-120131)
 - [Part F — The causal track (100–108)](#part-f--the-causal-track-100108)
+- [Part F.2 — The observational R-lens readout of the same pairs (140–141)](#part-f2--the-observational-r-lens-readout-of-the-same-pairs-140141)
 - [Part G — Make targets and the GPU-host workflow](#part-g--make-targets-and-the-gpu-host-workflow)
 
 ---
@@ -484,6 +485,76 @@ starcoder2-3b files were written after the rule change and record PASS.
 
 ---
 
+# Part F.2 — The observational R-lens readout of the same pairs (140–141)
+
+E16 reuses E13's four-program factorial, model hooks, frozen calib/test split and
+reporting conventions, and reads it with the R-lens validated at stage 110. The
+question is not E13's: when the binding flips and **exactly one token** changes,
+does the model's own attribution of its answer move from the definition that went
+out of scope to the one that came in?
+
+```bash
+python scripts/140_binding_relevance.py  --model deepseek-coder-6.7b --dtype float32
+python scripts/141_binding_relevance_report.py --model deepseek-coder-6.7b
+```
+
+| Stage | Command | Where | Gate | Output |
+|---|---|---|---|---|
+| 140 | `140_binding_relevance.py --model M` | **GPU**, minutes | **H6** | `relevance/relevance_{readings,pairs,summary,summary_calib,summary_correct,arms,mismatched,conservation,token_identity,positions,position_deltas}.csv` |
+| 141 | `141_binding_relevance_report.py --model M` | CPU, seconds | — | `e16_report.{md,yaml}` |
+
+Everything lands under `results/binding/{model}/relevance/`. Cost is one backward
+pass per (cell, layer, target mode) — 4 cells × 8 layers × 2 modes per base, on
+~21-token prompts — so a full 400-base 6.7b run is minutes, not hours. Use
+`--dtype float32`: this reads a *backward* pass and fp16 gradients underflow on
+sequences this short. On the GPU host:
+`screen -dmS binding-rlens-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_rlens.csh`.
+
+**Stage 140 requires H0 and deliberately not H1.** H1 fails on
+deepseek-coder-1.3b (0.809 overall, cell `ab_target` 0.571), and requiring it
+would delete the smaller model from a question it can be asked. Behavioural
+correctness is joined from `behaviour.csv` and reported as a stratifier —
+`relevance_summary_correct.csv` is the same statistic on pairs the model answers
+in *both* members.
+
+**It refuses on starcoder2-3b and exits 2, which is correct.** LayerNorm plus a
+non-gated MLP means both homogenising LRP rules bind to nothing, so there is no
+conservation to read. H6 is recorded as `not_applicable` with the rule counts.
+E13's DAS result on that model is unaffected; only this readout is out of scope.
+
+## Reading the E16 report in the right order
+
+Read **table 3 before the headline.** Relevance is taken for the model's score of
+the *bound value*, so the scored token moves across a binding flip — and it moves
+in *opposite* directions in the two arms. A shift that does not replicate across
+them is an output-token artifact, not a binding effect, and the verdict
+`output_token_artifact` exists for exactly that outcome. Then read table 4
+(`fixed_a`/`fixed_b`, where both members are scored at literally the same token
+id), table 7 (the differing token indices, measured on the encoded prompts rather
+than inherited), and table 8 (the mismatched-pair recombination).
+
+The reported layer is picked on **calibration** bases by the rule in
+`binding_relevance.select_cell` and read on **test** bases, which is why stage 140
+defaults to `--split all`: one GPU pass covers both and the selection stays held
+out. If a run has no calibration rows, the report says so in the
+`selection_source` line rather than silently selecting on the reported split.
+
+## The one thing not to conclude from it
+
+H6 is **mechanical**: a null redistribution passes it. And no branch of the
+verdict licenses a causal claim. The R-lens decomposes the model's output score
+over input positions and intervenes on nothing; E13/R10's DAS interchange is the
+causal benchmark on this same corpus. The report puts them side by side and
+computes **no ratio** between them, because a share of an answer score and a rate
+of answer change under an edit are not the same unit. See
+[METHODS §6.5b](METHODS.md#65b-the-same-r-lens-applied-to-the-binding-counterfactual-e16).
+
+Also note what the instrument cannot see: the attn-rule detaches q and k, so no
+relevance is attributed to *pattern formation*. For a binding task, "attend to the
+right definition" is precisely the mechanism that is invisible here.
+
+---
+
 # Part G — Make targets and the GPU-host workflow
 
 ## G.1 Make targets
@@ -497,6 +568,10 @@ make data / data-real / extract / probes / context / obfuscation / assets
 
 # instrument validation
 make jlens-validate / rlens-validate
+
+# E16: the observational R-lens readout of E13's binding pairs
+make binding-relevance / binding-relevance-report / binding-rlens
+make binding-rlens-smoke
 
 # the security track
 make sinkflow                    # 120 → 124
@@ -560,6 +635,10 @@ scripts invoke `$PYTHON` directly rather than a bare `python`;
    sinkflow-obf sinkflow-report`, then `jobs/sinkflow_vocab.csh`.
 5. Causal track: `make binding MODEL=deepseek-coder-6.7b` — hard-gated, so it
    stops itself at the first failing gate.
+5b. Observational readout of the same pairs, after stage 101 has recorded H0:
+   `screen -dmS binding-rlens-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_rlens.csh`
+   (and the same for `deepseek-coder-1.3b`, where it runs despite H1 failing).
+   Minutes, not hours.
 6. Anywhere: `make assets`; rsync `results/tables results/figures` back.
 
 If the cluster has no internet, run `make data-real` locally and rsync `data/`

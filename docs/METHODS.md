@@ -724,6 +724,63 @@ not an artifact of which output token the relevance is taken for. The method
 remains inapplicable to StarCoder2, so this is one architecture family measured
 twice, not a cross-family replication.
 
+## 6.5b The same R-lens applied to the binding counterfactual (E16)
+
+R9's construction leaves one thing on the table. Its pair members are
+token-identical at the roles it measures but differ at the sink argument, and its
+programs are not token-aligned index for index. E13's binding factorial is
+tighter on both counts, and E16 reuses it unchanged.
+
+Within one arm of that factorial, `source` and `target` differ at **exactly one
+token** out of about twenty-one — the inner definition's *name* — while sharing a
+token length, identical anchor positions, and an identical token at the use site.
+Those are generation-time invariants (`binding_pairs._finalize`), and stage 140
+re-measures them on the encoded prompts rather than inheriting them, because the
+whole reading depends on them. So the outer definition, the inner definition's
+*value*, the use site, the signature and the answer suffix are all
+token-identical at identical indices, and a redistribution among them cannot be
+the differing token, a length effect, a tokenisation artifact, or positional
+drift.
+
+The relevance is taken for the model's output score of the **bound value**, which
+is the quantity the question is about. That means the scored token changes across
+a binding flip — and it changes in *opposite* directions in the two arms, because
+the factorial crosses binding structure with value assignment. Arm sign agreement
+is therefore the output-token control, and it is the same crossing that
+identifies the DAS result in §8.5. Two further conditions cost no extra backward
+pass: each program is read at both candidate tokens, so `fixed_a` and `fixed_b`
+can score *both* members at literally the same token id, removing the output
+token from the contrast entirely.
+
+The headline statistic is declared before the run: the inner definition's
+token-identical half gaining relevance share minus the wholly token-identical
+outer definition losing it. Positive means relevance moved toward the definition
+that just came into scope. Four controls run alongside — the token-identical
+restriction, the random-orientation permutation null and its exact sign-test
+counterpart, two same-binding contrasts where the bound token moves the same way
+while the binding does not, and a mismatched-pair recombination — plus a
+re-reading structural zero, which is the R-lens analogue of the DAS `noop` arm:
+the lens has no dose to zero out, so the available zero is reading the same
+program twice and requiring the same fractions.
+
+Behavioural accuracy is a **stratifier here, not a gate**. H1 fails on
+deepseek-coder-1.3b (0.809 overall, cell `ab_target` 0.571) and passes at 1.000
+on 6.7b, and requiring it would delete the smaller model from a question it can
+be asked. The decomposition is well defined whatever the scored token's rank — it
+is the partition of *that token's* score — but what it licenses is not, so every
+row carries `correct_both` and the shift is reported on all pairs and on the
+subset the model answers.
+
+**E16 does not extend the causal claim and is not designed to.** E13's DAS
+interchange is the causal benchmark on this corpus; E16 reads a decomposition of
+the model's output and intervenes on nothing. The two are different quantities
+measured on the same programs, so the report puts them side by side and computes
+no ratio between them. What they can jointly support is a conjunction — the
+binding is causally transportable at this site *and* the attribution redistributes
+with it — or the more interesting disjunction, where the causal fact holds and
+the attribution does not move, which would show attribution and use coming apart
+on a corpus where the causal question is already settled.
+
 ## 6.6 What these tools can and cannot establish
 
 - A vocabulary lens can show that a distinction is aligned with the output
@@ -733,7 +790,14 @@ twice, not a cross-family replication.
   over many unrelated tokens supports only distributed output alignment.
 - A conserving R-lens can describe where an output score is attributed. It does
   not establish causal necessity, and its answer depends on the chosen backward
-  rules.
+  rules. On the binding corpus (E16) this distinction is sharper than usual
+  rather than softer, because a causal answer already exists there from DAS: a
+  relevance shift agreeing with it is not confirmation of it, and a relevance
+  shift absent alongside it is not a refutation.
+- The attn-rule detaches q and k, so the lens attributes no relevance to
+  *pattern formation*. For a binding task, where "attend to the right
+  definition" is the plausible mechanism, that is the one thing the instrument
+  cannot see, and it belongs in any reading of E16.
 - Agreement between logit, J-, and R-lenses does not make a semantic claim
   stronger when the plain logit lens already gives the same result.
 

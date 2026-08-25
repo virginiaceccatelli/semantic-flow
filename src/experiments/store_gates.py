@@ -86,7 +86,7 @@ STORE = GateSpec(
 
 BINDING = GateSpec(
     experiment="E13",
-    order=("H0", "H1", "H2", "H3", "H4", "H5"),
+    order=("H0", "H1", "H2", "H3", "H4", "H5", "H6"),
     meaning={
         "H0": "the four-program factorial verifies: invariants, alignment, execution truth",
         "H1": "the model returns the correctly bound variable (behavioural accuracy)",
@@ -95,11 +95,22 @@ BINDING = GateSpec(
         "H4": "low-rank interchange beats matched controls on the TRAINING arm",
         "H5": "the same subspace transfers to the HELD-OUT value assignment, "
               "where an answer direction cannot",
+        # E16, the OBSERVATIONAL R-lens track over the same four programs. H6 is
+        # MECHANICAL, for the same reason J4 is: a null redistribution must pass
+        # it, and no gate anywhere may require a positive attribution result.
+        "H6": "the relevance readout is mechanically sound: the LRP rules actually "
+              "installed so relevance conserves, the token roles partition every "
+              "token exactly once, the per-role deltas close to the difference of "
+              "the two conservation ratios, every binding_flip pair differs at "
+              "exactly one measured token index, the fixed-target conditions "
+              "really do score both members at one token, and every declared cell "
+              "exists",
     },
     owner={
         "H0": "101_binding_verify", "H1": "102_binding_behaviour",
         "H2": "104_binding_decode", "H3": "105_binding_ceiling",
         "H4": "106_binding_interchange", "H5": "106_binding_interchange",
+        "H6": "140_binding_relevance",
     },
     requirements={
         "100_binding_pairs": (), "101_binding_verify": (),
@@ -107,6 +118,15 @@ BINDING = GateSpec(
         "104_binding_decode": ("H0", "H1"), "105_binding_ceiling": ("H0", "H1", "H2"),
         "106_binding_interchange": ("H0", "H1", "H2", "H3"),
         "107_binding_report": (),
+        # E16 needs the verified factorial and NOTHING else. H1 is deliberately
+        # not required: it fails on deepseek-coder-1.3b (0.809 overall, cell
+        # ab_target 0.571) and requiring it would delete the smaller model from a
+        # question it can be asked. The relevance decomposition is well defined
+        # whatever the scored token's rank — it is the partition of THAT token's
+        # score — so behavioural correctness is carried into every row as
+        # `correct_both` and reported as a stratifier instead of a gate.
+        "140_binding_relevance": ("H0",),
+        "141_binding_relevance_report": (),
     },
     default_root="results/binding",
 )

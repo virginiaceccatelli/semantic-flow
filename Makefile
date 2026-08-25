@@ -40,6 +40,12 @@
 #   make sinkflow-lens-all MODEL=...       stages 128→131 in order
 #   make sinkflow-lens-smoke               the tiny 1.3b end-to-end check (D)
 #
+#   ── E16, the OBSERVATIONAL R-lens readout of E13's binding counterfactual ──
+#   make binding-relevance MODEL=...       stage 140 relevance by role — H6 (GPU)
+#   make binding-relevance-report MODEL=.. stage 141 verdict + DAS comparison (CPU)
+#   make binding-rlens MODEL=...           stages 140→141 in order
+#   make binding-rlens-smoke               the tiny 1.3b end-to-end check
+#
 #   ── E11, the active direction: J-space binding routing ──
 #   make jspace-pairs MODEL=...     stage 70 counterfactual pairs (CPU)
 #   make jspace-lens MODEL=...      stage 71 frozen lenses — GATE (GPU/MPS)
@@ -104,7 +110,8 @@ PROBES := results/probes/$(MODEL)/core
         sinkflow-report sinkflow-smoke sinkflow-vocab sinkflow-vocab-discover \
         sinkflow-vocab-report sinkflow-vocab-all sinkflow-vocab-smoke \
         sinkflow-align sinkflow-positive sinkflow-relevance \
-        sinkflow-lens-report sinkflow-lens-all sinkflow-lens-smoke
+        sinkflow-lens-report sinkflow-lens-all sinkflow-lens-smoke \
+        binding-relevance binding-relevance-report binding-rlens binding-rlens-smoke
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
 STORE_LAYERS ?= 6,12,18
@@ -408,6 +415,45 @@ sinkflow-lens-smoke:
 	@test -f results/smoke/sinkflow/align/align_summary.csv
 	@test -f results/smoke/sinkflow/positive/positive_summary.csv
 	@test -f results/smoke/sinkflow/relevance/relevance_summary.csv
+
+# ── E16 the observational R-lens readout of E13's binding pairs (140→141) ─────
+# E13 (R10) is the CAUSAL result on this corpus: a rank-1 DAS interchange at the
+# use anchor transports which definition is in scope. E16 asks the observational
+# question beside it — when the same binding flips and exactly ONE token changes,
+# does the model's own attribution of its answer move from the definition that
+# went out of scope to the one that came in? The two are different quantities and
+# stage 141's report never divides one by the other.
+#
+# Stage 140 needs a GPU and requires H0 only. H1 is deliberately NOT a
+# prerequisite: it fails on deepseek-coder-1.3b, and requiring it would delete
+# that model from a question it can be asked. Behavioural correctness is carried
+# into every row as `correct_both` and reported as a stratifier instead.
+#
+# 140 REFUSES on architectures where the homogenising LRP rules bind to nothing
+# (starcoder2: LayerNorm + non-gated MLP) and exits non-zero on purpose, so
+# `binding-rlens` tolerates it with a `-` prefix and still runs the report.
+binding-relevance:
+	$(PY) scripts/140_binding_relevance.py --model $(MODEL)
+
+binding-relevance-report:
+	$(PY) scripts/141_binding_relevance_report.py --model $(MODEL)
+
+binding-rlens:
+	-$(PY) scripts/140_binding_relevance.py --model $(MODEL)
+	$(PY) scripts/141_binding_relevance_report.py --model $(MODEL)
+
+# One layer, six bases, float32 for the same MPS reason as `sinkflow-lens-smoke`:
+# fp16 gradients come back non-finite on that backend. The gate override is what
+# makes this runnable without E13's stages 100-101 having been run here.
+binding-rlens-smoke:
+	$(PY) scripts/140_binding_relevance.py --model $(MODEL) \
+		--output results/smoke/binding/$(MODEL) --layers=6 --n-bases 6 \
+		--dtype float32 --n-permutations 100 --n-boot 100 --n-determinism 2 \
+		--no-tables --override-gate 'smoke run'
+	$(PY) scripts/141_binding_relevance_report.py --model $(MODEL) \
+		--results results/smoke/binding/$(MODEL)
+	@test -f results/smoke/binding/$(MODEL)/relevance/relevance_summary.csv
+	@test -f results/smoke/binding/$(MODEL)/e16_report.md
 	@test -f results/smoke/sinkflow/e15d_report.md
 	@echo "SINKFLOW LENS SMOKE OK"
 
