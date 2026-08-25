@@ -2,11 +2,11 @@ experiment: E15-D
 model: deepseek-coder-6.7b
 verdicts:
   v1_alignment: direction_replicates_but_not_dominant
-  positive_control: machinery_blind
+  positive_control: both_properties_detected
   v3_relevance: redistribution_found
-consequence_for_e15c: E15-C's null is about the METHOD. The models answer the forced
-  choice, the identical readout does not see it, so no claim about what code models
-  represent survives that track and every number in it keeps its caveat.
+consequence_for_e15c: 'E15-C''s CANDIDATE POOL was the limitation, not its readout:
+  the same machinery over a different basis finds the security contrast E15-C missed.
+  The E15-C null should be re-reported as a pool artifact.'
 gates:
   J0:
     passed: true
@@ -129,13 +129,12 @@ v1:
     same_label_proj_mean: null
     same_label_proj_sign_consistency: null
 positive_control:
-  verdict_text: "MACHINERY BLIND \u2014 the model answers the forced choice and the\
-    \ identical readout misses it. The instrument, not the model, is what E15-C's\
-    \ null is about."
+  verdict_text: "BOTH DETECTED \u2014 the readout finds the taint contrast AND the\
+    \ security contrast in this basis, which E15-C's pool did not."
   reported:
     prompt_style: sink
     lens: rlens
-    layer: -1
+    layer: 27
     condition: clean_heldout
   thresholds:
     sign_consistency: 0.7
@@ -143,9 +142,9 @@ positive_control:
     behaviour_floor: 0.5
   checks:
     behaviour_above_chance: true
-    lens_detects_the_property: false
-    lens_tracks_the_model: false
-    security_contrast_at_same_cell: false
+    lens_detects_the_property: true
+    lens_tracks_the_model: true
+    security_contrast_at_same_cell: true
   behaviour:
     model: deepseek-coder-6.7b
     condition: clean_heldout
@@ -165,25 +164,25 @@ positive_control:
   headline:
     model: deepseek-coder-6.7b
     lens: rlens
-    layer: -1
-    relative_depth: null
+    layer: 27
+    relative_depth: 0.871
     prompt_style: sink
     condition: clean_heldout
     condition_kind: clean
     condition_order: -1
     n_pairs: 72
-    taint_mean_delta_z: 0.0
-    taint_sign_consistency: 0.0
-    taint_permutation_p: 1.0
-    taint_permutation_effect_size: null
-    taint_corr_model_delta: null
-    taint_lens_tracks_model: 0.0833333333333333
-    security_mean_delta_z: 0.0
-    security_sign_consistency: 0.0
-    security_permutation_p: 1.0
-    security_permutation_effect_size: null
-    security_corr_model_delta: null
-    security_lens_tracks_model: 0.0833333333333333
+    taint_mean_delta_z: 0.0346755056848354
+    taint_sign_consistency: 0.8472222222222222
+    taint_permutation_p: 0.0
+    taint_permutation_effect_size: 5.744739117251228
+    taint_corr_model_delta: 0.722573608766784
+    taint_lens_tracks_model: 0.8055555555555556
+    security_mean_delta_z: 0.0166983585883532
+    security_sign_consistency: 0.7638888888888888
+    security_permutation_p: 0.0
+    security_permutation_effect_size: 4.2535747265990365
+    security_corr_model_delta: 0.1872686368148478
+    security_lens_tracks_model: 0.7083333333333334
     mean_model_delta_margin: 0.0307074611385663
     model_pair_separation: 0.75
 v3:
@@ -234,7 +233,7 @@ v3:
     median_delta_frac: -0.0212592719430727
     sign_test_p: 5.765519304519332e-12
     permutation_p: 0.0
-    permutation_effect_size: -5.696130574695832
+    permutation_effect_size: -5.6961305746958315
     mean_frac_unsafe: 0.0408636326688321
     mean_frac_safe: 0.0677578335979158
     token_count_matched_frac: 1.0

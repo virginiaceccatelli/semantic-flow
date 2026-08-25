@@ -42,11 +42,19 @@ experiment is causal at the tested model, layer, site, and program construction.
   readout scores **0.85–0.94**. At the same measurement cell, the security-word
   set scores **0.347 / 0.389** on two models, significantly in the opposite
   direction.
+- On text that is identical everywhere the measurement reads, both DeepSeek
+  models route their answer differently depending on which data-flow chain
+  reaches the sink: the feeding chain loses relevance share and the other gains,
+  on **65/72** pairs at 1.3B and **64/72** at 6.7B. The shift is small — 1–2% of
+  the answer score — and the two models produce it at different depths.
 - For binding, a rank-1, magnitude-free DAS interchange changes which definition
-  is in scope. It succeeds on **100%** of held-out rows in both arms of the 2×2
-  design while moving **0.479** of `||h||`. The closed-form difference-in-means
-  baseline succeeds on 76% while moving **0.711** of `||h||`; dose-matched
-  random subspaces succeed on 1–2%.
+  is in scope, in **two architecture families**. It succeeds on **100%** of
+  held-out rows in both arms of the 2×2 design in each — deepseek-coder-6.7b at
+  layer 8 moving **0.479** of `||h||`, starcoder2-3b at layer 11 moving
+  **0.478**. The closed-form difference-in-means baseline succeeds on 76% / 55%
+  while moving ~0.71; the explicit answer direction attenuates 6.9× on 6.7B and
+  reverses sign on StarCoder2, which is the falsification the design was built to
+  produce.
 
 For the complete experiments, controls, qualifications, and model-specific
 results, see [docs/RESULTS.md](docs/RESULTS.md).

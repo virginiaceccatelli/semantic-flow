@@ -701,12 +701,28 @@ role tokens are identical. A consistent change in relevance at those unchanged
 roles would therefore indicate that the model routes the same text differently
 depending on which chain reaches the sink.
 
-The experiment was run only on DeepSeek-Coder 1.3B. It reports both the median
-paired shift and the preregistered permutation test of the mean. This matters
-because the two statistics disagree: most pairs shift in the same direction,
-but a few large outliers make the mean-based control fail. The result must
-therefore be described as **suggestive routing evidence, not a confirmed
-semantic result**.
+The experiment has now been run on DeepSeek-Coder 1.3B and 6.7B. It reports both
+the median paired shift and the preregistered permutation test of the mean,
+because the two statistics can disagree. On 1.3B most pairs shift in the same
+direction but the delta distribution is heavy-tailed enough that the mean-based
+control does not fire, giving the verdict
+`redistribution_consistent_but_not_in_mean`; the statistic that survives there is
+the sign, whose exact null under the same random-orientation scheme is a binomial
+test. On 6.7B both statistics agree and all five declared checks hold, giving
+`redistribution_found`. The routing pattern is therefore a **replicated
+observational result on the DeepSeek family**, with its magnitude — 1–2% of the
+answer score — rather than its controls as the main limitation.
+
+The two models do not route at the same depth, and this is reported rather than
+smoothed. The pattern being located is a paired one — the tainted chain losing
+share while the trusted chain gains — and 1.3B shows it at layers 0 and 3, with
+the tainted side gone by layer 11 and the trusted side still elevated at 19. On
+6.7B layers 0 and 3 do not show it: the two chains move together or sit at
+chance. It appears at layer 7, peaks at 11, holds at 15, and is gone by 19.
+Within each model both target tokens give the same profile, so the difference is
+not an artifact of which output token the relevance is taken for. The method
+remains inapplicable to StarCoder2, so this is one architecture family measured
+twice, not a cross-family replication.
 
 ## 6.6 What these tools can and cannot establish
 
@@ -722,9 +738,10 @@ semantic result**.
   stronger when the plain logit lens already gives the same result.
 
 The practical status is therefore modest: the logit lens reveals a reliable but
-distributed output-space distinction; the J-lens adds no semantic result; and
-the R-lens produces one interesting routing pattern that does not clear its
-strongest preregistered control.
+distributed output-space distinction; the J-lens adds no semantic result; and the
+R-lens produces one routing result that clears every declared control on 6.7B and
+all but the mean-based one on 1.3B, at a magnitude of 1–2% of the answer score
+and on one architecture family.
 
 # 7. Reading the lens as a contrast, and the three ways a null can be wrong
 

@@ -1,9 +1,5 @@
 # E15-D — three follow-ups to the E15-C null (starcoder2-3b)
 
-## What this experiment asks
-
-This report follows up the vocabulary result with three checks: a full-vocabulary direction, a positive control on a property the model can express, and relevance redistribution across tokens. Together they distinguish a model-level null from a readout that is simply unable to detect anything.
-
 Each section states a verdict decided by a checklist declared in code before the run. All three stages are observational: none of them establishes that the model *uses* what is measured.
 
 | stage | gate | verdict |

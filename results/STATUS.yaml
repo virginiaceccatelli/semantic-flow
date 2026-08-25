@@ -23,7 +23,7 @@
 # for the retired interpretation and why each piece of it was retired.
 
 version: 3
-updated: 2026-08-11
+updated: 2026-08-24
 
 experiments:
 
@@ -234,6 +234,11 @@ experiments:
       probes cannot say because they choose their own direction. It makes no
       causal claim — E13's interchange does that, and is strictly stronger for
       the purpose. Design and the four gates: docs/METHODS.md §6.4.
+      WHAT THE INSTRUMENT BOUGHT: gate R is a precondition, not a result, and its
+      only downstream product is E15-D's relevance routing (stage 130). As of
+      2026-08-24 that has run on both models gate R passes on, and replicates —
+      so the R-lens has now paid for itself on exactly the two models where it is
+      valid, and on no others. See E15-D relevance_routing.
 
   E15:
     name: source-to-sink flow under obfuscation (the security audit track)
@@ -527,27 +532,46 @@ experiments:
       different ones by the frozen direction's top-100 loadings overlapping the
       same-label direction's at a Jaccard index of 0.005 / 0.005 / 0.000.
     relevance_routing: >
-      Stage 130, deepseek-coder-1.3b ONLY. Relevance conserves at median
-      |rho-1| = 0.0000, worst case 5e-5, at every layer, so R_t/s is a genuine
-      partition of the model's own answer and a paired difference is a
-      redistribution. Aggregated by AST role; under the real tokenizer every
-      token-identical role matches at 1.000 within every pair and sink_arg at
-      0.611 (the 44/72 length-matched pairs), so a shift among the other roles is
-      the model routing its answer through IDENTICAL TEXT. It shifts: whichever
-      data-flow chain feeds the sink LOSES relevance share and the other GAINS.
-      taint_chain 65/72 down and trust_chain 63/72 up at layer 0 (sign-test
-      p = 7e-13 and 4e-11), holding at layer 3, decaying with depth, gone for
-      taint_chain by layer 11 while trust_chain survives to layer 19. It holds
-      separately in both role_swap strata and both order_swap strata at p <= 2e-2
-      in all eight cells at layers 0 and 3, so it is neither an identifier-name
-      nor a position-in-program effect. MAGNITUDE IS SMALL: median shift 1-2% of
-      the answer. The pre-declared above_permutation_control check, which tests
-      the MEAN, FAILS (p = 0.39-0.62): relevance deltas are heavy-tailed enough
-      that seven outlier pairs of seventy-two flip the mean's sign while the
-      median and the sign stay put. The statistic that survives is the sign, and
-      its exact null under the same random-orientation scheme is binomial - which
-      is the test quoted above. Verdict:
-      redistribution_consistent_but_not_in_mean.
+      REPLICATED ON BOTH DEEPSEEK MODELS (2026-08-24). Relevance conserves at
+      median |rho-1| = 1e-7 (1.3b, worst case 5e-5) and 2e-7 (6.7b, worst case
+      3e-6) at every layer read, so R_t/s is a genuine partition of the model's
+      own answer and a paired difference is a redistribution. Aggregated by AST
+      role; under the real tokenizer every token-identical role matches at 1.000
+      within every pair and sink_arg at 0.611 (the 44/72 length-matched pairs),
+      so a shift among the other roles is the model routing its answer through
+      IDENTICAL TEXT. It shifts in both models: whichever data-flow chain feeds
+      the sink LOSES relevance share and the other GAINS. 1.3b at layer 0 -
+      taint_chain 65/72 down, trust_chain 63/72 up (sign-test p = 7.0e-13 and
+      4.2e-11). 6.7b at layer 11 - taint_chain 64/72 down, trust_chain 57/72 up
+      (sign-test p = 5.8e-12 and 6.5e-07). MAGNITUDE IS SMALL IN BOTH: median
+      shift 1-2% of the answer.
+      THE CONTROL THAT FAILS ON 1.3b FIRES ON 6.7b. The pre-declared
+      above_permutation_control check tests the MEAN. On 1.3b it FAILS
+      (p = 0.39-0.62): relevance deltas are heavy-tailed enough that a few outlier
+      pairs flip the mean's sign while the median and the sign stay put, so the
+      statistic that survives there is the sign, whose exact null under the same
+      random-orientation scheme is binomial. On 6.7b BOTH statistics agree
+      (permutation p = 0.000) and all five declared checks hold. Verdicts:
+      redistribution_consistent_but_not_in_mean (1.3b),
+      redistribution_found (6.7b).
+      THE DEPTH DOES NOT REPLICATE, and this is the open question. The pattern
+      being located is a PAIRED one - taint chain down AND trust chain up in the
+      same cell. 1.3b shows it at layers 0 and 3, loses the taint side by layer
+      11, and keeps the trust side elevated to 19. 6.7b shows it at NEITHER layer
+      0 nor 3 - there the two chains move together or sit at chance, and at layer
+      0 the trust chain moves DOWN - then produces it at layer 7, peaks at 11,
+      holds at 15, and is gone by 19. In relative depth that is 0-13% against
+      23-48%. Within each model both target tokens give the same profile, so it
+      is not an artifact of which output token the relevance is taken for.
+      1.3b's strata result is unchanged and applies to 1.3b only: it holds
+      separately in both role_swap strata and both order_swap strata at
+      p <= 2e-2 in all eight cells at layers 0 and 3, so at that model it is
+      neither an identifier-name nor a position-in-program effect. The equivalent
+      stratification has not been run on 6.7b.
+      CONSEQUENCE FOR THE DEPTH SEQUENCE: the claim that the property is ROUTED
+      differently before it is REPRESENTABLE in output coordinates is a 1.3b
+      statement and must be made as one. On 6.7b routing and the output-aligned
+      direction both begin at layer 7 and both peak at layer 11 - they coincide.
     positive_control: >
       THE READOUT IS NOT BLIND, AND THAT IS WHAT MAKES E15-C'S NULL MEAN
       SOMETHING. Stage 129 runs the IDENTICAL measurement - same pair_contrast
@@ -600,10 +624,13 @@ experiments:
       model's own forced-choice margin - and the last involves no probe and no
       lens at all.
     not_run: >
-      Stage 130 has not run on deepseek-coder-6.7b, so the relevance routing
-      result is one model. Stage 130 is NOT APPLICABLE to starcoder2-3b and
-      records J4 as such: LayerNorm plus a non-gated MLP means both homogenising
-      LRP rules bind to nothing, so there is no conservation to read.
+      Stage 130 has now run on BOTH DeepSeek models (2026-08-24), so the
+      relevance routing result is two models within one architecture family.
+      Stage 130 remains NOT APPLICABLE to starcoder2-3b and records J4 as such:
+      LayerNorm plus a non-gated MLP means both homogenising LRP rules bind to
+      nothing, so there is no conservation to read. The role_swap / order_swap
+      stratification behind the 1.3b identifier-and-position controls has NOT
+      been repeated on 6.7b.
     corrects: >
       A DEFECT IN E15-C'S OWN CONTROLS, found while building this and fixed, now
       run on all three models. sinkflow_vocab.mismatched_pairs redraws the SAFE
@@ -620,13 +647,20 @@ experiments:
       pairing_gain - what base matching buys - is 0.014 / 0.014 / 0.056.
       NO E15-C NUMBER CHANGED.
     next_steps: >
-      1. Explain 6.7B's prompted security contrast - the one asymmetry left. The
-      cheapest step reads the same cell under the `e6` prompt, which inverts that
-      model's behaviour, from CSVs already on disk. 2. Run stage 130 on
-      deepseek-coder-6.7b. 3. The direction's top loadings are uninterpretable
-      and that is reported as a fact, not solved; whether the direction is
-      causally used is untested and would need an intervention, which the E15
-      extension's scope prohibits.
+      1. EXPLAIN THE DEPTH SHIFT IN THE ROUTING RESULT. It replicates on 6.7b and
+      clears every declared control there, but at 23-48% depth against 1.3b's
+      0-13%, with each model flat where the other fires. Both target tokens give
+      the same profile within each model, so it is not a target artifact and
+      needs an account. The per-layer CSVs are already on disk; no GPU time is
+      needed to start. 2. Repeat the role_swap / order_swap stratification on
+      6.7b, so the identifier-name and position controls cover the model where
+      the mean-based test actually fires. 3. Explain 6.7B's prompted security
+      contrast - the one asymmetry left. The cheapest step reads the same cell
+      under the `e6` prompt, which inverts that model's behaviour, from CSVs
+      already on disk. 4. The direction's top loadings are uninterpretable and
+      that is reported as a fact, not solved; whether the direction is causally
+      used is untested and would need an intervention, which the E15 extension's
+      scope prohibits.
 
   E6:
     name: behavioral lead time
@@ -677,29 +711,46 @@ experiments:
     name: binding interchange, falsified by the value assignment
     status: active
     stage: "100,101,102,103,104,105,106,107,108"
-    model: deepseek-coder-6.7b
+    model: "deepseek-coder-6.7b, starcoder2-3b"
     tables:
       - results/binding/deepseek-coder-6.7b/interchange_summary.csv
       - results/binding/deepseek-coder-6.7b/interchange_contrasts.csv
       - results/binding/deepseek-coder-6.7b/e13_diagnosis.csv
+      - results/binding/starcoder2-3b/interchange_summary.csv
+      - results/binding/starcoder2-3b/interchange_contrasts.csv
+      - results/binding/starcoder2-3b/e13_diagnosis.csv
     claim: >
-      H0-H5 ALL PASS on deepseek-coder-6.7b. A rank-1, magnitude-free
-      interchange at the use anchor (layer 8) makes the model emit the value
-      the INSTALLED binding selects on 100.0% of held-out rows in BOTH value
-      assignments — including the arm the subspace was never fitted on, where a
-      token or answer-direction account demands the opposite movement. 280
-      held-out base programs, 560 rows per cell, cluster bootstrap over bases.
-      An answer-direction account is refuted rather than merely unsupported.
+      H0-H5 ALL PASS ON TWO ARCHITECTURE FAMILIES. A rank-1, magnitude-free
+      interchange at the use anchor makes the model emit the value the INSTALLED
+      binding selects on 100.0% of held-out rows in BOTH value assignments —
+      including the arm the subspace was never fitted on, where a token or
+      answer-direction account demands the opposite movement. deepseek-coder-6.7b
+      at layer 8 (edit fraction 0.479, transfer ratio 0.998) and starcoder2-3b at
+      layer 11 (0.478, 1.002). 280 held-out base programs each, 560 rows per cell,
+      cluster bootstrap over bases. An answer-direction account is refuted rather
+      than merely unsupported, and on starcoder2-3b it is refuted more sharply:
+      the control REVERSES SIGN across the arms (ratio -0.157) instead of
+      attenuating. Replication is across FAMILIES, not scales — RMSNorm plus a
+      gated MLP against LayerNorm plus a non-gated MLP.
     caveat: >
-      The closed-form difference-in-means baseline was run and it TRANSPORTS —
-      76.1% / 76.8%, transfer ratio 1.003 — so a single fixed direction carries
-      much of the binding. The learned direction dominates it: 100% at edit
-      fraction 0.479 against 76% at 0.711, about twice the effect per unit dose,
-      while capturing LESS of the raw state difference (59.5% vs 88.2%). It is
-      therefore not a better-aligned mean. Report both arms. Still NOT
-      demonstrated: why a rank-1 edit beats the whole-state patch (100% vs 86%);
-      the available account (the full patch installs the driving component and
-      components that fight it) is plausible and untested.
+      The closed-form difference-in-means baseline was run in both models and it
+      TRANSPORTS — 76.1% / 76.8% on 6.7b (transfer ratio 1.003) and 54.6% / 54.5%
+      on starcoder2-3b — so a single fixed direction carries much of the binding.
+      The learned direction dominates it in both: 100% at edit fraction 0.479
+      against 76% at 0.711 (6.7b), and 100% at 0.478 against 55% at 0.717
+      (starcoder2-3b), roughly twice the effect per unit dose either way, while on
+      6.7b capturing LESS of the raw state difference (59.5% vs 88.2%). It is
+      therefore not a better-aligned mean. Report both arms.
+      ONE ASYMMETRY BETWEEN THE MODELS, reported as such: starcoder2-3b's
+      dose-matched random control is 15x livelier (30.9% against 2.1%) at a dose
+      13% above the treatment's, so that model's answer at this site is easier to
+      disturb in general. The separation is still decisive — das 100% against
+      30.9%, paired contrast +7.05 [+6.97, +7.12] — but the margin comes from the
+      treatment being near-perfect, not from the control being dead. Its
+      answer_direction control also pushes the model off-candidate on 10.9% of ab
+      rows, where the treatment never does.
+      Still NOT demonstrated: why a rank-1 edit beats the whole-state patch. See
+      limitation.
     identification: >
       A 2x2 of binding x value assignment. The same one-token binding flip
       demands OPPOSITE token movements in the two value assignments, so an
@@ -720,8 +771,8 @@ experiments:
       - "H1 (stage 102): the model returns the correctly bound variable — >= 0.85 overall AND >= 0.75 per cell"
       - "H2 (stage 104): which definition is in scope is decodable at the use anchor above the measured surface baseline"
       - "H3 (stage 105): whole-state interchange flips the answer in BOTH arms — the ceiling, and the proof that H5 is testable"
-      - "H4 (stage 106): PASS — +9.029 [8.952, 9.108], 189% of the ceiling; all three control contrasts clear zero"
-      - "H5 (stage 106): PASS — 100.0% of held-out rows emit the installed answer, 114% of that arm's ceiling; the answer_direction control transfers at an argmax ratio of 0.154 against transport's 1.025"
+      - "H4 (stage 106): PASS on both — 6.7b +9.029 [8.952, 9.108] = 189% of the ceiling; starcoder2-3b +7.512 [7.437, 7.586] = 434%. All control contrasts clear zero in both"
+      - "H5 (stage 106): PASS on both — 100.0% of held-out rows emit the installed answer in each model; answer_direction transfers at an argmax ratio of 0.154 (6.7b) and -0.157 (starcoder2-3b) against transport's 1.025 / 1.002"
     gate_criterion_changed: >
       2026-08-13. H5's discriminator clause was moved from delta_ld to
       says_installed — the metric this module pre-registered in its design
@@ -731,6 +782,19 @@ experiments:
       while its transfer condition passed at 188% of ceiling. Both readings, the
       full justification, and what would have made the change illegitimate are
       recorded in docs/ARCHIVE.md under 2026-08-13.
+    numbers_starcoder2_3b:
+      site: use
+      layer: 11
+      rank: 1
+      n_bases_test: 280
+      says_installed_das: "ab 100.0%, ba 100.0% — at edit fraction 0.478"
+      says_installed_whole_state: "ab 68.8%, ba 67.3% — at edit fraction 0.804"
+      says_installed_mean_difference: "ab 54.6%, ba 54.5% — the closed-form baseline, at edit fraction 0.717"
+      says_installed_random_norm: "ab 30.9%, ba 30.4% — at edit fraction 0.540 against the treatment's 0.478, i.e. an OVER-dosed control, and 15x livelier than 6.7b's. Still separated decisively: the paired contrast das_binding - random_norm is +7.05 [+6.97, +7.12]"
+      says_installed_answer_direction: "ab 44.8%, ba 18.4% — and its delta_ld goes NEGATIVE on ba (-0.263), i.e. the control reverses rather than merely attenuating"
+      says_other_answer_direction: "10.9% of ab rows — that control partly destroys rather than redirects; the treatment's says_other is 0.0%"
+      h4_fraction_of_ceiling: 4.34
+      h5_fraction_of_ceiling: 1.49
     numbers:
       site: use
       layer: 8
@@ -744,20 +808,62 @@ experiments:
       alignment_with_mean_difference: 0.673
       share_of_state_difference_captured: "das 0.595, mean_difference 0.882"
     status_note: >
-      RUN on deepseek-coder-6.7b. All 14 machinery checks pass: structural zeros
-      exactly 0.00e+00, alignment orthonormal to 4.07e-07, ceiling alive in both
-      arms, and the model emits a non-candidate token on 0.0% of rows. Stage 108
-      recomputes the summary and contrasts from the raw per-row `interchange.csv`
-      rather than trusting the aggregates the GPU stage wrote — two separate
-      aggregation bugs in the dose-matched control were caught this way, and both
-      had made H4 fail on bookkeeping rather than on data.
+      RUN on deepseek-coder-6.7b and starcoder2-3b. On 6.7b all 14 machinery
+      checks pass: structural zeros exactly 0.00e+00, alignment orthonormal to
+      4.07e-07, ceiling alive in both arms, and the model emits a non-candidate
+      token on 0.0% of rows. On starcoder2-3b 10 of 14 pass; the four failures are
+      all structural-zero checks and are a THRESHOLD ARTIFACT, not a fault - see
+      structural_zeros_starcoder below. Stage 108 recomputes the summary and
+      contrasts from the raw per-row `interchange.csv` rather than trusting the
+      aggregates the GPU stage wrote — two separate aggregation bugs in the
+      dose-matched control were caught this way, and both had made H4 fail on
+      bookkeeping rather than on data.
+      BOOKKEEPING: 6.7b's gates.yaml still records H5 as FAIL because it predates
+      the 2026-08-13 says_installed rule change and stages 106-107 have not been
+      re-run there. starcoder2-3b's gate file was written after the change and
+      records PASS. The underlying 6.7b rows are unchanged.
+    structural_zeros_starcoder: >
+      starcoder2-3b's four structural_zero checks report False and should not be
+      read as a machinery fault. 58.6% of noop rows are EXACTLY zero and every
+      non-zero one is a multiple of 0.03125 - one fp16 unit-in-last-place at that
+      model's logit scale of ~36-38 - with a maximum of two ulps (6.25e-02) and a
+      mean of +1.1e-05 whose interval straddles zero. verify_structural_zeros uses
+      an ABSOLUTE 1e-4 bound, which is below what fp16 can represent here. The
+      contrast that makes this legible: before the stage-106 layer-keying bug was
+      fixed (2026-08-24) the same statistic was -0.129 [-0.141, -0.119] with a
+      maximum of 0.719, i.e. systematically biased and 23 ulps wide. THAT was a
+      fault; this is quantisation. The bound needs the same relative-tolerance
+      treatment already applied to the R-lens R0 check.
+    the_stage_106_bug: >
+      FIXED 2026-08-24, and it invalidated the FIRST starcoder2-3b run (2026-08-19,
+      recorded H4/H5 as FAIL at 46% and 39%). scripts/106_binding_interchange.py
+      assigned states_test, lens_vectors, mean_direction and fitted INSIDE the
+      `for layer in layer_list` loop while resolving chosen_layer = layer_list[0]
+      after it, so a MULTI-LAYER run evaluated the claim-bearing grid at the first
+      layer using the LAST layer's states, J-lens and subspace. Invisible on any
+      single-layer run, which is why 6.7b (layer 8 only, from H3) was never
+      affected. The run with `--layers 7,11,15` put layer-15 states through a
+      layer-7 intervention. Tells: noop at 7.19e-01, calibration says_installed
+      1.000 collapsing to 0.239 on test at the identical cell, and
+      mean_difference_L7/L11/L15.npy all on disk. The fix keys every per-layer
+      object by layer and asserts the selected subspace's recorded layer equals
+      chosen_layer.
     limitation: >
-      H4 alone would be E11 again; the claim is H5, and it holds. The
-      difference-in-means question is settled: the baseline transports at 76%
-      and the learned direction beats it at two-thirds the dose. What is NOT
-      established: why a rank-1 edit beats installing the whole donor state.
-      Single model, single site, single layer, one binding construction — scope
-      claims accordingly.
+      H4 alone would be E11 again; the claim is H5, and it holds in both models.
+      The difference-in-means question is settled: the closed-form baseline
+      transports (76% on 6.7b, 55% on starcoder2-3b) and the learned direction
+      beats it at roughly two-thirds the dose in both.
+      WHAT IS NOT ESTABLISHED, and is now the largest loose end: why a rank-1 edit
+      beats installing the whole donor state. 100% against 86% on 6.7b; 100%
+      against 68.8% on starcoder2-3b, where in logit-margin terms the rank-1 edit
+      reaches 434% of the whole-state ceiling. A gate expressed as a fraction of a
+      ceiling the treatment exceeds four-fold has stopped doing work and should be
+      reformulated before write-up. The available account - that the full patch
+      installs the driving component AND components that fight it - remains
+      plausible and undemonstrated.
+      TWO MODELS ACROSS TWO ARCHITECTURE FAMILIES, single site, single layer, one
+      binding construction — scope claims accordingly. The model count is no
+      longer the limitation; the site and the construction are.
 
   E12:
     name: latent store transitions (INSTRUMENT VALIDATION)

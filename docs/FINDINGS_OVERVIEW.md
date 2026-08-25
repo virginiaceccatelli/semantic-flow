@@ -96,7 +96,8 @@ The lens experiments ask whether the safe/unsafe difference is aligned with the
 model's own output vocabulary. The clean result comes from the simplest method,
 the **logit lens**, which applies the model's ordinary output head to an
 intermediate state. The more elaborate J-lens and R-lens do not improve this
-result and are not needed for the conclusion below.
+result and are not needed for the conclusion immediately below; the R-lens earns
+its place later in this part, on a question no vocabulary projection can ask.
 
 For every matched pair, the experiment records the change across the model's
 entire vocabulary of roughly 32,000 tokens. Training pairs define an average
@@ -130,12 +131,26 @@ different prompt. The positive control therefore validates the readout without
 showing that the models solve the security task reliably.
 
 No further run is needed to establish the replicated full-vocabulary finding.
-There is currently **no clean semantic result unique to the J-lens or R-lens**.
-The R-lens produced a small routing pattern on DeepSeek 1.3B, but it failed its
-preregistered mean-based permutation control and has not been replicated on
-6.7B. It should not be presented as a finding. A future R-lens claim would
-require replication on 6.7B and a result that passes the declared control;
-StarCoder2 cannot be included without extending the method to its architecture.
+The **J-lens still adds no semantic result** of its own.
+
+The **R-lens now does**. It divides the model's answer score among the syntactic
+roles of the program and asks whether relevance moves between the two data-flow
+chains when a different chain is connected to the sink — on text that is
+identical at every role except the sink argument itself. The chain feeding the
+sink loses relevance share and the other gains, on **65 of 72 pairs in DeepSeek
+1.3B and 64 of 72 in 6.7B**. On 6.7B the effect also passes the preregistered
+permutation test of the mean, which 1.3B fails: a few large pairs reverse its
+mean while most pairwise signs agree, so the 1.3B result rests on the sign test
+alone.
+
+Two limits keep this modest. The magnitude is small — the median pair moves
+**1–2%** of the answer score. And the two models do not route at the same depth.
+The pattern is a paired one, the tainted chain losing share while the trusted
+chain gains, and DeepSeek 1.3B shows it in its first few layers while 6.7B shows
+nothing there and produces it between roughly a quarter and a half of the way
+through the network. Why the same routing happens at a different stage in the
+larger model is unexplained. StarCoder2 cannot be included without extending the
+method to its architecture, so this is one model family measured twice.
 
 # Part IV — A binding representation is causally used
 
@@ -161,18 +176,40 @@ explanation. A simple difference-of-means direction transfers to approximately
 **76%**, but the learned direction reaches 100% while changing the hidden state
 by substantially less.
 
-This is the project's strongest result. At this model, layer, and code location,
-the downstream computation reads a low-dimensional representation of **which
-definition is in scope**. The result is causal because changing that
+**The same experiment has now been completed on StarCoder2-3B, and it agrees.** A
+rank-one intervention at layer 11 also reaches **100% in both arms**, at
+essentially the same edit size (0.478 of the hidden state's norm, against 6.7B's
+0.479). All six gates pass. The falsification is sharper in this model: the
+explicit answer direction does not merely weaken across the arms, it **reverses**,
+which is the strongest form of the failure the design predicts for an
+answer-based explanation.
+
+This matters more than an ordinary replication because the two models are
+different architectures, not two sizes of the same one. They use different
+normalisation and different feed-forward layers. Finding the same one-dimensional
+causal handle in both is evidence that it reflects how the task is solved rather
+than one network's idiosyncrasy.
+
+This is the project's strongest result. At these models, layers, and code
+locations, the downstream computation reads a low-dimensional representation of
+**which definition is in scope**. The result is causal because changing that
 representation changes the emitted value, and the factorial design rules out a
 fixed token or answer direction as the explanation.
 
-The scope should remain explicit. This intervention has been completed on one
-model, one layer, one site, and one synthetic construction. Replication on a
-second model and site is needed before claiming that the same causal mechanism
-is general. Before a paper release, stages 106–107 should also be rerun so the
-saved gate report reflects the already-adopted full-vocabulary decision metric;
-the underlying intervention rows and reported outcomes do not change.
+The scope should remain explicit. The intervention has been completed on two
+models but still at one layer, one site, and one synthetic construction, so the
+model count is no longer the limitation — the location and the construction are.
+
+One finding is genuinely unresolved and should not be smoothed over. The
+rank-one edit works *better* than replacing the entire hidden state with the
+donor's: 100% against 86% on 6.7B and 100% against 69% on StarCoder2. The
+explanation on offer — that replacing everything also installs components that
+work against the change — is plausible but has not been tested. Until it is, the
+comparison against a "whole-state ceiling" is not measuring what its name
+suggests. Separately, before a paper release stages 106–107 should be rerun for
+6.7B so its saved gate report reflects the already-adopted decision metric; the
+underlying rows and reported outcomes do not change, and StarCoder2's report
+already uses the current rule.
 
 # Overall conclusion
 
@@ -183,8 +220,8 @@ to many changes in presentation but fragile when scope interference increases
 or visible control structure is flattened. A security-relevant flow distinction
 appears in the models' output coordinates, but as a distributed pattern rather
 than a human-readable security word. Finally, a controlled intervention shows
-that DeepSeek-Coder 6.7B causally uses a low-dimensional binding representation
-at the tested site.
+that two different model architectures causally use a low-dimensional binding
+representation at the tested site.
 
 The appropriate claim is not that these models “understand code” in a general
 human sense. The evidence supports a narrower and more useful conclusion: **the

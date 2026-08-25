@@ -5,7 +5,7 @@
 #   128  full-vocabulary alignment      J2   ~15 min   one matmul per cell
 #   129  the POSITIVE CONTROL           J3   ~1-3 h    3 forwards per prompt +
 #                                                      one lens build
-#   130  relevance by AST role          J4   ~30-90 m  one backward per
+#   130  relevance by AST role          J4   1-3 min   one backward per
 #                                                      (member, layer, target)
 #   131  verdicts                       -    seconds
 #

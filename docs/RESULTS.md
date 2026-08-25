@@ -108,8 +108,8 @@ movement.
 | **R6** R-lens conservation | lens instrument | ● | ● | n/a | conservation within 1e-4 at every layer; the **gated-MLP rule dominates by 4.5×**, falsifying the pre-registered prediction. Does not apply to StarCoder2 |
 | **R7** full-vocabulary direction | vocabulary contrast | ● | ● | ● | **72/72** held-out pairs project positively; onset ~25% depth; collapses under flattening alone; loadings are meaningless |
 | **R8** positive control | vocabulary contrast | ● | ● | ● | the readout is **not blind** — 0.85–0.94 on a property the models express, while the security lexicon at the same cell is *inverted* |
-| **R9** relevance routing | R-lens attribution | ● | ☐ | n/a | the chain feeding the sink loses relevance share, 63–65 of 72 pairs, on token-identical text |
-| **R10** binding interchange | DAS | ☐ | ● | ☐ | rank-1 transport at 100% in both arms, beating a closed-form baseline at two-thirds the dose |
+| **R9** relevance routing | R-lens attribution | ● | ● | n/a | the chain feeding the sink loses relevance share on token-identical text — **65/72** pairs on 1.3B, **64/72** on 6.7B, where the mean-based control fires too |
+| **R10** binding interchange | DAS | ☐ | ● | ● | rank-1 transport at **100% in both arms in two architecture families**, beating a closed-form baseline at two-thirds the dose |
 
 Legend: ☐ not run · ◑ partially run · ● run at canonical scale
 
@@ -572,11 +572,13 @@ attribution result:
    unrelated token dimensions rather than concentrated in words such as
    `unsafe`. This is evidence for a distributed, output-aligned representation,
    not for an explicit semantic label.
-2. **Suggestive, obtained with the R-lens:** the model usually redistributes a
-   small amount of answer relevance between the two data-flow chains even where
-   their text is identical. However, the preregistered permutation control on
-   the mean fails because of several large outliers. This is not a robust
-   positive result.
+2. **Replicated, obtained with the R-lens:** the model redistributes a small
+   amount of answer relevance between the two data-flow chains even where their
+   text is identical, in both DeepSeek models. On 6.7B the effect clears every
+   declared control, including the permutation test of the mean that fails on
+   1.3B. The magnitude stays small — 1–2% of the answer score — and the method
+   does not apply to StarCoder2, so this is one architecture family measured
+   twice.
 
 The **J-lens has no surviving semantic result**. It passes its engineering
 checks and improves generic next-token recovery, but its semantic findings
@@ -588,7 +590,7 @@ either fail the required controls or are reproduced by the cheaper logit lens.
 |---|---|---|
 | **logit lens** | yes | **yes** — R7 and the R8 positive control |
 | **J-lens** | yes | **no** |
-| **R-lens** | yes on DeepSeek; not applicable to StarCoder2 | only the tentative routing pattern in R9 |
+| **R-lens** | yes on DeepSeek; not applicable to StarCoder2 | **yes** — R9 relevance routing, replicated on both DeepSeek models |
 
 The extra complexity of the J- and R-lenses did not improve the vocabulary-space
 conclusions. At the strongest positive-control cell, all three give essentially
@@ -698,33 +700,61 @@ than a simple measurement failure. It does not show reliable task performance:
 the final choices remain biased, and the 6.7B result reverses under another
 prompt wording.
 
-## R9 — The only unique R-lens result is suggestive, not conclusive
+## R9 — The unique R-lens result, now replicated on both DeepSeek models
 
 ### Method
 
-On DeepSeek 1.3B, the conserving R-lens divides an answer score among syntactic
-roles. Only the sink argument differs between each safe/unsafe pair; the two
-data-flow chains are textually identical. The test asks whether relevance moves
-between those unchanged chains when a different chain is connected to the sink.
+The conserving R-lens divides an answer score among syntactic roles. Only the
+sink argument differs between each safe/unsafe pair; the two data-flow chains are
+textually identical. The test asks whether relevance moves between those
+unchanged chains when a different chain is connected to the sink.
 
 ### Result
 
-At layer 0, **65/72** pairs shift the taint-chain share in the same direction and
-**63/72** shift the trust-chain share in the opposite direction. The median
-change is small, about **1–2%** of the answer score, and it fades with depth.
+The chain feeding the sink loses relevance share and the other gains, in both
+models, at each model's reported cell (72 held-out clean pairs):
 
-This pattern is interesting because it occurs on identical text and survives
-identifier/order strata. But the preregistered permutation comparison of the
-**mean** does not pass (`p = 0.39–0.62`). A few large outliers reverse the mean
-even though most pairwise signs agree. The honest verdict is therefore
-`redistribution_consistent_but_not_in_mean`.
+| | 1.3B (layer 0) | 6.7B (layer 11) |
+|---|---|---|
+| taint chain shifts down | **65/72** | **64/72** |
+| trust chain shifts up | **63/72** | **57/72** |
+| median taint-chain shift | −0.014 | −0.021 |
+| sign-test *p* | 7.0e−13 | 5.8e−12 |
+| permutation *p* on the mean | 0.57 — **fails** | **0.000** |
+| verdict | `redistribution_consistent_but_not_in_mean` | `redistribution_found` |
+
+Relevance conserves essentially exactly in both — median |ρ−1| of 1e−7 and 2e−7,
+worst case 5e−5 and 3e−6, at every layer read — so the role shares are a genuine
+partition of the model's own answer and a paired difference is a redistribution
+rather than a change of scale.
+
+**The mean-based control that fails on 1.3B fires on 6.7B.** On 1.3B the
+per-pair deltas are heavy-tailed enough that the mean and the sign disagree on
+several roles, and the statistic that survives is the sign, whose exact null
+under the same random-orientation scheme is the sign test in the table above. On
+6.7B both statistics agree, and all five declared checks hold.
+
+**The depth does not replicate.** What is being located is the *paired* pattern —
+taint chain down and trust chain up in the same cell. On 1.3B it is present at
+layers 0 and 3 — 90% and 86% of pairs move the taint chain down while 88% and
+85% move the trust chain up. The taint side is gone by layer 11; the trust side
+stays elevated to layer 19. On 6.7B layers 0 and 3
+do not show it at all: the two chains move together or sit at chance there, and
+at layer 0 the trust chain moves *down*. The paired pattern appears at layer 7,
+peaks at layer 11, holds at 15, and is gone by 19. In relative depth that is
+0–13% against 23–48% — not the same place in the network. It is not an artifact
+of which output token the relevance is taken for: within each model both target
+tokens give the same profile.
 
 ### What this means
 
-R9 suggests that the model may route its computation differently depending on
-which data-flow chain reaches the sink. It does not provide strong evidence of a
-semantic mechanism: the effect is small, was measured on one model, depends on
-chosen attribution rules, and fails the strongest preregistered control.
+R9 shows that the model routes its computation differently depending on which
+data-flow chain reaches the sink, on text that is identical at the roles being
+measured. It is now a replicated result rather than a single-model clue. Three
+limits remain: the effect is small (**1–2%** of the answer score), it depends on
+the chosen attribution rules, and it is confined to the DeepSeek family because
+the method does not apply to StarCoder2. It is observational — it describes where
+an answer is attributed, not what the model uses.
 
 ## Bottom line for semantic understanding
 
@@ -733,8 +763,8 @@ chosen attribution rules, and fails the strongest preregistered control.
 - It does **not** show a discrete or human-readable “unsafe” concept. The signal
   is distributed across unrelated token dimensions.
 - The J-lens adds no semantic evidence beyond the simple logit lens.
-- The R-lens routing result is worth keeping as a clue, but not as a confirmed
-  finding.
+- The R-lens routing result is a confirmed observational finding on the DeepSeek
+  family, small in magnitude and not consistent in depth across the two scales.
 - None of these observations proves causal use or semantic understanding. The
   intervention experiments in Part IV are required for claims about what the
   model actually uses.
@@ -776,38 +806,47 @@ question this design has to answer (METHODS §8.2).
 
 ### Method
 
-Stages 100–108 on deepseek-coder-6.7b, 400 base programs (120 calibration / 280
-test), site `use`, layer 8, rank 1 — site and layer chosen on calibration and
-recorded before test numbers were read. Six hard gates, each refusing to run
-downstream stages. Seven control arms (METHODS §8.4). Outcome metric is
-`says_installed`, the **full-vocabulary argmax**, not the logit margin, for the
-reason in METHODS §8.6. Cluster bootstrap over bases.
+Stages 100–108 on **deepseek-coder-6.7b** (site `use`, layer 8, rank 1) and on
+**starcoder2-3b** (site `use`, layer 11, rank 1). 400 base programs each (120
+calibration / 280 test); site and layer chosen on calibration and recorded before
+test numbers were read. Six hard gates, each refusing to run downstream stages.
+Seven control arms (METHODS §8.4). Outcome metric is `says_installed`, the
+**full-vocabulary argmax**, not the logit margin, for the reason in METHODS §8.6.
+Cluster bootstrap over bases.
+
+The two models are different architecture families — Llama-style with RMSNorm and
+a gated MLP, against StarCoder2's LayerNorm and non-gated MLP. That matters here
+in a way it does not elsewhere in this document: it is the same *design* run on a
+genuinely different network, not a rerun at another scale.
 
 ### Result — the gates
 
-| gate | result |
-|---|---|
-| **H0** generation and independent ground truth | **PASS** — 400/400 bases; all six invariant checks at 1.0000, including the arm crossing |
-| **H1** the model returns the bound variable | **PASS** — 1.000 overall, 1.000 in the weakest cell |
-| **H2** the binding is decodable at the use anchor | **PASS** — 1.000 against a *measured* surface floor of 0.500, selectivity 0.524 |
-| **H3** whole-state interchange flips the answer, per arm | **PASS** — ab +4.781 [+4.683, +4.878], ba +4.799 [+4.694, +4.903], flip rates 0.857 / 0.879; both structural zeros exactly 0.00e+00 |
-| **H4** low-rank interchange beats matched controls on the training arm | **PASS** — 189% of the whole-state ceiling; all three control contrasts clear zero; edit moved 0.479 of ‖h‖ |
-| **H5** the same subspace transfers to the held-out arm | **PASS** — 100.0% of held-out rows emit the installed answer, 114% of that arm's ceiling; `answer_direction` transfers at an arm ratio of 0.154 against transport's 1.025 |
+**All six gates pass in both models.**
 
-H1 and H2 both at 1.000 are worth pausing on: with no arithmetic anywhere, 6.7B
-resolves these bindings perfectly, and which definition is in scope is perfectly
+| gate | 6.7B (layer 8) | StarCoder2-3B (layer 11) |
+|---|---|---|
+| **H0** generation and independent ground truth | **PASS** — 400/400 bases, all six invariants at 1.0000 | **PASS** — 400/400, all six at 1.0000 |
+| **H1** the model returns the bound variable | **PASS** — 1.000 overall | **PASS** — 0.981 [0.973, 0.988]; weakest cell 0.954 |
+| **H2** the binding is decodable at the use anchor | **PASS** — 1.000 vs a measured floor of 0.500 | **PASS** — 1.000 vs the same 0.500 floor |
+| **H3** whole-state interchange flips the answer, per arm | **PASS** — ab +4.781, ba +4.799; flip 0.857 / 0.879 | **PASS** — ab +1.731, ba +1.761; flip 0.663 / 0.659 |
+| **H4** low-rank beats matched controls on the training arm | **PASS** — 189% of ceiling; edit moved 0.479 of ‖h‖ | **PASS** — 434% of ceiling; edit moved 0.478 of ‖h‖ |
+| **H5** the same subspace transfers to the held-out arm | **PASS** — 100.0% installed; `answer_direction` arm ratio 0.154 vs transport's 1.025 | **PASS** — 100.0% installed; `answer_direction` arm ratio **−0.157** vs transport's 1.002 |
+
+H1 and H2 are worth pausing on: with no arithmetic anywhere, both models resolve
+these bindings at or near ceiling, and which definition is in scope is perfectly
 decodable at the use anchor against a floor pinned to 0.500. That is a cleaner
 replication of R1's isolation than R1 itself, on a corpus built for intervention.
 
-> **A bookkeeping note, stated because it matters.** The `gates.yaml` and
-> `e13_report.md` on disk still record **H5 as FAIL**, because they were written
+> **A bookkeeping note, stated because it matters.** For **6.7B only**, the
+> `gates.yaml` and `e13_report.md` on disk still record **H5 as FAIL**, because they were written
 > under the superseded `delta_ld` (logit-margin) discriminator and stages 106–107
 > have not been re-run since the rule was corrected to `says_installed` on
 > 2026-08-13. **The underlying rows are unchanged** — every number in the table
 > below is read directly from `interchange_summary.csv` — and the full record of
 > the rule change, including the verdicts under both rules, is in
 > [ARCHIVE.md §5](ARCHIVE.md). Re-running stages 106–107 would regenerate the
-> gate file; nothing else changes.
+> gate file; nothing else changes. StarCoder2's gate file was written after the
+> rule change and records H5 as PASS, so it needs no such note.
 
 ### Result — the transport, and every control
 
@@ -828,6 +867,48 @@ All 14 machinery checks pass: structural zeros exactly 0.00e+00 (`noop` at both
 sites, `whole_state` at the pre-mutation site), alignment orthonormal to 4.07e-07,
 the ceiling alive in both arms, and the model emits a non-candidate token on
 **0.0%** of rows.
+
+### The same result in a different architecture family
+
+StarCoder2-3B, rank 1 at the use anchor (layer 11), fitted on arm `ab` alone,
+280 test bases, 560 rows per cell:
+
+| variant | `ab` emits installed | `ba` emits installed | edit fraction |
+|---|---:|---:|---:|
+| **`das_binding`** (rank 1, learned) | **100.0%** | **100.0%** | **0.478** |
+| `whole_state` (the entire donor state) | 68.8% | 67.3% | 0.804 |
+| **`mean_difference`** (rank 1, closed form) | 54.6% | 54.5% | 0.717 |
+| `answer_direction` (norm-matched) | 44.8% | 18.4% | 0.478 |
+| `random_norm` (dose-matched random) | 30.9% | 30.4% | 0.540 |
+| `random_rank` / `noop` | 2.3% | 1.4% | 0.019 / 0 |
+
+The learned subspace lands in the same place: **100% in both arms at essentially
+the same dose** (0.478 against 6.7B's 0.479), transfer ratio **1.002**. And the
+falsification bites harder here than it did on 6.7B — the explicit answer
+direction does not merely attenuate across the arms, it **reverses sign** (arm
+ratio −0.157), which is the strongest form of the signature the 2×2 was built to
+produce.
+
+Two differences from 6.7B are worth stating rather than leaving for a reader to
+find. The dose-matched random control is far livelier — **30.9%** against 6.7B's
+2.1%, at a dose 13% above the treatment's — so StarCoder2's answer at this site is
+easier to disturb in general. It is still separated decisively (the paired
+contrast `das_binding − random_norm` is **+7.05 [+6.97, +7.12]**), but the margin
+is bought by the treatment being near-perfect, not by the control being dead. And
+`answer_direction` pushes the model off-candidate on 10.9% of `ab` rows, where the
+treatment never does.
+
+**On the structural zeros.** StarCoder2's four structural-zero checks report
+`False`, and this is a threshold artifact rather than a machinery fault. 58.6% of
+`noop` rows are exactly zero and every non-zero one is a multiple of **0.03125** —
+precisely one fp16 unit-in-last-place at this model's logit scale (~36–38) — with
+a maximum of two ulps and a mean of +1.1e−5 whose interval straddles zero. The
+check uses an *absolute* 1e−4 bound, which is below what fp16 can represent here.
+The comparison that makes this legible: before the layer-keying bug in stage 106
+was fixed, the same statistic was **−0.129 [−0.141, −0.119] with a maximum of
+0.719** — systematically biased and 23 ulps wide. That was a real fault; this is
+quantisation. The bound should be made scale- and dtype-aware, the same correction
+already applied to the R-lens R0 check.
 
 ### What this refutes, rather than merely fails to support
 
@@ -861,18 +942,28 @@ state less.
 
 ### What it means
 
-At this site, in this model, the model's own downstream computation **reads** a
-rank-1 subspace whose content is *which definition is in scope*. Not the token.
-Not the answer. That is the first affirmative causal result in the project, and
-the design refutes the two competing accounts rather than merely failing to
-support them.
+At this site, in **both** models, the downstream computation **reads** a rank-1
+subspace whose content is *which definition is in scope*. Not the token. Not the
+answer. That is the affirmative causal result in the project, and the design
+refutes the two competing accounts rather than merely failing to support them.
+Because the two models are different architecture families, the result is no
+longer a statement about one network's idiosyncrasy.
 
 ### What is still open
 
-A rank-1 edit outperforming the whole-state patch (100% vs 86%) has a plausible
-explanation — the full patch installs the driving component *and* components that
-fight it — that is **not** independently demonstrated. And this is one site, one
-layer, one model, one construction.
+**Why a rank-1 edit outperforms the whole-state patch**, which is now the largest
+loose end rather than a footnote. On 6.7B the rank-1 edit reaches 100% against the
+full donor state's 86%; on StarCoder2 it reaches 100% against **68.8%**, and in
+logit-margin terms it is **434% of the whole-state ceiling**. The "ceiling" is
+therefore not functioning as one in either model, and more strongly in the second.
+The available explanation — that the full patch installs the driving component
+*and* components that fight it — is plausible and remains **not** independently
+demonstrated. A gate expressed as a fraction of a ceiling that the treatment
+exceeds four-fold is a threshold that has stopped doing work, and it should be
+reformulated before this is written up.
+
+Also still open: one site, one layer, one construction. What is no longer open is
+the model count.
 
 ---
 
@@ -926,25 +1017,33 @@ lexicon at that same cell runs *backwards* on two of three models. Interpretabil
 that looks for concepts by asking "which token lights up" would have concluded the
 property is absent. It is not absent; it is distributed.
 
-**There is an order of operations, and it is legible.** Relevance routing differs
-between the two members at 0–13% depth, an output-aligned direction appears at
-~25%, and the answer becomes sayable at 40–65%. The property is *routed*
-differently before it is *representable* in output coordinates, and representable
-long before it is *sayable*.
+**There is an order of operations on 1.3B, and it does not survive scale.** On
+DeepSeek 1.3B relevance routing differs between the two members at 0–13% depth,
+an output-aligned direction appears at 30%, and the answer becomes sayable at
+40–65%: the property is *routed* differently before it is *representable* in
+output coordinates, and representable long before it is *sayable*. On 6.7B the
+first two coincide — routing and the output-aligned direction both begin at layer
+7 (23% depth) and both peak at layer 11 (35%). The routing itself replicates; the
+claim that routing *precedes* representation is a 1.3B statement and should be
+made as one.
 
-**And at least one of these representations is causally used.** The DAS
-interchange settles for binding what probing structurally cannot: a rank-1,
-dose-free edit at the resolution site installs *which definition is in scope*, in
-both arms of a factorial where a token account and an answer account each demand
-the opposite movement. The model reads that subspace.
+**And at least one of these representations is causally used, in two architecture
+families.** The DAS interchange settles for binding what probing structurally
+cannot: a rank-1, dose-free edit at the resolution site installs *which definition
+is in scope*, in both arms of a factorial where a token account and an answer
+account each demand the opposite movement. Both models read that subspace, at
+essentially the same dose, and on StarCoder2 the answer-direction control reverses
+outright rather than merely fading.
 
 **One methodological result about the tools themselves.** Of three
 output-basis readouts, the two expensive ones change no conclusion when used as
 vocabulary projections — the plain logit lens matches them wherever a result
 actually fires. The R-lens pays for itself only in a different role, as a
-*conserving attribution* over input positions, and that role produced the
-earliest-depth evidence in the depth sequence. A validated instrument that turns
-out to be unnecessary for the question at hand is worth reporting as such.
+*conserving attribution* over input positions, and that role produced the only
+evidence in this project that no vocabulary projection can reach — including, on
+1.3B, the earliest-depth evidence in the depth sequence. A validated instrument
+that turns out to be unnecessary for most of the questions at hand, but decisive
+for one, is worth reporting as such.
 
 **What the whole thing licenses, stated conservatively.** These models compute
 program-structural relations, build them with depth, anchor them to control
@@ -962,7 +1061,7 @@ would discard exactly the distinctions the project exists to draw.
 - **Not that code models "understand" programs.** Every claim is a decoding,
   format or intervention result at named sites under named controls.
 - **Not that binding is causally used *in general*.** R10 shows a rank-1
-  interchange transports the binding at one site, one layer, one model, one
+  interchange transports the binding at one site, one layer, two models, one
   synthetic construction. Four earlier designs failed to establish even that, each
   for a different recorded reason ([ARCHIVE.md](ARCHIVE.md)).
 - **Not that the R10 subspace is the *only* direction that transports.** The
@@ -986,8 +1085,10 @@ would discard exactly the distinctions the project exists to draw.
 - **Not that the 0.500 floor is pinned against *every* computable text feature.**
   It is pinned against the stated surface baselines. A cross-position
   string-equality baseline is outside the ±3 window and is an open item.
-- **Not that R9's routing effect is large.** Median 1–2% of the answer, one model,
-  and its mean-based permutation control does not fire.
+- **Not that R9's routing effect is large.** Median 1–2% of the answer. It now
+  replicates on 6.7B, where the mean-based permutation control fires as well; on
+  1.3B that control still does not fire and the effect there rests on the sign
+  test alone. The two models also route at different depths.
 
 ---
 
@@ -998,16 +1099,21 @@ Ordered by what would most change what this project can claim.
 1. **Re-run stages 106–107 to regenerate R10's gate file** under the
    `says_installed` discriminator, so the on-disk verdict matches the reported
    one. No number changes; this is bookkeeping that a reader will check.
-2. **Replicate R9 on 6.7B.** The relevance redistribution is one model, and it is
-   the only result the R-lens makes possible.
-   `scripts/130_sinkflow_relevance.py --model deepseek-coder-6.7b`, ~30–90 min.
-   It is not applicable to StarCoder2, so 6.7B is the whole replication.
+2. **Explain R9's depth shift.** The redistribution replicates on 6.7B and clears
+   every declared control there, but it sits at layers 7–15 (23–48% depth) rather
+   than 1.3B's layers 0–3 (0–13%), with each model flat where the other fires.
+   Both target tokens give the same profile within each model, so this is not a
+   target artifact and needs an account. The per-layer CSVs are already on disk;
+   no GPU time is required to start.
 3. **Explain, or bound, the rank-1 edit beating the whole-state patch** (100% vs
    86% at 60% of the edit norm). The available account is plausible and untested,
    and a reviewer will ask.
-4. **A second model and a second site for R10.** The causal result is currently
-   one cell: `use`, layer 8, rank 1, 6.7B. 1.3B is cheap now that stage 106 runs
-   in minutes.
+4. **A second *site* for R10, and an account of the 434% ceiling.** The second
+   model is done — StarCoder2-3B reproduces 100%/100% at layer 11 — so what
+   remains is a second anchor and, more urgently, an explanation of why the
+   rank-1 edit exceeds the whole-state patch by four-fold there. Related: make
+   `verify_structural_zeros` scale- and dtype-aware, so an fp16 run stops
+   reporting one-ulp noise as a machinery failure.
 5. **Explain the `assign_chain` fragility.** It has replicated in three models
    under renaming *alone* — starcoder2-3b drops to 0.639 there while
    `branch_merge` stays at 1.000. Diagnose on the existing

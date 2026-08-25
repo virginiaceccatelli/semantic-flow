@@ -1,18 +1,14 @@
 # E15-D — three follow-ups to the E15-C null (deepseek-coder-6.7b)
 
-## What this experiment asks
-
-This report follows up the vocabulary result with three checks: a full-vocabulary direction, a positive control on a property the model can express, and relevance redistribution across tokens. Together they distinguish a model-level null from a readout that is simply unable to detect anything.
-
 Each section states a verdict decided by a checklist declared in code before the run. All three stages are observational: none of them establishes that the model *uses* what is measured.
 
 | stage | gate | verdict |
 |---|---|---|
 | V1 full-vocabulary alignment | J2 PASS | `direction_replicates_but_not_dominant` |
-| positive control | J3 PASS | `machinery_blind` |
+| positive control | J3 PASS | `both_properties_detected` |
 | V3 relevance redistribution | J4 PASS | `redistribution_found` |
 
-**What this means for E15-C.** E15-C's null is about the METHOD. The models answer the forced choice, the identical readout does not see it, so no claim about what code models represent survives that track and every number in it keeps its caveat.
+**What this means for E15-C.** E15-C's CANDIDATE POOL was the limitation, not its readout: the same machinery over a different basis finds the security contrast E15-C missed. The E15-C null should be re-reported as a pool artifact.
 
 ---
 
@@ -149,16 +145,16 @@ If concentration is high over the full vocabulary and low inside the pool, the p
 
 ## Positive control — can this machinery detect verbalisation at all?
 
-**Verdict.** MACHINERY BLIND — the model answers the forced choice and the identical readout misses it. The instrument, not the model, is what E15-C's null is about.
+**Verdict.** BOTH DETECTED — the readout finds the taint contrast AND the security contrast in this basis, which E15-C's pool did not.
 
-Prompt style `sink`, lens `rlens`, condition `clean_heldout`, layer -1 — chosen as the layer that best detects the TAINT property, with the security contrast then read at that same cell.
+Prompt style `sink`, lens `rlens`, condition `clean_heldout`, layer 27 — chosen as the layer that best detects the TAINT property, with the security contrast then read at that same cell.
 
 | check | holds |
 |---|---|
 | behaviour_above_chance | yes |
-| lens_detects_the_property | no |
-| lens_tracks_the_model | no |
-| security_contrast_at_same_cell | no |
+| lens_detects_the_property | yes |
+| lens_tracks_the_model | yes |
+| security_contrast_at_same_cell | yes |
 
 ### Table 17 — behaviour: can the model answer at all?
 

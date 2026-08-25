@@ -315,7 +315,7 @@ Construction, threat model and metrics: [METHODS §5](METHODS.md#5-the-security-
 | 127 | `127_sinkflow_vocab_report.py --model M` | CPU, seconds | — | `vocab/e15c_report.{md,yaml}`, `vocab/vocab_specificity.csv`, `results/figures/e15c_depth_{model}.png` |
 | 128 | `128_sinkflow_align.py --model M` | **GPU**, ~15 min | **J2** | `align/align_{direction.json,summary,loadings,restricted}.csv` |
 | 129 | `129_sinkflow_positive.py --model M` | **GPU**, ~1 h | **J3** | `positive/positive_{behaviour,behaviour_summary,pairs,summary}.csv`, `positive/lenses/*.pkl` |
-| 130 | `130_sinkflow_relevance.py --model M` | **GPU**, ~30 min | **J4** | `relevance/relevance_{readings,pairs,summary,conservation}.csv` |
+| 130 | `130_sinkflow_relevance.py --model M` | **GPU**, 1–3 min | **J4** | `relevance/relevance_{readings,pairs,summary,conservation}.csv` |
 | 131 | `131_sinkflow_lens_report.py --model M` | CPU, seconds | — | `e15d_report.{md,yaml}` |
 
 Everything lands under `results/sinkflow/{model}/`. GPU stages are 121, 125 and
@@ -338,6 +338,14 @@ did exactly that: both passed on what turned out to be a null.
 | 128 | Do the per-pair differences agree over the **whole vocabulary**? | No candidate pool is chosen, so a null cannot be blamed on one. Two statistics: *generalisation* (projection onto a train-frozen direction) and *dominance* (`sv1_share`). |
 | 129 | Can this readout detect verbalisation **at all**? | The **positive control**. Same function, same convention, same orientation, one candidate basis carrying both token sets — J3 refuses the run if the bases differ. |
 | 130 | Where does **relevance** move when only the semantics change? | Needs no lexicalisation. Under the LRP rules `Σ_t R_t = s`, so `R_t/s` is a partition of the answer and a paired difference is a genuine redistribution. |
+
+**Stage 130 reads `0 <= layer < last`.** The last decoder layer is dropped from
+the default layer list on purpose: above it the tail network is the final norm
+and the unembedding at the readout position alone, so the score depends on one
+position and every other position's relevance is identically zero. Conservation
+still holds there, trivially, but there is no distribution across positions to
+compare — the cell is the absence of a measurement, not a null. Pass `--layers`
+to override. Runs made before 2026-08-24 include that layer.
 
 **Stage 130 refuses on StarCoder2** and records J4 as *not applicable*: the
 homogenising rules bind to nothing there, so there is no conservation to read.
@@ -432,24 +440,47 @@ non-finite.
 | **H0** | `verification.csv` — which of the six invariant checks dropped below 0.999. The arm crossing is the one that makes H5 a falsification |
 | **H1** | `behaviour_summary.csv` per cell. If the model cannot return the bound variable, no instrument built on top of it means anything |
 | **H2** | `decode.csv` — the *measured* surface baseline column, not just accuracy |
-| **H3** | `ceiling_summary.csv` — **both arms** must be alive, or a null in either says nothing. Structural zeros must be exactly `0.00e+00` |
+| **H3** | `ceiling_summary.csv` — **both arms** must be alive, or a null in either says nothing. Structural zeros should be `0.00e+00`; see the fp16 note below before treating a non-zero one as a fault |
 | **H4** | `interchange_contrasts.csv` — all three control contrasts must clear zero, and `edit_fraction` must be comparable across arms |
 | **H5** | Read the `answer_direction` rows **first**. If that control also passes on `ba`, the discriminator is broken and no verdict is licensed |
 
-## Two warnings
+## Three warnings
 
 **Do not pass `--pairs`.** Every stage derives it from `--model`; interpolating a
 shell `$MODEL` is how a stage ends up reading another model's data.
+
+**Do not pass `--layers` to stage 106 without a reason.** Omitted, it uses the
+single layer stage 105 chose on calibration, which is the pre-committed
+claim-bearing cell. Passing a list makes the test grid run at the *first* entry,
+which is not necessarily the layer H3 selected — the 2026-08-19 starcoder2-3b run
+passed `7,11,15`, evaluated at layer 7, and reported FAIL at a layer H3 had not
+chosen. (Until 2026-08-24 it also mixed layers outright: the per-layer states,
+J-lens, subspace and difference-in-means baseline leaked out of the loop, so the
+grid ran at the first layer holding the *last* layer's objects. Fixed; every
+per-layer object is now keyed by layer and the selected subspace's recorded layer
+is asserted against `chosen_layer`.)
 
 **H4 without H5 proves nothing about transport** — that combination is the earlier
 design that was retracted. Read [RESULTS.md R10](RESULTS.md#r10--a-rank-1-interchange-transports-which-definition-is-in-scope)
 before interpreting either.
 
+**On structural zeros in fp16.** `verify_structural_zeros` uses an *absolute*
+`< 1e-4` bound. That is below fp16's resolution at a typical logit scale, so an
+fp16 run can report `False` on arithmetic that is as exact as the dtype permits.
+Diagnose it before treating it as a fault: look at the *distribution* of `noop`
+`delta_ld`, not the maximum. StarCoder2-3B's 2026-08-24 run has 58.6% of rows at
+exactly zero, every non-zero row a multiple of `0.03125` — one fp16 ulp at that
+model's logit scale — a maximum of two ulps, and a mean whose interval straddles
+zero. A genuine fault looks different: the pre-fix run on the same model was
+`−0.129 [−0.141, −0.119]` with a maximum of 0.719, systematically biased and 23
+ulps wide.
+
 **Current state on disk:** the 6.7b `gates.yaml` and `e13_report.md` still record
 H5 under the superseded logit-margin discriminator and therefore read FAIL. The
 rows in `interchange_summary.csv` are unchanged and pass under the pre-registered
 `says_installed` rule; re-running 106–107 regenerates the gate file. See
-[ARCHIVE.md](ARCHIVE.md) for the full record of that rule change.
+[ARCHIVE.md](ARCHIVE.md) for the full record of that rule change. The
+starcoder2-3b files were written after the rule change and record PASS.
 
 ---
 
