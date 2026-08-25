@@ -96,8 +96,11 @@ def main(
     n_permutations: int = typer.Option(500, help="Draws for the orientation permutation null"),
     n_boot: int = typer.Option(2000, help="Cluster-bootstrap draws over bases"),
     n_determinism: int = typer.Option(3, help="Bases re-read twice as a structural zero"),
-    dtype: str = typer.Option("float32", help="float16 | float32 — float32 by default "
-                                              "because this reads a backward pass"),
+    dtype: str = typer.Option("float32", help="float32 | bfloat16 | float16. float32 "
+                                              "by default because this reads a "
+                                              "BACKWARD pass; use bfloat16 on a GPU "
+                                              "where 6.7b in float32 would be "
+                                              "offloaded (see --help notes)"),
     device: str = typer.Option("auto"),
     seed: int = typer.Option(42),
     positions: bool = typer.Option(True, help="Write the per-position profiles"),
@@ -131,7 +134,8 @@ def main(
     )
     from src.experiments.sinkflow_vocab import homogenising_rules_bound, lrp_rule_counts
     from src.experiments.store_gates import BINDING, GateFailure, record_gate, require_gates
-    from src.models.lens import freeze_parameters, last_layer_index
+    from src.models.lens import (
+        assert_readable_weights, freeze_parameters, last_layer_index)
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
 
@@ -162,11 +166,35 @@ def main(
         raise typer.Exit(2)
 
     dev = resolve_device(device)
-    torch_dtype = {"float16": torch.float16, "float32": torch.float32}[dtype]
-    cfg = ModelConfig.from_registry(model, device=dev, dtype=torch_dtype)
+    dtypes = {"float16": torch.float16, "float32": torch.float32,
+              "bfloat16": torch.bfloat16}
+    if dtype not in dtypes:
+        console.print(f"[red]--dtype must be one of {sorted(dtypes)}, not {dtype!r}[/red]")
+        raise typer.Exit(2)
+    cfg = ModelConfig.from_registry(model, device=dev, dtype=dtypes[dtype])
     loader = ModelLoader(cfg)
     mdl, tokenizer = loader.model, loader.tokenizer
     freeze_parameters(mdl)
+
+    # Before anything is measured: `ModelLoader` uses device_map="auto", so a
+    # model that does not fit in the VRAM that happened to be free is silently
+    # split, and the offloaded part comes back as meta placeholders. The tail goes
+    # first — `model.norm` and `lm_head` — which is precisely what the cotangent
+    # reads, so the symptom is a meta-tensor error from the lens rather than an
+    # out-of-memory error from the loader. Caught here it costs seconds.
+    try:
+        assert_readable_weights(mdl, remedy=(
+            f"free the GPU and re-run (do NOT run two models on one card at "
+            f"once — check `nvidia-smi`), or re-run with `--dtype bfloat16`: "
+            f"{model}'s checkpoint is natively bfloat16, it halves the "
+            f"footprint against float32, and unlike float16 it keeps float32's "
+            f"exponent range, so the backward pass does not underflow. Its "
+            f"cost is precision: conservation is reported per layer in "
+            f"relevance_conservation.csv and gated, so a bfloat16 run says "
+            f"whether the fraction reading still holds."))
+    except RuntimeError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(2)
 
     # Layer -1 is the embedding and has no decoder module to hook, so the readout
     # starts at layer 0. The LAST decoder layer is dropped for a different and

@@ -458,6 +458,11 @@ def record_relevance(
     position whose next token is the answer and the same convention
     `binding_pairs._appends_one_token` verified at generation time and
     `binding_interchange.score_behaviour` reads the forced choice at.
+
+    The cotangents are built ONCE per base, not per cell. Across all four cells
+    and both target modes only two output tokens are ever scored — `v_a` and
+    `v_b` — so a per-cell build would index the full unembedding four times over
+    for the same two rows, which on 6.7b is a (32256, 4096) gather per call.
     """
     import torch
 
@@ -468,6 +473,10 @@ def record_relevance(
     device = next(model.parameters()).device
     readings: list[RelevanceReading] = []
     problems: list[str] = []
+
+    candidates = [int(record.token_ids["v_a"]), int(record.token_ids["v_b"])]
+    rows = _candidate_cotangents(model, candidates).to(device)
+    cotangent_of = {token: rows[index] for index, token in enumerate(candidates)}
 
     for arm in ARMS:
         for binding in BINDINGS:
@@ -484,12 +493,11 @@ def record_relevance(
             sample = LensSample(input_ids=input_ids, t=position, t_primes=[position])
             wanted = [target_token_for(record, arm, binding, mode)
                       for mode in target_modes]
-            cotangents = _candidate_cotangents(model, wanted).to(device)
 
             for layer in layers:
                 for index, mode in enumerate(target_modes):
                     result = relevance_by_position(model, layer, sample,
-                                                  cotangents[index],
+                                                  cotangent_of[wanted[index]],
                                                   t_prime=position, lrp=lrp)
                     if result is None:
                         problems.append(
@@ -515,7 +523,7 @@ def record_relevance(
                         position_roles=list(seen), input_ids=list(ids[:usable]),
                         n_tokens=int(usable)))
                     del relevance
-            del cotangents
+    del rows, cotangent_of
     if getattr(device, "type", str(device)).startswith("cuda"):
         torch.cuda.empty_cache()
     return readings, problems

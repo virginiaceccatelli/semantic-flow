@@ -239,3 +239,45 @@ reporting an invalid attribution.
 6. Experimental safeguards developed from four failed interventions, including
    construction-pinned floors, matched positive controls, magnitude-free edits,
    and hard prerequisite gates.
+
+## Findings in brief
+
+**Representation.** Linear probes were trained on the models' hidden states to
+test whether they contain information about variable binding and
+definition-to-use relationships. Accuracy rose from chance at the input to about
+98% in the middle layers, even when related code locations were far apart and
+simple cues such as token identity and distance were controlled. This suggests
+that the models construct contextual representations of program structure rather
+than merely recognising variable names or nearby tokens. However, decoding
+information from a hidden state does not by itself show that the model uses it.
+
+**Robustness.** Frozen probes were applied after meaning-preserving changes to
+the code, revealing which transformations preserve the original representation.
+The representations remained fairly stable under identifier renaming, long
+irrelevant insertions, opaque predicates, and equivalent arithmetic, but
+weakened substantially when competing scopes were introduced and collapsed
+under control-flow flattening. The key boundary therefore appears to be
+structural complexity rather than cosmetic change or distance. More precisely,
+flattening makes the learned linear readout stop transferring; it does not prove
+that all information about the relationship has disappeared.
+
+**DAS causal use.** Distributed Alignment Search (DAS) learns a very small
+direction in the hidden state associated with which variable definition is
+currently in scope. Moving a model's activation along this single direction
+caused both DeepSeek-Coder 6.7B and StarCoder2-3B to emit the value associated
+with the newly installed binding on 100% of held-out cases, while random and
+answer-token-based directions failed the controls. This is the strongest result
+because it goes beyond observing information: deliberately changing the
+representation changes the model's answer. The conclusion is still local to the
+tested models, synthetic programs, layers, and intervention site.
+
+**R-lens and verbalisation.** The lens analysis asks whether the model expresses
+its internal data-flow distinction in coordinates connected to its output
+vocabulary and which parts of the input contribute to the answer score. The
+safe/unsafe distinction was reliably present, but spread across thousands of
+mostly unrelated token dimensions rather than concentrated in human-readable
+words such as *safe*, *unsafe*, or *tainted*--so the information is
+output-aligned without being explicitly verbalised. The R-lens additionally
+found a small redistribution of answer relevance between the data-flow chains
+when the sink connection changed, although this is an observational attribution
+result, not evidence of causal use.

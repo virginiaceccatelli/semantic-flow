@@ -140,6 +140,66 @@ def final_norm_gain(model) -> torch.Tensor:
     return weight.detach()
 
 
+def unreadable_parameters(model) -> dict[str, str]:
+    """Parameters whose data is not present in this process, name -> device.
+
+    `ModelLoader` loads CUDA models with `device_map="auto"`, so when the weights
+    do not fit in the VRAM that was free at load time accelerate offloads the
+    tail of the network and leaves **meta** placeholders behind. Hooks
+    materialize those during a forward pass, which is why a forward still works —
+    but every lens reads weights *outside* a forward pass
+    (`get_output_unembedding`, `final_norm_gain`), and reading a meta tensor
+    raises `NotImplementedError: Cannot copy out of meta tensor; no data!`.
+
+    `device_map="auto"` fills from the start of the model, so what is offloaded
+    first is the END — `model.norm` and `lm_head`, which is exactly what the
+    cotangent needs. That makes this failure look like a bug in the lens rather
+    than a memory problem, which is why it is worth a named check.
+
+    A parameter on `cpu` is NOT unreadable and is not reported: it is a real
+    tensor, just slow. Only `meta` (including disk offload, which also presents
+    as meta) breaks the read.
+    """
+    return {name: param.device.type
+            for name, param in model.named_parameters()
+            if param.device.type == "meta"}
+
+
+def assert_readable_weights(model, remedy: str = "") -> None:
+    """Refuse to start a lens run whose weights are partly offloaded.
+
+    Called before any measurement, so an offloaded load costs seconds and names
+    its own fix rather than raising a meta-tensor error deep inside a loop after
+    the model, the data and the behavioural join have all been set up.
+
+    It is not only about the read. With the tail offloaded, every backward pass
+    streams those weights back, so a run needing tens of thousands of them is not
+    merely fragile — it is orders of magnitude too slow to finish.
+    """
+    offloaded = unreadable_parameters(model)
+    if not offloaded:
+        return
+    names = sorted(offloaded)
+    shown = ", ".join(names[:6]) + (" ..." if len(names) > 6 else "")
+    plan = getattr(model, "hf_device_map", None)
+    lines = [
+        f"{len(names)} parameter(s) are on the meta device, so their data is not "
+        f"in this process and the lens cannot read them: {shown}",
+        "  cause:  the model was loaded with device_map='auto' and did not fit in "
+        "the VRAM that was free, so accelerate offloaded the tail of the network "
+        "— which is `model.norm` and `lm_head`, exactly what the cotangent reads.",
+    ]
+    if plan:
+        lines.append(f"  plan:   {plan}")
+    if remedy:
+        lines.append(f"  fix:    {remedy}")
+    lines.append(
+        "  note:   even with the read worked around, an offloaded tail streams "
+        "weights on every backward pass, so the run would not finish in "
+        "reasonable time. Freeing the GPU is the real fix, not a smaller read.")
+    raise RuntimeError("\n".join(lines))
+
+
 def freeze_parameters(model) -> None:
     """Drop gradients for all weights.
 

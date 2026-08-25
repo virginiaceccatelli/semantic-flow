@@ -711,6 +711,62 @@ def test_stage_140_requires_h0_and_deliberately_not_h1():
     assert "H6" in BINDING.order
 
 
+# ── the offload preflight ────────────────────────────────────────────────────
+
+
+def test_a_fully_materialised_model_passes_the_preflight():
+    torch = pytest.importorskip("torch")
+    from transformers import LlamaConfig, LlamaForCausalLM
+
+    from src.models.lens import assert_readable_weights, unreadable_parameters
+
+    model = LlamaForCausalLM(LlamaConfig(
+        vocab_size=32, hidden_size=16, intermediate_size=32, num_hidden_layers=1,
+        num_attention_heads=2, num_key_value_heads=2, max_position_embeddings=16))
+    assert unreadable_parameters(model) == {}
+    assert_readable_weights(model)          # must not raise
+
+
+def test_an_offloaded_tail_is_refused_and_the_message_names_the_fix():
+    """The 6.7b failure: device_map='auto' offloads `model.norm` and `lm_head`.
+
+    Those are the last modules, so they are the FIRST to be offloaded, and they
+    are exactly what `_candidate_cotangents` reads — which turns a memory problem
+    into a meta-tensor error that looks like a bug in the lens.
+    """
+    torch = pytest.importorskip("torch")
+    from transformers import LlamaConfig, LlamaForCausalLM
+
+    from src.models.lens import assert_readable_weights, unreadable_parameters
+
+    model = LlamaForCausalLM(LlamaConfig(
+        vocab_size=32, hidden_size=16, intermediate_size=32, num_hidden_layers=1,
+        num_attention_heads=2, num_key_value_heads=2, max_position_embeddings=16))
+    model.lm_head.weight = torch.nn.Parameter(
+        torch.empty_like(model.lm_head.weight, device="meta"), requires_grad=False)
+    offloaded = unreadable_parameters(model)
+    assert "lm_head.weight" in offloaded
+    with pytest.raises(RuntimeError) as excinfo:
+        assert_readable_weights(model, remedy="free the GPU or use --dtype bfloat16")
+    message = str(excinfo.value)
+    assert "lm_head.weight" in message
+    assert "device_map" in message
+    assert "free the GPU or use --dtype bfloat16" in message
+
+
+def test_a_parameter_on_cpu_is_not_reported_as_unreadable():
+    """`cpu` is a real tensor — slow to read, not impossible. Only meta breaks."""
+    torch = pytest.importorskip("torch")
+    from transformers import LlamaConfig, LlamaForCausalLM
+
+    from src.models.lens import unreadable_parameters
+
+    model = LlamaForCausalLM(LlamaConfig(
+        vocab_size=32, hidden_size=16, intermediate_size=32, num_hidden_layers=1,
+        num_attention_heads=2, num_key_value_heads=2, max_position_embeddings=16))
+    assert unreadable_parameters(model.to("cpu")) == {}
+
+
 def test_every_declared_label_survives_a_csv_round_trip():
     """Sentinels must not collide with pandas' default NA values.
 

@@ -32,11 +32,27 @@
 # is why this script does not chain with `&&` — 141 must still run.
 #
 # float32, not float16: this reads a BACKWARD pass, and fp16 gradients underflow
-# on short sequences. The sequences are ~21 tokens, so float32 costs nothing here.
+# on short sequences. The sequences are ~21 tokens, so float32 costs nothing here
+# in time — but it does cost VRAM, and that is the one operational trap.
 #
-# Run inside a screen session:
-#   screen -dmS binding-rlens-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_rlens.csh
+# ** RUN THE TWO MODELS ONE AT A TIME. ** `ModelLoader` loads with
+# device_map="auto", so a 6.7b float32 load (~27 GB) that does not fit in the
+# VRAM *currently free* is silently split, and the offloaded tail comes back as
+# meta placeholders. The tail is `model.norm` and `lm_head` — exactly what the
+# lens cotangent reads — so the symptom is a meta-tensor error from the lens
+# rather than an out-of-memory error from the loader. Stage 140 now refuses at
+# load with that explanation instead of failing mid-loop.
+#
+# If the card genuinely cannot hold 6.7b in float32, re-run that model with
+# `env DTYPE=bfloat16`: the checkpoint is natively bfloat16, it halves the
+# footprint, and unlike float16 it keeps float32's exponent range so the
+# backward pass does not underflow. It costs precision, so read
+# `relevance/relevance_conservation.csv` — the fraction reading is gated on it.
+#
+# Run inside a screen session, sequentially:
 #   screen -dmS binding-rlens-1.3b env MODEL=deepseek-coder-1.3b jobs/binding_rlens.csh
+#   # wait for that to finish (screen -ls), then:
+#   screen -dmS binding-rlens-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_rlens.csh
 if (! $?MODEL) setenv MODEL deepseek-coder-6.7b
 source jobs/common.csh
 if (! $?DTYPE) setenv DTYPE float32
@@ -44,6 +60,7 @@ if (! $?DTYPE) setenv DTYPE float32
 set OUT = "results/binding/${MODEL}"
 
 echo "=== stage 140: relevance by token role (H6) — GPU ==="
+nvidia-smi --query-gpu=memory.used,memory.total --format=csv 2>/dev/null
 # No --layers: the registry's probe layers in [0, last) are the profile, and the
 # reported layer is picked on CALIBRATION bases by stage 141. No --split either:
 # one run covers calib and test, so the selection is held out without a second

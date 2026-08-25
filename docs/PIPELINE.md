@@ -510,6 +510,43 @@ pass per (cell, layer, target mode) — 4 cells × 8 layers × 2 modes per base,
 sequences this short. On the GPU host:
 `screen -dmS binding-rlens-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_rlens.csh`.
 
+## The VRAM trap, and why it looks like a lens bug
+
+**Run the two models one at a time.** `ModelLoader` loads CUDA models with
+`device_map="auto"`, so a 6.7b float32 load (~27 GB) that does not fit in the
+VRAM *currently free* — because the 1.3b job is still holding the card, say — is
+silently split, and accelerate leaves **meta** placeholders where it offloaded.
+`device_map="auto"` fills from the start of the network, so what goes first is
+the end: `model.norm` and `lm_head`. Those are exactly what
+`lens._candidate_cotangents` reads, and reading a meta tensor raises
+
+```
+NotImplementedError: Cannot copy out of meta tensor; no data!
+```
+
+which looks like a bug in the lens and is really a memory problem. A forward pass
+still works (accelerate's hooks materialize weights during forward), so nothing
+else in the stage complains first.
+
+Stage 140 calls `lens.assert_readable_weights` immediately after loading, so this
+now fails in seconds with the cause and the remedy instead of mid-loop. The
+remedies, in order:
+
+1. **Free the GPU** (`nvidia-smi`) and re-run. This is the real fix — with the
+   tail offloaded, every one of the 25,600 backward passes would stream those
+   weights back, so the run would not finish in reasonable time even if the read
+   were worked around.
+2. `--dtype bfloat16`. The DeepSeek checkpoints are natively bfloat16, so this
+   halves the footprint against float32, and unlike float16 it keeps float32's
+   exponent range — the backward pass does not underflow. It costs mantissa
+   precision, so read `relevance/relevance_conservation.csv`: the fraction
+   reading is gated on conservation, and a bfloat16 run reports whether it still
+   holds rather than assuming so.
+
+The same trap applies to every lens stage that reads weights outside a forward
+pass (110, 125, 128–130); `lens.unreadable_parameters` is there for them too,
+though only stage 140 currently calls it.
+
 **Stage 140 requires H0 and deliberately not H1.** H1 fails on
 deepseek-coder-1.3b (0.809 overall, cell `ab_target` 0.571), and requiring it
 would delete the smaller model from a question it can be asked. Behavioural
