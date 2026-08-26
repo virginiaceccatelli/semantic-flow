@@ -3,12 +3,18 @@
 ## What this pipeline does
 
 The pipeline turns a controlled program into an interpretable experiment in
-four steps. First it generates programs whose binding, data-flow, or security
-label is known exactly. Next it runs a frozen language model once and stores the
+four steps. First it generates programs whose binding and def–use labels are
+known exactly. Next it runs a frozen language model once and stores the
 hidden states at specific token positions. CPU analysis then applies probes,
-controls, and statistical summaries to those saved states. Finally, the lens
-and causal stages test how the representation is expressed and whether the
-model uses it.
+controls, and statistical summaries to those saved states. Finally, DAS tests
+whether the model causally uses a binding component and the R-lens attributes
+the answer on the same binding programs.
+
+The active reproduction path is **Part C → Part F → Part F.2**. Stage 60 is
+supporting validation for DAS's answer-direction control, and stage 110 validates
+the R-lens backward rules. The security and standalone lens tracks remain
+runnable but are archived scientifically; they are retained here only so their
+artifacts can be reproduced.
 
 Each numbered stage below states where it runs, what earlier artifacts it
 requires, what command launches it, and what files it produces. A **gate** is a
@@ -28,8 +34,8 @@ What it *found*: [RESULTS.md](RESULTS.md).
 - [Part A — Setup](#part-a--setup)
 - [Part B — The stage map](#part-b--the-stage-map)
 - [Part C — Foundation stages (00–31, 90)](#part-c--foundation-stages-0031-90)
-- [Part D — The lens stages (60, 110)](#part-d--the-lens-stages-60-110)
-- [Part E — The security track (120–131)](#part-e--the-security-track-120131)
+- [Part D — Supporting lens validation (60, 110)](#part-d--supporting-lens-validation-60-110)
+- [Part E — Archived security and lens tracks (120–131)](#part-e--archived-security-and-lens-tracks-120131)
 - [Part F — The causal track (100–108)](#part-f--the-causal-track-100108)
 - [Part F.2 — The observational R-lens readout of the same pairs (140–141)](#part-f2--the-observational-r-lens-readout-of-the-same-pairs-140141)
 - [Part G — Make targets and the GPU-host workflow](#part-g--make-targets-and-the-gpu-host-workflow)
@@ -131,20 +137,21 @@ FOUNDATION — representation and robustness (Instruments 1 and 2)
   data  extr  probes  R4   R5                               assets
               R1-R3
 
-INSTRUMENT VALIDATION — the lens stack (Instrument 3)
+SUPPORTING VALIDATION
 
   60   J-lens validation   GPU        — a GATE (instrument only)
-  110  R-lens gate R       GPU   R6   — a GATE
+  110  R-lens rule validation GPU     — a GATE
 
-SECURITY TRACK — the audit, the vocabulary, the output basis
+ARCHIVED TRACKS — reproducible, not part of the active claim
 
-  120 → 121 → 122 → 123 → 124            R5      S0-S3
-  125 → 126 → 127                        archived  J0, J1
-  128 → 129 → 130 → 131                  R7-R9   J2, J3, J4
+  120 → 121 → 122 → 123 → 124            security benchmark
+  125 → 126 → 127                        vocabulary study
+  128 → 129 → 130 → 131                  taint R-lens study
 
-CAUSAL TRACK — DAS interchange (Instrument 4)
+ACTIVE CAUSAL TRACK — DAS interchange
 
   100 → 101 → … → 108                    R10     H0-H5
+  140 → 141                              R11     H6
 
 RETIRED / PARKED — still runnable; see ARCHIVE.md
   40 lead time · 50 patching · 61-62 J-lens uses · 70-74 J-space · 80-89 store
@@ -258,7 +265,7 @@ reappear in a figure by accident.
 
 ---
 
-# Part D — The lens stages (60, 110)
+# Part D — Supporting lens validation (60, 110)
 
 ## Stage 60 — J-lens validation (GPU; MPS ok for 1.3b) — a gate, not a result
 
@@ -288,7 +295,8 @@ in early layers) and the R2c **rule ablation**. Outputs under
 **It raises on starcoder2-3b, and that is correct behaviour.** LayerNorm plus a
 non-gated MLP means both homogenising rules bind to nothing, so the `no_attn` arm
 removes the only rule that bound. A forward delta of *exactly* 0.0 in
-`rlens_r0_forward.csv` is the signature of an empty install (METHODS §6.4).
+`rlens_r0_forward.csv` is the signature of an empty install; the active binding
+checks are summarized in [METHODS §6.3](METHODS.md#63-instrument-checks).
 
 **On MPS**, build lenses in `--dtype float32`: the fp16 VJP through this path
 returns non-finite gradients at every scale in the retry ladder. Prefer CUDA for
@@ -296,13 +304,18 @@ any real lens build.
 
 ---
 
-# Part E — The security track (120–131)
+# Part E — Archived security and lens tracks (120–131)
+
+These stages are operationally supported but no longer contribute to the active
+binding narrative. Their scientific interpretation is in
+[ARCHIVE.md](ARCHIVE.md); the material below is retained for reproduction.
 
 The benchmark: 3 sink families × 4 flow structures × 20 base seeds × 2 labels =
 **480 clean programs**, transformed on the held-out side only, under **ten
 conditions** — clean, `normalize`, four **atomic** arms (`rename_only`,
 `opaque_only`, `encode_only`, `flatten_only`) and four **cumulative** arms.
-Construction, threat model and metrics: [METHODS §5](METHODS.md#5-the-security-benchmark-e15-construction-threat-model-metrics).
+Construction, threat model, and interpretation are archived in
+[ARCHIVE §4.6](ARCHIVE.md#46-source-to-sink-security-benchmark).
 
 | Stage | Command | Where | Gate | Output |
 |---|---|---|---|---|
@@ -356,7 +369,7 @@ That is a fact about the architecture, not a failed measurement, which is why
 Lens **fidelity** (next-token recovery, agreement with the final layer, relevance
 conservation) is a *diagnostic*: it warns and never blocks, and the report
 separates "mechanically invalid" from "mechanically valid with weak lens
-fidelity" (METHODS §6.5).
+fidelity"; see [ARCHIVE §4.7](ARCHIVE.md#47-full-vocabulary-output-alignment-and-prompted-positive-control).
 
 ## Things that are easy to get wrong by hand
 
@@ -415,7 +428,7 @@ transport *which definition is in scope*? Identification is a 2×2: the same
 one-token binding flip demands **opposite** token movements in the two value
 assignments, so the alignment is fitted on arm `ab` and the claim is read on arm
 `ba`. **No arithmetic anywhere** — the model returns a variable. Full design:
-[METHODS §8](METHODS.md#8-instrument-4--das-magnitude-free-interchange-on-a-learned-subspace).
+[METHODS §5](METHODS.md#5-das--causal-interchange-of-a-binding-component).
 
 | Stage | Command | Where | Gate | Output |
 |---|---|---|---|---|
@@ -614,7 +627,7 @@ over input positions and intervenes on nothing; E13/R10's DAS interchange is the
 causal benchmark on this same corpus. The report puts them side by side and
 computes **no ratio** between them, because a share of an answer score and a rate
 of answer change under an edit are not the same unit. See
-[METHODS §6.5b](METHODS.md#65b-the-same-r-lens-applied-to-the-binding-counterfactual-e16).
+[METHODS §6](METHODS.md#6-r-lens-attribution-on-the-binding-programs).
 
 Also note what the instrument cannot see: the attn-rule detaches q and k, so no
 relevance is attributed to *pattern formation*. For a binding task, "attend to the

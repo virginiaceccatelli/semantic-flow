@@ -1,20 +1,19 @@
 # Archive — what was retired, and what each failure produced
 
-## Why unsuccessful experiments are kept
+## Why displaced experiments are kept
 
-This file records experiments that were tried but no longer support a main
-claim. “Retired” does not mean that the run was useless or that its numbers were
-deleted. It means that a control exposed an alternative explanation, a gate was
-not satisfied, or a later design asked the same question more cleanly. Each
-section explains the original question, what was changed or measured, the exact
-outcome, why that outcome was insufficient, and what the next experiment learned
-from it. Keeping these failures visible prevents the final narrative from hiding
-the design decisions that produced it.
+This file records both experiments that failed their own evidential bar and sound
+experiments that no longer belong to the repository's main binding narrative.
+“Retired” does not mean that a run was useless or that its numbers were deleted.
+It can mean that a control exposed an alternative explanation, a gate was not
+satisfied, a later design asked the question more cleanly, or the experiment
+opens a separate research story that distracts from the cumulative active claim.
+Each section explains which of these reasons applies.
 
-Everything tried here that did not survive its own controls. **Nothing is
-deleted**: every raw CSV is still in `results/tables/`, every figure in
+**Nothing is deleted**: every raw CSV is still in `results/tables/`, every figure in
 `results/figures/`, every manifest in `results/manifests/`, and every stage
-command still runs. What is withdrawn is the **claim**, not the data.
+command still runs. What changes is the experiment's role in the **main
+narrative**, not the underlying data.
 
 This file exists because the retirements are the project's methodological
 content. Four intervention designs were attempted before the one that worked, and
@@ -77,9 +76,7 @@ whole-state replacement, which changes everything the position encodes at once.
 ## 1.2 J-lens readout uses (archived)
 
 Two uses of the validated J-lens, both archived. **The instrument validation
-itself survives; it is instrument work and lives in
-[METHODS §6.3](METHODS.md#63-the-j-lens-a-first-order-causal-correction), with §4.5
-below recording why it is no longer listed as a result.**
+itself survives as supporting method work and is recorded in §4.5 below.**
 
 **Taint / lead time.** Built to explain a behavioural effect that did not survive
 its own floors (§2), and it inherits that metric wholesale. It also produced the
@@ -116,11 +113,8 @@ Archived anyway, for two reasons that are not about execution:
    A dissociation between "decodable" and "verbalizable" is least interesting
    exactly where decodability is mostly syntactic.
 
-**This is the failure that produced the positive-control discipline of
-[METHODS §7.3](METHODS.md#73-three-ways-a-null-could-be-wrong-and-the-measurement-for-each)** — and
-[R8](RESULTS.md#r8--the-positive-control-the-readout-is-not-blind-and-the-security-words-run-backwards)
-is what a
-positive control matched *in kind* looks like when it is done right.
+**This is the failure that produced the project's positive-control discipline.**
+Section 4.7 records the later positive control matched *in kind*.
 
 **Preserved:** `jlens_taint{,_summary,_prefixes,_sanity}_{model}.csv`,
 `jlens_controldep{,_summary}_{model}.csv`, and their figures.
@@ -152,7 +146,7 @@ readout positive control, four subspace controls at the same magnitude, and a
 site potent enough to flip 22% of answers when replaced wholesale. **It is the
 most instructive failure in the project**, and it is why every subsequent design
 either has no dose parameter or measures the site's response curve first — see
-[METHODS §8.2](METHODS.md#82-the-interchange-operator-and-why-it-has-no-dose-knob).
+[METHODS §5.2](METHODS.md#52-the-interchange-operator-and-why-it-has-no-dose-knob).
 
 **Also not attributable to the Jacobian correction.** The plain logit lens is more
 efficient at the same site (2.35 vs 1.82), and at the last layer the two are equal
@@ -309,7 +303,7 @@ report this" imports an interpretation the instrument does not support.
 system**, and the questions asked of it are about *format*: is the distinction in
 those coordinates at all, is any single token carrying it, and — separately, with
 its own positive control — would this readout detect verbalisation if it were
-there. Those questions have answers ([RESULTS.md Part III](RESULTS.md#part-iii--what-form-it-is-in)),
+there. Those archived questions and their results are recorded in §4.7,
 and none of them requires the retired frame.
 
 **Smaller claims that went with it:**
@@ -445,10 +439,9 @@ on a third of the evidence is uninformative in both directions.
 
 **2. Both halves of its reading were superseded by measurements that do clear
 their bars.** The "distributed, not lexicalised" half is established directly by
-[R7](RESULTS.md#r7--the-distinction-is-in-the-output-basis-and-it-is-not-a-word)'s
-loadings — flat, spread over thousands of meaningless tokens — with no pool and no
-null involved. The "the security words do not carry it" half is established far
-more sharply by [R8](RESULTS.md#r8--the-positive-control-the-readout-is-not-blind-and-the-security-words-run-backwards),
+the full-vocabulary study in §4.7 — flat loadings spread over thousands of
+meaningless tokens — with no pool and no null involved. The "the security words
+do not carry it" half is established far more sharply by §4.7's prompted control,
 as a *within-cell dissociation*: at the cell where the taint poles separate the
 pair at 0.889 / 0.944, the same lexicon in the same basis separates it at
 0.347 / 0.389 — significantly in the wrong direction, on an instrument that is
@@ -476,7 +469,7 @@ label difference survived it: its expected mean is the main arm's exactly, and o
 the canonical runs the two agree to four decimal places on all three models — on
 6.7B the *control* is more sign-consistent than the main arm (0.417 vs 0.403). It
 falsifies "specific to this pairing", not "about the label". The same-label arm
-that replaced it is now standard ([METHODS §7.2](METHODS.md#72-what-the-contrast-is-controlled-against)).
+that replaced it is recorded with the full-vocabulary study in §4.7.
 
 **Still runnable, data preserved.** Stages 125–127; everything under
 `results/sinkflow/{model}/vocab/`, including `e15c_report.md`, the depth figures
@@ -496,15 +489,123 @@ finding attached, and because the instrument it validates turned out to change n
 conclusion: at every cell where a vocabulary readout actually fires, the logit
 lens, J-lens and R-lens agree to within noise, and where the J-lens was used as a
 coordinate system the plain logit lens was *more* efficient at the same site
-(§1.3). It now lives in [METHODS §6.3](METHODS.md#63-the-j-lens-a-first-order-causal-correction),
-where instrument validation belongs.
+(§1.3). It is preserved here as supporting validation rather than an active
+semantic result.
 
-One caveat that travelled with it and still applies: StarCoder2 has no R-lens
-(§ the architecture note in METHODS §6.4), so that model's vocabulary-contrast
-numbers rest on this validation and nothing else.
+One caveat that travelled with it and still applies: StarCoder2 has no compatible
+R-lens rules, so that model's archived vocabulary-contrast numbers rest on this
+validation and nothing else.
 
 **Still runnable, data preserved.** `scripts/60_jlens_validate.py`;
 `results/tables/jlens_validation{,_checks}_{model}.csv`.
+
+## 4.6 Source-to-sink security benchmark
+
+**Why it left the main narrative.** This experiment is sound and practically
+interesting, but it introduces a second semantic target, a separate threat
+model, additional lexical baselines, and a second family of transformations. It
+does not contribute to the causal binding claim, and no causal intervention was
+performed on the security property. Keeping it in the active results made the
+repository read as two adjacent projects rather than one cumulative argument.
+
+**Question and setup.** Matched Python programs ask whether the argument to a
+sensitive operation such as `os.system`, `cursor.execute`, or `eval` is derived
+from an untrusted source. Ground truth is checked independently by instrumented
+execution and a static taint fixpoint. Safe and unsafe members differ at the sink
+connection while retaining the same surrounding template.
+
+**Controls.** The hidden-state probe is compared with both a bounded local reader
+and a whole-program lexical reader. Models are evaluated on held-out program
+families. Frozen probes are then applied to identifier renaming, opaque branches,
+equivalent mixed Boolean-arithmetic rewrites, and control-flow flattening, both
+one at a time and cumulatively. Independent redraws measure transformation noise,
+and class-specific error rates distinguish information loss from collapse to one
+class.
+
+**Result.** The frozen readout reaches 1.000 on clean held-out programs over both
+measured lexical floors. Renaming costs 0.01–0.12 depending on model; opaque
+predicates and arithmetic rewriting add little or no measurable loss.
+Control-flow flattening causes approximately 0.31–0.34 loss and accounts for
+nearly all of the cumulative degradation. What remains after flattening is
+largely a model-specific class preference rather than reliable flow recovery.
+
+**Interpretation.** The result supports a narrow auditability claim: a clean
+linear source-to-sink readout transfers across several surface rewrites and fails
+primarily when visible control structure is replaced. It does not show causal
+use, and a failed frozen readout does not prove that every encoding of the flow
+relation disappeared.
+
+**Preserved:** stages E15 under `results/sinkflow/{model}/`, including
+`e15_report.md`, prediction CSVs, transformation summaries, and figures.
+
+## 4.7 Full-vocabulary output alignment and prompted positive control
+
+**Why it left the main narrative.** This was the strongest surviving
+verbalisation-related study, but it concerns the security distinction rather
+than variable binding. It therefore does not complete the active sequence from
+binding representation to binding use. It is retained as a possible template
+for a future binding-verbalisation experiment.
+
+**Setup.** At a position containing the same token in matched safe and unsafe
+programs, the ordinary logit lens scores the full roughly 32,000-token output
+vocabulary. Training pairs define an average unsafe-minus-safe direction; that
+direction is frozen and evaluated on held-out pairs. Same-label pairs control
+for ordinary program variation, and the identical-token embedding difference is
+an exact zero floor.
+
+**Result.** All 72 held-out pairs point in the predicted direction in each of the
+three models. The direction appears after early contextual processing and
+weakens under control-flow flattening. Its largest coordinates are unrelated
+token fragments, and its weight is distributed across thousands of vocabulary
+dimensions rather than concentrated in words such as `unsafe` or `tainted`.
+
+**Positive control.** The models are separately prompted with an explicit yes/no
+taint question. The same family of readouts tracks their graded answer margins
+with internal sign consistency around 0.85–0.94, although final yes/no choices
+remain biased. This shows that the readout can detect an explicitly expressed
+answer while avoiding the stronger claim that the models solve the prompted
+task reliably.
+
+**Interpretation.** The security distinction is repeatably aligned with the
+output basis but is not concentrated in a human-readable security word. This is
+distributed output alignment, not proof that the model possesses or verbalises
+a discrete human concept.
+
+**Preserved:** stages E15-C and E15-D under
+`results/sinkflow/{model}/{vocab,positive}/`, including `e15c_report.md`,
+full-vocabulary CSVs, prompted-control summaries, and depth figures.
+
+## 4.8 R-lens attribution on source-to-sink flow
+
+**Why it left the main narrative.** The result is observational, small in
+magnitude, confined to the DeepSeek family, and appears at different depths in
+the two model sizes. The later binding R-lens experiment is larger, more tightly
+controlled, and sits directly beside a causal binding result on the same corpus.
+
+**Setup.** A conserving R-lens divides one answer score among syntactic roles in
+matched safe and unsafe programs. The data-flow chain roles are token-identical;
+only the sink argument changes. The test asks whether relevance moves between
+the unchanged chains when a different chain feeds the sink.
+
+**Controls.** The modified backward rules must preserve the forward output,
+attach to the intended modules, and conserve relevance. Both possible target
+tokens must give the same qualitative profile. Random orientation tests the
+signed mean and exact sign consistency, while same-label and role-level checks
+bound ordinary program variation.
+
+**Result.** The feeding chain loses relevance share and the other chain gains on
+65/72 pairs in DeepSeek 1.3B and 64/72 in DeepSeek 6.7B. The median movement is
+about 1–2% of the answer score. The mean-based permutation control clears on
+6.7B but not on 1.3B, where heavy tails leave the result supported only by the
+pairwise sign. The effect appears in early layers on 1.3B and around one-quarter
+to one-half depth on 6.7B.
+
+**Interpretation.** The result is a replicated observational routing pattern,
+not a causal result or a stable cross-scale localization. It remains useful as
+method development for the stronger binding attribution experiment.
+
+**Preserved:** stages 128–131 and
+`results/sinkflow/{deepseek-model}/relevance/`.
 
 ---
 
