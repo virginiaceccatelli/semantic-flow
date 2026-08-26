@@ -45,7 +45,7 @@ that go beyond decoding entirely.
 - [§3 Instrument 1 — linear probes and their floors](#3-instrument-1--linear-probes-and-their-floors)
 - [§4 Instrument 2 — frozen transfer and the obfuscation ladder](#4-instrument-2--frozen-transfer-and-the-obfuscation-ladder)
 - [§5 The security benchmark (E15): construction, threat model, metrics](#5-the-security-benchmark-e15-construction-threat-model-metrics)
-- [§6 Instrument 3 — the lens stack: logit, J-lens, R-lens](#6-instrument-3--the-lens-stack-logit-j-lens-r-lens)
+- [Part III methods — semantic form, attribution, and causal use](#part-iii-methods--semantic-form-attribution-and-causal-use) — §6 output-space and attribution lenses, §7 contrast controls, §8 DAS intervention
 - [§7 Reading the lens as a contrast, and the three ways a null can be wrong](#7-reading-the-lens-as-a-contrast-and-the-three-ways-a-null-can-be-wrong)
 - [§8 Instrument 4 — DAS: magnitude-free interchange on a learned subspace](#8-instrument-4--das-magnitude-free-interchange-on-a-learned-subspace)
 - [§9 Statistics, gates and reproducibility](#9-statistics-gates-and-reproducibility)
@@ -571,7 +571,16 @@ that as "mostly fine".
 
 ---
 
-# 6. Instrument 3 — the lens stack: logit, J-lens, R-lens
+# 6. Instrument 3 — output-space and attribution lenses
+
+This part uses three measurements, in increasing order of what they can establish.
+A first-time reader should keep their outputs separate:
+
+| Tool | What is done | What is measured | What it can establish |
+|---|---|---|---|
+| **logit lens** | no model state is changed; the ordinary output head reads an intermediate state | a score for every output token | whether a semantic contrast is aligned with output vocabulary coordinates, and whether it resembles meaningful words |
+| **R-lens** | the forward model is unchanged; special conserving rules propagate one chosen output score backward | the share of that score attributed to each input role | whether attribution moves between semantically active and inactive program locations |
+| **DAS** | one learned component of a hidden state is replaced with the donor program's component | whether the model's emitted answer follows the donor binding | whether downstream computation causally uses that component at the tested layer and site |
 
 ## 6.1 What a lens is meant to tell us
 
@@ -586,12 +595,13 @@ The project tested three versions:
 | method | plain-language operation | role in the final analysis |
 |---|---|---|
 | **logit lens** | apply the model's ordinary output head to an intermediate state | sufficient for every surviving vocabulary-space result |
-| **J-lens** | estimate how the remaining layers would transform a small change at that state | instrument validated, but no unique semantic result survived |
-| **R-lens** | modify the backward calculation so one output score can be divided among earlier token positions | used only for the routing experiment; applicable to the tested DeepSeek architecture, not StarCoder2 |
+| **J-lens** | estimate how the remaining layers would transform a small change at that state | supporting method: validated, no independent semantic result, used to construct DAS's answer-direction control |
+| **R-lens** | modify the backward calculation so one output score can be divided among earlier token positions | used for security-flow routing and binding attribution; applicable to the tested DeepSeek architecture, not StarCoder2 |
 
 This distinction is central: **R7 and R8 do not need the J- or R-lens.** Their
-conclusions come from the ordinary logit lens. The only question for which the
-R-lens adds a capability is R9: where in the input an answer score is assigned.
+conclusions come from the ordinary logit lens. The R-lens adds a different
+capability in R9 and R11: assigning an answer score among input roles. The
+J-lens adds no semantic claim of its own.
 
 ## 6.2 The logit lens: the baseline that proved sufficient
 
@@ -621,32 +631,8 @@ This tests whether a **repeatable output-aligned direction** exists. It does not
 test whether a particular word such as `unsafe` represents the concept, nor
 whether the direction causes the model's behaviour.
 
-## 6.3 The J-lens: valid instrument, no useful result here
 
-The J-lens adds a local, first-order estimate of the remaining network. In plain
-language, it asks: “if this intermediate state changed slightly in this token
-direction, how would the final state change?” The estimate is averaged over a
-separate corpus so it can be reused.
-
-Two checks show that the implementation works mechanically:
-
-- At the last layer, where no transformer blocks remain, the J-lens must equal
-  the logit lens. Its cosine with the logit lens is **1.0000** on all three
-  models.
-- Before the final layer it recovers the next token better than the plain logit
-  lens, improving top-1 recovery by about **0.15–0.22**.
-
-These are validation results, not evidence of semantic understanding. On the
-semantic tasks, the J-lens did not yield a result that both survived the controls
-and was absent from the logit lens. Its earlier J-space intervention also failed
-to isolate a causal value subspace. The J-lens is therefore not used to support
-the final semantic claims.
-
-The likely reason is simple: a single averaged linear approximation is a poor
-summary of many nonlinear, context-dependent layers. Better next-token recovery
-does not guarantee a better readout of an abstract relation such as data flow.
-
-## 6.4 The R-lens: a conserving attribution method
+## 6.3 The R-lens: a conserving attribution method
 
 ### The problem it addresses
 
@@ -689,7 +675,7 @@ non-gated MLP do not match the implemented rules, so the relevant corrections
 never attach. The pipeline detects this and refuses to report R-lens semantics
 for that architecture.
 
-## 6.5 How the R-lens is used for the semantic test
+## 6.4 How the R-lens is used for the semantic test
 
 R9 selects the model's answer score, propagates it backward with the validated
 R-lens, and sums relevance by syntactic role: the tainted chain, trusted chain,
@@ -724,7 +710,7 @@ not an artifact of which output token the relevance is taken for. The method
 remains inapplicable to StarCoder2, so this is one architecture family measured
 twice, not a cross-family replication.
 
-## 6.5b The same R-lens applied to the binding counterfactual (E16)
+## 6.5 The same R-lens applied to the binding counterfactual (E16)
 
 R9's construction leaves one thing on the table. Its pair members are
 token-identical at the roles it measures but differ at the sink argument, and its

@@ -40,8 +40,7 @@ is paired with the control that could have falsified it.
 - [Status at a glance](#status-at-a-glance)
 - [Part I — The relation is represented](#part-i--the-relation-is-represented) — R1 binding, R2 def–use
 - [Part II — What the representation is made of](#part-ii--what-the-representation-is-made-of) — R3 interference, R4 atomic attribution, R5 the security audit
-- [Part III — What form it is in](#part-iii--what-form-it-is-in) — which lens does the work; R6 the R-lens, R7 the output-basis direction, R8 the positive control, R9 relevance routing
-- [Part IV — Whether the model uses it](#part-iv--whether-the-model-uses-it) — R10 the DAS interchange, R11 the R-lens attribution beside it
+- [Part III — Form, verbalisation, and causal use](#part-iii--form-verbalisation-and-causal-use) — R6–R9 ask how the signal appears; R10 intervenes on binding; R11 attributes the answer on the same programs
 - [Synthesis](#synthesis-what-this-says-about-semantic-understanding)
 - [Boundaries](#boundaries-what-this-project-does-not-claim)
 - [Open items](#open-items)
@@ -567,12 +566,57 @@ which is the failure direction an auditor cares about most.
 
 ---
 
-# Part III — What form it is in
+# Part III — Form, verbalisation, and causal use
 
-*These experiments are observational. They describe what can be read from the
-model, not what the model causally needs.*
+Part III asks three questions that require different tools:
 
-## Current status in plain language
+1. **Is a semantic distinction aligned with the model's output vocabulary?**
+   The logit-lens experiments answer this observational question.
+2. **Is that distinction expressed as a recognisable word, or only as a
+   distributed output-space pattern?** The full-vocabulary contrast and its
+   prompted positive control answer the verbalisation question.
+3. **Does the model actually use a semantic binding representation, and where is
+   its answer attributed?** DAS answers the causal-use question by editing the
+   model. The R-lens answers the separate attribution question without editing
+   it.
+
+These claims must not be collapsed. “Output-aligned” does not mean “expressed as
+a word.” “Attributed to a definition” does not mean “caused by that definition.”
+Only DAS supports a causal claim.
+
+### Recommended reading order for a new reader
+
+| Read | Tool | Plain-language question | Kind of evidence |
+|---|---|---|---|
+| **R7–R8** | logit lens | does safe/unsafe appear in output coordinates, and would this readout detect explicit verbalisation? | observational representation |
+| **R9** | R-lens | does answer relevance move between unchanged data-flow chains? | observational attribution |
+| **R10** | DAS | does replacing a learned binding component make the answer follow the donor binding? | **causal intervention** |
+| **R11** | R-lens on R10's programs | when binding changes, is the answer score reassigned from the inactive definition to the active one? | observational attribution beside the causal result |
+
+R6 validates the R-lens instrument and can be read when checking the method. The
+J-lens produces no independent semantic result; it appears only as a validated
+technical component of the output-directed control in R10.
+
+### Where the Part III evidence lives
+
+This file is the narrative entry point. `METHODS.md` explains how each tool and
+control works; generated reports contain the model-specific tables; CSV files
+under the same directory are the underlying measurements.
+
+| Result | Method section | Detailed generated evidence |
+|---|---|---|
+| **R6** R-lens validation | [METHODS §6.4](METHODS.md#64-the-r-lens-a-conserving-attribution-method) | `../results/rlens/{model}/validate/` |
+| **R7–R8** output alignment and verbalisation control | [METHODS §6.2 and §7](METHODS.md#62-the-logit-lens-the-baseline-that-proved-sufficient) | [`e15c_report.md`, 6.7B example](../results/sinkflow/deepseek-coder-6.7b/vocab/e15c_report.md) and `../results/sinkflow/{model}/positive/` |
+| **R9** security-flow attribution | [METHODS §6.5](METHODS.md#65-how-the-r-lens-is-used-for-the-semantic-test) | `../results/sinkflow/{model}/relevance/` |
+| **R10** causal binding interchange | [METHODS §8](METHODS.md#8-instrument-4--das-magnitude-free-interchange-on-a-learned-subspace) | [`e13_report.md`, 6.7B](../results/binding/deepseek-coder-6.7b/e13_report.md) and [`e13_report.md`, StarCoder2](../results/binding/starcoder2-3b/e13_report.md) |
+| **R11** binding attribution | [METHODS §6.5b](METHODS.md#65b-the-same-r-lens-applied-to-the-binding-counterfactual-e16) | [`e16_report.md`, 6.7B](../results/binding/deepseek-coder-6.7b/e16_report.md) and [`e16_report.md`, 1.3B](../results/binding/deepseek-coder-1.3b/e16_report.md) |
+
+## Part III-A — Semantic form and verbalisation
+
+*R6–R9 are observational. They describe what can be read from the model, not
+what the model causally needs.*
+
+### Current status in plain language
 
 The lens experiments support one strong representational result and one weaker
 attribution result:
@@ -595,12 +639,12 @@ The **J-lens has no surviving semantic result**. It passes its engineering
 checks and improves generic next-token recovery, but its semantic findings
 either fail the required controls or are reproduced by the cheaper logit lens.
 
-## Which lens matters here
+### Which lens matters here
 
 | lens | did it work mechanically? | did it add a semantic result? |
 |---|---|---|
 | **logit lens** | yes | **yes** — R7 and the R8 positive control |
-| **J-lens** | yes | **no** |
+| **J-lens** | yes | **no independent result**; retained to construct R10's output-directed control |
 | **R-lens** | yes on DeepSeek; not applicable to StarCoder2 | **yes** — R9 relevance routing, replicated on both DeepSeek models, and R11 binding attribution on 6.7B |
 
 The R-lens is the only instrument here that produced a result no other lens
@@ -616,16 +660,16 @@ the same sign consistency: **0.889** for 1.3B, approximately **0.8–0.85** for
 6.7B, and **0.944** for StarCoder2. The plain logit lens is therefore the right
 tool for the main semantic summary.
 
-## R6 — Does the R-lens conserve relevance?
+### R6 — Does the R-lens conserve relevance?
 
-### Method
+#### Method
 
 R6 is an instrument test. It checks that the modified backward rules leave the
 forward model unchanged and that the relevance assigned to earlier positions
 adds back to the chosen output score. It then removes each rule in turn to see
 which correction matters.
 
-### Result
+#### Result
 
 The gate passes on both DeepSeek models:
 
@@ -644,15 +688,15 @@ StarCoder2 is out of scope: its normalization and MLP do not match the implement
 rules, so the pipeline correctly refuses to treat its backward pass as an
 R-lens.
 
-### What this means
+#### What this means
 
 The R-lens is a valid attribution instrument for the tested DeepSeek models. R6
 does **not** show semantic understanding; it only makes the later routing test
 interpretable.
 
-## R7 — The distinction is in the output basis, and it is not a word
+### R7 — The distinction is in the output basis, and it is not a word
 
-### Method
+#### Method
 
 For each matched pair, the ordinary logit lens produces scores for all roughly
 32,000 vocabulary tokens at the final program position. This position contains
@@ -663,7 +707,7 @@ That direction is frozen. Held-out pairs then test whether the unsafe program
 projects farther along it than its matched safe program. Same-label pairs test
 whether ordinary differences between programs produce the same effect.
 
-### Result
+#### Result
 
 | clean held-out pairs | 1.3B | 6.7B | StarCoder2 3B |
 |---|---:|---:|---:|
@@ -681,7 +725,7 @@ the weight is spread thinly across thousands of tokens. The direction also fails
 the preregistered dominance test (`0.76 / 0.97 / 0.76`, below the required
 `2.0`): it is repeatable, but it is not the largest difference between programs.
 
-### What this means
+#### What this means
 
 The models contain a stable safe/unsafe difference in their own output
 coordinates. But the lens does not reveal a human-readable semantic variable.
@@ -696,16 +740,16 @@ direction can demonstrate a consistent internal difference, but it cannot tell
 us that the model represents the human concept *unsafe* or understands data
 flow in the human sense.
 
-## R8 — The positive control: the readout is not blind, and the security words run backwards
+### R8 — The positive control: the readout is not blind, and the security words run backwards
 
-### Method
+#### Method
 
 To check that R7's lack of meaningful security words is not merely a blind
 instrument, the model is explicitly asked a yes/no taint question. The readout
 tests whether the unsafe member receives a larger `yes`-minus-`no` margin than
 the matched safe member.
 
-### Result
+#### Result
 
 All models choose the same answer token for every program, so ordinary accuracy
 is **0.500**. Their graded margins nevertheless order the pairs correctly in
@@ -718,16 +762,16 @@ than a simple measurement failure. It does not show reliable task performance:
 the final choices remain biased, and the 6.7B result reverses under another
 prompt wording.
 
-## R9 — The unique R-lens result, now replicated on both DeepSeek models
+### R9 — The unique R-lens result, now replicated on both DeepSeek models
 
-### Method
+#### Method
 
 The conserving R-lens divides an answer score among syntactic roles. Only the
 sink argument differs between each safe/unsafe pair; the two data-flow chains are
 textually identical. The test asks whether relevance moves between those
 unchanged chains when a different chain is connected to the sink.
 
-### Result
+#### Result
 
 The chain feeding the sink loses relevance share and the other gains, in both
 models, at each model's reported cell (72 held-out clean pairs):
@@ -764,7 +808,7 @@ peaks at layer 11, holds at 15, and is gone by 19. In relative depth that is
 of which output token the relevance is taken for: within each model both target
 tokens give the same profile.
 
-### What this means
+#### What this means
 
 R9 shows that the model routes its computation differently depending on which
 data-flow chain reaches the sink, on text that is identical at the roles being
@@ -774,7 +818,7 @@ the chosen attribution rules, and it is confined to the DeepSeek family because
 the method does not apply to StarCoder2. It is observational — it describes where
 an answer is attributed, not what the model uses.
 
-## Bottom line for semantic understanding
+### Bottom line for semantic form and verbalisation
 
 - The lens evidence shows a **reliable internal difference** between safe and
   unsafe programs in output coordinates.
@@ -787,31 +831,30 @@ an answer is attributed, not what the model uses.
   corpus — 5–22% of the answer score against R9's 1–2% — but only on 6.7B, and
   bounded by the fact that it is a property of the binding contrast rather than
   of any individual program (R11).
-- None of these observations proves causal use or semantic understanding. The
-  intervention experiments in Part IV are required for claims about what the
-  model actually uses.
+- None of these observations proves causal use. R10 below is required for the
+  claim about what the model actually uses.
 
 
-# Part IV — Whether the model uses it
+## Part III-B — Causal use and attribution on the same binding programs
 
-*Instrument 4: DAS interchange
+*The main instrument is DAS interchange
 ([METHODS §8](METHODS.md#8-instrument-4--das-magnitude-free-interchange-on-a-learned-subspace)).
-Everything in Parts I–III is correlational: a representation can be a faithful
+Everything before R10 is observational: a representation can be a faithful
 shadow of a computation happening somewhere else. R10 is the only causal evidence
 in the project. R11 sits beside it deliberately — the same corpus read
 observationally with the R-lens — so that the difference between "the model uses
 this" and "the answer is attributed here" can be seen on one set of programs
 rather than argued in the abstract.*
 
-## R10 — A rank-1 interchange transports which definition is in scope
+### R10 — A rank-1 interchange transports which definition is in scope
 
-### Research question
+#### Research question
 
 Does a low-rank, **magnitude-free** interchange at the site where a binding is
 resolved transport *which definition is in scope* — rather than a token, or an
 answer direction?
 
-### Hypothesis and the falsification that identifies it
+#### Hypothesis and the falsification that identifies it
 
 The design is a 2×2 crossing **binding structure** with **value assignment**, so
 that the *same* binding flip demands **opposite token movements** in the two
@@ -841,7 +884,7 @@ same direction should attenuate or reverse. A true binding intervention should
 instead follow whichever value the installed binding selects and remain
 successful in both arms.
 
-### Method
+#### Method
 
 Stages 100–108 on **deepseek-coder-6.7b** (site `use`, layer 8, rank 1) and on
 **starcoder2-3b** (site `use`, layer 11, rank 1). 400 base programs each (120
@@ -856,7 +899,7 @@ a gated MLP, against StarCoder2's LayerNorm and non-gated MLP. That matters here
 in a way it does not elsewhere in this document: it is the same *design* run on a
 genuinely different network, not a rerun at another scale.
 
-### Result — the gates
+#### Result — the gates
 
 **All six gates pass in both models.**
 
@@ -885,7 +928,7 @@ replication of R1's isolation than R1 itself, on a corpus built for intervention
 > gate file; nothing else changes. StarCoder2's gate file was written after the
 > rule change and records H5 as PASS, so it needs no such note.
 
-### Result — the transport, and every control
+#### Result — the transport, and every control
 
 A rank-1 subspace at the use anchor (layer 8), fitted on arm `ab` alone, makes the
 model emit the value the *installed binding* selects on **100.0% of held-out rows
@@ -905,7 +948,7 @@ sites, `whole_state` at the pre-mutation site), alignment orthonormal to 4.07e-0
 the ceiling alive in both arms, and the model emits a non-candidate token on
 **0.0%** of rows.
 
-### The same result in a different architecture family
+#### The same result in a different architecture family
 
 StarCoder2-3B, rank 1 at the use anchor (layer 11), fitted on arm `ab` alone,
 280 test bases, 560 rows per cell:
@@ -947,7 +990,7 @@ was fixed, the same statistic was **−0.129 [−0.141, −0.119] with a maximum
 quantisation. The bound should be made scale- and dtype-aware, the same correction
 already applied to the R-lens R0 check.
 
-### What this refutes, rather than merely fails to support
+#### What this refutes, rather than merely fails to support
 
 **Not disruption.** The dose-matched random subspace is *over*-dosed — 0.513 of
 ‖h‖ against the treatment's 0.479 — and at that larger dose produces the installed
@@ -966,7 +1009,7 @@ answer, but it does not follow the binding after the values are crossed. DAS
 does follow the binding: when the correct installed answer changes from `b` to
 `a`, the direction learned on the first arm still makes the model emit `a`.
 
-### The closed-form baseline transports too — and loses
+#### The closed-form baseline transports too — and loses
 
 The learned direction sits at |cos| 0.673 from the mean donor−host difference:
 substantially aligned, not identical, and no cosine can say whether the optimiser
@@ -983,7 +1026,7 @@ difference (59.5% against 88.2%), so it is not a better-aligned version of the
 same object. It is a different direction that works better while disturbing the
 state less.
 
-### What it means
+#### What it means
 
 At this site, in **both** models, the downstream computation **reads** a rank-1
 subspace whose content is *which definition is in scope*. Not the token. Not the
@@ -992,7 +1035,7 @@ refutes the two competing accounts rather than merely failing to support them.
 Because the two models are different architecture families, the result is no
 longer a statement about one network's idiosyncrasy.
 
-### What is still open
+#### What is still open
 
 **Why a rank-1 edit outperforms the whole-state patch**, which is now the largest
 loose end rather than a footnote. On 6.7B the rank-1 edit reaches 100% against the
@@ -1008,9 +1051,9 @@ reformulated before this is written up.
 Also still open: one site, one layer, one construction. What is no longer open is
 the model count.
 
-## R11 — The R-lens attribution beside the causal result
+### R11 — The R-lens attribution beside the causal result
 
-### Research question
+#### Research question
 
 R10 established that at the use anchor a rank-1 subspace *causally* carries which
 definition is in scope. R11 asks the different, observational question next to it:
@@ -1018,7 +1061,7 @@ when the binding flips and **exactly one token** of the program changes, does th
 model's own attribution of its answer move from the definition that just went out
 of scope to the one that just came into scope?
 
-### Method
+#### Method
 
 Stages 140–141 over E13's own four-program factorial, frozen calib/test split and
 model hooks, read with the R-lens validated in R6. Under the LRP rules the tail
@@ -1046,7 +1089,7 @@ re-reading structural zero (the same program read twice must give the same
 shares) is **exactly 0.0** on both. Both runs were float32 on one GPU: 12 minutes
 for 1.3B over 6 layers, 34 minutes for 6.7B over 8.
 
-### Result — 6.7B: the attribution moves, and the differing token is not what moves it
+#### Result — 6.7B: the attribution moves, and the differing token is not what moves it
 
 At the pre-committed cell (layer 0), on 280 held-out bases:
 
@@ -1089,7 +1132,7 @@ where the shift is **+0.172**; the profile is smooth there, so nothing turns on
 the missing layer, but the two results are not read at the same depth and no claim
 here assumes they are.
 
-### The control that fires, and what it costs the claim
+#### The control that fires, and what it costs the claim
 
 **The mismatched-pair control reproduces the treatment exactly.** Pairing a
 `source` from one base with a `target` from a *different* base gives +0.1268 at
@@ -1114,7 +1157,7 @@ tests. The numbers to quote are the effect sizes above — **5–22% of the answ
 score, depending on depth** — and not the *p*-values (1e−84) or Cohen's *d* (8.6),
 which describe how repeatable the template contrast is.
 
-### Result — 1.3B: not interpretable, for a diagnosable reason
+#### Result — 1.3B: not interpretable, for a diagnosable reason
 
 The verdict on 1.3B is recorded as `output_token_artifact`, and the honest reading
 is weaker than that label: **the measurement is not interpretable on this model.**
@@ -1144,7 +1187,7 @@ rescue it: the arms then disagree in the mean in the opposite pattern and
 `flip_ba`'s intervals span zero at every layer. There is also no DAS result on
 1.3B to compare against, because E13 stopped at H1 there.
 
-### What this does and does not add to R10
+#### What this does and does not add to R10
 
 On 6.7B, the model's own attribution of its answer redistributes between two
 **token-identical** competing definitions when the binding flips, in the
