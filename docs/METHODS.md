@@ -781,6 +781,33 @@ with it — or the more interesting disjunction, where the causal fact holds and
 the attribution does not move, which would show attribution and use coming apart
 on a corpus where the causal question is already settled.
 
+### Two things the first run taught, both about the method
+
+**The share reading needs a positive score, and nothing checked that.**
+Conservation (`Σ R_t = s`) is necessary but not sufficient for reading `R_t / s`
+as a share. When `s` is near zero the shares explode, and when `s` is *negative*
+they invert: a role that supports the answer takes a negative "share". On
+deepseek-coder-1.3b **7.56%** of readings have a bound-value score at or below
+zero — all of them in the *shadowing* cell, exactly where H1's behavioural
+failure sits — and the resulting role fractions run from −517 to +599 while
+conservation stays at 1.6e−7. Conservation was doing its job and answering a
+different question. A positive-score condition belongs beside it; see
+[RESULTS Open items](RESULTS.md#open-items). On 6.7b no reading has a
+non-positive score and every share lies in [−0.03, +0.83].
+
+**The mismatched-pair control loses its power on a single-template corpus.** On
+E15-D's benchmark, different bases are different programs — different sink
+families, different flow structures — so pairing across bases destroys a great
+deal and the control is informative. E13's factorial is one template with
+substituted names and values, so a mismatched pair *still* contrasts
+non-shadowing against shadowing: the semantic contrast survives the mismatch and
+only the identifiers and literals are destroyed. On 6.7b the control therefore
+reproduces the treatment to four decimals, and gating on it would be a false
+negative. What the control still reports, correctly, is that the effect is a
+difference of cell population means rather than a per-program quantity — which is
+the fact that bounds how the *p*-values should be read, and is why E16's write-up
+quotes effect sizes instead.
+
 ## 6.6 What these tools can and cannot establish
 
 - A vocabulary lens can show that a distinction is aligned with the output
@@ -945,7 +972,7 @@ Two consequences for interpretation:
 |---|---|---|
 | **`whole_state`** | the rank-`d` limit — install the entire donor state | it is the *ceiling*, per arm, and its being alive in both arms is what makes a null in either arm interpretable |
 | **`mean_difference`** | rank-1 span of the **mean** donor−host difference; no optimiser, no labels, one fixed direction for every example | the cheapest thing that could work. A learned direction must *dominate* it, not merely beat zero |
-| **`answer_direction`** | an explicit output-aligned answer direction, norm-matched to the treatment | the positive control **for the falsification itself**: it *must* pass on the fitted arm and *must* fail on the held-out arm |
+| **`answer_direction`** | subtract the J-lens direction for the training arm's current answer from the J-lens direction for its installed answer; keep that direction fixed across arms and scale each edit to the DAS edit norm | tests the simpler account “the learned subspace just pushes toward the answer token required in the fitted arm”; it should work on that arm and fail or reverse when the crossed arm requires the opposite token |
 | **`random_norm`** | a random subspace whose interchange moves the **same fraction of ‖h‖** | disruption. Rank-matching alone is not dose-matching |
 | **`random_rank`** | a random subspace of the same *rank* | the weaker, rank-matched floor, reported alongside |
 | **`noop`** | provably the zero edit | machinery: it must be exactly 0.00e+00 |
@@ -960,6 +987,24 @@ that manufactures a positive**. The required rank is estimated in closed form
 from `E‖R Rᵀ d‖² = (r/d)‖d‖²`, then bracketed exactly; the rank actually reached
 is reported, because needing many random dimensions to match one learned
 dimension is itself informative.
+
+**Why the answer-direction control is decisive.** In the fitted `ab` arm, the
+donor binding changes the required answer from value `a` to value `b`. The
+control therefore constructs a direction that explicitly pushes the model from
+the `a` output direction toward the `b` output direction. It uses J-lens vectors,
+not raw final-layer unembedding rows, because the intervention occurs partway
+through the network and the J-lens estimates how the remaining layers map a
+change there to the output. A synthetic donor makes the interchange an exact
+push along this direction, and its length is set equal to the DAS edit on that
+same example. The comparison therefore does not give DAS a larger dose.
+
+The held-out `ba` arm reverses the assigned values. There the same binding swap
+requires the answer to move from `b` to `a`. The fixed `a`-to-`b` control should
+now fail or point the wrong way, while a direction carrying the abstract fact
+“switch from the outer definition to the inner definition” should still install
+the correct value. Thus the control demonstrates both that an output-directed
+edit can affect the model at this site and that such an edit has a different
+cross-arm signature from binding transport.
 
 **A diagnostic worth naming: `concentration`.** Transformer residual streams have
 a handful of massive-activation dimensions whose values dwarf the rest, and an
@@ -986,6 +1031,16 @@ def f():                                 def f():
 Install the *target* run's state into the *source* run at the marked use. In arm
 `ab` the answer must move **a → b**; in arm `ba` the same intervention must move
 it **b → a**. **Fit the alignment on `ab`; read the claim on `ba`.**
+
+In concrete terms, three outcomes have different meanings:
+
+- If both DAS and `answer_direction` worked equally in both arms, the experiment
+  could not distinguish binding from an output-token push.
+- If neither worked in the held-out arm, that arm might simply be insensitive to
+  intervention, so a DAS null would be inconclusive.
+- The identifying result is that DAS follows the binding in both arms while the
+  deliberately fixed answer direction works in the fitted arm and attenuates or
+  reverses in the crossed arm.
 
 | account of what the subspace carries | arm `ab` | arm `ba` |
 |---|---|---|

@@ -94,6 +94,16 @@ value the *installed binding* selects on **100.0% of held-out rows in both
 arms** — where a token-direction or answer-direction account demands the opposite
 movement.
 
+**6. Read observationally, the same programs also relocate their answer's
+attribution — which is a weaker claim, deliberately.** On 6.7B the conserving
+R-lens moves **5–22%** of the answer score from the definition that just left
+scope to the one that just entered it, on **280/280** held-out programs, over text
+that is identical between the two members; the single differing token carries
+1.5% of it. This is where an answer is *attributed*, not what the model *uses* —
+point 5 is the only causal claim here — and the effect turns out to be a property
+of the binding contrast rather than of any individual program. It is also not
+measurable at 1.3B, where 7.6% of the scores being decomposed are non-positive.
+
 ---
 
 ## Status at a glance
@@ -110,7 +120,7 @@ movement.
 | **R8** positive control | vocabulary contrast | ● | ● | ● | the readout is **not blind** — 0.85–0.94 on a property the models express, while the security lexicon at the same cell is *inverted* |
 | **R9** relevance routing | R-lens attribution | ● | ● | n/a | the chain feeding the sink loses relevance share on token-identical text — **65/72** pairs on 1.3B, **64/72** on 6.7B, where the mean-based control fires too |
 | **R10** binding interchange | DAS | ☐ | ● | ● | rank-1 transport at **100% in both arms in two architecture families**, beating a closed-form baseline at two-thirds the dose |
-| **R11** binding attribution | R-lens attribution | ☐ | ☐ | n/a | **built, not yet run.** Does relevance move from the newly inactive definition to the newly active one when the binding flips and exactly one token changes? Observational; does not extend R10 |
+| **R11** binding attribution | R-lens attribution | ◑ | ● | n/a | on **token-identical** text, relevance moves from the newly inactive definition to the newly active one — **280/280** bases at every depth on 6.7B, peaking at **22%** of the answer score; the one differing token carries 1.5% of it. Not interpretable on 1.3B (7.6% of bound-value scores ≤ 0). Observational; does not extend R10 |
 
 Legend: ☐ not run · ◑ partially run · ● run at canonical scale
 
@@ -591,7 +601,14 @@ either fail the required controls or are reproduced by the cheaper logit lens.
 |---|---|---|
 | **logit lens** | yes | **yes** — R7 and the R8 positive control |
 | **J-lens** | yes | **no** |
-| **R-lens** | yes on DeepSeek; not applicable to StarCoder2 | **yes** — R9 relevance routing, replicated on both DeepSeek models |
+| **R-lens** | yes on DeepSeek; not applicable to StarCoder2 | **yes** — R9 relevance routing, replicated on both DeepSeek models, and R11 binding attribution on 6.7B |
+
+The R-lens is the only instrument here that produced a result no other lens
+could: R9's routing and R11's binding attribution both read a *conserving
+decomposition* rather than a vocabulary projection, so neither needs the
+distinction to be lexicalised. R11 is also where the instrument's limits are
+sharpest — it needs a positive output score to divide by, which fails on 7.6% of
+1.3B readings, and its attention rule makes pattern formation invisible.
 
 The extra complexity of the J- and R-lenses did not improve the vocabulary-space
 conclusions. At the strongest positive-control cell, all three give essentially
@@ -766,6 +783,10 @@ an answer is attributed, not what the model uses.
 - The J-lens adds no semantic evidence beyond the simple logit lens.
 - The R-lens routing result is a confirmed observational finding on the DeepSeek
   family, small in magnitude and not consistent in depth across the two scales.
+- The R-lens also yields a **much larger** attribution effect on the *binding*
+  corpus — 5–22% of the answer score against R9's 1–2% — but only on 6.7B, and
+  bounded by the fact that it is a property of the binding contrast rather than
+  of any individual program (R11).
 - None of these observations proves causal use or semantic understanding. The
   intervention experiments in Part IV are required for claims about what the
   model actually uses.
@@ -776,8 +797,11 @@ an answer is attributed, not what the model uses.
 *Instrument 4: DAS interchange
 ([METHODS §8](METHODS.md#8-instrument-4--das-magnitude-free-interchange-on-a-learned-subspace)).
 Everything in Parts I–III is correlational: a representation can be a faithful
-shadow of a computation happening somewhere else. This part is the only causal
-evidence in the project.*
+shadow of a computation happening somewhere else. R10 is the only causal evidence
+in the project. R11 sits beside it deliberately — the same corpus read
+observationally with the R-lens — so that the difference between "the model uses
+this" and "the answer is attributed here" can be seen on one set of programs
+rather than argued in the abstract.*
 
 ## R10 — A rank-1 interchange transports which definition is in scope
 
@@ -804,6 +828,18 @@ answer is falsified by the held-out arm rather than merely left unsupported.
 There is **no arithmetic anywhere** — the model returns a variable — and the
 interchange has **no dose parameter**, so "was the edit big enough?" is not a
 question this design has to answer (METHODS §8.2).
+
+Here “answer direction” has a specific operational meaning. On the fitted `ab`
+arm, changing the binding changes the desired answer from token `a` to token
+`b`. The control takes the J-lens direction for `b` minus the J-lens direction
+for `a` at the intervention layer and pushes the hidden state along it. It is
+scaled separately on every example so that its edit has the same norm as the DAS
+edit. This control is intentionally capable of changing the answer; it is not a
+weak random baseline. But it is fixed to the token movement required by `ab`.
+The crossed `ba` arm requires the opposite answer movement, `b` to `a`, so this
+same direction should attenuate or reverse. A true binding intervention should
+instead follow whichever value the installed binding selects and remain
+successful in both arms.
 
 ### Method
 
@@ -924,6 +960,12 @@ it pushes the model off-candidate on 9.1% of rows where the treatment never does
 This is exactly the asymmetry the 2×2 was built to produce, and it is the
 falsification earlier designs could not construct.
 
+Put plainly, the control shows what would have happened if DAS had merely found
+“make token `b` more likely.” That strategy helps when `b` is the newly correct
+answer, but it does not follow the binding after the values are crossed. DAS
+does follow the binding: when the correct installed answer changes from `b` to
+`a`, the direction learned on the first arm still makes the model emit `a`.
+
 ### The closed-form baseline transports too — and loses
 
 The learned direction sits at |cos| 0.673 from the mean donor−host difference:
@@ -968,10 +1010,6 @@ the model count.
 
 ## R11 — The R-lens attribution beside the causal result
 
-**Status: built and unit-tested, not yet run at scale.** This section states the
-design, the declared statistic, the controls and the verdict space; it contains no
-numbers, and the tables it will be filled from are generated by stages 140–141.
-
 ### Research question
 
 R10 established that at the use anchor a rank-1 subspace *causally* carries which
@@ -980,79 +1018,151 @@ when the binding flips and **exactly one token** of the program changes, does th
 model's own attribution of its answer move from the definition that just went out
 of scope to the one that just came into scope?
 
-### Why this is not a second measurement of R10
-
-DAS edits the model and reads whether the answer follows. The R-lens edits nothing
-and reads how the answer's *score* decomposes over input positions. A share of an
-answer score and a rate of answer change under an edit are different quantities in
-different units, and the pipeline computes **no ratio** between them. What the two
-can jointly support is a conjunction — the binding is causally transportable at
-this site *and* the attribution redistributes with it — or the more interesting
-disjunction, in which the causal fact holds and the attribution does not move.
-That second outcome would show attribution and use coming apart on the one corpus
-in this project where the causal question is already settled, which is why R11 is
-worth running even though R10 is positive.
-
 ### Method
 
-Stages 140–141 on **deepseek-coder-1.3b** and **deepseek-coder-6.7b**, over E13's
-own four-program factorial, frozen calib/test split, and model hooks. StarCoder2 is
-out of scope by construction, not by result: its LayerNorm and non-gated MLP mean
-both homogenising LRP rules bind to nothing, so there is no conserving relevance to
-decompose and stage 140 refuses.
+Stages 140–141 over E13's own four-program factorial, frozen calib/test split and
+model hooks, read with the R-lens validated in R6. Under the LRP rules the tail
+above layer *l* is degree-1 homogeneous, so per-position relevances are a
+partition of the output score and `R_t / s` is the share position *t* is
+responsible for. Relevance is summed into nine token roles recomputed from each
+program's own AST — the two definitions' names and values, the use site, the
+`return` keyword, the signature, the suffix, and a residual — and taken for the
+model's score of the **bound value**.
 
-Under the LRP rules the tail above layer *l* is degree-1 homogeneous, so per-position
-relevances are a partition of the score and `R_t / s` is the fraction position *t*
-is responsible for. Conservation is re-measured per (program, layer, target) on this
-run's own programs rather than inherited from R6. Relevance is summed into nine
-token roles — the two definitions' names and values, the use site, the `return`
-keyword, the signature, the suffix and a residual — recomputed from each program's
-own AST, never by string search, because in the shadowing member the inner
-definition's name *is* the outer name.
+Within one arm the two programs differ at **one token index out of 21**: the inner
+definition's name. Stage 140 re-measured that on the encoded prompts rather than
+trusting the data file: it holds on **400/400** binding-flip pairs at 1.3B and
+**800/800** at 6.7B, and the use-site token is identical in **800/800** and
+**1600/1600** contrasts respectively. The headline statistic is
+`binding_shift_identical` — the inner definition's token-identical *value* gaining
+share minus the wholly token-identical outer definition losing it. The reported
+layer is picked on calibration bases by a rule fixed in code and read on test
+bases (140 / 280 bases).
 
-The declared headline statistic is the inner definition's **token-identical** half
-gaining share minus the wholly token-identical outer definition losing it, with
-relevance taken for the model's output score of the **bound value**. The reported
-layer is chosen on calibration bases by a rule fixed in code and read on test bases.
+**Relevance conserves essentially exactly in both models** — median |ρ−1| of
+1.6e−7 and 8.6e−8, worst case 1.3e−3 and 1.2e−6 — so where the shares are
+readable at all they are a genuine partition of the model's own answer. The
+re-reading structural zero (the same program read twice must give the same
+shares) is **exactly 0.0** on both. Both runs were float32 on one GPU: 12 minutes
+for 1.3B over 6 layers, 34 minutes for 6.7B over 8.
 
-### Controls, and what each one refutes
+### Result — 6.7B: the attribution moves, and the differing token is not what moves it
 
-| control | what it can falsify |
-|---|---|
-| **token-identical** — every role but the edited name; the differing token indices are measured on the encoded prompts, not inherited | that the shift is the differing token, a length effect, a tokenisation artifact, or positional drift |
-| **arm crossing** — the same binding flip with the value assignment swapped, so the scored token moves the *other* way | that the shift is an artifact of which output token the relevance was taken for. This is R10's own identification structure, reused |
-| **`fixed_a` / `fixed_b`** — both members scored at literally the same token id, free because each program is read at both candidates | the same thing, in its strictest form: the output token is removed from the contrast entirely |
-| **same-binding** — the bound token moves a→b while the binding does *not* change | that the shift is about the value assignment rather than the binding |
-| **random-orientation** — per-base orientation flipped at random, on the mean and on the sign | that the *direction* rather than the mere difference carries the effect |
-| **mismatched-pair** — members from different bases, orientation kept | that the redistribution is specific to this pairing |
-| **re-reading** — the same program read twice, required to give identical fractions | nondeterminism in the backward path, which no orientation null can see |
-| **behavioural stratification** — every statistic also reported on pairs the model answers in both members | that the attribution of a token the model does not favour is being read as if it were an answer |
+At the pre-committed cell (layer 0), on 280 held-out bases:
 
-### The verdict space, fixed before the run
+| role | token-identical | mean Δ share | 95% CI | sign consistency |
+|---|:--:|---:|---|---:|
+| `inner_def_value` — the newly **active** definition | yes | **+0.049** | [+0.048, +0.050] | **280/280** |
+| `outer_def` — the newly **inactive** definition | yes | **−0.078** | [−0.079, −0.076] | **280/280** |
+| `use_site` | yes | −0.023 | [−0.023, −0.022] | 280/280 |
+| `inner_def_name` — **the one differing token** | no | **+0.002** | [+0.001, +0.002] | 186/280 |
 
-`binding_shift_found` · `shift_consistent_but_not_in_mean` (the R9 outcome on 1.3B,
-where heavy tails split the mean from the sign) · `output_token_artifact` (the arms
-disagree in sign) · `control_also_fires` · `no_shift` · `conservation_failed` ·
-`mechanically_invalid` · `not_applicable`.
+The direction is the predicted one, and the edited token contributes **1.5%** of
+the movement: the shift is carried by text that did not change. Every declared
+control holds. The two arms agree to three decimals (arm ratio **0.98–1.01**
+across all eight layers), so this is not an artifact of which output token the
+relevance is taken for. The `fixed_a` / `fixed_b` conditions, which score **both**
+members at literally the same token id, retain **+0.037** — 29% of the effect — at
+sign consistency ≥0.97.
+Scoring the *competing* value instead reverses the shift to **−0.053**, which is
+what an attribution keyed to the bound value should do. The two same-binding
+controls, where the bound token moves the same way and the binding does not, are
+flat: |mean| ≤ 0.002, sign ≈ 0.5, *p* ≥ 0.24.
 
-Gate **H6** is mechanical: a null redistribution passes it. It gates whether the
-numbers are relevance at all, never whether they are interesting.
+The layer profile rises to a mid-network peak and decays:
 
-### What no branch of it will establish
+| layer | 0 | 3 | 7 | 11 | **15** | 19 | 23 | 27 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| mean Δ share | +0.126 | +0.137 | +0.172 | +0.205 | **+0.219** | +0.091 | +0.072 | +0.025 |
 
-That the model *uses* the binding — that is R10's claim and R10's alone. And note
-what the instrument is blind to: the attn-rule detaches q and k, so no relevance is
-attributed to *pattern formation*. For a binding task, "attend to the right
-definition" is exactly the mechanism this method cannot see, which caps how much a
-positive result here could mean even in principle.
+Sign consistency is **1.000** at every layer through 23. The reported cell is
+layer 0 only because the selection rule maximises the displacement of sign
+consistency from 0.5, and that statistic **saturates**: layers 0–23 tie at 1.000
+and the tie-break takes the first. The largest effect is at layer 15 — 48%
+relative depth.
 
-### Behavioural caveat specific to 1.3B
+**DAS's layer 8 is not on this grid.** The layers come from
+`loader.MODEL_REGISTRY`'s generated `probe_layers`, which for 6.7B gives
+0, 3, 7, 11, 15, 19, 23, 27 — the same mismatch between `configs/models.yaml` and
+the registry recorded in open item 11. The nearest read layer to R10's site is 7,
+where the shift is **+0.172**; the profile is smooth there, so nothing turns on
+the missing layer, but the two results are not read at the same depth and no claim
+here assumes they are.
 
-H1 fails on deepseek-coder-1.3b — 0.809 overall, cell `ab_target` 0.571 — and there
-is no DAS result on that model to compare against. Stage 140 runs there anyway,
-because the relevance decomposition is well defined whatever the scored token's
-rank, but the 1.3B reading is a claim about attribution in a model that resolves
-these bindings unreliably, and the correct-pairs-only stratum is the row to read.
+### The control that fires, and what it costs the claim
+
+**The mismatched-pair control reproduces the treatment exactly.** Pairing a
+`source` from one base with a `target` from a *different* base gives +0.1268 at
+layer 0 against the treatment's +0.1263, and matches at every layer to four
+decimals. So the redistribution is not specific to the pairing.
+
+The diagnosis is not that the effect is spurious. Per-base variation is real but
+small — `frac_inner_def_value` in the shadowing cell is 0.071 ± 0.009, a
+coefficient of variation of 0.13 — while the separation between the two cells'
+means is **4.5–10×** that within-cell spread. The effect is therefore a difference
+of cell *population means*, and because every base in this corpus shares one
+template, a mismatched pair still contrasts the same two cells. **The control
+transfers poorly from R9's corpus to this one**: there, different bases are
+genuinely different programs (different sink families and flow structures), so
+mismatching destroys a great deal; here it destroys only the identifier names and
+the two literals. Gating on it would produce a false negative.
+
+What it does bound is the statistics. The measurement is a highly reliable
+property of the binding *contrast* rather than of any individual program, so 280
+bases behave closer to 280 replicates of one measurement than to 280 independent
+tests. The numbers to quote are the effect sizes above — **5–22% of the answer
+score, depending on depth** — and not the *p*-values (1e−84) or Cohen's *d* (8.6),
+which describe how repeatable the template contrast is.
+
+### Result — 1.3B: not interpretable, for a diagnosable reason
+
+The verdict on 1.3B is recorded as `output_token_artifact`, and the honest reading
+is weaker than that label: **the measurement is not interpretable on this model.**
+
+**7.56%** of readings (726/9600) have a bound-value score **at or below zero**.
+Where the score is negative, dividing by it makes a role that supports the answer
+take a negative "share", and the partition stops being a partition in any usable
+sense: role fractions run from **−517 to +599**, and 3% of role-cells have |share|
+> 1. On 6.7B, by contrast, **no** reading has a non-positive score and every share
+falls in [−0.03, +0.83].
+
+The failure is not spread evenly. Every non-positive score sits in a `*_target`
+cell — the *shadowing* programs — which is exactly where H1 fails on this model
+(`ab_target` behavioural accuracy **0.571**, overall 0.809). The behavioural
+failure and the attribution failure are the same failure: 1.3B does not reliably
+resolve the shadowed binding, its score for the bound value there is near zero or
+negative, and the share reading inherits that.
+
+What survives is suggestive but cannot carry a claim. The median and sign do move
+in the predicted direction in **both** arms at every conserving layer through 15 —
+median +0.070 to +0.124, sign consistency 0.72–0.86, sign-test *p* down to
+1e−18, both falling to chance by layer 19 — while every mean-based statistic is
+unusable, with confidence intervals spanning ±1 and
+the mean and median disagreeing in sign for the same role. Restricting to the
+bases the model answers correctly in both members (80 and 93 of 140) does not
+rescue it: the arms then disagree in the mean in the opposite pattern and
+`flip_ba`'s intervals span zero at every layer. There is also no DAS result on
+1.3B to compare against, because E13 stopped at H1 there.
+
+### What this does and does not add to R10
+
+On 6.7B, the model's own attribution of its answer redistributes between two
+**token-identical** competing definitions when the binding flips, in the
+predicted direction, at every depth, surviving the arm crossing, the
+fixed-output-token conditions and both same-binding controls. That is a real
+observational finding on the corpus where R10 already established causal
+transport, and the two are consistent.
+
+It does **not** strengthen R10. The R-lens intervenes on nothing; it describes
+where an output score is attributed, and R10's interchange is what shows the model
+*uses* the binding. The two sit at different depths — R11 peaks at 48% relative
+depth, R10 acts at 26% (and layer 8 itself is not on R11's grid) — and their units
+do not convert, so no ratio between them is computed anywhere in this pipeline.
+Three further limits: the effect is a property of the contrast rather than of
+individual programs (above), the method
+does not apply to StarCoder2 at all, and the attn-rule detaches q and k, so
+**"attend to the right definition" is precisely the mechanism this instrument
+cannot see**.
 
 ---
 
@@ -1188,37 +1298,56 @@ Ordered by what would most change what this project can claim.
 1. **Re-run stages 106–107 to regenerate R10's gate file** under the
    `says_installed` discriminator, so the on-disk verdict matches the reported
    one. No number changes; this is bookkeeping that a reader will check.
-2. **Explain R9's depth shift.** The redistribution replicates on 6.7B and clears
+2. **Give R11 a control with power on a single-template corpus.** The
+   mismatched-pair control reproduces the treatment to four decimals on 6.7B, not
+   because the effect is spurious but because every base shares one template, so
+   mismatching still contrasts the same two cells. Something that varies the
+   template — a second binding construction, or distractor statements between the
+   definitions — is what would separate "relevance tracks which definition is in
+   scope" from "the shadowing template attributes differently, invariantly."
+   This is the single largest limit on R11 and needs no new instrument.
+3. **Gate R11 on the sign of the score, and fix two verdict defects.** Three
+   things, all cheap and all found by reading the first run rather than by
+   design: (a) 7.56% of 1.3B readings have a bound-value score ≤ 0, which makes
+   the share reading meaningless there, and nothing in H6 or the verdict notices —
+   a positive-score condition belongs alongside the conservation check;
+   (b) `verdict_checks`'s `arms_agree` compares the *means*, so on 1.3B's
+   heavy-tailed deltas it returned `output_token_artifact` when the median and
+   sign agree across both arms and only the mean does not; (c) the
+   mismatched-pair control is run, written and reported but never entered the
+   checklist. Recorded here rather than patched after the fact, the way the H5
+   discriminator change is recorded in [ARCHIVE.md](ARCHIVE.md).
+4. **Explain R9's depth shift.** The redistribution replicates on 6.7B and clears
    every declared control there, but it sits at layers 7–15 (23–48% depth) rather
    than 1.3B's layers 0–3 (0–13%), with each model flat where the other fires.
    Both target tokens give the same profile within each model, so this is not a
    target artifact and needs an account. The per-layer CSVs are already on disk;
    no GPU time is required to start.
-3. **Explain, or bound, the rank-1 edit beating the whole-state patch** (100% vs
+5. **Explain, or bound, the rank-1 edit beating the whole-state patch** (100% vs
    86% at 60% of the edit norm). The available account is plausible and untested,
    and a reviewer will ask.
-4. **A second *site* for R10, and an account of the 434% ceiling.** The second
+6. **A second *site* for R10, and an account of the 434% ceiling.** The second
    model is done — StarCoder2-3B reproduces 100%/100% at layer 11 — so what
    remains is a second anchor and, more urgently, an explanation of why the
    rank-1 edit exceeds the whole-state patch by four-fold there. Related: make
    `verify_structural_zeros` scale- and dtype-aware, so an fp16 run stops
    reporting one-ulp noise as a machinery failure.
-5. **Explain the `assign_chain` fragility.** It has replicated in three models
+7. **Explain the `assign_chain` fragility.** It has replicated in three models
    under renaming *alone* — starcoder2-3b drops to 0.639 there while
    `branch_merge` stays at 1.000. Diagnose on the existing
    `sinkflow_predictions.csv` before spending any GPU.
-6. **Make the R-lens architecture-general, or bound it.** It does not apply to
+8. **Make the R-lens architecture-general, or bound it.** It does not apply to
    starcoder2-3b at all, which is what confines R9 to one model family. Extending
    `norm_eps_attr` to LayerNorm and `is_gated_mlp` to non-gated MLPs is the open
    work; the LayerNorm half is harder, since the mean-subtraction term is what the
    current algebra assumes away.
-7. **Context-matched pairs on real code** — the highest-value follow-up for the
+9. **Context-matched pairs on real code** — the highest-value follow-up for the
    foundation, and the one thing that would let R5's floor argument extend beyond
    synthetic programs. Build by mutating real functions.
-8. **A cross-position string-equality surface baseline** in the probe stage. The
+10. **A cross-position string-equality surface baseline** in the probe stage. The
    current baseline cannot represent "the inner definition's name equals the
    use's name", which is the feature a lexical adversary would use. CPU-only.
-9. **Reconcile `configs/models.yaml` with `MODEL_REGISTRY`** so declared
+11. **Reconcile `configs/models.yaml` with `MODEL_REGISTRY`** so declared
    `probe_layers` are the ones that actually run. It is why the three models sit
    on different layer grids and why every cross-model number must be read at
    matched relative depth.

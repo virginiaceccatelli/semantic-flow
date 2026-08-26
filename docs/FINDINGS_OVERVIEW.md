@@ -167,6 +167,15 @@ answer predicts the opposite effect in the second arm. The direction is learned
 on one arm and evaluated on the other, so the alternatives can be directly
 falsified.
 
+The answer-based alternative was also implemented as a concrete control. In the
+first arm, installing the other binding requires the answer to change from `a`
+to `b`. The control uses the model's J-lens output directions to construct an
+explicit `a`-to-`b` push at the intervention layer. It is given the same edit
+norm as DAS, so it cannot fail merely because it is weaker. In the crossed arm,
+the binding change instead requires `b` to become `a`. The fixed answer push
+should therefore fail or reverse, whereas an abstract binding direction should
+continue to work. This is what “the answer direction did not transfer” means.
+
 On DeepSeek-Coder 6.7B, a rank-one intervention at layer 8 makes the model emit
 the value selected by the installed binding on **100% of held-out examples in
 both arms**. A matched random direction succeeds on only about **2%**. An
@@ -195,6 +204,37 @@ locations, the downstream computation reads a low-dimensional representation of
 **which definition is in scope**. The result is causal because changing that
 representation changes the emitted value, and the factorial design rules out a
 fixed token or answer direction as the explanation.
+
+## The same programs, read without intervening
+
+A companion experiment reads the identical programs with an attribution method
+instead of an intervention. It asks where the model's own answer score comes from,
+and whether that moves when the binding changes. The two programs being compared
+differ at exactly one token out of twenty-one — the inner definition's name — so
+everything the measurement reads is textually identical.
+
+On DeepSeek-Coder 6.7B it moves, cleanly. The definition that has just come into
+scope gains about **5%** of the answer score and the one that has just left it
+loses about **8%**, in the same direction on **all 280** held-out programs and at
+every depth measured, peaking at roughly **22%** of the score in the middle of the
+network. The single token that does differ between the two programs accounts for
+about **1.5%** of that movement, so the effect is carried by text that did not
+change. Reversing the value assignment does not reverse the effect, and holding
+the scored output token literally fixed does not remove it.
+
+Two limits are worth stating plainly. First, the effect is a property of the
+*contrast* between the two program shapes rather than of any individual program:
+pairing programs from different examples gives the same number, because every
+example here is the same template with different names. Second, the measurement
+does not work at all on the 1.3B model, where the score being decomposed is
+non-positive on about 8% of readings — and those are precisely the shadowed
+programs the smaller model already fails to answer reliably.
+
+Most importantly, this is **not** additional causal evidence. Describing where an
+answer is attributed and showing that the model uses a representation are
+different claims, and only the intervention above supports the second. The two
+results are reported together because the contrast between them is instructive,
+not because the attribution reinforces the intervention.
 
 The scope should remain explicit. The intervention has been completed on two
 models but still at one layer, one site, and one synthetic construction, so the

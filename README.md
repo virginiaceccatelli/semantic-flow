@@ -47,14 +47,29 @@ experiment is causal at the tested model, layer, site, and program construction.
   reaches the sink: the feeding chain loses relevance share and the other gains,
   on **65/72** pairs at 1.3B and **64/72** at 6.7B. The shift is small — 1–2% of
   the answer score — and the two models produce it at different depths.
-- For binding, a rank-1, magnitude-free DAS interchange changes which definition
-  is in scope, in **two architecture families**. It succeeds on **100%** of
-  held-out rows in both arms of the 2×2 design in each — deepseek-coder-6.7b at
-  layer 8 moving **0.479** of `||h||`, starcoder2-3b at layer 11 moving
-  **0.478**. The closed-form difference-in-means baseline succeeds on 76% / 55%
-  while moving ~0.71; the explicit answer direction attenuates 6.9× on 6.7B and
-  reverses sign on StarCoder2, which is the falsification the design was built to
-  produce.
+- On the same binding pairs, read observationally rather than causally, the
+  model's own attribution of its answer moves from the definition that just left
+  scope to the one that just entered it — on **280/280** held-out programs at
+  every measured depth in **6.7B**, peaking at **22%** of the answer score. The
+  text carrying the shift is identical between the two programs; the one token
+  that does differ carries **1.5%** of the movement. The measurement is not
+  interpretable at 1.3B, where 7.6% of the scores being decomposed are
+  non-positive. This describes where an answer is attributed, not what the model
+  uses.
+- For binding, a rank-1 DAS interchange changes which definition the model acts
+  as though the variable refers to, in **two architecture families**. The
+  direction is learned on examples where installing the other binding changes
+  answer `a` to answer `b`, then tested on a crossed arm where the same binding
+  change must instead change `b` to `a`. It succeeds on **100%** of held-out
+  rows in both arms. An explicit answer-token control is constructed to push
+  toward `b`, using the model's own J-lens output direction, and is given the
+  same edit norm as DAS. As intended, that control works much better in the
+  first arm than the crossed arm: **27.9% versus 4.3%** on DeepSeek-Coder 6.7B,
+  and it reverses direction on StarCoder2. DAS does not show this collapse,
+  which rules out the simple explanation that it merely learned an answer-token
+  push. Random, no-op, whole-state, and difference-of-means controls are also
+  reported. The conclusion is causal but local to the tested site, layer,
+  construction, and models.
 
 For the complete experiments, controls, qualifications, and model-specific
 results, see [docs/RESULTS.md](docs/RESULTS.md).
@@ -261,23 +276,47 @@ structural complexity rather than cosmetic change or distance. More precisely,
 flattening makes the learned linear readout stop transferring; it does not prove
 that all information about the relationship has disappeared.
 
-**DAS causal use.** Distributed Alignment Search (DAS) learns a very small
-direction in the hidden state associated with which variable definition is
-currently in scope. Moving a model's activation along this single direction
-caused both DeepSeek-Coder 6.7B and StarCoder2-3B to emit the value associated
-with the newly installed binding on 100% of held-out cases, while random and
-answer-token-based directions failed the controls. This is the strongest result
-because it goes beyond observing information: deliberately changing the
-representation changes the model's answer. The conclusion is still local to the
-tested models, synthetic programs, layers, and intervention site.
+**DAS causal use.** Distributed Alignment Search (DAS) learns a one-dimensional
+subspace of the hidden state at the unchanged variable-use token. The experiment
+replaces only the component in that subspace with the component from a donor
+program whose variable has the other binding. If the subspace carries binding,
+the recipient should emit the value selected by the donor's binding.
 
-**R-lens and verbalisation.** The lens analysis asks whether the model expresses
-its internal data-flow distinction in coordinates connected to its output
-vocabulary and which parts of the input contribute to the answer score. The
-safe/unsafe distinction was reliably present, but spread across thousands of
-mostly unrelated token dimensions rather than concentrated in human-readable
-words such as *safe*, *unsafe*, or *tainted*--so the information is
-output-aligned without being explicitly verbalised. The R-lens additionally
-found a small redistribution of answer relevance between the data-flow chains
-when the sink connection changed, although this is an observational attribution
-result, not evidence of causal use.
+The decisive control crosses the values assigned to the outer and inner
+definitions. DAS is fitted on an arm where the binding swap requires the answer
+to move from `a` to `b`. It is then tested on an arm where the same semantic swap
+requires the opposite token movement, from `b` to `a`. A fixed push toward
+answer `b` would therefore work on the first arm and fail or reverse on the
+second, whereas a binding representation should transfer across both.
+
+That fixed-answer alternative was tested directly. The `answer_direction`
+control uses the J-lens difference between the two answer-token directions at
+the intervention layer, is fixed from the first arm, and is scaled on every row
+to match the DAS edit norm. It works on the first arm but attenuates sharply or
+reverses on the crossed arm. DAS instead makes both DeepSeek-Coder 6.7B and
+StarCoder2-3B emit the value selected by the installed binding on 100% of
+held-out cases in both arms. Dose-matched random edits, a no-op, a whole-state
+patch, and a simple difference-of-means direction provide separate checks for
+generic disruption, implementation errors, site responsiveness, and whether
+learning DAS added anything. This is the strongest result because deliberately
+changing the representation changes the answer. It remains local to the tested
+models, synthetic construction, layers, and intervention site.
+
+**J-lens, R-lens, and verbalisation.** The ordinary logit lens asks whether an
+intermediate state already points in directions used by the output vocabulary.
+It finds a reliable safe/unsafe difference, but the direction is spread across
+thousands of mostly unrelated tokens rather than concentrated in readable words
+such as *safe*, *unsafe*, or *tainted*. The semantic distinction is therefore
+output-aligned but not explicitly verbalised. The J-lens estimates how the
+remaining layers transform a small change and passes its engineering checks,
+but it contributes no semantic finding beyond the simpler logit lens.
+
+The R-lens asks a different question: how should one selected answer score be
+divided among earlier input positions? On the security pairs it finds a small
+redistribution between the two data-flow chains when the sink connection
+changes. On the binding pairs in DeepSeek-Coder 6.7B, it assigns more of the
+answer score to the definition that comes into scope and less to the one that
+leaves scope, even though those definition tokens are unchanged. This is an
+observational attribution result. It complements the DAS intervention but does
+not show causal use, identify where binding is computed, or imply that the
+model verbalises the relation as a human-readable word.

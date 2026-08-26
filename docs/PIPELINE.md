@@ -443,7 +443,7 @@ non-finite.
 | **H2** | `decode.csv` — the *measured* surface baseline column, not just accuracy |
 | **H3** | `ceiling_summary.csv` — **both arms** must be alive, or a null in either says nothing. Structural zeros should be `0.00e+00`; see the fp16 note below before treating a non-zero one as a fault |
 | **H4** | `interchange_contrasts.csv` — all three control contrasts must clear zero, and `edit_fraction` must be comparable across arms |
-| **H5** | Read the `answer_direction` rows **first**. If that control also passes on `ba`, the discriminator is broken and no verdict is licensed |
+| **H5** | Read the `answer_direction` rows **first**. This is a J-lens `a`-to-`b` output push learned from `ab`, matched to DAS's per-row edit norm. It should affect `ab` but attenuate or reverse on `ba`, where the required answer movement is `b` to `a`. If it succeeds like DAS in both arms, the design has not separated binding transport from an answer-token direction and no verdict is licensed |
 
 ## Three warnings
 
@@ -575,6 +575,36 @@ The reported layer is picked on **calibration** bases by the rule in
 defaults to `--split all`: one GPU pass covers both and the selection stays held
 out. If a run has no calibration rows, the report says so in the
 `selection_source` line rather than silently selecting on the reported split.
+
+## Check the sign of the score before reading any share
+
+`R_t / s` is a share only when `s > 0`. Conservation (`Σ R_t = s`) is checked and
+gated; **the sign of `s` is not**, and the two are different questions. On
+deepseek-coder-1.3b 7.56% of readings have a non-positive bound-value score, all
+of them in the shadowing cells, and the resulting role fractions run from −517 to
++599 while conservation sits at 1.6e−7. Until the gate exists (RESULTS open item
+3), check it by hand after every run:
+
+```bash
+python - <<'EOF'
+import pandas as pd
+r = pd.read_csv("results/binding/MODEL/relevance/relevance_readings.csv")
+bad = r[r.score <= 0]
+print(f"{len(bad)}/{len(r)} readings have score <= 0")
+print(bad.groupby(["cell", "target_mode"]).size() if len(bad) else "clean")
+EOF
+```
+
+Anything above a fraction of a percent means the share reading is not licensed for
+that model, whatever the conservation table says. 6.7B comes back clean (0/25600).
+
+## The layer grid comes from MODEL_REGISTRY, not configs/models.yaml
+
+With no `--layers`, the profile is `ModelConfig.probe_layers` filtered to
+`[0, last)`, and those are *generated* by `ModelConfig.__post_init__` rather than
+read from `configs/models.yaml`. For 6.7B that is 0, 3, 7, 11, 15, 19, 23, 27 — so
+**R10's layer 8 is not read**. Pass `--layers` explicitly if you need to compare
+at a specific depth.
 
 ## The one thing not to conclude from it
 
