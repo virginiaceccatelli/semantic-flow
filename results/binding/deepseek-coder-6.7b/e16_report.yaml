@@ -1,0 +1,179 @@
+experiment: E16
+model: deepseek-coder-6.7b
+verdict: binding_shift_found
+verdict_text: 'When the binding changes and nothing else does, the model''s own attribution
+  of its answer moves from the definition that went out of scope to the one that came
+  into scope. The shift survives the token-identical restriction, replicates across
+  the arms where the scored token moves the other way, and does not appear in the
+  same-binding controls. It remains OBSERVATIONAL: it says where the answer is attributed,
+  not what the model uses.'
+observational: true
+causal_benchmark:
+  experiment: E13 / R10 (stage 106, DAS interchange)
+  layer: 8
+  note: different quantity, not a different measurement of one quantity; no ratio
+    between the two is computed
+gates:
+  H0:
+    passed: true
+    detail: '1.0000 of 400 bases agree with an independent interpreter and satisfy
+      every invariant, including the arm crossing that makes the held-out test a falsification
+      (threshold 0.999). Per check: semantics_agree 1.0000, arms_crossed 1.0000, mutation_distance_ok
+      1.0000, anchors_ordered 1.0000, values_distinct 1.0000, tokens_distinct 1.0000'
+  H1:
+    passed: true
+    detail: overall 1.000 [1.000, 1.000] against 0.85; weakest cell ab_source 1.000
+      against 0.75
+  H2:
+    passed: true
+    detail: 'best layer 8: binding decodable at 1.000 (selectivity 0.524) against
+      a MEASURED surface baseline of 0.500; margin +0.500. Thresholds 0.8 and 0.1.
+      The floor is pinned by construction here: the anchor token is identical across
+      the counterfactual and the mutation is outside the baseline''s window.'
+  H3:
+    passed: true
+    detail: 'site use, layer 8 (both chosen on calibration): ab: +4.781 [+4.683, +4.878],
+      flip rate 0.857; ba: +4.799 [+4.694, +4.903], flip rate 0.879 (thresholds: CI
+      above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says
+      nothing.'
+  H4:
+    passed: true
+    detail: 'ab @ use L8 r1: +9.029 [+8.952, +9.108] = 189% of the whole-state ceiling
+      +4.781 (threshold 50%); controls cleared: True; edit moved 0.479 of ||h||'
+  H5:
+    passed: false
+    detail: "ba @ use L8 r1: das_binding +9.009 [+8.933, +9.089] = 188% of the held-out\
+      \ ceiling (threshold 50%); discriminator \u2014 answer_direction ab +2.322 [+2.157,\
+      \ +2.482] (passes: True), ba +0.335 [+0.208, +0.456] (fails: False)"
+  H6:
+    passed: true
+    detail: '25600 readings and 51200 paired contrasts over 4 contrasts x 8 layers
+      x 4 target conditions; median |rho-1| 8.61e-08; conserving layers [0, 3, 7,
+      11, 15, 19, 23, 27]; LRP rules bound {''ln'': 65, ''mlp'': 32, ''attn'': 32}'
+gates_not_run: []
+reported:
+  layer: 0
+  selection_source: calibration
+  statistic: binding_shift_identical
+  target_condition: bound
+  contrast: flip_ab
+  split: test
+thresholds:
+  sign_consistency: 0.7
+  permutation_p: 0.05
+  conservation_tolerance: 0.25
+checks:
+  rules_installed_and_conserving: true
+  shift_consistent: true
+  above_permutation_control: true
+  above_sign_test: true
+  arms_agree: true
+  same_binding_controls_quiet: true
+  statistic_is_token_identical: true
+conserving_layers:
+- 0
+- 3
+- 7
+- 11
+- 15
+- 19
+- 23
+- 27
+roles:
+- inner_def_name
+- inner_def_value
+- outer_def_name
+- outer_def_value
+- use_site
+- return_kw
+- signature
+- suffix
+- other
+token_identical_roles:
+- inner_def_value
+- outer_def_name
+- outer_def_value
+- use_site
+- return_kw
+- signature
+- suffix
+- other
+shifts:
+  binding_shift:
+  - inner_def
+  - outer_def
+  binding_shift_identical:
+  - inner_def_identical
+  - outer_def
+contrasts:
+- name: flip_ab
+  kind: binding_flip
+  expect: shift
+  binding_changes: true
+  note: outer binding -> inner binding; bound value v_a -> v_b; exactly one token
+    differs (the inner definition's name)
+- name: flip_ba
+  kind: binding_flip
+  expect: shift
+  binding_changes: true
+  note: 'the SAME binding flip with the value assignment swapped: bound value v_b
+    -> v_a. An output-token artifact must reverse sign here; a binding effect must
+    not.'
+- name: same_outer
+  kind: same_binding
+  expect: no_shift
+  binding_changes: false
+  note: binding fixed at OUTER; bound value v_a -> v_b as in flip_ab. Two tokens differ
+    (both value literals), so the def-value roles are not token-identical in this
+    control.
+- name: same_inner
+  kind: same_binding
+  expect: no_shift
+  binding_changes: false
+  note: binding fixed at INNER; bound value v_a -> v_b as in flip_ab. Two tokens differ
+    (both value literals).
+headline:
+  model: deepseek-coder-6.7b
+  split: test
+  correct_only: 0
+  contrast: flip_ab
+  contrast_kind: binding_flip
+  contrast_order: 0
+  binding_changes: 1
+  expect: shift
+  layer: 0
+  target_condition: bound
+  statistic: binding_shift_identical
+  role: binding_shift_identical
+  token_identical: 1
+  n_pairs: 280
+  n_bases: 280
+  mean_delta: 0.1263393443702643
+  median_delta: 0.1265707094367868
+  sd_delta: 0.0146971770209669
+  cohens_d: 8.596164024562611
+  ci_lo: 0.1246127198968163
+  ci_hi: 0.1280500571266362
+  sign_consistency: 1.0
+  n_nonzero: 280
+  degenerate: 0
+  sign_test_p: 1.0295115178936058e-84
+  permutation_p: 0.0
+  permutation_effect_size: 16.561818654261746
+  mean_frac_from: null
+  mean_frac_to: null
+  same_target_token: 0
+  median_abs_rho_minus_one: 2.255618384849889e-07
+do_not_claim:
+- "that a relevance shift shows the model USES the binding \u2014 this is an attribution\
+  \ of the model's own score, it intervenes on nothing, and causal use is what E13/R10's\
+  \ DAS interchange tests"
+- that the size of a relevance shift is comparable to the size of a DAS effect; one
+  is a share of an answer score, the other a rate of answer change under an edit
+- "that the lens attributes relevance to pattern formation \u2014 the attn-rule detaches\
+  \ q and k, so 'attend to the right definition' is precisely the mechanism this instrument\
+  \ cannot see (src/models/lrp.py)"
+- anything about real code, other languages, or model families outside the two DeepSeeks
+  the R-lens rules match
+- a layer profile as a claim about where binding is COMPUTED; it is where the answer's
+  attribution is redistributed

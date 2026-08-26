@@ -1,0 +1,58 @@
+{
+  "stage": "140_binding_relevance",
+  "timestamp": "20260826_130939",
+  "git_sha": "ac07e98",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/140_binding_relevance.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--dtype",
+    "float32"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "pairs": "data/synthetic/binding_pairs_deepseek-coder-6.7b.jsonl",
+    "output": "results/binding/deepseek-coder-6.7b",
+    "layers": "[0, 3, 7, 11, 15, 19, 23, 27]",
+    "split": "all",
+    "n_bases": "400",
+    "target_modes": "['bound', 'other']",
+    "dtype": "float32",
+    "device": "cuda",
+    "seed": "42",
+    "max_length": "256"
+  },
+  "wall_time_s": 2021.3,
+  "extra": {
+    "H6": true,
+    "n_readings": 25600,
+    "n_pairs": 51200,
+    "conserving_layers": [
+      0,
+      3,
+      7,
+      11,
+      15,
+      19,
+      23,
+      27
+    ],
+    "lrp_rule_counts": {
+      "ln": 65,
+      "mlp": 32,
+      "attn": 32
+    },
+    "determinism": {
+      "passed": true,
+      "max_abs_delta": 0.0,
+      "n": 12,
+      "tolerance": 1e-09,
+      "layer": 0
+    },
+    "violations": [],
+    "gates_required": "H0",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

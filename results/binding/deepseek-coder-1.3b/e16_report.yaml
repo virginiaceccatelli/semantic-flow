@@ -1,0 +1,157 @@
+experiment: E16
+model: deepseek-coder-1.3b
+verdict: output_token_artifact
+verdict_text: A shift is present but the two arms disagree in sign, which is the signature
+  of an artifact of which output token the relevance was taken for rather than of
+  the binding. The fixed_a/fixed_b conditions are the rows to read next.
+observational: true
+causal_benchmark:
+  experiment: E13 / R10 (stage 106, DAS interchange)
+  layer: null
+  note: different quantity, not a different measurement of one quantity; no ratio
+    between the two is computed
+gates:
+  H0:
+    passed: true
+    detail: '1.0000 of 200 bases agree with an independent interpreter and satisfy
+      every invariant, including the arm crossing that makes the held-out test a falsification
+      (threshold 0.999). Per check: semantics_agree 1.0000, arms_crossed 1.0000, mutation_distance_ok
+      1.0000, anchors_ordered 1.0000, values_distinct 1.0000, tokens_distinct 1.0000'
+  H1:
+    passed: false
+    detail: overall 0.809 [0.779, 0.838] against 0.85; weakest cell ab_target 0.571
+      against 0.75
+  H6:
+    passed: true
+    detail: '9600 readings and 19200 paired contrasts over 4 contrasts x 6 layers
+      x 4 target conditions; median |rho-1| 1.56e-07; conserving layers [0, 3, 7,
+      11, 15, 19]; LRP rules bound {''ln'': 49, ''mlp'': 24, ''attn'': 24}'
+gates_not_run:
+- H2
+- H3
+- H4
+- H5
+reported:
+  layer: 7
+  selection_source: calibration
+  statistic: binding_shift_identical
+  target_condition: bound
+  contrast: flip_ab
+  split: test
+thresholds:
+  sign_consistency: 0.7
+  permutation_p: 0.05
+  conservation_tolerance: 0.25
+checks:
+  rules_installed_and_conserving: true
+  shift_consistent: true
+  above_permutation_control: false
+  above_sign_test: true
+  arms_agree: false
+  same_binding_controls_quiet: true
+  statistic_is_token_identical: true
+conserving_layers:
+- 0
+- 3
+- 7
+- 11
+- 15
+- 19
+roles:
+- inner_def_name
+- inner_def_value
+- outer_def_name
+- outer_def_value
+- use_site
+- return_kw
+- signature
+- suffix
+- other
+token_identical_roles:
+- inner_def_value
+- outer_def_name
+- outer_def_value
+- use_site
+- return_kw
+- signature
+- suffix
+- other
+shifts:
+  binding_shift:
+  - inner_def
+  - outer_def
+  binding_shift_identical:
+  - inner_def_identical
+  - outer_def
+contrasts:
+- name: flip_ab
+  kind: binding_flip
+  expect: shift
+  binding_changes: true
+  note: outer binding -> inner binding; bound value v_a -> v_b; exactly one token
+    differs (the inner definition's name)
+- name: flip_ba
+  kind: binding_flip
+  expect: shift
+  binding_changes: true
+  note: 'the SAME binding flip with the value assignment swapped: bound value v_b
+    -> v_a. An output-token artifact must reverse sign here; a binding effect must
+    not.'
+- name: same_outer
+  kind: same_binding
+  expect: no_shift
+  binding_changes: false
+  note: binding fixed at OUTER; bound value v_a -> v_b as in flip_ab. Two tokens differ
+    (both value literals), so the def-value roles are not token-identical in this
+    control.
+- name: same_inner
+  kind: same_binding
+  expect: no_shift
+  binding_changes: false
+  note: binding fixed at INNER; bound value v_a -> v_b as in flip_ab. Two tokens differ
+    (both value literals).
+headline:
+  model: deepseek-coder-1.3b
+  split: test
+  correct_only: 0
+  contrast: flip_ab
+  contrast_kind: binding_flip
+  contrast_order: 0
+  binding_changes: 1
+  expect: shift
+  layer: 7
+  target_condition: bound
+  statistic: binding_shift_identical
+  role: binding_shift_identical
+  token_identical: 1
+  n_pairs: 140
+  n_bases: 140
+  mean_delta: -0.152192393753949
+  median_delta: 0.1221326043592651
+  sd_delta: 3.3717270905892325
+  cohens_d: -0.0451378150321627
+  ci_lo: -0.7687354720009695
+  ci_hi: 0.3128328960793586
+  sign_consistency: 0.8142857142857143
+  n_nonzero: 140
+  degenerate: 0
+  sign_test_p: 2.4239447396778804e-14
+  permutation_p: 0.552
+  permutation_effect_size: -0.5475454128665975
+  mean_frac_from: null
+  mean_frac_to: null
+  same_target_token: 0
+  median_abs_rho_minus_one: 1.484721189326521e-07
+do_not_claim:
+- "that a relevance shift shows the model USES the binding \u2014 this is an attribution\
+  \ of the model's own score, it intervenes on nothing, and causal use is what E13/R10's\
+  \ DAS interchange tests"
+- that the size of a relevance shift is comparable to the size of a DAS effect; one
+  is a share of an answer score, the other a rate of answer change under an edit
+- "that the lens attributes relevance to pattern formation \u2014 the attn-rule detaches\
+  \ q and k, so 'attend to the right definition' is precisely the mechanism this instrument\
+  \ cannot see (src/models/lrp.py)"
+- anything about real code, other languages, or model families outside the two DeepSeeks
+  the R-lens rules match
+- a layer profile as a claim about where binding is COMPUTED; it is where the answer's
+  attribution is redistributed
