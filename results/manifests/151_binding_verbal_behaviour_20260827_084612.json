@@ -1,0 +1,36 @@
+{
+  "stage": "151_binding_verbal_behaviour",
+  "timestamp": "20260827_084612",
+  "git_sha": "8b181ce",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/151_binding_verbal_behaviour.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--dtype",
+    "float32"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "pairs": "data/synthetic/binding_pairs_deepseek-coder-1.3b.jsonl",
+    "output": "results/binding/deepseek-coder-1.3b",
+    "questions": "['scope/direct', 'scope/swapped', 'binding/direct', 'binding/swapped', 'pyscope/direct', 'pyscope/swapped', 'shadow/direct', 'shadow/swapped', 'value/direct']",
+    "split": "all",
+    "n_bases": "200",
+    "layers": "[0, 3, 7, 11, 15, 19, 23]",
+    "dtype": "float32",
+    "device": "cuda",
+    "seed": "42",
+    "max_length": "256"
+  },
+  "wall_time_s": 177.7,
+  "extra": {
+    "H8": true,
+    "n_rows": 7200,
+    "report_split": "test",
+    "violations": [],
+    "gates_required": "H0",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

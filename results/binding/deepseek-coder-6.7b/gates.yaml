@@ -1,6 +1,6 @@
 experiment: E13
 model: deepseek-coder-6.7b
-updated: '2026-08-26 13:09:39'
+updated: '2026-08-27 09:49:19'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -159,6 +159,162 @@ gates:
       - 19
       - 23
       - 27
+      lrp_rule_counts:
+        ln: 65
+        mlp: 32
+        attn: 32
+      report_split: test
+      determinism:
+        passed: true
+        max_abs_delta: 0.0
+        n: 12
+        tolerance: 1.0e-09
+        layer: 0
+      violations: []
+      gates_required: H0
+      gate_override: false
+      gate_override_reason: ''
+  H7:
+    name: H7
+    passed: true
+    value: 221.0
+    detail: 10 lexicon pairs from 4 families, 15 mechanism words, 221 candidates (160
+      discovered, 32 random) over 120 calib bases
+    stage: 150_binding_verbal_discover
+    timestamp: '2026-08-27 09:02:21'
+    override: false
+    override_reason: ''
+    extra:
+      layers:
+      - 0
+      - 3
+      - 7
+      - 11
+      - 15
+      - 19
+      - 23
+      - 27
+      - 31
+      question: scope/direct
+      n_calib_bases: 120
+      n_lexicon_pairs: 10
+      lexicon_families:
+      - action
+      - ordinal
+      - scope
+      - shadowing
+      omitted:
+      - inner: masked
+        outer: exposed
+        family: shadowing
+        reason: 'not one stable token: masked'
+      dropped_questions: []
+      violations: []
+      gates_required: H0
+      gate_override: false
+      gate_override_reason: ''
+  H8:
+    name: H8
+    passed: true
+    value: 14400.0
+    detail: 14400 scored choices over 9 questions x 400 bases x 4 cells; report split
+      test
+    stage: 151_binding_verbal_behaviour
+    timestamp: '2026-08-27 09:11:53'
+    override: false
+    override_reason: ''
+    extra:
+      questions:
+      - scope/direct
+      - scope/swapped
+      - binding/direct
+      - binding/swapped
+      - pyscope/direct
+      - pyscope/swapped
+      - shadow/direct
+      - shadow/swapped
+      - value/direct
+      n_bases: 400
+      report_split: test
+      layers:
+      - 0
+      - 3
+      - 7
+      - 11
+      - 15
+      - 19
+      - 23
+      - 27
+      - 31
+      problems: []
+      violations: []
+      gates_required: H0
+      gate_override: false
+      gate_override_reason: ''
+  H9:
+    name: H9
+    passed: true
+    value: 64000.0
+    detail: '38400 readings and 64000 paired contrasts over 4 contrasts x 8 layers
+      x 5 target conditions for scope/direct; median |rho-1| 1.27e-07; readable layers
+      [0, 3, 7, 11, 15, 19, 23, 27]; LRP rules bound {''ln'': 65, ''mlp'': 32, ''attn'':
+      32}'
+    stage: 152_binding_verbal_relevance
+    timestamp: '2026-08-27 09:49:19'
+    override: false
+    override_reason: ''
+    extra:
+      layers:
+      - 0
+      - 3
+      - 7
+      - 11
+      - 15
+      - 19
+      - 23
+      - 27
+      question: scope/direct
+      target_conditions:
+      - margin
+      - said
+      - unsaid
+      - fixed_inner
+      - fixed_outer
+      contrasts:
+      - flip_ab
+      - flip_ba
+      - same_outer
+      - same_inner
+      readable_layers:
+      - 0
+      - 3
+      - 7
+      - 11
+      - 15
+      - 19
+      - 23
+      - 27
+      positive_layers:
+      - 0
+      - 3
+      - 7
+      - 11
+      - 15
+      - 19
+      - 23
+      - 27
+      margin_layers:
+      - 0
+      - 3
+      - 7
+      - 11
+      - 15
+      - 19
+      - 23
+      - 27
+      pole_tokens:
+        inner: 4640
+        outer: 4871
       lrp_rule_counts:
         ln: 65
         mlp: 32

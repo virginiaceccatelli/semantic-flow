@@ -1,0 +1,137 @@
+model: deepseek-coder-6.7b
+verdict: not_run
+verdict_meaning: the stage has not run for this model.
+checks:
+  behaviour_measured: true
+  primary_style_verbalised: true
+  any_style_verbalised: true
+  value_control_at_ceiling: true
+  value_control_ran: true
+  has_readable_layer: true
+  cell_found: true
+  shift_positive: true
+  shift_sign_consistent: true
+  shift_ci_excludes_zero: false
+  shift_beats_permutation: false
+  enough_pairs: true
+  arms_agree_median: true
+  arms_agree_sign: true
+  arms_both_significant: true
+  controls_flat: true
+  mismatched_mean: 0.006881543689349627
+  mismatched_ratio: 2.398201068501055
+  mismatched_below_treatment: false
+  question_carries_less_than_defs: false
+  question_share_of_movement: 0.9895358723726363
+readable_layers:
+- 0
+- 3
+- 7
+- 11
+- 15
+- 19
+- 23
+- 27
+layer_picked_on: calibration bases
+reported_cell:
+  model: deepseek-coder-6.7b
+  split: test
+  correct_only: 0
+  contrast: flip_ab
+  contrast_kind: binding_flip
+  contrast_order: 0
+  binding_changes: 1
+  expect: shift
+  layer: 27
+  target_condition: margin
+  statistic: binding_shift_identical
+  role: binding_shift_identical
+  token_identical: 1
+  n_pairs: 280
+  n_bases: 280
+  mean_delta: 0.0028694606885697
+  median_delta: 0.0125746409620591
+  sd_delta: 0.1613589510042422
+  cohens_d: 0.0177830896316022
+  ci_lo: -0.0187933840404476
+  ci_hi: 0.0186579491911478
+  sign_consistency: 0.7607142857142857
+  n_nonzero: 280
+  degenerate: 0
+  sign_test_p: 6.8090053392724e-19
+  permutation_p: 0.654
+  permutation_effect_size: 0.2476572986507279
+  mean_frac_from: null
+  mean_frac_to: null
+  same_target_token: 1
+  median_abs_rho_minus_one: 9.333578154802068e-07
+gates:
+  H0:
+    recorded: true
+    passed: true
+  H1:
+    recorded: true
+    passed: true
+  H2:
+    recorded: true
+    passed: true
+  H3:
+    recorded: true
+    passed: true
+  H4:
+    recorded: true
+    passed: true
+  H5:
+    recorded: true
+    passed: false
+  H6:
+    recorded: true
+    passed: true
+  H7:
+    recorded: true
+    passed: true
+  H8:
+    recorded: true
+    passed: true
+  H9:
+    recorded: true
+    passed: true
+headline_statistic: binding_shift_identical
+headline_condition: margin
+primary_style: scope
+chance: 0.5
+roles:
+- inner_def_name
+- inner_def_value
+- outer_def_name
+- outer_def_value
+- use_site
+- return_kw
+- signature
+- question_var
+- question
+- other
+do_not_claim:
+- "that a relevance shift shows the model USES the binding \u2014 this is an attribution\
+  \ of the model's own score, it intervenes on nothing, and causal use is what E13/R10's\
+  \ DAS interchange tests"
+- that the size of a relevance shift is comparable to the size of a DAS effect; one
+  is a share of an answer score, the other a rate of answer change under an edit
+- "that the lens attributes relevance to pattern formation \u2014 the attn-rule detaches\
+  \ q and k, so 'attend to the right definition' is precisely the mechanism this instrument\
+  \ cannot see (src/models/lrp.py)"
+- anything about real code, other languages, or model families outside the two DeepSeeks
+  the R-lens rules match
+- that answering the forced choice is INTROSPECTION. The question is about the program,
+  and a model can answer it by reading the program at inference time exactly as a
+  reader would. Nothing here distinguishes a report about the model's own computation
+  from a correct answer about the text.
+- "that a verbalisation null means the model lacks the concept. It means the concept\
+  \ did not surface in these four question forms, at this readout position, in these\
+  \ two choice words \u2014 R10 already shows the representation is there and is used."
+- that the mechanism-vocabulary statistic is a contrast. It is a mass measurement
+  against a random floor, it has no poles, and pooling it with the polar contrast
+  would be adding a one-sided quantity to a two-sided one.
+- that a word style scoring above chance generalises to the words it was not asked
+  with. Four question forms and eight choice tokens is a sample of phrasings, not
+  a coverage claim about how the model can be asked.

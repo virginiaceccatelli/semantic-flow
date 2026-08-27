@@ -1,0 +1,41 @@
+{
+  "stage": "150_binding_verbal_discover",
+  "timestamp": "20260827_084309",
+  "git_sha": "8b181ce",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/150_binding_verbal_discover.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--dtype",
+    "float32",
+    "--style",
+    "scope"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "pairs": "data/synthetic/binding_pairs_deepseek-coder-1.3b.jsonl",
+    "output": "results/binding/deepseek-coder-1.3b",
+    "layers": "[0, 3, 7, 11, 15, 19, 23]",
+    "question": "scope/direct",
+    "style": "scope",
+    "n_calib_bases": "60",
+    "n_pool": "24",
+    "n_random": "32",
+    "max_candidates": "160",
+    "dtype": "float32",
+    "device": "cuda",
+    "seed": "42",
+    "max_length": "256"
+  },
+  "wall_time_s": 8.5,
+  "extra": {
+    "H7": true,
+    "n_candidates": 225,
+    "n_lexicon_pairs": 10,
+    "violations": [],
+    "gates_required": "H0",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}
