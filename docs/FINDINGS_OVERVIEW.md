@@ -121,6 +121,37 @@ The 1.3B result is not interpreted: non-positive bound-value scores make its
 normalized relevance shares unstable. StarCoder2 is outside the implemented
 R-lens rules.
 
+## 5. Verbalisation, in progress
+
+Everything above is read in the model's internal coordinates. A separate question
+is whether the distinction surfaces in anything the model **emits**.
+
+The same four programs get a question appended, rendered from the *outer* name
+only so it is byte-identical in all four cells and the one-token counterfactual
+survives:
+
+```
+z = 6                        z = 6
+def f():                     def f():
+    d = 3                        z = 3
+    return z                     return z
+# Question: does f return the z assigned inside f or outside f? Answer:
+#                → outside                        → inside
+```
+
+Four question styles in two variants each, with chance pinned at 0.500 by the
+factorial, and E13's own value question as a **positive control** built in from
+the start — so that a null on the word styles can be told apart from a harness
+that could not detect verbalisation if it were there. Then the R-lens of section
+4 is applied to the *word* the model answers with, to ask whether the word is
+attributed to the same competing definitions the value is.
+
+Built and smoke-tested; not yet run. Two things it will keep separate, because
+they can come apart in both directions: whether the model *can* answer, and
+whether its answer is *grounded* in the definitions rather than in the question
+text. And one thing no outcome will license — answering a question about a
+program is not introspection about the model's own computation.
+
 ## The combined conclusion
 
 The strongest supported statement is:
@@ -135,9 +166,9 @@ model and establishes causal use. The R-lens edits nothing and establishes
 attribution under a specified set of backward rules.
 
 Neither experiment establishes a complete mechanism or explicit verbalisation.
-A future binding-verbalisation study should test whether the binding relation
-becomes expressible in meaningful output vocabulary or under a relation-matched
-prompt.
+The verbalisation study in section 5 is built to test the second of those and is
+not yet run; whichever way it comes out, it will add a third observational
+result rather than strengthen the causal one.
 
 ## Where to read next
 

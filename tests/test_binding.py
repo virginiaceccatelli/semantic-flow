@@ -216,10 +216,12 @@ def test_resolve_pairs_path_names_a_mismatch(tmp_path, monkeypatch):
 
 def test_binding_spec_is_separate_from_the_store_spec():
     # H0-H5 are E13's causal chain, in order and unchanged. H6 is E16's
-    # observational R-lens readout over the same four programs, appended rather
-    # than interleaved so no E13 stage's prerequisites move.
+    # observational R-lens readout and H7-H9 are E17's verbalisation track, both
+    # over the same four programs, appended rather than interleaved so no E13
+    # stage's prerequisites move.
     assert BINDING.order[:6] == ("H0", "H1", "H2", "H3", "H4", "H5")
-    assert BINDING.order == ("H0", "H1", "H2", "H3", "H4", "H5", "H6")
+    assert BINDING.order == ("H0", "H1", "H2", "H3", "H4", "H5", "H6",
+                             "H7", "H8", "H9")
     assert STORE.order[0] == "G0"
     assert BINDING.root_for("m") != STORE.root_for("m")
 

@@ -187,6 +187,52 @@ CONSERVATION_TOLERANCE = 0.25    # |rho - 1| above this and the fractions are no
 MIN_PAIRS_RELEVANCE = 24
 
 
+# ── the role scheme ──────────────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class RoleScheme:
+    """One naming of the token roles, composites, shifts and target conditions.
+
+    Everything below that summarises a redistribution — `readings_table`,
+    `pair_redistribution`, `mismatched_redistribution`, `summarize_shifts` — used
+    to read the module constants directly. It now reads a scheme, and
+    `VALUE_SCHEME` reproduces those constants exactly, so stage 140's output is
+    unchanged by construction rather than by inspection.
+
+    The reason the indirection exists is E17: the verbalisation readout
+    (`binding_verbalisation`) asks the SAME question of the SAME four programs
+    with the SAME instrument, and differs only in what is scored (a word instead
+    of a value) and therefore in two role names (the appended question instead of
+    the answer suffix) and four target-condition names. Copying three hundred
+    lines of summarising code to change six strings would make "the same
+    instrument" a claim about resemblance rather than about identity.
+    """
+
+    name: str
+    roles: tuple[str, ...]
+    composites: dict[str, tuple[str, ...]]
+    shifts: dict[str, tuple[str, str]]
+    token_identical: tuple[str, ...]
+    conditions: tuple[str, ...]        # target conditions, incl. the fixed ones
+    modes: tuple[str, ...]             # the conditions that cost a backward pass
+
+    def role_columns(self) -> list[str]:
+        return list(self.roles) + list(self.composites)
+
+    def statistics(self) -> tuple[str, ...]:
+        """Every per-role delta, every composite delta, and the shift statistics."""
+        return (tuple(f"delta_frac_{role}" for role in self.roles)
+                + tuple(f"delta_frac_{name}" for name in self.composites)
+                + tuple(self.shifts))
+
+
+VALUE_SCHEME = RoleScheme(
+    name="value", roles=ROLES, composites=COMPOSITES, shifts=SHIFTS,
+    token_identical=TOKEN_IDENTICAL_ROLES, conditions=TARGET_CONDITIONS,
+    modes=TARGET_MODES)
+
+
 # ── the contrasts ────────────────────────────────────────────────────────────
 
 
@@ -298,8 +344,9 @@ class RoleMap:
     spans: dict[str, list[tuple[int, int]]] = field(default_factory=dict)
     problems: list[str] = field(default_factory=list)
 
-    def counts(self) -> dict[str, int]:
-        return {role: int(sum(1 for r in self.roles if r == role)) for role in ROLES}
+    def counts(self, roles_order: Sequence[str] = ROLES) -> dict[str, int]:
+        return {role: int(sum(1 for r in self.roles if r == role))
+                for role in roles_order}
 
 
 def _span_chars(source: str, node: ast.AST) -> tuple[int, int]:
@@ -384,22 +431,29 @@ def role_spans(program: str, prompt: str, var: str) -> dict:
 
 
 def map_roles(program: str, prompt: str, offsets: Sequence[tuple[int, int]],
-              var: str) -> RoleMap:
-    """Per-token roles for one prompt. Earlier roles in `ROLES` win a token.
+              var: str, roles_order: Sequence[str] = ROLES,
+              spans_fn=None) -> RoleMap:
+    """Per-token roles for one prompt. Earlier roles in `roles_order` win a token.
 
     The precedence order is what makes the partition well defined: the inner
     definition's name sits inside the assignment that contains it, and a token
     counted twice would break the conservation arithmetic that is the whole
     point of this readout.
+
+    `roles_order` and `spans_fn` exist for E17: the verbalisation prompt replaces
+    the answer suffix with a question and therefore needs two extra roles and its
+    own span resolver, but the precedence rule, the residual `other` and the
+    single-assignment guarantee must be the same ones or the two experiments'
+    partitions are not comparable. Defaults reproduce stage 140 exactly.
     """
     try:
-        resolved = role_spans(program, prompt, var)
+        resolved = (spans_fn or role_spans)(program, prompt, var)
     except (SyntaxError, ValueError) as exc:
         return RoleMap(roles=["other"] * len(offsets),
                        problems=[f"role spans unavailable: {exc}"])
     roles = ["other"] * len(offsets)
     assigned = [False] * len(offsets)
-    for role in ROLES:
+    for role in roles_order:
         if role == "other":
             continue
         for start, end in resolved["spans"].get(role, []):
@@ -413,9 +467,11 @@ def map_roles(program: str, prompt: str, offsets: Sequence[tuple[int, int]],
                    problems=list(resolved["problems"]))
 
 
-def composite(fractions: dict[str, float], name: str) -> float:
+def composite(fractions: dict[str, float], name: str,
+              composites: Optional[dict[str, tuple[str, ...]]] = None) -> float:
     """Sum of the role fractions a composite is made of."""
-    return float(sum(fractions.get(role, 0.0) for role in COMPOSITES[name]))
+    return float(sum(fractions.get(role, 0.0)
+                     for role in (composites or COMPOSITES)[name]))
 
 
 # ── relevance ────────────────────────────────────────────────────────────────
@@ -529,7 +585,8 @@ def record_relevance(
     return readings, problems
 
 
-def readings_table(readings: Sequence[RelevanceReading], model: str) -> pd.DataFrame:
+def readings_table(readings: Sequence[RelevanceReading], model: str,
+                   scheme: RoleScheme = VALUE_SCHEME) -> pd.DataFrame:
     """One row per (base, cell, layer, target mode). Positions are not in here."""
     return pd.DataFrame([{
         "model": model, "base_id": r.base_id, "split": r.split,
@@ -537,9 +594,10 @@ def readings_table(readings: Sequence[RelevanceReading], model: str) -> pd.DataF
         "layer": r.layer, "target_mode": r.target_mode,
         "target_token": r.target_token, "score": r.score, "rho": r.rho,
         "n_tokens": r.n_tokens,
-        **{f"frac_{role}": r.fractions.get(role, 0.0) for role in ROLES},
-        **{f"frac_{name}": composite(r.fractions, name) for name in COMPOSITES},
-        **{f"ntok_{role}": r.token_counts.get(role, 0) for role in ROLES},
+        **{f"frac_{role}": r.fractions.get(role, 0.0) for role in scheme.roles},
+        **{f"frac_{name}": composite(r.fractions, name, scheme.composites)
+           for name in scheme.composites},
+        **{f"ntok_{role}": r.token_counts.get(role, 0) for role in scheme.roles},
     } for r in readings])
 
 
@@ -642,7 +700,9 @@ def _index_readings(readings_frame: pd.DataFrame) -> dict[tuple, dict]:
 
 
 def pair_redistribution(readings_frame: pd.DataFrame, records_by_id: dict,
-                        behaviour: Optional[pd.DataFrame] = None) -> pd.DataFrame:
+                        behaviour: Optional[pd.DataFrame] = None,
+                        scheme: RoleScheme = VALUE_SCHEME,
+                        modes_for=None) -> pd.DataFrame:
     """`delta_frac_role = frac_role(to) - frac_role(from)`, per base and cell.
 
     Because the fractions sum to `rho ~ 1` in each member, the deltas sum to
@@ -667,13 +727,14 @@ def pair_redistribution(readings_frame: pd.DataFrame, records_by_id: dict,
         correct = {(str(row["base_id"]), str(row["arm"]), str(row["binding"])):
                    int(row[column]) for _, row in behaviour.iterrows()}
 
-    role_columns = list(ROLES) + list(COMPOSITES)
+    role_columns = scheme.role_columns()
+    resolve = modes_for or modes_for_condition
     layers = sorted(readings_frame["layer"].unique().tolist())
     rows: list[dict] = []
     for contrast in CONTRASTS:
         for base_id, record in records_by_id.items():
-            for condition in TARGET_CONDITIONS:
-                modes = modes_for_condition(record, contrast, condition)
+            for condition in scheme.conditions:
+                modes = resolve(record, contrast, condition)
                 if modes is None:
                     continue
                 for layer in layers:
@@ -709,15 +770,15 @@ def pair_redistribution(readings_frame: pd.DataFrame, records_by_id: dict,
                         record_row[f"frac_{role}_from"] = float(frm[f"frac_{role}"])
                         record_row[f"frac_{role}_to"] = float(to[f"frac_{role}"])
                         record_row[f"delta_frac_{role}"] = delta
-                        if role in ROLES:
+                        if role in scheme.roles:
                             total += delta
                             record_row[f"ntok_{role}_match"] = int(
                                 int(frm[f"ntok_{role}"]) == int(to[f"ntok_{role}"]))
                     record_row["delta_total"] = total
                     record_row["delta_token_identical_roles"] = sum(
                         record_row[f"delta_frac_{role}"]
-                        for role in TOKEN_IDENTICAL_ROLES)
-                    for name, (gain, lose) in SHIFTS.items():
+                        for role in scheme.token_identical)
+                    for name, (gain, lose) in scheme.shifts.items():
                         record_row[name] = (record_row[f"delta_frac_{gain}"]
                                             - record_row[f"delta_frac_{lose}"])
                     got_from = correct.get((base_id, contrast.frm[0], contrast.frm[1]))
@@ -737,7 +798,8 @@ def pair_redistribution(readings_frame: pd.DataFrame, records_by_id: dict,
 
 
 def mismatched_redistribution(readings_frame: pd.DataFrame, records_by_id: dict,
-                              seed: int = 42) -> pd.DataFrame:
+                              seed: int = 42,
+                              scheme: RoleScheme = VALUE_SCHEME) -> pd.DataFrame:
     """The `binding_flip` contrasts with the two members drawn from DIFFERENT bases.
 
     The permutation null keeps the pairing and destroys the orientation; this one
@@ -762,14 +824,14 @@ def mismatched_redistribution(readings_frame: pd.DataFrame, records_by_id: dict,
             break
 
     indexed = _index_readings(readings_frame)
-    role_columns = list(ROLES) + list(COMPOSITES)
+    role_columns = scheme.role_columns()
     layers = sorted(readings_frame["layer"].unique().tolist())
     rows: list[dict] = []
     for contrast in CONTRASTS:
         if contrast.kind != "binding_flip":
             continue
         for base_id, donor_id in zip(bases, permuted):
-            for mode in TARGET_MODES:
+            for mode in scheme.modes:
                 for layer in layers:
                     key_from = (base_id, contrast.frm[0], contrast.frm[1],
                                 int(layer), mode)
@@ -793,7 +855,7 @@ def mismatched_redistribution(readings_frame: pd.DataFrame, records_by_id: dict,
                     for role in role_columns:
                         row[f"delta_frac_{role}"] = (float(to[f"frac_{role}"])
                                                      - float(frm[f"frac_{role}"]))
-                    for name, (gain, lose) in SHIFTS.items():
+                    for name, (gain, lose) in scheme.shifts.items():
                         row[name] = row[f"delta_frac_{gain}"] - row[f"delta_frac_{lose}"]
                     rows.append(row)
     return pd.DataFrame(rows)
@@ -803,17 +865,14 @@ def mismatched_redistribution(readings_frame: pd.DataFrame, records_by_id: dict,
 
 # The statistics summarised per cell: every role, every composite, and the two
 # headline shifts. `binding_shift_identical` is the one the claim rests on.
-STATISTICS: tuple[str, ...] = (
-    tuple(f"delta_frac_{role}" for role in ROLES)
-    + tuple(f"delta_frac_{name}" for name in COMPOSITES)
-    + tuple(SHIFTS)
-)
+STATISTICS: tuple[str, ...] = VALUE_SCHEME.statistics()
 
 
 def summarize_shifts(pairs_frame: pd.DataFrame, model: str,
                      n_permutations: int = 500, n_boot: int = 2000,
                      seed: int = 42, split: str = "test",
-                     correct_only: bool = False) -> pd.DataFrame:
+                     correct_only: bool = False,
+                     scheme: RoleScheme = VALUE_SCHEME) -> pd.DataFrame:
     """One row per (contrast, layer, target condition, statistic).
 
     **Three inferential quantities, because they answer different questions.**
@@ -860,7 +919,7 @@ def summarize_shifts(pairs_frame: pd.DataFrame, model: str,
                                      dropna=False):
         contrast_name, layer, condition = key
         contrast = CONTRAST_BY_NAME.get(str(contrast_name))
-        for statistic in STATISTICS:
+        for statistic in scheme.statistics():
             if statistic not in chunk.columns:
                 continue
             delta = chunk[statistic].to_numpy(dtype=float)
@@ -889,7 +948,7 @@ def summarize_shifts(pairs_frame: pd.DataFrame, model: str,
                     chunk["expect"].iloc[0] if "expect" in chunk else ""),
                 "layer": int(layer), "target_condition": condition,
                 "statistic": statistic, "role": role,
-                "token_identical": int(_is_token_identical(role)),
+                "token_identical": int(_is_token_identical(role, scheme)),
                 "n_pairs": int(len(chunk)),
                 "n_bases": int(len(set(bases.tolist()))),
                 "mean_delta": float(np.nanmean(delta)),
@@ -927,19 +986,21 @@ def summarize_shifts(pairs_frame: pd.DataFrame, model: str,
     ).reset_index(drop=True)
 
 
-def _is_token_identical(role: str) -> bool:
+def _is_token_identical(role: str, scheme: RoleScheme = VALUE_SCHEME) -> bool:
     """Is this role/composite made only of token-identical spans?
 
     A composite containing `inner_def_name` is not, and that is why
     `binding_shift_identical` exists next to `binding_shift`.
     """
-    if role in ROLES:
-        return role in TOKEN_IDENTICAL_ROLES
-    if role in COMPOSITES:
-        return all(part in TOKEN_IDENTICAL_ROLES for part in COMPOSITES[role])
-    if role in SHIFTS:
-        gain, lose = SHIFTS[role]
-        return _is_token_identical(gain) and _is_token_identical(lose)
+    if role in scheme.roles:
+        return role in scheme.token_identical
+    if role in scheme.composites:
+        return all(part in scheme.token_identical
+                   for part in scheme.composites[role])
+    if role in scheme.shifts:
+        gain, lose = scheme.shifts[role]
+        return (_is_token_identical(gain, scheme)
+                and _is_token_identical(lose, scheme))
     return False
 
 

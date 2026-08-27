@@ -47,7 +47,8 @@ that go beyond decoding entirely.
 - [Part III — From representation to causal use](#part-iii--from-representation-to-causal-use)
 - [§5 DAS — causal interchange of a binding component](#5-das--causal-interchange-of-a-binding-component)
 - [§6 R-lens attribution on the binding programs](#6-r-lens-attribution-on-the-binding-programs)
-- [§7 Statistics, gates and reproducibility](#7-statistics-gates-and-reproducibility)
+- [§7 Verbalisation of the binding relation](#7-verbalisation-of-the-binding-relation)
+- [§8 Statistics, gates and reproducibility](#8-statistics-gates-and-reproducibility)
 
 ---
 
@@ -772,9 +773,223 @@ verbalisation. A future verbalisation experiment would need a different readout:
 for example, a matched prompt or output-space test asking whether the binding
 relation becomes expressible in meaningful vocabulary.
 
-# 7. Statistics, gates and reproducibility
+# 7. Verbalisation of the binding relation
 
-## 7.1 Uncertainty
+Stages 150–153 (`src/experiments/binding_verbalisation.py`). **Built and
+smoke-tested; not yet run at scale.** Gates H7, H8, H9.
+
+## 7.1 The question §6 cannot answer
+
+§5 establishes that the models causally use a binding representation and §6 that
+the answer's relevance moves with the binding. Both are read in the model's
+internal coordinates. Neither says whether the distinction surfaces in anything
+the model *emits*, and that is a separate empirical question rather than a
+corollary of either.
+
+It splits into two, and this experiment keeps them apart because they can come
+apart in both directions:
+
+    behavioural     asked in words, does the model answer correctly?
+    attributional   when the answer IS that word, does relevance sit on the
+                    competing definitions the way it does for the value?
+
+A model can answer from a shallow cue while all the relevance sits on the
+question text. A model can carry the distinction internally and be unable to name
+it. Collapsing the two is the main way to get this wrong, so the report orders
+them behaviour-first and the verdict space contains a name for each combination.
+
+## 7.2 The corpus is unchanged, and that is the point
+
+E13's factorial is reused whole — the same four programs per base, the same
+frozen calibration/test split, the same anchor positions. Only a question is
+appended:
+
+```
+z = 6                        z = 6
+def f():                     def f():
+    d = 3                        z = 3
+    return z                     return z
+# Question: does f return the z assigned inside f or outside f? Answer:
+#                                                     → outside / → inside
+```
+
+Every template renders from the **outer** name only — the letter both members of
+a pair share — plus the literal `f`. So the rendered question is byte-identical in
+all four cells of a base, the full prompt still differs at exactly one token, and
+the one-token control §6.4 relies on survives intact. It is re-measured on the
+encoded prompts rather than inherited, because appending a question changes the
+string the forward pass sees.
+
+A question rendered from the inner name would put the answer in the prompt. H8
+and H9 both refuse the run if any rendered question contains a standalone
+occurrence of it.
+
+## 7.3 Narrowing the words
+
+A code model that represents "which definition is in scope" could express it in
+several unrelated vocabularies, and guessing one is how a vocabulary study
+manufactures a null. The lexicon is therefore **matched opposing pairs across
+four families**, so a frequency imbalance between the poles cancels in the paired
+contrast and a family-level pattern is visible if one exists:
+
+| family | pairs (inner / outer) | what it tests |
+|---|---|---|
+| scope | local/global, inner/outer, inside/outside, nested/module | the language's own vocabulary |
+| shadowing | hidden/visible, masked/exposed | the name of the phenomenon |
+| ordinal | second/first, later/earlier, new/original | position, needing no scope concept |
+| action | replaced/kept, changed/unchanged | what happened to the binding |
+
+The `ordinal` family is there to be separated from `scope`, not pooled with it:
+"the nearest assignment wins" is a positional rule that requires no notion of
+scope at all, and a result carried entirely by that family means something weaker
+than one carried by `scope`.
+
+Three design decisions inside this:
+
+- **Dropped as pairs, never as words.** If either side is not one stable token
+  under a tokenizer, the whole pair goes with the reason recorded. Half a pair
+  would turn a matched contrast into an unmatched one and silently reintroduce
+  the imbalance the pairing exists to cancel. On deepseek-coder 10 of 11 pairs
+  survive across all four families; on starcoder2 all 11 do.
+- **Encodability was checked before the list was fixed**, not after. `shadowed`,
+  `shadowing`, `reassigned`, `overwritten`, `redefined` and `rebound` are all
+  multi-token on deepseek-coder, so a shadowing family built from them would have
+  been declared and then deleted. Nothing is stemmed or truncated to a first
+  sub-token: the first token of `" reassigned"` is not the word.
+- **A separate non-polar set** (`scope`, `binding`, `namespace`, `lookup`, …)
+  measures whether binding vocabulary is in play at all, against a random floor.
+  It is never pooled with the polar contrast, because a word elevated in both
+  members cancels in a paired difference and inflates a mass statistic.
+
+Because a hand-written list is a hypothesis about the model rather than a fact
+about it, stage 150 also ranks the **full vocabulary** by its mean paired
+logit-lens delta between the two bindings, on **calibration bases only**, with
+both arms pooled — pooling makes a token that rises in only one arm cancel rather
+than rank, since such a token is tracking the returned literal. The result is
+frozen to disk and stage 151 loads it, so the freeze is a filesystem boundary
+rather than a promise. The pool is logit-lens-selected, so a direction only a
+corrected lens would surface cannot be found this way; that limitation is
+inherited from the E15-C design and recorded in the frozen file's provenance.
+
+## 7.4 The forced choice, and its three controls
+
+Four question styles, each asked in two variants, plus the value control:
+
+| style | choices | why this one |
+|---|---|---|
+| `scope` (primary) | inside / outside | names the construction, not a technical term, so a model with no word for shadowing can still answer |
+| `binding` | inner / outer | the vocabulary §6's roles are named in |
+| `pyscope` | local / global | Python's keyword pair — the strongest pretraining prior, and therefore the style most likely to be answered without reading this program |
+| `shadow` | yes / no | single tokens under any tokenizer, so it cannot be dropped by lexicon validation |
+| `value` | the two literals | **the positive control** — E13's own forced choice |
+
+**Chance is 0.500 by construction.** Within a base the correct answer is "outer"
+in two cells and "inner" in the other two, so a model that always answers the
+same way scores exactly 0.500. `says_inner_rate` is reported beside accuracy
+because only it separates "right half the time" from "always says outer".
+
+- **Variant** — each two-option style is asked in both option *orders*, and the
+  yes/no style in both *polarities*. A model that picks the last-mentioned option
+  scores high on one variant and low on the other, so the bias-free number is the
+  pooled one and a single variant alone reports the bias.
+- **Arm consistency** — `ab_source` and `ba_source` have the same binding and
+  different literals, so the correct *word* is identical while the correct *value*
+  differs. A word answer that tracks the binding must agree across the arms; one
+  reading the literal must not. This is the value-independence control.
+- **The value positive control** — E15-C returned a vocabulary null and could not
+  distinguish "the models do not verbalise this" from "this machinery could not
+  detect verbalisation if it were there" (`ARCHIVE.md`; `sinkflow_positive` was
+  built afterwards to answer it). Here the control is free and in the design from
+  the start: the same harness, bases, cells and readout position, on the question
+  H1 shows the model answers at 1.000 on 6.7B. Word styles at chance beside a
+  ceiling there is a fact about verbalisation. Word styles at chance beside a
+  failing control licenses nothing, and the report says so.
+
+## 7.5 The R-lens on the word, and the one thing that had to change
+
+Stage 152 is §6's readout with a single substitution: a pole word's unembedding
+row as the cotangent instead of a value literal's. Same programs, same conserving
+rules, same four contrasts, same nine program roles — plus two, `question_var`
+for the variable's mentions inside the question text and `question` for the rest,
+because "the model routes its answer through the question rather than through the
+definitions" is a live alternative hypothesis and needs its own column.
+
+The change forced by R11's first run is the scored quantity. A raw logit has no
+meaningful sign — softmax is shift-invariant, so `s > 0` for one word is a fact
+about the arbitrary offset of the logit vector — and `R_t / s` is a share of the
+answer only when `s > 0`. R11 lost its 1.3B result to exactly that: 7.56% of
+readings at `s ≤ 0`, with conservation holding at 1.6e-7 throughout and noticing
+nothing (§6.3 measures completeness, not sign). So the headline here is the
+**pole margin**:
+
+    s = logit(inner word) − logit(outer word)
+
+which is shift-invariant, is the quantity the forced choice actually reads, and
+whose fractions are invariant under `s → −s` because relevance is linear in the
+cotangent — both numerator and denominator flip. The sign problem does not merely
+pass here, it cannot arise. And because relevance is linear in the cotangent, the
+margin decomposition is exactly `R(inner) − R(outer)` over `s_inner − s_outer`
+and costs **no extra backward pass**, the same arithmetic that makes §6.5's
+`fixed_*` conditions free. The single-pole readings are still reported, with their
+positive-score rate beside them, because they are what shows which pole moved.
+
+## 7.6 Two controls that swap roles relative to §6
+
+Worth stating explicitly, because reusing §6's tables without noticing this would
+mean reading two different controls under one name:
+
+| | §6 (value scored) | §7 (word scored) |
+|---|---|---|
+| the arms | the **output-token** control: the scored value token moves in opposite directions per arm | a **value-independence** control: the scored token does not move between arms while the literals do |
+| fixed conditions | `fixed_a`/`fixed_b`, free but base-dependent | `fixed_inner`/`fixed_outer`, free *and* base-independent — the pole tokens are the same ids in every base, so the control is exact for every contrast; the `margin` condition goes further and scores both members by the same linear *functional* |
+| same-binding controls | move the scored token the same way as the treatment | move the *value* while the correct word does not move at all — a sharper test of value contamination |
+
+## 7.7 What each outcome licenses
+
+Declared before the run, in `binding_verbalisation.VERBAL_VERDICTS`:
+
+| outcome | reading |
+|---|---|
+| words at chance, value at ceiling | the distinction is not verbalised; the instrument is exonerated by the control |
+| words above chance, relevance redistributes like §6's | the word is read off the same def-use structure the answer is — the strongest outcome available, still observational |
+| words above chance, relevance on the question text | verbalised but not grounded in the program; must not be merged with R11 |
+| words above chance, controls fire or arms disagree | the word tracks the literal, not the binding |
+| words at chance, relevance still redistributes | the structure is there and the model cannot say it; report as attribution of an unsaid word, not as verbalisation |
+
+**No branch licenses a causal claim.** §5's interchange is the causal instrument;
+a word is an output, and attribution of a word is still attribution. Two further
+limits belong on every reading. First, answering the question is not
+introspection: the question is about the program, and a model can answer it by
+reading the text at inference time exactly as a reader would — nothing here
+separates a report about the model's own computation from a correct answer about
+the code. Second, the attn-rule detaches q and k, so "attend to the right
+definition" remains precisely the mechanism this instrument cannot see (§6.2).
+
+## 7.8 The three gates
+
+All mechanical, for the reason §8.3 gives and H6 already follows: the informative
+outcome here may well be that the models verbalise nothing, and a gate that made
+a null hard to report would be a gate that chose the result.
+
+| gate | stage | what it checks |
+|---|---|---|
+| **H7** | 150 | every declared pair kept whole or dropped whole with a reason; enough pairs from more than one family; discovery ran on calibration bases only and the frozen file records which; the candidate set holds the lexicon, the discovered pool and the random controls without duplicates |
+| **H8** | 151 | every declared (base, cell, question) scored; the rendered question identical in all four cells of a base; no question names the inner definition; both choices distinct single tokens; both variants of every style ran; the value positive control ran |
+| **H9** | 152 | H6's checks on the verbalisation prompt, re-measured; the margin condition formed; `fixed_*` really token-fixed; the roles partition every token; the redistribution closes; a deterministic re-read |
+
+Each requires **H0 only**. H1 is deliberately not required — it fails on
+deepseek-coder-1.3B at 0.809, and whether a model that answers the *value*
+question at 0.809 can answer a *word* question is one of the things this track
+exists to measure. Stage 152 does not require H8 either, for the mirror-image
+reason: the decomposition is well defined whatever the model answers, and
+requiring the behavioural gate would delete `shift_without_verbalisation` from
+the verdict space before it could be observed.
+
+---
+
+# 8. Statistics, gates and reproducibility
+
+## 8.1 Uncertainty
 
 **Cluster bootstrap over source programs**, never over rows. Rows from one
 program share hidden vectors, so a row-level bootstrap gives intervals that are
@@ -785,7 +1000,7 @@ arm separately, carries the interval.
 Where a quantity is heavy-tailed, the **median and the sign** are reported beside
 the mean and its paired uncertainty rather than hidden by one summary statistic.
 
-## 7.2 Calibration/test separation
+## 8.2 Calibration/test separation
 
 Layer and site are chosen on a **calibration** split and recorded before any test
 number is read. A site picked after seeing the test split is a maximum, not a
@@ -794,7 +1009,7 @@ written to disk on the calibration side and **read back from disk** on the
 evaluation side, so the separation is a filesystem boundary rather than a
 promise.
 
-## 7.3 Gates
+## 8.3 Gates
 
 Two strengths.
 
@@ -816,7 +1031,7 @@ rather than refusing.
 that step. Gates are deliberately mechanical where the scientific result may be
 null; a valid instrument must still pass when no semantic effect is found.
 
-## 7.4 Reproducibility
+## 8.4 Reproducibility
 
 - **Seed 42 everywhere** by default (generator, CV splits, subsampling,
   bootstrap).

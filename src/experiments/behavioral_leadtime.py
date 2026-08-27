@@ -142,7 +142,7 @@ class PositionReadout:
     readout that does not beat this is reading position, not taint.
 
     This is the taint-task analogue of the surface-shortcut baseline that E2/E3
-    use (`METHODS.md` §7): same decision-rule shape, no model in the loop.
+    use (`METHODS.md` §8): same decision-rule shape, no model in the loop.
     """
 
     def __init__(self):

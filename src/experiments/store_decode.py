@@ -134,7 +134,7 @@ def surface_features(
     """+-`window` token ids around the anchor, plus the anchor index. No model.
 
     Deliberately the same feature set stage 20 uses for its surface baseline
-    (`docs/METHODS.md` section 7), so the two numbers are comparable. Its reach
+    (`docs/METHODS.md` section 8), so the two numbers are comparable. Its reach
     is bounded: the mutated literal sits at least `MIN_MUTATION_DISTANCE`
     tokens before the injection anchor, outside every window this baseline
     sees.

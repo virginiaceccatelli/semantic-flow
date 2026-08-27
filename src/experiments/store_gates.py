@@ -86,7 +86,7 @@ STORE = GateSpec(
 
 BINDING = GateSpec(
     experiment="E13",
-    order=("H0", "H1", "H2", "H3", "H4", "H5", "H6"),
+    order=("H0", "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9"),
     meaning={
         "H0": "the four-program factorial verifies: invariants, alignment, execution truth",
         "H1": "the model returns the correctly bound variable (behavioural accuracy)",
@@ -105,12 +105,35 @@ BINDING = GateSpec(
               "exactly one measured token index, the fixed-target conditions "
               "really do score both members at one token, and every declared cell "
               "exists",
+        # E17, the VERBALISATION track over the same four programs. All three
+        # gates are MECHANICAL for the same reason H6 and J0-J4 are: the
+        # informative outcome here may well be that the models verbalise
+        # nothing, and a gate that made a null hard to report would be a gate
+        # that chose the result.
+        "H7": "the candidate vocabulary is mechanically sound: every declared "
+              "lexicon pair is kept whole or dropped whole with a reason, enough "
+              "pairs survive from more than one family, discovery ran on "
+              "calibration bases only and the frozen file records which, and the "
+              "candidate set contains the lexicon, the discovered pool and the "
+              "random controls without duplicates",
+        "H8": "the forced choice is mechanically sound: every declared (base, "
+              "cell, question) is scored, the rendered question is identical in "
+              "all four cells of a base, no question names the inner definition, "
+              "both choices are distinct single tokens, both variants of every "
+              "word style ran, and the value positive control ran",
+        "H9": "the verbalisation relevance readout is mechanically sound: H6's "
+              "checks on the verbalisation prompt, plus a positive-score "
+              "condition — `R_t / s` is a share only when the score is positive, "
+              "and conservation holds for negative scores too",
     },
     owner={
         "H0": "101_binding_verify", "H1": "102_binding_behaviour",
         "H2": "104_binding_decode", "H3": "105_binding_ceiling",
         "H4": "106_binding_interchange", "H5": "106_binding_interchange",
         "H6": "140_binding_relevance",
+        "H7": "150_binding_verbal_discover",
+        "H8": "151_binding_verbal_behaviour",
+        "H9": "152_binding_verbal_relevance",
     },
     requirements={
         "100_binding_pairs": (), "101_binding_verify": (),
@@ -127,6 +150,24 @@ BINDING = GateSpec(
         # `correct_both` and reported as a stratifier instead of a gate.
         "140_binding_relevance": ("H0",),
         "141_binding_relevance_report": (),
+        # E17 needs the verified factorial and nothing else, for exactly the
+        # reason E16 does: H1 fails on deepseek-coder-1.3b, and whether a model
+        # that answers the VALUE question at 0.809 can answer a WORD question is
+        # one of the things this track is for. Behavioural correctness on both
+        # tasks is carried into the rows and reported as a stratifier.
+        #
+        # Stage 151 does NOT require H7. The behavioural half of E17 needs no
+        # candidate vocabulary at all — it scores two declared choice tokens — so
+        # tying it to the discovery stage would make a forced-choice measurement
+        # wait on a lens artifact it never reads. Stage 152 does not require H8
+        # for the mirror-image reason: the relevance readout is well defined
+        # whatever the model answers, and requiring the behavioural gate would
+        # delete the `shift_without_verbalisation` outcome from the verdict space
+        # before it could be observed.
+        "150_binding_verbal_discover": ("H0",),
+        "151_binding_verbal_behaviour": ("H0",),
+        "152_binding_verbal_relevance": ("H0",),
+        "153_binding_verbal_report": (),
     },
     default_root="results/binding",
 )

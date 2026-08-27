@@ -30,7 +30,7 @@ The headline statistic is **`binding_shift_identical`** = `delta_frac_inner_def_
 - **FAIL** `H1` (the model returns the correctly bound variable (behavioural accuracy)) — overall 0.809 [0.779, 0.838] against 0.85; weakest cell ab_target 0.571 against 0.75
 - **PASS** `H6` (the relevance readout is mechanically sound: the LRP rules actually installed so relevance conserves, the token roles partition every token exactly once, the per-role deltas close to the difference of the two conservation ratios, every binding_flip pair differs at exactly one measured token index, the fixed-target conditions really do score both members at one token, and every declared cell exists) — 9600 readings and 19200 paired contrasts over 4 contrasts x 6 layers x 4 target conditions; median |rho-1| 1.56e-07; conserving layers [0, 3, 7, 11, 15, 19]; LRP rules bound {'ln': 49, 'mlp': 24, 'attn': 24}
 
-Not run for this model: `H2`, `H3`, `H4`, `H5`. A gate that was never run is not a failed gate; stage 140 requires H0 only.
+Not run for this model: `H2`, `H3`, `H4`, `H5`, `H7`, `H8`, `H9`. A gate that was never run is not a failed gate; stage 140 requires H0 only.
 
 H6 is **mechanical**: a null redistribution passes it. It gates whether the numbers are relevance at all, never whether they are interesting.
 

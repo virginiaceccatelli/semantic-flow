@@ -22,8 +22,8 @@
 # See docs/RESULTS.md for what is currently supported and docs/ARCHIVE.md
 # for the retired interpretation and why each piece of it was retired.
 
-version: 3
-updated: 2026-08-24
+version: 4
+updated: 2026-08-26
 
 experiments:
 
@@ -661,6 +661,114 @@ experiments:
       that is reported as a fact, not solved; whether the direction is causally
       used is untested and would need an intervention, which the E15 extension's
       scope prohibits.
+
+  E16:
+    name: R-lens binding attribution
+    status: supporting
+    stage: "140,141"
+    model: "deepseek-coder-6.7b, deepseek-coder-1.3b"
+    tables:
+      - results/binding/deepseek-coder-6.7b/relevance/relevance_summary.csv
+      - results/binding/deepseek-coder-6.7b/relevance/relevance_arms.csv
+      - results/binding/deepseek-coder-1.3b/relevance/relevance_summary.csv
+    claim: >
+      OBSERVATIONAL, and interpretable on 6.7b only. When the binding flips and
+      exactly ONE token of a 21-token program changes, the conserving R-lens moves
+      answer relevance from the definition leaving scope to the one entering it:
+      the inner definition's token-identical VALUE gains +0.049 of the answer
+      score [+0.048, +0.050] and the outer definition loses -0.078
+      [-0.079, -0.076], both 280/280 in the predicted direction on held-out
+      bases. The one differing token carries +0.002, about 1.5% of the movement,
+      so the shift is carried by text that did not change. Arms agree (ratio
+      0.98-1.01), the fixed-output-token conditions retain +0.037 at sign >= 0.97,
+      scoring the competing value reverses to -0.053, the same-binding controls
+      are flat (|mean| <= 0.002, p >= 0.24), and conservation is 8.6e-8. Peak at
+      layer 15 (+0.219, 48% depth).
+    why_supporting: >
+      It is attribution, not intervention. R10's DAS interchange is the causal
+      result on this corpus and this does not extend it. The two are not two
+      measurements of one quantity and no ratio between them is computed.
+    caveat: >
+      Three limits. 1. The mismatched-pair control REPRODUCES the treatment to
+      four decimals, because every base is one template with substituted names -
+      so a mismatched pair still contrasts the same two cells and the control has
+      little power here. It does not show the effect is spurious (between-cell
+      separation is 4.5-10x the within-cell spread) but it does bound the
+      statistics: quote effect sizes, not p-values. 2. deepseek-coder-1.3b is NOT
+      interpretable: 7.56% of bound-value scores are <= 0, all in the shadowing
+      cells where H1 fails, which makes R_t/s a share of a negative number.
+      Conservation held at 1.6e-7 and noticed nothing. 3. The attn-rule detaches
+      q and k, so "attend to the right definition" is precisely the mechanism the
+      instrument cannot see.
+    outstanding:
+      - >
+        DAS's layer 8 was never read: the grid comes from MODEL_REGISTRY's
+        generated probe_layers (0,3,7,11,15,19,23,27), so the nearest cell is
+        L7 at +0.172.
+      - >
+        Three defects found by reading the first run and deliberately NOT patched
+        afterwards, since changing gate logic after seeing a result is what the
+        gate discipline exists to prevent: no positive-score condition beside the
+        conservation check; verdict_checks.arms_agree compares MEANS and so
+        mislabelled 1.3B where the median and sign agree; the mismatched-pair
+        control is run and reported but never entered the checklist. All three are
+        addressed prospectively in E17.
+
+  E17:
+    name: binding verbalisation
+    status: active
+    stage: "150,151,152,153"
+    model: "deepseek-coder-1.3b, deepseek-coder-6.7b (behavioural half also starcoder2)"
+    tables: []
+    claim: >
+      BUILT AND SMOKE-TESTED, NOT YET RUN AT SCALE. No claim yet. The question:
+      R10 shows the binding representation is causally used and R11 shows the
+      answer's relevance moves with it, both in internal coordinates - does the
+      distinction surface in anything the model EMITS, and if so is that word read
+      off the same def-use structure? Two halves kept apart because they can come
+      apart in both directions: a forced choice in four question styles x two
+      variants (chance pinned at 0.500 by E13's factorial), and R11's R-lens with
+      a pole word's unembedding row as the cotangent.
+    design_notes:
+      - >
+        The positive control is in the design from the start rather than added
+        after a null, which is E15-C/E15-D's lesson applied at design time: E13's
+        own value question, same harness, bases, cells and readout position, at
+        1.000 on 6.7b. Word styles at chance beside a ceiling there is a fact
+        about verbalisation; beside a failing control it licenses nothing.
+      - >
+        The candidate vocabulary is 11 MATCHED OPPOSING PAIRS across four families
+        (scope, shadowing, ordinal, action), so a pole frequency imbalance cancels
+        and "the nearest assignment wins" (ordinal) stays separable from "has a
+        scope concept" (scope). Dropped as pairs, never as words. Encodability was
+        checked before the list was fixed: shadowed, reassigned, overwritten,
+        redefined and rebound are all multi-token on deepseek-coder. 10 of 11
+        pairs survive there, all 11 on starcoder2. Stage 150 additionally ranks
+        the full vocabulary on CALIBRATION bases only and freezes it to disk.
+      - >
+        The headline scores the POLE MARGIN, not a single word's logit. A raw
+        logit has no meaningful sign (softmax is shift-invariant) and R_t/s is a
+        share only when s > 0 - the failure that voided E16's 1.3b readings. The
+        margin is shift-invariant, is what the forced choice reads, and its
+        fractions are invariant under s -> -s because relevance is linear in the
+        cotangent, so the sign problem cannot arise. By that same linearity it is
+        exactly R(inner) - R(outer) over s_inner - s_outer and costs no extra
+        backward pass.
+      - >
+        Two controls swap roles relative to E16. The arms are a VALUE-independence
+        control here, not an output-token one, because the scored word does not
+        move between arms while the literals do. And fixed_inner/fixed_outer are
+        base-INDEPENDENT, so the output-token control is exact for every contrast.
+      - >
+        Gates H7/H8/H9 are all MECHANICAL and each requires H0 only. H1 is not
+        required (it fails on 1.3b at 0.809) and stage 152 does not require H8,
+        because requiring it would delete the shift_without_verbalisation outcome
+        from the verdict space before it could be observed.
+    caveat: >
+      No branch of the verdict licenses a causal claim, and answering the question
+      is NOT introspection: the question is about the program, and a model can
+      answer it by reading the text at inference time as any reader would. A null
+      bounds the four phrasings and eight choice words tested, not the concept.
 
   E6:
     name: behavioral lead time

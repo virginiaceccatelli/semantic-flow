@@ -635,6 +635,111 @@ right definition" is precisely the mechanism that is invisible here.
 
 ---
 
+# Part F.3 — Is the binding verbalised? (150–153)
+
+E16 asks where the answer's relevance sits. E17 asks whether the model ever
+**says** which definition is in scope, and then applies E16's instrument to the
+word it says. Method: [METHODS §7](METHODS.md#7-verbalisation-of-the-binding-relation).
+Result placeholder: [RESULTS R12](RESULTS.md#r12--verbalisation-is-any-of-this-said-out-loud-built-not-yet-run).
+
+```bash
+MODEL=deepseek-coder-6.7b
+
+# 150  the lexicon this tokenizer supports, plus full-vocabulary discovery on
+#      CALIBRATION bases only, frozen to disk                    H7   ~10 min GPU
+python scripts/150_binding_verbal_discover.py --model $MODEL
+
+# 151  the forced choice (4 word styles x 2 variants + the value positive
+#      control), and the held-out vocabulary contrast            H8   ~20 min GPU
+python scripts/151_binding_verbal_behaviour.py --model $MODEL
+
+# 152  the R-lens with a pole WORD as the cotangent              H9   ~35 min GPU
+python scripts/152_binding_verbal_relevance.py --model $MODEL
+
+# 153  verdict + the R10/R11 comparison                           -   seconds CPU
+python scripts/153_binding_verbal_report.py --model $MODEL
+```
+
+Or the whole track, one model at a time:
+
+```csh
+screen -dmS verbal-1.3b env MODEL=deepseek-coder-1.3b jobs/binding_verbal.csh
+# wait for it to finish (screen -ls), THEN:
+screen -dmS verbal-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_verbal.csh
+```
+
+**Run the two models one at a time.** Same VRAM trap as Part F.2 — see [The VRAM
+trap, and why it looks like a lens bug](#the-vram-trap-and-why-it-looks-like-a-lens-bug).
+Stage 150 is the most VRAM-hungry of the four despite being the cheapest in time,
+because it materialises the full unembedding as float32 (about half a gigabyte on
+6.7b) to rank every vocabulary token; it frees it before returning. All four
+stages refuse at load with a named preflight rather than failing mid-loop.
+
+## Every stage requires H0 and nothing else
+
+Not an oversight. H1 fails on deepseek-coder-1.3b (0.809 overall), and whether a
+model that answers the *value* question at 0.809 can answer a *word* question is
+one of the things this track exists to measure. Stage 152 also does not require
+H8: the decomposition is well defined whatever the model answers, and requiring
+the behavioural gate would delete the `shift_without_verbalisation` outcome from
+the verdict space before it could be observed.
+
+## Stage 151 does not need stage 150
+
+The forced choice scores two declared choice tokens and reads no candidate
+vocabulary at all. If `verbal/verbal_candidates.json` is missing, stage 151 skips
+the vocabulary contrast with a message and still produces the behavioural result —
+which is the half that answers the headline question. Run 150 when you want the
+contrast and the discovery table.
+
+## Read the report in the order it is written
+
+Section 2 (the forced choice) comes before section 4 (the attribution)
+deliberately. A redistribution of a word's relevance means something different
+depending on whether the model can produce that word at all, and reading them the
+other way round is how a relevance shift gets reported as verbalisation.
+
+Check the `value` row of the behaviour table **first**: it is the positive
+control, and word styles at chance mean nothing unless it is at ceiling. Then:
+
+- `says_inner_rate` — 0.000 or 1.000 beside an accuracy of 0.500 is a model that
+  always gives the same answer, not a model that is half right;
+- the per-variant rows — a style that only works in one option *order* is
+  reporting a position bias, not an answer;
+- arm consistency — the value-independence control, and **not** the same control
+  the arms provide in E16;
+- the per-family contrast rows — a result carried entirely by the `ordinal`
+  family means "the nearest assignment wins", which needs no scope concept.
+
+## The positivity table bounds the single-pole rows, not the headline
+
+`verbal/verbal_relevance_positivity.csv` reports the positive-score rate per
+(layer, pole). It applies to the `said` / `unsaid` / `fixed_*` conditions, where
+`R_t / s` is only a share when `s > 0`. It does **not** apply to the headline
+`margin` condition, whose fractions are invariant under `s → −s` — see
+[Check the sign of the score before reading any share](#check-the-sign-of-the-score-before-reading-any-share)
+for why that distinction exists at all, and E16's 1.3B failure for what it cost
+the first time.
+
+## One style per relevance run
+
+Each style costs a full backward sweep, so stage 152 takes `--style` and defaults
+to the declared primary (`scope`). The pole-margin reading the headline rests on
+is derived from the two pole passes arithmetically and costs nothing extra. To
+read a second style, re-run stage 152 with `--style binding`; the outputs
+overwrite, so copy `verbal/` first if you want both.
+
+## What starcoder2 can and cannot do here
+
+Stage 152 refuses on starcoder2 and exits non-zero on purpose: LayerNorm plus a
+non-gated MLP means both homogenising LRP rules bind to nothing, so there is no
+conservation and no share to read. Stages 150, 151 and 153 are unaffected — the
+behavioural half needs no lens — so the verbalisation question **is** answerable
+on starcoder2 even though the attribution half is not. That is why
+`jobs/binding_verbal.csh` does not chain with `&&`.
+
+---
+
 # Part G — Make targets and the GPU-host workflow
 
 ## G.1 Make targets
@@ -652,6 +757,12 @@ make jlens-validate / rlens-validate
 # E16: the observational R-lens readout of E13's binding pairs
 make binding-relevance / binding-relevance-report / binding-rlens
 make binding-rlens-smoke
+
+# E17: is the binding verbalised?
+make binding-verbal                    # 150 -> 153, one model at a time
+make binding-verbal-discover / binding-verbal-behaviour
+make binding-verbal-relevance / binding-verbal-report
+make binding-verbal-smoke
 
 # the security track
 make sinkflow                    # 120 → 124

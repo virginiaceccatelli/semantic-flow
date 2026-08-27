@@ -16,6 +16,12 @@ The active evidence forms one sequence:
 4. **Binding attribution:** on the same programs, a conserving R-lens moves
    answer relevance from the inactive definition toward the active one.
 
+In progress, on the same programs: **verbalisation** — whether the model can
+*say* which definition is in scope, and whether the word it answers with is
+attributed to the same definitions the value's relevance is. Built and
+smoke-tested, not yet run; see
+[RESULTS R12](docs/RESULTS.md#r12--verbalisation-is-any-of-this-said-out-loud-built-not-yet-run).
+
 The former security benchmark, output-vocabulary study, standalone J-lens
 experiments, and R-lens taint-routing study remain reproducible and are documented
 in [docs/ARCHIVE.md](docs/ARCHIVE.md). They are not part of the active claim.

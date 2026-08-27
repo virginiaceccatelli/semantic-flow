@@ -111,7 +111,9 @@ PROBES := results/probes/$(MODEL)/core
         sinkflow-vocab-report sinkflow-vocab-all sinkflow-vocab-smoke \
         sinkflow-align sinkflow-positive sinkflow-relevance \
         sinkflow-lens-report sinkflow-lens-all sinkflow-lens-smoke \
-        binding-relevance binding-relevance-report binding-rlens binding-rlens-smoke
+        binding-relevance binding-relevance-report binding-rlens binding-rlens-smoke \
+        binding-verbal-discover binding-verbal-behaviour binding-verbal-relevance \
+        binding-verbal-report binding-verbal binding-verbal-smoke
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
 STORE_LAYERS ?= 6,12,18
@@ -454,8 +456,49 @@ binding-rlens-smoke:
 		--results results/smoke/binding/$(MODEL)
 	@test -f results/smoke/binding/$(MODEL)/relevance/relevance_summary.csv
 	@test -f results/smoke/binding/$(MODEL)/e16_report.md
-	@test -f results/smoke/sinkflow/e15d_report.md
-	@echo "SINKFLOW LENS SMOKE OK"
+	@echo "BINDING RLENS SMOKE OK"
+
+# ── E17: is the binding verbalised? (150-153) ─────────────────────────────────
+binding-verbal-discover:
+	$(PY) scripts/150_binding_verbal_discover.py --model $(MODEL)
+
+binding-verbal-behaviour:
+	$(PY) scripts/151_binding_verbal_behaviour.py --model $(MODEL)
+
+binding-verbal-relevance:
+	$(PY) scripts/152_binding_verbal_relevance.py --model $(MODEL)
+
+binding-verbal-report:
+	$(PY) scripts/153_binding_verbal_report.py --model $(MODEL)
+
+# `-` on 150 and 152 for different reasons. 150 is optional: stage 151's forced
+# choice reads no candidate vocabulary and is the half that answers the headline
+# question. 152 refuses outright on LayerNorm architectures, and 153 must still
+# run there because the behavioural result stands.
+binding-verbal:
+	-$(PY) scripts/150_binding_verbal_discover.py --model $(MODEL)
+	$(PY) scripts/151_binding_verbal_behaviour.py --model $(MODEL)
+	-$(PY) scripts/152_binding_verbal_relevance.py --model $(MODEL)
+	$(PY) scripts/153_binding_verbal_report.py --model $(MODEL)
+
+# Six bases, one layer, float32 for the same MPS reason as `binding-rlens-smoke`.
+# --n-bases 6 leaves too few calibration bases for discovery to be meaningful, so
+# the smoke skips stage 150 and lets 151 report the contrast as unavailable —
+# which is itself the path worth exercising.
+binding-verbal-smoke:
+	$(PY) scripts/151_binding_verbal_behaviour.py --model $(MODEL) \
+		--output results/smoke/binding/$(MODEL) --n-bases 6 --dtype float32 \
+		--layers=6 --n-boot 100 --no-tables --override-gate 'smoke run'
+	$(PY) scripts/152_binding_verbal_relevance.py --model $(MODEL) \
+		--output results/smoke/binding/$(MODEL) --layers=6 --n-bases 6 \
+		--dtype float32 --n-permutations 100 --n-boot 100 --n-determinism 2 \
+		--no-tables --override-gate 'smoke run'
+	$(PY) scripts/153_binding_verbal_report.py --model $(MODEL) \
+		--results results/smoke/binding/$(MODEL)
+	@test -f results/smoke/binding/$(MODEL)/verbal/verbal_behaviour_summary.csv
+	@test -f results/smoke/binding/$(MODEL)/verbal/verbal_relevance_summary.csv
+	@test -f results/smoke/binding/$(MODEL)/e17_report.md
+	@echo "BINDING VERBAL SMOKE OK"
 
 assets:
 	$(PY) scripts/90_make_paper_assets.py

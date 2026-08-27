@@ -79,6 +79,7 @@ binding change. This is observational and does not extend the causal claim.
 | **robustness** | frozen-probe transfer | resilient to distance and renaming; fragile to scope interference and flattening | three tested models where reported |
 | **causal use (R10/E13)** | rank-1 DAS interchange | 100% installed answer in both crossed arms | DeepSeek 6.7B and StarCoder2 3B |
 | **binding attribution (R11/E16)** | conserving R-lens | 280/280 shifts on 6.7B; peak ~22% of answer score | interpretable on DeepSeek 6.7B only |
+| **verbalisation (R12/E17)** | forced choice + R-lens on the answer word | **built, not yet run** | designed for both DeepSeeks |
 
 The R10/R11 labels are retained because generated reports and artifact names use
 them. Missing numbers R5–R9 refer to studies now documented in
@@ -423,6 +424,7 @@ are preserved in [ARCHIVE.md](ARCHIVE.md).
 |---|---|---|
 | causal binding transport | [METHODS §5](METHODS.md#5-das-causal-interchange-of-a-binding-component) | [DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e13_report.md), [StarCoder2 3B](../results/binding/starcoder2-3b/e13_report.md) |
 | binding attribution | [METHODS §6](METHODS.md#6-r-lens-attribution-on-the-binding-programs) | [DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e16_report.md), [DeepSeek-Coder 1.3B](../results/binding/deepseek-coder-1.3b/e16_report.md) |
+| verbalisation | [METHODS §7](METHODS.md#7-verbalisation-of-the-binding-relation) | built, not yet run — will write `e17_report.md` beside the two above |
 
 ## R10 — DAS: the binding representation is causally used
 
@@ -625,6 +627,124 @@ verbalisation result. A future verbalisation study would need to test whether th
 binding relation becomes expressible in meaningful output vocabulary or under a
 matched prompt, rather than where an existing answer score is attributed.
 
+## R12 — Verbalisation: is any of this said out loud? (built, not yet run)
+
+### Question
+
+R10 shows the models causally use a binding representation; R11 shows the
+answer's relevance moves with the binding. Both are read in the model's internal
+coordinates. Does the distinction surface in anything the model **emits** — and
+if it does, is that word read off the same structure R11 attributes the answer
+to?
+
+This is [open item 6](#open-items) built as it was specified there: a new matched
+study on the same corpus, with an output-vocabulary contrast and a
+relation-matched positive control, **not** a reinterpretation of R11.
+
+### Why it is a separate result and not an extension of R11
+
+Two senses of "verbalised" can come apart in both directions, so the design keeps
+them apart and the verdict space has a name for each combination:
+
+- **behavioural** — asked in words, does the model answer correctly?
+- **attributional** — when the answer *is* that word, does relevance sit on the
+  competing definitions the way it does for the value?
+
+A model can answer from a shallow cue while the relevance sits entirely on the
+question text. A model can carry the distinction and be unable to name it. The
+report is ordered behaviour-first for that reason: a redistribution of a word's
+relevance means something different depending on whether the model can produce
+that word at all.
+
+### Method
+
+E13's four programs per base are reused whole, with a question appended that is
+rendered from the **outer** name only — the letter both members of a pair share.
+The rendered question is therefore byte-identical in all four cells, the prompt
+still differs at exactly one token, and that is re-measured on the encoded
+prompts rather than inherited.
+
+```
+z = 6                        z = 6
+def f():                     def f():
+    d = 3                        z = 3
+    return z                     return z
+# Question: does f return the z assigned inside f or outside f? Answer:
+#                → outside                        → inside
+```
+
+Four question styles in two variants each, plus E13's own value question as the
+positive control. Chance is 0.500 **by construction**: within a base the correct
+answer is "outer" twice and "inner" twice, so a model that always answers the
+same way scores exactly 0.500.
+
+The candidate vocabulary is 11 matched opposing pairs across four families
+(scope, shadowing, ordinal, action) — matched so that a frequency imbalance
+between poles cancels, and separated by family so that "the nearest assignment
+wins" stays distinguishable from "has a scope concept". Encodability was checked
+before the list was fixed rather than after, and pairs are dropped whole. A
+separate non-polar set measures whether binding vocabulary is in play at all,
+against a random floor, and is never pooled with the polar contrast. Stage 150
+additionally ranks the full vocabulary on calibration bases only and freezes the
+result to disk, because a hand-written list is a hypothesis about the model
+rather than a fact about it.
+
+### The scored quantity, changed because of R11's first run
+
+Stage 152 is R11's readout with a pole word's unembedding row as the cotangent.
+The one thing that had to change is what counts as the score. A raw logit has no
+meaningful sign — softmax is shift-invariant — and `R_t / s` is a share of the
+answer only when `s > 0`. R11 lost its 1.3B result to exactly that, with
+conservation holding at 1.6e-7 and noticing nothing. The headline here is
+therefore the **pole margin**, `logit(inner word) − logit(outer word)`, which is
+shift-invariant, is the quantity the forced choice actually reads, and whose
+fractions are invariant under `s → −s` because relevance is linear in the
+cotangent. The sign problem cannot arise. And by that same linearity the margin
+decomposition is exactly `R(inner) − R(outer)` over `s_inner − s_outer`, so it
+costs no extra backward pass.
+
+### Two controls that swap roles relative to R11
+
+Reusing R11's tables without noticing this would mean reading two different
+controls under one name.
+
+| | R11 (value scored) | R12 (word scored) |
+|---|---|---|
+| the arms | the output-token control | a **value-independence** control: the scored token does not move between arms while the literals do |
+| fixed conditions | free, base-dependent | free **and** base-independent; the `margin` condition scores both members by the same linear functional |
+| same-binding controls | move the scored token as the treatment does | move the *value* while the correct word does not move at all |
+
+### What each outcome will license
+
+Declared before the run, in `binding_verbalisation.VERBAL_VERDICTS`:
+
+| outcome | reading |
+|---|---|
+| words at chance, value at ceiling | the distinction is not verbalised, and the instrument is exonerated by the control |
+| words above chance, relevance redistributes as in R11 | the word is read off the same def–use structure the answer is — the strongest outcome available here, still observational |
+| words above chance, relevance on the question text | verbalised but not grounded in the program; must not be merged with R11 |
+| words above chance, controls fire or arms disagree | the word tracks the literal, not the binding |
+| words at chance, relevance still redistributes | the structure is there and the model cannot say it; report as attribution of an unsaid word |
+
+### Limits, stated before any number exists
+
+- **No branch licenses a causal claim.** R10 is the causal instrument. A word is
+  an output, and attribution of a word is still attribution.
+- **Answering the question is not introspection.** The question is about the
+  program, and a model can answer it by reading the text at inference time as any
+  reader would. Nothing here separates a report about the model's own computation
+  from a correct answer about the code.
+- **A null bounds the phrasings tested, not the concept.** Four question forms and
+  eight choice words is a sample, not coverage. R10 already shows the
+  representation is present and used.
+- The attn-rule blindness carries over from R11 unchanged: with q and k detached,
+  "attend to the right definition" is the mechanism the lens cannot see.
+
+Method: [METHODS §7](METHODS.md#7-verbalisation-of-the-binding-relation).
+Commands: [PIPELINE Part F.3](PIPELINE.md#part-f3--is-the-binding-verbalised-150153).
+
+---
+
 # Synthesis: the main finding
 
 The active evidence now forms one cumulative argument.
@@ -712,15 +832,21 @@ Ordered by how directly they would strengthen the active narrative.
    beyond that template contrast.
 3. **Gate R-lens shares on a positive selected score.** This would make the 1.3B
    failure explicit in the mechanical gate rather than only in interpretation.
+   Not yet done for R11 itself — changing a gate after seeing the result it would
+   have caught is exactly what the gate discipline exists to prevent, so it waits
+   for a re-run. It is implemented prospectively in R12, which avoids needing it
+   by scoring a shift-invariant margin instead of a raw logit, and measures and
+   reports the rate anyway.
 4. **Explain why rank-1 DAS outperforms the whole-state patch.** The likely
    account—helpful and opposing donor components entering together—has not been
    independently tested.
 5. **Test DAS at a second site.** Replication across architectures is complete;
    localization within each network remains narrow.
-6. **Add a binding verbalisation experiment.** This must be a new matched study,
-   not a reinterpretation of R11: test whether the binding relation becomes
-   expressible in meaningful output vocabulary or under a prompt with a
-   relation-matched positive control.
+6. **Add a binding verbalisation experiment.** ~~Specified~~ **built** as R12
+   (stages 150–153): a new matched study on the same corpus, with a
+   matched-pair output vocabulary, calibration-only discovery, and E13's own
+   value question as the relation-matched positive control. Smoke-tested; not
+   yet run at scale. What remains is the run and the write-up.
 7. **Build context-matched mutations of real code.** This is required before the
    construction-pinned representational claim can be extended beyond synthetic
    programs.
