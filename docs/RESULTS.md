@@ -13,10 +13,7 @@ survives many surface changes but weakens under scope interference and
 control-flow flattening. Third, a DAS intervention shows that a rank-1 binding
 component is causally used at the variable-use site. Fourth, an R-lens analysis
 of the same programs shows that the answer score is reassigned from the inactive
-definition toward the active one. Fifth, a separate verbalisation study asks
-whether that distinction becomes expressible in the model's answers and output
-vocabulary. It does on DeepSeek-Coder 6.7B, but only for some phrasings and only
-late in the network.
+definition toward the active one.
 
 The security, output-vocabulary, standalone J-lens, and taint-routing studies are
 preserved in [ARCHIVE.md](ARCHIVE.md). They are not needed to evaluate the active
@@ -26,9 +23,7 @@ Every active result below completed at canonical scale and is paired with the
 control that could have falsified it. Read “represented” as *recoverable from a
 hidden state*, “robust” as *the same frozen readout still transfers*, “used” only
 where an intervention changes the downstream answer, and “attributed” as an
-observational decomposition of an unchanged output score. “Verbalised” means
-that the model can express the distinction in a tested word choice; it does not
-mean that the model is introspecting about its own internal computation.
+observational decomposition of an unchanged output score.
 
 ### Contents
 
@@ -36,7 +31,7 @@ mean that the model is introspecting about its own internal computation.
 - [Status at a glance](#status-at-a-glance)
 - [Part I — The relation is represented](#part-i--the-relation-is-represented)
 - [Part II — Robustness and failure boundaries](#part-ii--robustness-and-failure-boundaries)
-- [Part III — Causal use, binding attribution, and verbalisation](#part-iii--causal-use-binding-attribution-and-verbalisation)
+- [Part III — Causal use and binding attribution](#part-iii--causal-use-and-binding-attribution)
 - [Synthesis](#synthesis-the-main-finding)
 - [Boundaries](#boundaries-what-this-project-does-not-claim)
 - [Open items](#open-items)
@@ -74,17 +69,6 @@ definition tokens, survives crossed and fixed-output-token controls, reverses
 when the competing answer is scored, and is absent when values change without a
 binding change. This is observational and does not extend the causal claim.
 
-**5. Verbalisation.** Asked in words whether the returned variable is *local* or
-*global*, DeepSeek-Coder 6.7B is right on 0.900 of held-out programs, in both
-option orders, while answering the value question at 1.000. Mapping the
-answer-position state into vocabulary space, the inner-pole and outer-pole scope
-words almost completely swap mass with the binding at layers 23–27 — and a
-calibration-only ranking of the full vocabulary recovers an insideness cluster
-(`inside`, `inner`, `within`, `interior`, `dentro`) without being given a
-lexicon. The scope word family carries three times what the positional family
-does. So the distinction is sayable, in some phrasings and not others, and it
-becomes sayable much later in the network than it becomes represented or used.
-
 ---
 
 ## Status at a glance
@@ -95,7 +79,6 @@ becomes sayable much later in the network than it becomes represented or used.
 | **robustness** | frozen-probe transfer | resilient to distance and renaming; fragile to scope interference and flattening | three tested models where reported |
 | **causal use (R10/E13)** | rank-1 DAS interchange | 100% installed answer in both crossed arms | DeepSeek 6.7B and StarCoder2 3B |
 | **binding attribution (R11/E16)** | conserving R-lens | 280/280 shifts on 6.7B; peak ~22% of answer score | interpretable on DeepSeek 6.7B only |
-| **verbalisation (R12/E17)** | forced choice + output-vocabulary contrast | 0.900 on local/global; vocabulary poles swap at layers 23–27 | 6.7B; 1.3B untestable (its positive control fails) |
 
 The R10/R11 labels are retained because generated reports and artifact names use
 them. Missing numbers R5–R9 refer to studies now documented in
@@ -407,30 +390,24 @@ map of when a tool built on these representations should not be trusted.
 
 ---
 
-# Part III — Causal use, binding attribution, and verbalisation
+# Part III — Causal use and binding attribution
 
 Part I established that binding and def–use relations are recoverable from hidden
 states. Part II showed where those readouts remain stable and where they fail.
 Part III asks what happens after a binding representation has formed. Does the
 model use it to choose an answer? Can the unchanged answer be traced back to the
-definition that is actually in scope? Does the distinction eventually become
-expressible in ordinary scope-related words?
+definition that is actually in scope?
 
-Three experiments use the same controlled binding programs. DAS changes one
+Two experiments use the same controlled binding programs. DAS changes one
 learned component at the unchanged variable-use token and tests whether the
 emitted value follows the donor program's binding; this is the causal result.
 The R-lens changes no forward activation or output and instead divides the
-unchanged answer score among input roles; this is an attribution result. The
-verbalisation study appends a controlled question and asks both whether the
-model answers with the correct scope word and when the binding contrast aligns
-with those words in output-vocabulary coordinates.
+unchanged answer score among input roles; this is an attribution result.
 
 Reading them together is useful because each adds a different link. DAS
 establishes causal use at a tested site and layer. The R-lens describes how the
-unedited answer is attributed across the source program. Verbalisation shows
-that the distinction can become sayable, but does not establish either causal
-use or introspection. A positive lens result is not extra causal evidence, and a
-null lens or wording result would not undo DAS.
+unedited answer is attributed across the source program. A positive lens result
+is not extra causal evidence, and a null lens result would not undo DAS.
 
 The security benchmark, output-vocabulary study, standalone J-lens experiments,
 and R-lens taint-routing experiment remain reproducible but are no longer part of
@@ -443,7 +420,6 @@ are preserved in [ARCHIVE.md](ARCHIVE.md).
 |---|---|---|
 | causal binding transport | [METHODS §5](METHODS.md#5-das--causal-interchange-of-a-binding-component) | [DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e13_report.md), [StarCoder2 3B](../results/binding/starcoder2-3b/e13_report.md) |
 | binding attribution | [METHODS §6](METHODS.md#6-r-lens-attribution-on-the-binding-programs) | [DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e16_report.md), [DeepSeek-Coder 1.3B](../results/binding/deepseek-coder-1.3b/e16_report.md) |
-| verbalisation | [METHODS §7](METHODS.md#7-verbalisation-of-the-binding-relation) | [DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e17_report.md), [DeepSeek-Coder 1.3B](../results/binding/deepseek-coder-1.3b/e17_report.md) |
 
 ## R10 — DAS: the binding representation is causally used
 
@@ -639,305 +615,10 @@ answer change; the R-lens decomposes an unchanged forward computation.
 The layer profile indicates where attribution under these backward rules is
 redistributed, not where binding is computed. The attention rule also freezes
 query/key pattern formation, so the experiment cannot establish the intuitive
-mechanism “the model attends to the correct definition.” Finally, this result by
-itself says nothing about verbalisation. R12 asks that separate question with a
-matched prompt and an output-vocabulary contrast rather than reinterpreting this
-attribution profile.
+mechanism “the model attends to the correct definition.” Whether the same
+intermediate binding state aligns with semantic vocabulary remains an open
+J-lens experiment rather than a reinterpretation of this attribution profile.
 
-## R12 — Verbalisation: the binding is expressed in the model's own scope words, late
-
-### Question
-
-R10 shows the models causally use a binding representation; R11 shows the
-answer's relevance moves with the binding. Both are read in internal
-coordinates. Does the distinction surface in anything the model **emits** — and
-if it does, is that word attributed to the same definitions the value is?
-
-This is [open item 6](#open-items) built as specified there: a new matched study
-on the same corpus, with an output-vocabulary contrast and a relation-matched
-positive control, not a reinterpretation of R11.
-
-### Setup
-
-Stages 150–153 over E13's factorial, unchanged: the same four programs per base,
-the same frozen calibration/test split, the same anchor positions. A question is
-appended, rendered from the **outer** name only — the letter both members of a
-pair share — so the rendered question is byte-identical in all four cells and the
-prompt still differs at exactly one token out of 35.
-
-```
-z = 6                        z = 6
-def f():                     def f():
-    d = 3                        z = 3
-    return z                     return z
-# Question: does f return the z assigned inside f or outside f? Answer:
-#                → outside                        → inside
-```
-
-Four question styles, each asked in two variants, plus E13's own value question:
-
-| style | choices | why this one |
-|---|---|---|
-| `scope` (declared primary) | inside / outside | names the construction, not a technical term |
-| `binding` | inner / outer | the vocabulary R11's roles are named in |
-| `pyscope` | local / global | Python's keyword pair |
-| `shadow` | yes / no | single tokens under any tokenizer |
-| `value` | the two literals | **the positive control** — E13's own forced choice |
-
-**Chance is 0.500 by construction**: within a base the correct answer is "outer"
-in two cells and "inner" in two, so a model that always answers the same way
-scores exactly 0.500. Each two-option style is asked in both option *orders* and
-the yes/no style in both *polarities*.
-
-Ran on 400 bases for 6.7B (280 held out) and 200 for 1.3B (140 held out); 47 and
-16 minutes respectively. Every mechanical control holds in both models: 800/800
-and 400/400 binding-flip pairs differ at exactly the recorded mutation index;
-the use token is identical in 1600/1600 and 800/800 contrasts; no rendered
-question contains the inner definition's name and every one names the tracked
-variable; the same-binding controls differ at exactly two indices as designed;
-re-reading a prompt twice moves no fraction at all (max |Δ| = 0.0 over 12
-re-reads); conservation is 1.3e-7 and 3.0e-7. Gates H7, H8, H9 pass in both.
-
-Of 11 declared lexicon pairs, 10 survive both tokenizers — only `masked/exposed`
-drops, because `masked` is multi-token on deepseek-coder — leaving all four
-families represented.
-
-### Result 1 — 6.7B can say it, in one vocabulary and not others
-
-Held-out accuracy, both variants pooled, cluster intervals over bases:
-
-| style | accuracy | 95% CI | says_inner | verbalised |
-|---|---|---|---|---|
-| `pyscope` (local/global) | **0.900** | [0.888, 0.913] | 0.523 | **yes** |
-| `scope` (inside/outside) | 0.741 | [0.735, 0.746] | 0.261 | see below |
-| `binding` (inner/outer) | 0.500 | [0.500, 0.500] | 1.000 | no |
-| `shadow` (yes/no) | 0.500 | [0.500, 0.500] | 0.500 | no |
-| `value` — positive control | **1.000** | [1.000, 1.000] | 0.500 | yes |
-
-`pyscope` is the result. It clears chance in **both** option orders — 0.923
-direct, 0.878 swapped — and its pooled `says_inner` of 0.523 shows it is not a
-constant answer. Asked whether the returned variable is *local* or *global*, the
-model is right nine times in ten.
-
-The two nulls are informative rather than empty, because each fails in a
-diagnosable way. `binding` answers " inner" for every program in both orders, so
-the technical-term wording is answered by prior, not by reading. `shadow` answers
-" yes" to both polarities — the acquiescence bias the polarity variant was built
-to catch — which is why its accuracy is exactly 0.500 in both.
-
-**And the declared primary style has to be reported as two numbers, not one.**
-`scope` pooled to 0.741, but that is a mixture of a degenerate wording and a
-near-perfect one:
-
-| variant | accuracy | says_inner |
-|---|---|---|
-| `scope` direct ("inside f or outside f?") | 0.502 | 0.002 |
-| `scope` swapped ("outside f or inside f?") | **0.980** | 0.520 |
-
-One wording collapses to answering " outside" for essentially every program; the
-other is near ceiling with a balanced answer rate. The variant control is exactly
-what surfaces this, and the pooled row should not be quoted as an accuracy — a
-design lesson recorded in [METHODS §7.4](METHODS.md#74-the-forced-choice-and-its-three-controls).
-One further caveat on the 0.980: `argmax_is_a_choice` is **0.000** for this
-style, so neither choice word is ever the model's own top continuation there,
-whereas it is 1.000 for `pyscope`.
-
-Two additional controls clarify the 6.7B result. First, the value-independence
-comparison asks whether the same scope word is chosen across arms even though
-the returned literal changes. In the non-saturated conditions, `pyscope` agrees
-across arms on 0.793 and 0.854 of bases against a 0.500 floor, while the swapped
-`scope` wording reaches 0.979 and 1.000. The word therefore tracks binding much
-more than literal identity, although not perfectly. Constant-answer cells are
-uninformative here because their agreement is automatically 1.000.
-
-Second, there is almost no dissociation between computing the value and naming
-the binding. The value is correct in every cell, so `word_given_value` is the
-same as word accuracy: 0.923 and 0.878 for the two `pyscope` orders and 0.980 for
-swapped `scope`. When 6.7B computes the binding on these examples, it can usually
-name it in the successful phrasings.
-
-### Result 2 — the distinction is in output-aligned coordinates, and it arrives late
-
-This is the strongest single piece of evidence here. Mapping the answer-position
-state into vocabulary space and taking the paired change in (inner-word mass −
-outer-word mass) over the frozen candidate set, oriented `target − source`:
-
-| layer | Δ contrast prob | 95% CI | sign consistency |
-|---|---|---|---|
-| 0–19 | ≤ 1e-4 in magnitude, sign unstable across layers | | |
-| 23 | **+0.780** | [+0.692, +0.869] | 0.846 |
-| 27 | **+0.821** | [+0.710, +0.932] | 0.950 |
-| 31 | +0.030 | [+0.015, +0.049] | 0.996 |
-
-Both arms agree to three decimals at every layer. Between layers 19 and 23 the
-candidate-set distribution goes from carrying essentially nothing to almost
-completely swapping poles with the binding.
-
-**The family split favours a scope reading over a positional one.** In the
-z-scored convention, which is exact under this readout, at layer 27:
-
-| family | Δz | sign |
-|---|---|---|
-| **scope** (local/global, inner/outer, inside/outside, nested/module) | **+0.444** | 1.000 |
-| ordinal (second/first, later/earlier, new/original) | +0.145 | 0.996 |
-| action (replaced/kept, changed/unchanged) | +0.122 | 1.000 |
-| shadowing (hidden/visible) | +0.055 | 0.843 |
-| random control (selected by no delta) | +0.024 | 0.989 |
-| non-polar mechanism set | −0.042 | 0.011 |
-
-`scope` is three times `ordinal` and eighteen times the random floor. Since
-"the nearest assignment wins" is a purely positional rule that needs no notion of
-scope, and `ordinal` is the family that would carry it, this comparison is
-evidence for the scope reading. The non-polar mechanism set moves slightly
-*negative*, so "the vocabulary of binding is in play" is **not** supported — only
-the polar contrast is. The random floor is small but not zero, so a global shift
-affecting all tokens exists and is an order of magnitude below the effect.
-
-**Discovery found the words without being told them.** Ranking the full 32k
-vocabulary by paired logit-lens delta on **calibration bases only**, the tokens
-that rise most under the shadowing binding at layers 23–31 are:
-
-> ` Inside`, ` inside`, ` Within`, ` interior`, `interior`, ` inner`, `inner`,
-> `Inner`, `within`, `ins`, ` dentro`
-
-A semantically coherent insideness cluster across casings and even across
-languages, from a ranking that had no lexicon supplied. Only 18 of 432 discovered
-rows were in the hand-written lexicon, so this is mostly vocabulary nobody
-guessed, converging on the same families that carried the contrast. The falling
-side is looser but not meaningless: ` wrong`, `old`, ` old`, `undefined`,
-`extern`, ` fail`.
-
-**The depth is the point.** The binding is linearly decodable in middle layers
-(R1, ~0.984), causally transportable at layer 8 (R10), attributed at layer 15
-(R11) — and becomes expressible in output-aligned words only at layers 23–27, 72
-to 84% of the way through the network, falling again at the last layer.
-Representation and use come early; sayability comes late.
-
-### Result 3 — the attribution half did not work, for two separate reasons
-
-Both are reportable as they stand, and neither is a result about the model.
-
-**The pre-declared primary style turned out to be the degenerate one.** Stage 152
-reads one style per run and defaults to `scope/direct` — which is precisely the
-wording where the answer is a constant (0.502, `says_inner` 0.002). So the R-lens
-was applied to a question the model is not answering. That is a design miss, and
-the fix is a re-run with `--style pyscope` ([open item 3](#open-items)).
-
-**The declared headline condition is ill-conditioned on this corpus.** The
-headline scores the pole margin, chosen because a raw logit's sign is arbitrary
-and `R_t/s` is a share only when `s > 0` — the failure that voided R11's 1.3B
-readings. That protection worked exactly as intended: the margin's fractions are
-sign-invariant and conservation holds at median |ρ−1| = 1.0e-6. But the guard
-against *dividing by zero* is not a guard against *ill-conditioning*, and
-|s_margin| ≈ 21 against single-pole logits of 303 and 325 means the fractions are
-a difference of two near-cancelling large quantities over a small denominator. The
-median ratio |s_margin| / max(|s_inner|, |s_outer|) is **0.064**, so every share is
-inflated about **15.7×**; on 1.3B the ratio is 0.011 and the amplification 88×.
-The consequences are visible and disqualifying:
-mean shifts up to 0.53 of the answer score, a `same_inner` control interval of
-[−0.77, +0.35], and the mismatched-pair control reproducing the treatment at a
-ratio of 0.81–0.99 at every layer. Nothing can be read from it, and stage 153 now
-measures the ratio, prints it per layer, and refuses to let the verdict's
-grounding clause be read as answered when no layer clears 0.10.
-
-**The secondary single-pole condition is readable on 6.7B, and it is clean.**
-Both poles score positive on 1600/1600 readings (median logits 303 and 325), so
-the share reading is licensed. At layer 0, on 280 held-out bases:
-
-| role | Δ share | 95% CI | sign | token-identical |
-|---|---|---|---|---|
-| `inner_def_value` | +0.00135 | [+0.00121, +0.00149] | 0.871 | yes |
-| `outer_def` | −0.00518 | [−0.00551, −0.00486] | 0.036 | yes |
-| **`binding_shift_identical`** | **+0.00653** | [+0.00616, +0.00689] | **0.993** | yes |
-| `inner_def_name` — the one differing token | −0.00004 | [−0.00042, +0.00035] | 0.496 | **no** |
-| `question_all` | −0.00142 | [−0.00197, −0.00084] | 0.389 | yes |
-
-The one token the counterfactual edits carries nothing (p = 0.824), the roles sum
-to −2.5e-8, and the question text moves *less* than the definitions and in the
-opposite direction — so under this condition the word's attribution is grounded
-in the program, not in the question. The arms agree in sign at all eight layers
-(ratio 0.99 → 0.62, both significant), and both same-binding controls are flat
-(|mean| ≤ 0.0005 and ≤ 0.00013). The profile decays monotonically with depth,
-+0.0065 at layer 0 to +0.0003 at layer 27.
-
-**But it is suggestive, not established, and two things stop it short.** The
-output-token control does not retain the effect the way R11's did:
-`fixed_inner` is −0.0021 (sign 0.186) and `fixed_outer` +0.0033 (sign 0.896) —
-*opposite* signs, so the redistribution is not independent of which pole is
-scored. And no mismatched-pair control exists for this condition at all, because
-that control is only formed for the pole modes. Direction matches R11 and
-magnitude is about 5% of it (+0.0065 against +0.127), with an opposite depth
-profile — R11 peaks at layer 15, this decays from layer 0.
-
-Because the effect is negative at every layer under the declared headline, the
-reported cell also exposes a defect in the selection rule: `select_verbal_cell`
-maximises the mean, so on calibration it picked layer 27 — the one layer where
-the margin shift is positive, and where it is not significant (p = 0.654). The
-verdict `verbalised_not_grounded` is a function of that cell and should be read
-as "the declared headline could not be evaluated", not as a finding about
-grounding.
-
-### The 1.3B model: nothing is learned, and the report says so
-
-Every word style sits at exactly chance, and **the positive control fails**:
-0.811, which is H1's own failure on this model (0.809). With the control below
-ceiling, a null on the word styles cannot be told apart from a harness that could
-not detect verbalisation if it were there — so the verdict is
-`not_verbalised_instrument_untested` and nothing about 1.3B follows.
-
-Descriptively, its word answers are pure position: under `scope` direct
-`says_inner` is 0.038 (always the last-mentioned "outside") and under swapped it
-is 1.000 (always the last-mentioned "inside"), for 0.500 accuracy either way.
-Its single-pole scores are negative on 800/800 readings (median −126), so the
-single-pole conditions are void — the R11 failure mode, this time **caught and
-flagged by the gate** (`usable = 0`, `positive_layers = []`) rather than passing
-unnoticed. The margin there is worse conditioned still (|s| ≈ 1.5 against poles
-of 126) and returns shifts of 135% of the answer score. Discovery on 1.3B finds a
-mutation cluster rather than a scope one — `created`, `changed`, `updated`,
-`destroyed` — with 3 of 336 rows in the lexicon; with behaviour at chance and the
-control failing, this is recorded as description and licenses nothing.
-
-### What this adds to R10 and R11, and what it does not
-
-It **does not strengthen the causal claim**. Nothing here intervenes; a word is
-an output, and attribution of a word is still attribution. R10 remains the causal
-result.
-
-What it adds is a new observational fact with its own controls: the binding
-distinction is expressed in the model's own output-aligned scope vocabulary, that
-expression emerges in the last quarter of the network, and 6.7B can report the
-distinction in words at 0.88–0.98 depending on phrasing while answering the value
-question perfectly. The three results locate the phenomenon at three different
-depths — causal use at layer 8, answer attribution peaking at layer 15,
-vocabulary expression at layers 23–27 — and their units do not convert.
-
-### Limits
-
-Answering the question is not introspection. The question concerns the program,
-and the model may answer it by reading the text at inference time just as an
-external reader would. Nothing here distinguishes a report about the model's
-own computation from a correct answer about the code.
-
-The behavioral conclusion is also highly phrasing-dependent. Two of four styles
-are at chance, and the primary style ranges from 0.502 to 0.980 when option order
-changes. Four question forms and eight choice words sample possible phrasings;
-they do not cover the concept in general.
-
-The +0.821 vocabulary contrast is a share within an approximately 160-token
-candidate set, not a probability over the full vocabulary. Both poles are
-included and their swap is nearly complete within that set. The attribution half
-remains unresolved for the two mechanical reasons described above, and the
-R-lens still cannot see how queries and keys form the attention pattern because
-they are detached by its backward rule. Finally, the evidence comes from two
-models in one architecture family, one synthetic binding template, and not from
-diverse real programs.
-
-Method: [METHODS §7](METHODS.md#7-verbalisation-of-the-binding-relation).
-Commands: [PIPELINE Part F.3](PIPELINE.md#part-f3--is-the-binding-verbalised-150153).
-Reports: [DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e17_report.md),
-[DeepSeek-Coder 1.3B](../results/binding/deepseek-coder-1.3b/e17_report.md).
-
----
 
 # Synthesis: the main finding
 
@@ -975,31 +656,17 @@ by token-identical text, not by the single changed name token. It appears in bot
 crossed arms, survives fixed-output-token conditions, reverses when the competing
 value is scored, and is absent in same-binding controls.
 
-**Fifth, the distinction is expressible in the model's own words, and late.**
-Asked whether the returned variable is local or global, DeepSeek-Coder 6.7B
-answers correctly on 0.900 of held-out programs in both option orders, while
-answering the value question at 1.000 — so there is no dissociation to speak of
-on that phrasing. In vocabulary space the two word poles almost completely swap
-mass with the binding, but only at layers 23–27, and the scope word family
-carries three times what the purely positional family does. Two of four phrasings
-sit at exactly chance, each for a diagnosable reason, so this is a claim about
-some ways of asking and not about the concept.
-
 The strongest conclusion is therefore deliberately narrow:
 
 > In these controlled programs, variable binding becomes linearly represented,
 > remains stable under many surface changes but is fragile to structural
 > interference, is causally read from a rank-1 component at the use site, is
-> reflected in how the final answer is attributed to the active definition, and
-> becomes expressible in output-aligned scope vocabulary in the final quarter of
-> the network.
+> reflected in how the final answer is attributed to the active definition.
 
-These clauses are complementary, not interchangeable. DAS supports causal use.
-The R-lens supports attribution. The verbalisation result supports expressibility
-in output coordinates. They locate the phenomenon at three different depths —
-layer 8, layer 15, layers 23–27 — and their units do not convert. None
-establishes a complete mechanism, and none shows that a correct verbal answer is
-introspective rather than a correct reading of the program text.
+These clauses are complementary, not interchangeable. DAS supports causal use;
+the R-lens supports attribution. Neither establishes a complete mechanism. It
+remains open whether a J-lens can express the probe-detectable binding state in
+semantic vocabulary at the same intermediate position and layers.
 
 ---
 
@@ -1020,17 +687,8 @@ introspective rather than a correct reading of the program text.
 - **Not that the R-lens identifies the attention mechanism or computation
   layer.** Its rules freeze attention-pattern formation, and its layer profile is
   a profile of attribution under those rules.
-- **Not that a correct verbal answer is introspection.** R12's question is about
-  the program, and the model can answer it by reading the text at inference time
-  as any reader would. Nothing separates that from a report about its own
-  computation.
-- **Not that the binding is verbalisable in general.** Two of four question forms
-  sit at exactly chance and the primary form spans 0.502 to 0.980 across two
-  orderings of the same question. R12 bounds the phrasings tested, not the
-  concept.
-- **Not that the word's relevance has been located.** R12's attribution half is
-  unresolved: it was run on the one wording the model answers with a constant,
-  and its declared headline condition proved numerically ill-conditioned.
+- **Not that binding is internally verbalised.** That question has not yet been
+  tested at the probe's variable-use position with a depth-corrected J-lens.
 - **Not that the controlled isolation transfers to real code.** The exact 0.500
   floor relies on the synthetic paired construction.
 
@@ -1040,61 +698,23 @@ introspective rather than a correct reading of the program text.
 
 Ordered by how directly they would strengthen the active narrative.
 
-1. **Re-run the DeepSeek 6.7B DAS report under the final H5 discriminator.** The
-   underlying interchange rows are unchanged, but the generated gate file still
-   contains the superseded logit-margin verdict.
-2. **Re-run R12's relevance stage on a wording the model actually answers.**
-   Stage 152 defaults to the declared primary style `scope/direct`, which turned
-   out to be the one wording the model answers with a constant — so the R-lens
-   was read on a question it is not answering. `--style pyscope` (0.900 in both
-   orders) is the right target, and `--style scope --variant swapped` (0.980) is
-   the second. This is the single cheapest thing that would resolve R12's
-   attribution half; nothing else about R12 depends on it.
-3. **Condition, not just guard, the pole-margin denominator.**
-   `MIN_MARGIN_RELATIVE = 1e-6` prevents division by zero but not
-   ill-conditioning, and |s_margin| ≈ 21 against pole logits of 303 and 325
-   inflates every fraction about fifteenfold. The declared headline condition is
-   therefore unreadable on this corpus while conservation reports 1.0e-6 and
-   notices nothing — the same shape of failure as R11's sign problem, one level
-   further in. The threshold should be on
-   |s_margin| / max(|s_inner|, |s_outer|), reported per layer beside conservation
-   and positivity, and the run should fall back to the single-pole conditions
-   where it fails.
-4. **Fix `select_verbal_cell` for two-sided outcomes.** It maximises the mean, so
-   when the true effect is negative at every layer it selects the least-negative
-   one — on 6.7B that picked layer 27, the only layer where the sign flips and
-   where the effect is not significant (p = 0.654). It should select on
-   |effect| or on a declared direction.
-5. **Add a second binding template for R11 and R12.** The current mismatched-base
-   control lacks power because all bases share one template. A structurally
-   different shadowing construction would test whether the attribution follows
-   binding beyond that template contrast, and would give R12's vocabulary
-   contrast a second construction to replicate on.
-6. **Backport R12's positive-score gate to R11.** R12 measures the rate per
-   (layer, pole) and gates on it, and it worked: on 1.3B the single-pole
-   conditions came back `usable = 0`, `positive_layers = []`, so the failure that
-   silently voided R11's 1.3B result was flagged before interpretation this time.
-   R11 itself still has no such check. Changing a gate after seeing the result it
-   would have caught is what the gate discipline exists to prevent, so this waits
-   for an R11 re-run rather than a patch.
-7. **Explain why rank-1 DAS outperforms the whole-state patch.** The likely
+1. **Test internal semantic verbalisation with a frozen J-lens.** Read the
+   unchanged variable-use state on the original, unprompted binding factorial;
+   use a small predeclared paired semantic lexicon; compare J-lens, logit lens,
+   the supervised probe, and matched random directions; and make paired
+   counterfactual reversal the primary outcome. The implementation prompt is in
+   [JLENS_BINDING_VERBALISATION_PROMPT.md](JLENS_BINDING_VERBALISATION_PROMPT.md).
+2. **Explain why rank-1 DAS outperforms the whole-state patch.** The likely
    account—helpful and opposing donor components entering together—has not been
    independently tested.
-8. **Test DAS at a second site.** Replication across architectures is complete;
+3. **Test DAS at a second site.** Replication across architectures is complete;
    localization within each network remains narrow.
-9. **Extend R12 beyond four phrasings.** Two of four question forms sit at
-   exactly chance and the primary form spans 0.502 to 0.980 across two orderings,
-   so phrasing currently dominates the result. Candidate next steps: the words
-   discovery surfaced but the lexicon never asked with (`within`, `interior`), a
-   free-generation rather than forced-choice readout, and a second model family
-   to test whether `pyscope` beating `binding` is about Python's keywords or
-   about this model.
-10. **Build context-matched mutations of real code.** This is required before the
+4. **Build context-matched mutations of real code.** This is required before the
    construction-pinned representational claim can be extended beyond synthetic
    programs.
-11. **Add a cross-position string-equality baseline.** The current bounded surface
+5. **Add a cross-position string-equality baseline.** The current bounded surface
    reader cannot express the global feature “inner definition name equals use
    name.”
-12. **Reconcile the configured and generated layer grids.** This would make
+6. **Reconcile the configured and generated layer grids.** This would make
    cross-model relative-depth comparisons and the DAS/R-lens layer comparison
    easier to audit.

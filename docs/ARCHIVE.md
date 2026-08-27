@@ -346,7 +346,7 @@ exists to avoid.
 
 **What would revive it:** context-matched pairs built by *mutating* real
 functions, which would make it a like-for-like replication of the isolation rather
-than a transfer check. That is open item 8 in [RESULTS.md](RESULTS.md#open-items).
+than a transfer check. That is open item 9 in [RESULTS.md](RESULTS.md#open-items).
 
 
 ## 4.3 Control dependence
@@ -609,6 +609,42 @@ method development for the stronger binding attribution experiment.
 
 ---
 
+## 4.9 Prompted binding verbalisation and answer-position vocabulary alignment
+
+**Why it left the main narrative.** E17 appended an English question to each
+binding program, read the hidden state at the new answer position, and tested
+scope-word choices and vocabulary alignment there. That is not the intended
+internal-verbalisation question. The desired experiment must instead read the
+original, unchanged variable-use state—the position where the probe finds
+binding—without introducing a question that explicitly requests scope words.
+
+**What was done.** Stages 150–153 used the E13 four-program factorial and frozen
+calibration/test split. They tested four prompted word styles in both option
+orders, included the returned value as a positive control, ranked the full
+vocabulary on calibration examples with a logit lens, measured held-out opposing
+word-family contrasts, and attempted to attribute a selected word score with the
+R-lens.
+
+**What was observed.** On DeepSeek-Coder 6.7B, `local/global` forced choice
+reached 0.900, while other phrasings exposed constant-answer and option-order
+biases. At the prompted answer position, opposing scope-word mass changed
+sharply at layers 23–27, and calibration-only discovery recovered an insideness
+cluster including `Inside`, `Within`, `interior`, `inner`, and `dentro`. The
+word-attribution extension was unresolved because it used a degenerate wording
+and its pole-margin statistic was ill-conditioned. The 1.3B verbal result was
+uninformative because its value positive control also failed.
+
+These measurements remain valid descriptions of a prompted answer state, but
+they do not show that the earlier semantic state found by the binding probe is
+internally verbalised. The replacement experiment will use a frozen J-lens at
+the unchanged variable-use position with a small, predeclared semantic lexicon.
+
+**Preserved:** stages 150–153; `results/binding/*/verbal/`;
+`results/binding/*/e17_report.{md,yaml}`; and the E17 entry in
+`results/STATUS.yaml`.
+
+---
+
 # 5. A gate criterion that was changed after seeing data
 
 This is the thing the project is most careful about, so the change, its
@@ -657,8 +693,8 @@ threshold that the observed 4.3% happens to clear; switching metrics on conditio
 margin, 114% on the argmax); or making the change without leaving the old numbers
 on the record.
 
-Runs predating `says_installed` still evaluate under the old rule — the fallback
-is explicit in `evaluate_gate_h5` and pinned by a test. **The 6.7B `gates.yaml`
-and `e13_report.md` on disk are such runs**, which is why they still read H5 FAIL;
-re-running stages 106–107 regenerates them under the corrected rule without
-changing a single measured row.
+Runs predating `says_installed` still evaluate under the old rule—the fallback is
+explicit in `evaluate_gate_h5` and pinned by a test. The 6.7B files originally
+belonged to that class and read H5 FAIL. On 2026-08-27, the gate and report were
+regenerated from the unchanged measured rows under the corrected evaluator and
+now read H5 PASS. The table above preserves both verdicts.

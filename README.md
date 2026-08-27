@@ -15,10 +15,6 @@ The active evidence forms one sequence:
    behaves as though the variable refers to.
 4. **Binding attribution:** on the same programs, a conserving R-lens moves
    answer relevance from the inactive definition toward the active one.
-5. **Verbalisation:** on the same programs, 6.7B can *say* which definition is
-   in scope — 0.900 asked whether the returned variable is local or global — and
-   the two word poles almost completely swap output-vocabulary mass with the
-   binding in the network's final quarter.
 
 The former security benchmark, output-vocabulary study, standalone J-lens
 experiments, and R-lens taint-routing study remain reproducible and are documented
@@ -139,40 +135,6 @@ The 1.3B R-lens result is not interpreted because the model often assigns a zero
 or negative score to the bound value in the shadowing condition, making
 normalized relevance shares unstable.
 
-### 5. The binding is expressible in the model's own scope words, late
-
-The same four programs get a question appended, rendered from the shared outer
-name so the prompt still differs at exactly one token. Chance is 0.500 by
-construction: within a base the correct answer is "outer" twice and "inner"
-twice, so a constant answer scores exactly 0.500.
-
-On DeepSeek-Coder 6.7B, the clearest behavioral result is the `local/global`
-question: accuracy is 0.900 over 280 held-out programs and remains above chance
-in both option orders, at 0.923 and 0.878. The original value question scores
-1.000 through the same harness, so failures on other wordings cannot be blamed
-on a broken test. They are instead specific, diagnosable biases. The
-`inner/outer` version always answers “inner,” the yes/no version always answers
-“yes,” and the two orders of `inside/outside` range from 0.502 to 0.980. The
-experiment therefore supports verbalisation in some phrasings, not a general
-ability independent of wording.
-
-The internal vocabulary result is equally selective and arrives late. At layers
-23–27, inner-pole and outer-pole scope words almost completely exchange output
-mass with the binding, reaching +0.821 at layer 27 with agreement across both
-crossed arms. A calibration-only search of the full 32,000-token vocabulary,
-given no hand-written lexicon, independently recovers words such as `Inside`,
-`inside`, `Within`, `interior`, `inner`, and `dentro`. The scope family carries
-three times the contrast of purely positional words and eighteen times the
-random floor.
-
-The 1.3B model answers every word style at chance, but its positive control also
-fails (0.811), so nothing about that model follows — the report says so rather
-than reporting a null.
-
-Answering a question about a program is not introspection: the model can answer
-it by reading the text as any reader would. And the attribution half of this
-experiment is unresolved — it was run on the one wording answered with a
-constant, and its headline statistic proved numerically ill-conditioned.
 
 ## What the active evidence supports
 
@@ -181,19 +143,14 @@ The narrow conclusion is:
 > In controlled programs, variable binding becomes linearly represented, remains
 > stable under many surface changes but is fragile to structural interference,
 > is causally read from a rank-1 component at the use site, is reflected in how
-> the final answer is attributed to the active definition, and becomes
-> expressible in output-aligned scope vocabulary in the network's final quarter.
+> the final answer is attributed to the active definition.
 
 This conclusion is deliberately narrow. It does not establish general program
 understanding, causal binding use at every layer or site, or transfer of the
 controlled isolation to real code. It does not show that the DAS direction is
 unique, make R-lens attribution causal, or recover a complete attention
-mechanism. A correct scope-word answer may be an ordinary reading of the program
-rather than introspection, and no claim is made for phrasings beyond the four
-tested.
-
-The verbalisation study is therefore kept as its own experiment rather than
-being treated as a reinterpretation of the R-lens attribution result.
+mechanism. Whether the internal binding representation is aligned with semantic
+vocabulary at the same layers remains an open experiment.
 
 ## Repository map
 
@@ -239,8 +196,8 @@ Read [docs/PIPELINE.md](docs/PIPELINE.md) before running the full model suite.
 
 | Model | Active role |
 |---|---|
-| `deepseek-coder-1.3b-base` | representation and robustness; binding R-lens not interpretable and verbalisation instrument not validated |
-| `deepseek-coder-6.7b-base` | representation, robustness, DAS, binding R-lens, and verbalisation |
+| `deepseek-coder-1.3b-base` | representation and robustness; binding R-lens not interpretable |
+| `deepseek-coder-6.7b-base` | representation, robustness, DAS, and binding R-lens |
 | `starcoder2-3b` | robustness and cross-architecture DAS replication; R-lens rules not applicable |
 
 Base models are used because the target is the representation learned during

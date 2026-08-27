@@ -86,7 +86,7 @@ STORE = GateSpec(
 
 BINDING = GateSpec(
     experiment="E13",
-    order=("H0", "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9"),
+    order=("H0", "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "H10"),
     meaning={
         "H0": "the four-program factorial verifies: invariants, alignment, execution truth",
         "H1": "the model returns the correctly bound variable (behavioural accuracy)",
@@ -125,6 +125,20 @@ BINDING = GateSpec(
               "checks on the verbalisation prompt, plus a positive-score "
               "condition — `R_t / s` is a share only when the score is positive, "
               "and conservation holds for negative scores too",
+        # E18, the UNPROMPTED vocabulary readout at the probe's own position.
+        # Mechanical, for the third time and for the same reason: the declared
+        # informative outcome here is that the probe succeeds while the J-lens
+        # stays at its matched floor, and a gate that made that hard to record
+        # would be a gate that chose the result.
+        "H10": "the unprompted vocabulary readout is mechanically sound: every "
+               "declared lexicon pair kept whole or dropped whole with a reason, "
+               "the candidate row order the margin arithmetic assumes, all three "
+               "readouts carrying the same rows with their kinds declared and the "
+               "random control actually Gram-matched, the scored text being E13's "
+               "program verbatim with the encodings agreeing through the use "
+               "position, the use token identical in all four cells, every "
+               "declared cell present in both arms over the declared layer grid, "
+               "and the positive control fitted on calibration and read on test",
     },
     owner={
         "H0": "101_binding_verify", "H1": "102_binding_behaviour",
@@ -134,6 +148,7 @@ BINDING = GateSpec(
         "H7": "150_binding_verbal_discover",
         "H8": "151_binding_verbal_behaviour",
         "H9": "152_binding_verbal_relevance",
+        "H10": "160_binding_lexlens",
     },
     requirements={
         "100_binding_pairs": (), "101_binding_verify": (),
@@ -168,6 +183,15 @@ BINDING = GateSpec(
         "151_binding_verbal_behaviour": ("H0",),
         "152_binding_verbal_relevance": ("H0",),
         "153_binding_verbal_report": (),
+        # E18 needs the verified factorial and nothing else, for the reason E16
+        # and E17 need nothing else: H1 fails on deepseek-coder-1.3b, and the
+        # vocabulary readout is well defined whatever the model answers. H2 is
+        # deliberately NOT required either — the binding probe is this stage's
+        # own positive control, refitted on the frozen calibration split and read
+        # on test, and requiring E13's version of it would make the control a
+        # precondition of the experiment that reports it.
+        "160_binding_lexlens": ("H0",),
+        "161_binding_lexlens_report": (),
     },
     default_root="results/binding",
 )

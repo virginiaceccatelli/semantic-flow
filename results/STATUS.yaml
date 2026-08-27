@@ -715,8 +715,8 @@ experiments:
         addressed prospectively in E17.
 
   E17:
-    name: binding verbalisation
-    status: supporting
+    name: prompted binding verbalisation (retired from active narrative)
+    status: archived
     stage: "150,151,152,153"
     model: "deepseek-coder-6.7b, deepseek-coder-1.3b"
     tables:
@@ -725,7 +725,8 @@ experiments:
       - results/binding/deepseek-coder-6.7b/verbal/verbal_discovered.csv
       - results/binding/deepseek-coder-1.3b/verbal/verbal_behaviour_summary.csv
     claim: >
-      OBSERVATIONAL, and established on 6.7b only. THE BINDING IS SAYABLE, IN SOME
+      ARCHIVED OBSERVATION, not evidence about the original variable-use state.
+      On the prompted answer state in 6.7b, THE BINDING IS SAYABLE, IN SOME
       WORDS AND NOT OTHERS, AND IT BECOMES SAYABLE LATE. Asked in a comment whether
       the returned variable is local or global, deepseek-coder-6.7b answers
       correctly on 0.900 [0.888, 0.913] of 280 held-out programs, above chance in
@@ -963,10 +964,10 @@ experiments:
       aggregates the GPU stage wrote — two separate aggregation bugs in the
       dose-matched control were caught this way, and both had made H4 fail on
       bookkeeping rather than on data.
-      BOOKKEEPING: 6.7b's gates.yaml still records H5 as FAIL because it predates
-      the 2026-08-13 says_installed rule change and stages 106-107 have not been
-      re-run there. starcoder2-3b's gate file was written after the change and
-      records PASS. The underlying 6.7b rows are unchanged.
+      BOOKKEEPING RESOLVED 2026-08-27: 6.7b's H5 gate and E13 report were
+      regenerated from the unchanged measured rows under the says_installed
+      evaluator and now record PASS. starcoder2-3b also records PASS. The
+      superseded margin verdict remains documented in docs/ARCHIVE.md.
     structural_zeros_starcoder: >
       starcoder2-3b's four structural_zero checks report False and should not be
       read as a machinery fault. 58.6% of noop rows are EXACTLY zero and every

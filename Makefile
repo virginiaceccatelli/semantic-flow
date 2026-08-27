@@ -500,6 +500,39 @@ binding-verbal-smoke:
 	@test -f results/smoke/binding/$(MODEL)/e17_report.md
 	@echo "BINDING VERBAL SMOKE OK"
 
+# ── E18: is the binding expressible in scope vocabulary? (160-161) ──────────
+binding-lexlens-run:
+	$(PY) scripts/160_binding_lexlens.py --model $(MODEL)
+
+binding-lexlens-report:
+	$(PY) scripts/161_binding_lexlens_report.py --model $(MODEL)
+
+# `-` on 160 for the reason 152 carries one: the report must still render when
+# the readout stage refused, because "H10 failed" is itself what a reader needs
+# to see rather than a missing file.
+binding-lexlens:
+	-$(PY) scripts/160_binding_lexlens.py --model $(MODEL)
+	$(PY) scripts/161_binding_lexlens_report.py --model $(MODEL)
+
+# Six bases, one layer, a two-sample lens build, float32 for the same MPS reason
+# as `binding-rlens-smoke`: fp16 VJPs come back non-finite on that backend. The
+# lens build is the expensive half — one VJP per (build sample, t') per layer,
+# and the last decoder layer is always built for V1 — so the smoke keeps
+# `--n-build`, `--n-tprime` and `--n-seeds` at the minimum that still exercises
+# the stability path. The gate override is what makes this runnable without E13
+# stages 100-101 here.
+binding-lexlens-smoke:
+	$(PY) scripts/160_binding_lexlens.py --model $(MODEL) \
+		--output results/smoke/binding/$(MODEL) --layers=4 --n-bases 6 \
+		--dtype float32 --n-build 2 --n-tprime 1 --n-seeds 2 --n-random-seeds 2 \
+		--n-corpus 6 --n-eval 4 --n-boot 100 --split calib --lens-max-length 192 \
+		--no-tables --override-gate 'smoke run'
+	$(PY) scripts/161_binding_lexlens_report.py --model $(MODEL) \
+		--results results/smoke/binding/$(MODEL)
+	@test -f results/smoke/binding/$(MODEL)/lexlens/lexlens_summary.csv
+	@test -f results/smoke/binding/$(MODEL)/e18_report.md
+	@echo "BINDING LEXLENS SMOKE OK"
+
 assets:
 	$(PY) scripts/90_make_paper_assets.py
 

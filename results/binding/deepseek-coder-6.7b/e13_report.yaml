@@ -1,6 +1,6 @@
 experiment: E13
 model: deepseek-coder-6.7b
-verdict: NOT SUPPORTED
+verdict: BINDING TRANSPORTED
 question: Does a low-rank, magnitude-free interchange at the site where a variable
   binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token
   or an answer direction?
@@ -12,7 +12,7 @@ do_not_claim:
 - anything about real code, other languages, or other model families
 - that H4 alone supports the conclusion; without H5 it is E11 again
 - a null from H5 without checking that answer_direction failed on `ba` too
-first_blocking_gate: H5
+first_blocking_gate: null
 gates_run_under_override: []
 gates:
 - gate: H0
@@ -71,16 +71,66 @@ gates:
     answer direction cannot
   owner_stage: 106_binding_interchange
   recorded: true
-  passed: false
-  value: 1.8772332720163156
+  passed: true
+  value: 1.1382113821138211
   override: false
-  detail: "ba @ use L8 r1: das_binding +9.009 [+8.933, +9.089] = 188% of the held-out\
-    \ ceiling (threshold 50%); discriminator \u2014 answer_direction ab +0.001 [-0.000,\
-    \ +0.001] (passes: False), ba +0.001 [+0.000, +0.002] (fails: False)"
-diagnostic: "The subspace did not transfer to the held-out value assignment. Read\
-  \ the answer_direction rows FIRST: if that control also passes on `ba`, the discriminator\
-  \ is broken and no verdict is licensed. If it fails on `ba` as designed and das_binding\
-  \ fails too, the learned subspace is an answer direction \u2014 which is a real,\
-  \ reportable negative and exactly what E11 could not establish."
-rerun_after_fix: "write it up \u2014 both outcomes are reportable; see docs/METHODS.md §8\
-  \ \xA79"
+  detail: "ba @ use L8 r1: das_binding installed 100.0% = 114% of the held-out ceiling\
+    \ (threshold 50%); margin +9.009 [+8.933, +9.089] = 188% of it; discriminator\
+    \ \u2014 answer_direction ab +2.322 [+2.157, +2.482], installed 27.9% (passes:\
+    \ True); ba/ab argmax ratio 0.154 against transport's 1.025 (bar 0.513) (fails:\
+    \ True)"
+- gate: H6
+  meaning: 'the relevance readout is mechanically sound: the LRP rules actually installed
+    so relevance conserves, the token roles partition every token exactly once, the
+    per-role deltas close to the difference of the two conservation ratios, every
+    binding_flip pair differs at exactly one measured token index, the fixed-target
+    conditions really do score both members at one token, and every declared cell
+    exists'
+  owner_stage: 140_binding_relevance
+  recorded: true
+  passed: true
+  value: 51200.0
+  override: false
+  detail: '25600 readings and 51200 paired contrasts over 4 contrasts x 8 layers x
+    4 target conditions; median |rho-1| 8.61e-08; conserving layers [0, 3, 7, 11,
+    15, 19, 23, 27]; LRP rules bound {''ln'': 65, ''mlp'': 32, ''attn'': 32}'
+- gate: H7
+  meaning: 'the candidate vocabulary is mechanically sound: every declared lexicon
+    pair is kept whole or dropped whole with a reason, enough pairs survive from more
+    than one family, discovery ran on calibration bases only and the frozen file records
+    which, and the candidate set contains the lexicon, the discovered pool and the
+    random controls without duplicates'
+  owner_stage: 150_binding_verbal_discover
+  recorded: true
+  passed: true
+  value: 221.0
+  override: false
+  detail: 10 lexicon pairs from 4 families, 15 mechanism words, 221 candidates (160
+    discovered, 32 random) over 120 calib bases
+- gate: H8
+  meaning: 'the forced choice is mechanically sound: every declared (base, cell, question)
+    is scored, the rendered question is identical in all four cells of a base, no
+    question names the inner definition, both choices are distinct single tokens,
+    both variants of every word style ran, and the value positive control ran'
+  owner_stage: 151_binding_verbal_behaviour
+  recorded: true
+  passed: true
+  value: 14400.0
+  override: false
+  detail: 14400 scored choices over 9 questions x 400 bases x 4 cells; report split
+    test
+- gate: H9
+  meaning: "the verbalisation relevance readout is mechanically sound: H6's checks\
+    \ on the verbalisation prompt, plus a positive-score condition \u2014 `R_t / s`\
+    \ is a share only when the score is positive, and conservation holds for negative\
+    \ scores too"
+  owner_stage: 152_binding_verbal_relevance
+  recorded: true
+  passed: true
+  value: 64000.0
+  override: false
+  detail: '38400 readings and 64000 paired contrasts over 4 contrasts x 8 layers x
+    5 target conditions for scope/direct; median |rho-1| 1.27e-07; readable layers
+    [0, 3, 7, 11, 15, 19, 23, 27]; LRP rules bound {''ln'': 65, ''mlp'': 32, ''attn'':
+    32}'
+next_step: "write it up \u2014 both outcomes are reportable; see docs/RESULTS.md R13"

@@ -838,7 +838,7 @@ def test_the_verbal_stages_require_h0_and_deliberately_nothing_else():
                   "152_binding_verbal_relevance"):
         assert BINDING.requirements[stage] == ("H0",), stage
     assert BINDING.requirements["153_binding_verbal_report"] == ()
-    assert BINDING.order[-3:] == ("H7", "H8", "H9")
+    assert BINDING.order[7:10] == ("H7", "H8", "H9")
     for gate in ("H7", "H8", "H9"):
         assert gate in BINDING.meaning and gate in BINDING.owner
 

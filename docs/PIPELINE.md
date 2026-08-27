@@ -6,12 +6,11 @@ The pipeline turns a controlled program into a sequence of interpretable
 experiments. It first generates programs whose binding and def–use labels are
 known exactly, then runs a frozen language model and stores hidden states at
 specific token positions. CPU analysis applies probes, controls, and statistical
-summaries to those states. The later GPU stages test three distinct consequences:
-DAS asks whether the model causally uses a binding component, the R-lens
-attributes the unchanged answer on the same programs, and the verbalisation
-stages ask whether the binding becomes expressible in scope-related words.
+summaries to those states. The later GPU stages test two distinct consequences:
+DAS asks whether the model causally uses a binding component, and the R-lens
+attributes the unchanged answer on the same programs.
 
-The active reproduction path is **Part C → Part F → Part F.2 → Part F.3**. Stage 60 is
+The active reproduction path is **Part C → Part F → Part F.2**. Stage 60 is
 supporting validation for DAS's answer-direction control, and stage 110 validates
 the R-lens backward rules. The security and standalone lens tracks remain
 runnable but are archived scientifically; they are retained here only so their
@@ -39,7 +38,7 @@ What it *found*: [RESULTS.md](RESULTS.md).
 - [Part E — Archived security and lens tracks (120–131)](#part-e--archived-security-and-lens-tracks-120131)
 - [Part F — The causal track (100–108)](#part-f--the-causal-track-100108)
 - [Part F.2 — The observational R-lens readout of the same pairs (140–141)](#part-f2--the-observational-r-lens-readout-of-the-same-pairs-140141)
-- [Part F.3 — Is the binding verbalised? (150–153)](#part-f3--is-the-binding-verbalised-150153)
+- [Archived E17 — prompted verbalisation (150–153)](#archived-e17--prompted-verbalisation-150153)
 - [Part G — Make targets and the GPU-host workflow](#part-g--make-targets-and-the-gpu-host-workflow)
 
 ---
@@ -491,12 +490,11 @@ zero. A genuine fault looks different: the pre-fix run on the same model was
 `−0.129 [−0.141, −0.119]` with a maximum of 0.719, systematically biased and 23
 ulps wide.
 
-**Current state on disk:** the 6.7b `gates.yaml` and `e13_report.md` still record
-H5 under the superseded logit-margin discriminator and therefore read FAIL. The
-rows in `interchange_summary.csv` are unchanged and pass under the pre-registered
-`says_installed` rule; re-running 106–107 regenerates the gate file. See
-[ARCHIVE.md](ARCHIVE.md) for the full record of that rule change. The
-starcoder2-3b files were written after the rule change and record PASS.
+**Current state on disk:** both 6.7B and StarCoder2 now record H5 as PASS under
+the `says_installed` discriminator. The 6.7B report was regenerated from the
+existing measured rows on 2026-08-27; no model output or interchange row was
+changed. [ARCHIVE.md](ARCHIVE.md) preserves the superseded margin verdict and the
+full reason for the rule correction.
 
 ---
 
@@ -637,12 +635,17 @@ right definition" is precisely the mechanism that is invisible here.
 
 ---
 
-# Part F.3 — Is the binding verbalised? (150–153)
+# Archived E17 — prompted verbalisation (150–153)
 
-E16 asks where the answer's relevance sits. E17 asks whether the model ever
-**says** which definition is in scope, and then applies E16's instrument to the
-word it says. Method: [METHODS §7](METHODS.md#7-verbalisation-of-the-binding-relation).
-Results: [RESULTS R12](RESULTS.md#r12--verbalisation-the-binding-is-expressed-in-the-models-own-scope-words-late).
+These stages remain runnable only to reproduce the retired E17 study. E17 asks when the binding
+contrast becomes aligned with the model's own output vocabulary. Stages 150–151
+map hidden states through the unembedding matrix, recover candidate words, and
+measure the held-out inner-word versus outer-word contrast. Stage 151 also runs a
+separate prompted forced choice. Stage 152 then applies E16's R-lens rules to a
+selected word score to ask where that score is attributed. It does not test
+semantic vocabulary at the original variable-use state and is not part of the
+active narrative. Its rationale, result, and retirement reason are in
+[ARCHIVE.md](ARCHIVE.md).
 
 Measured wall times on the GPU host: stage 150 took 22 s / 8 s, stage 151 568 s /
 178 s, stage 152 2241 s / 794 s for 6.7b / 1.3b — about 47 and 16 minutes end to
@@ -694,16 +697,18 @@ the verdict space before it could be observed.
 
 The forced choice scores two declared choice tokens and reads no candidate
 vocabulary at all. If `verbal/verbal_candidates.json` is missing, stage 151 skips
-the vocabulary contrast with a message and still produces the behavioural result —
-which is the half that answers the headline question. Run 150 when you want the
-contrast and the discovery table.
+the internal vocabulary contrast with a message and still produces the
+behavioral result. The run is then incomplete for the main output-vocabulary
+claim: stage 150 supplies the frozen candidate set and discovery table required
+for that contrast.
 
-## Read the report in the order it is written
+## Read the three measurements separately
 
-Section 2 (the forced choice) comes before section 4 (the attribution)
-deliberately. A redistribution of a word's relevance means something different
-depending on whether the model can produce that word at all, and reading them the
-other way round is how a relevance shift gets reported as verbalisation.
+The internal vocabulary contrast is the main verbalisation result: it establishes
+that binding aligns with scope-related output coordinates at layers 23–27. The
+forced choice is a behavioral validation whose meaning depends strongly on
+wording. The R-lens stage is an additional grounding question and is currently
+unresolved; its failure does not weaken the internal vocabulary contrast.
 
 Check the `value` row of the behaviour table **first**: it is the positive
 control, and word styles at chance mean nothing unless it is at ceiling. Then:
@@ -751,7 +756,7 @@ reads 1.0e-6 throughout and cannot see any of it.
 Stage 153 measures this and prints it as *How well conditioned the margin quotient
 is*, marking the `margin` rows unreadable when no layer clears 0.10 — so read that
 table before any `margin` row. Moving the threshold into stage 152 as a real
-validity condition is [RESULTS open item 3](RESULTS.md#open-items). To compute it
+validity condition is [RESULTS open item 1](RESULTS.md#open-items). To compute it
 yourself:
 
 ```bash
@@ -818,7 +823,7 @@ make jlens-validate / rlens-validate
 make binding-relevance / binding-relevance-report / binding-rlens
 make binding-rlens-smoke
 
-# E17: is the binding verbalised?
+# archived E17: prompted verbalisation
 make binding-verbal                    # 150 -> 153, one model at a time
 make binding-verbal-discover / binding-verbal-behaviour
 make binding-verbal-relevance / binding-verbal-report
