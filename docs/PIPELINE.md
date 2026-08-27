@@ -2,15 +2,16 @@
 
 ## What this pipeline does
 
-The pipeline turns a controlled program into an interpretable experiment in
-four steps. First it generates programs whose binding and def–use labels are
-known exactly. Next it runs a frozen language model once and stores the
-hidden states at specific token positions. CPU analysis then applies probes,
-controls, and statistical summaries to those saved states. Finally, DAS tests
-whether the model causally uses a binding component and the R-lens attributes
-the answer on the same binding programs.
+The pipeline turns a controlled program into a sequence of interpretable
+experiments. It first generates programs whose binding and def–use labels are
+known exactly, then runs a frozen language model and stores hidden states at
+specific token positions. CPU analysis applies probes, controls, and statistical
+summaries to those states. The later GPU stages test three distinct consequences:
+DAS asks whether the model causally uses a binding component, the R-lens
+attributes the unchanged answer on the same programs, and the verbalisation
+stages ask whether the binding becomes expressible in scope-related words.
 
-The active reproduction path is **Part C → Part F → Part F.2**. Stage 60 is
+The active reproduction path is **Part C → Part F → Part F.2 → Part F.3**. Stage 60 is
 supporting validation for DAS's answer-direction control, and stage 110 validates
 the R-lens backward rules. The security and standalone lens tracks remain
 runnable but are archived scientifically; they are retained here only so their
@@ -38,6 +39,7 @@ What it *found*: [RESULTS.md](RESULTS.md).
 - [Part E — Archived security and lens tracks (120–131)](#part-e--archived-security-and-lens-tracks-120131)
 - [Part F — The causal track (100–108)](#part-f--the-causal-track-100108)
 - [Part F.2 — The observational R-lens readout of the same pairs (140–141)](#part-f2--the-observational-r-lens-readout-of-the-same-pairs-140141)
+- [Part F.3 — Is the binding verbalised? (150–153)](#part-f3--is-the-binding-verbalised-150153)
 - [Part G — Make targets and the GPU-host workflow](#part-g--make-targets-and-the-gpu-host-workflow)
 
 ---

@@ -18,6 +18,8 @@ DAS intervenes on a rank-1 binding component
 the answer follows the installed binding
         ↓
 the R-lens attributes the unedited answer to the active definition
+        ↓
+the distinction becomes expressible in scope-related output words, late
 ```
 
 The security, output-vocabulary, standalone J-lens, and taint-routing tracks are
@@ -74,13 +76,12 @@ requirement. A direction carrying “use the donor's definition” should.
 DAS makes DeepSeek-Coder 6.7B and StarCoder2 3B emit the value selected by the
 installed binding on 100% of held-out cases in both arms.
 
-The result is compared with:
-
-- a dose-matched answer direction constructed for the intervention layer;
-- dose- and rank-matched random subspaces;
-- a no-op;
-- a full donor-state patch; and
-- a closed-form mean donor−host direction.
+The comparison set separates several simpler explanations. A dose-matched answer
+direction tests whether DAS merely pushes toward the token required during
+fitting. Dose- and rank-matched random subspaces test generic disruption and set
+random low-rank floors. A no-op detects intervention machinery artifacts, a full
+donor-state patch verifies that the site can affect the answer, and a closed-form
+mean donor−host direction tests the simplest non-learned rank-1 alternative.
 
 The answer direction attenuates or reverses across the crossed arm, while DAS
 does not. Random controls are weaker. The mean direction transports part of the
@@ -106,12 +107,11 @@ shift is approximately 13% at the first measured layer, peaks near 22% in the
 middle, and declines toward the end. The changed name token carries only about
 1.5% of the movement.
 
-The result survives:
-
-- reversing the value assignment;
-- scoring both programs at the same fixed output token;
-- scoring the competing value, which reverses the shift; and
-- same-binding controls, which remain flat.
+The result survives reversing the value assignment and scoring both programs at
+the same fixed output token. Scoring the competing value reverses the relevance
+shift as predicted, while controls that change values without changing the
+binding remain flat. Together these comparisons separate binding-sensitive
+attribution from a response to one answer token or to the changed input name.
 
 The effect is best interpreted as a stable property of the template-level
 binding contrast. A mismatched-base control reproduces it because all generated

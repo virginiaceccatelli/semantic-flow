@@ -4,16 +4,18 @@
 
 This document explains exactly how each experiment was run. It starts by
 defining what counts as a semantic representation, then explains how program
-structure becomes exact token-level labels, and finally describes the four
+structure becomes exact token-level labels, and finally describes the five
 steps of the active argument. Each step answers a different question:
 
 - a **linear probe** asks whether information is present in a hidden state;
 - **frozen transfer** asks whether the same representation survives a program
   rewrite;
 - **DAS interchange** asks the causal question: whether changing only a learned
-  binding component changes the downstream answer; and
+  binding component changes the downstream answer;
 - the **R-lens** asks the separate observational question: whether the answer
-  score is attributed to the definition selected by the binding.
+  score is attributed to the definition selected by the binding; and
+- the **verbalisation study** asks whether the same binding distinction becomes
+  expressible in the model's output vocabulary and forced-choice answers.
 
 The controls are part of the method, not optional checks. Grouped splits prevent
 nearly identical rows from leaking across train and test; shuffled labels test
@@ -34,8 +36,8 @@ about that program whose truth is fixed by the program's own structure. If a
 weak readout can recover the fact, the model has already made it linearly
 available. The hard part is ensuring the readout is reading the *model's
 computation* rather than a shortcut in the text — most of this document is about
-closing those loopholes, and the last two sections are about the two instruments
-that go beyond decoding entirely.
+closing those loopholes. The later sections then distinguish causal use,
+attribution, and verbal expression rather than treating them as one claim.
 
 ### Contents
 
@@ -44,7 +46,7 @@ that go beyond decoding entirely.
 - [§2 From graph to token: alignment, ground truth, integrity](#2-from-graph-to-token-alignment-ground-truth-integrity)
 - [§3 Instrument 1 — linear probes and their floors](#3-instrument-1--linear-probes-and-their-floors)
 - [§4 Instrument 2 — frozen transfer and the obfuscation ladder](#4-instrument-2--frozen-transfer-and-the-obfuscation-ladder)
-- [Part III — From representation to causal use](#part-iii--from-representation-to-causal-use)
+- [Part III — From representation to causal use, attribution, and verbalisation](#part-iii--from-representation-to-causal-use-attribution-and-verbalisation)
 - [§5 DAS — causal interchange of a binding component](#5-das--causal-interchange-of-a-binding-component)
 - [§6 R-lens attribution on the binding programs](#6-r-lens-attribution-on-the-binding-programs)
 - [§7 Verbalisation of the binding relation](#7-verbalisation-of-the-binding-relation)
@@ -422,21 +424,23 @@ it says.
 
 ---
 
-# Part III — From representation to causal use
+# Part III — From representation to causal use, attribution, and verbalisation
 
 Parts I and II use probes to establish that binding is represented and to measure
-the stability of that representation. Part III uses the same controlled binding
-construction to ask two stronger but distinct questions:
+the stability of that representation. Part III follows the representation into
+three different consequences on the same controlled programs. DAS asks whether
+replacing one learned binding component makes the answer follow the installed
+binding. The R-lens leaves the forward computation unchanged and asks whether
+the answer score is attributed to the definition selected by that binding. The
+verbalisation study then asks whether the same distinction becomes expressible
+in a forced-choice answer and in output-aligned scope vocabulary.
 
-1. **DAS:** if one learned binding component is replaced, does the model's answer
-   follow the installed binding?
-2. **R-lens:** without changing the model, does the answer score become attributed
-   to the definition selected by that binding?
+DAS comes first because only it licenses the causal claim. The R-lens describes
+the unedited answer, and verbalisation describes what the model can express.
+Neither lens is used to prove causation, and verbalisation is not treated as
+introspection.
 
-DAS comes first because it licenses the causal claim. The R-lens then describes
-the answer on the same programs. It is not used to prove causation.
-
-The former security benchmark, output-vocabulary/verbalisation experiments,
+The former security benchmark, earlier general output-vocabulary experiments,
 standalone J-lens studies, and R-lens taint-routing study are preserved in
 [ARCHIVE.md](ARCHIVE.md). They remain reproducible but are not needed for the
 active binding argument.
@@ -769,9 +773,9 @@ A controlled positive result supports this statement:
 > active, including over definition tokens that did not change.
 
 It does not establish causal necessity, a complete attention mechanism, or
-verbalisation. A future verbalisation experiment would need a different readout:
-for example, a matched prompt or output-space test asking whether the binding
-relation becomes expressible in meaningful vocabulary.
+verbalisation. Section 7 therefore uses a different readout: a matched prompt and
+an output-space test asking whether the binding relation becomes expressible in
+meaningful vocabulary.
 
 # 7. Verbalisation of the binding relation
 
@@ -846,23 +850,24 @@ The `ordinal` family is there to be separated from `scope`, not pooled with it:
 scope at all, and a result carried entirely by that family means something weaker
 than one carried by `scope`.
 
-Three design decisions inside this:
+Three design choices keep this vocabulary test interpretable. First, pairs are
+dropped whole rather than one word at a time. If either pole is not a stable
+single token, both poles are removed and the reason is recorded; retaining half
+a pair would reintroduce the frequency imbalance that pairing was meant to
+cancel. Ten of eleven pairs survived both DeepSeek tokenizers. Only
+`masked/exposed` was removed because `masked` is multi-token, so all four word
+families remained represented.
 
-- **Dropped as pairs, never as words.** If either side is not one stable token
-  under a tokenizer, the whole pair goes with the reason recorded. Half a pair
-  would turn a matched contrast into an unmatched one and silently reintroduce
-  the imbalance the pairing exists to cancel. In the run, 10 of 11 pairs survived
-  on both DeepSeek tokenizers — only `masked/exposed` dropped, because `masked`
-  is multi-token there — leaving all four families represented.
-- **Encodability was checked before the list was fixed**, not after. `shadowed`,
-  `shadowing`, `reassigned`, `overwritten`, `redefined` and `rebound` are all
-  multi-token on deepseek-coder, so a shadowing family built from them would have
-  been declared and then deleted. Nothing is stemmed or truncated to a first
-  sub-token: the first token of `" reassigned"` is not the word.
-- **A separate non-polar set** (`scope`, `binding`, `namespace`, `lookup`, …)
-  measures whether binding vocabulary is in play at all, against a random floor.
-  It is never pooled with the polar contrast, because a word elevated in both
-  members cancels in a paired difference and inflates a mass statistic.
+Second, encodability was checked before the list was fixed. Candidate words such
+as `shadowed`, `reassigned`, `overwritten`, and `rebound` are multi-token on
+DeepSeek-Coder and were therefore excluded rather than truncated. A first
+sub-token is not treated as though it were the complete word.
+
+Third, a separate non-polar set—words such as `scope`, `binding`, `namespace`,
+and `lookup`—tests whether binding vocabulary is generally active against a
+random floor. These words are never pooled with the opposing-pole contrast. A
+word that rises for both bindings cancels in a paired contrast but would
+incorrectly inflate a simple vocabulary-mass measure.
 
 Because a hand-written list is a hypothesis about the model rather than a fact
 about it, stage 150 also ranks the **full vocabulary** by its mean paired
@@ -901,29 +906,26 @@ the run it did exactly that work: `binding` scored 0.500 with `says_inner` 1.000
 (always " inner") and `shadow` scored 0.500 with the polarity variants at 1.000
 and 0.000 (always " yes"), so both nulls are diagnosable rather than blank.
 
-- **Variant** — each two-option style is asked in both option *orders*, and the
-  yes/no style in both *polarities*. A model that picks the last-mentioned option
-  scores high on one variant and low on the other. This control fired hard: on
-  6.7B the primary `scope` style scored 0.502 in one ordering (answering
-  " outside" for essentially every program) and 0.980 in the other, and on 1.3B
-  it was a pure last-mentioned rule in both orderings. `pyscope` by contrast
-  cleared chance in both orders, 0.923 and 0.878, which is what makes its 0.900
-  a number rather than a mixture.
-- **Arm consistency** — `ab_source` and `ba_source` have the same binding and
-  different literals, so the correct *word* is identical while the correct *value*
-  differs. A word answer that tracks the binding must agree across the arms; one
-  reading the literal must not. This is the value-independence control.
-- **The value positive control** — E15-C returned a vocabulary null and could not
-  distinguish "the models do not verbalise this" from "this machinery could not
-  detect verbalisation if it were there" (`ARCHIVE.md`; `sinkflow_positive` was
-  built afterwards to answer it). Here the control is free and in the design from
-  the start: the same harness, bases, cells and readout position, on the question
-  H1 shows the model answers at 1.000 on 6.7B. Word styles at chance beside a
-  ceiling there is a fact about verbalisation. Word styles at chance beside a
-  failing control licenses nothing, and the report says so. Both outcomes
-  occurred: 6.7B's control returned 1.000, so its two null styles are facts about
-  those phrasings; 1.3B's returned 0.811 — H1's own failure — so its verdict is
-  `not_verbalised_instrument_untested` and nothing about that model follows.
+The first control changes option order, or polarity for the yes/no question. A
+model that merely selects the last-mentioned option will score high in one
+variant and low in the other. This control exposed a large wording effect: on
+6.7B, the primary `scope` style scored 0.502 in one order and 0.980 in the other;
+on 1.3B it became a pure last-mentioned rule. By contrast, `pyscope` exceeded
+chance in both orders, at 0.923 and 0.878, so its pooled 0.900 represents stable
+performance rather than an average of incompatible behaviors.
+
+The second control compares the two value arms. `ab_source` and `ba_source` have
+the same binding but different literals, so their correct scope word is the same
+while their correct value differs. Agreement across these arms is evidence that
+the word follows the binding rather than the returned literal.
+
+The third control asks for the returned value using E13's original question. It
+uses the same harness, bases, cells, and readout position, so it tests whether a
+failure on scope words could simply reflect an incapable model or broken
+measurement. The control reaches 1.000 on 6.7B, which makes chance performance
+on two word styles interpretable as phrasing-specific failures. It reaches only
+0.811 on 1.3B, reproducing H1's failure; consequently the word-level null on that
+model is uninformative and is labeled `not_verbalised_instrument_untested`.
 
 ## 7.5 The R-lens on the word, and the one thing that had to change
 

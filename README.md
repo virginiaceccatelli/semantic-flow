@@ -50,15 +50,11 @@ def f():               def f():
 #   returns 3              returns 7
 ```
 
-At the queried `x` in `return x`:
-
-- the token identity is the same;
-- its position and local context are controlled;
-- the answer changes only because the inner definition comes into scope.
-
-A bounded model-free surface reader is therefore at 0.500 by construction. This
-is what lets a hidden-state result be interpreted as contextual binding
-information rather than a local token shortcut.
+At the queried `x` in `return x`, the token identity, position, and bounded local
+context are the same. The answer changes only because the inner definition comes
+into scope. A bounded model-free surface reader is therefore at 0.500 by
+construction. This is what lets a hidden-state result be interpreted as
+contextual binding information rather than a local token shortcut.
 
 ## Main finding
 
@@ -76,15 +72,13 @@ does not use.
 
 ### 2. The representation has a structural robustness boundary
 
-The clean probe is frozen and evaluated on meaning-preserving variants.
-
-- Long irrelevant comments cause little damage.
-- Reusing the tracked names in competing scopes drives binding toward chance.
-- Consistent identifier renaming disrupts early lexical layers while much of the
-  middle-layer readout survives.
-- Opaque branches and equivalent arithmetic rewrites cause little additional
-  damage.
-- Control-flow flattening causes the largest reproducible collapse.
+The clean probe is frozen and evaluated on meaning-preserving variants. Long
+irrelevant comments cause little damage, whereas reusing the tracked names in
+competing scopes drives binding toward chance. Consistent identifier renaming
+disrupts early lexical layers while leaving much of the middle-layer readout
+intact. Opaque branches and equivalent arithmetic rewrites cause little
+additional damage, while control-flow flattening produces the largest
+reproducible collapse.
 
 These results identify where the original linear representation transfers. A
 failed frozen probe does not prove that every possible encoding has disappeared.
@@ -110,18 +104,14 @@ installed definition supplies.
 DAS produces the installed answer on 100% of held-out cases in both arms, in
 DeepSeek-Coder 6.7B and StarCoder2 3B.
 
-The controls test distinct alternatives:
-
-- a J-lens-derived, dose-matched answer direction tests a fixed output-token
-  push;
-- a dose-matched random subspace tests generic disruption;
-- a rank-matched random subspace provides a random rank-1 floor;
-- a no-op detects hook or measurement artifacts;
-- a whole-state donor patch verifies that the site can affect the answer;
-- a mean donor−host direction tests the simplest non-learned rank-1 alternative.
-
-The J-lens does not find the DAS direction. It is used only to construct the
-strong answer-direction control at the intervention layer.
+The controls isolate distinct alternatives. A J-lens-derived answer direction,
+scaled to the DAS edit norm, tests whether the learned intervention is merely a
+fixed output-token push. Dose-matched and rank-matched random subspaces test
+generic disruption and provide a random rank-1 floor. A no-op detects hook or
+measurement artifacts, a whole-state donor patch verifies that the intervention
+site can affect the answer, and the mean donor−host direction tests the simplest
+non-learned rank-1 alternative. The J-lens does not find the DAS direction; it is
+used only to construct the answer-direction control at the intervention layer.
 
 ### 4. The R-lens attributes the answer to the active definition
 
@@ -134,17 +124,12 @@ On the binding pairs, exactly one of roughly 21 tokens changes: the inner
 definition's name. The main statistic measures relevance movement between the
 outer definition and the inner definition's unchanged value.
 
-On DeepSeek-Coder 6.7B:
-
-- the newly active inner value gains answer relevance;
-- the newly inactive outer definition loses relevance;
-- the combined shift is about 13% at the first measured layer and peaks near 22%
-  in the middle;
-- the one changed token carries only about 1.5% of the movement;
-- both crossed arms agree;
-- fixed-output-token conditions retain the effect;
-- scoring the competing value reverses it; and
-- same-binding controls remain flat.
+On DeepSeek-Coder 6.7B, the newly active inner value gains answer relevance and
+the newly inactive outer definition loses it. The combined shift is about 13%
+at the first measured layer and peaks near 22% in the middle, while the one
+changed token carries only about 1.5% of the movement. Both crossed arms agree,
+fixed-output-token conditions retain the effect, scoring the competing value
+reverses it, and same-binding controls remain flat.
 
 This is attribution, not causation. DAS supports the claim that the binding
 component is used. The R-lens supports the separate claim that the unedited
@@ -161,24 +146,24 @@ name so the prompt still differs at exactly one token. Chance is 0.500 by
 construction: within a base the correct answer is "outer" twice and "inner"
 twice, so a constant answer scores exactly 0.500.
 
-On DeepSeek-Coder 6.7B, over 280 held-out programs:
+On DeepSeek-Coder 6.7B, the clearest behavioral result is the `local/global`
+question: accuracy is 0.900 over 280 held-out programs and remains above chance
+in both option orders, at 0.923 and 0.878. The original value question scores
+1.000 through the same harness, so failures on other wordings cannot be blamed
+on a broken test. They are instead specific, diagnosable biases. The
+`inner/outer` version always answers “inner,” the yes/no version always answers
+“yes,” and the two orders of `inside/outside` range from 0.502 to 0.980. The
+experiment therefore supports verbalisation in some phrasings, not a general
+ability independent of wording.
 
-- asked whether the returned variable is **local or global**, it is right on
-  **0.900** — and above chance in both option orders (0.923 and 0.878);
-- E13's own value question, run through the same harness as a positive control,
-  scores **1.000**, so the styles that fail are not the harness failing;
-- two of four phrasings sit at exactly chance, each diagnosably: the
-  `inner`/`outer` wording answers " inner" for every program, and the yes/no
-  wording answers " yes" to both polarities;
-- the primary `inside`/`outside` wording spans **0.502 to 0.980** across two
-  orderings of the same question, so phrasing dominates;
-- in vocabulary space the inner-pole and outer-pole scope words almost completely
-  swap mass with the binding at layers 23–27 (+0.821 at layer 27), with both
-  crossed arms agreeing;
-- a calibration-only ranking of the full 32k vocabulary, given no lexicon,
-  recovers ` Inside`, ` inside`, ` Within`, ` interior`, ` inner`, ` dentro`;
-- the scope word family carries three times what the purely positional family
-  does, and eighteen times a random floor.
+The internal vocabulary result is equally selective and arrives late. At layers
+23–27, inner-pole and outer-pole scope words almost completely exchange output
+mass with the binding, reaching +0.821 at layer 27 with agreement across both
+crossed arms. A calibration-only search of the full 32,000-token vocabulary,
+given no hand-written lexicon, independently recovers words such as `Inside`,
+`inside`, `Within`, `interior`, `inner`, and `dentro`. The scope family carries
+three times the contrast of purely positional words and eighteen times the
+random floor.
 
 The 1.3B model answers every word style at chance, but its positive control also
 fails (0.811), so nothing about that model follows — the report says so rather
@@ -199,20 +184,16 @@ The narrow conclusion is:
 > the final answer is attributed to the active definition, and becomes
 > expressible in output-aligned scope vocabulary in the network's final quarter.
 
-It does not establish:
+This conclusion is deliberately narrow. It does not establish general program
+understanding, causal binding use at every layer or site, or transfer of the
+controlled isolation to real code. It does not show that the DAS direction is
+unique, make R-lens attribution causal, or recover a complete attention
+mechanism. A correct scope-word answer may be an ordinary reading of the program
+rather than introspection, and no claim is made for phrasings beyond the four
+tested.
 
-- general program understanding;
-- causal binding use at every layer or site;
-- transfer of the controlled isolation to real code;
-- that the DAS direction is unique;
-- that R-lens attribution is causal;
-- a complete attention mechanism;
-- that a correct verbal answer is introspective rather than a correct reading of
-  the program text; or
-- that the binding is verbalisable under phrasings other than the four tested.
-
-A future binding-verbalisation study would be a new experiment, not a
-reinterpretation of the R-lens attribution result.
+The verbalisation study is therefore kept as its own experiment rather than
+being treated as a reinterpretation of the R-lens attribution result.
 
 ## Repository map
 
@@ -258,8 +239,8 @@ Read [docs/PIPELINE.md](docs/PIPELINE.md) before running the full model suite.
 
 | Model | Active role |
 |---|---|
-| `deepseek-coder-1.3b-base` | representation and robustness; binding R-lens attempted but not interpretable |
-| `deepseek-coder-6.7b-base` | representation, robustness, DAS, and binding R-lens |
+| `deepseek-coder-1.3b-base` | representation and robustness; binding R-lens not interpretable and verbalisation instrument not validated |
+| `deepseek-coder-6.7b-base` | representation, robustness, DAS, binding R-lens, and verbalisation |
 | `starcoder2-3b` | robustness and cross-architecture DAS replication; R-lens rules not applicable |
 
 Base models are used because the target is the representation learned during

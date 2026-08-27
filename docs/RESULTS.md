@@ -11,9 +11,12 @@ show that variable binding and definition-to-use relations become linearly
 recoverable in middle layers. Second, frozen probes show that this representation
 survives many surface changes but weakens under scope interference and
 control-flow flattening. Third, a DAS intervention shows that a rank-1 binding
-component is causally used at the variable-use site. Finally, an R-lens analysis
+component is causally used at the variable-use site. Fourth, an R-lens analysis
 of the same programs shows that the answer score is reassigned from the inactive
-definition toward the active one.
+definition toward the active one. Fifth, a separate verbalisation study asks
+whether that distinction becomes expressible in the model's answers and output
+vocabulary. It does on DeepSeek-Coder 6.7B, but only for some phrasings and only
+late in the network.
 
 The security, output-vocabulary, standalone J-lens, and taint-routing studies are
 preserved in [ARCHIVE.md](ARCHIVE.md). They are not needed to evaluate the active
@@ -23,7 +26,9 @@ Every active result below completed at canonical scale and is paired with the
 control that could have falsified it. Read “represented” as *recoverable from a
 hidden state*, “robust” as *the same frozen readout still transfers*, “used” only
 where an intervention changes the downstream answer, and “attributed” as an
-observational decomposition of an unchanged output score.
+observational decomposition of an unchanged output score. “Verbalised” means
+that the model can express the distinction in a tested word choice; it does not
+mean that the model is introspecting about its own internal computation.
 
 ### Contents
 
@@ -31,7 +36,7 @@ observational decomposition of an unchanged output score.
 - [Status at a glance](#status-at-a-glance)
 - [Part I — The relation is represented](#part-i--the-relation-is-represented)
 - [Part II — Robustness and failure boundaries](#part-ii--robustness-and-failure-boundaries)
-- [Part III — Causal use and binding attribution](#part-iii--causal-use-and-binding-attribution)
+- [Part III — Causal use, binding attribution, and verbalisation](#part-iii--causal-use-binding-attribution-and-verbalisation)
 - [Synthesis](#synthesis-the-main-finding)
 - [Boundaries](#boundaries-what-this-project-does-not-claim)
 - [Open items](#open-items)
@@ -402,27 +407,30 @@ map of when a tool built on these representations should not be trusted.
 
 ---
 
-# Part III — Causal use and binding attribution
+# Part III — Causal use, binding attribution, and verbalisation
 
 Part I established that binding and def–use relations are recoverable from hidden
 states. Part II showed where those readouts remain stable and where they fail.
-Part III asks the stronger question: **does the model use the binding
-representation when producing its answer?**
+Part III asks what happens after a binding representation has formed. Does the
+model use it to choose an answer? Can the unchanged answer be traced back to the
+definition that is actually in scope? Does the distinction eventually become
+expressible in ordinary scope-related words?
 
-Two experiments use the same controlled binding programs:
+Three experiments use the same controlled binding programs. DAS changes one
+learned component at the unchanged variable-use token and tests whether the
+emitted value follows the donor program's binding; this is the causal result.
+The R-lens changes no forward activation or output and instead divides the
+unchanged answer score among input roles; this is an attribution result. The
+verbalisation study appends a controlled question and asks both whether the
+model answers with the correct scope word and when the binding contrast aligns
+with those words in output-vocabulary coordinates.
 
-1. **DAS changes the model.** It replaces one learned component at the unchanged
-   variable-use token and asks whether the emitted value follows the donor
-   program's binding. This is the causal result.
-2. **The R-lens does not change the model.** It divides the answer score among
-   input roles and asks whether relevance moves from the definition that becomes
-   inactive to the one that becomes active. This is an attribution result.
-
-Reading them together is useful because they answer different questions on the
-same examples. DAS establishes causal use at a tested site and layer. The R-lens
-describes how the resulting answer is attributed across the source program. A
-positive R-lens result is not extra causal evidence, and a null R-lens result
-would not undo the DAS result.
+Reading them together is useful because each adds a different link. DAS
+establishes causal use at a tested site and layer. The R-lens describes how the
+unedited answer is attributed across the source program. Verbalisation shows
+that the distinction can become sayable, but does not establish either causal
+use or introspection. A positive lens result is not extra causal evidence, and a
+null lens or wording result would not undo DAS.
 
 The security benchmark, output-vocabulary study, standalone J-lens experiments,
 and R-lens taint-routing experiment remain reproducible but are no longer part of
@@ -561,14 +569,12 @@ using layer-wise relevance rules. It divides the score among input positions and
 then sums positions into roles: outer definition, inner definition name and
 value, use site, signature, `return`, suffix, and residual text.
 
-Before interpreting the decomposition, the experiment checks that:
-
-- the special backward rules leave the forward output unchanged;
-- the rules actually attach to the model's normalization, attention, and gated
-  MLP modules;
-- relevance assigned to all positions sums back to the selected output score;
-- every input token belongs to exactly one role; and
-- reading the same program twice gives exactly zero redistribution.
+Before interpreting the decomposition, the experiment verifies that the special
+backward rules leave the forward output unchanged and actually attach to the
+intended normalization, attention, and gated-MLP modules. It then checks that
+relevance over all positions sums back to the selected output score, that every
+input token belongs to exactly one role, and that reading the same program twice
+produces exactly zero redistribution.
 
 These checks pass with conservation error near numerical precision on the tested
 DeepSeek models. The rules do not match StarCoder2's architecture, so no R-lens
@@ -633,10 +639,10 @@ answer change; the R-lens decomposes an unchanged forward computation.
 The layer profile indicates where attribution under these backward rules is
 redistributed, not where binding is computed. The attention rule also freezes
 query/key pattern formation, so the experiment cannot establish the intuitive
-mechanism “the model attends to the correct definition.” Finally, this is not a
-verbalisation result. A future verbalisation study would need to test whether the
-binding relation becomes expressible in meaningful output vocabulary or under a
-matched prompt, rather than where an existing answer score is attributed.
+mechanism “the model attends to the correct definition.” Finally, this result by
+itself says nothing about verbalisation. R12 asks that separate question with a
+matched prompt and an output-vocabulary contrast rather than reinterpreting this
+attribution profile.
 
 ## R12 — Verbalisation: the binding is expressed in the model's own scope words, late
 
@@ -736,17 +742,19 @@ One further caveat on the 0.980: `argmax_is_a_choice` is **0.000** for this
 style, so neither choice word is ever the model's own top continuation there,
 whereas it is 1.000 for `pyscope`.
 
-Two more controls, both on 6.7B:
+Two additional controls clarify the 6.7B result. First, the value-independence
+comparison asks whether the same scope word is chosen across arms even though
+the returned literal changes. In the non-saturated conditions, `pyscope` agrees
+across arms on 0.793 and 0.854 of bases against a 0.500 floor, while the swapped
+`scope` wording reaches 0.979 and 1.000. The word therefore tracks binding much
+more than literal identity, although not perfectly. Constant-answer cells are
+uninformative here because their agreement is automatically 1.000.
 
-- **Value independence.** Where the answer is not saturated, `pyscope` agrees
-  across the arms on 0.793 and 0.854 of bases against a 0.500 floor, and
-  `scope` swapped on 0.979 and 1.000. So the word largely, but not entirely,
-  ignores which literal is returned. Agreement is trivially 1.000 wherever the
-  model gives a constant answer, so only the non-saturated cells inform.
-- **Dissociation is essentially absent.** The value is answered correctly on
-  every cell, so `word_given_value` equals word accuracy: 0.923 / 0.878 for
-  `pyscope` and 0.980 for `scope` swapped. Where 6.7B computes the binding it can
-  usually also name it.
+Second, there is almost no dissociation between computing the value and naming
+the binding. The value is correct in every cell, so `word_given_value` is the
+same as word accuracy: 0.923 and 0.878 for the two `pyscope` orders and 0.980 for
+swapped `scope`. When 6.7B computes the binding on these examples, it can usually
+name it in the successful phrasings.
 
 ### Result 2 — the distinction is in output-aligned coordinates, and it arrives late
 
@@ -905,22 +913,24 @@ vocabulary expression at layers 23–27 — and their units do not convert.
 
 ### Limits
 
-- **Answering the question is not introspection.** The question is about the
-  program, and the model can answer it by reading the text at inference time as
-  any reader would. Nothing here separates a report about the model's own
-  computation from a correct answer about the code.
-- **Phrasing dominates.** Two of four styles are at chance, and the primary style
-  spans 0.502 to 0.980 across two orderings of the same question. Four question
-  forms and eight choice words is a sample of phrasings, not coverage.
-- **The vocabulary contrast is mass within a ~160-token candidate set**, not over
-  the full vocabulary, so "+0.821" is a share of that set. Both poles are in it
-  and the swap is near-complete, but the number is not a probability over all
-  tokens.
-- **The attribution half is unresolved**, for the two reasons above.
-- **The attn-rule blindness carries over from R11 unchanged**: with q and k
-  detached, "attend to the right definition" remains the mechanism this
-  instrument cannot see.
-- Two models, one architecture family, one binding template, synthetic programs.
+Answering the question is not introspection. The question concerns the program,
+and the model may answer it by reading the text at inference time just as an
+external reader would. Nothing here distinguishes a report about the model's
+own computation from a correct answer about the code.
+
+The behavioral conclusion is also highly phrasing-dependent. Two of four styles
+are at chance, and the primary style ranges from 0.502 to 0.980 when option order
+changes. Four question forms and eight choice words sample possible phrasings;
+they do not cover the concept in general.
+
+The +0.821 vocabulary contrast is a share within an approximately 160-token
+candidate set, not a probability over the full vocabulary. Both poles are
+included and their swap is nearly complete within that set. The attribution half
+remains unresolved for the two mechanical reasons described above, and the
+R-lens still cannot see how queries and keys form the attention pattern because
+they are detached by its backward rule. Finally, the evidence comes from two
+models in one architecture family, one synthetic binding template, and not from
+diverse real programs.
 
 Method: [METHODS §7](METHODS.md#7-verbalisation-of-the-binding-relation).
 Commands: [PIPELINE Part F.3](PIPELINE.md#part-f3--is-the-binding-verbalised-150153).
