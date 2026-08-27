@@ -574,3 +574,14 @@ def test_readout_state_reads_the_family_contrast_not_a_pair_one():
     scope = state[(state["family"] == HYPOTHESIS_FAMILY) & (state["arm"] == "ab")]
     assert scope["beats_random"].all()
     assert verdict_of(verdict_checks(state, probe)) == "verbalised_scope"
+
+
+def test_a_run_that_never_happened_does_not_report_a_passing_gate():
+    """`not_run` must not print "H10 passed": with no scored rows there is
+    nothing for the mechanical checks to have validated."""
+    checks = {c.name: c for c in verdict_checks(pd.DataFrame(), pd.DataFrame(),
+                                                ran=False)}
+    assert "not evaluated" in checks["mechanically_valid"].detail
+    ran = {c.name: c for c in verdict_checks(pd.DataFrame(), pd.DataFrame(),
+                                             ran=True)}
+    assert ran["mechanically_valid"].detail == "H10 recorded no violations"

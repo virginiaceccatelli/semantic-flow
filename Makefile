@@ -514,8 +514,10 @@ binding-lexlens:
 	-$(PY) scripts/160_binding_lexlens.py --model $(MODEL)
 	$(PY) scripts/161_binding_lexlens_report.py --model $(MODEL)
 
-# Six bases, one layer, a two-sample lens build, float32 for the same MPS reason
-# as `binding-rlens-smoke`: fp16 VJPs come back non-finite on that backend. The
+# Six bases, one layer, a two-sample lens build. `--dtype float32` overrides the
+# stage default here for the same MPS reason as `binding-rlens-smoke`: fp16 VJPs
+# come back non-finite on that backend, while the real CUDA run wants the
+# float16 that stage 71 built the frozen lenses in. The
 # lens build is the expensive half — one VJP per (build sample, t') per layer,
 # and the last decoder layer is always built for V1 — so the smoke keeps
 # `--n-build`, `--n-tprime` and `--n-seeds` at the minimum that still exercises

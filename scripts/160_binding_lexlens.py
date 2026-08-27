@@ -115,7 +115,16 @@ def main(
     lens_max_length: int = typer.Option(512, help="Cap for the lens corpus"),
     reuse_lens: bool = typer.Option(False, help="Reload frozen readouts instead of "
                                                 "rebuilding them"),
-    dtype: str = typer.Option("float32", help="float32 | bfloat16 | float16"),
+    # float16 is not a memory convenience, it is the dtype the repository's
+    # J-lens was actually built and validated in: stage 71 built every frozen
+    # lens for both models in float16 on CUDA (`results/manifests/71_*`), and
+    # stage 103 cached E13's use-token states in float16 too, so this default
+    # reproduces both the instrument and the states rather than a third thing.
+    # `compute_lens_vectors` carries the grad-scale retry ladder for exactly
+    # this case. On MPS use float32: fp16 VJPs come back non-finite there.
+    dtype: str = typer.Option("float16", help="float16 | bfloat16 | float32. "
+                                              "float16 matches stage 71's lens "
+                                              "build; use float32 on MPS."),
     device: str = typer.Option("auto"),
     seed: int = typer.Option(42),
     split: str = typer.Option("test", help="Split the summaries report"),

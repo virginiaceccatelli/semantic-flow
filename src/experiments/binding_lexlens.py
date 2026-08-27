@@ -1169,8 +1169,13 @@ def verdict_checks(
         VerdictCheck("ran", bool(ran),
                      "stage 160 produced scored rows for this model"),
         VerdictCheck("mechanically_valid", not invalid,
-                     "H10 recorded no violations" if not invalid
-                     else "H10 failed; no result is reportable from this run"),
+                     "H10 failed; no result is reportable from this run" if invalid
+                     # With no scored rows there is nothing for the mechanical
+                     # checks to have validated, whatever the registry says — a
+                     # report that claimed "H10 passed" over an empty run would
+                     # be reporting a gate on a measurement that never happened.
+                     else "not evaluated — stage 160 produced no scored rows"
+                     if not ran else "H10 recorded no violations"),
     ]
     layers = probe_success_layers(probe)
     checks.append(VerdictCheck(
