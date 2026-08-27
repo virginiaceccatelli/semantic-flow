@@ -121,7 +121,7 @@ The 1.3B result is not interpreted: non-positive bound-value scores make its
 normalized relevance shares unstable. StarCoder2 is outside the implemented
 R-lens rules.
 
-## 5. Verbalisation, in progress
+## 5. Verbalisation
 
 Everything above is read in the model's internal coordinates. A separate question
 is whether the distinction surfaces in anything the model **emits**.
@@ -142,15 +142,42 @@ def f():                     def f():
 Four question styles in two variants each, with chance pinned at 0.500 by the
 factorial, and E13's own value question as a **positive control** built in from
 the start — so that a null on the word styles can be told apart from a harness
-that could not detect verbalisation if it were there. Then the R-lens of section
-4 is applied to the *word* the model answers with, to ask whether the word is
-attributed to the same competing definitions the value is.
+that could not detect verbalisation if it were there.
 
-Built and smoke-tested; not yet run. Two things it will keep separate, because
-they can come apart in both directions: whether the model *can* answer, and
-whether its answer is *grounded* in the definitions rather than in the question
-text. And one thing no outcome will license — answering a question about a
-program is not introspection about the model's own computation.
+**DeepSeek-Coder 6.7B can say it, in some words and not others.** Over 280
+held-out programs, asked whether the returned variable is *local* or *global*, it
+is right on 0.900, and above chance in both option orders (0.923 and 0.878). The
+positive control returns 1.000, so the phrasings that fail are not the harness
+failing. Two of the four do fail, each in a diagnosable way: the `inner`/`outer`
+wording answers " inner" for every program, and the yes/no wording answers " yes"
+to both polarities. And the wording chosen in advance as primary — "inside f or
+outside f" — spans 0.502 to 0.980 across two orderings of the same question, so
+phrasing dominates the result more than the model does.
+
+**In vocabulary space the effect is large and late.** Mapping the answer-position
+state into output coordinates, the inner-pole and outer-pole scope words almost
+completely swap mass with the binding at layers 23–27 (+0.821 at layer 27), with
+both crossed arms agreeing. Below layer 19 there is essentially nothing. A ranking
+of the full 32k vocabulary on calibration bases only, given no lexicon, recovers a
+coherent insideness cluster — ` Inside`, ` inside`, ` Within`, ` interior`,
+` inner`, ` dentro` — and the scope word family carries three times what the
+purely positional family does, and eighteen times a random floor. Since "the
+nearest assignment wins" is a positional rule needing no scope concept, that
+comparison favours the scope reading.
+
+So the three results sit at three depths: causally used at layer 8, attributed at
+layer 15, sayable at layers 23–27. The binding is represented and used well before
+it becomes expressible.
+
+**The 1.3B model teaches nothing here**, and the report says so rather than
+reporting a null: every word style is at chance, but its positive control also
+fails (0.811), so a null cannot be distinguished from an undetectable one.
+
+Two limits carry over every reading. Answering a question about a program is not
+introspection — the model can answer it by reading the text as any reader would.
+And the attribution half of this experiment is unresolved: it was run on the one
+wording the model answers with a constant, and its headline statistic proved
+numerically ill-conditioned. One re-run resolves it.
 
 ## The combined conclusion
 
@@ -158,17 +185,18 @@ The strongest supported statement is:
 
 > In controlled programs, variable binding becomes linearly represented, remains
 > stable under many surface changes but is fragile to structural interference,
-> is causally read from a rank-1 component at the use site, and is reflected in
-> how the final answer is attributed to the active definition.
+> is causally read from a rank-1 component at the use site, is reflected in how
+> the final answer is attributed to the active definition, and becomes
+> expressible in output-aligned scope vocabulary in the network's final quarter.
 
 DAS and the R-lens are deliberately not merged into one claim. DAS edits the
 model and establishes causal use. The R-lens edits nothing and establishes
 attribution under a specified set of backward rules.
 
-Neither experiment establishes a complete mechanism or explicit verbalisation.
-The verbalisation study in section 5 is built to test the second of those and is
-not yet run; whichever way it comes out, it will add a third observational
-result rather than strengthen the causal one.
+No experiment here establishes a complete mechanism. The verbalisation study adds
+a third observational result rather than strengthening the causal one: it shows
+the distinction is expressible in the model's own output vocabulary, not that the
+model consults it when answering.
 
 ## Where to read next
 

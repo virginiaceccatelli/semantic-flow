@@ -148,21 +148,22 @@ def main(
     conservation = _read(verbal_dir / "verbal_relevance_conservation.csv")
     positivity = _read(verbal_dir / "verbal_relevance_positivity.csv")
     identity = _read(verbal_dir / "verbal_relevance_identity.csv")
+    readings = _read(verbal_dir / "verbal_relevance_readings.csv")
 
     gates = load_gates(model, root=root, spec=BINDING)
     rows = gate_table(model, root=root, spec=BINDING)
 
+    # `gate_table`'s own semantics, not a re-derivation of them: "recorded"
+    # means a Gate object exists for that name — `Gate` carries no `recorded`
+    # field, and an earlier version of this helper looked for one and therefore
+    # reported every run as `not_run`.
+    by_name = {row["gate"]: row for row in rows}
+
     def recorded(name: str) -> bool:
-        entry = gates.get(name)
-        return bool(entry and getattr(entry, "recorded", None) is not None) \
-            if not isinstance(entry, dict) else bool(entry.get("recorded"))
+        return bool(by_name.get(name, {}).get("recorded"))
 
     def passed(name: str) -> bool:
-        entry = gates.get(name)
-        if entry is None:
-            return False
-        return bool(getattr(entry, "passed", None) if not isinstance(entry, dict)
-                    else entry.get("passed"))
+        return bool(by_name.get(name, {}).get("passed"))
 
     not_applicable = False
     for name in ("H9",):
@@ -215,6 +216,34 @@ def main(
 
     positive = positive_layers(positivity) if positivity is not None else []
 
+    # ── how well conditioned the margin quotient is, per layer ───────────────
+    # `MIN_MARGIN_RELATIVE` stops a division by zero; it does not stop an
+    # ill-conditioned quotient. `R_t/s` for the margin is a difference of two
+    # near-cancelling large quantities over a small denominator, so when
+    # |s_margin| is a small fraction of the pole scale every share is inflated by
+    # the reciprocal of that fraction — and conservation cannot see it, because
+    # completeness constrains the numerator and says nothing about the
+    # denominator. Measured here rather than assumed, and it does NOT enter the
+    # verdict: the verdict mapping is the one declared before the run.
+    conditioning = None
+    if _has(readings, "target_mode", "score", "layer"):
+        wide = readings.pivot_table(index=["base_id", "cell", "layer"],
+                                    columns="target_mode", values="score")
+        if {"margin", "inner", "outer"}.issubset(wide.columns):
+            scale = wide[["inner", "outer"]].abs().max(axis=1)
+            ratio = (wide["margin"].abs() / scale.where(scale > 0))
+            conditioning = (ratio.groupby(level="layer")
+                            .agg(median_margin_over_pole="median",
+                                 min_margin_over_pole="min",
+                                 amplification=lambda c: 1.0 / float(c.median())
+                                 if float(c.median()) > 0 else float("nan"))
+                            .reset_index())
+            conditioning["well_conditioned"] = (
+                conditioning["median_margin_over_pole"] >= 0.10).astype(int)
+    margin_ill_conditioned = bool(
+        conditioning is not None and len(conditioning) > 0
+        and int(conditioning["well_conditioned"].max()) == 0)
+
     controls = (summary[summary["contrast"].isin(CONTROL_CONTRASTS)]
                 if _has(summary, "contrast") else pd.DataFrame())
     checks = verbal_verdict_checks(
@@ -256,6 +285,13 @@ def main(
         lines.append(f"| `{key}` | {rendered} |")
     lines += [
         "",
+        *(["> **Caveat on this verdict.** The `margin` condition it is computed "
+           "from is ill-conditioned in this run (see *How well conditioned the "
+           "margin quotient is* in section 4), so any clause of the verdict that "
+           "depends on the size of a margin share — grounding above all — is "
+           "**not evaluated** rather than answered. The behavioural half of "
+           "section 2 is unaffected and stands on its own.", ""]
+          if margin_ill_conditioned else []),
         "Declared in `binding_verbalisation.verbal_verdict_checks` before the run. "
         "Behaviour is evaluated before attribution on purpose: a redistribution of "
         "a word's relevance means something different depending on whether the "
@@ -444,6 +480,32 @@ def main(
                             "n_nonpositive", "positive_rate", "median_score",
                             "min_score", "usable"]),
         "",
+        "### How well conditioned the margin quotient is",
+        "",
+        "`MIN_MARGIN_RELATIVE` stops a division by zero. It does not stop an "
+        "ill-conditioned quotient, and nothing else does either: the margin's "
+        "shares are a difference of two near-cancelling large quantities over a "
+        "small denominator, so when |s_margin| is a small fraction of the pole "
+        "scale every share is inflated by the reciprocal of that fraction. "
+        "Conservation is blind to it — completeness constrains the numerator and "
+        "says nothing about the denominator. Below about 0.10 the `margin` rows "
+        "should not be read.",
+        "",
+        _table(conditioning, ["layer", "median_margin_over_pole",
+                              "min_margin_over_pole", "amplification",
+                              "well_conditioned"]),
+        "",
+        *(["> **The `margin` rows in this report are not readable.** No layer "
+           "reaches a margin/pole ratio of 0.10, so every share under the "
+           "headline condition is inflated by roughly the amplification factor "
+           "above. That affects the reported cell, and therefore the grounding "
+           "component of the verdict: `question_carries_less_than_defs` is "
+           "computed from statistics that are not interpretable at this "
+           "conditioning. Read the single-pole `said` rows instead, where they "
+           "clear the positivity threshold, and treat the verdict's grounding "
+           "clause as *not evaluated* rather than as answered. The verdict string "
+           "itself is left exactly as the pre-declared mapping produces it.",
+           ""] if margin_ill_conditioned else []),
         f"Readable layers (both conditions): `{readable}`. "
         f"Conserving only: see the table above. "
         f"Positive-score only: `{positive}`.",
@@ -605,6 +667,10 @@ def main(
         "verdict_meaning": VERBAL_VERDICTS.get(verdict, ""),
         "checks": {k: _plain(v) for k, v in checks.items()},
         "readable_layers": [int(x) for x in readable],
+        "margin_ill_conditioned": margin_ill_conditioned,
+        "margin_conditioning": ([{k: _plain(v) for k, v in row.items()}
+                                 for row in conditioning.to_dict(orient="records")]
+                                if conditioning is not None else None),
         "layer_picked_on": picked_on,
         "reported_cell": ({k: _plain(v) for k, v in cell.items()}
                           if cell is not None else None),
@@ -623,6 +689,11 @@ def main(
     console.print(f"[bold]E17 stage 153 — {model}[/bold]")
     console.print(f"  verdict: [bold]{verdict}[/bold]")
     console.print(f"  readable layers: {readable}")
+    if margin_ill_conditioned:
+        console.print("  [yellow]margin condition ILL-CONDITIONED: no layer "
+                      "reaches |s_margin| / pole >= 0.10, so the headline shares "
+                      "are inflated and the verdict's grounding clause is not "
+                      "evaluated[/yellow]")
     if cell is not None:
         console.print(f"  reported cell: L{int(cell.get('layer', -1))} "
                       f"mean {float(cell.get('mean_delta', float('nan'))):+.5f} "

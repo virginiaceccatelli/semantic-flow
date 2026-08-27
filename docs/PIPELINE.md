@@ -475,7 +475,7 @@ per-layer object is now keyed by layer and the selected subspace's recorded laye
 is asserted against `chosen_layer`.)
 
 **H4 without H5 proves nothing about transport** — that combination is the earlier
-design that was retracted. Read [RESULTS.md R10](RESULTS.md#r10--a-rank-1-interchange-transports-which-definition-is-in-scope)
+design that was retracted. Read [RESULTS.md R10](RESULTS.md#r10--das-the-binding-representation-is-causally-used)
 before interpreting either.
 
 **On structural zeros in fp16.** `verify_structural_zeros` uses an *absolute*
@@ -640,7 +640,11 @@ right definition" is precisely the mechanism that is invisible here.
 E16 asks where the answer's relevance sits. E17 asks whether the model ever
 **says** which definition is in scope, and then applies E16's instrument to the
 word it says. Method: [METHODS §7](METHODS.md#7-verbalisation-of-the-binding-relation).
-Result placeholder: [RESULTS R12](RESULTS.md#r12--verbalisation-is-any-of-this-said-out-loud-built-not-yet-run).
+Results: [RESULTS R12](RESULTS.md#r12--verbalisation-the-binding-is-expressed-in-the-models-own-scope-words-late).
+
+Measured wall times on the GPU host: stage 150 took 22 s / 8 s, stage 151 568 s /
+178 s, stage 152 2241 s / 794 s for 6.7b / 1.3b — about 47 and 16 minutes end to
+end, well under the hour the job script's header estimates.
 
 ```bash
 MODEL=deepseek-coder-6.7b
@@ -709,7 +713,13 @@ control, and word styles at chance mean nothing unless it is at ceiling. Then:
 - arm consistency — the value-independence control, and **not** the same control
   the arms provide in E16;
 - the per-family contrast rows — a result carried entirely by the `ordinal`
-  family means "the nearest assignment wins", which needs no scope concept.
+  family means "the nearest assignment wins", which needs no scope concept. On
+  6.7b at layer 27 `scope` came in at +0.444 against `ordinal` +0.145 and a random
+  floor of +0.024, which is the comparison that favours the scope reading;
+- `verbal_discovered.csv` — the calibration-only full-vocabulary ranking, and on
+  6.7b the most convincing single table in the track (` Inside`, ` inside`,
+  ` Within`, ` interior`, ` inner`, ` dentro` at layers 23–31, from a ranking
+  given no lexicon).
 
 ## The positivity table bounds the single-pole rows, not the headline
 
@@ -721,13 +731,61 @@ control, and word styles at chance mean nothing unless it is at ceiling. Then:
 for why that distinction exists at all, and E16's 1.3B failure for what it cost
 the first time.
 
-## One style per relevance run
+It did its job on the first run: 6.7b came back `positive_rate` 1.000 at both
+poles (median logits 303 and 325), so its single-pole conditions are readable;
+1.3b came back 0.000 at both (median −126), so its `positive_layers` is empty and
+those rows are correctly marked unusable rather than quietly reported.
+
+## Also check the *size* of the margin, not only its sign
+
+The condition the first run showed is missing. `MIN_MARGIN_RELATIVE = 1e-6` stops
+a division by zero; it does not stop an ill-conditioned quotient. On 6.7b the
+median ratio |s_margin| / max(|s_inner|, |s_outer|) is 0.064, which inflates every
+fraction 15.7× — mean shifts of 0.53 of the answer score, a control interval of
+[−0.77, +0.35], and the mismatched-pair control reproducing the treatment at
+0.81–0.99. On 1.3b the ratio is 0.011 and the amplification 88×. Conservation
+reads 1.0e-6 throughout and cannot see any of it.
+
+Stage 153 measures this and prints it as *How well conditioned the margin quotient
+is*, marking the `margin` rows unreadable when no layer clears 0.10 — so read that
+table before any `margin` row. Moving the threshold into stage 152 as a real
+validity condition is [RESULTS open item 3](RESULTS.md#open-items). To compute it
+yourself:
+
+```bash
+python - <<'EOF'
+import pandas as pd
+M = "deepseek-coder-6.7b"
+r = pd.read_csv(f"results/binding/{M}/verbal/verbal_relevance_readings.csv")
+w = r.pivot_table(index=["base_id","cell","layer"], columns="target_mode",
+                  values="score")
+ratio = (w["margin"].abs()
+         / w[["inner","outer"]].abs().max(axis=1)).groupby(level="layer").median()
+print(ratio.round(4))   # below ~0.05 and the margin fractions are not readable
+EOF
+```
+
+## One style per relevance run — and pass `--style` explicitly
 
 Each style costs a full backward sweep, so stage 152 takes `--style` and defaults
 to the declared primary (`scope`). The pole-margin reading the headline rests on
 is derived from the two pole passes arithmetically and costs nothing extra. To
-read a second style, re-run stage 152 with `--style binding`; the outputs
+read a second style, re-run stage 152 with a different `--style`; the outputs
 overwrite, so copy `verbal/` first if you want both.
+
+**Read stage 151's behaviour table before choosing the style, and do not take the
+default.** In the first run the default (`scope`, variant `direct`) turned out to
+be the one wording 6.7b answers with a constant — 0.502 accuracy, `says_inner`
+0.002 — so the whole backward sweep was spent on a question the model is not
+answering, while `pyscope` (0.900 in both option orders) was never read. The style
+worth reading relevance for is the one stage 151 shows is answered above chance in
+*both* variants:
+
+```bash
+python scripts/152_binding_verbal_relevance.py --model $MODEL --style pyscope
+# and, if you want the second-best:
+python scripts/152_binding_verbal_relevance.py --model $MODEL --style scope --variant swapped
+```
 
 ## What starcoder2 can and cannot do here
 

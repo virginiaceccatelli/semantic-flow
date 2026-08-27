@@ -716,59 +716,96 @@ experiments:
 
   E17:
     name: binding verbalisation
-    status: active
+    status: supporting
     stage: "150,151,152,153"
-    model: "deepseek-coder-1.3b, deepseek-coder-6.7b (behavioural half also starcoder2)"
-    tables: []
+    model: "deepseek-coder-6.7b, deepseek-coder-1.3b"
+    tables:
+      - results/binding/deepseek-coder-6.7b/verbal/verbal_behaviour_summary.csv
+      - results/binding/deepseek-coder-6.7b/verbal/verbal_contrast_summary.csv
+      - results/binding/deepseek-coder-6.7b/verbal/verbal_discovered.csv
+      - results/binding/deepseek-coder-1.3b/verbal/verbal_behaviour_summary.csv
     claim: >
-      BUILT AND SMOKE-TESTED, NOT YET RUN AT SCALE. No claim yet. The question:
-      R10 shows the binding representation is causally used and R11 shows the
-      answer's relevance moves with it, both in internal coordinates - does the
-      distinction surface in anything the model EMITS, and if so is that word read
-      off the same def-use structure? Two halves kept apart because they can come
-      apart in both directions: a forced choice in four question styles x two
-      variants (chance pinned at 0.500 by E13's factorial), and R11's R-lens with
-      a pole word's unembedding row as the cotangent.
-    design_notes:
-      - >
-        The positive control is in the design from the start rather than added
-        after a null, which is E15-C/E15-D's lesson applied at design time: E13's
-        own value question, same harness, bases, cells and readout position, at
-        1.000 on 6.7b. Word styles at chance beside a ceiling there is a fact
-        about verbalisation; beside a failing control it licenses nothing.
-      - >
-        The candidate vocabulary is 11 MATCHED OPPOSING PAIRS across four families
-        (scope, shadowing, ordinal, action), so a pole frequency imbalance cancels
-        and "the nearest assignment wins" (ordinal) stays separable from "has a
-        scope concept" (scope). Dropped as pairs, never as words. Encodability was
-        checked before the list was fixed: shadowed, reassigned, overwritten,
-        redefined and rebound are all multi-token on deepseek-coder. 10 of 11
-        pairs survive there, all 11 on starcoder2. Stage 150 additionally ranks
-        the full vocabulary on CALIBRATION bases only and freezes it to disk.
-      - >
-        The headline scores the POLE MARGIN, not a single word's logit. A raw
-        logit has no meaningful sign (softmax is shift-invariant) and R_t/s is a
-        share only when s > 0 - the failure that voided E16's 1.3b readings. The
-        margin is shift-invariant, is what the forced choice reads, and its
-        fractions are invariant under s -> -s because relevance is linear in the
-        cotangent, so the sign problem cannot arise. By that same linearity it is
-        exactly R(inner) - R(outer) over s_inner - s_outer and costs no extra
-        backward pass.
-      - >
-        Two controls swap roles relative to E16. The arms are a VALUE-independence
-        control here, not an output-token one, because the scored word does not
-        move between arms while the literals do. And fixed_inner/fixed_outer are
-        base-INDEPENDENT, so the output-token control is exact for every contrast.
-      - >
-        Gates H7/H8/H9 are all MECHANICAL and each requires H0 only. H1 is not
-        required (it fails on 1.3b at 0.809) and stage 152 does not require H8,
-        because requiring it would delete the shift_without_verbalisation outcome
-        from the verdict space before it could be observed.
+      OBSERVATIONAL, and established on 6.7b only. THE BINDING IS SAYABLE, IN SOME
+      WORDS AND NOT OTHERS, AND IT BECOMES SAYABLE LATE. Asked in a comment whether
+      the returned variable is local or global, deepseek-coder-6.7b answers
+      correctly on 0.900 [0.888, 0.913] of 280 held-out programs, above chance in
+      BOTH option orders (0.923 / 0.878) with a balanced 0.523 answer rate, while
+      E13's own value question run through the same harness scores 1.000. Chance is
+      0.500 by construction. In vocabulary space the inner-pole and outer-pole
+      scope words almost completely swap mass with the binding at layers 23-27
+      (+0.780 and +0.821 delta contrast prob, both arms agreeing to three
+      decimals), against essentially nothing below layer 19. At layer 27 the SCOPE
+      family carries +0.444 against ordinal +0.145, action +0.122, shadowing
+      +0.055 and a random floor of +0.024 - and since "the nearest assignment
+      wins" is positional and would live in `ordinal`, that comparison favours a
+      scope reading. A calibration-only ranking of the full 32k vocabulary, given
+      no lexicon, recovers ' Inside', ' inside', ' Within', ' interior', ' inner',
+      'within', ' dentro' at layers 23-31; only 18 of 432 discovered rows were in
+      the hand-written list.
+    why_supporting: >
+      Nothing here intervenes. R10's DAS interchange is the causal result on this
+      corpus and this does not extend it; a word is an output, and attribution of a
+      word is still attribution. What it adds is a third depth: causally used at
+      layer 8, attributed at layer 15, expressible at layers 23-27. The units do
+      not convert.
     caveat: >
-      No branch of the verdict licenses a causal claim, and answering the question
-      is NOT introspection: the question is about the program, and a model can
-      answer it by reading the text at inference time as any reader would. A null
-      bounds the four phrasings and eight choice words tested, not the concept.
+      Four things. 1. Answering the question is NOT introspection: it is a question
+      about the program, and the model can answer it by reading the text at
+      inference time as any reader would. 2. Phrasing dominates - two of four
+      styles sit at exactly chance (the inner/outer wording answers " inner" for
+      every program; the yes/no wording answers " yes" to both polarities, the
+      acquiescence bias the polarity variant was built to catch), and the wording
+      declared primary in advance spans 0.502 to 0.980 across two orderings of the
+      SAME question, so its pooled 0.741 is a mixture and not an accuracy.
+      `argmax_is_a_choice` is 0.000 for that style, meaning neither choice word is
+      ever the model's own top continuation. 3. The vocabulary contrast is mass
+      within a ~160-token candidate set, not over the full vocabulary. 4. 1.3b
+      teaches nothing: every word style is at chance but its positive control also
+      fails (0.811, H1's own failure), so the verdict is
+      not_verbalised_instrument_untested and no null about that model follows.
+    outstanding:
+      - >
+        THE ATTRIBUTION HALF IS UNRESOLVED, for two mechanical reasons and no
+        result about the model. (a) Stage 152 reads one style per run and defaults
+        to the declared primary `scope/direct` - which is exactly the wording the
+        model answers with a constant (0.502, says_inner 0.002), so the R-lens was
+        applied to a question it is not answering. `--style pyscope` is the re-run.
+        (b) The declared headline condition, the pole margin, is ill-conditioned
+        here: the median ratio |s_margin| / max(|s_inner|, |s_outer|) is 0.064 on
+        6.7b and 0.011 on 1.3b, so every share is inflated 15.7x and 88x
+        respectively. Symptoms: mean shifts up to 0.53 of the
+        answer score, a same_inner control interval of [-0.77, +0.35], and the
+        mismatched-pair control reproducing the treatment at 0.81-0.99 at every
+        layer. Conservation reads 1.0e-6 throughout and cannot see it - the same
+        shape of blind spot as E16's sign problem, one level further in.
+      - >
+        The secondary single-pole `said` condition IS readable on 6.7b (both poles
+        positive on 1600/1600) and is clean as far as it goes: at layer 0
+        binding_shift_identical +0.00653 [+0.00616, +0.00689] at sign 0.993, with
+        inner_def_value +0.00135 and outer_def -0.00518, the one differing token
+        carrying -0.00004 at p 0.824, the roles summing to -2.5e-8, both arms
+        agreeing in sign at all eight layers, and both same-binding controls flat.
+        But fixed_inner (-0.0021) and fixed_outer (+0.0033) have OPPOSITE signs, so
+        the redistribution is not independent of which pole is scored, and no
+        mismatched control is formed for this condition. Suggestive, not
+        established. Direction matches E16, magnitude about 5% of it, depth profile
+        opposite (decays from layer 0 rather than peaking at 15).
+      - >
+        Two machinery defects the run exposed. `select_verbal_cell` maximises the
+        mean, so with a negative effect at every layer it picked layer 27 - the one
+        layer where the sign flips and where p = 0.654. And stage 153's gate lookup
+        checked for a `recorded` attribute that `Gate` does not carry, so the first
+        generated reports said `not_run` while H7-H9 had all passed; fixed, and the
+        reports regenerated.
+      - >
+        WHAT WORKED, recorded because it was designed for this. The positive
+        control settled the 1.3b null the way E15-C's could not. The variant
+        control caught both the option-order collapse and the yes/no acquiescence
+        bias. The positive-score gate flagged 1.3b's single-pole conditions as
+        unusable (positive_rate 0.000, positive_layers []) before anyone
+        interpreted them - the exact failure that silently voided E16's 1.3b
+        result. And calibration-only discovery supplied most of the evidence for
+        the vocabulary claim, in words the hand-written lexicon never contained.
 
   E6:
     name: behavioral lead time

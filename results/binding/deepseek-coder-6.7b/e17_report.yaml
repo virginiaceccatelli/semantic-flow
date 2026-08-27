@@ -1,6 +1,9 @@
 model: deepseek-coder-6.7b
-verdict: not_run
-verdict_meaning: the stage has not run for this model.
+verdict: verbalised_not_grounded
+verdict_meaning: "the model answers above chance, but relevance for the word does\
+  \ not move over the competing definitions \u2014 it sits on the question text. The\
+  \ answer is verbalised and is not attributed to the def-use structure R11 measured;\
+  \ the two must not be merged."
 checks:
   behaviour_measured: true
   primary_style_verbalised: true
@@ -32,6 +35,48 @@ readable_layers:
 - 19
 - 23
 - 27
+margin_ill_conditioned: true
+margin_conditioning:
+- layer: 0
+  median_margin_over_pole: 0.06377923072026931
+  min_margin_over_pole: 0.00015002252327537768
+  amplification: 15.67908531832128
+  well_conditioned: 0
+- layer: 3
+  median_margin_over_pole: 0.06377923072026931
+  min_margin_over_pole: 0.00015002252327537768
+  amplification: 15.67908531832128
+  well_conditioned: 0
+- layer: 7
+  median_margin_over_pole: 0.06377923072026931
+  min_margin_over_pole: 0.00015002252327537768
+  amplification: 15.67908531832128
+  well_conditioned: 0
+- layer: 11
+  median_margin_over_pole: 0.06377923072026931
+  min_margin_over_pole: 0.00015002252327537768
+  amplification: 15.67908531832128
+  well_conditioned: 0
+- layer: 15
+  median_margin_over_pole: 0.06377923072026931
+  min_margin_over_pole: 0.00015002252327537768
+  amplification: 15.67908531832128
+  well_conditioned: 0
+- layer: 19
+  median_margin_over_pole: 0.06377923072026931
+  min_margin_over_pole: 0.00015002252327537768
+  amplification: 15.67908531832128
+  well_conditioned: 0
+- layer: 23
+  median_margin_over_pole: 0.06377923072026931
+  min_margin_over_pole: 0.00015002252327537768
+  amplification: 15.67908531832128
+  well_conditioned: 0
+- layer: 27
+  median_margin_over_pole: 0.06377923072026931
+  min_margin_over_pole: 0.00015002252327537768
+  amplification: 15.67908531832128
+  well_conditioned: 0
 layer_picked_on: calibration bases
 reported_cell:
   model: deepseek-coder-6.7b

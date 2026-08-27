@@ -1,6 +1,8 @@
 model: deepseek-coder-1.3b
-verdict: not_run
-verdict_meaning: the stage has not run for this model.
+verdict: not_verbalised_instrument_untested
+verdict_meaning: 'the word styles sit at chance AND the value control fails. Nothing
+  is learned: E15-D''s ambiguity, reproduced. Report the descriptive tables and no
+  conclusion.'
 checks:
   behaviour_measured: true
   primary_style_verbalised: false
@@ -30,6 +32,38 @@ readable_layers:
 - 11
 - 15
 - 19
+margin_ill_conditioned: true
+margin_conditioning:
+- layer: 0
+  median_margin_over_pole: 0.011370017762430318
+  min_margin_over_pole: 3.375714438782038e-05
+  amplification: 87.95061018323793
+  well_conditioned: 0
+- layer: 3
+  median_margin_over_pole: 0.011370017762430318
+  min_margin_over_pole: 3.375714438782038e-05
+  amplification: 87.95061018323793
+  well_conditioned: 0
+- layer: 7
+  median_margin_over_pole: 0.011370017762430318
+  min_margin_over_pole: 3.375714438782038e-05
+  amplification: 87.95061018323793
+  well_conditioned: 0
+- layer: 11
+  median_margin_over_pole: 0.011370017762430318
+  min_margin_over_pole: 3.375714438782038e-05
+  amplification: 87.95061018323793
+  well_conditioned: 0
+- layer: 15
+  median_margin_over_pole: 0.011370017762430318
+  min_margin_over_pole: 3.375714438782038e-05
+  amplification: 87.95061018323793
+  well_conditioned: 0
+- layer: 19
+  median_margin_over_pole: 0.011370017762430318
+  min_margin_over_pole: 3.375714438782038e-05
+  amplification: 87.95061018323793
+  well_conditioned: 0
 layer_picked_on: calibration bases
 reported_cell:
   model: deepseek-coder-1.3b
@@ -51,7 +85,7 @@ reported_cell:
   median_delta: -0.1381713555865691
   sd_delta: 6.9520016881348905
   cohens_d: -0.1936334070923357
-  ci_lo: -2.659207697546361
+  ci_lo: -2.6592076975463614
   ci_hi: -0.3759322098932363
   sign_consistency: 0.2571428571428571
   n_nonzero: 140

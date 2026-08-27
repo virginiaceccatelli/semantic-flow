@@ -775,8 +775,10 @@ relation becomes expressible in meaningful vocabulary.
 
 # 7. Verbalisation of the binding relation
 
-Stages 150–153 (`src/experiments/binding_verbalisation.py`). **Built and
-smoke-tested; not yet run at scale.** Gates H7, H8, H9.
+Stages 150–153 (`src/experiments/binding_verbalisation.py`). Run on
+deepseek-coder-6.7b (400 bases, 280 held out) and deepseek-coder-1.3b (200 bases,
+140 held out); 47 and 16 minutes. Gates H7, H8, H9 pass in both.
+Results: [RESULTS R12](RESULTS.md#r12--verbalisation-the-binding-is-expressed-in-the-models-own-scope-words-late).
 
 ## 7.1 The question §6 cannot answer
 
@@ -849,8 +851,9 @@ Three design decisions inside this:
 - **Dropped as pairs, never as words.** If either side is not one stable token
   under a tokenizer, the whole pair goes with the reason recorded. Half a pair
   would turn a matched contrast into an unmatched one and silently reintroduce
-  the imbalance the pairing exists to cancel. On deepseek-coder 10 of 11 pairs
-  survive across all four families; on starcoder2 all 11 do.
+  the imbalance the pairing exists to cancel. In the run, 10 of 11 pairs survived
+  on both DeepSeek tokenizers — only `masked/exposed` dropped, because `masked`
+  is multi-token there — leaving all four families represented.
 - **Encodability was checked before the list was fixed**, not after. `shadowed`,
   `shadowing`, `reassigned`, `overwritten`, `redefined` and `rebound` are all
   multi-token on deepseek-coder, so a shadowing family built from them would have
@@ -871,6 +874,13 @@ rather than a promise. The pool is logit-lens-selected, so a direction only a
 corrected lens would surface cannot be found this way; that limitation is
 inherited from the E15-C design and recorded in the frozen file's provenance.
 
+This step earned its cost. On 6.7B the top-rising tokens under the shadowing
+binding at layers 23–31 are ` Inside`, ` inside`, ` Within`, ` interior`,
+` inner`, `within`, `ins`, ` dentro` — a coherent insideness cluster across
+casings and languages, from a ranking given no lexicon. Only 18 of 432 discovered
+rows were in the hand-written list, so most of the evidence for the vocabulary
+claim is in words the design did not guess.
+
 ## 7.4 The forced choice, and its three controls
 
 Four question styles, each asked in two variants, plus the value control:
@@ -886,12 +896,19 @@ Four question styles, each asked in two variants, plus the value control:
 **Chance is 0.500 by construction.** Within a base the correct answer is "outer"
 in two cells and "inner" in the other two, so a model that always answers the
 same way scores exactly 0.500. `says_inner_rate` is reported beside accuracy
-because only it separates "right half the time" from "always says outer".
+because only it separates "right half the time" from "always says outer" — and in
+the run it did exactly that work: `binding` scored 0.500 with `says_inner` 1.000
+(always " inner") and `shadow` scored 0.500 with the polarity variants at 1.000
+and 0.000 (always " yes"), so both nulls are diagnosable rather than blank.
 
 - **Variant** — each two-option style is asked in both option *orders*, and the
   yes/no style in both *polarities*. A model that picks the last-mentioned option
-  scores high on one variant and low on the other, so the bias-free number is the
-  pooled one and a single variant alone reports the bias.
+  scores high on one variant and low on the other. This control fired hard: on
+  6.7B the primary `scope` style scored 0.502 in one ordering (answering
+  " outside" for essentially every program) and 0.980 in the other, and on 1.3B
+  it was a pure last-mentioned rule in both orderings. `pyscope` by contrast
+  cleared chance in both orders, 0.923 and 0.878, which is what makes its 0.900
+  a number rather than a mixture.
 - **Arm consistency** — `ab_source` and `ba_source` have the same binding and
   different literals, so the correct *word* is identical while the correct *value*
   differs. A word answer that tracks the binding must agree across the arms; one
@@ -903,7 +920,10 @@ because only it separates "right half the time" from "always says outer".
   the start: the same harness, bases, cells and readout position, on the question
   H1 shows the model answers at 1.000 on 6.7B. Word styles at chance beside a
   ceiling there is a fact about verbalisation. Word styles at chance beside a
-  failing control licenses nothing, and the report says so.
+  failing control licenses nothing, and the report says so. Both outcomes
+  occurred: 6.7B's control returned 1.000, so its two null styles are facts about
+  those phrasings; 1.3B's returned 0.811 — H1's own failure — so its verdict is
+  `not_verbalised_instrument_untested` and nothing about that model follows.
 
 ## 7.5 The R-lens on the word, and the one thing that had to change
 
@@ -933,7 +953,67 @@ and costs **no extra backward pass**, the same arithmetic that makes §6.5's
 `fixed_*` conditions free. The single-pole readings are still reported, with their
 positive-score rate beside them, because they are what shows which pole moved.
 
-## 7.6 Two controls that swap roles relative to §6
+### What the run showed about this choice, in both directions
+
+The protection worked where it was designed to. On 1.3B the single-pole scores are
+negative on 800/800 readings (median −126), so the conditions that need a positive
+score came back `usable = 0` with `positive_layers = []` — the failure that
+silently voided R11's 1.3B result, flagged this time before interpretation. On
+6.7B both poles score positive on 1600/1600 (median logits 303 and 325), so the
+single-pole conditions are licensed there.
+
+But **a guard against dividing by zero is not a guard against ill-conditioning**,
+and that is where the margin failed. `MIN_MARGIN_RELATIVE = 1e-6` admits any
+margin above about 3e-4 of the pole scale, and the observed margins sit at
+|s| ≈ 21 against poles of 303 and 325. The fractions are then a difference of two
+near-cancelling large quantities over a small denominator: the median ratio
+|s_margin| / max(|s_inner|, |s_outer|) is 0.064 on 6.7B and 0.011 on 1.3B, giving
+amplification factors of 15.7× and 88×. The symptoms are unambiguous: mean shifts
+up to
+0.53 of the answer score, a same-binding control interval of [−0.77, +0.35], and
+the mismatched-pair control reproducing the treatment at a ratio of 0.81–0.99 at
+every layer. Conservation reported 1.0e-6 throughout and noticed nothing, which
+is the same shape of blind spot as R11's sign problem one level further in:
+completeness constrains the numerator, and neither completeness nor sign
+constrains the *conditioning* of the quotient.
+
+The threshold therefore belongs on |s_margin| / max(|s_inner|, |s_outer|). Stage
+153 now measures that ratio per layer, prints it beside conservation and
+positivity, and marks the `margin` rows unreadable when no layer clears 0.10 —
+which is reporting, not gating: the verdict mapping is still exactly the one
+declared before the run, and what the caveat says is that its grounding clause was
+*not evaluated*. Moving the threshold into stage 152 as a first-class validity
+condition, with a fallback to the single-pole conditions, is
+[RESULTS open item 3](RESULTS.md#open-items).
+
+### And the primary style has to be answerable, not just well-motivated
+
+`PRIMARY_STYLE = "scope"` was declared before the run because it names the
+construction rather than a technical term. On 6.7B that style turned out to be the
+one the model answers with a constant in the wording stage 152 defaults to
+(`scope/direct`, 0.502, `says_inner` 0.002), while the style that *is* answered —
+`pyscope`, 0.900 in both orders — was never read by the relevance sweep, because
+each style costs a full backward sweep and only one runs per invocation.
+
+The declaration was not wrong to make in advance; the ordering was wrong. A style
+can only be chosen a priori on how well it *names* the relation, and whether the
+model answers it is a fact about the model that stage 151 measures. So the
+relevance sweep should take its style from stage 151's calibration behaviour
+rather than from a module constant — a selection made on held-out calibration
+rows, which is the same discipline that already picks the reported layer.
+
+## 7.6 What the pooled variant row is and is not
+
+The design called the two-variant mean "the bias-free number", and that is right
+only when both variants measure the same thing. On 6.7B's `scope` style they did
+not: 0.502 and 0.980 average to 0.741, which is neither variant and describes no
+behaviour. The pooled row is the right summary when the variants agree and a
+warning when they diverge, so both are reported and the spread is what to read.
+`argmax_is_a_choice` belongs beside it — it is 1.000 for `pyscope` and 0.000 for
+`scope`, meaning neither `scope` choice word is ever the model's own top
+continuation, which bounds what its 0.980 shows.
+
+## 7.7 Two controls that swap roles relative to §6
 
 Worth stating explicitly, because reusing §6's tables without noticing this would
 mean reading two different controls under one name:
@@ -944,7 +1024,7 @@ mean reading two different controls under one name:
 | fixed conditions | `fixed_a`/`fixed_b`, free but base-dependent | `fixed_inner`/`fixed_outer`, free *and* base-independent — the pole tokens are the same ids in every base, so the control is exact for every contrast; the `margin` condition goes further and scores both members by the same linear *functional* |
 | same-binding controls | move the scored token the same way as the treatment | move the *value* while the correct word does not move at all — a sharper test of value contamination |
 
-## 7.7 What each outcome licenses
+## 7.8 What each outcome licenses
 
 Declared before the run, in `binding_verbalisation.VERBAL_VERDICTS`:
 
@@ -956,6 +1036,28 @@ Declared before the run, in `binding_verbalisation.VERBAL_VERDICTS`:
 | words above chance, controls fire or arms disagree | the word tracks the literal, not the binding |
 | words at chance, relevance still redistributes | the structure is there and the model cannot say it; report as attribution of an unsaid word, not as verbalisation |
 
+### What came out
+
+**6.7B: `verbalised_not_grounded`; 1.3B: `not_verbalised_instrument_untested`.**
+
+The first label needs reading with care, and RESULTS R12 says so rather than
+quoting it. The behavioural half is unambiguous — `pyscope` at 0.900 in both
+orders against a constructed 0.500 floor, with the positive control at 1.000 — and
+the vocabulary half is strong and arm-replicated. What is *not* established is the
+grounding, because the two conditions that would have settled it both failed for
+mechanical reasons above: the declared headline was ill-conditioned, and the
+secondary single-pole condition was read on a wording the model answers with a
+constant. `verbalised_not_grounded` is a function of the reported cell, and the
+reported cell is the one layer where the ill-conditioned statistic happened to
+change sign. The honest statement is that R12's attribution half is unresolved
+and one re-run resolves it.
+
+One further defect the run exposed in the machinery rather than in the model:
+`select_verbal_cell` maximises the mean, so with a negative effect at every layer
+it selected the least-negative one — layer 27, where the effect is not significant
+(p = 0.654). A two-sided outcome needs selection on |effect| or on a declared
+direction.
+
 **No branch licenses a causal claim.** §5's interchange is the causal instrument;
 a word is an output, and attribution of a word is still attribution. Two further
 limits belong on every reading. First, answering the question is not
@@ -965,7 +1067,7 @@ separates a report about the model's own computation from a correct answer about
 the code. Second, the attn-rule detaches q and k, so "attend to the right
 definition" remains precisely the mechanism this instrument cannot see (§6.2).
 
-## 7.8 The three gates
+## 7.9 The three gates
 
 All mechanical, for the reason §8.3 gives and H6 already follows: the informative
 outcome here may well be that the models verbalise nothing, and a gate that made

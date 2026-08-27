@@ -15,12 +15,10 @@ The active evidence forms one sequence:
    behaves as though the variable refers to.
 4. **Binding attribution:** on the same programs, a conserving R-lens moves
    answer relevance from the inactive definition toward the active one.
-
-In progress, on the same programs: **verbalisation** — whether the model can
-*say* which definition is in scope, and whether the word it answers with is
-attributed to the same definitions the value's relevance is. Built and
-smoke-tested, not yet run; see
-[RESULTS R12](docs/RESULTS.md#r12--verbalisation-is-any-of-this-said-out-loud-built-not-yet-run).
+5. **Verbalisation:** on the same programs, 6.7B can *say* which definition is
+   in scope — 0.900 asked whether the returned variable is local or global — and
+   the two word poles almost completely swap output-vocabulary mass with the
+   binding in the network's final quarter.
 
 The former security benchmark, output-vocabulary study, standalone J-lens
 experiments, and R-lens taint-routing study remain reproducible and are documented
@@ -156,14 +154,50 @@ The 1.3B R-lens result is not interpreted because the model often assigns a zero
 or negative score to the bound value in the shadowing condition, making
 normalized relevance shares unstable.
 
+### 5. The binding is expressible in the model's own scope words, late
+
+The same four programs get a question appended, rendered from the shared outer
+name so the prompt still differs at exactly one token. Chance is 0.500 by
+construction: within a base the correct answer is "outer" twice and "inner"
+twice, so a constant answer scores exactly 0.500.
+
+On DeepSeek-Coder 6.7B, over 280 held-out programs:
+
+- asked whether the returned variable is **local or global**, it is right on
+  **0.900** — and above chance in both option orders (0.923 and 0.878);
+- E13's own value question, run through the same harness as a positive control,
+  scores **1.000**, so the styles that fail are not the harness failing;
+- two of four phrasings sit at exactly chance, each diagnosably: the
+  `inner`/`outer` wording answers " inner" for every program, and the yes/no
+  wording answers " yes" to both polarities;
+- the primary `inside`/`outside` wording spans **0.502 to 0.980** across two
+  orderings of the same question, so phrasing dominates;
+- in vocabulary space the inner-pole and outer-pole scope words almost completely
+  swap mass with the binding at layers 23–27 (+0.821 at layer 27), with both
+  crossed arms agreeing;
+- a calibration-only ranking of the full 32k vocabulary, given no lexicon,
+  recovers ` Inside`, ` inside`, ` Within`, ` interior`, ` inner`, ` dentro`;
+- the scope word family carries three times what the purely positional family
+  does, and eighteen times a random floor.
+
+The 1.3B model answers every word style at chance, but its positive control also
+fails (0.811), so nothing about that model follows — the report says so rather
+than reporting a null.
+
+Answering a question about a program is not introspection: the model can answer
+it by reading the text as any reader would. And the attribution half of this
+experiment is unresolved — it was run on the one wording answered with a
+constant, and its headline statistic proved numerically ill-conditioned.
+
 ## What the active evidence supports
 
 The narrow conclusion is:
 
 > In controlled programs, variable binding becomes linearly represented, remains
 > stable under many surface changes but is fragile to structural interference,
-> is causally read from a rank-1 component at the use site, and is reflected in
-> how the final answer is attributed to the active definition.
+> is causally read from a rank-1 component at the use site, is reflected in how
+> the final answer is attributed to the active definition, and becomes
+> expressible in output-aligned scope vocabulary in the network's final quarter.
 
 It does not establish:
 
@@ -172,8 +206,10 @@ It does not establish:
 - transfer of the controlled isolation to real code;
 - that the DAS direction is unique;
 - that R-lens attribution is causal;
-- a complete attention mechanism; or
-- verbalisation of binding as a human-readable word.
+- a complete attention mechanism;
+- that a correct verbal answer is introspective rather than a correct reading of
+  the program text; or
+- that the binding is verbalisable under phrasings other than the four tested.
 
 A future binding-verbalisation study would be a new experiment, not a
 reinterpretation of the R-lens attribution result.
