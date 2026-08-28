@@ -491,10 +491,11 @@ def delta_frame(
     """The paired counterfactual reversal, one row per (base, arm, layer, pair).
 
     `lenses[readout][layer]` is a LIST of lenses: one for `jlens` and `logit`,
-    several seeds for `gram_random`. A control row's `delta` and `reversal` are
-    the mean over its seeds, which is what makes a single Gram-matched draw
-    unable to decide anything — and the per-seed rates come back in the second
-    frame so the spread is visible rather than averaged away.
+    several seeds for `gram_random`. The diagnostic control row is the mean over
+    seeds. The second frame retains one row per split and direction, because the
+    question "is this word contrast special?" must be answered over directions,
+    not by pretending that thousands of near-identical bases are independent
+    evidence about one direction.
 
     Returns `(deltas, random_seeds)`.
     """
@@ -536,17 +537,19 @@ def delta_frame(
                     reversal += (np.sign(d) == PREDICTED_SIGN).astype(np.float64)
                     if readout == RANDOM:
                         for index in range(n_pairs):
-                            seed_rows.append({
-                                "model": model, "layer": int(layer), "arm": arm,
-                                "seed": int(lens.metadata.get("seed", -1)),
-                                "family": families[index],
-                                "pair_index": index,
-                                "inner_word": inner_words[index],
-                                "outer_word": outer_words[index],
-                                "reversal": float(np.mean(
-                                    np.sign(d[:, index]) == PREDICTED_SIGN)),
-                                "mean_delta": float(np.mean(d[:, index])),
-                                "n": int(d.shape[0])})
+                            for split_name in sorted(set(splits)):
+                                mask = splits == split_name
+                                seed_rows.append({
+                                    "model": model, "split": split_name,
+                                    "layer": int(layer), "arm": arm,
+                                    "seed": int(lens.metadata.get("seed", -1)),
+                                    "family": families[index], "pair_index": index,
+                                    "inner_word": inner_words[index],
+                                    "outer_word": outer_words[index],
+                                    "mean_delta": float(np.mean(d[mask, index])),
+                                    "reversal": float(np.mean(
+                                        np.sign(d[mask, index]) == PREDICTED_SIGN)),
+                                    "n_bases": int(np.sum(mask))})
                 k = float(len(bank))
                 m_source, m_target = m_source / k, m_target / k
                 delta, reversal = delta / k, reversal / k
@@ -568,6 +571,70 @@ def delta_frame(
                 }))
     deltas = pd.concat(chunks, ignore_index=True) if chunks else pd.DataFrame()
     return deltas, pd.DataFrame(seed_rows)
+
+
+def pair_direction_table(frame: pd.DataFrame, random_rows: pd.DataFrame,
+                         split: str = REPORT_SPLIT) -> pd.DataFrame:
+    """Simple per-word answer: J-lens rate and its random-direction percentile.
+
+    Rows are never pooled across word pairs.  Each arm is shown separately and
+    ``both_arm_percentile`` is the worse of the two percentiles.  A contrast is
+    called ``direction_specific`` only when both arms exceed 99% of independent
+    Gram-matched directions.  This is deliberately descriptive; consistency
+    across layers remains visible in the table rather than becoming another
+    fitted statistic.
+    """
+    needed = {"split", "arm", "layer", "seed", "pair_index",
+              "family", "inner_word", "outer_word", "reversal"}
+    if frame.empty or random_rows.empty or not needed.issubset(random_rows.columns):
+        return pd.DataFrame()
+    keys = ["layer", "family", "pair_index", "inner_word", "outer_word"]
+    real = frame[(frame["readout"] == JLENS) & (frame["split"] == split)]
+    null = random_rows[random_rows["split"] == split]
+    real_rates = real.groupby(keys + ["arm"])["reversal"].mean()
+    logit_rates = frame[(frame["readout"] == LOGIT) & (frame["split"] == split)] \
+        .groupby(keys + ["arm"])["reversal"].mean()
+    null_rates = null.set_index(["seed"] + keys + ["arm"])["reversal"]
+    rows = []
+    for index, group in real_rates.reset_index().groupby(keys, sort=True):
+        by_arm = group.set_index("arm")["reversal"]
+        if not set(ARMS).issubset(by_arm.index):
+            continue
+        row = dict(zip(keys, index if isinstance(index, tuple) else (index,)))
+        percentiles = []
+        for arm in ARMS:
+            observed = float(by_arm[arm])
+            try:
+                draws = null_rates.xs((*index, arm), level=keys + ["arm"]).to_numpy()
+            except KeyError:
+                draws = np.asarray([])
+            # Mid-rank empirical percentile handles the many rates at exactly 0/1.
+            pct = (float(np.sum(draws < observed))
+                   + 0.5 * float(np.sum(draws == observed))) / len(draws) \
+                  if len(draws) else np.nan
+            row[f"reversal_{arm}"] = observed
+            row[f"random_percentile_{arm}"] = pct
+            percentiles.append(pct)
+        finite_percentiles = [v for v in percentiles if np.isfinite(v)]
+        worst = float(min(finite_percentiles)) if finite_percentiles else np.nan
+        min_reversal = float(min(row[f"reversal_{arm}"] for arm in ARMS))
+        logit_min = float(min(float(logit_rates.get((*index, arm), np.nan))
+                              for arm in ARMS))
+        row.update({"min_arm_reversal": min_reversal,
+                    "logit_min_arm_reversal": logit_min,
+                    "beats_logit": bool(np.isfinite(logit_min)
+                                        and min_reversal > logit_min),
+                    "both_arm_percentile": worst,
+                    # "clear" means large, present in both value arms, and rare
+                    # for matched directions. Cross-layer consistency is decided
+                    # separately by the verdict, never hidden by family pooling.
+                    "direction_specific": bool(np.isfinite(worst) and worst >= .99),
+                    "clear_at_layer": bool(min_reversal >= .80
+                                           and np.isfinite(worst) and worst >= .99),
+                    "n_random_directions": int(null["seed"].nunique()),
+                    "split": split})
+        rows.append(row)
+    return pd.DataFrame(rows)
 
 
 # ── summaries ────────────────────────────────────────────────────────────────
@@ -1161,6 +1228,7 @@ def _fires(state: pd.DataFrame, family: str, arms: Sequence[str] = ARMS) -> list
 def verdict_checks(
     state: pd.DataFrame,
     probe: Optional[pd.DataFrame] = None,
+    pair_directions: Optional[pd.DataFrame] = None,
     invalid: bool = False,
     ran: bool = True,
 ) -> list[VerdictCheck]:
@@ -1185,11 +1253,42 @@ def verdict_checks(
         f"here informative"))
 
     scope_both = _fires(state, HYPOTHESIS_FAMILY)
+    consistent_pairs: list[str] = []
+    consistent_beats_logit: list[str] = []
     scope_one = sorted(set(_fires(state, HYPOTHESIS_FAMILY, (ARMS[0],)))
                        ^ set(_fires(state, HYPOTHESIS_FAMILY, (ARMS[1],))))
     controls = {f: _fires(state, f) for f in CONTROL_FAMILIES}
+    if pair_directions is not None and not pair_directions.empty:
+        scope_one = []  # both arms are built into `clear_at_layer`
+        controls = {f: [] for f in CONTROL_FAMILIES}
+        scope = pair_directions[pair_directions["family"] == HYPOTHESIS_FAMILY]
+        for (inner, outer), group in scope.groupby(["inner_word", "outer_word"]):
+            ordered_layers = sorted(int(v) for v in group["layer"].unique())
+            clear = set(int(v) for v in group.loc[
+                group["clear_at_layer"].astype(bool), "layer"])
+            # Consecutive means adjacent entries in the declared layer grid, not
+            # numerically adjacent transformer blocks.
+            if any(a in clear and b in clear
+                   for a, b in zip(ordered_layers, ordered_layers[1:])):
+                consistent_pairs.append(f"{inner}/{outer}")
+                if group.loc[group["layer"].isin(clear), "beats_logit"].all():
+                    consistent_beats_logit.append(f"{inner}/{outer}")
+        scope_both = sorted(int(v) for v in scope.loc[
+            scope["clear_at_layer"].astype(bool), "layer"].unique()) \
+            if consistent_pairs else []
+        for family in CONTROL_FAMILIES:
+            control = pair_directions[pair_directions["family"] == family]
+            for _, group in control.groupby(["inner_word", "outer_word"]):
+                grid = sorted(int(v) for v in group["layer"].unique())
+                clear = set(int(v) for v in group.loc[
+                    group["clear_at_layer"].astype(bool), "layer"])
+                if any(a in clear and b in clear for a, b in zip(grid, grid[1:])):
+                    controls[family] = sorted(clear)
+                    break
     beats_logit: list[int] = []
-    if not state.empty:
+    if consistent_pairs:
+        beats_logit = scope_both if consistent_beats_logit else []
+    elif not state.empty:
         for layer in scope_both:
             part = state[(state["family"] == HYPOTHESIS_FAMILY)
                          & (state["layer"] == layer) & (state["arm"].isin(ARMS))]
@@ -1198,8 +1297,9 @@ def verdict_checks(
 
     checks += [
         VerdictCheck("scope_reverses_in_both_arms", bool(scope_both),
-                     f"scope-family reversal clears chance and the Gram-matched "
-                     f"floor in both arms at layers {scope_both or 'none'}"),
+                     f"clear scope pairs at two adjacent tested layers: "
+                     f"{consistent_pairs or 'none'} (clear layers "
+                     f"{scope_both or 'none'})"),
         VerdictCheck("scope_beats_logit_lens", bool(beats_logit),
                      f"and beats the plain logit lens at layers "
                      f"{beats_logit or 'none'}"),

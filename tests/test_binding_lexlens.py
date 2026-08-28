@@ -43,6 +43,7 @@ from src.experiments.binding_lexlens import (
     h10_checks,
     lexicon_for,
     pair_index_of,
+    pair_direction_table,
     pair_margins,
     probe_success_layers,
     readout_state,
@@ -258,10 +259,34 @@ def test_control_rows_average_over_seeds(records, lexicon):
     """A single Gram-matched draw must not be able to decide anything."""
     used = make_states(records)
     lenses = make_lenses(lexicon, n_random=4)
-    deltas, _ = delta_frame(used, records, lenses, lexicon, model="fake")
+    deltas, seeds = delta_frame(used, records, lenses, lexicon, model="fake")
     control = deltas[deltas["readout"] == RANDOM]
     assert (control["n_seeds"] == 4).all()
     assert set(np.unique(control["reversal"])) <= {0.0, 0.25, 0.5, 0.75, 1.0}
+    assert {"split", "seed", "n_bases"}.issubset(seeds.columns)
+    assert "base_id" not in seeds.columns
+
+
+def test_pair_direction_table_uses_test_directions_and_both_arms():
+    real = synth_deltas({(JLENS, HYPOTHESIS_FAMILY): 1.0}, layers=(4,),
+                        n_pairs_per_family=1)
+    rows = []
+    for seed, rate in enumerate((0.0, 0.25, 0.5, 0.75) * 25):
+        for arm in ARMS:
+            rows.append({"split": "test", "arm": arm, "layer": 4,
+                         "seed": seed, "family": HYPOTHESIS_FAMILY,
+                         "pair_index": 0, "inner_word": "scope_in",
+                         "outer_word": "scope_out", "reversal": rate})
+            # Calibration rows must not contaminate the test-direction null.
+            rows.append({"split": "calib", "arm": arm, "layer": 4,
+                         "seed": seed, "family": HYPOTHESIS_FAMILY,
+                         "pair_index": 0, "inner_word": "scope_in",
+                         "outer_word": "scope_out", "reversal": 1.0})
+    table = pair_direction_table(real, pd.DataFrame(rows))
+    row = table[(table["family"] == HYPOTHESIS_FAMILY)].iloc[0]
+    assert row["reversal_ab"] == 1.0 and row["reversal_ba"] == 1.0
+    assert row["both_arm_percentile"] == 1.0
+    assert row["clear_at_layer"]
 
 
 # -- the read -----------------------------------------------------------------
@@ -401,6 +426,19 @@ def test_a_null_with_the_probe_at_chance_learns_nothing():
 def test_scope_reversal_above_both_controls_is_verbalised():
     state, probe = state_for({(JLENS, HYPOTHESIS_FAMILY): 1.0})
     assert verdict_of(verdict_checks(state, probe)) == "verbalised_scope"
+
+
+def test_direction_verdict_requires_same_pair_at_adjacent_layers():
+    state, probe = state_for({})
+    rows = []
+    for layer, clear in ((4, True), (8, False)):
+        rows.append({"family": HYPOTHESIS_FAMILY, "inner_word": "local",
+                     "outer_word": "global", "layer": layer,
+                     "clear_at_layer": clear, "beats_logit": True})
+    directions = pd.DataFrame(rows)
+    assert verdict_of(verdict_checks(state, probe, directions)) == "not_verbalised"
+    directions["clear_at_layer"] = True
+    assert verdict_of(verdict_checks(state, probe, directions)) == "verbalised_scope"
 
 
 def test_a_reversal_the_logit_lens_matches_is_not_jlens_specific():

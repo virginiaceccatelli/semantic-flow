@@ -106,7 +106,8 @@ def main(
     n_build: int = typer.Option(200, help="Lens build samples per seed"),
     n_tprime: int = typer.Option(3, help="Readout positions t' per build sample"),
     n_seeds: int = typer.Option(3, help="Independent lens builds, for stability"),
-    n_random_seeds: int = typer.Option(5, help="Gram-matched control draws"),
+    n_random_seeds: int = typer.Option(500, help="Gram-matched control draws for "
+                                      "the per-word direction percentile"),
     n_corpus: int = typer.Option(120, help="Lens corpus programs"),
     n_eval: int = typer.Option(120, help="Held-out corpus positions for V2"),
     n_boot: int = typer.Option(2000),
@@ -150,6 +151,7 @@ def main(
         lexicon_frame,
         lexicon_for,
         load_lexicon_lenses,
+        pair_direction_table,
         probe_control_table,
         probe_success_layers,
         read_use_states,
@@ -288,6 +290,8 @@ def main(
                                        base_ids=scored)
     deltas.to_csv(lex_dir / "lexlens_deltas.csv", index=False)
     random_seeds.to_csv(lex_dir / "lexlens_random_seeds.csv", index=False)
+    pair_directions = pair_direction_table(deltas, random_seeds, split=split)
+    pair_directions.to_csv(lex_dir / "lexlens_pair_directions.csv", index=False)
 
     summary = pd.concat(
         [summarize(deltas, level=level, split=split, n_boot=n_boot, seed=seed)
@@ -332,7 +336,8 @@ def main(
         tables_dir = Path("results/tables")
         tables_dir.mkdir(parents=True, exist_ok=True)
         for name in ("lexlens_lexicon", "lexlens_summary", "lexlens_contrasts",
-                     "lexlens_arms", "lexlens_probe", "lexlens_state"):
+                     "lexlens_arms", "lexlens_probe", "lexlens_state",
+                     "lexlens_pair_directions"):
             path = lex_dir / f"{name}.csv"
             if path.exists():
                 shutil.copy(path, tables_dir / f"binding_{name}_{model}.csv")

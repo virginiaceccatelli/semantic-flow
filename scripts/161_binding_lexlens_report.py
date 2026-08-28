@@ -153,11 +153,13 @@ def main(
     probe = _read(lex_dir / "lexlens_probe.csv")
     state = _read(lex_dir / "lexlens_state.csv")
     seeds = _read(lex_dir / "lexlens_random_seeds.csv")
+    pair_directions = _read(lex_dir / "lexlens_pair_directions.csv")
 
     empty = pd.DataFrame()
     ran = _has(summary, "reversal", "layer") and _has(state, "family", "layer")
     checks = verdict_checks(state if state is not None else empty,
                             probe if probe is not None else empty,
+                            pair_directions if pair_directions is not None else empty,
                             invalid=recorded("H10") and not passed("H10"),
                             ran=bool(ran))
     verdict = verdict_of(checks)
@@ -236,6 +238,24 @@ def main(
                ["layer", "arm", "family", "inner_word", "outer_word", "reversal",
                 "reversal_ci_lo", "reversal_ci_hi", "beats_chance", "mean_delta"],
                limit=400))
+    add("")
+
+    add("## Which word contrasts are distinctly readable?")
+    add("")
+    add("Each pair is kept separate. `random_percentile_*` places its J-lens "
+        "reversal against independent Gram-matched directions on the same test "
+        "bases. `clear_at_layer` requires at least 0.80 reversal in both value "
+        "arms and at least the 99th random-direction percentile in both. The "
+        "verdict requires the same scope pair to be clear at two adjacent tested "
+        "layers; otherwise the honest result is no consistent verbalisation.")
+    add("")
+    add(_table(pair_directions, ["layer", "family", "inner_word", "outer_word",
+                                 "reversal_ab", "reversal_ba",
+                                 "random_percentile_ab", "random_percentile_ba",
+                                 "both_arm_percentile", "min_arm_reversal",
+                                 "logit_min_arm_reversal", "beats_logit",
+                                 "clear_at_layer",
+                                 "n_random_directions"], limit=100))
     add("")
 
     add("## Reversal by family, per arm")
@@ -323,8 +343,12 @@ def main(
     add("")
     add("### The Gram-matched control, per seed")
     add("")
-    add(_table(seeds, ["layer", "arm", "seed", "family", "inner_word",
-                       "outer_word", "reversal", "mean_delta", "n"], limit=80))
+    add("The CSV retains every split and direction separately; only a short "
+        "preview is shown here.")
+    add("")
+    add(_table(seeds, ["split", "layer", "arm", "seed", "family",
+                       "inner_word", "outer_word", "reversal", "mean_delta",
+                       "n_bases"], limit=40))
     add("")
 
     add("## The lexicon")
