@@ -18,10 +18,15 @@ DAS intervenes on a rank-1 binding component
 the answer follows the installed binding
         ↓
 the R-lens attributes the unedited answer to the active definition
+        ↓
+the unprompted J-lens tests whether that state is written in scope words
+        ↓
+no tested word pair is distinct from Gram-matched directions
 ```
 
-The security, output-vocabulary, standalone J-lens, and taint-routing tracks are
-preserved in [ARCHIVE.md](ARCHIVE.md). They are not required for this argument.
+The security, output-vocabulary, older standalone J-lens, and taint-routing tracks
+are preserved in [ARCHIVE.md](ARCHIVE.md). E18 is the active binding-specific
+J-lens experiment.
 
 ## 1. Representation
 
@@ -119,14 +124,28 @@ The 1.3B result is not interpreted: non-positive bound-value scores make its
 normalized relevance shares unstable. StarCoder2 is outside the implemented
 R-lens rules.
 
-## Next experiment: internal semantic verbalisation
+## 5. Internal semantic verbalisation with the J-lens
 
-The next planned experiment will apply a frozen J-lens at the unchanged
-variable-use position, without appending a question. It will test whether the
-same intermediate states from which the binding probe succeeds align with a
-small, predeclared semantic lexicon. This is an open question, not a current
-result. The retired prompted study and its artifacts are recorded in
-[ARCHIVE.md](ARCHIVE.md).
+E18 applies a frozen J-lens at the unchanged variable-use position without
+appending a question. It tests nine predeclared single-token contrasts: four
+scope pairs, three positional pairs, and two action pairs. The headline is not a
+raw reversal rate, because the binding counterfactual moves hidden states along
+an almost fixed direction and arbitrary readouts can therefore reverse on nearly
+every base. Each pair is instead located within 500 Gram-matched random
+directions on the same 280 held-out bases, separately in both crossed value arms.
+
+The binding probe is 1.000 at L8, L12, L16, L20, and L24, establishing that the
+tested states carry the binding. Several word pairs also have large raw rates:
+`nested/module` reaches 1.000/1.000 at L16 and `local/global` reaches
+0.996/1.000 at L20. But their worse-arm random percentiles are only 0.953 and
+0.936, below the declared 0.990 threshold. No scope, positional, or action pair
+clears the criterion at any layer, and therefore none repeats across adjacent
+layers.
+
+This is a valid negative: the probe-detectable and causally used binding is not
+detectably expressed in this lexicon at the unprompted use token. It is not a
+claim that the model cannot discuss scope when prompted. The full result and
+limitations are in [RESULTS.md, Part IV](RESULTS.md#part-iv--j-lens-verbalisation).
 
 ## The combined conclusion
 
@@ -135,15 +154,16 @@ The strongest supported statement is:
 > In controlled programs, variable binding becomes linearly represented, remains
 > stable under many surface changes but is fragile to structural interference,
 > is causally read from a rank-1 component at the use site, is reflected in how
-> the final answer is attributed to the active definition.
+> the final answer is attributed to the active definition, but is not detectably
+> expressed in the tested scope vocabulary at that unprompted state.
 
 DAS and the R-lens are deliberately not merged into one claim. DAS edits the
 model and establishes causal use. The R-lens edits nothing and establishes
 attribution under a specified set of backward rules.
 
-No experiment here establishes a complete mechanism. In particular, the project
-does not yet show whether the probe-detectable binding state is expressible in
-semantic vocabulary at the same intermediate position and layers.
+No experiment here establishes a complete mechanism. E18 constrains lexical
+alignment only for its nine pairs, one unprompted position, one model, and a
+linear J-lens; prompted language and other readouts remain separate questions.
 
 ## Where to read next
 
@@ -152,4 +172,5 @@ semantic vocabulary at the same intermediate position and layers.
 - [DeepSeek DAS report](../results/binding/deepseek-coder-6.7b/e13_report.md).
 - [StarCoder2 DAS report](../results/binding/starcoder2-3b/e13_report.md).
 - [DeepSeek binding R-lens report](../results/binding/deepseek-coder-6.7b/e16_report.md).
+- [DeepSeek J-lens verbalisation report](../results/binding/deepseek-coder-6.7b/e18_report.md).
 - [ARCHIVE.md](ARCHIVE.md): displaced studies and failed designs.

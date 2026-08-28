@@ -47,6 +47,7 @@ observational attribution rather than treating them as one claim.
 - [Part III — From representation to causal use and attribution](#part-iii--from-representation-to-causal-use-and-attribution)
 - [§5 DAS — causal interchange of a binding component](#5-das--causal-interchange-of-a-binding-component)
 - [§6 R-lens attribution on the binding programs](#6-r-lens-attribution-on-the-binding-programs)
+- [§6.8 E18 — unprompted J-lens verbalisation](#68-e18-unprompted-lexical-expression-of-the-binding-state)
 - [§7 Statistics, gates and reproducibility](#7-statistics-gates-and-reproducibility)
 
 ---

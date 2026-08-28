@@ -15,10 +15,14 @@ The active evidence forms one sequence:
    behaves as though the variable refers to.
 4. **Binding attribution:** on the same programs, a conserving R-lens moves
    answer relevance from the inactive definition toward the active one.
+5. **J-lens verbalisation:** at the unchanged, unprompted use-token state, none
+   of nine declared scope, positional, or action word contrasts is distinct from
+   500 Gram-matched readout directions in both crossed value arms.
 
-The former security benchmark, output-vocabulary study, standalone J-lens
+The former security benchmark, output-vocabulary study, older standalone J-lens
 experiments, and R-lens taint-routing study remain reproducible and are documented
-in [docs/ARCHIVE.md](docs/ARCHIVE.md). They are not part of the active claim.
+in [docs/ARCHIVE.md](docs/ARCHIVE.md). E18 is the active binding-specific J-lens
+test.
 
 ## Start here
 
@@ -28,8 +32,9 @@ For a first reading:
 2. Read [docs/METHODS.md](docs/METHODS.md) for the constructions, controls, and
    instrument mechanics.
 3. Read the generated [DAS report](results/binding/deepseek-coder-6.7b/e13_report.md)
-   and [R-lens report](results/binding/deepseek-coder-6.7b/e16_report.md) for
-   model-specific tables.
+   [R-lens report](results/binding/deepseek-coder-6.7b/e16_report.md), and
+   [J-lens verbalisation report](results/binding/deepseek-coder-6.7b/e18_report.md)
+   for model-specific tables.
 4. Use [docs/PIPELINE.md](docs/PIPELINE.md) to reproduce stages.
 5. Use [docs/ARCHIVE.md](docs/ARCHIVE.md) for displaced tracks, failed designs,
    and the methodological history.
@@ -135,6 +140,27 @@ The 1.3B R-lens result is not interpreted because the model often assigns a zero
 or negative score to the bound value in the shadowing condition, making
 normalized relevance shares unstable.
 
+### 5. The represented binding is not distinctly verbalised by the J-lens
+
+E18 reads the same unchanged `x` in `return x`, with no appended question or
+answer prompt. Nine predeclared single-token contrasts cover scope
+(`local/global`, `inner/outer`, `inside/outside`, `nested/module`), position, and
+action. Each J-lens reversal is compared with 500 readouts that have the same row
+Gram matrix but random residual-stream directions, on the same 280 held-out
+bases and in both crossed value arms.
+
+Raw reversals can be striking: `nested/module` is 1.000/1.000 at L16 and
+`local/global` is 0.996/1.000 at L20. They are not direction-specific, however:
+their worse-arm random percentiles are 0.953 and 0.936, below the declared 0.990
+threshold. No scope, positional, or action pair clears the threshold at any
+layer. Meanwhile, the matched binding probe remains at 1.000 at every tested
+layer.
+
+This is a valid constrained negative: binding is present and causally used, but
+is not detectably aligned with these output-word directions at the unprompted
+use-token state. It does not show that the model cannot verbalise binding when
+prompted or through other words, positions, or readouts.
+
 
 ## What the active evidence supports
 
@@ -143,14 +169,15 @@ The narrow conclusion is:
 > In controlled programs, variable binding becomes linearly represented, remains
 > stable under many surface changes but is fragile to structural interference,
 > is causally read from a rank-1 component at the use site, is reflected in how
-> the final answer is attributed to the active definition.
+> the final answer is attributed to the active definition, but is not detectably
+> expressed in the tested scope vocabulary at that unprompted state.
 
 This conclusion is deliberately narrow. It does not establish general program
 understanding, causal binding use at every layer or site, or transfer of the
 controlled isolation to real code. It does not show that the DAS direction is
 unique, make R-lens attribution causal, or recover a complete attention
-mechanism. Whether the internal binding representation is aligned with semantic
-vocabulary at the same layers remains an open experiment.
+mechanism. E18 answers only the predeclared linear J-lens/lexicon question; it
+does not rule out prompted or otherwise differently expressed verbalisation.
 
 ## Repository map
 
@@ -188,6 +215,9 @@ make binding-pilot
 
 # Binding R-lens attribution
 make binding-rlens MODEL=deepseek-coder-6.7b
+
+# Unprompted J-lens verbalisation
+make binding-lexlens MODEL=deepseek-coder-6.7b
 ```
 
 Read [docs/PIPELINE.md](docs/PIPELINE.md) before running the full model suite.
@@ -197,7 +227,7 @@ Read [docs/PIPELINE.md](docs/PIPELINE.md) before running the full model suite.
 | Model | Active role |
 |---|---|
 | `deepseek-coder-1.3b-base` | representation and robustness; binding R-lens not interpretable |
-| `deepseek-coder-6.7b-base` | representation, robustness, DAS, and binding R-lens |
+| `deepseek-coder-6.7b-base` | representation, robustness, DAS, binding R-lens, and J-lens verbalisation |
 | `starcoder2-3b` | robustness and cross-architecture DAS replication; R-lens rules not applicable |
 
 Base models are used because the target is the representation learned during

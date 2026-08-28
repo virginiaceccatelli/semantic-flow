@@ -13,11 +13,15 @@ survives many surface changes but weakens under scope interference and
 control-flow flattening. Third, a DAS intervention shows that a rank-1 binding
 component is causally used at the variable-use site. Fourth, an R-lens analysis
 of the same programs shows that the answer score is reassigned from the inactive
-definition toward the active one.
+definition toward the active one. Fifth, an unprompted J-lens readout asks
+whether that same binding state is already expressed in scope-related output
+vocabulary at the use token. It is not: large raw word-pair reversals are common
+under matched random directions, and no declared pair meets the
+direction-specific consistency criterion.
 
-The security, output-vocabulary, standalone J-lens, and taint-routing studies are
-preserved in [ARCHIVE.md](ARCHIVE.md). They are not needed to evaluate the active
-claim.
+The security, output-vocabulary, older standalone J-lens, and taint-routing
+studies are preserved in [ARCHIVE.md](ARCHIVE.md). E18, the binding-specific
+J-lens verbalisation test, is active and reported in Part IV below.
 
 Every active result below completed at canonical scale and is paired with the
 control that could have falsified it. Read “represented” as *recoverable from a
@@ -32,6 +36,7 @@ observational decomposition of an unchanged output score.
 - [Part I — The relation is represented](#part-i--the-relation-is-represented)
 - [Part II — Robustness and failure boundaries](#part-ii--robustness-and-failure-boundaries)
 - [Part III — Causal use and binding attribution](#part-iii--causal-use-and-binding-attribution)
+- [Part IV — J-lens verbalisation](#part-iv--j-lens-verbalisation)
 - [Synthesis](#synthesis-the-main-finding)
 - [Boundaries](#boundaries-what-this-project-does-not-claim)
 - [Open items](#open-items)
@@ -69,6 +74,14 @@ definition tokens, survives crossed and fixed-output-token controls, reverses
 when the competing answer is scored, and is absent when values change without a
 binding change. This is observational and does not extend the causal claim.
 
+**5. J-lens verbalisation.** At the unchanged use token, the binding probe stays
+at 1.000 across all five tested layers, but no predeclared scope, positional, or
+action word pair is exceptional relative to 500 Gram-matched directions in both
+value arms. `local/global` reaches 0.996/1.000 raw reversal at L20 and
+`nested/module` reaches 1.000/1.000 at L16, yet their worse-arm random
+percentiles are only 0.936 and 0.953. The binding is present and causally used,
+but it is not detectably verbalised in this lexicon at this unprompted state.
+
 ---
 
 ## Status at a glance
@@ -79,6 +92,7 @@ binding change. This is observational and does not extend the causal claim.
 | **robustness** | frozen-probe transfer | resilient to distance and renaming; fragile to scope interference and flattening | three tested models where reported |
 | **causal use (R10/E13)** | rank-1 DAS interchange | 100% installed answer in both crossed arms | DeepSeek 6.7B and StarCoder2 3B |
 | **binding attribution (R11/E16)** | conserving R-lens | 280/280 shifts on 6.7B; peak ~22% of answer score | interpretable on DeepSeek 6.7B only |
+| **J-lens verbalisation (R12/E18)** | unprompted J-lens + 500 Gram-matched directions | no pair clears the 0.99 direction-specificity threshold in both arms | valid negative on DeepSeek 6.7B |
 
 The R10/R11 labels are retained because generated reports and artifact names use
 them. Missing numbers R5–R9 refer to studies now documented in
@@ -615,10 +629,91 @@ answer change; the R-lens decomposes an unchanged forward computation.
 The layer profile indicates where attribution under these backward rules is
 redistributed, not where binding is computed. The attention rule also freezes
 query/key pattern formation, so the experiment cannot establish the intuitive
-mechanism “the model attends to the correct definition.” Whether the same
-intermediate binding state aligns with semantic vocabulary remains an open
-J-lens experiment rather than a reinterpretation of this attribution profile.
+mechanism “the model attends to the correct definition.” E18 tests the separate
+semantic-vocabulary question directly in Part IV rather than reinterpreting this
+attribution profile.
 
+
+# Part IV — J-lens verbalisation
+
+*Instrument 5: an unprompted J-lens vocabulary readout against a
+direction-level null ([METHODS §6.8](METHODS.md#68-e18-unprompted-lexical-expression-of-the-binding-state)).*
+
+## R12 / E18 — The represented binding is not distinctly verbalised at the use token
+
+### Question
+
+The probe and DAS establish that the unchanged `x` in `return x` carries a
+binding distinction that the model uses. Is that distinction already written in
+recognisable scope vocabulary—such as `local/global`, `inner/outer`, or
+`nested/module`—before any question or answer prompt is appended?
+
+### Method and decisive control
+
+E18 reads the original, unprompted variable-use state at layers 8, 12, 16, 20,
+and 24. Nine predeclared single-token pairs cover four scope contrasts, three
+positional contrasts, and two action contrasts. For each pair, the outcome is
+the fraction of 280 held-out programs on which its inner-minus-outer J-lens
+margin moves in the predicted direction when the binding flips. Both crossed
+value arms must agree.
+
+A high raw reversal rate is not sufficient. E13's binding intervention moves
+states along an almost fixed direction, so an arbitrary readout can align with
+that movement on nearly every program. E18 therefore compares each lexical pair
+with 500 independent Gram-matched readouts having the same row norms and angles
+as the J-lens. A pair is clear at a layer only when reversal is at least 0.80 in
+both arms and reaches the 99th percentile of matched directions in both. The
+headline additionally requires the same scope pair at two adjacent tested
+layers. The calibration-trained binding probe on the same states is the positive
+control.
+
+### Finding overview
+
+| Check | Finding |
+|---|---|
+| Mechanical validity | H10 passed; all 1,600 exactness cells passed; all 9 pairs survived tokenisation |
+| Binding present | probe accuracy 1.000 at L8, L12, L16, L20, and L24 |
+| Random-direction reference | 500 directions, scored separately on the 280 test bases in both arms |
+| Strongest scope raw rate | `nested/module` 1.000/1.000 at L16; `local/global` 0.996/1.000 at L20 |
+| Strongest scope specificity | `nested/module` 0.953 worse-arm percentile at L16; `local/global` 0.936 at L20 |
+| Declared threshold | 0.990 in both arms, with reversal ≥0.80 |
+| Clear scope pairs | none at any layer |
+| Clear positional/action pairs | none at any layer |
+| Verdict | `not_verbalised` |
+
+### Result
+
+Several lexical contrasts have visually compelling raw profiles, but none is
+specific to the J-lens direction. `local/global` is 0.964/0.968 at L16,
+0.996/1.000 at L20, and 0.986/0.993 at L24; its corresponding worse-arm random
+percentiles are 0.791, 0.936, and 0.915. `nested/module` reaches 1.000/1.000 at
+L16 and 0.993/0.996 at L24, but only the 0.953 and 0.927 percentiles. Even the
+positional control `later/earlier`, which is exactly 1.000/1.000 at L8–L16,
+reaches at most percentile 0.964. Thus no pair clears even the one-layer
+criterion, and none can satisfy cross-layer consistency.
+
+The negative is not caused by missing binding information: the matched probe is
+perfect at every tested layer. Instrument stability is a limitation—independent
+J-lens builds exceed 0.90 sign agreement only at L24, and V2 contains 13 held-out
+lexical-token positions—but L24 independently gives the same direction-null
+negative.
+
+### Conclusion and limits
+
+> In DeepSeek-Coder 6.7B, the probe-detectable and causally used binding state is
+> not detectably expressed by any of the nine tested scope, positional, or action
+> word contrasts at the unprompted variable-use position.
+
+This does not mean that the model cannot discuss or verbalise scope. E17's
+prompted answer state, other vocabulary, other positions, nonlinear readouts,
+and other models are outside this result. It means that the specific semantic
+representation recovered by the probe is not transparently aligned with these
+output-word directions where the probe reads it.
+
+Primary artifacts: [E18 report](../results/binding/deepseek-coder-6.7b/e18_report.md)
+and [`lexlens_pair_directions.csv`](../results/binding/deepseek-coder-6.7b/lexlens/lexlens_pair_directions.csv).
+
+---
 
 # Synthesis: the main finding
 
