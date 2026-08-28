@@ -1,6 +1,6 @@
 # E18 — is the binding expressible in scope vocabulary? (deepseek-coder-6.7b)
 
-**Verdict: `not_verbalised`.** The probe succeeds on these very states — binding is linearly present at this position and layer, and E13/R10 shows it is causally used — while every J-lens reversal stays at its matched floor. Binding is REPRESENTED AND CAUSALLY USED BUT NOT DETECTABLY VERBALISED in this lexicon at this position. This is a real negative, not a missing measurement: the positive control is what rules out the instrument.
+**Verdict: `not_verbalised`.** The probe succeeds on these very states — binding is linearly present at this position and layer, and E13/R10 shows it is causally used — while no predeclared word pair is both strong and exceptional relative to Gram-matched directions in both value arms at consecutive tested layers. Binding is REPRESENTED AND CAUSALLY USED BUT NOT DETECTABLY VERBALISED in this lexicon at this position. Large raw reversals are not enough: matched random directions produce them frequently too.
 
 Read at the unchanged `x` of `return x` in the **unprompted** E13 program — no answer suffix, no question, no generation — at the binding probe's own layer grid. E17 asks the prompted-behaviour version of this question and is reported separately.
 

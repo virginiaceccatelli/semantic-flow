@@ -38,6 +38,7 @@ What it *found*: [RESULTS.md](RESULTS.md).
 - [Part E — Archived security and lens tracks (120–131)](#part-e--archived-security-and-lens-tracks-120131)
 - [Part F — The causal track (100–108)](#part-f--the-causal-track-100108)
 - [Part F.2 — The observational R-lens readout of the same pairs (140–141)](#part-f2--the-observational-r-lens-readout-of-the-same-pairs-140141)
+- [Part F.3 — Unprompted J-lens vocabulary readout (160–161)](#part-f3--unprompted-j-lens-vocabulary-readout-160161)
 - [Archived E17 — prompted verbalisation (150–153)](#archived-e17--prompted-verbalisation-150153)
 - [Part G — Make targets and the GPU-host workflow](#part-g--make-targets-and-the-gpu-host-workflow)
 
@@ -805,6 +806,26 @@ on starcoder2 even though the attribution half is not. That is why
 
 ---
 
+# Part F.3 — Unprompted J-lens vocabulary readout (160–161)
+
+Stage 160 reads the unchanged E13 use-token state with the predeclared scope,
+positional, and action word pairs. It writes per-pair J-lens reversals and their
+percentiles under 500 Gram-matched directions on the same held-out split. H10 is
+mechanical and must pass equally for a positive or negative result. Stage 161 is
+CPU-only and renders `e18_report.md`; no family pooling can create its verdict.
+
+```bash
+python scripts/160_binding_lexlens.py --model deepseek-coder-6.7b \
+  --dtype float16 --n-seeds 5 --n-random-seeds 500 --n-corpus 200 --n-eval 200
+python scripts/161_binding_lexlens_report.py --model deepseek-coder-6.7b
+```
+
+On the GPU host, `jobs/binding_lexlens.csh` runs both stages. The primary table
+is `lexlens/lexlens_pair_directions.csv`; a valid all-false `clear_at_layer`
+column is an informative negative when the probe succeeds.
+
+---
+
 # Part G — Make targets and the GPU-host workflow
 
 ## G.1 Make targets
@@ -828,6 +849,10 @@ make binding-verbal                    # 150 -> 153, one model at a time
 make binding-verbal-discover / binding-verbal-behaviour
 make binding-verbal-relevance / binding-verbal-report
 make binding-verbal-smoke
+
+# E18: unprompted J-lens vocabulary readout
+make binding-lexlens / binding-lexlens-run / binding-lexlens-report
+make binding-lexlens-smoke
 
 # the security track
 make sinkflow                    # 120 → 124

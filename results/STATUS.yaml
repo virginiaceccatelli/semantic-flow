@@ -23,7 +23,7 @@
 # for the retired interpretation and why each piece of it was retired.
 
 version: 4
-updated: 2026-08-26
+updated: 2026-08-28
 
 experiments:
 
@@ -807,6 +807,33 @@ experiments:
         interpreted them - the exact failure that silently voided E16's 1.3b
         result. And calibration-only discovery supplied most of the evidence for
         the vocabulary claim, in words the hand-written lexicon never contained.
+
+  E18:
+    name: unprompted J-lens binding vocabulary readout
+    status: supporting
+    stage: "160,161"
+    model: deepseek-coder-6.7b
+    tables:
+      - results/binding/deepseek-coder-6.7b/lexlens/lexlens_pair_directions.csv
+      - results/binding/deepseek-coder-6.7b/lexlens/lexlens_probe.csv
+      - results/binding/deepseek-coder-6.7b/lexlens/lexlens_lens_stability.csv
+    claim: >
+      VALID NEGATIVE. At the unchanged use token of the unprompted binding
+      programs, no one of nine predeclared scope, positional, or action word
+      contrasts is both strong in the two crossed value arms and above the 99th
+      percentile of 500 Gram-matched directions. Large raw reversals are common:
+      local/global reaches 0.996/1.000 at L20, but only the 0.936 worse-arm random
+      percentile; nested/module reaches 1.000/1.000 at L16 but percentile 0.953.
+      No pair clears the declared one-layer criterion, hence none can repeat at
+      adjacent layers. The matched binding probe is 1.000 at all five layers, so
+      binding is present while expression in this lexicon is not established.
+    caveat: >
+      This is not evidence that the model cannot verbalise binding. It is a null
+      for nine single-token pairs at one unprompted position under a linear
+      J-lens. Independent-build sign agreement is above 0.90 only at L24, though
+      L24 independently gives the same negative; V2 has only 13 held-out corpus
+      positions. E17's prompted answer-state result is a different question.
+    outstanding: []
 
   E6:
     name: behavioral lead time

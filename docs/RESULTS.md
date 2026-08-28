@@ -656,17 +656,28 @@ by token-identical text, not by the single changed name token. It appears in bot
 crossed arms, survives fixed-output-token conditions, reverses when the competing
 value is scored, and is absent in same-binding controls.
 
+**Fifth, that binding state is not detectably expressed in the predeclared
+scope vocabulary.** E18 reads the unchanged use-token state with an unprompted
+J-lens. Although `local/global`, `inside/outside`, and `nested/module` sometimes
+reverse on more than 0.95 of held-out programs, none exceeds the 99th percentile
+of 500 Gram-matched directions in both crossed value arms at any layer. No
+positional or action-control pair does either. The matched binding probe remains
+at 1.000 at all five layers, so this is a constrained negative about lexical
+alignment, not absence of binding information.
+
 The strongest conclusion is therefore deliberately narrow:
 
 > In these controlled programs, variable binding becomes linearly represented,
 > remains stable under many surface changes but is fragile to structural
 > interference, is causally read from a rank-1 component at the use site, is
-> reflected in how the final answer is attributed to the active definition.
+> reflected in how the final answer is attributed to the active definition, but
+> is not detectably aligned with the tested scope words at that unprompted state.
 
 These clauses are complementary, not interchangeable. DAS supports causal use;
 the R-lens supports attribution. Neither establishes a complete mechanism. It
-remains open whether a J-lens can express the probe-detectable binding state in
-semantic vocabulary at the same intermediate position and layers.
+E18 answers the tested J-lens/lexicon version negatively; it does not establish
+that the model could never verbalise binding under another prompt, position,
+lexicon, or nonlinear readout.
 
 ---
 
@@ -687,8 +698,10 @@ semantic vocabulary at the same intermediate position and layers.
 - **Not that the R-lens identifies the attention mechanism or computation
   layer.** Its rules freeze attention-pattern formation, and its layer profile is
   a profile of attribution under those rules.
-- **Not that binding is internally verbalised.** That question has not yet been
-  tested at the probe's variable-use position with a depth-corrected J-lens.
+- **Not that binding can never be verbalised.** E18 finds no direction-specific,
+  cross-arm expression in nine predeclared word pairs at the unprompted use
+  position. Prompted answers, other words, and other positions are different
+  questions.
 - **Not that the controlled isolation transfers to real code.** The exact 0.500
   floor relies on the synthetic paired construction.
 
@@ -698,23 +711,17 @@ semantic vocabulary at the same intermediate position and layers.
 
 Ordered by how directly they would strengthen the active narrative.
 
-1. **Test internal semantic verbalisation with a frozen J-lens.** Read the
-   unchanged variable-use state on the original, unprompted binding factorial;
-   use a small predeclared paired semantic lexicon; compare J-lens, logit lens,
-   the supervised probe, and matched random directions; and make paired
-   counterfactual reversal the primary outcome. The implementation prompt is in
-   [JLENS_BINDING_VERBALISATION_PROMPT.md](JLENS_BINDING_VERBALISATION_PROMPT.md).
-2. **Explain why rank-1 DAS outperforms the whole-state patch.** The likely
+1. **Explain why rank-1 DAS outperforms the whole-state patch.** The likely
    account—helpful and opposing donor components entering together—has not been
    independently tested.
-3. **Test DAS at a second site.** Replication across architectures is complete;
+2. **Test DAS at a second site.** Replication across architectures is complete;
    localization within each network remains narrow.
-4. **Build context-matched mutations of real code.** This is required before the
+3. **Build context-matched mutations of real code.** This is required before the
    construction-pinned representational claim can be extended beyond synthetic
    programs.
-5. **Add a cross-position string-equality baseline.** The current bounded surface
+4. **Add a cross-position string-equality baseline.** The current bounded surface
    reader cannot express the global feature “inner definition name equals use
    name.”
-6. **Reconcile the configured and generated layer grids.** This would make
+5. **Reconcile the configured and generated layer grids.** This would make
    cross-model relative-depth comparisons and the DAS/R-lens layer comparison
    easier to audit.

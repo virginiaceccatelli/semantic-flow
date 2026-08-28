@@ -1119,10 +1119,11 @@ VERDICT_TEXT: dict[str, str] = {
     "not_verbalised": (
         "The probe succeeds on these very states — binding is linearly present at "
         "this position and layer, and E13/R10 shows it is causally used — while "
-        "every J-lens reversal stays at its matched floor. Binding is REPRESENTED "
-        "AND CAUSALLY USED BUT NOT DETECTABLY VERBALISED in this lexicon at this "
-        "position. This is a real negative, not a missing measurement: the "
-        "positive control is what rules out the instrument."),
+        "no predeclared word pair is both strong and exceptional relative to "
+        "Gram-matched directions in both value arms at consecutive tested layers. "
+        "Binding is REPRESENTED AND CAUSALLY USED BUT NOT DETECTABLY VERBALISED "
+        "in this lexicon at this position. Large raw reversals are not enough: "
+        "matched random directions produce them frequently too."),
     "probe_absent": (
         "The binding probe does not succeed on these states, so there is nothing "
         "for a vocabulary readout to have failed to express. Nothing about "

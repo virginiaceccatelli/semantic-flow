@@ -766,9 +766,31 @@ A controlled positive result supports this statement:
 > active, including over definition tokens that did not change.
 
 It does not establish causal necessity, a complete attention mechanism, or
-internal verbalisation. Testing whether the same variable-use states align with
-semantic vocabulary requires a separate frozen J-lens experiment and remains
-future work.
+internal verbalisation. The latter is tested separately in E18.
+
+## 6.8 E18: unprompted lexical expression of the binding state
+
+E18 reads the same unchanged variable-use token with no appended question or
+answer suffix. Nine predeclared opposing word pairs cover scope, positional, and
+action vocabulary. For each pair, layer, and crossed value arm, the statistic is
+the share of held-out programs on which the inner-minus-outer J-lens margin moves
+in the predicted direction when only the binding changes.
+
+Raw reversal is descriptive because an arbitrary fixed direction can align with
+the near-rank-1 counterfactual displacement. The specificity reference is
+therefore 500 independent readouts with the same J-lens row Gram matrix. Each
+random direction is scored on the same 280 test bases; calibration and test rates
+remain separate. A pair is clear at one layer only if reversal is at least 0.80
+in both value arms and its rate is at or above the 99th percentile of matched
+directions in both. The verdict additionally requires the same scope pair at two
+adjacent entries of the declared layer grid. Pairs are never pooled to decide the
+claim. The plain logit lens is reported to distinguish vocabulary alignment from
+an effect added by the Jacobian correction.
+
+The positive control is a calibration-fitted binding probe evaluated on the same
+held-out states. Its success makes a lexical null informative: the conclusion is
+limited to this lexicon, position, model, and linear readout, rather than absence
+of the represented binding.
 
 
 # 7. Statistics, gates and reproducibility
