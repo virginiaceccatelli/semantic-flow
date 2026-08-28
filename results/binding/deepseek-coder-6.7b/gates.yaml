@@ -1,6 +1,6 @@
 experiment: E13
 model: deepseek-coder-6.7b
-updated: '2026-08-27 09:49:19'
+updated: '2026-08-28 08:29:41'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -98,8 +98,8 @@ gates:
     name: H5
     passed: true
     value: 1.1382113821138211
-    detail: "ba @ use L8 r1: das_binding installed 100.0% = 114% of the held-out\
-      \ ceiling (threshold 50%); margin +9.009 [+8.933, +9.089] = 188% of it; discriminator\
+    detail: "ba @ use L8 r1: das_binding installed 100.0% = 114% of the held-out ceiling\
+      \ (threshold 50%); margin +9.009 [+8.933, +9.089] = 188% of it; discriminator\
       \ \u2014 answer_direction ab +2.322 [+2.157, +2.482], installed 27.9% (passes:\
       \ True); ba/ab argmax ratio 0.154 against transport's 1.025 (bar 0.513) (fails:\
       \ True)"
@@ -328,6 +328,69 @@ gates:
         n: 12
         tolerance: 1.0e-09
         layer: 0
+      violations: []
+      gates_required: H0
+      gate_override: false
+      gate_override_reason: ''
+  H10:
+    name: H10
+    passed: true
+    value: 108000.0
+    detail: 108000 reversal rows over 400 bases x 2 arms x 5 layers x 3 readouts x
+      9 pairs; probe succeeds at layers [8, 12, 16, 20, 24]; report split test
+    stage: 160_binding_lexlens
+    timestamp: '2026-08-28 08:29:41'
+    override: false
+    override_reason: ''
+    extra:
+      layers:
+      - 8
+      - 12
+      - 16
+      - 20
+      - 24
+      split: test
+      n_bases: 400
+      n_pairs: 9
+      families:
+      - action
+      - positional
+      - scope
+      omitted: []
+      candidate_ids:
+      - 2291
+      - 9526
+      - 4640
+      - 28919
+      - 3455
+      - 1856
+      - 756
+      - 10900
+      - 5452
+      - 5160
+      - 12915
+      - 4871
+      - 6230
+      - 7239
+      - 1019
+      - 3620
+      - 5976
+      - 31940
+      probe_layers:
+      - 8
+      - 12
+      - 16
+      - 20
+      - 24
+      state_problems: []
+      cached_state_agreement:
+        layer: 8
+        n: 1600
+        max_abs_delta: 0.03125
+        mean_abs_delta: 0.01114715576171875
+        float16_resolution: true
+      n_random_seeds: 5
+      reuse_lens: false
       violations: []
       gates_required: H0
       gate_override: false

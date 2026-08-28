@@ -1,0 +1,47 @@
+{
+  "stage": "160_binding_lexlens",
+  "timestamp": "20260828_082941",
+  "git_sha": "9687c6e",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/160_binding_lexlens.py",
+    "--model",
+    "deepseek-coder-6.7b"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "pairs": "data/synthetic/binding_pairs_deepseek-coder-6.7b.jsonl",
+    "output": "results/binding/deepseek-coder-6.7b",
+    "layers": "[8, 12, 16, 20, 24]",
+    "corpus": "data/real/csn_python_200.jsonl",
+    "n_bases": "400",
+    "n_build": "200",
+    "n_tprime": "3",
+    "n_seeds": "3",
+    "n_random_seeds": "5",
+    "n_boot": "2000",
+    "dtype": "float16",
+    "device": "cuda",
+    "seed": "42",
+    "split": "test",
+    "reuse_lens": "False",
+    "max_length": "256"
+  },
+  "wall_time_s": 2260.2,
+  "extra": {
+    "H10": true,
+    "n_rows": 108000,
+    "n_pairs": 9,
+    "probe_layers": [
+      8,
+      12,
+      16,
+      20,
+      24
+    ],
+    "violations": [],
+    "gates_required": "H0",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}
