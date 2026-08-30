@@ -15,9 +15,9 @@ The active evidence forms one sequence:
    behaves as though the variable refers to.
 4. **Binding attribution:** on the same programs, a conserving R-lens moves
    answer relevance from the inactive definition toward the active one.
-5. **J-lens verbalisation:** at the unchanged, unprompted use-token state, none
-   of nine declared scope, positional, or action word contrasts is distinct from
-   500 Gram-matched readout directions in both crossed value arms.
+5. **J-lens lexical alignment:** at the unchanged, unprompted use-token state,
+   several scope-related word contrasts track binding in both crossed value arms,
+   independently of which literal is returned.
 
 The former security benchmark, output-vocabulary study, older standalone J-lens
 experiments, and R-lens taint-routing study remain reproducible and are documented
@@ -140,26 +140,28 @@ The 1.3B R-lens result is not interpreted because the model often assigns a zero
 or negative score to the bound value in the shadowing condition, making
 normalized relevance shares unstable.
 
-### 5. The represented binding is not distinctly verbalised by the J-lens
+### 5. The binding state aligns with some scope-related J-lens contrasts
 
 E18 reads the same unchanged `x` in `return x`, with no appended question or
 answer prompt. Nine predeclared single-token contrasts cover scope
 (`local/global`, `inner/outer`, `inside/outside`, `nested/module`), position, and
-action. Each J-lens reversal is compared with 500 readouts that have the same row
-Gram matrix but random residual-stream directions, on the same 280 held-out
-bases and in both crossed value arms.
+action. Each contrast is read on the same 280 held-out bases in two crossed value
+arms: the inner binding returns `b` in `ab` but `a` in `ba`. A word margin that
+tracks the returned literal should therefore reverse across arms; a
+binding-associated margin should keep the same orientation.
 
-Raw reversals can be striking: `nested/module` is 1.000/1.000 at L16 and
-`local/global` is 0.996/1.000 at L20. They are not direction-specific, however:
-their worse-arm random percentiles are 0.953 and 0.936, below the declared 0.990
-threshold. No scope, positional, or action pair clears the threshold at any
-layer. Meanwhile, the matched binding probe remains at 1.000 at every tested
-layer.
+The strongest effects are striking: `nested/module` is 1.000/1.000 at L16 and
+`local/global` is 0.996/1.000 at L20. The same orientation in `ab` and `ba` rules
+out the simplest returned-literal explanation. The response is not uniform
+across scope vocabulary—`inner/outer` is weak—and positional and action pairs
+such as `later/earlier` and `replaced/kept` also respond strongly. The template
+makes locality, order, proximity, and replacement coincide, so it cannot identify
+which of these correlated properties drives the alignment.
 
-This is a valid constrained negative: binding is present and causally used, but
-is not detectably aligned with these output-word directions at the unprompted
-use-token state. It does not show that the model cannot verbalise binding when
-prompted or through other words, positions, or readouts.
+The supported result is therefore **binding-associated lexical alignment**, not
+clear internal verbalisation: several J-lens word margins follow the binding
+independently of value identity, but the construction does not show that the
+model specifically encodes the abstract concept of scope in those words.
 
 
 ## What the active evidence supports
@@ -169,15 +171,15 @@ The narrow conclusion is:
 > In controlled programs, variable binding becomes linearly represented, remains
 > stable under many surface changes but is fragile to structural interference,
 > is causally read from a rank-1 component at the use site, is reflected in how
-> the final answer is attributed to the active definition, but is not detectably
-> expressed in the tested scope vocabulary at that unprompted state.
+> the final answer is attributed to the active definition, and is associated
+> with several scope-related lexical contrasts at that unprompted state.
 
 This conclusion is deliberately narrow. It does not establish general program
 understanding, causal binding use at every layer or site, or transfer of the
 controlled isolation to real code. It does not show that the DAS direction is
 unique, make R-lens attribution causal, or recover a complete attention
-mechanism. E18 answers only the predeclared linear J-lens/lexicon question; it
-does not rule out prompted or otherwise differently expressed verbalisation.
+mechanism. E18 establishes value-independent lexical alignment, not uniquely
+scope-semantic or faithful internal verbalisation.
 
 ## Repository map
 

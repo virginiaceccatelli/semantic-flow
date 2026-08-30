@@ -809,14 +809,16 @@ on starcoder2 even though the attribution half is not. That is why
 # Part F.3 — Unprompted J-lens vocabulary readout (160–161)
 
 Stage 160 reads the unchanged E13 use-token state with the predeclared scope,
-positional, and action word pairs. It writes per-pair J-lens reversals and their
-percentiles under 500 Gram-matched directions on the same held-out split. H10 is
-mechanical and must pass equally for a positive or negative result. Stage 161 is
-CPU-only and renders `e18_report.md`; no family pooling can create its verdict.
+positional, and action word pairs. It writes per-pair J-lens reversals separately
+for the crossed `ab` and `ba` value arms. Agreement across the arms rules out a
+fixed preference for literal answer token `a` or `b`; comparison across the
+three word families exposes properties confounded by the single template. H10
+is mechanical and must pass regardless of the scientific result. Stage 161 is
+CPU-only and renders `e18_report.md`.
 
 ```bash
 python scripts/160_binding_lexlens.py --model deepseek-coder-6.7b \
-  --dtype float16 --n-seeds 5 --n-random-seeds 500 --n-corpus 200 --n-eval 200
+  --dtype float16 --n-seeds 5 --n-corpus 200 --n-eval 200
 python scripts/161_binding_lexlens_report.py --model deepseek-coder-6.7b
 ```
 

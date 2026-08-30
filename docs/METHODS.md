@@ -777,21 +777,21 @@ action vocabulary. For each pair, layer, and crossed value arm, the statistic is
 the share of held-out programs on which the inner-minus-outer J-lens margin moves
 in the predicted direction when only the binding changes.
 
-Raw reversal is descriptive because an arbitrary fixed direction can align with
-the near-rank-1 counterfactual displacement. The specificity reference is
-therefore 500 independent readouts with the same J-lens row Gram matrix. Each
-random direction is scored on the same 280 test bases; calibration and test rates
-remain separate. A pair is clear at one layer only if reversal is at least 0.80
-in both value arms and its rate is at or above the 99th percentile of matched
-directions in both. The verdict additionally requires the same scope pair at two
-adjacent entries of the declared layer grid. Pairs are never pooled to decide the
-claim. The plain logit lens is reported to distinguish vocabulary alignment from
-an effect added by the Jacobian correction.
+The two value arms form the principal control. In `ab`, activating the inner
+definition changes the returned literal from `a` to `b`; in `ba`, it changes the
+literal from `b` to `a`. A margin that shifts in the same binding-relative
+direction in both arms therefore cannot be a fixed preference for either answer
+token. Pairs and families are reported separately so scope contrasts can be
+compared with positional and action contrasts. The plain logit lens is also
+reported to distinguish vocabulary alignment from an effect added by the
+Jacobian correction.
 
 The positive control is a calibration-fitted binding probe evaluated on the same
-held-out states. Its success makes a lexical null informative: the conclusion is
-limited to this lexicon, position, model, and linear readout, rather than absence
-of the represented binding.
+held-out states. Its success confirms that the J-lens is reading states that
+contain binding information. Because the one template changes scope, textual
+order, distance, and replacement status together, even a high crossed-arm rate
+supports only binding-associated lexical alignment, not uniquely scope-semantic
+or faithful verbalisation.
 
 
 # 7. Statistics, gates and reproducibility

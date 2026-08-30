@@ -33,11 +33,14 @@ the unchanged use token installs the donor binding and produces the correspondin
 answer on 100% of held-out examples in two crossed value arms, in DeepSeek-Coder
 6.7B and StarCoder2 3B. On DeepSeek-Coder 6.7B, a conserving relevance lens
 reassigns the unchanged answer score from the definition leaving scope to the
-one entering scope, peaking near 22% of the answer score. However, no one of nine
-predeclared semantic word contrasts is exceptional relative to 500 Gram-matched
-readout directions in both arms. These findings show a representation that is
-recoverable, structurally fragile, causally used, and attributionally connected
-to the answer, but not transparently verbalised at the same state. We argue that
+one entering scope, peaking near 22% of the answer score. An unprompted J-lens
+also finds that `local/global` and `nested/module` margins follow the binding in
+both crossed value arms, ruling out simple tracking of one literal answer token.
+Positional and action contrasts are also strong, however, so the single-template
+design cannot identify this alignment uniquely as scope verbalisation. These
+findings show a representation that is recoverable, structurally fragile,
+causally used, attributionally connected to the answer, and associated with
+human vocabulary without being transparently verbalised. We argue that
 this decomposed audit is a useful foundation for semantic governance: it reveals
 both evidence for genuine program reasoning and concrete boundaries beyond which
 trust is not warranted.
@@ -119,8 +122,8 @@ Our contributions are:
   answer-token push;
 - evidence that structural interference, rather than distance alone, is the
   dominant failure mode of the frozen representation; and
-- a valid negative showing that high lexical reversal rates do not imply clear
-  verbalisation once variation over matched readout directions is measured.
+- a crossed-arm J-lens test showing binding-associated lexical alignment while
+  exposing why alignment on one template is not faithful verbalisation.
 
 ## 2. Security and governance framing
 
@@ -195,10 +198,11 @@ Finally, attribution and vocabulary lenses serve different purposes from causal
 intervention. Our relevance lens decomposes an unchanged output score under
 specified backward rules; it describes answer attribution but cannot establish
 necessity. Our J-lens asks whether a hidden state aligns with candidate output
-words after accounting for the remaining network. Because a nearly rank-1 state
-shift can make arbitrary directions appear consistently responsive, we compare
-the lexical rows with many Gram-matched random directions rather than with 0.5
-alone.
+words after accounting for the remaining network. We use crossed value arms so
+that the literal answer movement reverses while the semantic binding movement
+does not. This separates binding-associated lexical change from a fixed
+preference for one answer token, while comparisons among scope, positional, and
+action words expose unresolved template confounds.
 
 ## 4. Formal problem statement
 
@@ -269,9 +273,10 @@ m_\ell(x)=J_\ell(h_\ell(x,u))_{w_{\mathrm{in}}}
 \]
 
 The counterfactual shift is (\delta=m_\ell(x^{(1)})-m_\ell(x^{(0)})), with
-predicted sign (\delta>0). The reversal rate is compared with readouts whose
-row Gram matrix equals the J-lens Gram matrix, so norms and pairwise angles are
-held fixed while residual-stream orientation is randomized.
+predicted sign (\delta>0). We measure its sign separately in `ab` and `ba`.
+Because activating the inner definition requires opposite literal answer
+movements in the two arms, agreement isolates binding-relative alignment from a
+fixed output-token preference.
 
 ## 5. Experimental design
 
@@ -305,7 +310,7 @@ consequence of capability and architecture gates rather than missing rows:
 | Perturbation transfer | reported | reported | reported | same frozen-probe protocol |
 | DAS binding interchange | capability result only | **causal claim** | **causal claim** | answer behavior and intervention gates must pass |
 | R-lens attribution | invalid normalized shares | **attribution claim** | not applicable | 1.3B has non-positive target scores; StarCoder2 does not match the implemented rules |
-| J-lens verbalisation | not run as headline | **valid negative** | not run | canonical direction-null run is currently 6.7B only |
+| J-lens lexical alignment | not run as headline | **descriptive association** | not run | crossed-arm run is currently 6.7B only |
 
 ### 5.2 Probes and surface controls
 
@@ -355,11 +360,12 @@ full-vocabulary emitted token, not only a two-token logit margin.
 The R-lens propagates the selected bound-value score backward under conserving
 rules and aggregates token relevance into syntactic roles. Forward equivalence,
 module attachment, conservation, role coverage, and same-program zero controls
-must pass before interpretation. The J-lens verbalisation experiment uses nine
+must pass before interpretation. The J-lens lexical experiment uses nine
 predeclared single-token pairs—four scope, three positional, and two action
-contrasts—and 500 Gram-matched directions. A pair is clear only if reversal is at
-least 0.80 and at or above the 0.99 random-direction percentile in both arms; the
-headline additionally requires repetition at adjacent tested layers.
+contrasts. Reversal is reported separately in both crossed arms and across word
+families. Cross-arm agreement rules out a fixed `a`- or `b`-token direction;
+family comparisons reveal whether scope words behave differently from correlated
+positional and action descriptions.
 
 ### 5.5 Claim discipline and mechanical gates
 
@@ -368,15 +374,15 @@ the scientific outcome is positive. Tokenization and graph-to-token alignment
 must preserve the intended anchors; paired programs must differ in exactly the
 declared location; all cells and both crossed arms must be present; calibration
 and test bases must be disjoint; intervention no-ops must be exact; relevance
-must conserve the selected score; and random J-lens rows must reproduce the real
-lens Gram matrix. A failed mechanical gate invalidates the measurement rather
+must conserve the selected score; and J-lens word pairs must preserve their
+declared tokenization. A failed mechanical gate invalidates the measurement rather
 than becoming a negative result.
 
 The distinction matters most for E18. Its binding probe is a positive control,
-not evidence for lexical expression. If the probe failed, a word-level null
-would show only that the tested state lacked measurable binding. Because the
-probe is perfect while the direction-specific lexical criterion fails, the null
-instead separates “represented” from “explicitly aligned with these words.”
+not evidence for lexical expression. Its success establishes that the tested
+state contains binding information. Cross-arm lexical agreement is additional
+evidence of association, but not of faithful verbalisation because the template
+changes scope, order, distance, and replacement together.
 Likewise, the failed 1.3B normalized R-lens result is not treated as absence of
 binding attribution: the denominator required to interpret relevance as a share
 is non-positive in part of that condition, so the instrument is invalid there.
@@ -492,33 +498,31 @@ active definition rather than responding locally to the changed name. This is
 observational evidence. It complements but does not amplify the causal status of
 DAS.
 
-### 6.5 The binding state is not transparently verbalised
+### 6.5 The binding state has lexical alignment, not identified verbalisation
 
 The J-lens experiment is mechanically valid: all 1,600 exactness cells pass, all
 nine word pairs survive tokenization, and the matched binding probe is 1.000 at
-L8, L12, L16, L20, and L24. Several word pairs nevertheless illustrate why raw
-reversal is insufficient:
+L8, L12, L16, L20, and L24. Several word pairs follow the binding strongly in
+both crossed value arms:
 
-| Pair and layer | Reversal `ab` / `ba` | Worse-arm random percentile | Clear? |
-|---|---:|---:|---:|
-| `nested/module`, L16 | 1.000 / 1.000 | 0.953 | No |
-| `local/global`, L20 | 0.996 / 1.000 | 0.936 | No |
-| `nested/module`, L24 | 0.993 / 0.996 | 0.927 | No |
-| `local/global`, L24 | 0.986 / 0.993 | 0.915 | No |
-| positional `later/earlier`, L16 | 1.000 / 1.000 | 0.964 | No |
+| Pair and layer | Family | Reversal `ab` / `ba` | Interpretation |
+|---|---|---:|---|
+| `nested/module`, L16 | scope | 1.000 / 1.000 | strong binding association |
+| `local/global`, L20 | scope | 0.996 / 1.000 | strong binding association |
+| `nested/module`, L24 | scope | 0.993 / 0.996 | persists late |
+| `local/global`, L24 | scope | 0.986 / 0.993 | persists late |
+| `later/earlier`, L16 | positional | 1.000 / 1.000 | equally strong confound |
 
-No scope, positional, or action pair reaches the declared 0.990 percentile in
-both arms at any layer; consequently, none can repeat at adjacent layers. The
-honest conclusion is not that “scope words are absent,” since their raw margins
-often move strongly. It is that the observed movement is not specific to those
-semantic directions: readouts with identical geometry and random orientation
-produce comparably consistent changes.
-
-This valid negative is conceptually important. A causally used semantic
-representation need not be organized in a basis that maps transparently onto
-human vocabulary at the state where it operates. Conversely, a vocabulary-like
-readout should not be accepted as an explanation without a direction-level
-control.
+The crossed arms make these associations meaningful: the inner binding returns
+`b` in `ab` but `a` in `ba`, so a consistent margin cannot simply follow one
+literal output token. They do not isolate scope semantics. In this construction,
+the active definition also becomes later, nearer, second, and retained; the
+positional `later/earlier` and action `replaced/kept` contrasts can be as strong
+as the scope pairs, while `inner/outer` is weak. The honest conclusion is thus
+that some vocabulary directions align with the binding counterfactual, not that
+the representation explicitly verbalises “scope.” This distinction matters for
+interpretability: lexical alignment is evidence about an association, not a
+faithful natural-language rendering of the causal state.
 
 ### 6.6 Findings in one view
 
@@ -528,7 +532,7 @@ control.
 | Perturbation | Mixed | transfer is robust to many surface changes; fragile to scope and flattened flow | absence of every alternative encoding |
 | Causal use | Pass | rank-1 interchange controls the answer according to binding | causal use at every layer, site, or program family |
 | Attribution | Pass on 6.7B | answer relevance shifts toward the active definition | a causal explanation or complete mechanism |
-| Explicit lexical extraction | Valid negative | no tested word pair is direction-specific at the unprompted state | inability to discuss scope when prompted |
+| Lexical alignment | Descriptive positive | several margins follow binding across reversed answer identities | unique scope semantics or faithful verbalisation |
 
 ## 7. Discussion
 
@@ -572,11 +576,12 @@ signals that its relevant semantic representations remain within a validated
 regime. Our probes are research instruments rather than deployment monitors, but
 the results motivate such monitors and transformation-based confidence tests.
 
-The absence of explicit J-lens verbalisation adds a second caution. Asking a
-model to explain which definition is in scope may produce a plausible verbal
-answer, but that explanation need not be a direct readout of the causally used
-state. Human-readable rationales should not be treated as faithful solely because
-they use correct semantic terminology. Governance mechanisms should combine
+The ambiguous J-lens alignment adds a second caution. Some vocabulary margins
+track the binding, but the same state aligns with positional and action words
+that the template changes at the same time. A plausible verbal answer therefore
+need not be a unique or faithful readout of the causally used state.
+Human-readable rationales should not be treated as faithful solely because they
+use correct semantic terminology. Governance mechanisms should combine
 behavioral tests, causal audits, and provenance/constraint enforcement rather
 than relying on self-explanation.
 
@@ -611,7 +616,7 @@ context-matched counterfactuals embedded in diverse real code.
 
 The model scope is also limited. Representation and robustness span three model
 families where reported, but the clean R-lens attribution applies only to
-DeepSeek-Coder 6.7B, and the J-lens verbalisation result is currently only for
+DeepSeek-Coder 6.7B, and the J-lens lexical result is currently only for
 that model. DeepSeek-Coder 1.3B does not provide an interpretable normalized
 R-lens result because some selected scores are non-positive. StarCoder2's
 architecture is outside the implemented relevance rules.
@@ -634,10 +639,12 @@ be read as properties of the controlled contrast, not diverse natural programs.
 
 The J-lens instrument has limited early-layer stability. Independent-build sign
 agreement exceeds 0.90 only at L24, and its held-out lexical next-token
-validation contains 13 positions. L24 independently yields the same negative,
-but broader corpora and lexical coverage would strengthen the conclusion. The
-nine predeclared pairs cannot establish that no vocabulary direction, nonlinear
-combination, or prompted state expresses binding.
+validation contains 13 positions. More importantly, all binding examples share
+one template, which changes locality, order, distance, and replacement together.
+Broader templates that break these correlations are required before naming the
+alignment as scope semantics. The nine predeclared pairs also cannot establish
+what other vocabulary directions, nonlinear combinations, or prompted states
+express.
 
 Finally, semantic grounding is necessary but insufficient for safety. A model
 can correctly represent binding while following a malicious instruction,
@@ -658,13 +665,14 @@ The tested code models construct a linearly recoverable binding relation that is
 absent from the input token, preserve it across many surface perturbations, and
 use a compact component of it causally when selecting an answer. On DeepSeek-
 Coder 6.7B, the answer score is also attributed toward the definition that is
-actually active. Yet this grounding is bounded: competing scope and flattened
-control flow degrade transfer, and the causally used state is not transparently
-aligned with the tested semantic vocabulary.
+actually active. The unprompted use state also aligns with several lexical
+contrasts across reversed answer identities. Yet this grounding is bounded:
+competing scope and flattened control flow degrade transfer, and the lexical
+alignment is confounded across scope, position, and replacement descriptions.
 
 The resulting conclusion is intentionally conditional. These models do more
 than lexical matching on the controlled task, but their semantic representations
-are neither universally robust nor automatically human-readable. For security
+are neither universally robust nor automatically or uniquely human-readable. For security
 and software-engineering deployment, the appropriate response is not to infer
 trust from one correct output or one attractive explanation. It is to build
 assurance cases that test representation, invariance, causal use, and failure
