@@ -243,6 +243,8 @@ def load_lens(directory: str | Path):
 
     directory = Path(directory)
     path = directory if directory.is_file() else directory / "lens.pt"
+    if not path.exists():
+        raise FileNotFoundError(_missing_lens_message(path))
     lens = jlens.JacobianLens.load(str(path))
 
     meta_path = path.parent / META_FILENAME
@@ -254,3 +256,39 @@ def load_lens(directory: str | Path):
         with contextlib.suppress(json.JSONDecodeError):
             prov = json.loads(prov)
     return lens, prov if isinstance(prov, dict) else {}
+
+
+def _missing_lens_message(path: Path) -> str:
+    """Why the lens is absent, and what to do — not just that it is absent.
+
+    Three situations produce a missing `lens.pt` and they need different
+    responses, so the message distinguishes them rather than leaving a bare
+    FileNotFoundError from inside `torch.load` for a reader to interpret. A
+    surviving fit checkpoint is the useful signal: it means the fit ran and
+    died partway, and re-running resumes rather than restarting.
+    """
+    checkpoint = path.parent / "fit_checkpoint.pt"
+    lines = [f"no fitted lens at {path}."]
+    if checkpoint.exists():
+        size = checkpoint.stat().st_size / 1e9
+        lines += [
+            f"  A fit checkpoint IS present ({checkpoint}, {size:.2f} GB), so",
+            "  stage 201 started and did not finish. Re-running it resumes from",
+            "  the checkpoint; no completed prompts are lost.",
+        ]
+    elif path.parent.exists():
+        lines += [
+            f"  {path.parent} exists but holds no checkpoint either, so stage 201",
+            "  failed before its first prompt completed — look for the error at",
+            "  the START of the stage 201 log, not the end.",
+        ]
+    else:
+        lines.append("  Stage 201 has not run for this model.")
+    lines += [
+        "  Fit it with:",
+        "      python scripts/201_lens_fit.py --model <model> \\",
+        "          --corpus data/lens_corpus/pile10k-n100.jsonl",
+        "  Check the host can run the fit first (seconds, no weights loaded):",
+        "      python scripts/201_lens_fit.py --model <model> --check-env",
+    ]
+    return "\n".join(lines)

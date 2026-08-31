@@ -42,11 +42,18 @@
 # Stage 201 checkpoints every 10 prompts and resumes automatically, so a killed
 # job is restarted by re-running this script.
 #
-# Run inside a screen session, sequentially:
-#   screen -dmS lens-1.3b  env MODEL=deepseek-coder-1.3b jobs/workspace_lens.csh
+# Run inside a screen session, sequentially, WITH A LOG. `screen -L` is worth the
+# extra flag: this is a multi-hour job, and when a stage fails the useful part of
+# the output is minutes of scrollback that a detached screen will not keep.
+#
+#   screen -L -Logfile lens-1.3b.log -dmS lens-1.3b \
+#       env MODEL=deepseek-coder-1.3b HALVES=--halves jobs/workspace_lens.csh
 #   # wait (screen -ls), then:
-#   screen -dmS lens-3b    env MODEL=starcoder2-3b       jobs/workspace_lens.csh
-#   screen -dmS lens-6.7b  env MODEL=deepseek-coder-6.7b jobs/workspace_lens.csh
+#   screen -L -Logfile lens-3b.log   -dmS lens-3b   env MODEL=starcoder2-3b       jobs/workspace_lens.csh
+#   screen -L -Logfile lens-6.7b.log -dmS lens-6.7b env MODEL=deepseek-coder-6.7b jobs/workspace_lens.csh
+#
+# On a stage failure the script stops immediately rather than cascading, so the
+# real error is the LAST thing in the log, not the first of five tracebacks.
 if (! $?MODEL) setenv MODEL deepseek-coder-1.3b
 source jobs/common.csh
 if (! $?DTYPE)     setenv DTYPE bfloat16
@@ -83,6 +90,20 @@ echo "=== stage 201: fit the J-lens and the R-lens — GPU, HOURS ==="
 nvidia-smi --query-gpu=memory.used,memory.total --format=csv 2>/dev/null
 $PYTHON scripts/201_lens_fit.py --model "$MODEL" --corpus "$CORPUS" \
     --dim-batch "$DIM_BATCH" --dtype "$DTYPE" $HALVES
+# A failed fit MUST abort. Everything downstream reads `lens.pt`, so without
+# this guard a dead stage 201 produces four more tracebacks and its own — the
+# only one that says anything — scrolls off the top of the log.
+if ($status != 0) then
+    echo ""
+    echo "*** stage 201 FAILED. Stopping here: 202-205 all read lens.pt and"
+    echo "*** would only produce FileNotFoundError on top of the real error."
+    echo "*** The real error is immediately above this line."
+    if (-e "${OUT}/j-lens/fit_checkpoint.pt") then
+        echo "*** A fit checkpoint exists, so the fit STARTED and died partway."
+        echo "*** Re-running this script resumes from it; no work is lost."
+    endif
+    exit 1
+endif
 
 echo "=== stage 202: the GATE — GPU ==="
 # Deliberately NOT chained with && from here: if the gate fails we still want

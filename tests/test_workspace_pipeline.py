@@ -443,3 +443,34 @@ def test_a_missing_corpus_names_the_stage_that_builds_it():
     """A bare FileNotFoundError sent the first cluster run looking in the wrong place."""
     with pytest.raises(FileNotFoundError, match="200_lens_corpus"):
         corpus_mod.Corpus.load("data/lens_corpus/does-not-exist.jsonl")
+
+
+# ── missing-prerequisite errors ──────────────────────────────────────────────
+
+def test_a_missing_lens_names_the_stage_and_distinguishes_the_three_causes(tmp_path):
+    """A bare FileNotFoundError from inside torch.load sent a cluster run in
+    circles. Each of the three situations needs a different response, so the
+    message has to tell them apart."""
+    from src.workspace_lens.fitting import load_lens
+
+    # 1. stage 201 never ran for this model
+    with pytest.raises(FileNotFoundError, match="has not run for this model"):
+        load_lens(tmp_path / "never" / "j-lens")
+
+    # 2. it ran and died before completing a prompt
+    started = tmp_path / "started" / "j-lens"
+    started.mkdir(parents=True)
+    with pytest.raises(FileNotFoundError, match="START of the stage 201 log"):
+        load_lens(started)
+
+    # 3. it died partway and a resumable checkpoint survives
+    (started / "fit_checkpoint.pt").write_bytes(b"x" * 1024)
+    with pytest.raises(FileNotFoundError, match="resumes from"):
+        load_lens(started)
+
+    # Every branch names the stage that fixes it.
+    for directory in (tmp_path / "never" / "j-lens", started):
+        try:
+            load_lens(directory)
+        except FileNotFoundError as exc:
+            assert "201_lens_fit.py" in str(exc) and "--check-env" in str(exc)
