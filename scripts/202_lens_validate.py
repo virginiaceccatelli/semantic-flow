@@ -86,7 +86,7 @@ def main(
 
     probe_prompt = suite_obj.items[0].prompt
     checks.append(V.check_w3(lens_model, lens_j, probe_prompt, target_layer))
-    checks.append(V.check_w3b(lens_model, probe_prompt))
+    checks.append(V.check_w3b(lens_model, hf_model, probe_prompt))
     checks.append(V.check_w4(lens_model, hf_model,
                              [i.prompt for i in suite_obj.items[:n_forward]]))
     checks.extend(V.check_w5(hf_model, prov_r))

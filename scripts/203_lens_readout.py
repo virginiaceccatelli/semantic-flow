@@ -98,7 +98,8 @@ def main(
                 vec = logits[0]
                 rows.append({
                     "model": model, "item_id": item.item_id, "family": item.family,
-                    "pair_id": item.pair_id, "arm": item.arm, "lens": lens_name,
+                    "pair_id": item.pair_id, "arm": item.arm, "read": item.read,
+                    "lens": lens_name,
                     "layer": int(layer), "position": position,
                     "target_in_prompt": item.target_in_prompt,
                     "rank": rank_of(vec, target_ids),
@@ -108,7 +109,7 @@ def main(
                 })
                 topk_records.append({
                     "item_id": item.item_id, "family": item.family,
-                    "lens": lens_name, "layer": int(layer),
+                    "read": item.read, "lens": lens_name, "layer": int(layer),
                     "top": [t for t, _, _ in top_tokens(vec, tokenizer, topk)],
                 })
         if (n + 1) % 20 == 0:

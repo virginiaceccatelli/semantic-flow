@@ -151,10 +151,19 @@ class _TinyDecoder(nn.Module):
                               max_length=max_length).input_ids.to(self.input_device)
 
     def forward(self, input_ids: torch.Tensor):
+        """Mirrors a real HF decoder, including the final norm.
+
+        `LlamaModel.forward` ends with `hidden_states = self.norm(hidden_states)`
+        before returning `last_hidden_state`, so anything that unembeds that
+        tensor must NOT apply the norm again. Omitting the norm here made the
+        doubles disagree with every real model on exactly that point, and hid a
+        gate bug until it ran on GPU weights.
+        """
         hidden = self.embed_tokens(input_ids)
         for block in self.layers:
             hidden = block(hidden)
-        return SimpleNamespace(last_hidden_state=hidden)
+        return SimpleNamespace(last_hidden_state=self.norm(hidden),
+                               logits=self.lm_head(self.norm(hidden)))
 
     def unembed(self, residual: torch.Tensor) -> torch.Tensor:
         """Mirrors `HFLensModel.unembed`: cast to the head's dtype and device.

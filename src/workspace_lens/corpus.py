@@ -361,14 +361,23 @@ def build(kind: str, n: int, seed: int = 0,
     if kind not in ("pile", "code"):
         raise ValueError(f"unknown corpus kind {kind!r}; expected 'pile' or 'code'")
     out_dir = Path(out_dir)
-    corpus = (pile_prompts(n=n) if kind == "pile"
-              else code_prompts(n=n, seed=seed))
-    path = out_dir / f"{corpus.name}.jsonl"
+    name = f"pile10k-n{n}" if kind == "pile" else f"csn-python-n{n}-seed{seed}"
+    path = out_dir / f"{name}.jsonl"
+
+    # Reuse before rebuilding, not after. The previous order built a fresh
+    # corpus and only then compared digests, which wasted the download every
+    # run and — with HF_HUB_OFFLINE set, as it is on the cluster — failed
+    # outright on a corpus that was already sitting on disk. `Corpus.load`
+    # re-derives the digest from the prompt texts, so reuse is still verified.
     if path.exists():
         existing = Corpus.load(path)
-        if existing.digest == corpus.digest:
-            logger.info("reusing existing corpus %s", path)
+        if len(existing.prompts) == n:
+            logger.info("reusing existing corpus %s (digest %s)",
+                        path, existing.digest[:12])
             return existing, path
-        logger.warning("corpus at %s differs from a fresh build; overwriting", path)
+        logger.warning("%s holds %d prompts, not %d; rebuilding",
+                       path, len(existing.prompts), n)
+
+    corpus = pile_prompts(n=n) if kind == "pile" else code_prompts(n=n, seed=seed)
     corpus.save(path)
     return corpus, path

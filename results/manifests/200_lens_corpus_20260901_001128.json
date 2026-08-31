@@ -1,0 +1,75 @@
+{
+  "stage": "200_lens_corpus",
+  "timestamp": "20260901_001128",
+  "git_sha": "ed3ff80",
+  "python": "3.12.3",
+  "argv": [
+    "scripts/200_lens_corpus.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--corpus",
+    "code",
+    "--n-prompts",
+    "20",
+    "--n-per-family",
+    "10",
+    "--corpus-dir",
+    "/tmp/x",
+    "--suite-dir",
+    "/tmp/x"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "n_prompts": "20",
+    "corpus": "code",
+    "seed": "0",
+    "n_per_family": "10"
+  },
+  "wall_time_s": 0.2,
+  "extra": {
+    "corpus": {
+      "name": "csn-python-n20-seed0",
+      "dataset_id": "code_search_net/python (data/real/csn_python_200.jsonl)",
+      "revision": null,
+      "n_prompts": 20,
+      "row_ids": [
+        40,
+        71,
+        74,
+        165,
+        133,
+        22,
+        92,
+        185,
+        161,
+        42,
+        68,
+        147,
+        30,
+        199,
+        35,
+        190,
+        140,
+        82,
+        45,
+        194
+      ],
+      "digest": "5ca46af296902dfbcb491b06cda09ee7b8c5afa56415143df72857ea78b4de29"
+    },
+    "disjointness": {
+      "corpus": "csn-python-n20-seed0",
+      "corpus_digest": "5ca46af296902dfbcb491b06cda09ee7b8c5afa56415143df72857ea78b4de29",
+      "n_corpus": 20,
+      "n_eval": 160,
+      "min_shared_run": 120,
+      "n_exact_overlap": 0,
+      "n_substring_overlap": 0,
+      "examples": []
+    },
+    "suite": {
+      "path": "/tmp/x/code-semantics-deepseek-coder-1.3b.jsonl",
+      "n_items": 160,
+      "dropped": {}
+    }
+  }
+}

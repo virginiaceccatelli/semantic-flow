@@ -167,23 +167,32 @@ def earliest_layer(ranks_by_layer: dict[int, float], k: int) -> Optional[int]:
 
 
 def summarise(rows, k_values=(1, 10, 25)) -> "object":
-    """Per (lens, layer, family) pass@k and median rank, as a DataFrame.
+    """Per (lens, layer, family, read) pass@k and median rank, as a DataFrame.
 
     `rows` are the per-(item, lens, layer) records written by the readout
     stage; this is the only place the aggregation happens, so the report and
     the figures cannot disagree about what pass@k means.
+
+    `read` is part of the key, never pooled over: a value-carrying family is
+    measured both at the variable's use and at the position where the value must
+    be emitted, and averaging those together would hide exactly the contrast
+    they exist to draw.
     """
     import pandas as pd
 
     df = pd.DataFrame(rows)
     if df.empty:
         return df
+    if "read" not in df.columns:
+        df["read"] = "use"
     out = []
-    for (lens, layer, family), grp in df.groupby(["lens", "layer", "family"]):
+    for (lens, layer, family, read), grp in df.groupby(
+            ["lens", "layer", "family", "read"]):
         record = {"lens": lens, "layer": int(layer), "family": family,
+                  "read": read,
                   "n": len(grp), "median_rank": float(grp["rank"].median()),
                   "mean_margin": float(grp["margin"].mean(skipna=True))}
         for k in k_values:
             record[f"pass@{k}"] = pass_at_k(grp["rank"], k)
         out.append(record)
-    return pd.DataFrame(out).sort_values(["lens", "family", "layer"])
+    return pd.DataFrame(out).sort_values(["lens", "family", "read", "layer"])

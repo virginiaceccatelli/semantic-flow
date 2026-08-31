@@ -40,6 +40,34 @@ by copying a nearby token.
 claim: their targets are tokens that **never appear in the prompt**, so a hit
 cannot be attention copying an input token forward.
 
+## Two read positions, because the first run showed one is not enough
+
+The first 1.3B run read every value-carrying family at the *use* token — the
+`x` of `return x` — and returned an exact null. The top-k explained it: at that
+position the model is poised to say `' + '` or `' == '`, because the natural
+continuation of `return x` is an operator. The value was never what that
+position was about to verbalize, so "the lens does not surface it" answered a
+question nobody asked.
+
+Every value-carrying family therefore now carries **two** items per program,
+distinguished by `read`:
+
+    read="use"      the variable's use token — is the bound value verbalizable
+                    at the moment the variable is read?
+    read="answer"   a validated `assert f() == ` suffix, where the value IS the
+                    next token the model must emit — how early does it appear?
+
+The suffix comes from `src.data.counterfactual_pairs.choose_answer_suffix`,
+which this repository already validates per tokenizer: it checks that writing
+the answer appends *exactly one* token and that the answerless encoding is a
+strict prefix. Scoring a space token instead of an answer is a silent failure,
+and it is not one this suite invents a second time.
+
+The contrast is the point. `answer` establishes that the model has the value and
+says when; `use` then asks whether it was verbalizable earlier, at the position
+where binding is resolved. A null at `use` beside a hit at `answer` is a
+finding. A null at both is a null about the instrument's reach.
+
 ## Positions
 
 Positions are named by an anchor substring rather than an index, and resolved
@@ -83,6 +111,7 @@ class ProbeItem:
     distractor_words: list[str] # what a surface reader would emit instead
     arm: str = ""               # which member of a crossed pair this is
     pair_id: str = ""           # the two arms of a crossed pair share this
+    read: str = "use"           # "use" | "answer" — WHERE the lens is read
     target_in_prompt: bool = True
     notes: str = ""
 
@@ -95,6 +124,7 @@ class Suite:
     name: str
     items: list[ProbeItem] = field(default_factory=list)
     dropped_multitoken: dict = field(default_factory=dict)
+    answer_reads: str = "unknown"   # "built" | why they could not be
 
     def prompts(self) -> list[str]:
         return [item.prompt for item in self.items]
@@ -105,6 +135,7 @@ class Suite:
         with open(path, "w") as f:
             f.write(json.dumps({"_meta": {"name": self.name,
                                           "n_items": len(self.items),
+                                          "answer_reads": self.answer_reads,
                                           "dropped_multitoken":
                                               self.dropped_multitoken}}) + "\n")
             for item in self.items:
@@ -122,12 +153,38 @@ class Suite:
                 else:
                     items.append(ProbeItem(**obj))
         return cls(name=meta.get("name", Path(path).stem), items=items,
-                   dropped_multitoken=meta.get("dropped_multitoken", {}))
+                   dropped_multitoken=meta.get("dropped_multitoken", {}),
+                   answer_reads=meta.get("answer_reads", "unknown"))
 
 
 # ── program templates ────────────────────────────────────────────────────────
 
 _HEADER = "# utility helpers\nimport os\nimport sys\n\n"
+
+
+def _answer_suffix(tokenizer, fname: str) -> str:
+    """`\nassert <fname>() == `, in the spelling this tokenizer validates.
+
+    Delegates the hard part to the repository's existing
+    `choose_answer_suffix`, which verifies per tokenizer that the answer is
+    exactly one appended token; only the entry-point name is substituted.
+    """
+    from src.data.counterfactual_pairs import choose_answer_suffix
+
+    return choose_answer_suffix(tokenizer).replace("f()", f"{fname}()")
+
+
+def _answer_item(source: ProbeItem, suffix: str) -> ProbeItem:
+    """The same program, read where the value must actually be emitted."""
+    return ProbeItem(
+        item_id=f"{source.item_id}-answer", family=source.family,
+        pair_id=source.pair_id, arm=source.arm, read="answer",
+        prompt=source.prompt + suffix, anchor=suffix,
+        target_words=list(source.target_words),
+        distractor_words=list(source.distractor_words),
+        target_in_prompt=source.target_in_prompt,
+        notes=f"{source.notes}; read at the answer position",
+    )
 
 
 def _binding_pair(pair: int, outer: int, inner: int, fname: str, other: str):
@@ -360,6 +417,14 @@ def build_suite(tokenizer, n_per_family: int = 10, name: str = "code-semantics")
             "the tokenizer before continuing — this is the signature of the "
             "mis-resolved code tokenizer that load_tokenizer() guards against."
         )
+    try:
+        _answer_suffix(tokenizer, "f")
+        answer_reads = "built"
+    except Exception as exc:                                    # noqa: BLE001
+        answer_reads = f"unavailable: {type(exc).__name__}: {str(exc)[:120]}"
+        logger.warning("no answer-position reads for this tokenizer (%s); the "
+                       "use-position families are unaffected", answer_reads)
+
     pairs = _value_pairs(values, n_per_family, seed=0)
     # The arith family needs its operands' SUM to be a single token too,
     # which is a strictly tighter constraint, so it draws its own pairs
@@ -370,15 +435,34 @@ def build_suite(tokenizer, n_per_family: int = 10, name: str = "code-semantics")
     items: list[ProbeItem] = []
     for i, (outer, inner) in enumerate(pairs):
         fname, other = _NAMES[i % len(_NAMES)], _OTHER[i % len(_OTHER)]
-        items += _binding_pair(i, outer, inner, fname, other)
+        binding = _binding_pair(i, outer, inner, fname, other)
+        defuse = _defuse(i, outer, other, filler=3 + i)
+        alias = _alias(i, inner, other, _OTHER[(i + 3) % len(_OTHER)])
+        call = _call(i, outer, fname)
+        a, b = arith_pairs[i % len(arith_pairs)]
+        arith = _arith(i, a, b)
+
+        items += binding
         items += _scopeword_pair(i, outer, inner, fname, other)
-        items.append(_defuse(i, outer, other, filler=3 + i))
-        items.append(_alias(i, inner, other, _OTHER[(i + 3) % len(_OTHER)]))
-        items.append(_call(i, outer, fname))
+        items += [defuse, alias, call, arith]
+
+        # The same value-carrying programs, read where the value must actually
+        # be emitted. Entry points differ per family, so the suffix is built per
+        # item rather than once.
+        #
+        # A tokenizer that cannot make the answer a single appended token gets
+        # the use-position families and no answer reads, rather than no suite at
+        # all: the answer position is an addition to the design, and losing it
+        # should cost that addition, not everything else. Why it was lost is
+        # recorded on the suite and printed by stage 200.
+        if answer_reads == "built":
+            for source, entry in ((binding[0], fname), (binding[1], fname),
+                                  (defuse, "compute"), (alias, "run"),
+                                  (call, "main"), (arith, "total")):
+                items.append(_answer_item(source, _answer_suffix(tokenizer, entry)))
+
         literal, targets, distractors, tname = _TYPES[i % len(_TYPES)]
         items.append(_typeof(i, literal, targets, distractors, tname))
-        a, b = arith_pairs[i % len(arith_pairs)]
-        items.append(_arith(i, a, b))
         items.append(_loopvar(i, ["hello", "world", "alpha", "gamma"][i % 4]))
 
     scorable, dropped = {}, {}
@@ -411,7 +495,8 @@ def build_suite(tokenizer, n_per_family: int = 10, name: str = "code-semantics")
         logger.warning("dropped %d unscorable items (multi-token target, or the "
                        "other arm of a crossed pair): %s",
                        sum(dropped.values()), dropped)
-    return Suite(name=name, items=kept, dropped_multitoken=dropped)
+    return Suite(name=name, items=kept, dropped_multitoken=dropped,
+                 answer_reads=answer_reads)
 
 
 def _is_single_token(tokenizer, word: str) -> bool:

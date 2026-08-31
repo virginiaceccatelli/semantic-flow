@@ -227,12 +227,15 @@ def test_crossed_arms_are_token_identical_at_the_read_position():
     pairs = {}
     for item in suite.items:
         if item.family == "binding":
-            pairs.setdefault(item.pair_id, []).append(item)
+            # Keyed by read position too: a program contributes one pair at the
+            # use token and one at the answer position, and they are different
+            # measurements of it.
+            pairs.setdefault((item.pair_id, item.read), []).append(item)
     assert pairs
     for items in pairs.values():
         assert len(items) == 2
         outer, inner = sorted(items, key=lambda i: i.arm)
-        assert outer.anchor == inner.anchor == "    return x"
+        assert outer.anchor == inner.anchor
         # The target of one arm is the distractor of the other.
         assert outer.target_words == inner.distractor_words
         assert inner.target_words == outer.distractor_words
@@ -624,3 +627,84 @@ def test_bos_is_forced_only_when_the_checkpoint_asks_for_one():
     # An unreadable checkpoint must not force: that is the conservative side,
     # since it leaves the released behaviour untouched.
     assert declared_add_bos("definitely/not-a-real-model-id") is False
+
+
+def test_w3b_compares_against_the_lm_head_not_the_normed_hidden_state():
+    """The gate bug that failed a correct pipeline at 0.37 relative.
+
+    `last_hidden_state` is post-final-norm on every real HF decoder, so
+    unembedding it applies the norm twice. The check must compare against the
+    causal-LM head's own logits; a double-normed reference is a wrong reference,
+    not a wrong readout.
+    """
+    model = TinyRMSDecoder(n_layers=4)
+    check = validate.check_w3b(model, model, LONG_PROMPT)
+    assert check.passed, check.detail
+    assert check.value < 1e-5
+
+    # The failing comparison, made explicit: norming twice really does move the
+    # logits by a lot, so the old reference could not have been right.
+    import torch as _t
+    from jlens.hooks import ActivationRecorder
+    ids = model.encode(LONG_PROMPT, max_length=256)
+    with ActivationRecorder(model.layers, at=[model.n_layers - 1]) as rec:
+        out = model.forward(ids)
+        h = rec.activations[model.n_layers - 1][0].detach().float()
+    correct = model.unembed(h)
+    double_normed = model.unembed(out.last_hidden_state[0].float())
+    rel = float((correct - double_normed).abs().max() / correct.abs().max())
+    assert rel > 1e-2, "the doubles no longer reproduce the double-norm error"
+
+
+def test_value_families_are_read_at_both_the_use_and_the_answer_position():
+    """The design fix the first 1.3B run forced.
+
+    Reading only at the use token returned an exact null whose top-k showed the
+    model was poised to say an operator, not a value — so the null answered a
+    question nobody asked. Every value-carrying family now also gets a read at
+    the position where the value must actually be emitted.
+    """
+    suite = evalsuite.build_suite(_WordTokenizer(), n_per_family=3)
+    assert suite.answer_reads == "built", suite.answer_reads
+
+    by_read = {}
+    for item in suite.items:
+        by_read.setdefault((item.family, item.read), []).append(item)
+
+    for family in ("binding", "defuse", "alias", "call", "arith"):
+        assert (family, "use") in by_read, family
+        assert (family, "answer") in by_read, family
+    # Concept families have no single emitted answer, so they stay use-only.
+    for family in ("typeof", "loopvar", "scopeword"):
+        assert (family, "answer") not in by_read, family
+
+    # An answer item is the same program plus the suffix, read at the suffix.
+    answer = by_read[("binding", "answer")][0]
+    use = next(i for i in by_read[("binding", "use")]
+               if answer.item_id.startswith(i.item_id))
+    assert answer.prompt.startswith(use.prompt)
+    assert answer.anchor in answer.prompt and answer.anchor.startswith("\nassert")
+    assert answer.target_words == use.target_words
+
+
+def test_a_tokenizer_without_a_valid_answer_suffix_still_yields_a_suite():
+    """Losing the answer position must cost that addition, not the whole suite.
+
+    The failing case is a tokenizer that maps `"3"` and `" 3"` to the *same*
+    id: the repository's suffix check needs the space to belong to exactly one
+    of the two spellings, so it cannot certify which token an answer read would
+    score, and refuses. That refusal is correct — scoring a space token instead
+    of an answer is a silent failure — but it must not take the use-position
+    families down with it.
+    """
+    class SpaceBlindDigits(_WordTokenizer):
+        def __call__(self, text, add_special_tokens=True, **kw):
+            stripped = text.strip()
+            if stripped.isdigit() and len(stripped) == 1:
+                return {"input_ids": [100 + int(stripped)]}
+            return super().__call__(text, add_special_tokens, **kw)
+
+    suite = evalsuite.build_suite(SpaceBlindDigits(), n_per_family=3)
+    assert suite.items
+    assert suite.answer_reads.startswith("unavailable"), suite.answer_reads
+    assert all(i.read == "use" for i in suite.items)

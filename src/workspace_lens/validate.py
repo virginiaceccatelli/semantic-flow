@@ -156,12 +156,21 @@ def check_w3(lens_model, lens, prompt: str, target_layer: int,
 
 
 @torch.no_grad()
-def check_w3b(lens_model, prompt: str, tol: float = 1e-4) -> Check:
-    """The logit-lens path at the final block must BE the model's logits.
+def check_w3b(lens_model, hf_model=None, prompt: str = "", tol: float = 1e-4) -> Check:
+    """The readout's `unembed` must BE the model's own tail.
 
-    Independent of any fitted artifact: it certifies that the readout's
-    `unembed` is the model's own tail, which is the assumption every lens
-    number rests on.
+    Independent of any fitted artifact: it certifies the assumption every lens
+    number rests on — that `unembed(h_final)` reproduces the logits the model
+    would actually emit.
+
+    The reference has to be the LM head's own output. An earlier version compared
+    against `forward(...).last_hidden_state`, which on every real HF decoder is
+    **post-final-norm** (`LlamaModel.forward` ends with `hidden_states =
+    self.norm(hidden_states)`), so unembedding it applied the norm twice and the
+    check failed at 0.37 relative on a pipeline that was correct. The toy models
+    used in testing did not apply a final norm inside `forward`, so the bug could
+    only appear on real weights — they now mirror HF, and this compares against
+    `hf_model(input_ids).logits` when a causal-LM wrapper is available.
     """
     from jlens.hooks import ActivationRecorder
 
@@ -172,14 +181,29 @@ def check_w3b(lens_model, prompt: str, tol: float = 1e-4) -> Check:
         h = rec.activations[final][0].detach().float()
     readout = lens_model.unembed(h).float()
 
-    reference = getattr(out, "logits", None)
-    if reference is None:                        # bare text decoder, no LM head
-        reference = lens_model.unembed(
-            getattr(out, "last_hidden_state", h)[0].float())
+    reference, source = None, ""
+    owner = hf_model if hf_model is not None else getattr(lens_model, "_hf_model", None)
+    if owner is not None:
+        try:
+            reference = owner(input_ids=input_ids).logits[0].float()
+            source = "the causal-LM head"
+        except (TypeError, AttributeError):
+            reference = None
+    if reference is None:
+        # `last_hidden_state` is already normed, so the head alone completes it.
+        hidden = getattr(out, "last_hidden_state", None)
+        if hidden is not None and hasattr(lens_model, "_lm_head"):
+            reference = lens_model._lm_head(hidden[0]).float()
+            source = "lm_head(last_hidden_state)"
+    if reference is None:
+        return Check("W3b_unembed_is_model_tail", False, True,
+                     "could not obtain the model's own logits to compare against")
+
     reference = reference.reshape(readout.shape).float()
     rel = float((readout - reference).abs().max() / (reference.abs().max() or 1.0))
     return Check("W3b_unembed_is_model_tail", rel <= tol, True,
-                 f"max relative logit difference {rel:.2e}", value=rel, threshold=tol)
+                 f"max relative logit difference {rel:.2e} against {source}",
+                 value=rel, threshold=tol)
 
 
 # ── W4 ───────────────────────────────────────────────────────────────────────

@@ -64,6 +64,8 @@ def main(
     if not rows_path.exists():
         raise typer.BadParameter(f"no readout at {rows_path}; run stage 203 first")
     rows = pd.read_csv(rows_path)
+    if "read" not in rows.columns:
+        rows["read"] = "use"          # readouts predating the answer position
     summary = pd.read_csv(lens_dir / "readout" / "workspace_lens_summary.csv")
 
     gate_path = lens_dir / "validate" / "workspace_lens_gate.csv"
@@ -75,16 +77,19 @@ def main(
 
     # ── figure 1: pass@k across layers, per lens, pooled and per family ──────
     layers = sorted(rows["layer"].unique())
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4), sharey=True)
-    for lens in LENS_ORDER:
-        sub = rows[rows["lens"] == lens]
-        curve = [(sub[sub["layer"] == l]["rank"] < k).mean() for l in layers]
-        axes[0].plot(layers, curve, label=lens, color=COLOURS[lens], lw=2)
-        absent = sub[~sub["target_in_prompt"]]
-        curve = [(absent[absent["layer"] == l]["rank"] < k).mean() for l in layers]
-        axes[1].plot(layers, curve, label=lens, color=COLOURS[lens], lw=2)
-    axes[0].set_title(f"all items (n={rows['item_id'].nunique()})")
-    axes[1].set_title("targets absent from the prompt")
+    panels = [("read == 'answer'", rows[rows["read"] == "answer"]),
+              ("read == 'use'", rows[rows["read"] == "use"]),
+              ("targets absent from the prompt", rows[~rows["target_in_prompt"]])]
+    panels = [(t, d) for t, d in panels if not d.empty]
+    fig, axes = plt.subplots(1, len(panels), figsize=(4 + 3.5 * len(panels), 4),
+                             sharey=True, squeeze=False)
+    axes = axes[0]
+    for ax, (title, data) in zip(axes, panels):
+        for lens in LENS_ORDER:
+            sub = data[data["lens"] == lens]
+            curve = [(sub[sub["layer"] == l]["rank"] < k).mean() for l in layers]
+            ax.plot(layers, curve, label=lens, color=COLOURS[lens], lw=2)
+        ax.set_title(f"{title} (n={data['item_id'].nunique()})")
     for ax in axes:
         ax.set_xlabel("source layer"); ax.grid(alpha=.3); ax.set_ylim(-.02, 1.02)
     axes[0].set_ylabel(f"pass@{k}"); axes[0].legend()
@@ -227,18 +232,27 @@ def _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
                          f"{mark} | {r['detail']} |")
         lines.append("")
 
+    if "read" not in summary.columns:
+        summary["read"] = "use"
     lines += [f"## What the lenses surface (pass@{k}, best over layers)", "",
-              "| family | j-lens | r-lens | logit lens | target in prompt |",
-              "|---|---|---|---|---|"]
+              "`read = answer` is the position where the value must actually be "
+              "emitted; `read = use` is the variable's use token. They are never "
+              "pooled: a null at `use` beside a hit at `answer` is a finding "
+              "about verbalizability, while a null at both is a null about the "
+              "instrument's reach.", "",
+              "| family | read | j-lens | r-lens | logit lens | target in prompt |",
+              "|---|---|---|---|---|---|"]
     for family in sorted(rows["family"].unique()):
-        sub = summary[summary["family"] == family]
-        cells = []
-        for lens in LENS_ORDER:
-            col = sub[sub["lens"] == lens][f"pass@{k}"]
-            cells.append(f"{col.max():.3f}" if len(col) else "—")
-        in_prompt = rows[rows["family"] == family]["target_in_prompt"].all()
-        lines.append(f"| {family} | " + " | ".join(cells) + " | "
-                     f"{'yes' if in_prompt else 'no'} |")
+        for read in sorted(rows[rows["family"] == family]["read"].unique()):
+            sub = summary[(summary["family"] == family) & (summary["read"] == read)]
+            cells = []
+            for lens in LENS_ORDER:
+                col = sub[sub["lens"] == lens][f"pass@{k}"]
+                cells.append(f"{col.max():.3f}" if len(col) else "—")
+            in_prompt = rows[(rows["family"] == family)
+                             & (rows["read"] == read)]["target_in_prompt"].all()
+            lines.append(f"| {family} | {read} | " + " | ".join(cells) + " | "
+                         f"{'yes' if in_prompt else 'no'} |")
     lines.append("")
 
     lines += [f"## Earliest layer the target enters the top {k}", "",

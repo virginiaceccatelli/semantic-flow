@@ -79,11 +79,14 @@ def main(
     table.add_row("probe suite", str(len(suite.items)),
                   f"{len(set(i.family for i in suite.items))} families, "
                   f"{sum(suite.dropped_multitoken.values())} dropped (multi-token)")
+    table.add_row("  answer reads", "", suite.answer_reads)
     for family in sorted(set(i.family for i in suite.items)):
         n = sum(1 for i in suite.items if i.family == family)
         absent = sum(1 for i in suite.items
                      if i.family == family and not i.target_in_prompt)
+        reads = sorted({i.read for i in suite.items if i.family == family})
         table.add_row(f"  {family}", str(n),
+                      f"read at {'+'.join(reads)}; "
                       f"{absent} with a target absent from the prompt")
     console.print(table)
     console.print(f"corpus  -> {corpus_path}")
