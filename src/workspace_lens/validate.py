@@ -156,7 +156,8 @@ def check_w3(lens_model, lens, prompt: str, target_layer: int,
 
 
 @torch.no_grad()
-def check_w3b(lens_model, hf_model=None, prompt: str = "", tol: float = 1e-4) -> Check:
+def check_w3b(lens_model, hf_model=None, prompt: str = "",
+              tol: Optional[float] = None) -> Check:
     """The readout's `unembed` must BE the model's own tail.
 
     Independent of any fitted artifact: it certifies the assumption every lens
@@ -173,6 +174,16 @@ def check_w3b(lens_model, hf_model=None, prompt: str = "", tol: float = 1e-4) ->
     `hf_model(input_ids).logits` when a causal-LM wrapper is available.
     """
     from jlens.hooks import ActivationRecorder
+
+    # Dtype-aware, like W4 and W5e. The readout re-runs the model's own norm and
+    # head on a residual that has been round-tripped through float32, so it can
+    # only ever agree to within one rounding step of the compute dtype — which
+    # in bfloat16 is ~8e-3, eighty times a fixed 1e-4 bound. Depth does not
+    # enter: this is one norm and one matmul, not a traversal.
+    if tol is None:
+        dtype = next(hf_model.parameters()).dtype if hf_model is not None else \
+            next(lens_model.parameters()).dtype
+        tol = max(1e-4, 8.0 * torch.finfo(dtype).eps)
 
     input_ids = lens_model.encode(prompt, max_length=256)
     final = lens_model.n_layers - 1
@@ -202,7 +213,8 @@ def check_w3b(lens_model, hf_model=None, prompt: str = "", tol: float = 1e-4) ->
     reference = reference.reshape(readout.shape).float()
     rel = float((readout - reference).abs().max() / (reference.abs().max() or 1.0))
     return Check("W3b_unembed_is_model_tail", rel <= tol, True,
-                 f"max relative logit difference {rel:.2e} against {source}",
+                 f"max relative logit difference {rel:.2e} against {source} "
+                 f"(tolerance {tol:.1e} is one rounding step of the compute dtype)",
                  value=rel, threshold=tol)
 
 
