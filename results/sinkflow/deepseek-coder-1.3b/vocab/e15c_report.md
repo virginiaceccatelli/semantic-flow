@@ -6,7 +6,7 @@ This report asks whether the safe/unsafe difference appears in vocabulary coordi
 
 **Verdict.** INVERTED — the security lexicon's contrast is strong and consistent but runs OPPOSITE to the hypothesis: unsafe programs score lower on the unsafe pole than their matched safe counterparts. Report the sign; do not report this as the model representing 'unsafe'.
 
-Primary lens `rlens` (declared before any result was produced); reported at lens `rlens`, site `sink_arg`, layer 11, condition `clean_heldout`.
+Primary lens `clrp` (declared before any result was produced); reported at lens `clrp`, site `sink_arg`, layer 11, condition `clean_heldout`.
 
 | check | holds |
 |---|---|
@@ -68,38 +68,38 @@ Ranked on CLEAN TRAINING pairs only and frozen before any held-out pair was scor
 
 | layer | relative_depth | lens | mean_delta_contrast_z | sign_consistency_z | permutation_p | topk_enrichment_positive |
 |---|---|---|---|---|---|---|
-| -1 |  | jlens | -0.000 | 0.111 | 0.986 | 0.000 |
+| -1 |  | clens | -0.000 | 0.111 | 0.986 | 0.000 |
 | -1 |  | logit | 0.076 | 0.125 | 0.422 | 0.000 |
-| -1 |  | rlens | 0.008 | 0.125 | 0.814 | 0.000 |
-| 0 | 0.000 | jlens | -0.014 | 0.403 | 0.404 | 0.000 |
+| -1 |  | clrp | 0.008 | 0.125 | 0.814 | 0.000 |
+| 0 | 0.000 | clens | -0.014 | 0.403 | 0.404 | 0.000 |
 | 0 | 0.000 | logit | 0.063 | 0.514 | 0.482 | 0.125 |
-| 0 | 0.000 | rlens | 0.005 | 0.542 | 0.940 | 0.000 |
-| 3 | 0.130 | jlens | 0.038 | 0.556 | 0.298 | 0.000 |
+| 0 | 0.000 | clrp | 0.005 | 0.542 | 0.940 | 0.000 |
+| 3 | 0.130 | clens | 0.038 | 0.556 | 0.298 | 0.000 |
 | 3 | 0.130 | logit | 0.080 | 0.458 | 0.212 | 0.250 |
-| 3 | 0.130 | rlens | 0.093 | 0.528 | 0.134 | 0.250 |
-| 7 | 0.304 | jlens | -0.156 | 0.236 | 0.002 | 0.875 |
+| 3 | 0.130 | clrp | 0.093 | 0.528 | 0.134 | 0.250 |
+| 7 | 0.304 | clens | -0.156 | 0.236 | 0.002 | 0.875 |
 | 7 | 0.304 | logit | -0.387 | 0.181 | 0.000 | 0.875 |
-| 7 | 0.304 | rlens | -0.058 | 0.361 | 0.208 | 0.625 |
-| 11 | 0.478 | jlens | -0.268 | 0.236 | 0.000 | 0.875 |
+| 7 | 0.304 | clrp | -0.058 | 0.361 | 0.208 | 0.625 |
+| 11 | 0.478 | clens | -0.268 | 0.236 | 0.000 | 0.875 |
 | 11 | 0.478 | logit | -0.433 | 0.194 | 0.000 | 0.625 |
-| 11 | 0.478 | rlens | -0.304 | 0.153 | 0.000 | 0.875 |
-| 15 | 0.652 | jlens | -0.283 | 0.167 | 0.000 | 1.000 |
+| 11 | 0.478 | clrp | -0.304 | 0.153 | 0.000 | 0.875 |
+| 15 | 0.652 | clens | -0.283 | 0.167 | 0.000 | 1.000 |
 | 15 | 0.652 | logit | -0.348 | 0.153 | 0.000 | 0.500 |
-| 15 | 0.652 | rlens | -0.264 | 0.139 | 0.000 | 1.000 |
-| 19 | 0.826 | jlens | -0.295 | 0.208 | 0.000 | 0.875 |
+| 15 | 0.652 | clrp | -0.264 | 0.139 | 0.000 | 1.000 |
+| 19 | 0.826 | clens | -0.295 | 0.208 | 0.000 | 0.875 |
 | 19 | 0.826 | logit | -0.201 | 0.250 | 0.000 | 0.625 |
-| 19 | 0.826 | rlens | -0.204 | 0.250 | 0.000 | 0.875 |
-| 23 | 1.000 | jlens | -0.100 | 0.250 | 0.000 | 0.750 |
+| 19 | 0.826 | clrp | -0.204 | 0.250 | 0.000 | 0.875 |
+| 23 | 1.000 | clens | -0.100 | 0.250 | 0.000 | 0.750 |
 | 23 | 1.000 | logit | -0.100 | 0.250 | 0.000 | 0.750 |
-| 23 | 1.000 | rlens | -0.100 | 0.250 | 0.000 | 0.750 |
+| 23 | 1.000 | clrp | -0.100 | 0.250 | 0.000 | 0.750 |
 
 Pairwise agreement of the three readouts' mean vocabulary-difference vectors:
 
 | layer | lens_a | lens_b | cosine | spearman | n_tokens |
 |---|---|---|---|---|---|
-| 11 | jlens | logit | 0.895 | 0.871 | 196 |
-| 11 | jlens | rlens | 0.960 | 0.954 | 196 |
-| 11 | logit | rlens | 0.966 | 0.946 | 196 |
+| 11 | clens | logit | 0.895 | 0.871 | 196 |
+| 11 | clens | clrp | 0.960 | 0.954 | 196 |
+| 11 | logit | clrp | 0.966 | 0.946 | 196 |
 
 ### Table 9 — semantic contrast across atomic and cumulative obfuscation
 
@@ -124,14 +124,14 @@ The permutation null asks whether the safe→unsafe *orientation* carries the ef
 
 | lens | layer | relative_depth | sign_consistency_z | permutation_p | displacement | control_displacement | specificity | beats_random_lens |
 |---|---|---|---|---|---|---|---|---|
-| jlens | -1 |  | 0.111 | 0.986 | 0.389 | 0.347 | 1.120 | True |
-| jlens | 0 | 0.000 | 0.403 | 0.404 | 0.097 | 0.056 | 1.750 | True |
-| jlens | 3 | 0.130 | 0.556 | 0.298 | 0.056 | 0.153 | 0.364 | False |
-| jlens | 7 | 0.304 | 0.236 | 0.002 | 0.264 | 0.278 | 0.950 | False |
-| jlens | 11 | 0.478 | 0.236 | 0.000 | 0.264 | 0.167 | 1.583 | True |
-| jlens | 15 | 0.652 | 0.167 | 0.000 | 0.333 | 0.250 | 1.333 | True |
-| jlens | 19 | 0.826 | 0.208 | 0.000 | 0.292 | 0.250 | 1.167 | True |
-| jlens | 23 | 1.000 | 0.250 | 0.000 | 0.250 | 0.250 | 1.000 | False |
+| clens | -1 |  | 0.111 | 0.986 | 0.389 | 0.347 | 1.120 | True |
+| clens | 0 | 0.000 | 0.403 | 0.404 | 0.097 | 0.056 | 1.750 | True |
+| clens | 3 | 0.130 | 0.556 | 0.298 | 0.056 | 0.153 | 0.364 | False |
+| clens | 7 | 0.304 | 0.236 | 0.002 | 0.264 | 0.278 | 0.950 | False |
+| clens | 11 | 0.478 | 0.236 | 0.000 | 0.264 | 0.167 | 1.583 | True |
+| clens | 15 | 0.652 | 0.167 | 0.000 | 0.333 | 0.250 | 1.333 | True |
+| clens | 19 | 0.826 | 0.208 | 0.000 | 0.292 | 0.250 | 1.167 | True |
+| clens | 23 | 1.000 | 0.250 | 0.000 | 0.250 | 0.250 | 1.000 | False |
 | logit | -1 |  | 0.125 | 0.422 | 0.375 | 0.347 | 1.080 | True |
 | logit | 0 | 0.000 | 0.514 | 0.482 | 0.014 | 0.056 | 0.250 | False |
 | logit | 3 | 0.130 | 0.458 | 0.212 | 0.042 | 0.153 | 0.273 | False |
@@ -140,14 +140,14 @@ The permutation null asks whether the safe→unsafe *orientation* carries the ef
 | logit | 15 | 0.652 | 0.153 | 0.000 | 0.347 | 0.250 | 1.389 | True |
 | logit | 19 | 0.826 | 0.250 | 0.000 | 0.250 | 0.250 | 1.000 | False |
 | logit | 23 | 1.000 | 0.250 | 0.000 | 0.250 | 0.250 | 1.000 | False |
-| rlens | -1 |  | 0.125 | 0.814 | 0.375 | 0.347 | 1.080 | True |
-| rlens | 0 | 0.000 | 0.542 | 0.940 | 0.042 | 0.056 | 0.750 | False |
-| rlens | 3 | 0.130 | 0.528 | 0.134 | 0.028 | 0.153 | 0.182 | False |
-| rlens | 7 | 0.304 | 0.361 | 0.208 | 0.139 | 0.278 | 0.500 | False |
-| rlens | 11 | 0.478 | 0.153 | 0.000 | 0.347 | 0.167 | 2.083 | True |
-| rlens | 15 | 0.652 | 0.139 | 0.000 | 0.361 | 0.250 | 1.444 | True |
-| rlens | 19 | 0.826 | 0.250 | 0.000 | 0.250 | 0.250 | 1.000 | False |
-| rlens | 23 | 1.000 | 0.250 | 0.000 | 0.250 | 0.250 | 1.000 | False |
+| clrp | -1 |  | 0.125 | 0.814 | 0.375 | 0.347 | 1.080 | True |
+| clrp | 0 | 0.000 | 0.542 | 0.940 | 0.042 | 0.056 | 0.750 | False |
+| clrp | 3 | 0.130 | 0.528 | 0.134 | 0.028 | 0.153 | 0.182 | False |
+| clrp | 7 | 0.304 | 0.361 | 0.208 | 0.139 | 0.278 | 0.500 | False |
+| clrp | 11 | 0.478 | 0.153 | 0.000 | 0.347 | 0.167 | 2.083 | True |
+| clrp | 15 | 0.652 | 0.139 | 0.000 | 0.361 | 0.250 | 1.444 | True |
+| clrp | 19 | 0.826 | 0.250 | 0.000 | 0.250 | 0.250 | 1.000 | False |
+| clrp | 23 | 1.000 | 0.250 | 0.000 | 0.250 | 0.250 | 1.000 | False |
 
 ### Table 12 — is the contrast a distribution artifact?
 
@@ -180,14 +180,14 @@ A weak row does not invalidate its layer. It is the reason the verdict separates
 | gram_random | 15 | 1 |  |  | -0.020 |  | 1 | final-layer rank agreement -0.020 < 0.3 |
 | gram_random | 19 | 1 |  |  | 0.098 |  | 1 | final-layer rank agreement 0.098 < 0.3 |
 | gram_random | 23 | 1 |  |  | 0.092 |  | 1 | final-layer rank agreement 0.092 < 0.3 |
-| jlens | -1 | 0 |  |  | 0.163 |  | 1 | final-layer rank agreement 0.163 < 0.3 |
-| jlens | 0 | 0 |  |  | 0.314 |  | 0 |  |
-| jlens | 3 | 0 |  |  | 0.281 |  | 1 | final-layer rank agreement 0.281 < 0.3 |
-| jlens | 7 | 0 |  |  | 0.258 |  | 1 | final-layer rank agreement 0.258 < 0.3 |
-| jlens | 11 | 0 |  |  | 0.358 |  | 0 |  |
-| jlens | 15 | 0 |  |  | 0.352 |  | 0 |  |
-| jlens | 19 | 0 |  |  | 0.534 |  | 0 |  |
-| jlens | 23 | 0 |  |  | 1.000 |  | 0 |  |
+| clens | -1 | 0 |  |  | 0.163 |  | 1 | final-layer rank agreement 0.163 < 0.3 |
+| clens | 0 | 0 |  |  | 0.314 |  | 0 |  |
+| clens | 3 | 0 |  |  | 0.281 |  | 1 | final-layer rank agreement 0.281 < 0.3 |
+| clens | 7 | 0 |  |  | 0.258 |  | 1 | final-layer rank agreement 0.258 < 0.3 |
+| clens | 11 | 0 |  |  | 0.358 |  | 0 |  |
+| clens | 15 | 0 |  |  | 0.352 |  | 0 |  |
+| clens | 19 | 0 |  |  | 0.534 |  | 0 |  |
+| clens | 23 | 0 |  |  | 1.000 |  | 0 |  |
 | logit | -1 | 0 |  |  | 0.016 |  | 1 | final-layer rank agreement 0.016 < 0.3 |
 | logit | 0 | 0 |  |  | 0.162 |  | 1 | final-layer rank agreement 0.162 < 0.3 |
 | logit | 3 | 0 |  |  | 0.162 |  | 1 | final-layer rank agreement 0.162 < 0.3 |
@@ -204,14 +204,14 @@ A weak row does not invalidate its layer. It is the reason the verdict separates
 | random | 15 | 1 |  |  | 0.005 |  | 1 | final-layer rank agreement 0.005 < 0.3 |
 | random | 19 | 1 |  |  | 0.008 |  | 1 | final-layer rank agreement 0.008 < 0.3 |
 | random | 23 | 1 |  |  | 0.026 |  | 1 | final-layer rank agreement 0.026 < 0.3 |
-| rlens | -1 | 0 |  |  | -0.148 | 1.001 | 1 | final-layer rank agreement -0.148 < 0.3 |
-| rlens | 0 | 0 |  |  | -0.067 | 1.001 | 1 | final-layer rank agreement -0.067 < 0.3 |
-| rlens | 3 | 0 |  |  | 0.104 | 1.001 | 1 | final-layer rank agreement 0.104 < 0.3 |
-| rlens | 7 | 0 |  |  | 0.309 | 1.000 | 0 |  |
-| rlens | 11 | 0 |  |  | 0.472 | 1.000 | 0 |  |
-| rlens | 15 | 0 |  |  | 0.623 | 1.000 | 0 |  |
-| rlens | 19 | 0 |  |  | 0.780 | 1.000 | 0 |  |
-| rlens | 23 | 0 |  |  | 1.000 | 1.000 | 0 |  |
+| clrp | -1 | 0 |  |  | -0.148 | 1.001 | 1 | final-layer rank agreement -0.148 < 0.3 |
+| clrp | 0 | 0 |  |  | -0.067 | 1.001 | 1 | final-layer rank agreement -0.067 < 0.3 |
+| clrp | 3 | 0 |  |  | 0.104 | 1.001 | 1 | final-layer rank agreement 0.104 < 0.3 |
+| clrp | 7 | 0 |  |  | 0.309 | 1.000 | 0 |  |
+| clrp | 11 | 0 |  |  | 0.472 | 1.000 | 0 |  |
+| clrp | 15 | 0 |  |  | 0.623 | 1.000 | 0 |  |
+| clrp | 19 | 0 |  |  | 0.780 | 1.000 | 0 |  |
+| clrp | 23 | 0 |  |  | 1.000 | 1.000 | 0 |  |
 
 ### Controls at the reported cell
 
@@ -219,23 +219,23 @@ A weak row does not invalidate its layer. It is the reason the verdict separates
 
 | arm | lens | mean_delta_contrast_z | sign_consistency_z | permutation_p | n_pairs |
 |---|---|---|---|---|---|
-| mismatched_pairs | jlens | -0.256 | 0.250 | 0.000 | 72 |
+| mismatched_pairs | clens | -0.256 | 0.250 | 0.000 | 72 |
 | mismatched_pairs | logit | -0.402 | 0.153 | 0.000 | 72 |
-| mismatched_pairs | rlens | -0.289 | 0.167 | 0.000 | 72 |
-| same_label_unsafe | jlens | -0.002 | 0.472 | 0.942 | 72 |
+| mismatched_pairs | clrp | -0.289 | 0.167 | 0.000 | 72 |
+| same_label_unsafe | clens | -0.002 | 0.472 | 0.942 | 72 |
 | same_label_unsafe | logit | -0.010 | 0.472 | 0.802 | 72 |
-| same_label_unsafe | rlens | 0.004 | 0.458 | 0.912 | 72 |
-| same_label_safe | jlens | 0.011 | 0.458 | 0.778 | 72 |
+| same_label_unsafe | clrp | 0.004 | 0.458 | 0.912 | 72 |
+| same_label_safe | clens | 0.011 | 0.458 | 0.778 | 72 |
 | same_label_safe | logit | 0.031 | 0.528 | 0.566 | 72 |
-| same_label_safe | rlens | 0.015 | 0.528 | 0.654 | 72 |
+| same_label_safe | clrp | 0.015 | 0.528 | 0.654 | 72 |
 | random_lens | random | -0.278 | 0.347 | 0.000 | 72 |
 | gram_random_lens | gram_random | 0.327 | 0.667 | 0.000 | 72 |
-| role_swap_0 | jlens | -0.215 | 0.351 | 0.002 | 37 |
+| role_swap_0 | clens | -0.215 | 0.351 | 0.002 | 37 |
 | role_swap_0 | logit | -0.390 | 0.189 | 0.000 | 37 |
-| role_swap_0 | rlens | -0.273 | 0.216 | 0.000 | 37 |
-| role_swap_1 | jlens | -0.324 | 0.114 | 0.000 | 35 |
+| role_swap_0 | clrp | -0.273 | 0.216 | 0.000 | 37 |
+| role_swap_1 | clens | -0.324 | 0.114 | 0.000 | 35 |
 | role_swap_1 | logit | -0.478 | 0.200 | 0.000 | 35 |
-| role_swap_1 | rlens | -0.337 | 0.086 | 0.000 | 35 |
+| role_swap_1 | clrp | -0.337 | 0.086 | 0.000 | 35 |
 
 ### Concept tokens at the reported cell
 

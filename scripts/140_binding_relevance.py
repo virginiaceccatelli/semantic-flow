@@ -134,7 +134,7 @@ def main(
     )
     from src.experiments.sinkflow_vocab import homogenising_rules_bound, lrp_rule_counts
     from src.experiments.store_gates import BINDING, GateFailure, record_gate, require_gates
-    from src.models.lens import (
+    from src.models.cotangent_lens import (
         assert_readable_weights, freeze_parameters, last_layer_index)
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
@@ -223,7 +223,7 @@ def main(
     # ── the validity condition, checked BEFORE any number is produced ────────
     if not homogenising_rules_bound(counts) and not override_gate:
         console.print(
-            f"[red]GATE rlens_rules_bound FAILED\n"
+            f"[red]GATE clrp_rules_bound FAILED\n"
             f"  expected: the RMSNorm rule or the gated-MLP rule binds to at "
             f"least one module, so relevance conserves and the fractions are a "
             f"partition\n"

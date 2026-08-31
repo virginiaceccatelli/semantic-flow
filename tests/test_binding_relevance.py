@@ -618,7 +618,7 @@ def test_h6_passes_on_a_null_redistribution(records):
 
 def test_h6_refuses_an_architecture_where_the_rules_never_installed(records):
     violations = _h6(records, lrp_counts={"ln": 0, "mlp": 0, "attn": 32})
-    assert any(v.gate == "rlens_rules_bound" for v in violations)
+    assert any(v.gate == "clrp_rules_bound" for v in violations)
 
 
 def test_h6_refuses_roles_that_do_not_partition(records):
@@ -718,7 +718,7 @@ def test_a_fully_materialised_model_passes_the_preflight():
     torch = pytest.importorskip("torch")
     from transformers import LlamaConfig, LlamaForCausalLM
 
-    from src.models.lens import assert_readable_weights, unreadable_parameters
+    from src.models.cotangent_lens import assert_readable_weights, unreadable_parameters
 
     model = LlamaForCausalLM(LlamaConfig(
         vocab_size=32, hidden_size=16, intermediate_size=32, num_hidden_layers=1,
@@ -737,7 +737,7 @@ def test_an_offloaded_tail_is_refused_and_the_message_names_the_fix():
     torch = pytest.importorskip("torch")
     from transformers import LlamaConfig, LlamaForCausalLM
 
-    from src.models.lens import assert_readable_weights, unreadable_parameters
+    from src.models.cotangent_lens import assert_readable_weights, unreadable_parameters
 
     model = LlamaForCausalLM(LlamaConfig(
         vocab_size=32, hidden_size=16, intermediate_size=32, num_hidden_layers=1,
@@ -759,7 +759,7 @@ def test_a_parameter_on_cpu_is_not_reported_as_unreadable():
     torch = pytest.importorskip("torch")
     from transformers import LlamaConfig, LlamaForCausalLM
 
-    from src.models.lens import unreadable_parameters
+    from src.models.cotangent_lens import unreadable_parameters
 
     model = LlamaForCausalLM(LlamaConfig(
         vocab_size=32, hidden_size=16, intermediate_size=32, num_hidden_layers=1,

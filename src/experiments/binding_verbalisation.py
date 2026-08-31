@@ -991,7 +991,7 @@ def verbal_full_vocab_deltas(
     import torch
 
     from src.experiments.sinkflow_vocab import _free_device_memory, _output_vocab_size
-    from src.models.lens import _candidate_cotangents
+    from src.models.cotangent_lens import _candidate_cotangents
 
     device = next(model.parameters()).device
     vocab_size = int(_output_vocab_size(model))
@@ -1184,11 +1184,11 @@ def build_logit_lens(model, candidates: "VerbalCandidates"):
     """ONE logit lens over the frozen candidate set, for every layer.
 
     Deliberately one object and not one per layer: the logit lens is
-    `g * W_U[w]`, which has no layer dependence at all — `JLens.layer` is
+    `g * W_U[w]`, which has no layer dependence at all — `CotangentLens.layer` is
     metadata here. Building it per layer would gather the same rows out of a
     (32256, 4096) unembedding once per layer for identical output.
     """
-    from src.models.lens import logit_lens
+    from src.models.cotangent_lens import logit_lens
 
     return logit_lens(model, layer=-1, token_ids=candidates.token_ids,
                       token_strings=candidates.token_strings)
@@ -1503,7 +1503,7 @@ def pole_cotangents(model, tokenizer, question: VerbalQuestion):
     per-base build would gather the same two rows out of the unembedding four
     hundred times. Returns None when the question's choices are unscoreable.
     """
-    from src.models.lens import _candidate_cotangents
+    from src.models.cotangent_lens import _candidate_cotangents
 
     if question.kind != "word":
         raise ValueError("only word questions have pole cotangents; the value "
@@ -1547,7 +1547,7 @@ def record_verbal_relevance(
     from src.data.alignment import compute_offsets
     from src.data.counterfactual_pairs import encode_prompt
     from src.experiments.binding_relevance import RelevanceReading
-    from src.models.lens import LensSample, relevance_by_position
+    from src.models.cotangent_lens import LensSample, relevance_by_position
 
     readings: list = []
     problems: list[str] = []
@@ -2102,7 +2102,7 @@ def h9_verbal_relevance_checks(
         violations.append(GateViolation(gate, expected, observed, list(offenders), rerun))
 
     if not homogenising_rules_bound(lrp_counts or {}):
-        fail("rlens_rules_bound",
+        fail("clrp_rules_bound",
              "the RMSNorm rule or the gated-MLP rule binds to at least one "
              "module, so relevance conserves and the fractions are a partition",
              f"ln={(lrp_counts or {}).get('ln', 0)}, "

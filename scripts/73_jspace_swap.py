@@ -68,7 +68,7 @@ def main(
         run_jspace_swap,
         verify_noop,
     )
-    from src.models.lens import freeze_parameters
+    from src.models.cotangent_lens import freeze_parameters
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
 
@@ -123,10 +123,10 @@ def main(
         contrasts.to_csv(Path(output) / "jspace_swap_contrasts.csv", index=False)
         console.print("\n[bold]paired contrasts at the marked use (test split)[/bold]")
         console.print(contrasts[["contrast", "delta", "ci_lo", "ci_hi",
-                                 "jlens_exceeds_control"]].to_string(index=False))
+                                 "clens_exceeds_control"]].to_string(index=False))
 
     head = summary[(summary.split == "test") & (summary.position == "use")
-                   & (summary.variant == "jlens_value")]
+                   & (summary.variant == "clens_value")]
     if not head.empty:
         console.print("\n[bold]J-lens value swap at the marked use (test)[/bold]")
         console.print(head[["site", "delta_ld", "ci_lo", "ci_hi", "flip_rate",

@@ -282,7 +282,7 @@ def test_j4_refuses_an_architecture_where_the_rules_never_installed():
     frame, pairs, summary = _gate_frames()
     violations = j4_relevance_checks(frame, pairs, summary, UNBOUND, layers=[3],
                                      conditions=["clean_heldout"], role_problems=[])
-    assert "rlens_rules_bound" in {v.gate for v in violations}
+    assert "clrp_rules_bound" in {v.gate for v in violations}
 
 
 def test_j4_refuses_roles_that_do_not_partition():

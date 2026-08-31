@@ -98,46 +98,46 @@ If concentration is high over the full vocabulary and low inside the pool, the p
 
 | lens | arm | layer | site | n_candidates | sv1_share | sv1_floor | mean_pairwise_cosine |
 |---|---|---|---|---|---|---|---|
-| jlens | main | -1 | sink_arg | 196 | 0.3415 | 0.0556 | -0.0392 |
-| jlens | same_label_unsafe | -1 | sink_arg | 196 | 0.4526 | 0.0233 | -0.0232 |
-| jlens | same_label_safe | -1 | sink_arg | 196 | 0.4352 | 0.0233 | -0.0230 |
-| jlens | main | -1 | last_token | 196 |  |  |  |
-| jlens | same_label_unsafe | -1 | last_token | 196 |  |  |  |
-| jlens | same_label_safe | -1 | last_token | 196 |  |  |  |
-| jlens | main | 0 | sink_arg | 196 | 0.2878 | 0.0139 | 0.0021 |
-| jlens | same_label_unsafe | 0 | sink_arg | 196 | 0.2994 | 0.0139 | -0.0118 |
-| jlens | same_label_safe | 0 | sink_arg | 196 | 0.2813 | 0.0139 | -0.0092 |
-| jlens | main | 0 | last_token | 196 | 0.4439 | 0.0139 | 0.0044 |
-| jlens | same_label_unsafe | 0 | last_token | 196 | 0.4047 | 0.0139 | -0.0119 |
-| jlens | same_label_safe | 0 | last_token | 196 | 0.4046 | 0.0139 | -0.0119 |
-| jlens | main | 3 | sink_arg | 196 | 0.1904 | 0.0139 | 0.0182 |
-| jlens | same_label_unsafe | 3 | sink_arg | 196 | 0.2411 | 0.0139 | -0.0117 |
-| jlens | same_label_safe | 3 | sink_arg | 196 | 0.2360 | 0.0139 | -0.0120 |
-| jlens | main | 3 | last_token | 196 | 0.2214 | 0.0139 | 0.0017 |
-| jlens | same_label_unsafe | 3 | last_token | 196 | 0.3256 | 0.0139 | -0.0137 |
-| jlens | same_label_safe | 3 | last_token | 196 | 0.3334 | 0.0139 | -0.0136 |
-| jlens | main | 7 | sink_arg | 196 | 0.2544 | 0.0139 | 0.1540 |
-| jlens | same_label_unsafe | 7 | sink_arg | 196 | 0.2685 | 0.0139 | -0.0129 |
-| jlens | same_label_safe | 7 | sink_arg | 196 | 0.2592 | 0.0139 | -0.0126 |
-| jlens | main | 7 | last_token | 196 | 0.2666 | 0.0139 | 0.1662 |
-| jlens | same_label_unsafe | 7 | last_token | 196 | 0.3410 | 0.0139 | -0.0137 |
-| jlens | same_label_safe | 7 | last_token | 196 | 0.3324 | 0.0139 | -0.0136 |
-| jlens | main | 11 | sink_arg | 196 | 0.4449 | 0.0139 | 0.4094 |
-| jlens | same_label_unsafe | 11 | sink_arg | 196 | 0.2298 | 0.0139 | -0.0132 |
-| jlens | same_label_safe | 11 | sink_arg | 196 | 0.2500 | 0.0139 | -0.0131 |
-| jlens | main | 11 | last_token | 196 | 0.2104 | 0.0139 | 0.1629 |
-| jlens | same_label_unsafe | 11 | last_token | 196 | 0.2675 | 0.0139 | -0.0137 |
-| jlens | same_label_safe | 11 | last_token | 196 | 0.2731 | 0.0139 | -0.0136 |
-| jlens | main | 15 | sink_arg | 196 | 0.4881 | 0.0139 | 0.4552 |
-| jlens | same_label_unsafe | 15 | sink_arg | 196 | 0.2204 | 0.0139 | -0.0135 |
-| jlens | same_label_safe | 15 | sink_arg | 196 | 0.1955 | 0.0139 | -0.0135 |
-| jlens | main | 15 | last_token | 196 | 0.2246 | 0.0139 | 0.1489 |
-| jlens | same_label_unsafe | 15 | last_token | 196 | 0.2824 | 0.0139 | -0.0136 |
-| jlens | same_label_safe | 15 | last_token | 196 | 0.2621 | 0.0139 | -0.0137 |
-| jlens | main | 19 | sink_arg | 196 | 0.3976 | 0.0139 | 0.3576 |
-| jlens | same_label_unsafe | 19 | sink_arg | 196 | 0.2025 | 0.0139 | -0.0134 |
-| jlens | same_label_safe | 19 | sink_arg | 196 | 0.1930 | 0.0139 | -0.0136 |
-| jlens | main | 19 | last_token | 196 | 0.2654 | 0.0139 | 0.1217 |
+| clens | main | -1 | sink_arg | 196 | 0.3415 | 0.0556 | -0.0392 |
+| clens | same_label_unsafe | -1 | sink_arg | 196 | 0.4526 | 0.0233 | -0.0232 |
+| clens | same_label_safe | -1 | sink_arg | 196 | 0.4352 | 0.0233 | -0.0230 |
+| clens | main | -1 | last_token | 196 |  |  |  |
+| clens | same_label_unsafe | -1 | last_token | 196 |  |  |  |
+| clens | same_label_safe | -1 | last_token | 196 |  |  |  |
+| clens | main | 0 | sink_arg | 196 | 0.2878 | 0.0139 | 0.0021 |
+| clens | same_label_unsafe | 0 | sink_arg | 196 | 0.2994 | 0.0139 | -0.0118 |
+| clens | same_label_safe | 0 | sink_arg | 196 | 0.2813 | 0.0139 | -0.0092 |
+| clens | main | 0 | last_token | 196 | 0.4439 | 0.0139 | 0.0044 |
+| clens | same_label_unsafe | 0 | last_token | 196 | 0.4047 | 0.0139 | -0.0119 |
+| clens | same_label_safe | 0 | last_token | 196 | 0.4046 | 0.0139 | -0.0119 |
+| clens | main | 3 | sink_arg | 196 | 0.1904 | 0.0139 | 0.0182 |
+| clens | same_label_unsafe | 3 | sink_arg | 196 | 0.2411 | 0.0139 | -0.0117 |
+| clens | same_label_safe | 3 | sink_arg | 196 | 0.2360 | 0.0139 | -0.0120 |
+| clens | main | 3 | last_token | 196 | 0.2214 | 0.0139 | 0.0017 |
+| clens | same_label_unsafe | 3 | last_token | 196 | 0.3256 | 0.0139 | -0.0137 |
+| clens | same_label_safe | 3 | last_token | 196 | 0.3334 | 0.0139 | -0.0136 |
+| clens | main | 7 | sink_arg | 196 | 0.2544 | 0.0139 | 0.1540 |
+| clens | same_label_unsafe | 7 | sink_arg | 196 | 0.2685 | 0.0139 | -0.0129 |
+| clens | same_label_safe | 7 | sink_arg | 196 | 0.2592 | 0.0139 | -0.0126 |
+| clens | main | 7 | last_token | 196 | 0.2666 | 0.0139 | 0.1662 |
+| clens | same_label_unsafe | 7 | last_token | 196 | 0.3410 | 0.0139 | -0.0137 |
+| clens | same_label_safe | 7 | last_token | 196 | 0.3324 | 0.0139 | -0.0136 |
+| clens | main | 11 | sink_arg | 196 | 0.4449 | 0.0139 | 0.4094 |
+| clens | same_label_unsafe | 11 | sink_arg | 196 | 0.2298 | 0.0139 | -0.0132 |
+| clens | same_label_safe | 11 | sink_arg | 196 | 0.2500 | 0.0139 | -0.0131 |
+| clens | main | 11 | last_token | 196 | 0.2104 | 0.0139 | 0.1629 |
+| clens | same_label_unsafe | 11 | last_token | 196 | 0.2675 | 0.0139 | -0.0137 |
+| clens | same_label_safe | 11 | last_token | 196 | 0.2731 | 0.0139 | -0.0136 |
+| clens | main | 15 | sink_arg | 196 | 0.4881 | 0.0139 | 0.4552 |
+| clens | same_label_unsafe | 15 | sink_arg | 196 | 0.2204 | 0.0139 | -0.0135 |
+| clens | same_label_safe | 15 | sink_arg | 196 | 0.1955 | 0.0139 | -0.0135 |
+| clens | main | 15 | last_token | 196 | 0.2246 | 0.0139 | 0.1489 |
+| clens | same_label_unsafe | 15 | last_token | 196 | 0.2824 | 0.0139 | -0.0136 |
+| clens | same_label_safe | 15 | last_token | 196 | 0.2621 | 0.0139 | -0.0137 |
+| clens | main | 19 | sink_arg | 196 | 0.3976 | 0.0139 | 0.3576 |
+| clens | same_label_unsafe | 19 | sink_arg | 196 | 0.2025 | 0.0139 | -0.0134 |
+| clens | same_label_safe | 19 | sink_arg | 196 | 0.1930 | 0.0139 | -0.0136 |
+| clens | main | 19 | last_token | 196 | 0.2654 | 0.0139 | 0.1217 |
 
 ---
 
@@ -145,7 +145,7 @@ If concentration is high over the full vocabulary and low inside the pool, the p
 
 **Verdict.** MACHINERY VALIDATED — the model answers the forced choice, the identical readout detects it, and the security contrast at the same cell does not replicate.
 
-Prompt style `sink`, lens `rlens`, condition `clean_heldout`, layer 19 — chosen as the layer that best detects the TAINT property, with the security contrast then read at that same cell.
+Prompt style `sink`, lens `clrp`, condition `clean_heldout`, layer 19 — chosen as the layer that best detects the TAINT property, with the security contrast then read at that same cell.
 
 | check | holds |
 |---|---|

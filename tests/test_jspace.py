@@ -46,7 +46,7 @@ from src.models.jspace import (
     swap_matrix,
     swap_report,
 )
-from src.models.lens import JLens, gram_matched_random, gram_matched_random_lens
+from src.models.cotangent_lens import CotangentLens, gram_matched_random, gram_matched_random_lens
 from tests.fake_tokenizer import FakeCodeTokenizer, FakeDigitTokenizer
 
 
@@ -381,7 +381,7 @@ def test_gram_matched_control_preserves_norms_and_angles():
 
 def test_gram_matched_lens_keeps_the_candidate_vocabulary():
     rng = np.random.default_rng(2)
-    lens = JLens(vectors=rng.normal(size=(5, 16)), token_ids=[1, 2, 3, 4, 5],
+    lens = CotangentLens(vectors=rng.normal(size=(5, 16)), token_ids=[1, 2, 3, 4, 5],
                  token_strings=list("abcde"), layer=3)
     control = gram_matched_random_lens(lens, seed=4)
     assert control.kind == "gram_random"
@@ -540,7 +540,7 @@ def test_bootstrap_drops_non_finite_rows():
 
 @pytest.fixture
 def toy_setup(tmp_path, tokenizer):
-    from src.models.lens import lens_filename
+    from src.models.cotangent_lens import lens_filename
 
     torch.manual_seed(0)
     small = generate_counterfactual_pairs(tokenizer, n_bases=6, seed=11)
@@ -557,7 +557,7 @@ def toy_setup(tmp_path, tokenizer):
     rng = np.random.default_rng(0)
     for layer in (0, 1, 2):
         for kind in ("jspace", "jspace_logit", "jspace_gram_random"):
-            JLens(vectors=rng.normal(size=(len(ids), 8)), token_ids=ids,
+            CotangentLens(vectors=rng.normal(size=(len(ids), 8)), token_ids=ids,
                   token_strings=strings, layer=layer, kind=kind).save(
                       lens_dir / lens_filename(kind, layer))
     return small, model, lens_dir
@@ -577,7 +577,7 @@ def test_readout_stage_produces_a_complete_paired_table(toy_setup, tokenizer, tm
         output_dir=tmp_path / "readout", positions=["use", "answer"],
         n_boot=50, with_probe=True,
     )
-    assert set(df["lens"]) >= {"jlens", "logit", "gram_random"}
+    assert set(df["lens"]) >= {"clens", "logit", "gram_random"}
     assert set(df["variant"]) == {"source", "target"}
     # every example is reported, none dropped for being answered wrongly
     assert df["pair_id"].nunique() == len(small)
@@ -604,7 +604,7 @@ def test_readout_never_selects_its_layer_on_test_rows(toy_setup, tokenizer, tmp_
     calib_only = summary[summary.split == "calib"]
     chosen = select_layer(summary)
     if chosen is not None:
-        best_calib = calib_only[(calib_only.lens == "jlens")
+        best_calib = calib_only[(calib_only.lens == "clens")
                                 & (calib_only.subset == "all")
                                 & (calib_only.position == "use")]
         # the selection must be reproducible from calibration rows alone, on
@@ -645,8 +645,8 @@ def test_swap_stage_runs_every_control_and_the_no_op_is_inert(toy_setup, tokeniz
 
     contrasts = control_contrasts(summary, df, split="test", position="use", n_boot=50)
     assert set(contrasts["contrast"]) == {
-        f"jlens_value - {v}" for v in SWAP_VARIANTS
-        if v not in ("jlens_value", "probe_basis")}
+        f"clens_value - {v}" for v in SWAP_VARIANTS
+        if v not in ("clens_value", "probe_basis")}
 
 
 def test_the_two_structural_zeros_hold(toy_setup, tokenizer, tmp_path):
@@ -692,7 +692,7 @@ def _stage90(tmp_path):
 def test_variant_default_comes_from_the_module_not_the_cli():
     """A stale CLI copy silently drops newly added controls — it did once.
 
-    `jlens_offvalue` was added to SWAP_VARIANTS while stage 73's `--variants`
+    `clens_offvalue` was added to SWAP_VARIANTS while stage 73's `--variants`
     default still listed the previous six, so a full GPU re-run reproduced the
     old grid exactly and the new control never executed. The default must be
     derived, and the script must not carry its own list.
@@ -702,10 +702,10 @@ def test_variant_default_comes_from_the_module_not_the_cli():
     from src.experiments.jspace_swap import SWAP_VARIANTS, resolve_variants
 
     assert resolve_variants(None) == list(SWAP_VARIANTS)
-    assert "jlens_offvalue" in resolve_variants(None)
-    assert resolve_variants("jlens_value,gram_random") == ["jlens_value", "gram_random"]
+    assert "clens_offvalue" in resolve_variants(None)
+    assert resolve_variants("clens_value,gram_random") == ["clens_value", "gram_random"]
     with pytest.raises(ValueError, match="Unknown swap variant"):
-        resolve_variants("jlens_value,not_a_variant")
+        resolve_variants("clens_value,not_a_variant")
 
     source = (_Path(__file__).parent.parent / "scripts"
               / "73_jspace_swap.py").read_text()
@@ -758,10 +758,10 @@ def test_probe_basis_directions_undo_the_scaler():
 def test_offvalue_control_uses_digits_the_program_never_mentions():
     """The digit-geometry control: same separation, values not in the program."""
     from src.experiments.jspace_swap import _offvalue_pair
-    from src.models.lens import lens_filename  # noqa: F401  (import sanity)
+    from src.models.cotangent_lens import lens_filename  # noqa: F401  (import sanity)
 
     rng = np.random.default_rng(0)
-    lens = JLens(vectors=rng.normal(size=(10, 8)), token_ids=list(range(100, 110)),
+    lens = CotangentLens(vectors=rng.normal(size=(10, 8)), token_ids=list(range(100, 110)),
                  token_strings=[str(d) for d in range(10)], layer=0)
     pair = types.SimpleNamespace(pair_id="base_0001_affine", v_source=2,
                                  v_target=5, answer_source=4, answer_target=7)
@@ -830,9 +830,9 @@ def test_layer_selection_defaults_to_a_scale_free_metric():
 
     assert SELECT_METRIC == "reversal_rate"
     summary = pd.DataFrame([
-        {"split": "calib", "subset": "all", "position": "use", "lens": "jlens",
+        {"split": "calib", "subset": "all", "position": "use", "lens": "clens",
          "layer": 4, "reversal_rate": 0.40, "paired_gap": 0.01},
-        {"split": "calib", "subset": "all", "position": "use", "lens": "jlens",
+        {"split": "calib", "subset": "all", "position": "use", "lens": "clens",
          "layer": 31, "reversal_rate": 0.10, "paired_gap": 0.90},
     ])
     assert select_layer(summary) == 4
@@ -880,7 +880,7 @@ def test_stage90_renders_the_e11_figures(tmp_path):
          "paired_gap": 0.2, "paired_gap_ci_lo": 0.1, "paired_gap_ci_hi": 0.3,
          "n_pairs": 20}
         for s in ("calib", "test") for L in (0, 6)
-        for k in ("jlens", "logit", "gram_random", "probe")
+        for k in ("clens", "logit", "gram_random", "probe")
     ]).to_csv(readout, index=False)
     mod._jspace_readout_assets(readout)
     assert (tmp_path / "jspace_readout_reversal_M.png").exists()
@@ -893,8 +893,8 @@ def test_stage90_renders_the_e11_figures(tmp_path):
          "n_rows": 40, "n_bases": 20, "flip_rate": 0.2,
          "moves_toward_target": True, "mean_delta_norm_ratio": 0.05}
         for p in ("use", "pre_def") for L in (0, 6)
-        for v in ("jlens_value", "logit_value", "gram_random",
-                  "noop_same_value", "jlens_answer", "whole_state")
+        for v in ("clens_value", "logit_value", "gram_random",
+                  "noop_same_value", "clens_answer", "whole_state")
     ]).to_csv(swap, index=False)
     mod._jspace_swap_assets(swap)
     assert (tmp_path / "jspace_swap_use_M.png").exists()
@@ -903,7 +903,7 @@ def test_stage90_renders_the_e11_figures(tmp_path):
     by_op = tmp_path / "jspace_swap_by_operation_M.csv"
     pd.DataFrame([{
         "split": "test", "position": "use", "site_kind": "single", "site": "L6",
-        "variant": "jlens_value", "n_families": 2, "min_family_delta": 0.1,
+        "variant": "clens_value", "n_families": 2, "min_family_delta": 0.1,
         "max_family_delta": 0.4, "all_families_positive": True,
         "all_families_ci_positive": True, "delta_affine": 0.4,
         "ci_lo_affine": 0.2, "delta_threshold": 0.1, "ci_lo_threshold": 0.05,
@@ -923,10 +923,10 @@ def test_stage90_skips_archived_experiments_by_default():
     spec.loader.exec_module(mod)
     archived, owners = mod.archived_prefixes()
     assert "behavioral_leadtime_" in archived        # E6
-    assert "jlens_taint_" in archived                # E10-2
-    assert "jlens_controldep_" in archived           # E10-3
+    assert "clens_taint_" in archived                # E10-2
+    assert "clens_controldep_" in archived           # E10-3
     assert "static_probes_" not in archived          # E2/E3 foundation
-    assert "jlens_validation_" not in archived       # E10-0 instrument check
+    assert "clens_validation_" not in archived       # E10-0 instrument check
     assert "jspace_readout_" not in archived         # E11 is active
     assert owners["static_probes_"] in {"E1", "E2", "E3", "E4", "E8"}
 

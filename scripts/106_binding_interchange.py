@@ -101,7 +101,7 @@ def main(
     from src.experiments.store_gates import BINDING, GateFailure, load_gates, record_gate, require_gates
     from src.models.das import (AlignmentExample, learn_alignment,
                                 mean_difference_subspace)
-    from src.models.lens import LensSample, compute_lens_vectors, get_output_unembedding
+    from src.models.cotangent_lens import LensSample, compute_lens_vectors, get_output_unembedding
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
 

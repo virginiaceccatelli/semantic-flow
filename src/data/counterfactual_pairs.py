@@ -395,7 +395,7 @@ def _single_token_id(tokenizer, text: str) -> Optional[int]:
 def number_token(tokenizer, value: int) -> Optional[tuple[int, str]]:
     """(id, spelling) for a number that is one token, space-prefixed if possible.
 
-    Same policy as `jlens_validate.single_token_candidates`, and it has to
+    Same policy as `clens_validate.single_token_candidates`, and it has to
     stay the same: that function builds the lens's candidate rows, and a pair
     whose value token is not one of those rows cannot be ranked or swapped.
     Byte-BPE tokenizers differ on which form is atomic — deepseek-coder emits

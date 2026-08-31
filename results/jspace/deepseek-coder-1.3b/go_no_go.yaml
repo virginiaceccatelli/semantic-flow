@@ -13,13 +13,13 @@ readout_contrasts:
   subset: all
   position: use
   layer: 23
-  contrast: jlens - gram_random
+  contrast: clens - gram_random
   accuracy_delta: -0.014285714285714285
   accuracy_ci_lo: -0.04285714285714286
   accuracy_ci_hi: 0.014285714285714285
   n_rows: 280
   n_bases: 70
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
   reversal_delta: -0.02142857142857143
   reversal_ci_lo: -0.07142857142857142
   reversal_ci_hi: 0.02142857142857143
@@ -27,13 +27,13 @@ readout_contrasts:
   subset: all
   position: use
   layer: 23
-  contrast: jlens - logit
+  contrast: clens - logit
   accuracy_delta: 0.0
   accuracy_ci_lo: 0.0
   accuracy_ci_hi: 0.0
   n_rows: 280
   n_bases: 70
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
   reversal_delta: 0.0
   reversal_ci_lo: 0.0
   reversal_ci_hi: 0.0
@@ -41,13 +41,13 @@ readout_contrasts:
   subset: all
   position: use
   layer: 23
-  contrast: jlens - probe
+  contrast: clens - probe
   accuracy_delta: -0.5035714285714286
   accuracy_ci_lo: -0.5178571428571429
   accuracy_ci_hi: -0.48928571428571427
   n_rows: 280
   n_bases: 70
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
   reversal_delta: -0.9857142857142858
   reversal_ci_lo: -1.0
   reversal_ci_hi: -0.9642857142857143
@@ -56,53 +56,53 @@ swap_contrasts:
 - split: test
   position: use
   site: L6
-  contrast: jlens_value - logit_value
+  contrast: clens_value - logit_value
   delta: 0.004575895624501363
   ci_lo: 0.0017857226782611445
   ci_hi: 0.007589279631418838
   n_rows: 280
   n_bases: 70
-  jlens_exceeds_control: true
+  clens_exceeds_control: true
 - split: test
   position: use
   site: L6
-  contrast: jlens_value - gram_random
+  contrast: clens_value - gram_random
   delta: 0.0029575910951410017
   ci_lo: -5.57959904628121e-05
   ci_hi: 0.005970979245113473
   n_rows: 280
   n_bases: 70
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
 - split: test
   position: use
   site: L6
-  contrast: jlens_value - noop_same_value
+  contrast: clens_value - noop_same_value
   delta: 0.002343749574252537
   ci_lo: -0.0006138412228652393
   ci_hi: 0.00535714330417769
   n_rows: 280
   n_bases: 70
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
 - split: test
   position: use
   site: L6
-  contrast: jlens_value - jlens_answer
+  contrast: clens_value - clens_answer
   delta: 0.0025669647114617486
   ci_lo: -0.0008370531510029517
   ci_hi: 0.006138388493231362
   n_rows: 280
   n_bases: 70
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
 - split: test
   position: use
   site: L6
-  contrast: jlens_value - whole_state
+  contrast: clens_value - whole_state
   delta: -0.20563615752117975
   ci_lo: -0.29046177329229456
   ci_hi: -0.12873604297637942
   n_rows: 280
   n_bases: 70
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
 cross_operation:
   n_families: 2
   min_family_delta: 0.0011160714285714

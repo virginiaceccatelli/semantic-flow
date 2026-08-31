@@ -111,7 +111,7 @@ def main(
         collect_pair_states,
     )
     from src.experiments.store_gates import SINKFLOW, GateFailure, record_gate, require_gates
-    from src.models.lens import _candidate_cotangents, freeze_parameters, lens_filename
+    from src.models.cotangent_lens import _candidate_cotangents, freeze_parameters, lens_filename
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import git_sha, write_manifest
 
@@ -284,16 +284,16 @@ def main(
     # ── 4. the same statistic inside E15-C's frozen 196-token basis ──────────
     restricted_frame = pd.DataFrame()
     if restricted:
-        from src.models.lens import JLens
+        from src.models.cotangent_lens import CotangentLens
 
         lens_dir = root / "vocab" / "lenses"
-        lenses: dict[str, dict[int, JLens]] = {}
+        lenses: dict[str, dict[int, CotangentLens]] = {}
         for kind in LENS_KINDS:
             by_layer = {}
             for layer in layer_list:
                 path = lens_dir / lens_filename(kind, layer)
                 if path.exists():
-                    by_layer[layer] = JLens.load(path)
+                    by_layer[layer] = CotangentLens.load(path)
             if by_layer:
                 lenses[kind] = by_layer
         if lenses:

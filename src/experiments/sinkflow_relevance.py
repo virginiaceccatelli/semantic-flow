@@ -22,7 +22,7 @@ members, any difference between them is a genuine REDISTRIBUTION rather than a
 change of scale.
 
 This is the property the vocabulary readout never had. E15-C's z-score
-convention exists precisely because `JLens.scores` drops an unknown positive
+convention exists precisely because `CotangentLens.scores` drops an unknown positive
 factor; here there is nothing to drop, because conservation fixes the total.
 
 ## Positions are aggregated by AST ROLE, not by index
@@ -302,12 +302,12 @@ def role_relevance(
 
     One backward pass per (layer, target). The readout position is the last
     token of the program — the position whose final state produces the next
-    token, and the same convention `jlens_validate` uses for a next-token claim.
+    token, and the same convention `clens_validate` uses for a next-token claim.
     """
     import torch
 
     from src.data.alignment import compute_offsets
-    from src.models.lens import LensSample, _candidate_cotangents, relevance_by_position
+    from src.models.cotangent_lens import LensSample, _candidate_cotangents, relevance_by_position
 
     device = next(model.parameters()).device
     encoded = tokenizer(program.source, return_tensors="pt", truncation=True,
@@ -562,7 +562,7 @@ def j4_relevance_checks(
         violations.append(GateViolation(gate, expected, observed, list(offenders), rerun))
 
     if not homogenising_rules_bound(lrp_counts or {}):
-        fail("rlens_rules_bound",
+        fail("clrp_rules_bound",
              "the RMSNorm rule or the gated-MLP rule binds to at least one "
              "module, so relevance conserves and the fractions are a partition",
              f"ln={(lrp_counts or {}).get('ln', 0)}, "

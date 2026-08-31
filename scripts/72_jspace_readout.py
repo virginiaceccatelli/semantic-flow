@@ -59,7 +59,7 @@ def main(
         run_jspace_readout,
         select_layer,
     )
-    from src.models.lens import freeze_parameters
+    from src.models.cotangent_lens import freeze_parameters
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
 
@@ -93,8 +93,8 @@ def main(
 
     # The layer is chosen on CALIBRATION rows only and recorded here, so the
     # test number quoted anywhere downstream is read at a pre-committed layer.
-    chosen = select_layer(summary, metric=select_metric, position="use", lens="jlens")
-    alternative = select_layer(summary, metric="paired_gap", position="use", lens="jlens")
+    chosen = select_layer(summary, metric=select_metric, position="use", lens="clens")
+    alternative = select_layer(summary, metric="paired_gap", position="use", lens="clens")
     console.print(f"\ncalibration-selected layer for the `use` position: {chosen} "
                   f"(by {select_metric}; `paired_gap` would give {alternative})")
     test_rows = summary[(summary.split == "test") & (summary.subset == "all")

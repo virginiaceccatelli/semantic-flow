@@ -22,8 +22,8 @@
 # See docs/RESULTS.md for what is currently supported and docs/ARCHIVE.md
 # for the retired interpretation and why each piece of it was retired.
 
-version: 4
-updated: 2026-08-28
+version: 5
+updated: 2026-08-31
 
 experiments:
 
@@ -157,12 +157,12 @@ experiments:
       fragility claim is available - or needed.
 
   E10-0:
-    name: J-lens implementation validation
+    name: cotangent lens implementation validation
     status: supporting
     stage: "60"
-    tables: [jlens_validation_]
+    tables: [clens_validation_]
     claim: >
-      The J-lens machinery is correct and transfers to code models: at the last
+      The cotangent lens machinery is correct and transfers to code models: at the last
       decoder layer it reproduces the logit lens exactly (V1), and next-token
       recovery beats a norm-matched floor (V2).
     note: >
@@ -170,10 +170,10 @@ experiments:
       part of the E10 track that survives.
 
   E14:
-    name: R-lens — a more faithful backward pass, and where it fails
+    name: conserving cotangent lens — a more faithful backward pass, and where it fails
     status: supporting
     stage: "110, and measured again inside 125"
-    tables: [rlens_r2_, vocab_lens_diagnostics_]
+    tables: [clrp_r2_, vocab_lens_diagnostics_]
     claim: >
       GATE R PASSES on both Llama-family models (stage 110). R0 forward invariance
       1.62e-06 (1.3b, float32) and 1.21e-03 (6.7b, float16) relative; R1
@@ -199,11 +199,11 @@ experiments:
       so both homogenising rules bind to NOTHING and only the attention hooks
       register, which satisfies lrp_rules' own strict check. Stage 110 raises when
       its no_attn arm removes the only rule that bound. The tell is its
-      rlens_r0_forward.csv reporting a forward delta of EXACTLY 0.0 - value-
+      clrp_r0_forward.csv reporting a forward delta of EXACTLY 0.0 - value-
       preserving rules still perturb float arithmetic, rules that never installed
-      do not. The starcoder2-3b artifact labelled "rlens" in E15-C is therefore
+      do not. The starcoder2-3b artifact labelled "clrp" in E15-C is therefore
       arithmetically a J-LENS and its 0.154 conservation is simply raw autograd.
-      J0 now REFUSES this case (gate rlens_rules_bound, added 2026-08-19); it did
+      J0 now REFUSES this case (gate clrp_rules_bound, added 2026-08-19); it did
       not when those runs were made, which is why the artifact exists.
       Stage 111 (the trajectory experiment) is still not built.
     next_steps: >
@@ -211,17 +211,17 @@ experiments:
       (float16) and starcoder2-3b (raises). AttnLRP is NOT the leverage: attention
       costs 0.30-0.51 while the gated-MLP rule carries 4.46. The open work is
       ARCHITECTURE GENERALITY - extending norm_eps_attr to LayerNorm and
-      is_gated_mlp to non-gated MLPs, which is what would make the R-lens usable on
+      is_gated_mlp to non-gated MLPs, which is what would make the conserving cotangent lens usable on
       starcoder2-3b at all. The LayerNorm half is the harder one: the
       mean-subtraction term is exactly what the current algebra assumes away.
       Stage 110 should also record a "not applicable" verdict for such
       architectures rather than raising. Full roadmap in docs/RESULTS.md.
     consequence: >
-      The R-lens is not simply "better" and usable everywhere: it is
-      architecture-dependent, and starcoder2-3b's R-lens numbers carry a fidelity
+      The conserving cotangent lens is not simply "better" and usable everywhere: it is
+      architecture-dependent, and starcoder2-3b's conserving cotangent lens numbers carry a fidelity
       caveat that no single-model claim should rest on, and E15-C's "three lenses
       agree" statement is for that model really two lenses measured three ways.
-      J0 now REFUSES this case (gate rlens_rules_bound, added 2026-08-19); it did
+      J0 now REFUSES this case (gate clrp_rules_bound, added 2026-08-19); it did
       not when those runs were made, which is why the artifact exists. This is
       also the case study for why lens fidelity is a NON-BLOCKING DIAGNOSTIC
       rather than a gate
@@ -237,7 +237,7 @@ experiments:
       WHAT THE INSTRUMENT BOUGHT: gate R is a precondition, not a result, and its
       only downstream product is E15-D's relevance routing (stage 130). As of
       2026-08-24 that has run on both models gate R passes on, and replicates —
-      so the R-lens has now paid for itself on exactly the two models where it is
+      so the conserving cotangent lens has now paid for itself on exactly the two models where it is
       valid, and on no others. See E15-D relevance_routing.
 
   E15:
@@ -338,10 +338,10 @@ experiments:
       dissociation against a readout that demonstrably fires (taint 0.889/0.944
       vs security 0.347/0.389). (3) BOUNDED SEARCH: the 196-token pool is selected
       by a full-vocabulary LOGIT-lens ranking, so a direction only the J- or
-      R-lens would surface, on a token outside the pool, cannot be discovered.
+      conserving cotangent lens would surface, on a token outside the pool, cannot be discovered.
       The original null, kept for the record: OBSERVATIONAL, AND A NULL. Mapping the same sink-site states into each
-      model's own vocabulary space through three readouts (logit lens, J-lens,
-      R-lens; R-lens declared primary in code before any result) finds NO stable
+      model's own vocabulary space through three readouts (logit lens, cotangent lens,
+      conserving cotangent lens; conserving cotangent lens declared primary in code before any result) finds NO stable
       security-vocabulary concept in any model. Held-out sign consistency of the
       security-lexicon contrast is 0.153 (1.3b), 0.403 (6.7b) and 0.694
       (starcoder2-3b) - not even directionally consistent, and 1.3b is
@@ -445,10 +445,10 @@ experiments:
          result, which is what they were built to do. Lens fidelity is a
          DIAGNOSTIC that never blocks - see diagnostics below."
     diagnostics_not_gates: >
-      R-lens relevance conservation is 1.0001 (1.3b) and 0.9993 (6.7b) - essentially
+      conserving cotangent lens relevance conservation is 1.0001 (1.3b) and 0.9993 (6.7b) - essentially
       exact - but 0.154 on starcoder2-3b, where the LRP rules NEVER INSTALLED
       (LayerNorm + non-gated MLP match neither homogenising rule), so that model's
-      "rlens" artifact is arithmetically a J-lens. J0 now refuses this case. Agreement
+      "clrp" artifact is arithmetically a cotangent lens. J0 now refuses this case. Agreement
       with the final-layer vocabulary distribution is 0.18-0.47 across lenses and
       models, below the 0.30 warning threshold in several cells. Next-token recovery
       is unmeasurable (n_eval = 0) because a 196-token candidate vocabulary rarely
@@ -470,7 +470,7 @@ experiments:
       relative_depth is a column on every row and all cross-model numbers are read
       at matched depth. The embedding control is one measurement rather than three.
       E15-C is observational and its candidate pool is logit-lens-selected, so a
-      direction only the J-lens or R-lens would surface, on a token outside the
+      direction only the cotangent lens or conserving cotangent lens would surface, on a token outside the
       pool, could not be discovered. Security-lexicon coverage is model-specific
       (" vulnerable" survives on deepseek, " unsafe" on starcoder2-3b), which
       weakens the cross-model E15-C comparison. Synthetic Python, three sink
@@ -663,7 +663,7 @@ experiments:
       scope prohibits.
 
   E16:
-    name: R-lens binding attribution
+    name: conserving cotangent lens binding attribution
     status: supporting
     stage: "140,141"
     model: "deepseek-coder-6.7b, deepseek-coder-1.3b"
@@ -673,7 +673,7 @@ experiments:
       - results/binding/deepseek-coder-1.3b/relevance/relevance_summary.csv
     claim: >
       OBSERVATIONAL, and interpretable on 6.7b only. When the binding flips and
-      exactly ONE token of a 21-token program changes, the conserving R-lens moves
+      exactly ONE token of a 21-token program changes, the conserving cotangent lens moves
       answer relevance from the definition leaving scope to the one entering it:
       the inner definition's token-identical VALUE gains +0.049 of the answer
       score [+0.048, +0.050] and the outer definition loses -0.078
@@ -769,7 +769,7 @@ experiments:
         THE ATTRIBUTION HALF IS UNRESOLVED, for two mechanical reasons and no
         result about the model. (a) Stage 152 reads one style per run and defaults
         to the declared primary `scope/direct` - which is exactly the wording the
-        model answers with a constant (0.502, says_inner 0.002), so the R-lens was
+        model answers with a constant (0.502, says_inner 0.002), so the conserving cotangent lens was
         applied to a question it is not answering. `--style pyscope` is the re-run.
         (b) The declared headline condition, the pole margin, is ill-conditioned
         here: the median ratio |s_margin| / max(|s_inner|, |s_outer|) is 0.064 on
@@ -809,7 +809,7 @@ experiments:
         the vocabulary claim, in words the hand-written lexicon never contained.
 
   E18:
-    name: unprompted J-lens binding vocabulary readout
+    name: unprompted cotangent lens binding vocabulary readout
     status: supporting
     stage: "160,161"
     model: deepseek-coder-6.7b
@@ -850,10 +850,10 @@ experiments:
       support a claim and the corrected version shows nothing.
 
   E10-2:
-    name: taint workspace membership (J-lens)
+    name: taint workspace membership (cotangent lens)
     status: archived
     stage: "61"
-    tables: [jlens_taint_]
+    tables: [clens_taint_]
     retired_claims:
       - >
         That the taint state is "verbalizable" and that its workspace
@@ -863,10 +863,10 @@ experiments:
       it was built to explain did not survive its own floors. Null either way.
 
   E10-3:
-    name: control dependence (J-lens)
+    name: control dependence (cotangent lens)
     status: archived
     stage: "62,63"
-    tables: [jlens_controldep_]
+    tables: [clens_controldep_]
     retired_claims:
       - >
         That control dependence is decodable but "not verbalizable", i.e. a
@@ -1003,14 +1003,14 @@ experiments:
       fixed (2026-08-24) the same statistic was -0.129 [-0.141, -0.119] with a
       maximum of 0.719, i.e. systematically biased and 23 ulps wide. THAT was a
       fault; this is quantisation. The bound needs the same relative-tolerance
-      treatment already applied to the R-lens R0 check.
+      treatment already applied to the conserving cotangent lens R0 check.
     the_stage_106_bug: >
       FIXED 2026-08-24, and it invalidated the FIRST starcoder2-3b run (2026-08-19,
       recorded H4/H5 as FAIL at 46% and 39%). scripts/106_binding_interchange.py
       assigned states_test, lens_vectors, mean_direction and fitted INSIDE the
       `for layer in layer_list` loop while resolving chosen_layer = layer_list[0]
       after it, so a MULTI-LAYER run evaluated the claim-bearing grid at the first
-      layer using the LAST layer's states, J-lens and subspace. Invisible on any
+      layer using the LAST layer's states, cotangent lens and subspace. Invisible on any
       single-layer run, which is why 6.7b (layer 8 only, from H3) was never
       affected. The run with `--layers 7,11,15` put layer-15 states through a
       layer-7 intervention. Tells: noop at 7.19e-01, calibration says_installed
@@ -1101,7 +1101,7 @@ experiments:
       a PRECONDITION, never as a result.
 
   E11:
-    name: J-space binding routing
+    name: cotangent-space binding routing
     status: active
     verdict: >
       NO-GO under its own pre-registration, at BOTH positions. Reported in the
@@ -1114,11 +1114,11 @@ experiments:
     tables: [jspace_lens_, jspace_readout_, jspace_behaviour_, jspace_swap_]
     question: >
       When a code model resolves variable binding, does it route the SELECTED
-      value into J-lens coordinates that are causally reusable by downstream
+      value into cotangent lens coordinates that are causally reusable by downstream
       computation?
     parts:
       - stage 70: token-aligned counterfactual pairs, five operation families
-      - stage 71: frozen per-layer J-lens from a held-out generic corpus (GATE)
+      - stage 71: frozen per-layer cotangent lens from a held-out generic corpus (GATE)
       - stage 72: readout — paired counterfactual margin reversals
       - stage 73: causal coordinate swap with six controls
       - stage 74: pre-registered go/no-go for the full run
@@ -1138,7 +1138,7 @@ experiments:
         NOT attributable to the Jacobian correction. The plain logit lens is
         more efficient at the same site (2.35 vs 1.82), and at the last layer
         the two are equal by construction. E11's framing survives as a claim
-        about output-aligned value directions, not about the J-lens.
+        about output-aligned value directions, not about the cotangent lens.
     retracted:
       - >
         The use-position null. The dose-matched control (added 2026-08-07)
@@ -1157,3 +1157,59 @@ experiments:
         It is the readout-matched arm — the same swap in the basis of a probe
         that decodes the value from the same state (reversal 0.402 vs 0.025
         floor at the marked use).
+
+  E19:
+    name: the PUBLISHED J-lens and R-lens on code models
+    status: active
+    stage: "200-205"
+    tables: [workspace_lens_gate_, workspace_lens_summary_, workspace_lens_rows_,
+             workspace_lens_ablation_]
+    claim: >
+      NO CLAIM YET. Implemented, unit-tested and validated on toy CPU models;
+      the fitting run has not been executed, so no measurement exists. Any
+      statement about what these lenses surface is pending
+      results/workspace_lens/{model}/workspace_lens_report.md.
+    method: >
+      The estimator is the reference implementation released with "Verbalizable
+      Representations Form a Global Workspace in Language Models" (2026),
+      vendored unmodified at third_party/jacobian-lens (commit 581d398) and
+      imported as `jlens`. The R-lens is that same estimator run under the
+      published RelP backward rules (LN-rule, identity-rule, half-rule);
+      attention, linear layers and q/k norms are unmodified, as published.
+      Released recipe: target_layer = n_layers - 2, skip_first = 4,
+      max_seq_len = 128, corpus NeelNanda/pile-10k, n = 100 prompts.
+    not_this: >
+      E19 is NOT E10/E14/E15-C/E16/E17/E18. Those use the repository's own
+      cotangent lens (clens) and conserving cotangent lens (clrp): a
+      corpus-averaged vector-Jacobian product against a FIXED CANDIDATE
+      VOCABULARY, with the normalizer dropped, targeting the final layer and
+      fitted on the task programs themselves. Different estimator, different
+      target, different corpus, different readout. docs/WORKSPACE_LENS.md
+      section 1 tabulates the differences. Their code, results and table labels
+      were renamed on 2026-08-31 so the two can never be read as one method.
+    compatibility:
+      deepseek-coder-1.3b: >
+        Fully compatible. LlamaRMSNorm + SiLU + gated SwiGLU, no biases, no q/k
+        norms — the exact dense configuration of the released artifacts. All
+        three published rules apply verbatim. Primary model (cheapest, and the
+        one carrying the --halves repeatability arm).
+      deepseek-coder-6.7b: >
+        Fully compatible, same architecture as 1.3b. The expensive fit
+        (~14 PFLOP/prompt); needs ~8 GB of HOST RAM for the fp32 Jacobian
+        accumulators, which is the resource most easily under-requested.
+      starcoder2-3b: >
+        Supported with two documented adaptations: the LN-rule runs through a
+        LayerNorm analogue (the published rule is stated for RMSNorm; the same
+        denominator is detached and nothing else changes), and the half-rule is
+        INAPPLICABLE because the MLP is not gated — recorded as "n/a", never
+        "off". Biases throughout break exact relevance conservation, which is
+        reported rather than corrected. This is strictly better than the
+        archived clrp method managed here, where both homogenising rules bound
+        to nothing and stage 140 refuses to run.
+    gate: >
+      Stage 202 runs seven checks (W1 corpus independence, W2 matched pair,
+      W3/W3b readout correctness, W4 RelP forward invariance, W5 rules vs
+      architecture, W6 build repeatability, W7 qualitative reproduction) and
+      exits non-zero on a failed required one. Stages 203-205 are not
+      interpretable until it passes; stage 205 reproduces the gate table at the
+      top of its report so the two are never read apart.

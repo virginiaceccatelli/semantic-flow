@@ -79,7 +79,7 @@ def _readout_reading(test_readout, position: str) -> None:
     import numpy as np
 
     probe, probe_floor, probe_layer = _best_over_floor(test_readout, "probe", position)
-    lens, lens_floor, lens_layer = _best_over_floor(test_readout, "jlens", position)
+    lens, lens_floor, lens_layer = _best_over_floor(test_readout, "clens", position)
     if not (np.isfinite(probe) and np.isfinite(lens)):
         return
     console.print(f"\n   best at `{position}`:  probe {probe:.3f} "
@@ -227,7 +227,7 @@ def main(
         if ratios is not None and ratios.notna().any():
             console.print(f"\n   mean |Δh|/|h| at `{position}` by variant:")
             print("   " + ratios.dropna().round(4).to_string().replace("\n", "\n   "))
-            jl = ratios.get("jlens_value", float("nan"))
+            jl = ratios.get("clens_value", float("nan"))
             if np.isfinite(jl) and jl < 0.01:
                 console.print("   [yellow]The J-lens edit moved <1% of the state. "
                               "Before calling these coordinates causally inert, "
@@ -248,7 +248,7 @@ def main(
                               "being about coordinates.[/yellow]")
             else:
                 console.print("   → the position does control the answer, so a "
-                              "flat `jlens_value` here is informative about the "
+                              "flat `clens_value` here is informative about the "
                               "subspace rather than the site.")
 
     # ── 2. the readout, against its own measured floor ───────────────────────
@@ -281,7 +281,7 @@ def main(
     console.print("\n[bold]3. Calibration layer selection — `paired_gap` is not "
                   "comparable across layers[/bold]")
     calib = readout[(readout.split == "calib") & (readout.subset == "all")
-                    & (readout.position == position) & (readout.lens == "jlens")]
+                    & (readout.position == position) & (readout.lens == "clens")]
     if calib.empty:
         console.print("   [yellow]no calibration rows[/yellow]")
     else:
@@ -312,9 +312,9 @@ def main(
                       "jspace_swap_by_operation.csv[/yellow]")
     else:
         fam = by_operation[(by_operation.split == "test")
-                           & (by_operation.variant == "jlens_value")]
+                           & (by_operation.variant == "clens_value")]
         if fam.empty:
-            console.print("   [yellow]no test rows for jlens_value[/yellow]")
+            console.print("   [yellow]no test rows for clens_value[/yellow]")
         else:
             cols = ["position", "site", "n_families", "min_family_delta",
                     "max_family_delta", "all_families_positive",
@@ -333,7 +333,7 @@ def main(
                 console.print(
                     "   [yellow]At the `answer` position, note that "
                     "`whole_state` is E7's trivial-forcing cell and is not a "
-                    "control there. The controls that matter are `jlens_answer` "
+                    "control there. The controls that matter are `clens_answer` "
                     "(direct answer steering) and `gram_random`.[/yellow]")
 
     # ── 5. is the effect routing, or digit-space geometry? ───────────────────
@@ -377,26 +377,26 @@ def _answer_distance(root: Path, position: str) -> None:
              "bound_answer", "target_answer"]
     wide = sub.pivot_table(index=index, columns="variant",
                            values="delta_ld").reset_index()
-    if "jlens_value" not in wide.columns or "whole_state" not in wide.columns:
-        console.print("   [yellow]need both jlens_value and whole_state rows[/yellow]")
+    if "clens_value" not in wide.columns or "whole_state" not in wide.columns:
+        console.print("   [yellow]need both clens_value and whole_state rows[/yellow]")
         return
     wide["answer_gap"] = (wide["target_answer"] - wide["bound_answer"]).abs()
 
-    best_site = wide.groupby("site")["jlens_value"].mean().idxmax()
+    best_site = wide.groupby("site")["clens_value"].mean().idxmax()
     at_site = wide[wide.site == best_site].copy()
     console.print(f"   largest-effect site at `{position}`: {best_site}")
 
     # Only where the position carries something: dividing by a ceiling that is
     # itself noise manufactures enormous ratios out of nothing.
     usable = at_site[at_site["whole_state"].abs() > 0.05].copy()
-    usable["captured"] = usable["jlens_value"] / usable["whole_state"]
+    usable["captured"] = usable["clens_value"] / usable["whole_state"]
     if usable.empty:
         console.print("   [yellow]whole-state ceiling is ~0 everywhere here; "
                       "no fraction is defined[/yellow]")
         return
 
     table = (usable.groupby(["op_family", "answer_gap"])
-                   .agg(raw_shift=("jlens_value", "mean"),
+                   .agg(raw_shift=("clens_value", "mean"),
                         ceiling=("whole_state", "mean"),
                         captured=("captured", "mean"),
                         n=("captured", "size"))

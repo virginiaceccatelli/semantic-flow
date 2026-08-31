@@ -26,7 +26,7 @@ from src.experiments.binding_lexlens import (
     FAMILIES,
     HYPOTHESIS_FAMILY,
     INVARIANT_CHECKS,
-    JLENS,
+    CLENS,
     LEXICON,
     LOGIT,
     PREDICTED_SIGN,
@@ -53,7 +53,7 @@ from src.experiments.binding_lexlens import (
     verdict_checks,
     verdict_of,
 )
-from src.models.lens import JLens, gram_matched_random_lens
+from src.models.cotangent_lens import CotangentLens, gram_matched_random_lens
 from tests.fake_tokenizer import FakeDigitTokenizer
 
 LAYERS = (4, 8)
@@ -95,15 +95,15 @@ def lexicon(tokenizer):
 
 
 def make_lenses(lexicon, layers=LAYERS, d_model=D_MODEL, seed=0, n_random=2):
-    """Three readouts over the lexicon rows, with the real `JLens` container."""
+    """Three readouts over the lexicon rows, with the real `CotangentLens` container."""
     ids, strings = candidate_rows(lexicon)
     rng = np.random.default_rng(seed)
     lenses = {readout: {} for readout in READOUTS}
     for layer in layers:
-        real = JLens(vectors=rng.normal(size=(len(ids), d_model)), token_ids=ids,
-                     token_strings=strings, layer=layer, kind="jlens")
-        lenses[JLENS][layer] = [real]
-        lenses[LOGIT][layer] = [JLens(vectors=rng.normal(size=(len(ids), d_model)),
+        real = CotangentLens(vectors=rng.normal(size=(len(ids), d_model)), token_ids=ids,
+                     token_strings=strings, layer=layer, kind="clens")
+        lenses[CLENS][layer] = [real]
+        lenses[LOGIT][layer] = [CotangentLens(vectors=rng.normal(size=(len(ids), d_model)),
                                       token_ids=ids, token_strings=strings,
                                       layer=layer, kind="logit")]
         lenses[RANDOM][layer] = [gram_matched_random_lens(real, seed=100 + k)
@@ -222,14 +222,14 @@ def test_pair_margin_is_the_difference_of_two_rows_of_one_lens(lexicon):
 
     That is what makes the output-token control hold by construction rather than
     by measurement, and what makes the sign exact despite the positive
-    normalization factor `JLens.scores` drops.
+    normalization factor `CotangentLens.scores` drops.
     """
     n = len(lexicon.pairs)
     vectors = np.zeros((2 * n, D_MODEL))
     vectors[0, 0] = 3.0            # inner pole of pair 0
     vectors[n, 1] = 2.0            # outer pole of pair 0
     ids, strings = candidate_rows(lexicon)
-    lens = JLens(vectors=vectors, token_ids=ids, token_strings=strings, layer=0)
+    lens = CotangentLens(vectors=vectors, token_ids=ids, token_strings=strings, layer=0)
     state = np.zeros((1, D_MODEL), dtype=np.float32)
     state[0, 0], state[0, 1] = 1.0, 5.0
     assert pair_margins(lens, state, n)[0, 0] == pytest.approx(3.0 - 10.0)
@@ -249,7 +249,7 @@ def test_delta_is_inner_binding_minus_outer_binding(records, lexicon):
     assert np.allclose(deltas["delta"], deltas["m_target"] - deltas["m_source"],
                        atol=1e-5)
     # reversal is the sign of the delta, never its magnitude
-    single = deltas[deltas["readout"] == JLENS]
+    single = deltas[deltas["readout"] == CLENS]
     assert np.allclose(single["reversal"], (single["delta"] > 0).astype(float))
     # the control's rows carry every seed
     assert set(seeds["seed"]) == {100, 101}
@@ -268,7 +268,7 @@ def test_control_rows_average_over_seeds(records, lexicon):
 
 
 def test_pair_direction_table_uses_test_directions_and_both_arms():
-    real = synth_deltas({(JLENS, HYPOTHESIS_FAMILY): 1.0}, layers=(4,),
+    real = synth_deltas({(CLENS, HYPOTHESIS_FAMILY): 1.0}, layers=(4,),
                         n_pairs_per_family=1)
     rows = []
     for seed, rate in enumerate((0.0, 0.25, 0.5, 0.75) * 25):
@@ -347,9 +347,9 @@ def test_invariants_catch_a_use_token_that_differs_across_cells(records, tokeniz
 # -- the statistic ------------------------------------------------------------
 
 def test_summarize_reproduces_a_known_reversal_rate():
-    deltas = synth_deltas({(JLENS, HYPOTHESIS_FAMILY): 0.75}, n_bases=40)
+    deltas = synth_deltas({(CLENS, HYPOTHESIS_FAMILY): 0.75}, n_bases=40)
     summary = summarize(deltas, level="family", n_boot=200)
-    row = summary[(summary["readout"] == JLENS)
+    row = summary[(summary["readout"] == CLENS)
                   & (summary["family"] == HYPOTHESIS_FAMILY)
                   & (summary["arm"] == "both")].iloc[0]
     assert row["reversal"] == pytest.approx(0.75)
@@ -363,13 +363,13 @@ def test_summarize_reproduces_a_known_reversal_rate():
 
 
 def test_summarize_reports_every_arm_before_pooling():
-    deltas = synth_deltas({(JLENS, HYPOTHESIS_FAMILY): 1.0})
+    deltas = synth_deltas({(CLENS, HYPOTHESIS_FAMILY): 1.0})
     summary = summarize(deltas, level="family", n_boot=100)
     assert set(summary["arm"]) == set(ARMS) | {"both"}
 
 
 def test_contrast_is_paired_on_the_same_rows():
-    deltas = synth_deltas({(JLENS, HYPOTHESIS_FAMILY): 1.0,
+    deltas = synth_deltas({(CLENS, HYPOTHESIS_FAMILY): 1.0,
                            (RANDOM, HYPOTHESIS_FAMILY): 0.0})
     contrasts = contrast_table(deltas, level="family", n_boot=200)
     row = contrasts[(contrasts["family"] == HYPOTHESIS_FAMILY)
@@ -385,13 +385,13 @@ def test_contrast_is_paired_on_the_same_rows():
 
 def test_arm_agreement_flags_a_sign_flip():
     """A reversal that flips sign between the arms is tracking the LITERAL."""
-    deltas = synth_deltas({(JLENS, HYPOTHESIS_FAMILY): 1.0})
+    deltas = synth_deltas({(CLENS, HYPOTHESIS_FAMILY): 1.0})
     flip = deltas["arm"] == ARMS[1]
     deltas.loc[flip, "reversal"] = 1.0 - deltas.loc[flip, "reversal"]
     deltas.loc[flip, "delta"] = -deltas.loc[flip, "delta"]
     summary = summarize(deltas, level="family", n_boot=100)
     agreement = arm_agreement_table(summary)
-    row = agreement[(agreement["readout"] == JLENS)
+    row = agreement[(agreement["readout"] == CLENS)
                     & (agreement["family"] == HYPOTHESIS_FAMILY)].iloc[0]
     assert not row["agree"]
     assert not row["both_beat_chance"]
@@ -399,7 +399,7 @@ def test_arm_agreement_flags_a_sign_flip():
 
 def test_arm_agreement_survives_a_concatenated_summary():
     """`groupby` drops NaN keys, so an all-NaN column would empty the table."""
-    deltas = synth_deltas({(JLENS, HYPOTHESIS_FAMILY): 1.0})
+    deltas = synth_deltas({(CLENS, HYPOTHESIS_FAMILY): 1.0})
     summary = pd.concat([summarize(deltas, level=level, n_boot=50)
                          for level in ("all", "family", "pair")], ignore_index=True)
     agreement = arm_agreement_table(summary[summary["level"] == "family"])
@@ -424,7 +424,7 @@ def test_a_null_with_the_probe_at_chance_learns_nothing():
 
 
 def test_scope_reversal_above_both_controls_is_verbalised():
-    state, probe = state_for({(JLENS, HYPOTHESIS_FAMILY): 1.0})
+    state, probe = state_for({(CLENS, HYPOTHESIS_FAMILY): 1.0})
     assert verdict_of(verdict_checks(state, probe)) == "verbalised_scope"
 
 
@@ -441,15 +441,15 @@ def test_direction_verdict_requires_same_pair_at_adjacent_layers():
     assert verdict_of(verdict_checks(state, probe, directions)) == "verbalised_scope"
 
 
-def test_a_reversal_the_logit_lens_matches_is_not_jlens_specific():
-    state, probe = state_for({(JLENS, HYPOTHESIS_FAMILY): 1.0,
+def test_a_reversal_the_logit_lens_matches_is_not_clens_specific():
+    state, probe = state_for({(CLENS, HYPOTHESIS_FAMILY): 1.0,
                               (LOGIT, HYPOTHESIS_FAMILY): 1.0})
-    assert verdict_of(verdict_checks(state, probe)) == "verbalised_not_jlens_specific"
+    assert verdict_of(verdict_checks(state, probe)) == "verbalised_not_clens_specific"
 
 
 def test_a_one_armed_reversal_is_reported_as_arm_dependent():
-    deltas = synth_deltas({(JLENS, HYPOTHESIS_FAMILY): 1.0})
-    quiet = (deltas["arm"] == ARMS[1]) & (deltas["readout"] == JLENS)
+    deltas = synth_deltas({(CLENS, HYPOTHESIS_FAMILY): 1.0})
+    quiet = (deltas["arm"] == ARMS[1]) & (deltas["readout"] == CLENS)
     deltas.loc[quiet, "reversal"] = np.where(
         deltas.loc[quiet, "base_id"].str[-1].astype(int) % 2 == 0, 1.0, 0.0)
     summary = summarize(deltas, level="family", n_boot=200)
@@ -461,13 +461,13 @@ def test_a_one_armed_reversal_is_reported_as_arm_dependent():
 
 
 def test_a_control_family_alone_does_not_become_a_scope_result():
-    state, probe = state_for({(JLENS, CONTROL_FAMILIES[0]): 1.0})
+    state, probe = state_for({(CLENS, CONTROL_FAMILIES[0]): 1.0})
     assert verdict_of(verdict_checks(state, probe)) == "positional_or_action_only"
 
 
 def test_a_reversal_at_a_layer_the_probe_cannot_read_does_not_count():
     """The comparison is 'do the words say what the probe can already read'."""
-    state, probe = state_for({(JLENS, HYPOTHESIS_FAMILY): 1.0}, probe_accuracy=0.5)
+    state, probe = state_for({(CLENS, HYPOTHESIS_FAMILY): 1.0}, probe_accuracy=0.5)
     assert verdict_of(verdict_checks(state, probe)) == "probe_absent"
 
 
@@ -522,11 +522,11 @@ def test_h10_catches_a_scrambled_row_order(records, lexicon, tokenizer):
     used = make_states(records)
     lenses = make_lenses(lexicon)
     deltas, _ = delta_frame(used, records, lenses, lexicon, model="fake")
-    bad = lenses[JLENS][LAYERS[0]][0]
-    lenses[JLENS][LAYERS[0]] = [JLens(vectors=bad.vectors,
+    bad = lenses[CLENS][LAYERS[0]][0]
+    lenses[CLENS][LAYERS[0]] = [CotangentLens(vectors=bad.vectors,
                                       token_ids=list(reversed(bad.token_ids)),
                                       token_strings=bad.token_strings,
-                                      layer=bad.layer, kind="jlens")]
+                                      layer=bad.layer, kind="clens")]
     violations = h10_checks(lexicon, use_invariants(tokenizer, records), deltas,
                             lenses, LAYERS, records)
     assert any(v.gate == "candidate_row_order" for v in violations)
@@ -538,7 +538,7 @@ def test_h10_catches_a_control_that_is_not_gram_matched(records, lexicon, tokeni
     used = make_states(records)
     lenses = make_lenses(lexicon)
     deltas, _ = delta_frame(used, records, lenses, lexicon, model="fake")
-    real = lenses[JLENS][LAYERS[0]][0]
+    real = lenses[CLENS][LAYERS[0]][0]
     # a seed the J-lens build did not use: drawing from `default_rng(0)` here
     # would reproduce the J-lens rows exactly and match its Gram matrix by
     # accident, which is a fact about the fixture and not about the control
@@ -546,7 +546,7 @@ def test_h10_catches_a_control_that_is_not_gram_matched(records, lexicon, tokeni
     raw = rng.normal(size=real.vectors.shape)
     raw /= np.linalg.norm(raw, axis=1, keepdims=True)
     norms = np.linalg.norm(real.vectors, axis=1, keepdims=True)
-    lenses[RANDOM][LAYERS[0]] = [JLens(vectors=raw * norms,
+    lenses[RANDOM][LAYERS[0]] = [CotangentLens(vectors=raw * norms,
                                        token_ids=real.token_ids,
                                        token_strings=real.token_strings,
                                        layer=real.layer, kind="gram_random",
@@ -599,7 +599,7 @@ def test_h10_catches_a_half_dropped_pair(records, tokenizer):
 def test_readout_state_reads_the_family_contrast_not_a_pair_one():
     """A concatenated contrast table carries pair rows that match on family too;
     picking the first of those would report one pair's verdict as the family's."""
-    deltas = synth_deltas({(JLENS, HYPOTHESIS_FAMILY): 1.0,
+    deltas = synth_deltas({(CLENS, HYPOTHESIS_FAMILY): 1.0,
                            (RANDOM, HYPOTHESIS_FAMILY): 0.0},
                           n_pairs_per_family=2)
     summary = pd.concat([summarize(deltas, level=lvl, n_boot=200)

@@ -1,0 +1,879 @@
+\documentclass[10pt]{article}
+
+% , , , - fonts & encoding , , , -
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+\usepackage{mathptmx}          % Times text + math (ICLR/NeurIPS look); tt stays Latin Modern (scalable)
+
+% , , , - layout , , , -
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage[protrusion=true,expansion=false]{microtype}
+\usepackage[round]{natbib}
+\bibliographystyle{plainnat}
+
+% , , , - math & tables , , , -
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs,array,multirow}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc}
+\usepackage{listings}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,citecolor=blue!45!black,urlcolor=blue!45!black]{hyperref}
+
+% , , , - title spacing (compact, conference-style) , , , -
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{1.05\baselineskip}{0.35\baselineskip}
+\titlespacing*{\subsection}{0pt}{0.7\baselineskip}{0.25\baselineskip}
+\titlespacing*{\paragraph}{0pt}{0.4\baselineskip}{0.8em}
+\captionsetup{font=small,labelfont=bf}
+
+% , , , - code listing style , , , -
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!55!black},
+  commentstyle=\color{green!40!black}\itshape,
+  language=Python,
+  showstringspaces=false,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=none,
+  xleftmargin=1.2em
+}
+
+% , , , - macros , , , -
+\newcommand{\hb}{h_{\ell}}
+\newcommand{\Rmat}{\mathbf{R}}
+\newcommand{\Real}{\mathbb{R}}
+\newcommand{\Bind}{B}
+\newcommand{\acc}{\mathrm{Acc}}
+\newcommand{\cm}{\textsf{context\_matched}}
+\newcommand{\says}{\textsf{says\_installed}}
+\newcommand{\code}[1]{\texttt{#1}}
+\emergencystretch=3em \tolerance=1500
+
+\title{\vspace{-3.5em}\bfseries Security-Grounded Reasoning in Code Language Models:\\[0.15em]
+From Decodable Structure to Causal Use}
+
+\author{Anonymous authors\\\small Paper under double-blind review}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-2.2em}
+
+\begin{abstract}
+\noindent
+Code models increasingly inspect vulnerabilities, modify repositories, and
+operate development tools. Trust in these systems requires evidence that their
+answers depend on program semantics when lexical cues are misleading. We study
+variable binding, the relation between a variable use and its active definition,
+in DeepSeek-Coder 1.3B and 6.7B and StarCoder2 3B. Paired programs differ by one
+earlier character that changes the binding while preserving the queried token,
+its position, and its local context. A bounded surface reader therefore has
+exactly $0.500$ accuracy. We measure linear recoverability, transfer across
+program transformations, causal use, attribution to the active definition, and
+alignment with output vocabulary. Binding reaches $0.984$ linear-probe accuracy
+in middle layers. Frozen probes transfer across irrelevant context and consistent
+renaming, with lower accuracy under competing scopes and control-flow flattening.
+We then learn a one-dimensional intervention that replaces the host program's
+binding component with the component from a counterfactual program. The edited
+model returns the value selected by the donor binding on every held-out example
+for DeepSeek-Coder 6.7B and StarCoder2 3B. Reversing the value assignment between
+training and evaluation rules out a fixed answer-token direction. A conservative
+relevance decomposition assigns up to $22\%$ more of the answer score to the
+definition that enters scope. A Jacobian-based vocabulary readout follows the
+binding, although scope remains confounded with position and replacement in the
+single template. These results provide bounded evidence for security-relevant
+semantic reasoning. They also identify transformations under which that evidence
+weakens.
+\end{abstract}
+
+% =====================================================================
+\section{Introduction}
+% =====================================================================
+Code models now inspect vulnerabilities, edit repositories, review patches, and
+operate build systems. Accuracy on familiar benchmarks provides limited evidence
+for safe use in these settings. Identifier names, formatting, templates, nearby
+tokens, and common control-flow shapes often correlate with program behavior.
+These cues can fail on unfamiliar, obfuscated, or adversarial code. Reliable use
+therefore requires evidence that model outputs depend on the program relations
+that determine execution.
+
+We study this requirement through one minimal relation, \emph{variable binding}:
+which definition a variable use resolves to. Binding admits a construction that
+isolates semantics from surface form exactly. In the pair below, the queried
+token \code{x} is identical and occupies the same position, but one character in
+an earlier assignment changes whether the use resolves to the outer or the inner
+definition:
+\begin{center}
+\begin{minipage}{0.44\linewidth}
+\begin{lstlisting}
+x = 3
+def f():
+    y = 7
+    return x   # returns 3
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{0.44\linewidth}
+\begin{lstlisting}
+x = 3
+def f():
+    x = 7
+    return x   # returns 7
+\end{lstlisting}
+\end{minipage}
+\end{center}
+A reader restricted to a bounded window around the queried token cannot
+distinguish these cases. Predicting the value requires scope resolution and a
+link from the use to the active definition. This construction supports separate
+tests of representation, robustness, and causal use.
+
+Prior analysis of code models tends to answer one of these questions in
+isolation. Probing establishes that a fact is \emph{decodable}
+\citep{karmakar2021whatdo,wan2022theyknow,troshin2022probing}; robustness studies
+establish that behavior does or does not \emph{survive} a transformation
+\citep{yefet2020adversarial,henkel2022semantic,rabin2021generalizability};
+attribution and vocabulary lenses describe \emph{where} an output score comes from
+\citep{bach2015lrp,nostalgebraist2020logitlens}. These are not
+interchangeable. A probe can decode information the model never uses; a
+behavioral task can be solved by a shortcut; an attribution map can look
+plausible without being causal; and a causally important feature need not be
+human-readable. We therefore treat semantic grounding as a conjunction of
+separable claims and test each with an instrument matched to it.
+
+We define grounding operationally. Let a program property $S(x)$ be fixed by
+programming-language semantics (here, which definition a use resolves to). A
+model is \emph{semantically grounded} with respect to $S$ to the extent that its
+internal computation (i) is sensitive to changes in $S$ that leave surface form
+fixed, (ii) is invariant to changes that preserve $S$, and (iii) causally uses an
+internal representation of $S$ when producing the relevant output. This is
+stronger than benchmark accuracy and decodability. We test five questions.
+\textbf{(1) Representation:} Is binding linearly recoverable above a measured
+surface floor? \textbf{(2) Robustness:} Does the frozen representation survive
+meaning-preserving perturbations, and does structural interference reduce its
+transfer? \textbf{(3) Causal use:} Does replacing a compact binding component
+change the answer according to the installed binding? \textbf{(4) Attribution:}
+Is the unedited answer score assigned to the active definition?
+\textbf{(5) Lexical expression:} Does the representation align with scope terms
+in output coordinates?
+
+\paragraph{Findings and contributions.} Binding becomes linearly available in
+early-to-middle layers, survives many surface changes, and is read causally from
+a rank-1 component. Competing scope and flattened control flow reduce frozen-probe
+transfer. The lexical alignment does not identify scope independently of position.
+We contribute a paired construction with an exact $0.500$ surface floor, a
+stratified probing protocol, a frozen-transfer analysis, a crossed $2\times2$
+causal intervention, a conservative relevance decomposition, and a crossed-arm
+vocabulary test. Together, these measurements support a bounded trust claim and
+state where it fails.
+
+% =====================================================================
+\section{Related work}
+% =====================================================================
+\paragraph{Code models and what they encode.} Pretrained code models support
+search, generation, and completion \citep{feng2020codebert,wang2021codet5,
+chen2021codex,nijkamp2023codegen,li2023starcoder,lozhkov2024starcoder2,
+guo2024deepseekcoder}, and one line explicitly injects data-flow structure at
+pretraining time \citep{guo2021graphcodebert}. Probing studies report that such
+models encode aspects of syntax and data flow
+\citep{karmakar2021whatdo,wan2022theyknow,troshin2022probing,lopez2022astprobe},
+and \citet{jin2023evidence} argue that semantic content emerges in models trained
+only to generate programs. Recent work tests functional equivalence
+\citep{maveli2025functional}, execution-trace information
+\citep{wang2025codesemantics}, and internal signals for code correctness and
+security \citep{tahimic2025correctness,vu2025autoprobe}. These studies strengthen
+the case for white-box analysis of code models. Task and probe accuracy do not
+establish causal use of program semantics. Our intervention addresses that gap.
+
+\paragraph{Probing and its controls.} Linear probes read information already made
+linearly available by the model \citep{alain2016understanding}, but probe
+accuracy must be interpreted against controls for probe capacity and lexical
+memorization \citep{hewitt2019control,pimentel2020information,voita2020information,
+belinkov2022probing}. We adopt these controls, shuffled-label selectivity,
+grouped splits, an embedding-layer reference, and add a model-free surface reader
+evaluated on the same items, so that every claim is stated relative to a
+\emph{measured} floor rather than a nominal chance level. Our
+$0.500$ floor is not assumed; it is pinned by construction.
+
+\paragraph{Causal and mechanistic interpretability.} Causal abstraction
+distinguishes information that is present from information used with the role of
+an interpretable variable \citep{geiger2021causal,vig2020causal}. Interventions
+that localize or edit computation include activation patching and its analyses
+\citep{meng2022rome,wang2023ioi,conmy2023acdc,zhang2024patching,heimersheim2024patching},
+within the residual-stream view of \citet{elhage2021mathematical}. Distributed
+Alignment Search (DAS) learns a subspace in which interchange interventions align
+a distributed representation with a high-level causal variable
+\citep{geiger2024das,wu2023boundless}. We apply DAS to the variable ``which
+definition is in scope'' and add a crossed value assignment that forces the
+correct output direction to reverse between fitting and evaluation, which
+separates binding transport from an answer-token direction. The most closely
+related targets, symbol binding and entity tracking in language models
+\citep{smolensky1990tensor,feng2023entities,kim2023entity,prakash2024finetuning}%
+, concern natural-language entities; we study the programming-language relation,
+where ground truth is exactly decidable.
+
+\paragraph{Vocabulary lenses and attribution.} The logit lens reads a hidden
+state through the unembedding \citep{nostalgebraist2020logitlens}; the tuned lens
+corrects it with a learned affine map \citep{belrose2023tunedlens}, and related
+work reads intermediate states in vocabulary space
+\citep{geva2022ffn,dar2023embedding}. The Jacobian lens averages downstream
+Jacobians across positions and a broad prompt distribution to identify directions
+that support later verbalization \citep{gurnee2026workspace}. The R-lens replaces
+its raw-gradient backward pass with relevance-propagation coefficients
+\citep{blank2026rlens}, following Relevance Patching
+\citep{jafari2025relp}. Our vocabulary readout uses a prompt-specific downstream
+Jacobian. It is related to the Jacobian lens and implements a different estimator.
+Separately, layer-wise relevance
+propagation \citep{bach2015lrp} has been adapted to transformers with
+conservation-respecting rules for normalization and attention
+\citep{ali2022xai,achtibat2024attnlrp}, in contrast to gradient attributions
+\citep{sundararajan2017ig,chefer2021transformer}. We use both families as
+\emph{descriptive} instruments: a prompt-specific Jacobian vocabulary readout and
+a conservative relevance decomposition. The latter predates and differs from the
+2026 R-lens because it decomposes one answer score across source tokens. Neither
+instrument establishes causal necessity. DAS supplies the causal test.
+
+\paragraph{Robustness of code models.} Semantics-preserving transformations and
+adversarial renamings degrade code-model behavior
+\citep{yefet2020adversarial,bielik2020robust,henkel2022semantic,rabin2021generalizability}.
+We connect this literature to representation: we freeze a probe trained on clean
+programs and measure transfer under an execution-verified obfuscation ladder,
+which distinguishes lexical fragility (renaming) from structural fragility
+(control-flow flattening). Ground truth throughout is derived from a code property
+graph \citep{yamaguchi2014cpg}.
+
+% =====================================================================
+\section{Problem formulation}
+\label{sec:formulation}
+% =====================================================================
+Let $x$ be a program, $u$ the token position of a variable use, and
+$\Bind(x,u)\in\{0,1\}$ the binding fixed by language semantics: $0$ for the outer
+definition, $1$ for the inner. A frozen autoregressive model produces a hidden
+state $\hb(x,u)\in\Real^{d}$ at layer $\ell$, read at the last token that covers
+the use under causal attention. A paired generator constructs $x^{(0)}$ and
+$x^{(1)}$ with $\Bind(x^{(0)},u)\neq \Bind(x^{(1)},u)$ such that the token at $u$,
+its index, and its bounded local context are identical; the pair differs at one
+earlier identifier character.
+
+We call a property \emph{semantic} to the extent that a bounded reader of the
+program's surface form cannot recover it. This definition is enforced, not
+estimated: the paired construction makes the model-free reader score exactly
+$0.500$, so any accuracy above that floor is computed by the model rather than
+read off the text. The definition is falsifiable and has excluded a candidate
+relation: control dependence has a \emph{measured} surface floor near $0.93$ (a
+statement's guard is usually its nearest enclosing \code{if}), so decoding it at
+ceiling constrains nothing about semantic representation, and we do not report it
+(Appendix~\ref{app:controldep}). The floor is always stated relative to a named
+reader (\S\ref{sec:setup}).
+
+\paragraph{The five properties.} We operationalize grounding as five measurements.
+
+\emph{(P1) Recoverability.} A linear probe $q_\ell$ predicts $\Bind$ from $\hb$
+above the surface baseline $s$:
+$\acc\!\big(q_\ell(\hb),\Bind\big)-\acc\!\big(s,\Bind\big) > 0.$
+
+\emph{(P2) Transfer.} For a semantics-preserving transformation $T$, a probe
+fitted on clean programs is frozen and re-evaluated,
+$\Delta_T(\ell)=\acc\!\big(q_\ell(\hb(T(x),u_T)),\Bind\big)-\acc\!\big(q_\ell(\hb(x,u)),\Bind\big).$
+Grounding requires both invariance to meaning-preserving $T$ and sensitivity to
+meaning-changing $T$; indiscriminate invariance is as uninformative as
+indiscriminate sensitivity.
+
+\emph{(P3) Causal use.} DAS learns an orthonormal $\Rmat\in\Real^{d\times r}$ and
+performs an interchange between a host and a donor state,
+\begin{equation}
+\hb' \;=\; \hb^{\mathrm{host}} + \Rmat\Rmat^{\!\top}\!\big(\hb^{\mathrm{donor}}-\hb^{\mathrm{host}}\big).
+\label{eq:interchange}
+\end{equation}
+If $\Rmat$ realizes binding, the intervened model emits the value selected by the
+donor binding, including when the map from binding to answer token is reversed in
+a held-out arm.
+
+\emph{(P4) Attribution.} For a selected answer score $f_y(x)$, a relevance
+decomposition assigns token contributions $r_i$ satisfying approximate
+conservation $\sum_i r_i \approx f_y(x)$; we ask whether changing $\Bind$
+reallocates relevance from the definition becoming inactive to the one becoming
+active, including over tokens that do not change.
+
+\emph{(P5) Lexical expression.} For a predeclared token pair
+$(w_{\mathrm{in}},w_{\mathrm{out}})$, a vocabulary lens $J_\ell$ gives a margin
+$m_\ell(x)=J_\ell(\hb(x,u))_{w_{\mathrm{in}}}-J_\ell(\hb(x,u))_{w_{\mathrm{out}}}$;
+the counterfactual shift $\delta=m_\ell(x^{(1)})-m_\ell(x^{(0)})$ is predicted to
+be positive, and its sign is measured separately in the two value arms.
+
+% =====================================================================
+\section{Experimental setup}
+\label{sec:setup}
+% =====================================================================
+\paragraph{Models and coverage.} We study pretrained \emph{base} code models,
+not instruction-tuned chat models: DeepSeek-Coder 1.3B and 6.7B, and StarCoder2
+3B. The three models have $24$, $32$, and $30$ layers; cross-model comparisons
+are read at matched \emph{relative depth}, never at a shared index. Not every
+experiment licenses a claim for every model, because the causal and attribution
+instruments have capability and architecture prerequisites
+and attribution instruments have capability and architecture prerequisites.
+Representation and transfer are reported for all three models. Causal results are
+reported for DeepSeek-Coder 6.7B and StarCoder2 3B. Relevance attribution and the
+vocabulary readout are reported for DeepSeek-Coder 6.7B. Other configurations
+failed a stated gate or fell outside the implemented propagation rules.
+
+\paragraph{Data and ground truth.} Every label is derived from the program's own
+structure through a code property graph \citep{yamaguchi2014cpg}: abstract
+syntax, a statement-level control-flow graph with exactly resolved join points,
+and a data-flow graph whose reaching-definition edges define both binding and the
+directed definition--use edge. Labels are exact because the corpus is synthetic
+and the graph is known by construction; we validate the extractor against an
+independent reaching-definitions implementation (set inclusion in general, exact
+equality on straight-line code) and validate every perturbed program by execution
+(Appendix~\ref{app:groundtruth}). Graph events are mapped to token indices through
+a verified offset table that must reproduce the source exactly; a program whose
+round-trip fails is skipped and counted. String matching is not used for
+alignment, because a subword vocabulary silently mislabels shadowed names, which
+is exactly the phenomenon binding measures.
+
+\paragraph{Read positions.} Hidden states are captured at each decoder block
+output and, separately, at the embedding output (layer $-1$), which encodes token
+identity before any context mixing and serves as the context-free reference. The
+state for a use is read at its last covering token: the first position whose
+state can see the whole event under causal attention.
+
+\paragraph{Probe and floors.} The decoding instrument is deliberately weak, 
+$\ell_2$-regularized logistic regression ($C{=}0.1$, class-balanced,
+standardized features), so that ``decodable'' remains a statement about the
+model rather than about probe capacity. Pairwise relations use the endpoint
+feature $[\,h_i;\,h_j;\,h_i{-}h_j;\,|h_i{-}h_j|\,]$. All cross-validation is
+\code{Stratified\allowbreak GroupK\allowbreak Fold} grouped by source program, so no program has rows in
+both train and test; when the corpus is capped, whole groups are dropped. Claims
+are made on \emph{selectivity} (accuracy minus a shuffled-label control) and,
+critically, against a \emph{model-free surface baseline} that sees only a
+$\pm 3$-token window of token ids and the bucketed distance between anchors. This
+baseline exists because a first run reproduced $\approx 0.98$ on every task from
+local token context alone; the baseline is now a permanent floor, and a
+hidden-state result counts only if it beats the baseline on the same stratum.
+
+\paragraph{Negative strata.} Most negative pairs for a relation are separable
+from text alone, so negatives are reported in strata from easiest to decisive:
+\code{diff\_name} (different identifiers), \code{distance\_matched} (same token
+distance), \code{same\allowbreak\_name\allowbreak\_diff\allowbreak\_binding} (same spelling, diff.\ binding),
+and \cm{} (two token-identical programs differing by the one binding-flipping
+character). Only \cm{} is a clean headline: its members share every fixed-offset
+surface cue and one CV group, so by construction no surface feature separates the
+labels and the surface probe scores exactly $0.500$ there
+(Appendix~\ref{app:strata}).
+
+% =====================================================================
+\section{Representation and robustness}
+\label{sec:repr}
+% =====================================================================
+
+\subsection{Binding is constructed in context (P1)}
+On the decisive \cm{} stratum the binding probe is exactly at chance for the
+model-free reader and for the embedding layer, then rises sharply through early
+blocks and plateaus near $0.984$ in the middle (Table~\ref{tab:binding-layers},
+Figure~\ref{fig:strata}). Because the label is absent from the queried token and
+from local context, this is a representation claim, not a task-performance claim:
+the distinction is \emph{constructed} by contextual processing. The
+definition--use edge shows a related profile, accuracy near $0.99$ at layers
+7--11 with distance-matched negatives, and $0.96$--$0.99$ for endpoints separated
+by $50$--$200$ tokens (Appendix~\ref{app:defuse}), so the model represents both
+which definition is active and which use it reaches. Neither probe alone shows
+that these relations control the output; that claim is reserved for \S\ref{sec:das}.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Binding-probe accuracy on the \cm{} stratum by depth. The surface
+baseline and the embedding layer are pinned at $0.500$ by construction; accuracy
+is constructed through early blocks and plateaus in the middle. Peak layers
+(L7 for 1.3B; L11--15 for 6.7B) are selected on a calibration split.}
+\label{tab:binding-layers}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Measurement & DeepSeek 1.3B & DeepSeek 6.7B \\
+\midrule
+Surface baseline (model-free) & \textbf{0.500} & \textbf{0.500} \\
+Embedding layer ($-1$)        & \textbf{0.500} & \textbf{0.500} \\
+Block 0                        & 0.570 & 0.531 \\
+Layer 3                        & 0.961 & 0.914 \\
+Peak                           & \textbf{0.984} (L7) & \textbf{0.984} (L11--15) \\
+Last layer                     & 0.930 & 0.914 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.66\linewidth]{figs/binding_strata_deepseek-coder-6.7b_core.pdf}
+\caption{Binding-probe accuracy by negative stratum and layer
+(DeepSeek-Coder 6.7B). Easier strata are partly solvable from surface features;
+only \cm{} isolates the semantic distinction, and it sits at $0.500$ at the input.}
+\label{fig:strata}
+\end{figure}
+
+\subsection{Transfer reflects semantic difficulty (P2)}
+A probe trained on clean programs is frozen and re-evaluated on transformed
+programs, with ground truth recomputed for every variant; freezing measures
+whether the \emph{existing} readout still holds, rather than how learnable the
+relation is under each condition (Appendix~\ref{app:freeze}).
+
+\paragraph{Context interference.} Holding the added-token budget approximately
+fixed while varying what the inserted text does isolates interference from
+length. At $500$ inserted tokens, DeepSeek-Coder 6.7B retains $0.921$ binding
+accuracy with inert comments; dead code and lexical decoys give $0.794$--$0.795$,
+unrelated competing updates $0.859$, but scope shadows that reuse the tracked
+names reduce accuracy to $0.570$. At $1{,}000$ tokens the scope shadow reaches
+$0.498$ while all other fillers stay above $0.70$ (Figure~\ref{fig:context}). The
+licensed conclusion is comparative: tracked-name scope interference damages
+transfer far more than inert distance. It does not show that long context is
+universally harmless, nor that a failed frozen probe means the model has
+forgotten binding.
+
+\paragraph{Obfuscation ladder.} An execution-verified, cumulative ladder applies
+normalization, consistent renaming, opaque predicates, mixed
+Boolean--arithmetic rewrites, and control-flow flattening; every variant is
+checked observationally equivalent to its base, and the ladder is applied both
+individually and composed to attribute failures to steps
+(Appendix~\ref{app:obf}). Consistent renaming damages early lexical layers, some
+early probes fall below chance, while middle layers survive at $0.85$--$0.90$.
+Across models, \emph{control-flow flattening is the largest reproducible failure}
+(Table~\ref{tab:obf}, Figure~\ref{fig:obf}). These are frozen-readout results:
+they identify where the original representation transfers and thus a confidence
+boundary, not a proof that all binding information is erased when the probe fails.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Frozen-probe transfer through the obfuscation ladder (accuracy). Rename
+damages the lexical early layers; opaque predicates and arithmetic rewrites add
+little; control-flow flattening causes the largest cross-model collapse
+(\textbf{bold}).}
+\label{tab:obf}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Task, model & Rename & Opaque & Arith.\ encoding & Flatten \\
+\midrule
+Binding, 1.3B        & 0.783 & 0.801 & 0.834 & \textbf{0.555} \\
+Binding, 6.7B        & 0.883 & 0.862 & 0.857 & \textbf{0.615} \\
+Binding, StarCoder2  & 0.708 & 0.743 & 0.790 & \textbf{0.527} \\
+Def--use, 1.3B       & 0.819 & 0.799 & 0.800 & \textbf{0.461} \\
+Def--use, 6.7B       & 0.864 & 0.846 & 0.833 & \textbf{0.545} \\
+Def--use, StarCoder2 & 0.689 & 0.731 & 0.747 & \textbf{0.402} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figs/context_binding_deepseek-coder-6.7b.pdf}
+\caption{Context interference.}
+\label{fig:context}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figs/obfuscation_levels_deepseek-coder-6.7b.pdf}
+\caption{Obfuscation ladder.}
+\label{fig:obf}
+\end{subfigure}
+\caption{Frozen binding-probe transfer (DeepSeek-Coder 6.7B).
+(a) Long inert context is far less damaging than scope interference reusing the
+tracked names. (b) Middle layers survive renaming; control-flow flattening causes
+the largest collapse.}
+\label{fig:transfer}
+\end{figure}
+
+% =====================================================================
+\section{From representation to causal use and attribution}
+\label{sec:part3}
+% =====================================================================
+Sections~\ref{sec:repr} established that binding is represented and measured how
+stable that representation is. This section follows the representation into two
+distinct consequences on the \emph{same} controlled programs. \S\ref{sec:das}
+tests whether replacing one learned binding component makes the answer follow the
+installed binding; this is the only experiment that licenses a causal claim.
+\S\ref{sec:rlens} leaves the forward computation unchanged and asks whether the
+answer score is attributed to the definition the binding selects.
+\S\ref{sec:jlens} asks, at the same unprompted state, whether output-vocabulary
+margins move with the binding. These three instruments are less familiar than a
+linear probe, so we state precisely what each intervenes on, what each reads out,
+and what result would falsify its claim.
+
+\subsection{DAS: causal interchange of a binding component (P3)}
+\label{sec:das}
+
+\paragraph{What the experiment establishes.} A probe or lens can show that a fact
+is present, or present in output coordinates; neither can show that the fact is
+\emph{used}, because a representation can be a faithful copy of a computation that
+happens elsewhere. Establishing use requires an intervention on the state itself.
+
+\paragraph{The interchange operator.} Given the host state $\hb^{\mathrm{host}}$
+(the program the model is actually running) and a donor state
+$\hb^{\mathrm{donor}}$ (the counterfactual program), the intervention is
+Eq.~\eqref{eq:interchange}: the columns of the orthonormal matrix $\Rmat$ name a
+subspace, and the operator installs whatever the donor run has in that subspace
+while leaving the orthogonal complement of the host untouched. The design has no
+magnitude hyperparameter: unlike an additive edit of chosen norm, an interchange
+installs exactly the donor's component, so ``was the dose large enough'' is not a
+free question. The realized edit size is instead a \emph{measured} quantity
+(\code{edit\_fraction}), reported for every condition. Three algebraic properties
+are pinned by unit tests: the component of the host orthogonal to $\mathrm{span}(\Rmat)$
+is unchanged; $\hb^{\mathrm{donor}}=\hb^{\mathrm{host}}$ yields exactly the zero
+edit, so the no-op control is provably inert; and at $r=d$ the operator returns
+the whole donor state, so a whole-state patch is the rank-$d$ limit of the same
+operator and the correct ceiling to normalize against. The edit is computed in
+float64 and the half-precision hidden state is upcast before the edit and cast
+back afterward, so the intervention never occurs in half precision.
+
+\paragraph{How the subspace is learned.} $\Rmat$ is learned in the manner of DAS
+\citep{geiger2024das}: only $\Rmat$ is trained, every model parameter is frozen,
+and $\Rmat$ is re-orthonormalized inside the computation graph at each step so
+that the operator is a true interchange throughout optimization. The state
+entering the intervention site is detached, which is exact rather than
+approximate, layers before $\ell$ cannot depend on $\Rmat$, so no gradient
+should flow to them, and the objective is the negative log-probability of the
+token that the donor's value implies, at the final position. Two consequences
+follow. A null is strong: it states that \emph{no} $r$-dimensional subspace at
+this site behaves as claimed. A positive is weak without controls: because the
+method is expressive enough to fit structure that reflects something other than
+binding, the controls below are part of the claim, not an appendix to it.
+
+\paragraph{The crossed $2\times2$ that identifies binding.} The design crosses
+binding structure with value assignment. Four programs per base are
+token-identical except for one character:
+\begin{center}
+\begin{minipage}{0.46\linewidth}
+\begin{lstlisting}
+# ARM ab: (outer,inner)=(a,b)
+x = a
+def f():
+    y = b   # target: x = b
+    return x
+#   -> a (outer) / b (inner)
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{0.46\linewidth}
+\begin{lstlisting}
+# ARM ba: (outer,inner)=(b,a)
+x = b
+def f():
+    y = a   # target: x = a
+    return x
+#   -> b (outer) / a (inner)
+\end{lstlisting}
+\end{minipage}
+\end{center}
+The alignment is fitted on arm \code{ab}, where installing the inner binding
+requires the answer to move $a\!\to\!b$, and the claim is read on the held-out arm
+\code{ba}, where the \emph{same} binding swap requires the answer to move
+$b\!\to\!a$. This crossing is the identifying device: a direction that means
+``increase token $b$'' cannot succeed in both arms, whereas a direction carrying
+``use the donor's definition'' can. Because the answer \emph{is} the bound value,
+there is no arithmetic anywhere and no circularity to forbid; the crossing, not an
+arithmetic gap, breaks the confound (Table~\ref{tab:das-identify}).
+
+\begin{table}[t]
+\centering
+\small
+\caption{What each account of the subspace predicts across arms. Only ``which
+definition is in scope'' predicts a positive effect in both arms; the observed
+DAS pattern matches that row and no other.}
+\label{tab:das-identify}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Account of what the subspace carries & Arm \code{ab} & Arm \code{ba} \\
+\midrule
+which definition is in scope & positive & \textbf{positive} \\
+the token \code{b}           & positive & \textbf{negative} \\
+the answer direction         & positive & \textbf{negative} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Controls.} Every control is constructed to refute a specific simpler
+account (full detail in Appendix~\ref{app:das-controls}). The
+\emph{answer-direction} control is decisive: it builds a direction that
+explicitly pushes the fitted arm's output from value $a$ toward value $b$, using
+vocabulary-lens vectors (because the intervention is partway through the network),
+scaled to the DAS edit norm on the same example, and \emph{held fixed} across
+arms. It should work in \code{ab} and fail or reverse in \code{ba}. A
+\emph{mean-difference} direction (rank-1 span of the mean donor$-$host difference,
+no optimizer) is the cheapest non-learned alternative that a learned direction
+must dominate, not merely beat. Two random controls separate disruption from
+transport: a \emph{dose-matched} random subspace moves the same fraction of
+$\|\hb\|$, and a \emph{rank-matched} random subspace is the weaker floor; dose
+matching matters because a random rank-$r$ subspace captures only $\approx r/d$ of
+the state's energy while a learned one is selected to capture far more, so
+rank-matching alone would leave the comparison dose-mismatched in the direction
+that manufactures a positive. A no-op verifies the machinery, and a
+\emph{def-source} site where the programs are token-identical is a structural zero
+where any effect indicates a bug.
+
+\paragraph{Outcome metric.} The primary outcome is \says{}: whether the model's
+full-vocabulary argmax is the token the \emph{installed} binding selects, not a
+two-way logit margin. When clean accuracy is at ceiling, the model is confident,
+and any edit that merely disrupts the state regresses both candidates toward the
+middle and \emph{inflates} a two-way margin while transporting nothing; a
+disruption cannot systematically produce the correct installed token as the
+argmax. The experiment runs behind six gates that refuse downstream stages until
+they pass, including a behavioral gate (the model returns the correctly bound
+variable, $\geq 0.85$ overall) checked before any instrument is built on top of
+it (Appendix~\ref{app:das-gates}).
+
+\paragraph{Result.} DAS reaches $100\%$ installed-answer accuracy in both crossed
+arms on the two interpretable architectures (Table~\ref{tab:das}). On
+DeepSeek-Coder 6.7B the whole-state ceiling is $\approx 86\%$--$88\%$, so the
+rank-1 interchange is above the whole-state patch; the fitted-arm answer-direction
+control installs the correct token $27.9\%$ of the time and collapses to $4.3\%$
+in the crossed arm, while DAS remains perfect. The mean-difference direction is a
+real but weaker baseline that requires a larger edit ($\approx 0.71$ of
+$\|\hb\|$ versus $0.48$ for DAS). This is the strongest evidence in the study that
+downstream computation \emph{uses} a compact component with the causal role of the
+binding variable, at the tested site and layer.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Installed-answer accuracy (\says{}). DAS is fitted on \code{ab} and read
+on \code{ba}. Because the correct output token reverses between arms, DAS
+succeeding in both cannot be a fixed push toward one token; the answer-direction
+control shows exactly the predicted collapse across arms.}
+\label{tab:das}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Intervention & DeepSeek \code{ab} & DeepSeek \code{ba} & StarCoder2 \code{ab} & StarCoder2 \code{ba} \\
+\midrule
+\textbf{DAS, rank 1}       & \textbf{100.0\%} & \textbf{100.0\%} & \textbf{100.0\%} & \textbf{100.0\%} \\
+Whole-state donor patch    & 85.7\% & 87.9\% & 68.8\% & 67.3\% \\
+Mean donor$-$host direction& 76.1\% & 76.8\% & 54.6\% & 54.5\% \\
+Answer direction (fixed)   & 27.9\% & 4.3\%  & 44.8\% & 18.4\% \\
+Dose-matched random        & 2.1\%  & 1.8\%  & 30.9\% & 30.4\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Conservative relevance attribution of the unedited answer (P4)}
+\label{sec:rlens}
+
+\paragraph{What the experiment establishes.} DAS shows that changing a rank-1
+component at the use site changes the answer; it does not say which source
+locations the \emph{unedited} model's answer depends on. The conservative relevance decomposition answers that
+second, observational question on the same four-program factorial. It follows DAS
+deliberately: if it were the only experiment, a relevance shift could be
+overread as weak causal evidence, but here the causal fact is already established
+and the conservative relevance decomposition contributes a decomposition of the output score, not a second
+intervention.
+
+\paragraph{What it computes.} Fix one output score $s$, the model's score for the
+value the binding selects. Ordinary gradients measure local sensitivity but do
+not sum to $s$. The conservative relevance decomposition instead modifies only the \emph{backward} computation
+with conservation-respecting relevance rules
+\citep{bach2015lrp,ali2022xai,achtibat2024attnlrp}: it freezes normalization and
+the attention pattern, treats the SiLU nonlinearity as elementwise scaling, and
+splits the relevance of a gated MLP equally between its two multiplicative
+branches. The forward activations, logits, and emitted token are unchanged. For
+the pre-norm, gated-MLP DeepSeek architecture the resulting position relevances
+satisfy $\sum_i r_i \approx s$ at every reported layer, so each position's
+relevance divided by a \emph{positive} $s$ is a share; shares are summed into
+syntactic roles read from the AST (outer definition, inner name, inner value, use
+site, signature, \code{return}, suffix, residual). Freezing the attention pattern
+is a stated limitation: the method attributes what the fixed pattern transports,
+not how queries and keys formed it, so it cannot establish the mechanism
+``attention found the correct definition.''
+
+\paragraph{The one-token contrast and its statistic.} Within an arm, the
+non-shadowing and shadowing programs differ at exactly one token index out of
+$\approx 21$: the inner definition's name. The outer definition, inner value, use
+token, signature, and suffix are token-identical and re-verified during the run.
+The declared statistic is the \emph{share gained by the token-identical inner
+value minus the share retained by the token-identical outer definition}; a
+positive value means attribution moved toward the definition entering scope,
+measured over text that did not itself change. The instrument is interpreted only
+after forward invariance, rule binding, conservation, role partition, and a
+same-program zero-redistribution check all pass (Appendix~\ref{app:rlens}). The
+rules do not match StarCoder2's normalization and non-gated MLP, so the pipeline
+refuses to report relevance semantics there; and conservation alone is insufficient
+when shares are reported, so the sign of $s$ is checked separately, which fails
+often enough on the 1.3B model that its shares are not interpreted.
+
+\paragraph{Result.} On DeepSeek-Coder 6.7B the shift has the predicted sign on all
+$280$ held-out bases. At the first measured layer the newly active inner value
+gains $\approx 4.9\%$ of the answer score and the newly inactive outer definition
+loses $\approx 7.8\%$, a combined redistribution of $\approx 12.6\%$; the shift
+rises to $\approx 21.9\%$ in the middle and declines to $\approx 2.5\%$ near the
+output. The single changed name token carries only $\approx 1.5\%$ of the
+movement. The effect appears in both value arms, survives scoring both members at
+one fixed output token, reverses when the competing value is scored, and is
+absent in same-binding controls. It is therefore consistent with attribution
+following the active definition rather than responding locally to the changed
+name. This is observational evidence that complements, but does not amplify, the
+causal status of DAS; because all bases share one template, the effect is best
+read as a property of the template-level contrast (Appendix~\ref{app:rlens}).
+
+\subsection{Prompt-specific Jacobian readout of lexical alignment (P5)}
+\label{sec:jlens}
+
+\paragraph{What the experiment establishes.} The final question is whether the
+binding state is expressed in the model's \emph{output vocabulary} at the
+unprompted use token, with no appended question. The instrument is a
+prompt-specific Jacobian vocabulary readout. The logit lens
+reads a hidden state directly through the unembedding
+\citep{nostalgebraist2020logitlens}, the prompt-specific Jacobian readout estimates how the remaining layers
+map a change at the read position to the output, which is the relevant map when
+the state is read mid-network. We report the plain logit lens alongside it to
+separate vocabulary alignment from an effect introduced by the Jacobian
+correction.
+
+\paragraph{Design.} For each of nine predeclared single-token pairs, four scope
+(\code{local/global}, \code{nested/module}, \code{inner/outer}, and one
+additional), three positional, and two action contrasts, we measure, per layer
+and per value arm, the fraction of held-out programs on which the
+inner-minus-outer margin moves in the predicted direction when only the binding
+changes. The two value arms are the principal control: activating the inner
+definition returns literal \code{b} in \code{ab} but literal \code{a} in
+\code{ba}, so a margin that shifts the same binding-relative way in both arms is
+not following one answer token. Pairs are grouped into families so scope
+contrasts can be compared against positional and action contrasts. The positive
+control is a calibration-fitted binding probe on the same held-out states, which
+confirms the read position contains binding information; every word pair must
+preserve its declared tokenization (Appendix~\ref{app:jlens}).
+
+\paragraph{Result and its limit.} The instrument is mechanically valid: the
+matched binding probe is $1.000$ at L8, L12, L16, L20, and L24, and several scope
+pairs follow the binding strongly in both arms, \code{nested/module} reaches
+$1.000/1.000$ at L16 and \code{local/global} $0.996/1.000$ at L20, persisting past
+$0.98$ at L24 (Table~\ref{tab:jlens}). The crossing makes these associations
+meaningful. They do not, however, isolate scope semantics. Under the single
+template the active definition simultaneously becomes later, nearer, second, and
+retained, so the positional \code{later/earlier} and action \code{replaced/kept}
+contrasts move as strongly as the scope pairs while the literal \code{inner/outer}
+pair is weak. The supported conclusion is therefore
+\emph{binding-associated lexical alignment}, not that the representation
+verbalizes ``scope.'' A plausible-sounding rationale that uses correct semantic
+vocabulary is thus not, on this evidence, a faithful readout of the causal state.
+
+\begin{table}[t]
+\centering
+\small
+\caption{prompt-specific Jacobian crossed-arm reversal rate (fraction of held-out programs on which
+the margin moves with the binding), DeepSeek-Coder 6.7B, at representative
+layers. Scope pairs track the binding, but a positional confound tracks it as
+strongly, so alignment is not uniquely scope.}
+\label{tab:jlens}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+Pair, layer & Family & Reversal \code{ab} & Reversal \code{ba} \\
+\midrule
+\code{nested/module}, L16   & scope      & 1.000 & 1.000 \\
+\code{local/global}, L20    & scope      & 0.996 & 1.000 \\
+\code{nested/module}, L24   & scope      & 0.993 & 0.996 \\
+\code{local/global}, L24    & scope      & 0.986 & 0.993 \\
+\code{later/earlier}, L16   & positional & 1.000 & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Discussion}
+\label{sec:discussion}
+% =====================================================================
+No single result establishes semantic grounding; their conjunction is what is
+informative. The exact embedding and surface nulls show that binding is not
+locally encoded in the queried token. The rise through layers shows contextual
+construction. Renaming resistance in middle layers shows partial independence from
+identifier strings. Greater sensitivity to competing scope than to inert distance
+ties failure to semantic difficulty rather than to length. The crossed DAS
+intervention shows causal use that is separable from a fixed answer token, and the
+the relevance decomposition links the unedited answer to the active definition. Together these are
+difficult to reconcile with a purely lexical account.
+
+The same results also reject a strong symbolic account. The frozen representation
+is not invariant to all meaning-preserving transformations: flattening and scope
+interference sharply reduce transfer, early layers can be misled by renaming, and
+the vocabulary alignment is confounded across scope, position, and replacement.
+The models compute a useful binding relation, but that computation remains
+entangled with learned lexical and structural conventions. The practical reading
+is a \emph{conditional} one. Tasks dominated by ordinary lexical patterns can hide
+semantic weaknesses, because those patterns usually agree with program meaning;
+confidence should fall on inputs where lexical and semantic evidence diverge, 
+adversarial naming, unfamiliar control-flow lowering, deeply competing scopes, 
+which are exactly the regimes in which the measured readout loses transfer. An
+assurance case for a code model should therefore test representation, invariance,
+causal use, and failure boundaries separately, and restrict or escalate actions
+outside the validated regime, rather than infer trust from one correct output or
+one plausible explanation.
+
+% =====================================================================
+\section{Conclusion}
+% =====================================================================
+We tested semantic grounding with a binding construction whose surface floor is
+exactly $0.500$. The models form a linearly recoverable binding relation and use
+a rank-1 component of it when selecting an answer. DeepSeek-Coder 6.7B also
+assigns answer relevance toward the active definition, and its unprompted state
+aligns with several lexical contrasts after answer identities are reversed.
+Competing scope and flattened control flow reduce transfer. The lexical readout
+does not isolate scope from position. These results support trust within the
+tested conditions and identify concrete limits on that trust.
+
+% =====================================================================
+\section*{Limitations and threats to validity}
+\addcontentsline{toc}{section}{Limitations and threats to validity}
+% =====================================================================
+
+\paragraph{External validity.} The causal experiment is a small synthetic Python
+construction with one lexical mutation, one use site, and scalar-literal answers.
+That control is what makes the causal claim possible, but it does not cover
+repository scale, interprocedural aliasing, objects, closures, mutation through
+containers, exceptions, concurrency, or dynamic dispatch. The next step is to
+embed \cm{} counterfactuals in diverse real code instead of adding generated names.
+A general form-preserving, meaning-breaking construction, a program that presents
+as one thing and computes another, does not exist in this corpus, and it is the
+cell closest to the adversarial motivation.
+
+\paragraph{Model and instrument scope.} Representation and robustness span three
+model families where reported, but the conservative relevance attribution claim holds only for
+DeepSeek-Coder 6.7B (the 1.3B model has non-positive selected scores on part of
+the condition; StarCoder2 is outside the implemented relevance rules), and the
+crossed-arm vocabulary-lens result is currently 6.7B only. Cross-model numbers are
+read at matched relative depth, but depth alignment is itself an approximation.
+
+\paragraph{What a probe failure does and does not mean.} Frozen-probe transfer
+failure shows that a clean-trained linear readout no longer transfers; it does not
+prove the information was erased, since a refitted or nonlinear probe might recover
+it. Symmetrically, high probe accuracy does not prove use, which is why DAS is
+necessary. DAS is itself local: it identifies a successful rank-1 interchange at
+one site and layer, not a unique global mechanism, and its superiority to a
+whole-state patch suggests the full state carries opposing components, an
+explanation that remains untested.
+
+\paragraph{Attribution and lens caveats.} The conservative relevance decomposition is rule-dependent and
+observational; conservation verifies an accounting identity, not that the
+resulting partition is the unique causal explanation, and freezing the attention
+pattern precludes attributing the query/key formation. Because every base shares
+one template, a mismatched-base control reproduces the mean shift, so effect sizes
+should be read as properties of the controlled contrast. The prompt-specific Jacobian readout has limited
+early-layer stability (independent-build sign agreement exceeds $0.90$ only at
+L24), its next-token validation is small, and its single template changes scope,
+order, distance, and replacement together; broader templates that break these
+correlations are required before naming the alignment as scope.
+
+\paragraph{Grounding is necessary, not sufficient, for safety.} A model can
+represent binding correctly while following a malicious instruction, calling an
+unsafe tool, or optimizing the wrong objective. Access control, sandboxing,
+approval boundaries, and conventional software assurance remain necessary; this
+paper contributes evidence about one component of trustworthy reasoning, not a
+safety case.
+
+% References
+\bibliography{references_revised}
+
+\clearpage
+\appendix
+\input{appendix}
+
+\end{document}

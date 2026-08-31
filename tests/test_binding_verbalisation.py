@@ -605,7 +605,7 @@ def test_h9_refuses_a_run_where_the_homogenising_rules_did_not_install():
         readings, pairs, pd.DataFrame([{"x": 1}]), _null_identity(),
         score_positivity(readings), {"ln": 0, "mlp": 0, "attn": 32},
         layers=[3, 7], role_problems=[])
-    assert "rlens_rules_bound" in {v.gate for v in violations}
+    assert "clrp_rules_bound" in {v.gate for v in violations}
 
 
 def test_h9_refuses_a_question_that_names_the_inner_definition():

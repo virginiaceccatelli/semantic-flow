@@ -57,7 +57,7 @@ unconditionally, so neither depends on discovery.
 
 ## The scale caveat, and what is done about it
 
-`JLens.scores` drops a positive per-position factor (`1/rms(J h)`, see
+`CotangentLens.scores` drops a positive per-position factor (`1/rms(J h)`, see
 `src/models/lens.py`). Rankings and score *differences within one position* are
 exact; magnitudes across positions are not — and a paired contrast compares two
 different positions. Every statistic here is therefore reported in three forms:
@@ -112,13 +112,13 @@ from src.experiments.sink_flow import (
     condition_name,
     condition_order,
 )
-from src.models.lens import JLens
+from src.models.cotangent_lens import CotangentLens
 
 logger = logging.getLogger(__name__)
 
 # The readout methods, and the one declared primary BEFORE any result is seen.
-LENS_KINDS: tuple[str, ...] = ("logit", "jlens", "rlens")
-PRIMARY_LENS = "rlens"
+LENS_KINDS: tuple[str, ...] = ("logit", "clens", "clrp")
+PRIMARY_LENS = "clrp"
 
 # The security lexicon, fixed before any held-out number is produced. Small on
 # purpose: a large hand-written list would turn "does a security word carry the
@@ -402,7 +402,7 @@ def softmax(scores: np.ndarray) -> np.ndarray:
     return exponent / exponent.sum(axis=1, keepdims=True)
 
 
-def lens_scores(lens: JLens, states: np.ndarray) -> np.ndarray:
+def lens_scores(lens: CotangentLens, states: np.ndarray) -> np.ndarray:
     """(n, V) candidate scores for a stack of states, in the lens's own order."""
     states = np.atleast_2d(np.asarray(states, dtype=np.float32))
     return states @ lens.vectors.T
@@ -434,7 +434,7 @@ class ContrastResult:
         return self.contrast_z_unsafe - self.contrast_z_safe
 
 
-def pair_contrast(lens: JLens, unsafe_state: np.ndarray, safe_state: np.ndarray,
+def pair_contrast(lens: CotangentLens, unsafe_state: np.ndarray, safe_state: np.ndarray,
                   unsafe_positions: Sequence[int],
                   safe_positions: Sequence[int]) -> ContrastResult:
     """Score both members and orient the difference unsafe − safe, always.
@@ -487,7 +487,7 @@ def full_vocab_deltas(
     """
     import torch
 
-    from src.models.lens import _candidate_cotangents
+    from src.models.cotangent_lens import _candidate_cotangents
 
     device = next(model.parameters()).device
     vocab_size = int(_output_vocab_size(model))
@@ -542,14 +542,14 @@ def lrp_rule_counts(model) -> dict:
     is exactly how an "R-lens" can be built on an architecture the rules do not
     match: attention hooks register, `strict` is satisfied, and the two rules
     that make the traversed tail degree-1 homogeneous — the RMSNorm rule and the
-    gated-MLP rule — silently bind to nothing. The result is labelled `rlens` and
+    gated-MLP rule — silently bind to nothing. The result is labelled `clrp` and
     is arithmetically a J-lens.
 
     StarCoder2 is that architecture: LayerNorm rather than RMSNorm (different
     algebra, deliberately not matched) and a non-gated MLP (no
     `gate_proj`/`up_proj`/`down_proj`), so `ln` and `mlp` both come back 0.
     """
-    from src.models.lrp import lrp_rules
+    from src.models.cotangent_lrp import lrp_rules
 
     with lrp_rules(model, strict=False) as counts:
         return dict(counts)
@@ -567,7 +567,7 @@ def homogenising_rules_bound(counts: dict) -> bool:
 
 
 def _output_vocab_size(model) -> int:
-    from src.models.lens import get_output_unembedding
+    from src.models.cotangent_lens import get_output_unembedding
 
     return int(get_output_unembedding(model).shape[0])
 
@@ -647,7 +647,7 @@ def _decode_token(tokenizer, token_id: int) -> str:
 
 
 def discover_within_pool(
-    lenses: dict[str, dict[int, JLens]],
+    lenses: dict[str, dict[int, CotangentLens]],
     pairs: Sequence[PairState],
     candidates: VocabCandidates,
     layers: Sequence[int],
@@ -714,7 +714,7 @@ def discover_within_pool(
 
 
 def evaluate_pairs(
-    lenses: dict[str, dict[int, JLens]],
+    lenses: dict[str, dict[int, CotangentLens]],
     pairs: Sequence[PairState],
     candidates: VocabCandidates,
     layers: Sequence[int],
@@ -1022,7 +1022,7 @@ def same_label_pairs(pairs: Sequence[PairState], pole: str,
     return out
 
 
-def control_lenses(lenses: dict[int, JLens], seed: int = 42) -> dict[str, dict[int, JLens]]:
+def control_lenses(lenses: dict[int, CotangentLens], seed: int = 42) -> dict[str, dict[int, CotangentLens]]:
     """Norm-matched and Gram-matched random lenses built from a real one.
 
     `random` fixes every row's length; `gram_random` fixes every length AND
@@ -1031,9 +1031,9 @@ def control_lenses(lenses: dict[int, JLens], seed: int = 42) -> dict[str, dict[i
     under test. Both are already in `src/models/lens.py`; nothing new is
     invented here.
     """
-    from src.models.lens import gram_matched_random_lens, random_lens
+    from src.models.cotangent_lens import gram_matched_random_lens, random_lens
 
-    out: dict[str, dict[int, JLens]] = {"random": {}, "gram_random": {}}
+    out: dict[str, dict[int, CotangentLens]] = {"random": {}, "gram_random": {}}
     for layer, lens in lenses.items():
         out["random"][layer] = random_lens(lens, seed=seed)
         try:
@@ -1329,7 +1329,7 @@ WEAK_CONSERVATION = 0.25         # |rho - 1| above this earns a warning (R-lens)
 def lens_diagnostics(
     model,
     tokenizer,
-    lenses: dict[str, dict[int, JLens]],
+    lenses: dict[str, dict[int, CotangentLens]],
     sources: Sequence[str],
     layers: Sequence[int],
     n_eval: int = 60,
@@ -1343,10 +1343,10 @@ def lens_diagnostics(
     """
     import torch
 
-    from src.experiments.jlens_validate import next_token_metrics
+    from src.experiments.clens_validate import next_token_metrics
     from src.experiments.jspace_lens import build_lens_samples
     from src.models.hooks import extract_hidden_states
-    from src.models.lens import _candidate_cotangents, conservation_ratio
+    from src.models.cotangent_lens import _candidate_cotangents, conservation_ratio
 
     any_lens = next((lens for by_layer in lenses.values()
                      for lens in by_layer.values()), None)
@@ -1406,7 +1406,7 @@ def lens_diagnostics(
                 if len(order) > 2:
                     agreements.append(spearmanr(order, reference).statistic)
             conservation = float("nan")
-            if kind == "rlens" and n_conservation:
+            if kind == "clrp" and n_conservation:
                 cotangent = _candidate_cotangents(model, [candidate_ids[0]])[0].to(device)
                 ratios = [conservation_ratio(model, layer, sample, cotangent, lrp=True)
                           for sample, _ in samples[:n_conservation]]
@@ -1443,7 +1443,7 @@ def lens_diagnostics(
 
 
 def j0_lens_checks(
-    lenses: dict[str, dict[int, JLens]],
+    lenses: dict[str, dict[int, CotangentLens]],
     candidates: VocabCandidates,
     layers: Sequence[int],
     sites: Sequence[str],
@@ -1525,17 +1525,17 @@ def j0_lens_checks(
     # `lrp_rules`' own strict check while the two rules that create the
     # conservation property bind to nothing — which is how an architecture the
     # rules do not match (LayerNorm + non-gated MLP) yields a lens labelled
-    # `rlens` that is arithmetically a J-lens.
-    if lrp_counts is not None and "rlens" in lenses and lenses["rlens"] \
+    # `clrp` that is arithmetically a J-lens.
+    if lrp_counts is not None and "clrp" in lenses and lenses["clrp"] \
             and not homogenising_rules_bound(lrp_counts):
-        fail("rlens_rules_bound",
+        fail("clrp_rules_bound",
              "the RMSNorm rule or the gated-MLP rule binds to at least one "
              "module, so the R-lens is not silently a J-lens",
              f"ln={lrp_counts.get('ln', 0)}, mlp={lrp_counts.get('mlp', 0)}, "
              f"attn={lrp_counts.get('attn', 0)} — neither homogenising rule "
              f"installed on this architecture",
              [f"LayerNorm models (starcoder2) and non-gated MLPs are not matched "
-              f"by is_gated_mlp/norm_eps_attr; build with --lens-kinds logit,jlens "
+              f"by is_gated_mlp/norm_eps_attr; build with --lens-kinds logit,clens "
               f"or extend the rules"])
     return violations
 

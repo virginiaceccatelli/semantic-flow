@@ -1,0 +1,374 @@
+% =====================================================================
+% references.bib  --  SemFlow / semantic-grounding audit
+% NOTE (author, please verify): these entries were assembled from general
+% knowledge of the literature and were NOT checked against a live database.
+% Author lists, years, venues and page numbers may contain errors and a
+% few entries may be misattributed. Verify every entry against the DOI /
+% official proceedings before submission.
+% =====================================================================
+
+% ---------- Code language models ----------
+@inproceedings{feng2020codebert,
+  title={{CodeBERT}: A Pre-Trained Model for Programming and Natural Languages},
+  author={Feng, Zhangyin and Guo, Daya and Tang, Duyu and Duan, Nan and Feng, Xiaocheng and Gong, Ming and Shou, Linjun and Qin, Bing and Liu, Ting and Jiang, Daxin and Zhou, Ming},
+  booktitle={Findings of the Association for Computational Linguistics: EMNLP},
+  year={2020}
+}
+@inproceedings{guo2021graphcodebert,
+  title={{GraphCodeBERT}: Pre-training Code Representations with Data Flow},
+  author={Guo, Daya and Ren, Shuo and Lu, Shuai and Feng, Zhangyin and Tang, Duyu and Liu, Shujie and Zhou, Long and Duan, Nan and Svyatkovskiy, Alexey and Fu, Shengyu and others},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2021}
+}
+@inproceedings{wang2021codet5,
+  title={{CodeT5}: Identifier-aware Unified Pre-trained Encoder-Decoder Models for Code Understanding and Generation},
+  author={Wang, Yue and Wang, Weishi and Joty, Shafiq and Hoi, Steven C.H.},
+  booktitle={Empirical Methods in Natural Language Processing (EMNLP)},
+  year={2021}
+}
+@article{chen2021codex,
+  title={Evaluating Large Language Models Trained on Code},
+  author={Chen, Mark and Tworek, Jerry and Jun, Heewoo and Yuan, Qiming and others},
+  journal={arXiv preprint arXiv:2107.03374},
+  year={2021}
+}
+@inproceedings{nijkamp2023codegen,
+  title={{CodeGen}: An Open Large Language Model for Code with Multi-Turn Program Synthesis},
+  author={Nijkamp, Erik and Pang, Bo and Hayashi, Hiroaki and Tu, Lifu and Wang, Huan and Zhou, Yingbo and Savarese, Silvio and Xiong, Caiming},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2023}
+}
+@article{li2023starcoder,
+  title={{StarCoder}: may the source be with you!},
+  author={Li, Raymond and Ben Allal, Loubna and Zi, Yangtian and others},
+  journal={Transactions on Machine Learning Research (TMLR)},
+  year={2023}
+}
+@article{lozhkov2024starcoder2,
+  title={{StarCoder2} and {The Stack v2}: The Next Generation},
+  author={Lozhkov, Anton and Li, Raymond and Ben Allal, Loubna and others},
+  journal={arXiv preprint arXiv:2402.19173},
+  year={2024}
+}
+@article{guo2024deepseekcoder,
+  title={{DeepSeek-Coder}: When the Large Language Model Meets Programming -- The Rise of Code Intelligence},
+  author={Guo, Daya and Zhu, Qihao and Yang, Dejian and Xie, Zhenda and Dong, Kai and Zhang, Wentao and others},
+  journal={arXiv preprint arXiv:2401.14196},
+  year={2024}
+}
+
+% ---------- Probing methodology ----------
+@article{alain2016understanding,
+  title={Understanding intermediate layers using linear classifier probes},
+  author={Alain, Guillaume and Bengio, Yoshua},
+  journal={arXiv preprint arXiv:1610.01644},
+  year={2016}
+}
+@inproceedings{hewitt2019control,
+  title={Designing and Interpreting Probes with Control Tasks},
+  author={Hewitt, John and Liang, Percy},
+  booktitle={Empirical Methods in Natural Language Processing (EMNLP-IJCNLP)},
+  year={2019}
+}
+@inproceedings{hewitt2019structural,
+  title={A Structural Probe for Finding Syntax in Word Representations},
+  author={Hewitt, John and Manning, Christopher D.},
+  booktitle={North American Chapter of the Association for Computational Linguistics (NAACL)},
+  year={2019}
+}
+@article{belinkov2022probing,
+  title={Probing Classifiers: Promises, Shortcomings, and Advances},
+  author={Belinkov, Yonatan},
+  journal={Computational Linguistics},
+  volume={48},
+  number={1},
+  year={2022}
+}
+@inproceedings{pimentel2020information,
+  title={Information-Theoretic Probing for Linguistic Structure},
+  author={Pimentel, Tiago and Valvoda, Josef and Maudslay, Rowan Hall and Zmigrod, Ran and Williams, Adina and Cotterell, Ryan},
+  booktitle={Association for Computational Linguistics (ACL)},
+  year={2020}
+}
+@inproceedings{voita2020information,
+  title={Information-Theoretic Probing with Minimum Description Length},
+  author={Voita, Elena and Titov, Ivan},
+  booktitle={Empirical Methods in Natural Language Processing (EMNLP)},
+  year={2020}
+}
+
+% ---------- Structural / semantic analysis of code models ----------
+@inproceedings{maveli2025functional,
+  title={What Can Large Language Models Capture about Code Functional Equivalence?},
+  author={Maveli, Nickil and Vergari, Antonio and Cohen, Shay B.},
+  booktitle={Findings of the Association for Computational Linguistics: NAACL 2025},
+  year={2025},
+  doi={10.18653/v1/2025.findings-naacl.382}
+}
+@inproceedings{wang2025codesemantics,
+  title={Do Code Semantics Help? A Comprehensive Study on Execution Trace-Based Information for Code Large Language Models},
+  author={Wang, Jian Jornbowrl and Xie, Xiaofei and Hu, Qiang and Liu, Shangqing and Li, Yi},
+  booktitle={Findings of the Association for Computational Linguistics: EMNLP 2025},
+  year={2025},
+  doi={10.18653/v1/2025.findings-emnlp.548}
+}
+@article{tahimic2025correctness,
+  title={Mechanistic Interpretability of Code Correctness in {LLMs} via Sparse Autoencoders},
+  author={Tahimic, Kriz and Cheng, Charibeth},
+  journal={arXiv preprint arXiv:2510.02917},
+  year={2025}
+}
+@article{vu2025autoprobe,
+  title={Model-Agnostic Correctness Assessment for {LLM}-Generated Code via Dynamic Internal Representation Selection},
+  author={Vu, Thanh Trong and Bui, Tuan-Dung and Nguyen, Thu-Trang and Nguyen, Son and Vo, Hieu Dinh},
+  journal={arXiv preprint arXiv:2510.02934},
+  year={2025}
+}
+@inproceedings{karmakar2021whatdo,
+  title={What do pre-trained code models know about code?},
+  author={Karmakar, Anjan and Robbes, Romain},
+  booktitle={IEEE/ACM International Conference on Automated Software Engineering (ASE)},
+  year={2021}
+}
+@inproceedings{wan2022theyknow,
+  title={What do they capture? A structural analysis of pre-trained language models for source code},
+  author={Wan, Yao and Zhao, Wei and Zhang, Hongyu and Sui, Yulei and Xu, Guandong and Jin, Hai},
+  booktitle={International Conference on Software Engineering (ICSE)},
+  year={2022}
+}
+@inproceedings{troshin2022probing,
+  title={Probing Pretrained Models of Source Code},
+  author={Troshin, Sergey and Chirkova, Nadezhda},
+  booktitle={BlackboxNLP Workshop on Analyzing and Interpreting Neural Networks for NLP},
+  year={2022}
+}
+@inproceedings{lopez2022astprobe,
+  title={{AST-Probe}: Recovering abstract syntax trees from hidden representations of pre-trained language models},
+  author={Hern{\'a}ndez L{\'o}pez, Jos{\'e} Antonio and Weyssow, Martin and Cuadrado, Jes{\'u}s S{\'a}nchez and Sahraoui, Houari},
+  booktitle={IEEE/ACM International Conference on Automated Software Engineering (ASE)},
+  year={2022}
+}
+@article{jin2023evidence,
+  title={Evidence of Meaning in Language Models Trained on Programs},
+  author={Jin, Charles and Rinard, Martin},
+  journal={arXiv preprint arXiv:2305.11169},
+  year={2023}
+}
+
+% ---------- Emergent internal world/structure representations ----------
+@inproceedings{li2023othello,
+  title={Emergent World Representations: Exploring a Sequence Model Trained on a Synthetic Task},
+  author={Li, Kenneth and Hopkins, Aspen K. and Bau, David and Vi{\'e}gas, Fernanda and Pfister, Hanspeter and Wattenberg, Martin},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2023}
+}
+@inproceedings{nanda2023emergent,
+  title={Emergent Linear Representations in World Models of Self-Supervised Sequence Models},
+  author={Nanda, Neel and Lee, Andrew and Wattenberg, Martin},
+  booktitle={BlackboxNLP Workshop on Analyzing and Interpreting Neural Networks for NLP},
+  year={2023}
+}
+
+% ---------- Binding / entity tracking ----------
+@article{smolensky1990tensor,
+  title={Tensor product variable binding and the representation of symbolic structures in connectionist systems},
+  author={Smolensky, Paul},
+  journal={Artificial Intelligence},
+  volume={46},
+  number={1-2},
+  year={1990}
+}
+@inproceedings{feng2023entities,
+  title={How do Language Models Bind Entities in Context?},
+  author={Feng, Jiahai and Steinhardt, Jacob},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2024}
+}
+@inproceedings{kim2023entity,
+  title={Entity Tracking in Language Models},
+  author={Kim, Najoung and Schuster, Sebastian},
+  booktitle={Association for Computational Linguistics (ACL)},
+  year={2023}
+}
+@inproceedings{prakash2024finetuning,
+  title={Fine-Tuning Enhances Existing Mechanisms: A Case Study on Entity Tracking},
+  author={Prakash, Nikhil and Shaham, Tamar Rott and Haklay, Tal and Belinkov, Yonatan and Bau, David},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2024}
+}
+
+% ---------- Causal / mechanistic interpretability ----------
+@inproceedings{geiger2021causal,
+  title={Causal Abstractions of Neural Networks},
+  author={Geiger, Atticus and Lu, Hanson and Icard, Thomas and Potts, Christopher},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  year={2021}
+}
+@inproceedings{geiger2024das,
+  title={Finding Alignments Between Interpretable Causal Variables and Distributed Neural Representations},
+  author={Geiger, Atticus and Wu, Zhengxuan and Potts, Christopher and Icard, Thomas and Goodman, Noah D.},
+  booktitle={Causal Learning and Reasoning (CLeaR)},
+  year={2024}
+}
+@inproceedings{wu2023boundless,
+  title={Interpretability at Scale: Identifying Causal Mechanisms in {Alpaca}},
+  author={Wu, Zhengxuan and Geiger, Atticus and Icard, Thomas and Potts, Christopher and Goodman, Noah D.},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  year={2023}
+}
+@inproceedings{vig2020causal,
+  title={Investigating Gender Bias in Language Models Using Causal Mediation Analysis},
+  author={Vig, Jesse and Gehrmann, Sebastian and Belinkov, Yonatan and Qian, Sharon and Nevo, Daniel and Singer, Yaron and Shieber, Stuart},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  year={2020}
+}
+@inproceedings{meng2022rome,
+  title={Locating and Editing Factual Associations in {GPT}},
+  author={Meng, Kevin and Bau, David and Andonian, Alex and Belinkov, Yonatan},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  year={2022}
+}
+@inproceedings{wang2023ioi,
+  title={Interpretability in the Wild: a Circuit for Indirect Object Identification in {GPT-2} Small},
+  author={Wang, Kevin and Variengien, Alexandre and Conmy, Arthur and Shlegeris, Buck and Steinhardt, Jacob},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2023}
+}
+@inproceedings{conmy2023acdc,
+  title={Towards Automated Circuit Discovery for Mechanistic Interpretability},
+  author={Conmy, Arthur and Mavor-Parker, Augustine N. and Lynch, Aengus and Heimersheim, Stefan and Garriga-Alonso, Adri{\`a}},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  year={2023}
+}
+@article{elhage2021mathematical,
+  title={A Mathematical Framework for Transformer Circuits},
+  author={Elhage, Nelson and Nanda, Neel and Olsson, Catherine and others},
+  journal={Transformer Circuits Thread},
+  year={2021}
+}
+@inproceedings{zhang2024patching,
+  title={Towards Best Practices of Activation Patching in Language Models: Metrics and Methods},
+  author={Zhang, Fred and Nanda, Neel},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2024}
+}
+@article{heimersheim2024patching,
+  title={How to use and interpret activation patching},
+  author={Heimersheim, Stefan and Nanda, Neel},
+  journal={arXiv preprint arXiv:2404.15255},
+  year={2024}
+}
+
+% ---------- Vocabulary lenses ----------
+@article{gurnee2026workspace,
+  title={Verbalizable Representations Form a Global Workspace in Language Models},
+  author={Gurnee, Wes and Sofroniew, Nicholas and Pearce, Adam and Piotrowski, Mateusz and Kauvar, Isaac and Chen, Runjin and Soligo, Anna and Bogdan, Paul and Ong, Euan and Wang, Rowan and Thompson, Ben and Abrahams, David and Kantamneni, Subhash and Ameisen, Emmanuel and Batson, Joshua and Lindsey, Jack},
+  journal={Transformer Circuits},
+  year={2026},
+  url={https://transformer-circuits.pub/2026/workspace/}
+}
+@misc{blank2026rlens,
+  title={{R-lens}: Making {J-lens} More Faithful on Early Layers},
+  author={Blank, Camila and Bhatia, Agam and Nanda, Neel},
+  year={2026},
+  howpublished={AI Alignment Forum},
+  url={https://www.alignmentforum.org/posts/nv8oedrnLXKRzNEL9/r-lens-making-j-lens-more-faithful-on-early-layers}
+}
+@article{jafari2025relp,
+  title={{RelP}: Faithful and Efficient Circuit Discovery via Relevance Patching},
+  author={Rezaei Jafari, Farnoush and Eberle, Oliver and Khakzar, Ashkan and Nanda, Neel},
+  journal={arXiv preprint arXiv:2508.21258},
+  year={2025}
+}
+@misc{nostalgebraist2020logitlens,
+  title={Interpreting {GPT}: the logit lens},
+  author={nostalgebraist},
+  year={2020},
+  howpublished={LessWrong}
+}
+@article{belrose2023tunedlens,
+  title={Eliciting Latent Predictions from Transformers with the Tuned Lens},
+  author={Belrose, Nora and Furman, Zach and Smith, Logan and Halawi, Danny and Ostrovsky, Igor and McKinney, Lev and Biderman, Stella and Steinhardt, Jacob},
+  journal={arXiv preprint arXiv:2303.08112},
+  year={2023}
+}
+@inproceedings{geva2022ffn,
+  title={Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space},
+  author={Geva, Mor and Caciularu, Avi and Wang, Kevin Ro and Goldberg, Yoav},
+  booktitle={Empirical Methods in Natural Language Processing (EMNLP)},
+  year={2022}
+}
+@inproceedings{dar2023embedding,
+  title={Analyzing Transformers in Embedding Space},
+  author={Dar, Guy and Geva, Mor and Gupta, Ankit and Berant, Jonathan},
+  booktitle={Association for Computational Linguistics (ACL)},
+  year={2023}
+}
+
+% ---------- Attribution / layer-wise relevance propagation ----------
+@article{bach2015lrp,
+  title={On Pixel-Wise Explanations for Non-Linear Classifier Decisions by Layer-Wise Relevance Propagation},
+  author={Bach, Sebastian and Binder, Alexander and Montavon, Gr{\'e}goire and Klauschen, Frederick and M{\"u}ller, Klaus-Robert and Samek, Wojciech},
+  journal={PLoS ONE},
+  volume={10},
+  number={7},
+  year={2015}
+}
+@inproceedings{ali2022xai,
+  title={{XAI} for Transformers: Better Explanations through Conservative Propagation},
+  author={Ali, Ameen and Schnake, Thomas and Eberle, Oliver and Montavon, Gr{\'e}goire and M{\"u}ller, Klaus-Robert and Wolf, Lior},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2022}
+}
+@inproceedings{achtibat2024attnlrp,
+  title={{AttnLRP}: Attention-Aware Layer-Wise Relevance Propagation for Transformers},
+  author={Achtibat, Reduan and Hatefi, Sayed Mohammad Vakilzadeh and Dreyer, Maximilian and Jain, Aakriti and Wiegand, Thomas and Lapuschkin, Sebastian and Samek, Wojciech},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2024}
+}
+@inproceedings{sundararajan2017ig,
+  title={Axiomatic Attribution for Deep Networks},
+  author={Sundararajan, Mukund and Taly, Ankur and Yan, Qiqi},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2017}
+}
+@inproceedings{chefer2021transformer,
+  title={Transformer Interpretability Beyond Attention Visualization},
+  author={Chefer, Hila and Gur, Shir and Wolf, Lior},
+  booktitle={IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year={2021}
+}
+
+% ---------- Robustness / adversarial code ----------
+@article{yefet2020adversarial,
+  title={Adversarial Examples for Models of Code},
+  author={Yefet, Noam and Alon, Uri and Yahav, Eran},
+  journal={Proceedings of the ACM on Programming Languages (OOPSLA)},
+  year={2020}
+}
+@inproceedings{henkel2022semantic,
+  title={Semantic Robustness of Models of Source Code},
+  author={Henkel, Jordan and Ramakrishnan, Goutham and Wang, Zi and Albarghouthi, Aws and Jha, Somesh and Reps, Thomas},
+  booktitle={IEEE International Conference on Software Analysis, Evolution and Reengineering (SANER)},
+  year={2022}
+}
+@inproceedings{bielik2020robust,
+  title={Adversarial Robustness for Code},
+  author={Bielik, Pavol and Vechev, Martin},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2020}
+}
+@inproceedings{rabin2021generalizability,
+  title={On the Generalizability of Neural Program Models with respect to Semantic-Preserving Program Transformations},
+  author={Rabin, Md Rafiqul Islam and Bui, Nghi D.Q. and Wang, Ke and Yu, Yijun and Jiang, Lingxiao and Alipour, Mohammad Amin},
+  booktitle={Information and Software Technology},
+  year={2021}
+}
+
+% ---------- Program analysis infrastructure ----------
+@inproceedings{yamaguchi2014cpg,
+  title={Modeling and Discovering Vulnerabilities with Code Property Graphs},
+  author={Yamaguchi, Fabian and Golde, Nico and Arp, Daniel and Rieck, Konrad},
+  booktitle={IEEE Symposium on Security and Privacy (S\&P)},
+  year={2014}
+}

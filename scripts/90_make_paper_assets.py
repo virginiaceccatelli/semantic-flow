@@ -339,19 +339,19 @@ def _patching_assets(csv: Path):
 # ── E10: J-lens ──────────────────────────────────────────────────────────────
 # The three lens variants get fixed colours everywhere so the control lines
 # are recognisable at a glance across figures.
-LENS_COLORS = {"jlens": PALETTE[0], "logit": PALETTE[1],
+LENS_COLORS = {"clens": PALETTE[0], "logit": PALETTE[1],
                "random": PALETTE[7], "gram_random": PALETTE[7],
                "probe": PALETTE[2]}
-LENS_STYLES = {"jlens": "-", "logit": "--", "random": ":", "gram_random": ":",
+LENS_STYLES = {"clens": "-", "logit": "--", "random": ":", "gram_random": ":",
                "probe": "-."}
 
 # E11 intervention variants. The test is one colour; every control is muted, so
 # a figure cannot be read as "the effect" without the controls being visible.
-SWAP_COLORS = {"jlens_value": PALETTE[0], "logit_value": PALETTE[1],
+SWAP_COLORS = {"clens_value": PALETTE[0], "logit_value": PALETTE[1],
                "gram_random": PALETTE[7], "noop_same_value": PALETTE[8],
-               "jlens_answer": PALETTE[3], "whole_state": PALETTE[2]}
-SWAP_STYLES = {"jlens_value": "-", "logit_value": "--", "gram_random": ":",
-               "noop_same_value": ":", "jlens_answer": "-.", "whole_state": "--"}
+               "clens_answer": PALETTE[3], "whole_state": PALETTE[2]}
+SWAP_STYLES = {"clens_value": "-", "logit_value": "--", "gram_random": ":",
+               "noop_same_value": ":", "clens_answer": "-.", "whole_state": "--"}
 
 
 def _lens_plot(ax, df: pd.DataFrame, ycol: str, chance: float | None):
@@ -367,10 +367,10 @@ def _lens_plot(ax, df: pd.DataFrame, ycol: str, chance: float | None):
     sns.despine(ax=ax)
 
 
-def _jlens_validation_assets(csv: Path):
+def _clens_validation_assets(csv: Path):
     from src.analysis.tables import df_to_markdown
 
-    tag = csv.stem.replace("jlens_validation_", "")
+    tag = csv.stem.replace("clens_validation_", "")
     df = pd.read_csv(csv)
     df_to_markdown(df, MD / f"{csv.stem}.md", title=f"J-lens validation — {tag}")
 
@@ -382,7 +382,7 @@ def _jlens_validation_assets(csv: Path):
         _lens_plot(ax, v2, "top1", None)
         ax.set_ylabel("Top-1 accuracy (true next token)")
         ax.set_title(f"V2 next-token recovery by layer — {tag}")
-        _save(fig, f"jlens_validation_nexttoken_{tag}")
+        _save(fig, f"clens_validation_nexttoken_{tag}")
 
     # V3: does the yes/no readout agree with the model's own answer?
     v3 = df[df["check"] == "V3_taint_disposition"]
@@ -391,16 +391,16 @@ def _jlens_validation_assets(csv: Path):
         _lens_plot(ax, v3, "agree_model", 0.5)
         ax.set_ylabel("Agreement with model's forced choice")
         ax.set_title(f"V3 taint disposition by layer — {tag}")
-        _save(fig, f"jlens_validation_disposition_{tag}")
+        _save(fig, f"clens_validation_disposition_{tag}")
 
 
-def _jlens_taint_assets(csv: Path):
+def _clens_taint_assets(csv: Path):
     """E10-2. Shares stage 40's summary schema, so it gets the same treatment:
     the claim-bearing quantity is excess over the analytic null, and readouts
     that collapsed to a constant are dropped rather than plotted."""
     from src.analysis.tables import df_to_markdown
 
-    tag = csv.stem.replace("jlens_taint_summary_", "")
+    tag = csv.stem.replace("clens_taint_summary_", "")
     summary = pd.read_csv(csv)
     df_to_markdown(summary, MD / f"{csv.stem}.md",
                    title=f"J-lens taint lead time — {tag}")
@@ -419,21 +419,21 @@ def _jlens_taint_assets(csv: Path):
         _lens_plot(ax, usable, "early_warning_excess", 0.0)
         ax.set_ylabel("Early-warning excess over analytic null")
         ax.set_title(f"E10-2: early warning above what unreliability predicts — {tag}")
-        _save(fig, f"jlens_taint_excess_{tag}")
+        _save(fig, f"clens_taint_excess_{tag}")
 
     fig, ax = plt.subplots(figsize=(8, 4.5))
     _lens_plot(ax, usable, "early_warning_rate", None)
     ax.set_ylabel("P(readout wrong first | model wrong)")
     ax.set_title(f"E10-2 raw early-warning rate — {tag}\n"
                  "(rises with readout error rate; read the excess plot first)")
-    _save(fig, f"jlens_taint_earlywarning_{tag}")
+    _save(fig, f"clens_taint_earlywarning_{tag}")
 
 
-def _jlens_controldep_assets(csv: Path):
+def _clens_controldep_assets(csv: Path):
     """E10-3. Chance is exactly 0.5: the two targets are interchangeable."""
     from src.analysis.tables import df_to_markdown
 
-    tag = csv.stem.replace("jlens_controldep_summary_", "")
+    tag = csv.stem.replace("clens_controldep_summary_", "")
     summary = pd.read_csv(csv)
     df_to_markdown(summary, MD / f"{csv.stem}.md",
                    title=f"J-lens control dependence — {tag}")
@@ -448,14 +448,14 @@ def _jlens_controldep_assets(csv: Path):
         _lens_plot(ax, sub, "accuracy", 0.5)
         ax.set_ylabel("P(dependent target ranked above non-dependent)")
         ax.set_title(f"E10-3 control dependence, {stratum} — {tag}")
-        _save(fig, f"jlens_controldep_{stratum}_{tag}")
+        _save(fig, f"clens_controldep_{stratum}_{tag}")
 
     # The dissociation figure: the test next to its positive controls, same
     # anchors and same readout. A flat test line is only informative if the
     # control lines rise above chance.
     pooled = summary[summary.stratum == "all"]
     if pooled["comparison"].nunique() > 1:
-        jl = pooled[pooled.lens == "jlens"]
+        jl = pooled[pooled.lens == "clens"]
         fig, ax = plt.subplots(figsize=(8, 4.5))
         styles = {"control_dep": ("-", PALETTE[3]), "guard_var": ("--", PALETTE[2]),
                   "next_ident": (":", PALETTE[8])}
@@ -472,7 +472,7 @@ def _jlens_controldep_assets(csv: Path):
         ax.set_title(f"E10-3: is the null a dissociation or a dead readout? — {tag}")
         ax.legend(fontsize=8, framealpha=0.7)
         sns.despine(ax=ax)
-        _save(fig, f"jlens_controldep_dissociation_{tag}")
+        _save(fig, f"clens_controldep_dissociation_{tag}")
 
 
 # ── E11: J-space binding routing ─────────────────────────────────────────────
@@ -558,7 +558,7 @@ def _jspace_readout_assets(csv: Path):
         _save(fig, f"jspace_readout_reversal_{tag}")
 
     # Position x layer: where in the program the bound value becomes legible.
-    jl = df[(df.split == "test") & (df.subset == "all") & (df.lens == "jlens")]
+    jl = df[(df.split == "test") & (df.subset == "all") & (df.lens == "clens")]
     if not jl.empty:
         pivot = jl.pivot_table(index="position", columns="layer", values="reversal_rate")
         fig, ax = plt.subplots(figsize=(8, 3.6))
@@ -614,9 +614,9 @@ def _jspace_swap_assets(csv: Path):
                     linewidth=1.8, label=variant,
                     color=SWAP_COLORS.get(variant, PALETTE[4]),
                     linestyle=SWAP_STYLES.get(variant, "-"))
-            if {"ci_lo", "ci_hi"} <= set(rows.columns) and variant == "jlens_value":
+            if {"ci_lo", "ci_hi"} <= set(rows.columns) and variant == "clens_value":
                 ax.fill_between(rows["layer"], rows["ci_lo"], rows["ci_hi"],
-                                alpha=0.12, color=SWAP_COLORS["jlens_value"])
+                                alpha=0.12, color=SWAP_COLORS["clens_value"])
         ax.axhline(0.0, color="gray", linewidth=0.8, linestyle="--")
         ax.set_xlabel("Layer")
         ax.set_ylabel("Δ logit-diff toward the swapped-in value's answer")
@@ -645,7 +645,7 @@ def _jspace_by_operation_assets(csv: Path):
         return
 
     sub = df[(df.split == "test") & (df.position == "use")
-             & (df.variant == "jlens_value")]
+             & (df.variant == "clens_value")]
     if sub.empty:
         return
     families = sorted(c[len("delta_"):] for c in sub.columns
@@ -701,14 +701,14 @@ def main(
         "causal_patching_": _patching_assets,
         # E10 — order matters: the more specific prefix must come first, since
         # the first matching handler wins.
-        "jlens_validation_checks": None,              # gate verdicts, no figure
-        "jlens_validation_": _jlens_validation_assets,
-        "jlens_taint_summary_": _jlens_taint_assets,
-        "jlens_taint_sanity": _behavioural_sanity_assets,
-        "jlens_taint_prefixes": None,                 # per-prefix log
-        "jlens_taint_": None,                         # per-example rows
-        "jlens_controldep_summary_": _jlens_controldep_assets,
-        "jlens_controldep_": None,                    # per-case rows
+        "clens_validation_checks": None,              # gate verdicts, no figure
+        "clens_validation_": _clens_validation_assets,
+        "clens_taint_summary_": _clens_taint_assets,
+        "clens_taint_sanity": _behavioural_sanity_assets,
+        "clens_taint_prefixes": None,                 # per-prefix log
+        "clens_taint_": None,                         # per-example rows
+        "clens_controldep_summary_": _clens_controldep_assets,
+        "clens_controldep_": None,                    # per-case rows
         # E11 — same rule: the more specific prefix must come first.
         "jspace_lens_stability_": _jspace_lens_assets,
         "jspace_lens_validation_": _jspace_lens_validation_assets,

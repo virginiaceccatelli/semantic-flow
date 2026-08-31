@@ -61,7 +61,7 @@ def main(
         split_pairs,
     )
     from src.experiments.jspace_lens import lens_gates, load_lens_corpus, run_jspace_lens
-    from src.models.lens import freeze_parameters, last_layer_index
+    from src.models.cotangent_lens import freeze_parameters, last_layer_index
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
 

@@ -524,7 +524,7 @@ def record_relevance(
 
     from src.data.alignment import compute_offsets
     from src.data.counterfactual_pairs import encode_prompt
-    from src.models.lens import LensSample, _candidate_cotangents, relevance_by_position
+    from src.models.cotangent_lens import LensSample, _candidate_cotangents, relevance_by_position
 
     device = next(model.parameters()).device
     readings: list[RelevanceReading] = []
@@ -1165,7 +1165,7 @@ def h6_relevance_checks(
         violations.append(GateViolation(gate, expected, observed, list(offenders), rerun))
 
     if not homogenising_rules_bound(lrp_counts or {}):
-        fail("rlens_rules_bound",
+        fail("clrp_rules_bound",
              "the RMSNorm rule or the gated-MLP rule binds to at least one "
              "module, so relevance conserves and the fractions are a partition",
              f"ln={(lrp_counts or {}).get('ln', 0)}, "

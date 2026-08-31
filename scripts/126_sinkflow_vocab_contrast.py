@@ -113,7 +113,7 @@ def main(
         summarize_cells,
     )
     from src.experiments.store_gates import SINKFLOW, GateFailure, record_gate, require_gates
-    from src.models.lens import JLens, lens_filename
+    from src.models.cotangent_lens import CotangentLens, lens_filename
     from src.models.loader import MODEL_REGISTRY
     from src.utils import write_manifest
 
@@ -149,7 +149,7 @@ def main(
             raise typer.Exit(2)
 
     # ── the frozen lenses, loaded from disk ──────────────────────────────────
-    lenses: dict[str, dict[int, JLens]] = {kind: {} for kind in LENS_KINDS}
+    lenses: dict[str, dict[int, CotangentLens]] = {kind: {} for kind in LENS_KINDS}
     missing_lenses = []
     for kind in LENS_KINDS:
         for layer in layer_list:
@@ -157,7 +157,7 @@ def main(
             if not path.exists():
                 missing_lenses.append(str(path))
                 continue
-            lenses[kind][layer] = JLens.load(path)
+            lenses[kind][layer] = CotangentLens.load(path)
     if missing_lenses:
         console.print(f"[red]GATE lens_layers_present FAILED\n"
                       f"  expected: a lens file for every (kind, layer)\n"

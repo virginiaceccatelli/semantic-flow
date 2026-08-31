@@ -10,7 +10,7 @@ before the run rather than by whether some number looks encouraging.
     verbalised_scope               scope words reverse with the binding, in both
                                    value arms, above the Gram-matched floor AND
                                    above the plain logit lens
-    verbalised_not_jlens_specific  they reverse above the floor, but the logit
+    verbalised_not_clens_specific  they reverse above the floor, but the logit
                                    lens does as much — a logit-lens result
     positional_or_action_only      a control family fires and scope does not
     arm_dependent                  one arm only, the literal-tracking signature
@@ -115,7 +115,7 @@ def main(
         CONTROL_FAMILIES,
         DO_NOT_CLAIM,
         HYPOTHESIS_FAMILY,
-        JLENS,
+        CLENS,
         LEXICON,
         PROBE_SUCCESS,
         READOUTS,
@@ -233,7 +233,7 @@ def main(
         "that produced it. J-lens rows; the other two readouts are in "
         "`lexlens_summary.csv`.")
     add("")
-    add(_table(per_pair[per_pair["readout"] == JLENS] if _has(per_pair, "readout")
+    add(_table(per_pair[per_pair["readout"] == CLENS] if _has(per_pair, "readout")
                else per_pair,
                ["layer", "arm", "family", "inner_word", "outer_word", "reversal",
                 "reversal_ci_lo", "reversal_ci_hi", "beats_chance", "mean_delta"],
@@ -281,7 +281,7 @@ def main(
         "correction added anything the unembedding did not already have.")
     add("")
     add(_table(family_contrasts, ["layer", "family", "arm", "control",
-                                  "reversal_jlens", "reversal_control", "difference",
+                                  "reversal_clens", "reversal_control", "difference",
                                   "ci_lo", "ci_hi", "beats_control", "n_bases"],
                limit=200))
     add("")

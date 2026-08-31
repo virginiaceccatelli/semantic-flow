@@ -24,7 +24,7 @@ scope. We then test five progressively stronger properties of the resulting
 internal representation: linear recoverability, robustness under
 meaning-preserving and structure-changing perturbations, causal use in forming
 the answer, attribution of the answer to the active definition, and explicit
-alignment with scope vocabulary through an unprompted J-lens. Binding is absent
+alignment with scope vocabulary through an unprompted cotangent lens. Binding is absent
 from the input representation but reaches approximately 0.984 probe accuracy in
 middle layers over an exact 0.500 surface floor. Frozen probes tolerate long
 irrelevant context and consistent renaming better than competing scopes or
@@ -33,7 +33,7 @@ the unchanged use token installs the donor binding and produces the correspondin
 answer on 100% of held-out examples in two crossed value arms, in DeepSeek-Coder
 6.7B and StarCoder2 3B. On DeepSeek-Coder 6.7B, a conserving relevance lens
 reassigns the unchanged answer score from the definition leaving scope to the
-one entering scope, peaking near 22% of the answer score. An unprompted J-lens
+one entering scope, peaking near 22% of the answer score. An unprompted cotangent lens
 also finds that `local/global` and `nested/module` margins follow the binding in
 both crossed value arms, ruling out simple tracking of one literal answer token.
 Positional and action contrasts are also strong, however, so the single-template
@@ -122,7 +122,7 @@ Our contributions are:
   answer-token push;
 - evidence that structural interference, rather than distance alone, is the
   dominant failure mode of the frozen representation; and
-- a crossed-arm J-lens test showing binding-associated lexical alignment while
+- a crossed-arm cotangent lens test showing binding-associated lexical alignment while
   exposing why alignment on one template is not faithful verbalisation.
 
 ## 2. Security and governance framing
@@ -197,7 +197,7 @@ binding from a fixed answer feature.
 Finally, attribution and vocabulary lenses serve different purposes from causal
 intervention. Our relevance lens decomposes an unchanged output score under
 specified backward rules; it describes answer attribution but cannot establish
-necessity. Our J-lens asks whether a hidden state aligns with candidate output
+necessity. Our cotangent lens asks whether a hidden state aligns with candidate output
 words after accounting for the remaining network. We use crossed value arms so
 that the literal answer movement reverses while the semantic binding movement
 does not. This separates binding-associated lexical change from a fixed
@@ -265,7 +265,7 @@ inactive to the definition becoming active, including when those definition
 tokens are unchanged.
 
 **Lexical expression.** For a predeclared word pair
-((w_{\mathrm{in}},w_{\mathrm{out}})), the J-lens margin is
+((w_{\mathrm{in}},w_{\mathrm{out}})), the cotangent lens margin is
 
 \[
 m_\ell(x)=J_\ell(h_\ell(x,u))_{w_{\mathrm{in}}}
@@ -297,7 +297,7 @@ The binding factorial crosses two variables:
 | `ab` | `a` | `b` | answer `a → b` |
 | `ba` | `b` | `a` | answer `b → a` |
 
-DAS is fitted on `ab` and evaluated on `ba`. The J-lens and R-lens report both
+DAS is fitted on `ab` and evaluated on `ba`. The cotangent lens and conserving cotangent lens report both
 arms separately. Calibration bases are used for fitting and selection; frozen
 test bases are read once for claims.
 
@@ -309,8 +309,8 @@ consequence of capability and architecture gates rather than missing rows:
 | Binding/def–use probes | reported | reported | reported where strata pass | forward hidden states suffice |
 | Perturbation transfer | reported | reported | reported | same frozen-probe protocol |
 | DAS binding interchange | capability result only | **causal claim** | **causal claim** | answer behavior and intervention gates must pass |
-| R-lens attribution | invalid normalized shares | **attribution claim** | not applicable | 1.3B has non-positive target scores; StarCoder2 does not match the implemented rules |
-| J-lens lexical alignment | not run as headline | **descriptive association** | not run | crossed-arm run is currently 6.7B only |
+| conserving cotangent lens attribution | invalid normalized shares | **attribution claim** | not applicable | 1.3B has non-positive target scores; StarCoder2 does not match the implemented rules |
+| cotangent lens lexical alignment | not run as headline | **descriptive association** | not run | crossed-arm run is currently 6.7B only |
 
 ### 5.2 Probes and surface controls
 
@@ -352,15 +352,15 @@ flattening causes the largest cross-model collapse.
 ### 5.4 Causal and explanatory readouts
 
 DAS learns a rank-1 binding alignment at the use token. Controls include the
-crossed arm, a J-lens-derived answer direction matched to the DAS edit norm,
+crossed arm, a cotangent lens-derived answer direction matched to the DAS edit norm,
 dose- and rank-matched random subspaces, a no-op, a whole-state donor patch, and
 a closed-form donor-minus-host mean direction. The primary outcome is the
 full-vocabulary emitted token, not only a two-token logit margin.
 
-The R-lens propagates the selected bound-value score backward under conserving
+The conserving cotangent lens propagates the selected bound-value score backward under conserving
 rules and aggregates token relevance into syntactic roles. Forward equivalence,
 module attachment, conservation, role coverage, and same-program zero controls
-must pass before interpretation. The J-lens lexical experiment uses nine
+must pass before interpretation. The cotangent lens lexical experiment uses nine
 predeclared single-token pairs—four scope, three positional, and two action
 contrasts. Reversal is reported separately in both crossed arms and across word
 families. Cross-arm agreement rules out a fixed `a`- or `b`-token direction;
@@ -374,7 +374,7 @@ the scientific outcome is positive. Tokenization and graph-to-token alignment
 must preserve the intended anchors; paired programs must differ in exactly the
 declared location; all cells and both crossed arms must be present; calibration
 and test bases must be disjoint; intervention no-ops must be exact; relevance
-must conserve the selected score; and J-lens word pairs must preserve their
+must conserve the selected score; and cotangent lens word pairs must preserve their
 declared tokenization. A failed mechanical gate invalidates the measurement rather
 than becoming a negative result.
 
@@ -383,7 +383,7 @@ not evidence for lexical expression. Its success establishes that the tested
 state contains binding information. Cross-arm lexical agreement is additional
 evidence of association, but not of faithful verbalisation because the template
 changes scope, order, distance, and replacement together.
-Likewise, the failed 1.3B normalized R-lens result is not treated as absence of
+Likewise, the failed 1.3B normalized conserving cotangent lens result is not treated as absence of
 binding attribution: the denominator required to interpret relevance as a share
 is non-positive in part of that condition, so the instrument is invalid there.
 
@@ -484,7 +484,7 @@ with the causal role of the binding variable.
 
 ### 6.4 The answer is attributed to the active definition
 
-On DeepSeek-Coder 6.7B, the R-lens shift has the predicted sign on all 280
+On DeepSeek-Coder 6.7B, the conserving cotangent lens shift has the predicted sign on all 280
 held-out bases. At the first measured layer, the newly active inner value gains
 approximately 4.9% of the answer score and the newly inactive outer definition
 loses approximately 7.8%, a combined redistribution of 12.6%. The shift rises to
@@ -500,7 +500,7 @@ DAS.
 
 ### 6.5 The binding state has lexical alignment, not identified verbalisation
 
-The J-lens experiment is mechanically valid: all 1,600 exactness cells pass, all
+The cotangent lens experiment is mechanically valid: all 1,600 exactness cells pass, all
 nine word pairs survive tokenization, and the matched binding probe is 1.000 at
 L8, L12, L16, L20, and L24. Several word pairs follow the binding strongly in
 both crossed value arms:
@@ -545,7 +545,7 @@ layers shows contextual construction. Renaming resistance in middle layers shows
 partial independence from identifier strings. Greater sensitivity to competing
 scope than to inert distance ties failure to semantic difficulty. The crossed
 DAS intervention demonstrates causal use independent of a fixed answer token.
-Finally, the R-lens links the unchanged output score to the semantically active
+Finally, the conserving cotangent lens links the unchanged output score to the semantically active
 definition. Together, these observations are difficult to reconcile with a
 purely lexical account.
 
@@ -576,7 +576,7 @@ signals that its relevant semantic representations remain within a validated
 regime. Our probes are research instruments rather than deployment monitors, but
 the results motivate such monitors and transformation-based confidence tests.
 
-The ambiguous J-lens alignment adds a second caution. Some vocabulary margins
+The ambiguous cotangent lens alignment adds a second caution. Some vocabulary margins
 track the binding, but the same state aligns with positional and action words
 that the template changes at the same time. A plausible verbal answer therefore
 need not be a unique or faithful readout of the causally used state.
@@ -615,10 +615,10 @@ language features. The next step is not simply more generated names; it is
 context-matched counterfactuals embedded in diverse real code.
 
 The model scope is also limited. Representation and robustness span three model
-families where reported, but the clean R-lens attribution applies only to
-DeepSeek-Coder 6.7B, and the J-lens lexical result is currently only for
+families where reported, but the clean conserving cotangent lens attribution applies only to
+DeepSeek-Coder 6.7B, and the cotangent lens lexical result is currently only for
 that model. DeepSeek-Coder 1.3B does not provide an interpretable normalized
-R-lens result because some selected scores are non-positive. StarCoder2's
+conserving cotangent lens result because some selected scores are non-positive. StarCoder2's
 architecture is outside the implemented relevance rules.
 
 Probe transfer failure is not proof of representation erasure. A transformed
@@ -629,7 +629,7 @@ rank-1 intervention at one position and layer, not a unique global mechanism.
 Its superiority to a whole-state donor patch suggests that the full state may
 carry opposing components, an explanation that remains untested.
 
-The R-lens is rule-dependent and observational. Conservation verifies an
+The conserving cotangent lens is rule-dependent and observational. Conservation verifies an
 accounting identity but does not prove that the resulting partition is the
 unique causal explanation. Its attention rule freezes query/key pattern
 formation, so it cannot establish the intuitive story that the model “attends to
@@ -637,7 +637,7 @@ the correct definition.” Generated bases share one template, and a mismatched-
 base control reproduces the mean shift; attribution effect sizes should therefore
 be read as properties of the controlled contrast, not diverse natural programs.
 
-The J-lens instrument has limited early-layer stability. Independent-build sign
+The cotangent lens instrument has limited early-layer stability. Independent-build sign
 agreement exceeds 0.90 only at L24, and its held-out lexical next-token
 validation contains 13 positions. More importantly, all binding examples share
 one template, which changes locality, order, distance, and replacement together.
@@ -687,8 +687,8 @@ git revisions. The principal generated reports are:
 
 - [DAS binding report, DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e13_report.md)
 - [DAS binding report, StarCoder2 3B](../results/binding/starcoder2-3b/e13_report.md)
-- [R-lens binding report, DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e16_report.md)
-- [J-lens verbalisation report, DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e18_report.md)
+- [conserving cotangent lens binding report, DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e16_report.md)
+- [cotangent lens verbalisation report, DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e18_report.md)
 - [Complete methods](METHODS.md), [results](RESULTS.md), and
   [reproduction pipeline](PIPELINE.md)
 

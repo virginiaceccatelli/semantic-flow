@@ -35,7 +35,7 @@ Writes results/sinkflow/{model}/vocab/:
     vocab_discovery.json          the frozen candidate set + provenance
     vocab_train_deltas.csv        report table 6 (training-discovered tokens)
     vocab_lens_diagnostics.csv    report table 10 (fidelity warnings)
-    lenses/{jlens,rlens,logit}_layer_XX.pkl
+    lenses/{clens,clrp,logit}_layer_XX.pkl
 """
 
 from __future__ import annotations
@@ -105,7 +105,7 @@ def main(
     from src.data.activation_store import ActivationStore
     from src.data.sink_flow import base_ids_digest
     from src.experiments.jspace_lens import build_lens_samples, load_lens_corpus
-    from src.experiments.rlens_validate import R0_RTOL, check_forward_invariance
+    from src.experiments.clrp_validate import R0_RTOL, check_forward_invariance
     from src.experiments.sink_flow import SITES
     from src.experiments.sinkflow_vocab import (
         LENS_KINDS,
@@ -122,7 +122,7 @@ def main(
         validate_concept_tokens,
     )
     from src.experiments.store_gates import SINKFLOW, GateFailure, record_gate, require_gates
-    from src.models.lens import (
+    from src.models.cotangent_lens import (
         compute_lens_vectors,
         freeze_parameters,
         lens_filename,
@@ -209,13 +209,13 @@ def main(
             else:
                 lens = compute_lens_vectors(
                     mdl, layer, samples, token_ids, token_strings,
-                    grad_scale=grad_scale, lrp=(kind == "rlens"))
+                    grad_scale=grad_scale, lrp=(kind == "clrp"))
             lens.metadata = {**(lens.metadata or {}), "model": model,
                              "hf_id": cfg.hf_id, "experiment": "E15-C",
                              "git_sha": git_sha()}
             lens.save(lens_dir / lens_filename(kind, layer))
             lenses[kind][layer] = lens
-        console.print(f"  layer {layer}: logit + jlens + rlens built")
+        console.print(f"  layer {layer}: logit + clens + clrp built")
 
     # ── 5. per-lens discovery WITHIN the pool, on training pairs only ────────
     frozen, train_deltas = discover_within_pool(

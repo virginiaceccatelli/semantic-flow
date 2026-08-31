@@ -15,7 +15,7 @@ a property the model demonstrably does express, where a detection is expected.
 ## The property, and why this one
 
 The forced-choice taint question. E6/E7 already establish it as a property these
-models answer behaviourally, `jlens_validate.TAINT_QUESTION` and
+models answer behaviourally, `clens_validate.TAINT_QUESTION` and
 `choice_token_ids` are already built and tokenizer-validated, and the answer is
 a **single token** (`" yes"` / `" no"`) — which is exactly the constraint that
 made E15-C's design possible in the first place. So the positive control is not
@@ -30,7 +30,7 @@ That makes "the identical pipeline" checkable rather than asserted.
 
 ## Two prompts, because prompt sensitivity is a confound and not an assumption
 
-    e6     `jlens_validate.TAINT_QUESTION` verbatim, so the number is
+    e6     `clens_validate.TAINT_QUESTION` verbatim, so the number is
            comparable to the E6/E7 track
     sink   names the sink the label is actually about
            ("is the value passed to os.system attacker-controlled?"), because
@@ -74,7 +74,7 @@ from typing import Optional, Sequence
 import numpy as np
 import pandas as pd
 
-from src.experiments.jlens_validate import TAINT_CHOICES, TAINT_QUESTION
+from src.experiments.clens_validate import TAINT_CHOICES, TAINT_QUESTION
 from src.experiments.sink_flow import condition_kind, condition_name, condition_order
 from src.experiments.sinkflow_vocab import (
     ConceptTokens,
@@ -142,7 +142,7 @@ def build_positive_candidates(
     one margin, so the two properties would not be on the same scale as each
     other or as E15-C.
     """
-    from src.experiments.jlens_validate import choice_token_ids
+    from src.experiments.clens_validate import choice_token_ids
 
     choice_ids, choice_strings = choice_token_ids(tokenizer, TAINT_CHOICES)
     if len(set(choice_ids)) != 2:

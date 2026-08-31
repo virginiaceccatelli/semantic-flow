@@ -64,7 +64,7 @@ is reported beside it for every cell, never across readouts.
 The margin also removes the two problems a single word's score has here. It is
 shift-invariant, so it is not a fact about the arbitrary offset of the score
 vector; and both words are scored by the same linear functional evaluated on the
-same state, so any per-state scale factor (the one `JLens.scores` drops) cancels
+same state, so any per-state scale factor (the one `CotangentLens.scores` drops) cancels
 in the sign exactly.
 
 ## The two arms are the value-independence control
@@ -78,7 +78,7 @@ pooled, and `arm_agreement_table` is what a positive result has to survive.
 
 ## The three readouts, on exactly the same states
 
-    jlens        the repository's corpus-built J-lens, built by
+    clens        the repository's corpus-built J-lens, built by
                  `compute_lens_vectors` from third-party Python that shares no
                  program with the factorial, with `stability_row` and E11's V1/V2
                  validations attached. The only thing this experiment adds is
@@ -182,12 +182,12 @@ HYPOTHESIS_FAMILY = "scope"
 CONTROL_FAMILIES: tuple[str, ...] = ("positional", "action")
 
 # The three readouts, on identical states. Order is the reporting order.
-READOUTS: tuple[str, ...] = ("jlens", "logit", "gram_random")
-JLENS, LOGIT, RANDOM = READOUTS
+READOUTS: tuple[str, ...] = ("clens", "logit", "gram_random")
+CLENS, LOGIT, RANDOM = READOUTS
 
-# The lens kinds `src.models.lens` stamps on the artifacts, so a file can never
+# The lens kinds `src.models.cotangent_lens` stamps on the artifacts, so a file can never
 # be mistaken for a different readout than the one it is.
-LENS_KIND: dict[str, str] = {JLENS: "jlens", LOGIT: "logit", RANDOM: "gram_random"}
+LENS_KIND: dict[str, str] = {CLENS: "clens", LOGIT: "logit", RANDOM: "gram_random"}
 
 # The anchor. E13 names it `use`; it is the single `Load` of the outer name, in
 # `return x`, and the last token of the bare program.
@@ -470,7 +470,7 @@ def cached_state_agreement(
 def pair_margins(lens, X: np.ndarray, n_pairs: int) -> np.ndarray:
     """(n_states, n_pairs) inner-minus-outer margins for a batch of states.
 
-    `JLens.scores` drops a positive normalization factor, which is why only
+    `CotangentLens.scores` drops a positive normalization factor, which is why only
     within-position comparisons are valid — and the margin is exactly such a
     comparison: two rows of the same lens against the same state. The dropped
     factor scales both terms, so the SIGN is exact and the magnitude is in the
@@ -490,7 +490,7 @@ def delta_frame(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """The paired counterfactual reversal, one row per (base, arm, layer, pair).
 
-    `lenses[readout][layer]` is a LIST of lenses: one for `jlens` and `logit`,
+    `lenses[readout][layer]` is a LIST of lenses: one for `clens` and `logit`,
     several seeds for `gram_random`. The diagnostic control row is the mean over
     seeds. The second frame retains one row per split and direction, because the
     question "is this word contrast special?" must be answered over directions,
@@ -589,7 +589,7 @@ def pair_direction_table(frame: pd.DataFrame, random_rows: pd.DataFrame,
     if frame.empty or random_rows.empty or not needed.issubset(random_rows.columns):
         return pd.DataFrame()
     keys = ["layer", "family", "pair_index", "inner_word", "outer_word"]
-    real = frame[(frame["readout"] == JLENS) & (frame["split"] == split)]
+    real = frame[(frame["readout"] == CLENS) & (frame["split"] == split)]
     null = random_rows[random_rows["split"] == split]
     real_rates = real.groupby(keys + ["arm"])["reversal"].mean()
     logit_rates = frame[(frame["readout"] == LOGIT) & (frame["split"] == split)] \
@@ -732,7 +732,7 @@ def contrast_table(
         sliced = _arm_slice(part, arm)
         if sliced.empty:
             continue
-        treatment = sliced[sliced["readout"] == JLENS]
+        treatment = sliced[sliced["readout"] == CLENS]
         for control in (RANDOM, LOGIT):
             other = sliced[sliced["readout"] == control]
             if treatment.empty or other.empty:
@@ -749,7 +749,7 @@ def contrast_table(
                 rows.append({
                     "level": level, "arm": arm, "control": control,
                     **dict(zip(keys, values)),
-                    "reversal_jlens": float(group["reversal"].mean()),
+                    "reversal_clens": float(group["reversal"].mean()),
                     "reversal_control": float(group["reversal_control"].mean()),
                     "difference": ci.point, "ci_lo": ci.lo, "ci_hi": ci.hi,
                     "beats_control": bool(np.isfinite(ci.lo) and ci.lo > 0.0),
@@ -995,7 +995,7 @@ def h10_checks(
                          f"kind={LENS_KIND[readout]!r}",
                          f"L{layer} declares kind={lens.kind!r}")
     for layer in layers:
-        real = lenses.get(JLENS, {}).get(int(layer), [])
+        real = lenses.get(CLENS, {}).get(int(layer), [])
         controls = lenses.get(RANDOM, {}).get(int(layer), [])
         if not real or not controls:
             continue
@@ -1088,7 +1088,7 @@ def h10_checks(
 # ── the verdict ──────────────────────────────────────────────────────────────
 
 VERDICTS: tuple[str, ...] = (
-    "verbalised_scope", "verbalised_not_jlens_specific", "positional_or_action_only",
+    "verbalised_scope", "verbalised_not_clens_specific", "positional_or_action_only",
     "arm_dependent", "not_verbalised", "probe_absent", "mechanically_invalid",
     "not_run",
 )
@@ -1101,7 +1101,7 @@ VERDICT_TEXT: dict[str, str] = {
         "floor, and above the plain logit lens — so the correction, not the "
         "unembedding alone, is carrying it. The distinction is written in scope "
         "vocabulary at the use token, with no question anywhere in the context."),
-    "verbalised_not_jlens_specific": (
+    "verbalised_not_clens_specific": (
         "The scope-word margin reverses with the binding, in both arms, above the "
         "Gram-matched floor — but the plain logit lens does as much. Report this "
         "as a logit-lens result: the vocabulary contrast is present at this "
@@ -1176,7 +1176,7 @@ def readout_state(
         return pd.DataFrame()
     probe_layers = set(probe_success_layers(probe))
     rows: list[dict] = []
-    jl = summary[(summary["readout"] == JLENS) & (summary["level"] == "family")]
+    jl = summary[(summary["readout"] == CLENS) & (summary["level"] == "family")]
     for row in jl.to_dict(orient="records"):
         layer, arm, family = int(row["layer"]), row["arm"], row["family"]
 
@@ -1326,7 +1326,7 @@ def verdict_of(checks: Sequence[VerdictCheck]) -> str:
         return "probe_absent"
     if passed.get("scope_reverses_in_both_arms", False):
         return ("verbalised_scope" if passed.get("scope_beats_logit_lens", False)
-                else "verbalised_not_jlens_specific")
+                else "verbalised_not_clens_specific")
     if passed.get("scope_one_arm_only", False):
         return "arm_dependent"
     if passed.get("control_family_reverses", False):
@@ -1339,7 +1339,7 @@ def verdict_of(checks: Sequence[VerdictCheck]) -> str:
 # Filename tags for the frozen artifacts. Distinct prefixes, because
 # `load_frozen_lenses` globs `{kind}_layer_*.pkl` and a tag that is a prefix of
 # another would load the wrong files without saying so.
-LENS_TAG: dict[str, str] = {JLENS: "lexlens", LOGIT: "lexlens_logit"}
+LENS_TAG: dict[str, str] = {CLENS: "lexlens", LOGIT: "lexlens_logit"}
 RANDOM_TAG = "lexlens_gram"
 SEED_TAG = "lexlens_seed"
 
@@ -1389,11 +1389,11 @@ def build_lexicon_lenses(
     """
     from pathlib import Path
 
-    from src.experiments.jlens_validate import next_token_metrics, next_token_samples
+    from src.experiments.clens_validate import next_token_metrics, next_token_samples
     from src.experiments.jspace_lens import _rowwise_cosine, build_lens_samples, stability_row
     from src.models.hooks import extract_hidden_states
-    from src.models.lens import (
-        JLens,
+    from src.models.cotangent_lens import (
+        CotangentLens,
         compute_lens_vectors,
         gram_matched_random_lens,
         last_layer_index,
@@ -1430,7 +1430,7 @@ def build_lexicon_lenses(
 
     for layer in build_layers:
         logger.info("E18 lexicon lens | layer %s", layer)
-        per_seed: dict[int, JLens] = {}
+        per_seed: dict[int, CotangentLens] = {}
         all_samples = []
         for s in range(n_seeds):
             samples = build_lens_samples(tokenizer, build_sources, n_build,
@@ -1444,7 +1444,7 @@ def build_lexicon_lenses(
         pooled = compute_lens_vectors(model, layer, all_samples, cand_ids,
                                       cand_strings, grad_scale=grad_scale)
         pooled.metadata["n_seeds"] = n_seeds
-        pooled.save(lens_dir / lens_filename(LENS_TAG[JLENS], layer))
+        pooled.save(lens_dir / lens_filename(LENS_TAG[CLENS], layer))
         base_logit = logit_lens(model, layer, cand_ids, cand_strings)
         base_logit.save(lens_dir / lens_filename(LENS_TAG[LOGIT], layer))
         randoms = []
@@ -1452,7 +1452,7 @@ def build_lexicon_lenses(
             control = gram_matched_random_lens(pooled, seed=seed + k)
             control.save(lens_dir / lens_filename(f"{RANDOM_TAG}{k}", layer))
             randoms.append(control)
-        lenses[JLENS][layer] = [pooled]
+        lenses[CLENS][layer] = [pooled]
         lenses[LOGIT][layer] = [base_logit]
         lenses[RANDOM][layer] = randoms
 
@@ -1467,11 +1467,11 @@ def build_lexicon_lenses(
                         else np.empty((0, 0), dtype=np.float32))
         stability_rows.append(stability_row(layer, per_seed, pooled, probe_states,
                                             seed=seed))
-        for kind, lens in ((JLENS, pooled), (LOGIT, base_logit), (RANDOM, randoms[0])):
+        for kind, lens in ((CLENS, pooled), (LOGIT, base_logit), (RANDOM, randoms[0])):
             validation_rows.append({"check": "V2_next_token", "layer": layer,
                                     "lens": kind, **next_token_metrics(lens, evals)})
         validation_rows.append({
-            "check": "V1_identity_at_last_layer", "layer": layer, "lens": JLENS,
+            "check": "V1_identity_at_last_layer", "layer": layer, "lens": CLENS,
             "cosine_to_logit_lens": float(np.mean(
                 _rowwise_cosine(pooled.vectors, base_logit.vectors))),
             "is_last_layer": layer == last_layer})
@@ -1486,7 +1486,7 @@ def load_lexicon_lenses(lens_dir, n_random_seeds: int = 5) -> dict:
     files contain no binding program, the candidate order is re-checked by H10,
     and the stability/validation CSVs from the build stay next to them.
     """
-    from src.models.lens import load_frozen_lenses
+    from src.models.cotangent_lens import load_frozen_lenses
 
     lenses: dict = {readout: {} for readout in READOUTS}
     for readout, tag in LENS_TAG.items():
@@ -1526,7 +1526,7 @@ def lens_status(stability: pd.DataFrame, validation: pd.DataFrame,
             "cosine_mean": record.get("cosine_mean"),
             "stable": bool(np.isfinite(record.get("margin_sign_agreement", np.nan))
                            and record["margin_sign_agreement"] >= min_sign_agreement),
-            "v2_top1_jlens": top1.get(JLENS), "v2_top1_logit": top1.get(LOGIT),
+            "v2_top1_clens": top1.get(CLENS), "v2_top1_logit": top1.get(LOGIT),
             "v2_top1_gram_random": top1.get(RANDOM),
             "v2_n": int(v2["n"].iloc[0]) if len(v2) and "n" in v2.columns else 0,
             "threshold": min_sign_agreement,

@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.experiments.jlens_validate import TAINT_CHOICES, TAINT_QUESTION
+from src.experiments.clens_validate import TAINT_CHOICES, TAINT_QUESTION
 from src.experiments.sinkflow_positive import (
     BEHAVIOUR_FLOOR,
     PROMPT_STYLES,
@@ -37,7 +37,7 @@ from src.experiments.sinkflow_positive import (
     question_text,
     summarize_positive,
 )
-from src.models.lens import JLens
+from src.models.cotangent_lens import CotangentLens
 from tests.fake_tokenizer import FakeCodeTokenizer
 
 TOK = FakeCodeTokenizer()
@@ -63,13 +63,13 @@ def _state(base_id, role, label, style="sink", margin=0.0, says=0, states=None,
         n_prompt_tokens=40)
 
 
-def _lens(token_ids, layer=3, kind="rlens", signal_index=0, seed=0):
+def _lens(token_ids, layer=3, kind="clrp", signal_index=0, seed=0):
     """Row `signal_index` reads coordinate 0, so a state with a large coordinate
     0 scores high on that candidate and the orientation is checkable."""
     rng = np.random.default_rng(seed)
     vectors = rng.normal(scale=0.05, size=(len(token_ids), D))
     vectors[signal_index, 0] = 1.0
-    return JLens(vectors=vectors.astype(np.float32), token_ids=list(token_ids),
+    return CotangentLens(vectors=vectors.astype(np.float32), token_ids=list(token_ids),
                  token_strings=[f"t{t}" for t in token_ids], layer=layer,
                  kind=kind, metadata={"model": "fake-model"})
 
@@ -146,13 +146,13 @@ def test_a_pair_asked_two_different_questions_is_caught_by_j3():
     pair = AnswerPair(base_id="b0", condition="clean_heldout", prompt_style="sink",
                       family="f", structure="direct", unsafe=unsafe, safe=safe)
     assert not pair.prompts_identical
-    rows = pd.DataFrame([{"lens": "rlens", "layer": 3, "prompt_style": "sink",
+    rows = pd.DataFrame([{"lens": "clrp", "layer": 3, "prompt_style": "sink",
                           "condition": "clean_heldout", "base_id": "b0",
                           "orientation": "unsafe_minus_safe",
                           "taint_delta_contrast_z": 0.1, "model_delta_margin": 0.2}])
     violations = j3_positive_checks(
         rows, _summary_frame(), _behaviour_frame(), _candidates(), [pair],
-        layers=[3], lens_kinds=("rlens",))
+        layers=[3], lens_kinds=("clrp",))
     assert "prompt_identical_within_pair" in {v.gate for v in violations}
 
 
@@ -223,7 +223,7 @@ def _paired_states(n=12, signal=3.0):
 def test_the_two_contrasts_come_from_the_same_states_and_the_same_lens():
     candidates = _candidates()
     # index 0 is " yes"; the lens reads coordinate 0, so the taint contrast fires
-    lenses = {"rlens": {3: _lens(candidates.token_ids, signal_index=0)}}
+    lenses = {"clrp": {3: _lens(candidates.token_ids, signal_index=0)}}
     rows = contrast_rows(lenses, _paired_states(), candidates, [3])
     assert set(rows["orientation"]) == {"unsafe_minus_safe"}
     assert (rows["taint_delta_contrast_z"] > 0).all()
@@ -234,7 +234,7 @@ def test_the_two_contrasts_come_from_the_same_states_and_the_same_lens():
 
 def test_the_orientation_is_unsafe_minus_safe_for_both_properties():
     candidates = _candidates()
-    lenses = {"rlens": {3: _lens(candidates.token_ids, signal_index=0)}}
+    lenses = {"clrp": {3: _lens(candidates.token_ids, signal_index=0)}}
     forward = contrast_rows(lenses, _paired_states(n=6), candidates, [3])
     flipped_pairs = []
     for pair in _paired_states(n=6):
@@ -249,7 +249,7 @@ def test_the_orientation_is_unsafe_minus_safe_for_both_properties():
 
 def test_the_linking_statistic_separates_seeing_it_from_seeing_something():
     candidates = _candidates()
-    lenses = {"rlens": {3: _lens(candidates.token_ids, signal_index=0)}}
+    lenses = {"clrp": {3: _lens(candidates.token_ids, signal_index=0)}}
     rows = contrast_rows(lenses, _paired_states(), candidates, [3])
     summary = summarize_positive(rows, "fake", n_permutations=200)
     row = summary.iloc[0]
@@ -261,7 +261,7 @@ def test_the_linking_statistic_separates_seeing_it_from_seeing_something():
 
 def test_a_lens_that_fires_against_the_model_does_not_count_as_tracking_it():
     candidates = _candidates()
-    lenses = {"rlens": {3: _lens(candidates.token_ids, signal_index=1)}}  # " no"
+    lenses = {"clrp": {3: _lens(candidates.token_ids, signal_index=1)}}  # " no"
     rows = contrast_rows(lenses, _paired_states(), candidates, [3])
     summary = summarize_positive(rows, "fake", n_permutations=200)
     row = summary.iloc[0]
@@ -276,7 +276,7 @@ def _rows_frame(styles=("sink", "e6")):
     for style in styles:
         for base in ("b0", "b1"):
             records.append({
-                "lens": "rlens", "layer": 3, "prompt_style": style,
+                "lens": "clrp", "layer": 3, "prompt_style": style,
                 "condition": "clean_heldout", "base_id": base,
                 "orientation": "unsafe_minus_safe",
                 "taint_delta_contrast_z": 0.4, "model_delta_margin": 0.3})
@@ -284,7 +284,7 @@ def _rows_frame(styles=("sink", "e6")):
 
 
 def _summary_frame():
-    return pd.DataFrame([{"lens": "rlens", "layer": 3, "prompt_style": "sink",
+    return pd.DataFrame([{"lens": "clrp", "layer": 3, "prompt_style": "sink",
                           "condition": "clean_heldout",
                           "taint_sign_consistency": 0.5,
                           "security_sign_consistency": 0.5,
@@ -307,14 +307,14 @@ def test_j3_passes_when_the_positive_control_comes_back_negative():
     it hard to report."""
     violations = j3_positive_checks(
         _rows_frame(), _summary_frame(), _behaviour_frame(), _candidates(),
-        _pairs_for_gate(), layers=[3], lens_kinds=("rlens",))
+        _pairs_for_gate(), layers=[3], lens_kinds=("clrp",))
     assert violations == [], [v.gate for v in violations]
 
 
 def test_j3_refuses_a_run_with_only_one_prompt_style():
     violations = j3_positive_checks(
         _rows_frame(styles=("sink",)), _summary_frame(), _behaviour_frame(),
-        _candidates(), _pairs_for_gate(), layers=[3], lens_kinds=("rlens",))
+        _candidates(), _pairs_for_gate(), layers=[3], lens_kinds=("clrp",))
     assert "both_prompts_ran" in {v.gate for v in violations}
 
 
@@ -322,7 +322,7 @@ def test_j3_refuses_two_bases_that_share_a_cell():
     frame = pd.concat([_rows_frame(), _rows_frame()], ignore_index=True)
     violations = j3_positive_checks(
         frame, _summary_frame(), _behaviour_frame(), _candidates(),
-        _pairs_for_gate(), layers=[3], lens_kinds=("rlens",))
+        _pairs_for_gate(), layers=[3], lens_kinds=("clrp",))
     assert "one_row_per_pair_cell" in {v.gate for v in violations}
 
 
@@ -331,14 +331,14 @@ def test_j3_refuses_a_non_finite_contrast():
     frame.loc[0, "taint_delta_contrast_z"] = np.nan
     violations = j3_positive_checks(
         frame, _summary_frame(), _behaviour_frame(), _candidates(),
-        _pairs_for_gate(), layers=[3], lens_kinds=("rlens",))
+        _pairs_for_gate(), layers=[3], lens_kinds=("clrp",))
     assert "positive_contrast_finite" in {v.gate for v in violations}
 
 
 def test_j3_refuses_a_missing_cell():
     violations = j3_positive_checks(
         _rows_frame(), _summary_frame(), _behaviour_frame(), _candidates(),
-        _pairs_for_gate(), layers=[3, 7], lens_kinds=("rlens",))
+        _pairs_for_gate(), layers=[3, 7], lens_kinds=("clrp",))
     assert "positive_cells_complete" in {v.gate for v in violations}
 
 
@@ -347,7 +347,7 @@ def test_j3_refuses_two_properties_read_in_two_different_bases():
     candidates.security.token_ids = list(candidates.security.token_ids)[:-1]
     violations = j3_positive_checks(
         _rows_frame(), _summary_frame(), _behaviour_frame(), candidates,
-        _pairs_for_gate(), layers=[3], lens_kinds=("rlens",))
+        _pairs_for_gate(), layers=[3], lens_kinds=("clrp",))
     assert "one_basis_two_properties" in {v.gate for v in violations}
 
 
@@ -479,7 +479,7 @@ def test_answer_states_feeds_contrast_rows_without_a_shape_error():
     pairs, problems = pair_answer_states(states)
     assert not problems and len(pairs) == 2          # one per prompt style
     candidates = _candidates()
-    lenses = {"rlens": {layer: _lens(candidates.token_ids, layer=layer)
+    lenses = {"clrp": {layer: _lens(candidates.token_ids, layer=layer)
                         for layer in layers}}
     rows = contrast_rows(lenses, pairs, candidates, layers)
     assert len(rows) == len(pairs) * len(layers)

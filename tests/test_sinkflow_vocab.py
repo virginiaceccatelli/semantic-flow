@@ -51,7 +51,7 @@ from src.experiments.sinkflow_vocab import (
     validate_concept_tokens,
     zscore,
 )
-from src.models.lens import JLens
+from src.models.cotangent_lens import CotangentLens
 from tests.fake_tokenizer import FakeCodeTokenizer
 
 TOK = FakeCodeTokenizer()
@@ -93,13 +93,13 @@ def _fake_store(root, programs, signal_layer=3):
     return ActivationStore(root)
 
 
-def _fake_lens(layer: int, token_ids, kind="rlens", seed=0, d_model=D_MODEL) -> JLens:
+def _fake_lens(layer: int, token_ids, kind="clrp", seed=0, d_model=D_MODEL) -> CotangentLens:
     """A lens whose row 0 reads the same coordinate the store's signal lives in,
     so the unsafe member scores higher on it and the orientation is checkable."""
     rng = np.random.default_rng(seed)
     vectors = rng.normal(scale=0.05, size=(len(token_ids), d_model))
     vectors[0, 0] = 1.0
-    return JLens(vectors=vectors.astype(np.float32), token_ids=list(token_ids),
+    return CotangentLens(vectors=vectors.astype(np.float32), token_ids=list(token_ids),
                  token_strings=[f"t{t}" for t in token_ids], layer=layer, kind=kind,
                  metadata={"model": "fake-model"})
 
@@ -154,8 +154,8 @@ def test_the_lexicon_is_fixed_before_any_result():
 def test_the_primary_lens_is_declared_in_code():
     """Choosing it after seeing which produced the strongest result would make
     every number a selection artifact."""
-    assert PRIMARY_LENS == "rlens"
-    assert set(LENS_KINDS) == {"logit", "jlens", "rlens"}
+    assert PRIMARY_LENS == "clrp"
+    assert set(LENS_KINDS) == {"logit", "clens", "clrp"}
 
 
 # ── orientation ──────────────────────────────────────────────────────────────
@@ -179,7 +179,7 @@ def test_the_contrast_is_oriented_unsafe_minus_safe():
 
 
 def test_the_z_convention_is_invariant_to_the_lens_scale_factor():
-    """`JLens.scores` drops a positive per-position factor, so a statistic that
+    """`CotangentLens.scores` drops a positive per-position factor, so a statistic that
     compares two positions must not depend on it."""
     scores = np.array([[1.0, 2.0, 3.0, 4.0]])
     assert np.allclose(zscore(scores), zscore(7.5 * scores))
@@ -187,7 +187,7 @@ def test_the_z_convention_is_invariant_to_the_lens_scale_factor():
 
 def test_every_evaluated_row_records_its_orientation():
     candidates = _candidates()
-    lenses = {"rlens": {3: _fake_lens(3, candidates.token_ids)}}
+    lenses = {"clrp": {3: _fake_lens(3, candidates.token_ids)}}
     pairs, _ = _pairs_for(candidates)
     rows, _, _ = evaluate_pairs(lenses, pairs, candidates, [3])
     assert set(rows["orientation"]) == {"unsafe_minus_safe"}
@@ -242,12 +242,12 @@ def test_the_contrast_stage_refuses_to_select_its_own_tokens(tmp_path):
 
 def test_j1_refuses_when_discovery_and_evaluation_share_bases():
     candidates = _candidates()
-    lenses = {"rlens": {3: _fake_lens(3, candidates.token_ids)}}
+    lenses = {"clrp": {3: _fake_lens(3, candidates.token_ids)}}
     pairs, _ = _pairs_for(candidates)
     rows, tokens, _ = evaluate_pairs(lenses, pairs, candidates, [3])
     shared = [p.base_id for p in pairs]
     violations = j1_contrast_checks(
-        rows, tokens, candidates, {"rlens": {}}, train_bases=shared,
+        rows, tokens, candidates, {"clrp": {}}, train_bases=shared,
         heldout_bases=shared, layers=[3], sites=["sink_arg"],
         conditions=["clean_heldout"],
         controls_ran={"permutation": True, "mismatched": True})
@@ -256,7 +256,7 @@ def test_j1_refuses_when_discovery_and_evaluation_share_bases():
 
 def test_j1_refuses_when_the_frozen_token_set_is_missing():
     candidates = _candidates()
-    lenses = {"rlens": {3: _fake_lens(3, candidates.token_ids)}}
+    lenses = {"clrp": {3: _fake_lens(3, candidates.token_ids)}}
     pairs, _ = _pairs_for(candidates)
     rows, tokens, _ = evaluate_pairs(lenses, pairs, candidates, [3])
     violations = j1_contrast_checks(
@@ -305,11 +305,11 @@ def test_the_random_and_gram_matched_lens_controls_are_built_from_the_real_one()
 
 def test_j1_refuses_when_a_control_did_not_run():
     candidates = _candidates()
-    lenses = {"rlens": {3: _fake_lens(3, candidates.token_ids)}}
+    lenses = {"clrp": {3: _fake_lens(3, candidates.token_ids)}}
     pairs, _ = _pairs_for(candidates)
     rows, tokens, _ = evaluate_pairs(lenses, pairs, candidates, [3])
     violations = j1_contrast_checks(
-        rows, tokens, candidates, {"rlens": {}}, train_bases=["other_00"],
+        rows, tokens, candidates, {"clrp": {}}, train_bases=["other_00"],
         heldout_bases=[p.base_id for p in pairs], layers=[3], sites=["sink_arg"],
         conditions=["clean_heldout"],
         controls_ran={"permutation": True, "mismatched": False})
@@ -322,7 +322,7 @@ def test_j0_refuses_a_lens_built_for_a_different_model():
     candidates = _candidates()
     lenses = {kind: {3: _fake_lens(3, candidates.token_ids, kind=kind)}
               for kind in LENS_KINDS}
-    lenses["jlens"][3].metadata["model"] = "some-other-model"
+    lenses["clens"][3].metadata["model"] = "some-other-model"
     violations = j0_lens_checks(lenses, candidates, [3], ["sink_arg"],
                                 model_name="fake-model", hf_id="fake")
     assert "lens_model_match" in {v.gate for v in violations}
@@ -332,7 +332,7 @@ def test_j0_refuses_a_non_finite_lens():
     candidates = _candidates()
     lenses = {kind: {3: _fake_lens(3, candidates.token_ids, kind=kind)}
               for kind in LENS_KINDS}
-    lenses["rlens"][3].vectors[0, 0] = np.nan
+    lenses["clrp"][3].vectors[0, 0] = np.nan
     violations = j0_lens_checks(lenses, candidates, [3], ["sink_arg"],
                                 model_name="fake-model", hf_id="fake")
     assert "lens_finite" in {v.gate for v in violations}
@@ -397,7 +397,7 @@ def test_j1_passes_on_a_null_result():
              for i in range(8)]
     rows, tokens, _ = evaluate_pairs(lenses, pairs, candidates, [3])
     violations = j1_contrast_checks(
-        rows, tokens, candidates, {"rlens": {"3": {}}}, train_bases=["train_00"],
+        rows, tokens, candidates, {"clrp": {"3": {}}}, train_bases=["train_00"],
         heldout_bases=[p.base_id for p in pairs], layers=[3], sites=["sink_arg"],
         conditions=["clean_heldout"],
         controls_ran={"permutation": True, "mismatched": True,
@@ -407,12 +407,12 @@ def test_j1_passes_on_a_null_result():
 
 def test_j1_refuses_a_nan_contrast():
     candidates = _candidates()
-    lenses = {"rlens": {3: _fake_lens(3, candidates.token_ids)}}
+    lenses = {"clrp": {3: _fake_lens(3, candidates.token_ids)}}
     pairs, _ = _pairs_for(candidates)
     rows, tokens, _ = evaluate_pairs(lenses, pairs, candidates, [3])
     rows.loc[0, "delta_contrast_z"] = np.nan
     violations = j1_contrast_checks(
-        rows, tokens, candidates, {"rlens": {}}, train_bases=["other_00"],
+        rows, tokens, candidates, {"clrp": {}}, train_bases=["other_00"],
         heldout_bases=[p.base_id for p in pairs], layers=[3], sites=["sink_arg"],
         conditions=["clean_heldout"],
         controls_ran={"permutation": True, "mismatched": True})
@@ -421,11 +421,11 @@ def test_j1_refuses_a_nan_contrast():
 
 def test_j1_refuses_a_missing_cell():
     candidates = _candidates()
-    lenses = {"rlens": {3: _fake_lens(3, candidates.token_ids)}}
+    lenses = {"clrp": {3: _fake_lens(3, candidates.token_ids)}}
     pairs, _ = _pairs_for(candidates)
     rows, tokens, _ = evaluate_pairs(lenses, pairs, candidates, [3])
     violations = j1_contrast_checks(
-        rows, tokens, candidates, {"rlens": {}}, train_bases=["other_00"],
+        rows, tokens, candidates, {"clrp": {}}, train_bases=["other_00"],
         heldout_bases=[p.base_id for p in pairs], layers=[3],
         sites=["sink_arg", "last_token"], conditions=["clean_heldout"],
         controls_ran={"permutation": True, "mismatched": True})
@@ -528,7 +528,7 @@ def test_raw_per_pair_token_rows_are_written_for_the_requested_tokens():
     """The unaggregated scores the design asks to save — for a chosen subset,
     because the full frozen vocabulary per pair would be millions of rows."""
     candidates = _candidates()
-    lenses = {"rlens": {3: _fake_lens(3, candidates.token_ids)}}
+    lenses = {"clrp": {3: _fake_lens(3, candidates.token_ids)}}
     pairs, _ = _pairs_for(candidates)
     _, _, raw = evaluate_pairs(lenses, pairs, candidates, [3],
                                raw_token_ids=candidates.concepts.all_ids)
@@ -575,10 +575,10 @@ def test_the_mismatched_control_still_runs_when_no_cell_mate_exists():
         {"family+structure"}
 
 
-def test_j0_refuses_an_rlens_whose_homogenising_rules_never_bound():
+def test_j0_refuses_an_clrp_whose_homogenising_rules_never_bound():
     """StarCoder2 has LayerNorm and a non-gated MLP, so neither the RMSNorm rule
     nor the gated-MLP rule matches. Attention hooks alone satisfy `lrp_rules`'
-    own strict check, so a lens labelled `rlens` gets built that is
+    own strict check, so a lens labelled `clrp` gets built that is
     arithmetically a J-lens — and its relevance conservation is whatever raw
     autograd happens to give. J0 must catch that."""
     from src.experiments.sinkflow_vocab import homogenising_rules_bound
@@ -591,12 +591,12 @@ def test_j0_refuses_an_rlens_whose_homogenising_rules_never_bound():
     violations = j0_lens_checks(lenses, candidates, [3], ["sink_arg"],
                                 model_name="fake-model", hf_id="fake",
                                 lrp_counts=only_attention)
-    assert "rlens_rules_bound" in {v.gate for v in violations}
+    assert "clrp_rules_bound" in {v.gate for v in violations}
 
     # and it passes when either homogenising rule bound
     for counts in ({"ln": 24, "mlp": 0, "attn": 30}, {"ln": 0, "mlp": 24, "attn": 30}):
         assert homogenising_rules_bound(counts)
-        assert "rlens_rules_bound" not in {
+        assert "clrp_rules_bound" not in {
             v.gate for v in j0_lens_checks(lenses, candidates, [3], ["sink_arg"],
                                            model_name="fake-model", hf_id="fake",
                                            lrp_counts=counts)}
@@ -691,14 +691,14 @@ def test_j1_requires_the_same_label_control_to_have_run():
     from src.experiments.sinkflow_vocab import j1_contrast_checks
 
     frame = pd.DataFrame([{
-        "lens": "rlens", "layer": 3, "site": "sink_arg", "condition": "clean_heldout",
+        "lens": "clrp", "layer": 3, "site": "sink_arg", "condition": "clean_heldout",
         "base_id": "b0", "orientation": "unsafe_minus_safe",
         "unsafe_program": "u", "safe_program": "s",
         "delta_contrast_z": 0.1, "delta_contrast_prob": 0.01}])
     candidates = _candidates()
     candidates.provenance = {"discovery_split": "train", "train_digest": "abc"}
     violations = j1_contrast_checks(
-        frame, pd.DataFrame(), candidates, frozen={"rlens": {}},
+        frame, pd.DataFrame(), candidates, frozen={"clrp": {}},
         train_bases=["t"], heldout_bases=["b0"], layers=[3], sites=["sink_arg"],
         conditions=["clean_heldout"],
         controls_ran={"permutation": True, "mismatched": True, "same_label": False})

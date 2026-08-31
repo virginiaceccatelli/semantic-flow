@@ -23,8 +23,8 @@ they are an argument about what a causal claim in interpretability requires.
 | | Attempt | Failed because | Lesson carried into the surviving design |
 |---|---|---|---|
 | 1 | **Whole-state activation patching** | the informative position is the only place the two programs differ, so the patch transports the *input* | intervene only where the inputs agree |
-| 2 | **J-lens readout uses** (taint, control dependence) | the positive control was an *identity* control where the test was *relational* | a null needs a positive control matched **in kind** |
-| 3 | **Rank-2 J-space coordinate swap** | the site's dose–response is 18× convex, so the edit was below its effective causal dose | … and matched **in scale** — or use an intervention with no dose parameter |
+| 2 | **cotangent lens readout uses** (taint, control dependence) | the positive control was an *identity* control where the test was *relational* | a null needs a positive control matched **in kind** |
+| 3 | **Rank-2 cotangent-space coordinate swap** | the site's dose–response is 18× convex, so the edit was below its effective causal dose | … and matched **in scale** — or use an intervention with no dose parameter |
 | 4 | **Latent store transitions** | the design made two-step arithmetic the load-bearing capability for a question about program state | do not couple the semantic question to an unrelated capability |
 | — | **Behavioural lead time** | the metric rewarded unreliable readouts | a metric that cannot separate signal from noise is untrustworthy in *either* direction |
 
@@ -73,9 +73,9 @@ whole-state replacement, which changes everything the position encodes at once.
 **Preserved:** `causal_patching{,_summary}_{model}.csv`,
 `patching_recovery_{model}.png`. Stage 50 still runs.
 
-## 1.2 J-lens readout uses (archived)
+## 1.2 cotangent lens readout uses (archived)
 
-Two uses of the validated J-lens, both archived. **The instrument validation
+Two uses of the validated cotangent lens, both archived. **The instrument validation
 itself survives as supporting method work and is recorded in §4.5 below.**
 
 **Taint / lead time.** Built to explain a behavioural effect that did not survive
@@ -83,12 +83,12 @@ its own floors (§2), and it inherits that metric wholesale. It also produced th
 measurement that condemned the metric: across all 40 (layer, readout) cells,
 early-warning rate is predicted by readout *unreliability* at Pearson r = −0.905
 (p = 1.1e-15), and a norm-matched random direction carrying no information posts a
-*higher* mean early-warning rate (0.634) than the J-lens (0.481), the logit lens
+*higher* mean early-warning rate (0.634) than the cotangent lens (0.481), the logit lens
 (0.373) or the trained probe (0.354). Informative about the method, uninformative
 about the model.
 
 **Control dependence — "decodable but not verbalizable".** The measurements held
-up and were carefully done: at guard anchors the J-lens ranks the guard's own
+up and were carefully done: at guard anchors the cotangent lens ranks the guard's own
 variable above another present variable at 0.813 by the last layer, while the
 control-dependence comparison sits within ±0.02 of chance everywhere. A
 below-chance tail turned out to be a temporal confound (the `indent_matched`
@@ -116,11 +116,11 @@ Archived anyway, for two reasons that are not about execution:
 **This is the failure that produced the project's positive-control discipline.**
 Section 4.7 records the later positive control matched *in kind*.
 
-**Preserved:** `jlens_taint{,_summary,_prefixes,_sanity}_{model}.csv`,
-`jlens_controldep{,_summary}_{model}.csv`, and their figures.
+**Preserved:** `clens_taint{,_summary,_prefixes,_sanity}_{model}.csv`,
+`clens_controldep{,_summary}_{model}.csv`, and their figures.
 `scripts/63_controldep_temporal.py` reproduces the temporal-confound analysis.
 
-## 1.3 J-space rank-2 coordinate swap (NO-GO; the use-position null retracted)
+## 1.3 cotangent-space rank-2 coordinate swap (NO-GO; the use-position null retracted)
 
 **Not archived — reported, and read narrowly.** What is recorded here is that it
 did not pass its own pre-registration, which the headline sentence can obscure.
@@ -274,7 +274,7 @@ An earlier version of this project closed with a single synthesizing claim:
 > The model computes program semantics, causally uses some of them, and reports
 > none of them.
 
-with a global-workspace reading layered on top — that the J-lens measures
+with a global-workspace reading layered on top — that the cotangent lens measures
 *verbalizability*, that relations absent from it are computed "outside the
 workspace", and that binding is anticipatory in a way the output head does not
 reflect.
@@ -286,7 +286,7 @@ on experiments that failed their own controls:
 |---|---|---|
 | "computes" | binding, def–use | **survives** — it is the foundation in [RESULTS.md Part I](RESULTS.md#part-i--the-relation-is-represented) |
 | "causally uses" | whole-state patching | the design cannot separate semantic use from transported surface difference (§1.1) |
-| "reports none of them" | lead time, J-lens uses | all three nulls turned out to be uninformative rather than negative (§1.2, §2) |
+| "reports none of them" | lead time, cotangent lens uses | all three nulls turned out to be uninformative rather than negative (§1.2, §2) |
 
 A conjunction inherits the weakness of its weakest conjunct, and "does not report"
 was carrying most of the interpretive weight while being the least supported
@@ -400,15 +400,15 @@ records the demotion.
 
 **What it was.** The first attempt to ask whether the safe/unsafe distinction is
 expressed in the models' own output vocabulary. Sink-site states were mapped into
-vocabulary space through three readouts (logit lens, J-lens, R-lens, with
-`PRIMARY_LENS = "rlens"` declared in code before any result), against a 196-token
+vocabulary space through three readouts (logit lens, cotangent lens, conserving cotangent lens, with
+`PRIMARY_LENS = "clrp"` declared in code before any result), against a 196-token
 candidate pool discovered on the *training* split and frozen to disk, containing a
 per-model-validated security lexicon. Orientation fixed once as
 `score_unsafe − score_safe`.
 
 **What it returned.** A null, in all three models — and an *inverted* one in 1.3B:
 
-| clean held-out, R-lens, reported cell | 1.3B (L11) | 6.7B (L15) | SC2-3B (L15) |
+| clean held-out, conserving cotangent lens, reported cell | 1.3B (L11) | 6.7B (L15) | SC2-3B (L15) |
 |---|---:|---:|---:|
 | concept token surviving the tokenizer | `" vulnerable"` | `" vulnerable"` | `" unsafe"` |
 | held-out sign consistency | 0.153 | 0.403 | 0.694 |
@@ -426,7 +426,7 @@ models.** The specificity check added later — displacement of the real lens ov
 the best random/Gram-matched control — reads, from
 `vocab/vocab_specificity.csv`:
 
-| reported cell, clean held-out `sink_arg` | logit | J-lens | R-lens | beats random? |
+| reported cell, clean held-out `sink_arg` | logit | cotangent lens | conserving cotangent lens | beats random? |
 |---|---:|---:|---:|---|
 | 1.3B, L11 | 1.83 | 1.58 | 2.08 | yes |
 | **6.7B, L15** | **0.875** | **0.875** | **0.875** | **no, all three** |
@@ -449,7 +449,7 @@ demonstrably alive.
 
 **3. The search it performs cannot be characterised.** The candidate pool is
 selected by a full-vocabulary *logit-lens* ranking, so a direction only the J- or
-R-lens would surface, on a token outside the pool, cannot be discovered. That
+conserving cotangent lens would surface, on a token outside the pool, cannot be discovered. That
 limitation is recorded inside the frozen artifact, and it is exactly what stage
 128 removed.
 
@@ -475,10 +475,10 @@ that replaced it is recorded with the full-vocabulary study in §4.7.
 `results/sinkflow/{model}/vocab/`, including `e15c_report.md`, the depth figures
 `results/figures/e15c_depth_{model}.png`, and `vocab_specificity.csv`.
 
-## 4.5 J-lens validation as a reported result
+## 4.5 cotangent lens validation as a reported result
 
-**Not retired — relocated.** The J-lens validation is correct and still gates the
-lens track: at the last decoder layer `J` is provably the identity, so the J-lens
+**Not retired — relocated.** The cotangent lens validation is correct and still gates the
+lens track: at the last decoder layer `J` is provably the identity, so the cotangent lens
 must equal the logit lens exactly, and it measures **cosine 1.0000** on all three
 models — a closed-form check of the entire gradient path. Next-token top-1
 recovery is 0.633–0.650 against chance 0.038, beating the plain logit lens by
@@ -487,17 +487,17 @@ recovery is 0.633–0.650 against chance 0.038, beating the plain logit lens by
 It stopped being listed as a *result* because it is instrument validation with no
 finding attached, and because the instrument it validates turned out to change no
 conclusion: at every cell where a vocabulary readout actually fires, the logit
-lens, J-lens and R-lens agree to within noise, and where the J-lens was used as a
+lens, cotangent lens and conserving cotangent lens agree to within noise, and where the cotangent lens was used as a
 coordinate system the plain logit lens was *more* efficient at the same site
 (§1.3). It is preserved here as supporting validation rather than an active
 semantic result.
 
 One caveat that travelled with it and still applies: StarCoder2 has no compatible
-R-lens rules, so that model's archived vocabulary-contrast numbers rest on this
+conserving cotangent lens rules, so that model's archived vocabulary-contrast numbers rest on this
 validation and nothing else.
 
-**Still runnable, data preserved.** `scripts/60_jlens_validate.py`;
-`results/tables/jlens_validation{,_checks}_{model}.csv`.
+**Still runnable, data preserved.** `scripts/60_clens_validate.py`;
+`results/tables/clens_validation{,_checks}_{model}.csv`.
 
 ## 4.6 Source-to-sink security benchmark
 
@@ -575,14 +575,14 @@ a discrete human concept.
 `results/sinkflow/{model}/{vocab,positive}/`, including `e15c_report.md`,
 full-vocabulary CSVs, prompted-control summaries, and depth figures.
 
-## 4.8 R-lens attribution on source-to-sink flow
+## 4.8 conserving cotangent lens attribution on source-to-sink flow
 
 **Why it left the main narrative.** The result is observational, small in
 magnitude, confined to the DeepSeek family, and appears at different depths in
-the two model sizes. The later binding R-lens experiment is larger, more tightly
+the two model sizes. The later binding conserving cotangent lens experiment is larger, more tightly
 controlled, and sits directly beside a causal binding result on the same corpus.
 
-**Setup.** A conserving R-lens divides one answer score among syntactic roles in
+**Setup.** A conserving cotangent lens divides one answer score among syntactic roles in
 matched safe and unsafe programs. The data-flow chain roles are token-identical;
 only the sink argument changes. The test asks whether relevance moves between
 the unchanged chains when a different chain feeds the sink.
@@ -623,7 +623,7 @@ calibration/test split. They tested four prompted word styles in both option
 orders, included the returned value as a positive control, ranked the full
 vocabulary on calibration examples with a logit lens, measured held-out opposing
 word-family contrasts, and attempted to attribute a selected word score with the
-R-lens.
+conserving cotangent lens.
 
 **What was observed.** On DeepSeek-Coder 6.7B, `local/global` forced choice
 reached 0.900, while other phrasings exposed constant-answer and option-order
@@ -636,7 +636,7 @@ uninformative because its value positive control also failed.
 
 These measurements remain valid descriptions of a prompted answer state, but
 they do not show that the earlier semantic state found by the binding probe is
-internally verbalised. The replacement experiment will use a frozen J-lens at
+internally verbalised. The replacement experiment will use a frozen cotangent lens at
 the unchanged variable-use position with a small, predeclared semantic lexicon.
 
 **Preserved:** stages 150–153; `results/binding/*/verbal/`;

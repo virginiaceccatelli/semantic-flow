@@ -162,7 +162,7 @@ def main(
     )
     from src.experiments.jspace_lens import load_lens_corpus
     from src.experiments.store_gates import BINDING, GateFailure, record_gate, require_gates
-    from src.models.lens import assert_readable_weights, freeze_parameters
+    from src.models.cotangent_lens import assert_readable_weights, freeze_parameters
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
 
@@ -347,7 +347,7 @@ def main(
                             records, probe=probe, rerun=rerun)
     passed = not violations
     detail = (f"{len(deltas)} reversal rows over {len(scored)} bases x 2 arms x "
-              f"{len(layer_list)} layers x {len(('jlens', 'logit', 'gram_random'))} "
+              f"{len(layer_list)} layers x {len(('clens', 'logit', 'gram_random'))} "
               f"readouts x {len(lexicon.pairs)} pairs; probe succeeds at layers "
               f"{probe_success_layers(probe) or 'none'}; report split {split}"
               if passed else

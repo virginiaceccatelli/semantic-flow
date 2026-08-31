@@ -118,12 +118,12 @@ def main(
     # `paired_gap` to a scale-free one after the first pilots, so a reader has
     # to be able to see what the original choice would have given.
     chosen_layer = select_layer(readout_summary, metric=select_metric,
-                                position=position, lens="jlens", subset=subset)
+                                position=position, lens="clens", subset=subset)
     report["select_metric"] = select_metric
     report["calibration_selected_layer"] = chosen_layer
     report["calibration_selected_layer_by_paired_gap"] = select_layer(
         readout_summary, metric="paired_gap", position=position,
-        lens="jlens", subset=subset)
+        lens="clens", subset=subset)
     if chosen_layer is None:
         criteria.append(_criterion("readout_beats_random_control", False,
                                    "no calibration rows to select a layer from"))
@@ -132,7 +132,7 @@ def main(
                                       position=position, subset=subset,
                                       n_boot=n_boot, seed=seed)
         contrasts.to_csv(readout_dir / "jspace_readout_contrasts.csv", index=False)
-        gram = contrasts[contrasts.contrast == "jlens - gram_random"]
+        gram = contrasts[contrasts.contrast == "clens - gram_random"]
         beat = bool(not gram.empty and gram["accuracy_ci_lo"].iloc[0] > MIN_READOUT_ADVANTAGE)
         detail = ("no gram_random contrast available" if gram.empty else
                   f"layer {chosen_layer} (chosen on calibration): accuracy "
@@ -147,13 +147,13 @@ def main(
     # ── 3. the coordinate swap moves the logits ──────────────────────────────
     calib_swap = swap_summary[(swap_summary.split == "calib")
                               & (swap_summary.position == position)
-                              & (swap_summary.variant == "jlens_value")]
+                              & (swap_summary.variant == "clens_value")]
     site = (calib_swap.loc[calib_swap["delta_ld"].idxmax(), "site"]
             if not calib_swap.empty else None)
     report["calibration_selected_site"] = site
     test_swap = swap_summary[(swap_summary.split == "test")
                              & (swap_summary.position == position)
-                             & (swap_summary.variant == "jlens_value")]
+                             & (swap_summary.variant == "clens_value")]
     if site is not None:
         test_swap = test_swap[test_swap.site == site]
     if test_swap.empty:
@@ -185,11 +185,11 @@ def main(
         report["swap_contrasts"] = swap_contrasts.to_dict(orient="records")
 
     required = {"logit_value": "the Jacobian correction, not the unembedding",
-                "jlens_offvalue": "these values, not the digit subspace at large"}
+                "clens_offvalue": "these values, not the digit subspace at large"}
     has_contrasts = not swap_contrasts.empty and "contrast" in swap_contrasts.columns
     verdicts, details = [], []
     for control, what_it_shows in required.items():
-        row = (swap_contrasts[swap_contrasts.contrast == f"jlens_value - {control}"]
+        row = (swap_contrasts[swap_contrasts.contrast == f"clens_value - {control}"]
                if has_contrasts else swap_contrasts)
         if row.empty:
             verdicts.append(False)
@@ -209,7 +209,7 @@ def main(
         fam = by_operation[(by_operation.split == "test")
                            & (by_operation.position == position)
                            & (by_operation.site == site)
-                           & (by_operation.variant == "jlens_value")]
+                           & (by_operation.variant == "clens_value")]
         if not fam.empty:
             report["cross_operation"] = {
                 "n_families": int(fam["n_families"].iloc[0]),

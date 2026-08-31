@@ -9,13 +9,13 @@
 #   make obfuscation MODEL=.. stage 31 (CPU)
 #   make leadtime MODEL=...   stage 40 (GPU/MPS)
 #   make patching MODEL=...   stage 50 (GPU/MPS)
-#   make jlens-validate MODEL=...   stage 60 — E10 gate, must pass first (GPU/MPS)
-#   make jlens-taint MODEL=...      stage 61 — E10-2, ARCHIVED (GPU/MPS)
-#   make jlens-controldep MODEL=... stage 62 — E10-3, ARCHIVED (GPU/MPS)
-#   make jlens MODEL=...            stages 60→62 in order (60 gates the rest)
+#   make clens-validate MODEL=...   stage 60 — E10 gate, must pass first (GPU/MPS)
+#   make clens-taint MODEL=...      stage 61 — E10-2, ARCHIVED (GPU/MPS)
+#   make clens-controldep MODEL=... stage 62 — E10-3, ARCHIVED (GPU/MPS)
+#   make clens MODEL=...            stages 60→62 in order (60 gates the rest)
 #
-#   ── E14, the R-lens representational track ──
-#   make rlens-validate MODEL=...   stage 110 — E14 gate R, must pass (GPU/MPS)
+#   ── E14, the conserving cotangent lens representational track ──
+#   make clrp-validate MODEL=...   stage 110 — E14 gate R, must pass (GPU/MPS)
 #
 #   ── E15, the security audit track: source → sink under obfuscation ──
 #   make sinkflow-generate MODEL=..    stage 120 benchmark + validation — S0 (CPU)
@@ -40,13 +40,13 @@
 #   make sinkflow-lens-all MODEL=...       stages 128→131 in order
 #   make sinkflow-lens-smoke               the tiny 1.3b end-to-end check (D)
 #
-#   ── E16, the OBSERVATIONAL R-lens readout of E13's binding counterfactual ──
+#   ── E16, the OBSERVATIONAL conserving cotangent lens readout of E13's binding counterfactual ──
 #   make binding-relevance MODEL=...       stage 140 relevance by role — H6 (GPU)
 #   make binding-relevance-report MODEL=.. stage 141 verdict + DAS comparison (CPU)
-#   make binding-rlens MODEL=...           stages 140→141 in order
-#   make binding-rlens-smoke               the tiny 1.3b end-to-end check
+#   make binding-clrp MODEL=...           stages 140→141 in order
+#   make binding-clrp-smoke               the tiny 1.3b end-to-end check
 #
-#   ── E11, the active direction: J-space binding routing ──
+#   ── E11, the active direction: cotangent-space binding routing ──
 #   make jspace-pairs MODEL=...     stage 70 counterfactual pairs (CPU)
 #   make jspace-lens MODEL=...      stage 71 frozen lenses — GATE (GPU/MPS)
 #   make jspace-readout MODEL=...   stage 72 readout (GPU/MPS)
@@ -84,6 +84,18 @@
 #   make binding MODEL=...            stages 100→107; each refuses on a failed gate
 #   make binding-pilot                the 1.3b pilot
 #
+#   ── E19, the PUBLISHED J-lens and R-lens (transformer-circuits.pub/2026/workspace
+#      + the R-lens post), via the vendored reference implementation ──
+#   make lens-corpus MODEL=...      stage 200 fitting corpus + probe suite (CPU)
+#   make lens-fit MODEL=...         stage 201 fit BOTH lenses — expensive (GPU)
+#   make lens-fit-dry MODEL=...     stage 201 cost estimate only, no model load
+#   make lens-validate MODEL=...    stage 202 the seven-check GATE (GPU)
+#   make lens-readout MODEL=...     stage 203 J vs R vs logit over the suite (GPU)
+#   make lens-ablate MODEL=...      stage 204 causal edits along read directions (GPU)
+#   make lens-report MODEL=...      stage 205 tables, figures, report (CPU)
+#   make lens MODEL=...             stages 200→205 in order (202 gates 203-205)
+#   make lens-smoke                 tiny CPU check of the whole path (no weights)
+#
 #   make assets               stage 90 tables + figures, archived excluded (CPU)
 #   make assets-all           stage 90 including archived experiments (CPU)
 #   make test                 pytest
@@ -97,7 +109,7 @@ ACT := results/activations/$(MODEL)
 PROBES := results/probes/$(MODEL)/core
 
 .PHONY: smoke data data-real extract probes context obfuscation leadtime patching \
-        jlens jlens-validate jlens-taint jlens-controldep rlens-validate \
+        clens clens-validate clens-taint clens-controldep clrp-validate \
         jspace jspace-pairs jspace-lens jspace-readout jspace-swap jspace-report \
         jspace-diagnose jspace-pilot assets assets-all test \
         store store-pairs store-verify store-behaviour store-extract store-decode \
@@ -111,11 +123,26 @@ PROBES := results/probes/$(MODEL)/core
         sinkflow-vocab-report sinkflow-vocab-all sinkflow-vocab-smoke \
         sinkflow-align sinkflow-positive sinkflow-relevance \
         sinkflow-lens-report sinkflow-lens-all sinkflow-lens-smoke \
-        binding-relevance binding-relevance-report binding-rlens binding-rlens-smoke \
+        binding-relevance binding-relevance-report binding-clrp binding-clrp-smoke \
         binding-verbal-discover binding-verbal-behaviour binding-verbal-relevance \
-        binding-verbal-report binding-verbal binding-verbal-smoke
+        binding-verbal-report binding-verbal binding-verbal-smoke \
+        lens lens-corpus lens-fit lens-fit-dry lens-validate lens-readout \
+        lens-ablate lens-report lens-smoke
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
+
+# ── E19 published J-lens / R-lens ───────────────────────────────────────────
+# LENS_N is the number of fitting prompts. The released artifacts use 25 and the
+# paper uses 1000, noting quality saturates around 100; 100 is the default here
+# because it is the paper's own saturation point and still affordable at 6.7B.
+LENS_N ?= 100
+LENS_CORPUS_KIND ?= pile
+LENS_CORPUS := data/lens_corpus/pile10k-n$(LENS_N)-seed0.jsonl
+LENS_SUITE := data/lens_eval/code-semantics-$(MODEL).jsonl
+LENS_DIR := results/workspace_lens/$(MODEL)
+LENS_DIM_BATCH ?= 16
+LENS_DTYPE ?= bfloat16
+LENS_HALVES ?= --no-halves
 STORE_LAYERS ?= 6,12,18
 BINDING_LAYERS ?= 6,12,18
 BINDING_RANKS ?= 1,2,4,8
@@ -147,23 +174,23 @@ leadtime:
 patching:
 	$(PY) scripts/50_causal_patching.py --model $(MODEL) --probes $(PROBES)
 
-# ── E10 J-lens (stage 60 gates 61/62 — it exits non-zero if a check fails) ───
-jlens-validate:
-	$(PY) scripts/60_jlens_validate.py --model $(MODEL)
+# ── E10 cotangent lens (stage 60 gates 61/62 — it exits non-zero if a check fails) ───
+clens-validate:
+	$(PY) scripts/60_clens_validate.py --model $(MODEL)
 
-jlens-taint:
-	$(PY) scripts/61_jlens_taint.py --model $(MODEL) --probes $(PROBES)
+clens-taint:
+	$(PY) scripts/61_clens_taint.py --model $(MODEL) --probes $(PROBES)
 
-jlens-controldep:
-	$(PY) scripts/62_jlens_controldep.py --model $(MODEL)
+clens-controldep:
+	$(PY) scripts/62_clens_controldep.py --model $(MODEL)
 
-jlens: jlens-validate jlens-taint jlens-controldep
+clens: clens-validate clens-taint clens-controldep
 
-# ── E14 R-lens (stage 110 is the gate; it exits non-zero if a check fails) ───
-rlens-validate:
-	$(PY) scripts/110_rlens_validate.py --model $(MODEL)
+# ── E14 conserving cotangent lens (stage 110 is the gate; it exits non-zero if a check fails) ───
+clrp-validate:
+	$(PY) scripts/110_clrp_validate.py --model $(MODEL)
 
-# ── E11 J-space binding routing (stage 71 gates 72/73) ──────────────────────
+# ── E11 cotangent-space binding routing (stage 71 gates 72/73) ──────────────────────
 jspace-pairs:
 	$(PY) scripts/70_jspace_pairs.py --model $(MODEL)
 
@@ -344,7 +371,7 @@ sinkflow-vocab-all: sinkflow-vocab-discover sinkflow-vocab sinkflow-vocab-report
 # One layer, 8 candidate tokens, 2 lens triples with one readout position each.
 # Assumes `make sinkflow-smoke` has already written results/smoke/act.
 #
-# float32 and these tiny numbers are for MPS: a J/R-lens vector is one backward
+# float32 and these tiny numbers are for MPS: a J/conserving cotangent lens vector is one backward
 # pass per (candidate, t'), fp16 gradients do not survive that path on MPS (they
 # come back non-finite at every scale in the retry ladder), and fp32 backward on
 # MPS is slow. The canonical runs are CUDA with the stage's defaults; this target
@@ -371,7 +398,7 @@ sinkflow-vocab-smoke:
 # null cannot be blamed on a candidate pool. 129 is the POSITIVE CONTROL, and it
 # is what turns E15-C's null from unfalsifiable into a claim: it runs the
 # identical readout on a property the models demonstrably answer. 130 reads the
-# R-lens as a conserving attribution rather than as a vocabulary projection,
+# conserving cotangent lens as a conserving attribution rather than as a vocabulary projection,
 # which needs no lexicalisation at all.
 #
 # All three need a GPU. 131 recomputes nothing and is CPU-only.
@@ -418,7 +445,7 @@ sinkflow-lens-smoke:
 	@test -f results/smoke/sinkflow/positive/positive_summary.csv
 	@test -f results/smoke/sinkflow/relevance/relevance_summary.csv
 
-# ── E16 the observational R-lens readout of E13's binding pairs (140→141) ─────
+# ── E16 the observational conserving cotangent lens readout of E13's binding pairs (140→141) ─────
 # E13 (R10) is the CAUSAL result on this corpus: a rank-1 DAS interchange at the
 # use anchor transports which definition is in scope. E16 asks the observational
 # question beside it — when the same binding flips and exactly ONE token changes,
@@ -433,21 +460,21 @@ sinkflow-lens-smoke:
 #
 # 140 REFUSES on architectures where the homogenising LRP rules bind to nothing
 # (starcoder2: LayerNorm + non-gated MLP) and exits non-zero on purpose, so
-# `binding-rlens` tolerates it with a `-` prefix and still runs the report.
+# `binding-clrp` tolerates it with a `-` prefix and still runs the report.
 binding-relevance:
 	$(PY) scripts/140_binding_relevance.py --model $(MODEL)
 
 binding-relevance-report:
 	$(PY) scripts/141_binding_relevance_report.py --model $(MODEL)
 
-binding-rlens:
+binding-clrp:
 	-$(PY) scripts/140_binding_relevance.py --model $(MODEL)
 	$(PY) scripts/141_binding_relevance_report.py --model $(MODEL)
 
 # One layer, six bases, float32 for the same MPS reason as `sinkflow-lens-smoke`:
 # fp16 gradients come back non-finite on that backend. The gate override is what
 # makes this runnable without E13's stages 100-101 having been run here.
-binding-rlens-smoke:
+binding-clrp-smoke:
 	$(PY) scripts/140_binding_relevance.py --model $(MODEL) \
 		--output results/smoke/binding/$(MODEL) --layers=6 --n-bases 6 \
 		--dtype float32 --n-permutations 100 --n-boot 100 --n-determinism 2 \
@@ -481,7 +508,7 @@ binding-verbal:
 	-$(PY) scripts/152_binding_verbal_relevance.py --model $(MODEL)
 	$(PY) scripts/153_binding_verbal_report.py --model $(MODEL)
 
-# Six bases, one layer, float32 for the same MPS reason as `binding-rlens-smoke`.
+# Six bases, one layer, float32 for the same MPS reason as `binding-clrp-smoke`.
 # --n-bases 6 leaves too few calibration bases for discovery to be meaningful, so
 # the smoke skips stage 150 and lets 151 report the contrast as unavailable —
 # which is itself the path worth exercising.
@@ -515,7 +542,7 @@ binding-lexlens:
 	$(PY) scripts/161_binding_lexlens_report.py --model $(MODEL)
 
 # Six bases, one layer, a two-sample lens build. `--dtype float32` overrides the
-# stage default here for the same MPS reason as `binding-rlens-smoke`: fp16 VJPs
+# stage default here for the same MPS reason as `binding-clrp-smoke`: fp16 VJPs
 # come back non-finite on that backend, while the real CUDA run wants the
 # float16 that stage 71 built the frozen lenses in. The
 # lens build is the expensive half — one VJP per (build sample, t') per layer,
@@ -540,6 +567,58 @@ assets:
 
 assets-all:
 	$(PY) scripts/90_make_paper_assets.py --include-archived
+
+
+# ── E19: the published J-lens and R-lens ─────────────────────────────────────
+# Stage 202 is a GATE: it exits non-zero on a failed required check, and stages
+# 203-205 are not interpretable until it passes.
+#
+# `lens-fit` is the only expensive target. Run `lens-fit-dry` first — it prints
+# the backward-pass count, the PFLOP total, the checkpoint size and the host-RAM
+# hint without loading any weights, so a run is sized before it is launched.
+
+lens-corpus:
+	$(PY) scripts/200_lens_corpus.py --model $(MODEL) --n-prompts $(LENS_N) \
+		--corpus $(LENS_CORPUS_KIND)
+
+lens-fit-dry:
+	$(PY) scripts/201_lens_fit.py --model $(MODEL) --corpus $(LENS_CORPUS) \
+		--dim-batch $(LENS_DIM_BATCH) --dry-run
+
+lens-fit:
+	$(PY) scripts/201_lens_fit.py --model $(MODEL) --corpus $(LENS_CORPUS) \
+		--dim-batch $(LENS_DIM_BATCH) --dtype $(LENS_DTYPE) $(LENS_HALVES)
+
+lens-validate:
+	$(PY) scripts/202_lens_validate.py --model $(MODEL) --corpus $(LENS_CORPUS) \
+		--suite $(LENS_SUITE) --dtype $(LENS_DTYPE)
+
+lens-readout:
+	$(PY) scripts/203_lens_readout.py --model $(MODEL) --suite $(LENS_SUITE) \
+		--dtype $(LENS_DTYPE)
+
+lens-ablate:
+	$(PY) scripts/204_lens_ablate.py --model $(MODEL) --suite $(LENS_SUITE) \
+		--readout $(LENS_DIR)/readout/workspace_lens_rows.csv --dtype $(LENS_DTYPE)
+
+lens-report:
+	$(PY) scripts/205_lens_report.py --model $(MODEL)
+
+lens: lens-corpus lens-fit lens-validate lens-readout lens-ablate lens-report
+
+# The whole path on toy CPU models plus the reference implementation's own
+# tests: no weights, no network, a few seconds. This is what to run after any
+# change to src/workspace_lens/ or third_party/jacobian-lens/.
+lens-smoke:
+	$(PY) -m pytest tests/test_workspace_relp.py tests/test_workspace_pipeline.py -q
+	# The vendored release's own suite, run from its own root: its `tests`
+	# package shadows this repository's if both are collected at once.
+	cd third_party/jacobian-lens && $(PY) -m pytest tests -q -p no:cacheprovider
+	$(PY) scripts/200_lens_corpus.py --model $(MODEL) --corpus code \
+		--n-prompts 20 --n-per-family 4 \
+		--corpus-dir results/smoke/lens --suite-dir results/smoke/lens
+	@test -f results/smoke/lens/code-semantics-$(MODEL).jsonl
+
 
 test:
 	$(PY) -m pytest tests/ -q
@@ -568,16 +647,16 @@ smoke:
 	$(PY) scripts/50_causal_patching.py --model $(MODEL) \
 		--pairs $(SMOKE_DATA)/synthetic/minimal_pairs.jsonl --probes results/smoke/probes \
 		--output results/smoke/patching --max-pairs 3 --no-tables
-	$(PY) scripts/60_jlens_validate.py --model $(MODEL) \
-		--dataset $(SMOKE_DATA)/synthetic/core.jsonl --output results/smoke/jlens/validate \
+	$(PY) scripts/60_clens_validate.py --model $(MODEL) \
+		--dataset $(SMOKE_DATA)/synthetic/core.jsonl --output results/smoke/clens/validate \
 		--layers 0,11 --n-build 4 --n-eval 4 --n-sources 4 --n-taint 3 \
 		--no-strict --no-tables
-	$(PY) scripts/61_jlens_taint.py --model $(MODEL) \
+	$(PY) scripts/61_clens_taint.py --model $(MODEL) \
 		--dataset $(SMOKE_DATA)/synthetic/core.jsonl --probes results/smoke/probes \
-		--output results/smoke/jlens/taint --layers 0,11 --n-examples 6 --no-tables
-	$(PY) scripts/62_jlens_controldep.py --model $(MODEL) \
+		--output results/smoke/clens/taint --layers 0,11 --n-examples 6 --no-tables
+	$(PY) scripts/62_clens_controldep.py --model $(MODEL) \
 		--dataset $(SMOKE_DATA)/synthetic/core.jsonl \
-		--output results/smoke/jlens/controldep --layers 0,11 \
+		--output results/smoke/clens/controldep --layers 0,11 \
 		--n-examples 8 --n-build 3 --no-tables
 	$(PY) scripts/70_jspace_pairs.py --model $(MODEL) \
 		--output $(SMOKE_DATA)/synthetic/jspace_pairs.jsonl \
@@ -604,9 +683,9 @@ smoke:
 	@test -f results/smoke/obfuscation/obfuscation_robustness.csv
 	@test -f results/smoke/leadtime/behavioral_leadtime.csv
 	@test -f results/smoke/patching/causal_patching.csv
-	@test -f results/smoke/jlens/validate/jlens_validation_checks.csv
-	@test -f results/smoke/jlens/taint/jlens_taint_summary.csv
-	@test -f results/smoke/jlens/controldep/jlens_controldep_summary.csv
+	@test -f results/smoke/clens/validate/clens_validation_checks.csv
+	@test -f results/smoke/clens/taint/clens_taint_summary.csv
+	@test -f results/smoke/clens/controldep/clens_controldep_summary.csv
 	@test -f results/smoke/jspace/lens/jspace_lens_stability.csv
 	@test -f results/smoke/jspace/readout/jspace_readout_summary.csv
 	@test -f results/smoke/jspace/swap/jspace_swap_summary.csv

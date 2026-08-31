@@ -126,7 +126,7 @@ def top_difference_subspace(
 class AlignedSubspace:
     """A frozen (d, rank) orthonormal basis plus how it was obtained.
 
-    Frozen artifact, same contract as `LinearProbe.save/load` and `JLens`:
+    Frozen artifact, same contract as `LinearProbe.save/load` and `CotangentLens`:
     fitted once on the calibration split, then applied unchanged. The metadata
     is what makes a later reader able to tell a learned subspace from a control
     without re-deriving it.

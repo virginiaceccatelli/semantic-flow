@@ -21,7 +21,7 @@ cannot support a claim about that layer no matter how large its effect looks.
 layer `J` is the identity, so the J-lens must reproduce the logit lens exactly
 — this exercises the whole VJP path against a closed-form answer. V2:
 next-token recovery on held-out corpus positions, against the logit lens and
-the Gram-matched random floor. Both come from `jlens_validate`; re-implementing
+the Gram-matched random floor. Both come from `clens_validate`; re-implementing
 them here would let the two diverge.
 
 Source positions are broad (any position in the program, subject to a small
@@ -39,14 +39,14 @@ from typing import Optional, Sequence
 import numpy as np
 import pandas as pd
 
-from src.experiments.jlens_validate import (
+from src.experiments.clens_validate import (
     next_token_metrics,
     next_token_samples,
     single_token_candidates,
 )
 from src.models.hooks import extract_hidden_states
-from src.models.lens import (
-    JLens,
+from src.models.cotangent_lens import (
+    CotangentLens,
     LensSample,
     compute_lens_vectors,
     gram_matched_random_lens,
@@ -155,8 +155,8 @@ def _rowwise_cosine(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
 def stability_row(
     layer: int,
-    per_seed: dict[int, JLens],
-    pooled: JLens,
+    per_seed: dict[int, CotangentLens],
+    pooled: CotangentLens,
     probe_states: np.ndarray,
     seed: int = 42,
 ) -> dict:
@@ -272,7 +272,7 @@ def run_jspace_lens(
     for layer in layers:
         logger.info("E11 lens | layer %s", layer)
 
-        per_seed: dict[int, JLens] = {}
+        per_seed: dict[int, CotangentLens] = {}
         all_samples: list[LensSample] = []
         for s in range(n_seeds):
             samples = build_lens_samples(tokenizer, build_sources, n_build,
@@ -310,14 +310,14 @@ def run_jspace_lens(
 
         stability_rows.append(stability_row(layer, per_seed, pooled, probe_states, seed=seed))
 
-        for kind, lens in (("jlens", pooled), ("logit", base_logit),
+        for kind, lens in (("clens", pooled), ("logit", base_logit),
                            ("gram_random", gram), ("random", norm_random)):
             validation_rows.append({
                 "check": "V2_next_token", "layer": layer, "lens": kind,
                 **next_token_metrics(lens, evals),
             })
         validation_rows.append({
-            "check": "V1_identity_at_last_layer", "layer": layer, "lens": "jlens",
+            "check": "V1_identity_at_last_layer", "layer": layer, "lens": "clens",
             "cosine_to_logit_lens": float(np.mean(
                 _rowwise_cosine(pooled.vectors, base_logit.vectors))),
             "is_last_layer": layer == last_layer,
@@ -360,7 +360,7 @@ def lens_gates(
 
     v2 = validation[validation["check"] == "V2_next_token"]
     if not v2.empty:
-        jl = v2[v2["lens"] == "jlens"].dropna(subset=["top1"])
+        jl = v2[v2["lens"] == "clens"].dropna(subset=["top1"])
         if not jl.empty:
             best = jl.loc[jl["top1"].idxmax()]
             same_layer = v2[v2["layer"] == best["layer"]].set_index("lens")["top1"]
@@ -369,7 +369,7 @@ def lens_gates(
                 "check": "V2_beats_gram_matched_floor", "required": True,
                 "passed": bool(np.isfinite(floor) and best["top1"] > floor + min_v2_gain
                                and int(best.get("n", 0)) >= 20),
-                "detail": f"layer {int(best['layer'])} top-1: jlens {best['top1']:.3f} "
+                "detail": f"layer {int(best['layer'])} top-1: clens {best['top1']:.3f} "
                           f"vs gram_random {floor:.3f} "
                           f"(logit {same_layer.get('logit', float('nan')):.3f}), "
                           f"n={int(best.get('n', 0))}",

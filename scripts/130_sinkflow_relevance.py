@@ -89,7 +89,7 @@ def main(
     import torch
 
     from src.data.sink_flow import load_programs, resolve_sinkflow_path
-    from src.experiments.jlens_validate import TAINT_CHOICES, choice_token_ids
+    from src.experiments.clens_validate import TAINT_CHOICES, choice_token_ids
     from src.experiments.sink_flow import condition_name
     from src.experiments.sinkflow_relevance import (
         CONSERVATION_TOLERANCE,
@@ -108,7 +108,7 @@ def main(
         validate_concept_tokens,
     )
     from src.experiments.store_gates import SINKFLOW, GateFailure, record_gate, require_gates
-    from src.models.lens import freeze_parameters
+    from src.models.cotangent_lens import freeze_parameters
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
 
@@ -158,7 +158,7 @@ def main(
     # identically zero. Conservation still holds there — trivially — but there
     # is no distribution across positions to compare, so the cell is not a null
     # result, it is the absence of a measurement. Pass --layers to override.
-    from src.models.lens import last_layer_index
+    from src.models.cotangent_lens import last_layer_index
 
     final_layer = int(last_layer_index(mdl))
     layer_list = ([int(x) for x in layers.split(",")] if layers
@@ -181,7 +181,7 @@ def main(
     console.print(f"  LRP rules bound: {counts}")
     if not homogenising_rules_bound(counts) and not override_gate:
         console.print(
-            f"[red]GATE rlens_rules_bound FAILED\n"
+            f"[red]GATE clrp_rules_bound FAILED\n"
             f"  expected: the RMSNorm rule or the gated-MLP rule binds to at "
             f"least one module, so relevance conserves and the fractions are a "
             f"partition\n"

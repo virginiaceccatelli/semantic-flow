@@ -17,16 +17,16 @@ DAS intervenes on a rank-1 binding component
         ↓
 the answer follows the installed binding
         ↓
-the R-lens attributes the unedited answer to the active definition
+the conserving cotangent lens attributes the unedited answer to the active definition
         ↓
-the unprompted J-lens tests whether lexical contrasts follow that state
+the unprompted cotangent lens tests whether lexical contrasts follow that state
         ↓
 some contrasts track the binding in both crossed value arms
 ```
 
-The security, output-vocabulary, older standalone J-lens, and taint-routing tracks
+The security, output-vocabulary, older standalone cotangent lens, and taint-routing tracks
 are preserved in [ARCHIVE.md](ARCHIVE.md). E18 is the active binding-specific
-J-lens experiment.
+cotangent lens experiment.
 
 ## 1. Representation
 
@@ -93,9 +93,9 @@ binding but requires a larger edit and remains less reliable.
 This is the causal result: at the tested site and layer, downstream computation
 uses a compact component whose effect follows which definition is in scope.
 
-## 4. Binding attribution with the R-lens
+## 4. Binding attribution with the conserving cotangent lens
 
-The R-lens reads the same binding programs without changing the forward model. It
+The conserving cotangent lens reads the same binding programs without changing the forward model. It
 propagates the selected bound-value score backward and divides it among syntactic
 roles while conserving the score.
 
@@ -122,11 +122,11 @@ bases share one template.
 
 The 1.3B result is not interpreted: non-positive bound-value scores make its
 normalized relevance shares unstable. StarCoder2 is outside the implemented
-R-lens rules.
+conserving cotangent lens rules.
 
-## 5. Binding-associated lexical alignment with the J-lens
+## 5. Binding-associated lexical alignment with the cotangent lens
 
-E18 applies a frozen J-lens at the unchanged variable-use position without
+E18 applies a frozen cotangent lens at the unchanged variable-use position without
 appending a question. It tests nine predeclared single-token contrasts: four
 scope pairs, three positional pairs, and two action pairs. For each pair it asks
 whether changing the binding shifts the word margin in the predicted direction
@@ -139,7 +139,7 @@ probe is 1.000 at L8, L12, L16, L20, and L24, confirming that the read position
 contains binding information. `nested/module` reaches 1.000/1.000 at L16, while
 `local/global` reaches 0.996/1.000 at L20 and remains high at L24. These are
 clear descriptive associations between the binding counterfactual and those
-J-lens margins.
+cotangent lens margins.
 
 They are not evidence that the state explicitly says “local” or “nested.” The
 single program template changes scope, textual order, distance, and replacement
@@ -160,13 +160,13 @@ The strongest supported statement is:
 > state aligns with several lexical contrasts, although that alignment is not
 > uniquely identifiable as scope verbalisation.
 
-DAS and the R-lens are deliberately not merged into one claim. DAS edits the
-model and establishes causal use. The R-lens edits nothing and establishes
+DAS and the conserving cotangent lens are deliberately not merged into one claim. DAS edits the
+model and establishes causal use. The conserving cotangent lens edits nothing and establishes
 attribution under a specified set of backward rules.
 
 No experiment here establishes a complete mechanism. E18 is descriptive and
 constrains lexical alignment only for its nine pairs, one confounded template,
-one unprompted position, one model, and a linear J-lens; prompted language and
+one unprompted position, one model, and a linear cotangent lens; prompted language and
 other readouts remain separate questions.
 
 ## Where to read next
@@ -175,6 +175,6 @@ other readouts remain separate questions.
 - [METHODS.md](METHODS.md): construction and instrument details.
 - [DeepSeek DAS report](../results/binding/deepseek-coder-6.7b/e13_report.md).
 - [StarCoder2 DAS report](../results/binding/starcoder2-3b/e13_report.md).
-- [DeepSeek binding R-lens report](../results/binding/deepseek-coder-6.7b/e16_report.md).
-- [DeepSeek J-lens verbalisation report](../results/binding/deepseek-coder-6.7b/e18_report.md).
+- [DeepSeek binding conserving cotangent lens report](../results/binding/deepseek-coder-6.7b/e16_report.md).
+- [DeepSeek cotangent lens verbalisation report](../results/binding/deepseek-coder-6.7b/e18_report.md).
 - [ARCHIVE.md](ARCHIVE.md): displaced studies and failed designs.

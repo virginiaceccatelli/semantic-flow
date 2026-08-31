@@ -5,9 +5,9 @@ verdict_text: "STABLE NON-SECURITY VOCABULARY \u2014 the training-discovered dir
   \ replicate held out and beat the random-token control, but the security lexicon's\
   \ own contrast does not carry it. Output-aligned flow information WITHOUT explicit\
   \ verbalisation; do not call this 'the model represents unsafe'."
-primary_lens: rlens
+primary_lens: clrp
 reported:
-  lens: rlens
+  lens: clrp
   site: sink_arg
   layer: 15
   condition: clean_heldout
@@ -38,7 +38,7 @@ gates:
 headline:
   model: starcoder2-3b
   arm: main
-  lens: rlens
+  lens: clrp
   layer: 15
   site: sink_arg
   condition: clean_heldout
@@ -66,7 +66,7 @@ headline:
 mismatched_control:
   model: starcoder2-3b
   arm: mismatched_pairs
-  lens: rlens
+  lens: clrp
   layer: 15
   site: sink_arg
   condition: clean_heldout
@@ -95,7 +95,7 @@ same_label_control:
   unsafe:
     model: starcoder2-3b
     arm: same_label_unsafe
-    lens: rlens
+    lens: clrp
     layer: 15
     site: sink_arg
     condition: clean_heldout
@@ -123,7 +123,7 @@ same_label_control:
   safe:
     model: starcoder2-3b
     arm: same_label_safe
-    lens: rlens
+    lens: clrp
     layer: 15
     site: sink_arg
     condition: clean_heldout

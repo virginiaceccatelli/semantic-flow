@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+"""Stage 205 (CPU): tables, figures and the generated report.
+
+Reads whatever stages 202-204 wrote and produces:
+
+    workspace_lens_report.md            the model-specific report
+    results/figures/workspace_lens_passk_{model}.{png,pdf}
+    results/figures/workspace_lens_rank_{model}.{png,pdf}
+    results/figures/workspace_lens_earliest_{model}.{png,pdf}
+    results/figures/workspace_lens_ablation_{model}.{png,pdf}
+
+Nothing here recomputes a metric: `readout.summarise` is the single definition
+of pass@k, so a figure and the report cannot disagree about what was measured.
+
+Prerequisites: stages 202-204 (204 optional).
+
+    python scripts/205_lens_report.py --model deepseek-coder-1.3b
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import sys
+import time
+from pathlib import Path
+from typing import Optional
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+import typer
+from rich.console import Console
+
+app = typer.Typer(pretty_exceptions_show_locals=False)
+console = Console()
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+
+LENS_ORDER = ["j-lens", "r-lens", "logit-lens"]
+COLOURS = {"j-lens": "#1f77b4", "r-lens": "#d62728", "logit-lens": "#7f7f7f"}
+
+
+@app.command()
+def main(
+    model: str = typer.Option(...),
+    lens_dir: Optional[Path] = typer.Option(None),
+    figures: Path = typer.Option(Path("results/figures")),
+    k: int = typer.Option(10, help="k for pass@k and the earliest-layer statistic"),
+):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+
+    from src.workspace_lens.fitting import load_lens
+    from src.workspace_lens.readout import earliest_layer
+    from src.utils import write_manifest
+
+    t0 = time.time()
+    lens_dir = Path(lens_dir or Path("results/workspace_lens") / model)
+    figures.mkdir(parents=True, exist_ok=True)
+
+    rows_path = lens_dir / "readout" / "workspace_lens_rows.csv"
+    if not rows_path.exists():
+        raise typer.BadParameter(f"no readout at {rows_path}; run stage 203 first")
+    rows = pd.read_csv(rows_path)
+    summary = pd.read_csv(lens_dir / "readout" / "workspace_lens_summary.csv")
+
+    gate_path = lens_dir / "validate" / "workspace_lens_gate.csv"
+    gate = pd.read_csv(gate_path) if gate_path.exists() else None
+    abl_path = lens_dir / "ablate" / "workspace_lens_ablation.csv"
+    ablation = pd.read_csv(abl_path) if abl_path.exists() else None
+    _, prov = load_lens(lens_dir / "j-lens")
+    _, prov_r = load_lens(lens_dir / "r-lens")
+
+    # ── figure 1: pass@k across layers, per lens, pooled and per family ──────
+    layers = sorted(rows["layer"].unique())
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4), sharey=True)
+    for lens in LENS_ORDER:
+        sub = rows[rows["lens"] == lens]
+        curve = [(sub[sub["layer"] == l]["rank"] < k).mean() for l in layers]
+        axes[0].plot(layers, curve, label=lens, color=COLOURS[lens], lw=2)
+        absent = sub[~sub["target_in_prompt"]]
+        curve = [(absent[absent["layer"] == l]["rank"] < k).mean() for l in layers]
+        axes[1].plot(layers, curve, label=lens, color=COLOURS[lens], lw=2)
+    axes[0].set_title(f"all items (n={rows['item_id'].nunique()})")
+    axes[1].set_title("targets absent from the prompt")
+    for ax in axes:
+        ax.set_xlabel("source layer"); ax.grid(alpha=.3); ax.set_ylim(-.02, 1.02)
+    axes[0].set_ylabel(f"pass@{k}"); axes[0].legend()
+    fig.suptitle(f"{model}: what the lenses surface across layers")
+    _save(fig, figures / f"workspace_lens_passk_{model}")
+
+    # ── figure 2: median target rank per family ──────────────────────────────
+    families = sorted(rows["family"].unique())
+    ncol = min(4, len(families))
+    nrow = int(np.ceil(len(families) / ncol))
+    fig, axes = plt.subplots(nrow, ncol, figsize=(3.2 * ncol, 2.6 * nrow),
+                             squeeze=False, sharex=True)
+    for ax, family in zip(axes.flat, families):
+        for lens in LENS_ORDER:
+            sub = rows[(rows["lens"] == lens) & (rows["family"] == family)]
+            med = [sub[sub["layer"] == l]["rank"].median() for l in layers]
+            ax.plot(layers, med, color=COLOURS[lens], lw=1.6, label=lens)
+        ax.set_yscale("symlog"); ax.set_title(family, fontsize=9); ax.grid(alpha=.3)
+    for ax in axes.flat[len(families):]:
+        ax.axis("off")
+    axes.flat[0].legend(fontsize=7)
+    fig.supxlabel("source layer"); fig.supylabel("median rank of the target concept")
+    fig.tight_layout()
+    _save(fig, figures / f"workspace_lens_rank_{model}")
+
+    # ── figure 3: earliest layer the concept enters the top k ────────────────
+    earliest_rows = []
+    for (item, lens), grp in rows.groupby(["item_id", "lens"]):
+        by_layer = dict(zip(grp["layer"], grp["rank"]))
+        layer = earliest_layer(by_layer, k)
+        earliest_rows.append({"item_id": item, "lens": lens, "earliest": layer,
+                              "family": grp["family"].iloc[0],
+                              "found": layer is not None})
+    earliest = pd.DataFrame(earliest_rows)
+    fig, ax = plt.subplots(figsize=(7, 4))
+    width = 0.26
+    xs = np.arange(len(families))
+    for i, lens in enumerate(LENS_ORDER):
+        vals, errs = [], []
+        for family in families:
+            sub = earliest[(earliest["lens"] == lens) & (earliest["family"] == family)]
+            found = sub[sub["found"]]["earliest"]
+            vals.append(found.median() if len(found) else np.nan)
+            errs.append(len(found) / max(len(sub), 1))
+        bars = ax.bar(xs + (i - 1) * width, vals, width, label=lens, color=COLOURS[lens])
+        for bar, frac in zip(bars, errs):
+            ax.text(bar.get_x() + bar.get_width() / 2, 0.4, f"{frac:.0%}",
+                    ha="center", fontsize=6, rotation=90, color="white")
+    ax.set_xticks(xs); ax.set_xticklabels(families, rotation=30, ha="right")
+    ax.set_ylabel(f"median earliest layer with rank < {k}")
+    ax.set_title(f"{model}: where the concept first appears "
+                 f"(bar label = share of items that ever reach top {k})")
+    ax.legend(); ax.grid(alpha=.3, axis="y")
+    _save(fig, figures / f"workspace_lens_earliest_{model}")
+
+    # ── figure 4: causal ablation ────────────────────────────────────────────
+    if ablation is not None and not ablation.empty:
+        erase = ablation[ablation["edit"] == "erase"]
+        order = ["jlens", "rlens", "logit", "offtarget", "random"]
+        fig, ax = plt.subplots(figsize=(7, 4))
+        for i, layer in enumerate(sorted(erase["layer"].unique())):
+            sub = erase[erase["layer"] == layer]
+            vals = [sub[sub["direction"] == d]["delta_logit_diff"].mean() for d in order]
+            ax.bar(np.arange(len(order)) + i * 0.8 / len(erase["layer"].unique()),
+                   vals, 0.8 / len(erase["layer"].unique()), label=f"L{layer}")
+        ax.set_xticks(np.arange(len(order)) + 0.4); ax.set_xticklabels(order)
+        ax.axhline(0, color="k", lw=.8)
+        ax.set_ylabel("mean change in the model's own logit difference")
+        ax.set_title(f"{model}: erasing the lens read direction")
+        ax.legend(); ax.grid(alpha=.3, axis="y")
+        _save(fig, figures / f"workspace_lens_ablation_{model}")
+
+    # ── report ───────────────────────────────────────────────────────────────
+    report = _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
+                           gate, ablation, k)
+    console.print(f"report -> {report}")
+
+    write_manifest("205_lens_report", {"model": model, "lens_dir": str(lens_dir),
+                                       "k": k}, t0,
+                   extra={"report": str(report), "n_items": int(rows["item_id"].nunique())})
+
+
+def _save(fig, stem: Path):
+    for ext in ("png", "pdf"):
+        fig.savefig(f"{stem}.{ext}", dpi=150, bbox_inches="tight")
+    import matplotlib.pyplot as plt
+    plt.close(fig)
+    console.print(f"figure -> {stem}.png")
+
+
+def _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
+                  gate, ablation, k) -> Path:
+    import pandas as pd
+
+    recipe = prov.get("recipe", {})
+    corpus = prov.get("corpus", {})
+    relp = prov_r.get("relp") or {}
+    arch = prov_r.get("architecture", {})
+    lines = [
+        f"# J-lens / R-lens readout — {model}",
+        "",
+        "Generated by `scripts/205_lens_report.py`. The estimator is the released",
+        "reference implementation (`third_party/jacobian-lens`, commit "
+        f"`{str(prov.get('jacobian_lens_commit'))[:12]}`); the R-lens is the same",
+        "fit under the published RelP backward rules.",
+        "",
+        "## Configuration",
+        "",
+        "| setting | value |",
+        "|---|---|",
+        f"| model | `{prov.get('model', {}).get('hf_id')}` |",
+        f"| dtype / device | {prov.get('model', {}).get('dtype')} / "
+        f"{prov.get('model', {}).get('device')} |",
+        f"| target layer | {recipe.get('target_layer')} of "
+        f"{recipe.get('n_layers')} (released recipe: n_layers - 2) |",
+        f"| source layers | 0 - {max(recipe.get('source_layers', [0]))} |",
+        f"| skip_first | {recipe.get('skip_first')} |",
+        f"| max_seq_len | {recipe.get('max_seq_len')} |",
+        f"| fitting corpus | {corpus.get('dataset_id')}, n={corpus.get('n_prompts')}, "
+        f"digest `{str(corpus.get('digest'))[:12]}` |",
+        f"| BOS prepended | {prov.get('model', {}).get('bos_prepended')} |",
+        f"| RelP rules bound | LN {relp.get('ln_rmsnorm', 0)} RMSNorm + "
+        f"{relp.get('ln_layernorm', 0)} LayerNorm, identity {relp.get('identity', 0)}, "
+        f"half {relp.get('half', 0)} ({arch.get('half_rule')}) |",
+        f"| max forward deviation from the rules | "
+        f"{relp.get('max_forward_deviation', float('nan')):.2e} |",
+        "",
+    ]
+
+    if gate is not None:
+        lines += ["## Validation gate", "",
+                  "| check | required | result | detail |", "|---|---|---|---|"]
+        for _, r in gate.iterrows():
+            mark = "PASS" if r["passed"] else ("**FAIL**" if r["required"] else "n/a")
+            lines.append(f"| {r['check']} | {'yes' if r['required'] else 'no'} | "
+                         f"{mark} | {r['detail']} |")
+        lines.append("")
+
+    lines += [f"## What the lenses surface (pass@{k}, best over layers)", "",
+              "| family | j-lens | r-lens | logit lens | target in prompt |",
+              "|---|---|---|---|---|"]
+    for family in sorted(rows["family"].unique()):
+        sub = summary[summary["family"] == family]
+        cells = []
+        for lens in LENS_ORDER:
+            col = sub[sub["lens"] == lens][f"pass@{k}"]
+            cells.append(f"{col.max():.3f}" if len(col) else "—")
+        in_prompt = rows[rows["family"] == family]["target_in_prompt"].all()
+        lines.append(f"| {family} | " + " | ".join(cells) + " | "
+                     f"{'yes' if in_prompt else 'no'} |")
+    lines.append("")
+
+    lines += [f"## Earliest layer the target enters the top {k}", "",
+              "Median over the items that ever reach it; the share that do is in "
+              "brackets, because an item that never surfaces the concept is not a "
+              "late success.", "",
+              "| family | j-lens | r-lens | logit lens |", "|---|---|---|---|"]
+    for family in sorted(rows["family"].unique()):
+        cells = []
+        for lens in LENS_ORDER:
+            sub = earliest[(earliest["lens"] == lens) & (earliest["family"] == family)]
+            found = sub[sub["found"]]["earliest"]
+            cells.append(f"{found.median():.0f} ({len(found)}/{len(sub)})"
+                         if len(found) else f"— (0/{len(sub)})")
+        lines.append(f"| {family} | " + " | ".join(cells) + " |")
+    lines.append("")
+
+    if ablation is not None and not ablation.empty:
+        erase = ablation[ablation["edit"] == "erase"]
+        lines += ["## Causal ablation — erasing the lens read direction", "",
+                  "Change in the **model's own** logit difference between the target "
+                  "and distractor answers. `offtarget` and `random` are the controls "
+                  "that make a non-zero effect interpretable.", "",
+                  "| layer | direction | n | mean delta | median delta | |edit|/|h| |",
+                  "|---|---|---|---|---|---|"]
+        grouped = (erase.groupby(["layer", "direction"])
+                        .agg(n=("delta_logit_diff", "size"),
+                             mean=("delta_logit_diff", "mean"),
+                             median=("delta_logit_diff", "median"),
+                             norm=("edit_norm_ratio", "mean")).reset_index())
+        for _, r in grouped.iterrows():
+            lines.append(f"| {int(r['layer'])} | {r['direction']} | {int(r['n'])} | "
+                         f"{r['mean']:+.3f} | {r['median']:+.3f} | {r['norm']:.3f} |")
+        lines.append("")
+
+    lines += ["## Figures", "",
+              f"- `results/figures/workspace_lens_passk_{model}.png`",
+              f"- `results/figures/workspace_lens_rank_{model}.png`",
+              f"- `results/figures/workspace_lens_earliest_{model}.png`"]
+    if ablation is not None and not ablation.empty:
+        lines.append(f"- `results/figures/workspace_lens_ablation_{model}.png`")
+    lines.append("")
+
+    path = lens_dir / "workspace_lens_report.md"
+    path.write_text("\n".join(lines) + "\n")
+    return path
+
+
+if __name__ == "__main__":
+    app()

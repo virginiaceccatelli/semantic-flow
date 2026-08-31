@@ -1,0 +1,282 @@
+% ============================ APPENDIX ============================
+\section{Ground truth: code property graph and cross-checks}
+\label{app:groundtruth}
+Every label is derived from the program's own structure rather than from a
+learned labeller, for two reasons. First, a probe trained on approximate labels
+measures the approximation as much as the model, so the primary corpora are
+synthetic programs whose graph is known by construction; real-code transfer is
+reported only as an upper bound. Second, the exact $0.500$ floor exists only
+because the generator can emit two programs with identical surface and different
+graphs, which requires authoring the graph.
+
+Three independent cross-checks guard the extractors. (i) Reaching definitions are
+compared against \code{beniget}, an independently written analysis. The two answer
+slightly different questions---ours resolves each use to the single most recent
+reaching definition, \code{beniget} returns all possibly-reaching definitions
+across branches---so the sound comparison is set inclusion (our edges $\subseteq$
+\code{beniget}'s) with exact equality on straight-line code. This caught a real
+bug: uses in self-referential updates such as \code{b = b + a} were linked to the
+same-line target rather than the prior definition; the extractor now resolves in
+execution order. (ii) Every obfuscation variant is executed and checked
+observationally equivalent to its base. (iii) The binding factorials are decided
+twice, by execution and by a scope-aware reference interpreter, and both must
+agree with the intended label.
+
+\paragraph{Tokenizer integrity.} \code{AutoTokenizer} on \code{transformers} 5.x
+can silently resolve DeepSeek-Coder to a slow path that mis-tokenizes code
+(\code{def func} $\to$ \code{['de','ff','unc']}), producing corrupt activations
+without raising an error. The loader therefore uses \code{PreTrainedTokenizerFast}
+and rejects any tokenizer that fails an exact code round-trip; results predating
+this guard were rerun.
+
+\section{Excluded relation: control dependence}
+\label{app:controldep}
+Control dependence has a \emph{measured} surface floor of $0.927$: a statement's
+guard is usually its nearest enclosing \code{if}, so a $\pm 3$-token window plus
+indentation recovers most of the relation with no model. The models decode it at
+ceiling (AUC $0.999$), but because the floor is already near ceiling, this
+constrains nothing about semantic representation. Under the operational definition
+(\S\ref{sec:formulation}) the relation is mostly syntactic, and it is therefore
+not reported as a result. This is the definition doing work: a criterion that
+never excludes anything is not a criterion.
+
+\section{Probes, selectivity, and negative strata}
+\label{app:strata}
+The probe is $\ell_2$-regularized logistic regression ($C{=}0.1$, class-balanced,
+\code{saga}, \code{max\_iter}$=2000$, \code{tol}$=10^{-3}$) on standardized
+features; convergence is recorded per row and the stage fails if any reported fit
+did not converge. A high-capacity probe is avoided on purpose: it could learn the
+relation itself, converting a statement about the model into a statement about the
+probe.
+
+\paragraph{Selectivity.} For every probe the identical classifier is retrained on
+shuffled labels and \code{selectivity = accuracy $-$ control\_accuracy} is
+reported; claims are made on selectivity. Labels are shuffled within program for
+pairwise and per-token tasks (preserving each program's label mix and destroying
+only the token$\to$label pairing) and across programs for example-level tasks.
+
+\paragraph{Surface baseline.} A model-free reader sees only the $\pm 3$-token
+window of token ids around each anchor plus the bucketed anchor distance, fit with
+the same grouped CV, reported per stratum. It exists because a first run scored
+$\approx 0.98$ on every task and layer, which the baseline reproduced, proving the
+templated corpus was leaking labels through local token context.
+
+\paragraph{Strata.} Table~\ref{tab:strata} defines the negative strata and what
+each controls. Only \cm{} is a clean headline: both members are token-identical
+except the one binding-flipping character, the anchor windows and token distance
+are identical, and both share one CV group, so by construction no surface feature
+separates the labels and the surface probe scores exactly $0.500$.
+
+\begin{table}[h]
+\centering\small
+\caption{Negative strata for the binding probe, easiest to decisive.}
+\label{tab:strata}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Stratum & Construction & Controls for \\
+\midrule
+\code{diff\_name} & different variable names ($\leq 3\times$ positives) & trivial baseline \\
+\code{distance\_matched} & negatives at the positives' token distance & positional shortcuts \\
+\code{same\_name\_diff\_binding} & same spelling, different actual binding & the name-identity shortcut \\
+\textbf{\cm{}} & token-identical pair, one binding-flipping character & every fixed-offset surface cue \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Frozen transfer and the obfuscation ladder}
+\label{app:freeze}\label{app:obf}
+Robustness probes trained on clean base programs are evaluated unchanged on
+transformed programs; they are never retrained per condition. Retraining would
+measure how learnable the relation is under each condition---a different, easier
+question that lets the probe find a new per-condition shortcut and conceals the
+representational failure being sought. Ground truth is recomputed for every
+variant, since some transformations (competing updates; inserted opaque branches;
+flattening) genuinely change the graph.
+
+The ladder is cumulative and Tigress-inspired, implemented natively for Python
+(Table~\ref{tab:ladder}). Every variant is executed and checked observationally
+equivalent to its base, and all levels of a base are kept or dropped together so
+per-level curves compare an identical set of programs. Because a cumulative ladder
+cannot attribute a failure (its last rung contains every earlier one), the same
+four rewrites are also applied individually; each reported cell yields
+\code{delta\_clean} (cost vs.\ clean held-out), \code{delta\_previous} (marginal
+cost of the added step), and \code{delta\_atomic} (cumulative minus atomic, the
+interaction). The interaction is read against a measured draw-noise floor: two
+conditions apply the identical transformation under independent random draws, and
+their difference is that floor. Each variant's transformations are read off its
+own AST and must equal exactly what its condition declares.
+
+\begin{table}[h]
+\centering\small
+\caption{The obfuscation ladder. Each variant is execution-verified equivalent to
+its base.}
+\label{tab:ladder}
+\begin{tabular}{@{}cll@{}}
+\toprule
+Level & Transformation & What it changes \\
+\midrule
+0 & normalize (\code{ast.unparse}) & formatting only (baseline) \\
+1 & + consistent renaming of every local & identifier strings \\
+2 & + dead branches under false opaque predicates & apparent control structure \\
+3 & + mixed Boolean--arithmetic rewriting & expression form \\
+4 & + control-flow flattening into a dispatch loop & the entire control skeleton \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Definition--use edge results}
+\label{app:defuse}
+The definition--use experiment labels whether a directed reaching-definition edge
+connects one token to another, with distance-matched negatives so a nearest-token
+heuristic cannot solve it. Accuracy peaks near $0.99$ at layers 7--11 and remains
+$\approx 0.96$--$0.99$ for endpoints separated by $50$--$200$ tokens
+(Figure~\ref{fig:defuse}). With binding, this gives two related structural
+observations: the model represents which definition is active and which use it
+reaches.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\linewidth]{figs/defuse_distance_deepseek-coder-6.7b_core.pdf}
+\caption{Definition--use probe accuracy by endpoint distance
+(DeepSeek-Coder 6.7B, \cm{}-style distance-matched negatives).}
+\label{fig:defuse}
+\end{figure}
+
+\section{DAS: controls}
+\label{app:das-controls}
+Table~\ref{tab:das-controls} lists every control and the specific account it
+refutes. Two points deserve emphasis. The \emph{answer-direction} control uses
+J-lens vectors rather than raw final-layer unembedding rows because the
+intervention occurs partway through the network and the J-lens estimates how the
+remaining layers map a change there to the output; a synthetic donor makes the
+interchange an exact push along this direction, and its length is set equal to the
+DAS edit on the same example, so DAS is not given a larger dose. The
+\emph{concentration} diagnostic reports the share of a basis's mass on its largest
+residual-stream dimensions: transformer residual streams contain a few
+massive-activation dimensions, and an unconstrained low-rank fit can align with one
+to produce a large logit shift while transporting nothing; a basis spread over the
+stream gives $\approx \text{top-}k/d$, one riding a rogue dimension approaches
+$1.0$.
+
+\begin{table}[h]
+\centering\small
+\caption{DAS controls and the account each refutes.}
+\label{tab:das-controls}
+\begin{tabular}{@{}lp{0.62\linewidth}@{}}
+\toprule
+Control & What it refutes \\
+\midrule
+\code{whole\_state} & the rank-$d$ limit; the per-arm ceiling. Its being alive in both arms is what makes a null in either arm interpretable. \\
+\code{mean\_difference} & the cheapest non-learned rank-1 direction; a learned direction must dominate it, not merely beat zero. \\
+\code{answer\_direction} & ``the subspace just pushes toward the fitted arm's answer token''; must work in \code{ab} and fail/reverse in \code{ba}. \\
+\code{random\_norm} & disruption; a random subspace moving the same fraction of $\|\hb\|$. \\
+\code{random\_rank} & the weaker, rank-matched floor. \\
+\code{noop} & machinery; provably exactly $0.00\mathrm{e}{+}00$. \\
+\code{def\_source} site & a structural zero at a token-identical site; any effect is a bug. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{DAS: gates}
+\label{app:das-gates}
+Each gate refuses to run downstream stages until it passes; thresholds were fixed
+before any large-model run. H1 exists because of a recorded lesson: verify the
+model can do the task before building an instrument on it. On DeepSeek-Coder 6.7B
+all gates pass: H0 (execution and the reference interpreter agree, and every
+invariant including the arm crossing holds) at $1.0000$ of $400$ bases; H1
+behavioral accuracy $1.000\,[1.000,1.000]$; H2 binding decodable at $1.000$
+(selectivity $0.524$) at L8 against a measured surface baseline of $0.500$; H3
+whole-state flip margins $+4.78/+4.80$ with flip rates $0.86/0.88$ in the two
+arms; H4 rank-1 interchange at $189\%$ of the whole-state ceiling on the fitted
+arm; H5 transfer to the held-out arm at $100\%$ installed-answer with the
+answer-direction control failing there.
+
+\begin{table}[h]
+\centering\small
+\caption{DAS gates and thresholds.}
+\label{tab:das-gate-defs}
+\begin{tabular}{@{}clc@{}}
+\toprule
+Gate & Asserts & Threshold \\
+\midrule
+H0 & execution and reference interpreter agree; all invariants incl.\ arm crossing & $\geq 0.999$ of bases \\
+H1 & the model returns the correctly bound variable & $\geq 0.85$ overall, $\geq 0.75$ per cell \\
+H2 & binding decodable at the use anchor & $\geq 0.80$, $\geq 0.10$ over surface baseline \\
+H3 & whole-state interchange flips the answer in both arms & CI $>0$, flip rate $\geq 0.25$ \\
+H4 & low-rank interchange beats controls on the training arm & $\geq 50\%$ of ceiling \\
+H5 & the same subspace transfers to the held-out arm, where \code{answer\_direction} fails & $\geq 50\%$ of ceiling \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{R-lens: checks and controls}
+\label{app:rlens}
+The R-lens is interpreted only after five checks pass: forward invariance
+(installing the backward rules changes no forward output), rule binding (the
+normalization, attention, and gated-MLP rules attach to the intended modules),
+conservation (relevance sums to the selected score at every reported layer), role
+partition (every encoded token belongs to exactly one syntactic role), and a
+same-program reread that must produce exactly zero redistribution. Conservation
+holds with median $|\rho-1|\approx 10^{-7}$ across reported layers on the tested
+DeepSeek architectures; disabling any rule (no-LN, no-attention, no-fp32) breaks
+conservation, confirming the rules are load-bearing. Table~\ref{tab:rlens-controls}
+lists the substantive controls. The mismatched-base control has limited power
+here: every base shares one template, so mismatching still compares non-shadowing
+with shadowing, which bounds the finding to a population-level template contrast
+rather than showing it spurious.
+
+\begin{table}[h]
+\centering\small
+\caption{R-lens controls and the mechanism each isolates.}
+\label{tab:rlens-controls}
+\begin{tabular}{@{}lp{0.6\linewidth}@{}}
+\toprule
+Control & Mechanism isolated \\
+\midrule
+token-identical statistic & excludes direct relevance at the changed name, length, and positional drift \\
+crossed \code{ab}/\code{ba} arms & the scored token moves oppositely; agreement rules out a fixed output token \\
+\code{fixed\_a}/\code{fixed\_b} & both programs scored at one literal token id; removes output-token identity \\
+competing target & scoring the non-selected value should reverse the shift \\
+same-binding contrasts & values change, binding does not; should stay flat \\
+random orientation & randomly reversing pair direction should destroy the signed mean \\
+mismatched bases & tests dependence on the exact pairing (limited power here) \\
+same-program reread & structural zero \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{J-lens: validation}
+\label{app:jlens}
+The vocabulary-lens run passes its mechanical gates: all exactness cells pass, all
+nine word pairs preserve their declared tokenization, and the matched binding
+probe is $1.000$ at the reported layers, confirming that the read state contains
+binding information. The plain logit lens is reported alongside the
+Jacobian-corrected lens so that vocabulary alignment can be separated from an
+effect introduced by the correction. Independent-build sign agreement exceeds
+$0.90$ only at L24, and the held-out lexical next-token validation contains few
+positions, so early-layer margins are treated as unstable. Because the single
+template changes scope, textual order, distance, and replacement status together,
+even a high crossed-arm rate supports binding-associated alignment only, not
+uniquely scope-semantic or faithful verbalization; the positional and action
+families are reported precisely so this confound is visible rather than hidden.
+
+\section{Statistics and reproducibility}
+\label{app:stats}
+Uncertainty is a cluster bootstrap over source programs, never over rows, because
+rows from one program share hidden vectors and a row-level bootstrap gives
+intervals that are too narrow in the direction that makes a null look like a
+finding; control comparisons are paired on the same rows so the difference carries
+the interval. For heavy-tailed quantities the median and sign are reported beside
+the mean. Layer and site are chosen on a calibration split and recorded before any
+test number is read; frozen artifacts (probes, lenses, subspaces, discovered token
+sets) are written to disk on the calibration side and read back on the evaluation
+side, so the separation is a filesystem boundary. Weak gates exit non-zero on a
+failed check; hard gates refuse to run (exit 2) unless their prerequisites have
+passed, and any \code{--override-gate} is recorded permanently in the manifest and
+in every output row. Seed $42$ is used throughout (generator, CV splits,
+subsampling, bootstrap); every stage writes a manifest with the git revision,
+arguments, and wall-clock time; and all figures and tables regenerate from the
+tidy CSVs alone, so the chain from raw data to published figure is auditable end
+to end. A passing gate certifies that a measurement is well-formed at that step;
+it is not itself a scientific claim, and a valid instrument must still pass when no
+semantic effect is present.

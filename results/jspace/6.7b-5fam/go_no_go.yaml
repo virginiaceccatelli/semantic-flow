@@ -14,13 +14,13 @@ readout_contrasts:
   subset: all
   position: use
   layer: 16
-  contrast: jlens - gram_random
+  contrast: clens - gram_random
   accuracy_delta: 0.056372549019607844
   accuracy_ci_lo: -0.0074636194029850745
   accuracy_ci_hi: 0.11653340948029682
   n_rows: 408
   n_bases: 42
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
   reversal_delta: 0.09313725490196079
   reversal_ci_lo: 0.029411764705882353
   reversal_ci_hi: 0.1625615763546798
@@ -28,13 +28,13 @@ readout_contrasts:
   subset: all
   position: use
   layer: 16
-  contrast: jlens - logit
+  contrast: clens - logit
   accuracy_delta: 0.01715686274509804
   accuracy_ci_lo: -0.05121951219512195
   accuracy_ci_hi: 0.07933650362318835
   n_rows: 408
   n_bases: 42
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
   reversal_delta: 0.03431372549019608
   reversal_ci_lo: -0.065
   reversal_ci_hi: 0.1262135922330097
@@ -42,13 +42,13 @@ readout_contrasts:
   subset: all
   position: use
   layer: 16
-  contrast: jlens - probe
+  contrast: clens - probe
   accuracy_delta: -0.12009803921568628
   accuracy_ci_lo: -0.22170231185680145
   accuracy_ci_hi: -0.01970201873852991
   n_rows: 408
   n_bases: 42
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
   reversal_delta: -0.23529411764705882
   reversal_ci_lo: -0.37682757885763
   reversal_ci_hi: -0.09405940594059406
@@ -57,63 +57,63 @@ swap_contrasts:
 - split: test
   position: use
   site: L8+16+24
-  contrast: jlens_value - logit_value
+  contrast: clens_value - logit_value
   delta: 0.0013403779297482723
   ci_lo: -0.0022378869015261768
   ci_hi: 0.004664932326717748
   n_rows: 408
   n_bases: 42
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
 - split: test
   position: use
   site: L8+16+24
-  contrast: jlens_value - gram_random
+  contrast: clens_value - gram_random
   delta: 0.0001531908032940882
   ci_lo: -0.003697002391580765
   ci_hi: 0.0038485506732945083
   n_rows: 408
   n_bases: 42
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
 - split: test
   position: use
   site: L8+16+24
-  contrast: jlens_value - noop_same_value
+  contrast: clens_value - noop_same_value
   delta: 0.0013403835542061743
   ci_lo: -0.001531492226180542
   ci_hi: 0.004175142937959314
   n_rows: 408
   n_bases: 42
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
 - split: test
   position: use
   site: L8+16+24
-  contrast: jlens_value - jlens_answer
+  contrast: clens_value - clens_answer
   delta: -0.002259491267157536
   ci_lo: -0.0055264349693387
   ci_hi: 0.0009768060651942345
   n_rows: 408
   n_bases: 42
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
 - split: test
   position: use
   site: L8+16+24
-  contrast: jlens_value - jlens_offvalue
+  contrast: clens_value - clens_offvalue
   delta: -0.0049785523876255625
   ci_lo: -0.008706686776926292
   ci_hi: -0.0015316716616056644
   n_rows: 408
   n_bases: 42
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
 - split: test
   position: use
   site: L8+16+24
-  contrast: jlens_value - whole_state
+  contrast: clens_value - whole_state
   delta: -1.0715762823089665
   ci_lo: -1.2882480572421997
   ci_hi: -0.8600823669407561
   n_rows: 408
   n_bases: 42
-  jlens_exceeds_control: false
+  clens_exceeds_control: false
 cross_operation:
   n_families: 5
   min_family_delta: -0.0039062485808417
@@ -144,6 +144,6 @@ criteria:
   passed: false
   value: null
   detail: 'vs logit_value: +0.001 [-0.002, +0.005] (the Jacobian correction, not the
-    unembedding); vs jlens_offvalue: -0.005 [-0.009, -0.002] (these values, not the
+    unembedding); vs clens_offvalue: -0.005 [-0.009, -0.002] (these values, not the
     digit subspace at large)'
 verdict: NO-GO

@@ -132,7 +132,7 @@ def main(
         verbal_contrast_rows,
     )
     from src.experiments.store_gates import BINDING, GateFailure, record_gate, require_gates
-    from src.models.lens import assert_readable_weights, freeze_parameters
+    from src.models.cotangent_lens import assert_readable_weights, freeze_parameters
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
 

@@ -12,7 +12,7 @@ steps of the active argument. Each step answers a different question:
   rewrite;
 - **DAS interchange** asks the causal question: whether changing only a learned
   binding component changes the downstream answer;
-- the **R-lens** asks the separate observational question: whether the answer
+- the **conserving cotangent lens** asks the separate observational question: whether the answer
   score is attributed to the definition selected by the binding.
 
 The controls are part of the method, not optional checks. Grouped splits prevent
@@ -46,8 +46,8 @@ observational attribution rather than treating them as one claim.
 - [§4 Instrument 2 — frozen transfer and the obfuscation ladder](#4-instrument-2--frozen-transfer-and-the-obfuscation-ladder)
 - [Part III — From representation to causal use and attribution](#part-iii--from-representation-to-causal-use-and-attribution)
 - [§5 DAS — causal interchange of a binding component](#5-das--causal-interchange-of-a-binding-component)
-- [§6 R-lens attribution on the binding programs](#6-r-lens-attribution-on-the-binding-programs)
-- [§6.8 E18 — unprompted J-lens verbalisation](#68-e18-unprompted-lexical-expression-of-the-binding-state)
+- [§6 conserving cotangent lens attribution on the binding programs](#6-conserving-cotangent-lens-attribution-on-the-binding-programs)
+- [§6.8 E18 — unprompted cotangent lens verbalisation](#68-e18-unprompted-lexical-expression-of-the-binding-state)
 - [§7 Statistics, gates and reproducibility](#7-statistics-gates-and-reproducibility)
 
 ---
@@ -428,14 +428,14 @@ Parts I and II use probes to establish that binding is represented and to measur
 the stability of that representation. Part III follows the representation into
 two different consequences on the same controlled programs. DAS asks whether
 replacing one learned binding component makes the answer follow the installed
-binding. The R-lens leaves the forward computation unchanged and asks whether
+binding. The conserving cotangent lens leaves the forward computation unchanged and asks whether
 the answer score is attributed to the definition selected by that binding.
 
-DAS comes first because only it licenses the causal claim. The R-lens describes
+DAS comes first because only it licenses the causal claim. The conserving cotangent lens describes
 the unedited answer and is not used to prove causation.
 
 The former security benchmark, earlier general output-vocabulary experiments,
-standalone J-lens studies, and R-lens taint-routing study are preserved in
+standalone cotangent lens studies, and conserving cotangent lens taint-routing study are preserved in
 [ARCHIVE.md](ARCHIVE.md). They remain reproducible but are not needed for the
 active binding argument.
 
@@ -521,7 +521,7 @@ Two consequences for interpretation:
 |---|---|---|
 | **`whole_state`** | the rank-`d` limit — install the entire donor state | it is the *ceiling*, per arm, and its being alive in both arms is what makes a null in either arm interpretable |
 | **`mean_difference`** | rank-1 span of the **mean** donor−host difference; no optimiser, no labels, one fixed direction for every example | the cheapest thing that could work. A learned direction must *dominate* it, not merely beat zero |
-| **`answer_direction`** | subtract the J-lens direction for the training arm's current answer from the J-lens direction for its installed answer; keep that direction fixed across arms and scale each edit to the DAS edit norm | tests the simpler account “the learned subspace just pushes toward the answer token required in the fitted arm”; it should work on that arm and fail or reverse when the crossed arm requires the opposite token |
+| **`answer_direction`** | subtract the cotangent lens direction for the training arm's current answer from the cotangent lens direction for its installed answer; keep that direction fixed across arms and scale each edit to the DAS edit norm | tests the simpler account “the learned subspace just pushes toward the answer token required in the fitted arm”; it should work on that arm and fail or reverse when the crossed arm requires the opposite token |
 | **`random_norm`** | a random subspace whose interchange moves the **same fraction of ‖h‖** | disruption. Rank-matching alone is not dose-matching |
 | **`random_rank`** | a random subspace of the same *rank* | the weaker, rank-matched floor, reported alongside |
 | **`noop`** | provably the zero edit | machinery: it must be exactly 0.00e+00 |
@@ -540,9 +540,9 @@ dimension is itself informative.
 **Why the answer-direction control is decisive.** In the fitted `ab` arm, the
 donor binding changes the required answer from value `a` to value `b`. The
 control therefore constructs a direction that explicitly pushes the model from
-the `a` output direction toward the `b` output direction. It uses J-lens vectors,
+the `a` output direction toward the `b` output direction. It uses cotangent lens vectors,
 not raw final-layer unembedding rows, because the intervention occurs partway
-through the network and the J-lens estimates how the remaining layers map a
+through the network and the cotangent lens estimates how the remaining layers map a
 change there to the output. A synthetic donor makes the interchange an exact
 push along this direction, and its length is set equal to the DAS edit on that
 same example. The comparison therefore does not give DAS a larger dose.
@@ -637,25 +637,25 @@ model can do the task *before* building an instrument on top of it.
 
 ---
 
-# 6. R-lens attribution on the binding programs
+# 6. conserving cotangent lens attribution on the binding programs
 
 ## 6.1 Why this experiment follows DAS
 
 DAS shows that changing a rank-1 component at the use site changes the answer as
 the binding predicts. It does not say which source locations the unedited
-model's answer depends on. The R-lens asks that second, observational question
+model's answer depends on. The conserving cotangent lens asks that second, observational question
 on exactly the same four-program factorial.
 
-This order matters. If the R-lens were the only experiment, a relevance shift
+This order matters. If the conserving cotangent lens were the only experiment, a relevance shift
 could easily be overread as weak causal evidence. Here the causal fact comes
-from DAS. The R-lens contributes a decomposition of the output score, not a
+from DAS. The conserving cotangent lens contributes a decomposition of the output score, not a
 second intervention.
 
-## 6.2 What the R-lens computes
+## 6.2 What the conserving cotangent lens computes
 
 Choose one output score `s`, here the model's score for the value selected by the
 program's binding. Ordinary gradients measure local sensitivity but do not add
-up to `s`. The R-lens instead modifies only the backward calculation with
+up to `s`. The conserving cotangent lens instead modifies only the backward calculation with
 layer-wise relevance-propagation rules. The forward activations, logits, and
 emitted token remain unchanged.
 
@@ -690,7 +690,7 @@ The binding analysis is interpreted only after the following checks:
 
 The implemented rules pass on the tested DeepSeek architectures. They do not
 match StarCoder2's LayerNorm and non-gated MLP, so the pipeline refuses to report
-R-lens semantics for that model. This is an architecture boundary, not a null
+conserving cotangent lens semantics for that model. This is an architecture boundary, not a null
 result.
 
 Conservation alone is insufficient when shares are reported. If `s` is zero or
@@ -700,7 +700,7 @@ enough on DeepSeek-Coder 1.3B that its binding shares are not interpreted.
 
 ## 6.4 The one-token binding contrast
 
-The R-lens reuses DAS's two crossed value-assignment arms. Within either arm,
+The conserving cotangent lens reuses DAS's two crossed value-assignment arms. Within either arm,
 the non-shadowing and shadowing programs differ at exactly one token index out of
 roughly 21: the inner definition's name.
 
@@ -712,7 +712,7 @@ def f():                   def f():
 # outer binding             # inner binding
 ```
 
-The tokenizer-level invariants are measured again during the R-lens run rather
+The tokenizer-level invariants are measured again during the conserving cotangent lens run rather
 than trusted from generation. The outer definition, inner value, use token,
 signature, and suffix must be identical and aligned. This makes it possible to
 ask whether the changed name reorganizes attribution over text that itself did
@@ -774,7 +774,7 @@ internal verbalisation. The latter is tested separately in E18.
 E18 reads the same unchanged variable-use token with no appended question or
 answer suffix. Nine predeclared opposing word pairs cover scope, positional, and
 action vocabulary. For each pair, layer, and crossed value arm, the statistic is
-the share of held-out programs on which the inner-minus-outer J-lens margin moves
+the share of held-out programs on which the inner-minus-outer cotangent lens margin moves
 in the predicted direction when only the binding changes.
 
 The two value arms form the principal control. In `ab`, activating the inner
@@ -787,7 +787,7 @@ reported to distinguish vocabulary alignment from an effect added by the
 Jacobian correction.
 
 The positive control is a calibration-fitted binding probe evaluated on the same
-held-out states. Its success confirms that the J-lens is reading states that
+held-out states. Its success confirms that the cotangent lens is reading states that
 contain binding information. Because the one template changes scope, textual
 order, distance, and replacement status together, even a high crossed-arm rate
 supports only binding-associated lexical alignment, not uniquely scope-semantic

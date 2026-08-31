@@ -40,7 +40,7 @@ Writes results/sinkflow/{model}/positive/:
     positive_pairs.csv        one row per (pair, lens, layer, style): both contrasts
     positive_summary.csv      per cell: both contrasts + the linking statistic
     positive_candidates.json  the frozen basis and its provenance
-    lenses/{logit,jlens,rlens}_layer_XX.pkl
+    lenses/{logit,clens,clrp}_layer_XX.pkl
 """
 
 from __future__ import annotations
@@ -121,7 +121,7 @@ def main(
     )
     from src.experiments.sinkflow_vocab import LENS_KINDS, _output_vocab_size
     from src.experiments.store_gates import SINKFLOW, GateFailure, record_gate, require_gates
-    from src.models.lens import (
+    from src.models.cotangent_lens import (
         compute_lens_vectors,
         freeze_parameters,
         lens_filename,
@@ -233,13 +233,13 @@ def main(
                 lens = compute_lens_vectors(
                     mdl, layer, samples, candidates.token_ids,
                     candidates.token_strings, grad_scale=grad_scale,
-                    lrp=(kind == "rlens"))
+                    lrp=(kind == "clrp"))
             lens.metadata = {**(lens.metadata or {}), "model": model,
                              "hf_id": cfg.hf_id, "experiment": "E15-D-positive",
                              "git_sha": git_sha()}
             lens.save(lens_dir / lens_filename(kind, layer))
             lenses[kind][layer] = lens
-        console.print(f"  layer {layer}: logit + jlens + rlens built")
+        console.print(f"  layer {layer}: logit + clens + clrp built")
 
     # ── 4. both contrasts, on the same states, through the same function ─────
     n_layers_total = MODEL_REGISTRY.get(model, {}).get("n_layers")

@@ -7,12 +7,12 @@ experiments. It first generates programs whose binding and def–use labels are
 known exactly, then runs a frozen language model and stores hidden states at
 specific token positions. CPU analysis applies probes, controls, and statistical
 summaries to those states. The later GPU stages test two distinct consequences:
-DAS asks whether the model causally uses a binding component, and the R-lens
+DAS asks whether the model causally uses a binding component, and the conserving cotangent lens
 attributes the unchanged answer on the same programs.
 
 The active reproduction path is **Part C → Part F → Part F.2**. Stage 60 is
 supporting validation for DAS's answer-direction control, and stage 110 validates
-the R-lens backward rules. The security and standalone lens tracks remain
+the conserving cotangent lens backward rules. The security and standalone lens tracks remain
 runnable but are archived scientifically; they are retained here only so their
 artifacts can be reproduced.
 
@@ -37,9 +37,10 @@ What it *found*: [RESULTS.md](RESULTS.md).
 - [Part D — Supporting lens validation (60, 110)](#part-d--supporting-lens-validation-60-110)
 - [Part E — Archived security and lens tracks (120–131)](#part-e--archived-security-and-lens-tracks-120131)
 - [Part F — The causal track (100–108)](#part-f--the-causal-track-100108)
-- [Part F.2 — The observational R-lens readout of the same pairs (140–141)](#part-f2--the-observational-r-lens-readout-of-the-same-pairs-140141)
-- [Part F.3 — Unprompted J-lens vocabulary readout (160–161)](#part-f3--unprompted-j-lens-vocabulary-readout-160161)
+- [Part F.2 — The observational conserving cotangent lens readout of the same pairs (140–141)](#part-f2--the-observational-conserving-cotangent-lens-readout-of-the-same-pairs-140141)
+- [Part F.3 — Unprompted cotangent lens vocabulary readout (160–161)](#part-f3--unprompted-cotangent-lens-vocabulary-readout-160161)
 - [Archived E17 — prompted verbalisation (150–153)](#archived-e17--prompted-verbalisation-150153)
+- [Part H — E19: the published J-lens and R-lens (200–205)](#part-h--e19-the-published-j-lens-and-r-lens-200205)
 - [Part G — Make targets and the GPU-host workflow](#part-g--make-targets-and-the-gpu-host-workflow)
 
 ---
@@ -141,14 +142,15 @@ FOUNDATION — representation and robustness (Instruments 1 and 2)
 
 SUPPORTING VALIDATION
 
-  60   J-lens validation   GPU        — a GATE (instrument only)
-  110  R-lens rule validation GPU     — a GATE
+  200-205 PUBLISHED J-lens / R-lens (E19)  see docs/WORKSPACE_LENS.md
+  60   cotangent lens validation   GPU        — a GATE (instrument only)
+  110  conserving cotangent lens rule validation GPU     — a GATE
 
 ARCHIVED TRACKS — reproducible, not part of the active claim
 
   120 → 121 → 122 → 123 → 124            security benchmark
   125 → 126 → 127                        vocabulary study
-  128 → 129 → 130 → 131                  taint R-lens study
+  128 → 129 → 130 → 131                  taint conserving cotangent lens study
 
 ACTIVE CAUSAL TRACK — DAS interchange
 
@@ -156,7 +158,7 @@ ACTIVE CAUSAL TRACK — DAS interchange
   140 → 141                              R11     H6
 
 RETIRED / PARKED — still runnable; see ARCHIVE.md
-  40 lead time · 50 patching · 61-62 J-lens uses · 70-74 J-space · 80-89 store
+  40 lead time · 50 patching · 61-62 cotangent lens uses · 70-74 cotangent-space · 80-89 store
 ```
 
 **Two gate strengths.** Stages 60 and 110 are gates in the weak sense: they exit
@@ -269,35 +271,35 @@ reappear in a figure by accident.
 
 # Part D — Supporting lens validation (60, 110)
 
-## Stage 60 — J-lens validation (GPU; MPS ok for 1.3b) — a gate, not a result
+## Stage 60 — cotangent lens validation (GPU; MPS ok for 1.3b) — a gate, not a result
 
 ```bash
-python scripts/60_jlens_validate.py --model deepseek-coder-1.3b
-# GPU host: screen -dmS jlens-val-6.7b env MODEL=deepseek-coder-6.7b jobs/jlens_validate.csh
+python scripts/60_clens_validate.py --model deepseek-coder-1.3b
+# GPU host: screen -dmS clens-val-6.7b env MODEL=deepseek-coder-6.7b jobs/clens_validate.csh
 ```
 
-Builds per-layer J-lenses from a held-out generic corpus and runs V1 (exactness
+Builds per-layer cotangent lenses from a held-out generic corpus and runs V1 (exactness
 at the last layer), V2 (next-token recovery vs chance and vs the logit lens) and
 V3. Exits non-zero if a required check fails. Outputs
-`results/tables/jlens_validation_{,checks_}{model}.csv`.
+`results/tables/clens_validation_{,checks_}{model}.csv`.
 
-## Stage 110 — R-lens gate R, R6 (GPU)
+## Stage 110 — conserving cotangent lens gate R, R6 (GPU)
 
 ```bash
-python scripts/110_rlens_validate.py --model deepseek-coder-6.7b
+python scripts/110_clrp_validate.py --model deepseek-coder-6.7b
 ```
 
 Installs the LRP rules and runs R0 (forward invariance, **relative** tolerance),
 R1 (last layer equals the logit lens), R2a/R2b (LRP beats autograd; conservation
 in early layers) and the R2c **rule ablation**. Outputs under
-`results/rlens/{model}/validate/`: `rlens_r0_forward.csv`,
-`rlens_r2_conservation.csv`, `rlens_r2_summary.csv`,
-`rlens_validation_checks.csv`.
+`results/clrp/{model}/validate/`: `clrp_r0_forward.csv`,
+`clrp_r2_conservation.csv`, `clrp_r2_summary.csv`,
+`clrp_validation_checks.csv`.
 
 **It raises on starcoder2-3b, and that is correct behaviour.** LayerNorm plus a
 non-gated MLP means both homogenising rules bind to nothing, so the `no_attn` arm
 removes the only rule that bound. A forward delta of *exactly* 0.0 in
-`rlens_r0_forward.csv` is the signature of an empty install; the active binding
+`clrp_r0_forward.csv` is the signature of an empty install; the active binding
 checks are summarized in [METHODS §6.3](METHODS.md#63-instrument-checks).
 
 **On MPS**, build lenses in `--dtype float32`: the fp16 VJP through this path
@@ -458,7 +460,7 @@ non-finite.
 | **H2** | `decode.csv` — the *measured* surface baseline column, not just accuracy |
 | **H3** | `ceiling_summary.csv` — **both arms** must be alive, or a null in either says nothing. Structural zeros should be `0.00e+00`; see the fp16 note below before treating a non-zero one as a fault |
 | **H4** | `interchange_contrasts.csv` — all three control contrasts must clear zero, and `edit_fraction` must be comparable across arms |
-| **H5** | Read the `answer_direction` rows **first**. This is a J-lens `a`-to-`b` output push learned from `ab`, matched to DAS's per-row edit norm. It should affect `ab` but attenuate or reverse on `ba`, where the required answer movement is `b` to `a`. If it succeeds like DAS in both arms, the design has not separated binding transport from an answer-token direction and no verdict is licensed |
+| **H5** | Read the `answer_direction` rows **first**. This is a cotangent lens `a`-to-`b` output push learned from `ab`, matched to DAS's per-row edit norm. It should affect `ab` but attenuate or reverse on `ba`, where the required answer movement is `b` to `a`. If it succeeds like DAS in both arms, the design has not separated binding transport from an answer-token direction and no verdict is licensed |
 
 ## Three warnings
 
@@ -471,7 +473,7 @@ claim-bearing cell. Passing a list makes the test grid run at the *first* entry,
 which is not necessarily the layer H3 selected — the 2026-08-19 starcoder2-3b run
 passed `7,11,15`, evaluated at layer 7, and reported FAIL at a layer H3 had not
 chosen. (Until 2026-08-24 it also mixed layers outright: the per-layer states,
-J-lens, subspace and difference-in-means baseline leaked out of the loop, so the
+cotangent lens, subspace and difference-in-means baseline leaked out of the loop, so the
 grid ran at the first layer holding the *last* layer's objects. Fixed; every
 per-layer object is now keyed by layer and the selected subspace's recorded layer
 is asserted against `chosen_layer`.)
@@ -499,10 +501,10 @@ full reason for the rule correction.
 
 ---
 
-# Part F.2 — The observational R-lens readout of the same pairs (140–141)
+# Part F.2 — The observational conserving cotangent lens readout of the same pairs (140–141)
 
 E16 reuses E13's four-program factorial, model hooks, frozen calib/test split and
-reporting conventions, and reads it with the R-lens validated at stage 110. The
+reporting conventions, and reads it with the conserving cotangent lens validated at stage 110. The
 question is not E13's: when the binding flips and **exactly one token** changes,
 does the model's own attribution of its answer move from the definition that went
 out of scope to the one that came in?
@@ -522,7 +524,7 @@ pass per (cell, layer, target mode) — 4 cells × 8 layers × 2 modes per base,
 ~21-token prompts — so a full 400-base 6.7b run is minutes, not hours. Use
 `--dtype float32`: this reads a *backward* pass and fp16 gradients underflow on
 sequences this short. On the GPU host:
-`screen -dmS binding-rlens-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_rlens.csh`.
+`screen -dmS binding-clrp-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_clrp.csh`.
 
 ## The VRAM trap, and why it looks like a lens bug
 
@@ -623,7 +625,7 @@ at a specific depth.
 ## The one thing not to conclude from it
 
 H6 is **mechanical**: a null redistribution passes it. And no branch of the
-verdict licenses a causal claim. The R-lens decomposes the model's output score
+verdict licenses a causal claim. The conserving cotangent lens decomposes the model's output score
 over input positions and intervenes on nothing; E13/R10's DAS interchange is the
 causal benchmark on this same corpus. The report puts them side by side and
 computes **no ratio** between them, because a share of an answer score and a rate
@@ -642,7 +644,7 @@ These stages remain runnable only to reproduce the retired E17 study. E17 asks w
 contrast becomes aligned with the model's own output vocabulary. Stages 150–151
 map hidden states through the unembedding matrix, recover candidate words, and
 measure the held-out inner-word versus outer-word contrast. Stage 151 also runs a
-separate prompted forced choice. Stage 152 then applies E16's R-lens rules to a
+separate prompted forced choice. Stage 152 then applies E16's conserving cotangent lens rules to a
 selected word score to ask where that score is attributed. It does not test
 semantic vocabulary at the original variable-use state and is not part of the
 active narrative. Its rationale, result, and retirement reason are in
@@ -663,7 +665,7 @@ python scripts/150_binding_verbal_discover.py --model $MODEL
 #      control), and the held-out vocabulary contrast            H8   ~20 min GPU
 python scripts/151_binding_verbal_behaviour.py --model $MODEL
 
-# 152  the R-lens with a pole WORD as the cotangent              H9   ~35 min GPU
+# 152  the conserving cotangent lens with a pole WORD as the cotangent              H9   ~35 min GPU
 python scripts/152_binding_verbal_relevance.py --model $MODEL
 
 # 153  verdict + the R10/R11 comparison                           -   seconds CPU
@@ -708,7 +710,7 @@ for that contrast.
 The internal vocabulary contrast is the main verbalisation result: it establishes
 that binding aligns with scope-related output coordinates at layers 23–27. The
 forced choice is a behavioral validation whose meaning depends strongly on
-wording. The R-lens stage is an additional grounding question and is currently
+wording. The conserving cotangent lens stage is an additional grounding question and is currently
 unresolved; its failure does not weaken the internal vocabulary contrast.
 
 Check the `value` row of the behaviour table **first**: it is the positive
@@ -806,10 +808,10 @@ on starcoder2 even though the attribution half is not. That is why
 
 ---
 
-# Part F.3 — Unprompted J-lens vocabulary readout (160–161)
+# Part F.3 — Unprompted cotangent lens vocabulary readout (160–161)
 
 Stage 160 reads the unchanged E13 use-token state with the predeclared scope,
-positional, and action word pairs. It writes per-pair J-lens reversals separately
+positional, and action word pairs. It writes per-pair cotangent lens reversals separately
 for the crossed `ab` and `ba` value arms. Agreement across the arms rules out a
 fixed preference for literal answer token `a` or `b`; comparison across the
 three word families exposes properties confounded by the single template. H10
@@ -828,6 +830,107 @@ column is an informative negative when the probe succeeds.
 
 ---
 
+# Part H — E19: the published J-lens and R-lens (200–205)
+
+The methods of the 2026 global-workspace paper and the R-lens post, run through
+the released reference implementation vendored at `third_party/jacobian-lens`.
+Configuration, per-model compatibility and the complete list of deviations are in
+[WORKSPACE_LENS.md](WORKSPACE_LENS.md); this section is the commands.
+
+**This is a different method from stages 60–62/110/125–131/140–141/160–161.**
+Those are the *cotangent lens* (`clens`) and *conserving cotangent lens*
+(`clrp`) — a corpus-averaged readout over a fixed candidate vocabulary. Do not
+compare their tables with these.
+
+```
+  200  fitting corpus + probe suite   CPU      seconds  tokenizer only
+  201  fit BOTH lenses                GPU      HOURS    the whole cost of E19
+  202  the seven-check gate           GPU      minutes  REQUIRED before 203-205
+  203  J vs R vs logit readout        GPU      minutes
+  204  causal ablation                GPU      minutes
+  205  tables, figures, report        CPU      seconds
+```
+
+## Stage 200 — fitting corpus and probe suite (CPU)
+
+```bash
+python scripts/200_lens_corpus.py --model deepseek-coder-1.3b --n-prompts 100
+```
+
+Downloads `NeelNanda/pile-10k` once and writes
+`data/lens_corpus/pile10k-n100-seed0.jsonl` plus
+`data/lens_eval/code-semantics-{model}.jsonl`. Both files carry a content digest
+that later stages check, so an edited corpus fails loudly rather than producing a
+quietly different lens. `--corpus code` builds the CodeSearchNet sensitivity arm
+instead and needs no network.
+
+The suite adapts to the tokenizer: it selects the integer literals the model
+keeps whole and drops concepts it splits, reporting the counts. Both code
+tokenizers here segment every multi-digit number, so the usable literal pool is
+2–9 — see WORKSPACE_LENS.md §6.1.
+
+## Stage 201 — fit the J-lens and the R-lens (GPU) — the expensive one
+
+**Size it first.** `--dry-run` loads no weights:
+
+```bash
+python scripts/201_lens_fit.py --model deepseek-coder-6.7b \
+    --corpus data/lens_corpus/pile10k-n100-seed0.jsonl --dim-batch 16 --dry-run
+```
+
+Then:
+
+```bash
+python scripts/201_lens_fit.py --model deepseek-coder-1.3b \
+    --corpus data/lens_corpus/pile10k-n100-seed0.jsonl \
+    --dim-batch 16 --dtype bfloat16 --halves
+```
+
+Both lenses come from one call with one corpus in one process, so they differ
+only in the backward graph. `--halves` additionally fits disjoint-half lenses,
+which is what gate W6 reads; it triples the stage, so run it once, on 1.3b.
+
+Traps, in the order they bite:
+
+- **Host RAM, not VRAM.** Jacobians accumulate on the CPU in float32 —
+  `(n_layers-1) · d_model² · 4` bytes for the running sum, again per prompt,
+  again while checkpointing. Budget ~8 GB at 6.7B.
+- **bfloat16, not float16.** This is a backward pass through up to 30 blocks;
+  fp16 gradients underflow.
+- **One model at a time.** `device_map="auto"` offloads a co-resident model's
+  tail to meta placeholders, and the tail is exactly what the readout reads.
+- Checkpoints land every 10 prompts and resume automatically; re-run to continue.
+
+## Stage 202 — the gate (GPU)
+
+```bash
+python scripts/202_lens_validate.py --model deepseek-coder-1.3b \
+    --corpus data/lens_corpus/pile10k-n100-seed0.jsonl \
+    --suite data/lens_eval/code-semantics-deepseek-coder-1.3b.jsonl
+```
+
+Exits non-zero on a failed required check. W6 reports **skipped** rather than
+passed if stage 201 was run without `--halves`. Stage 205 reproduces this table
+at the top of its report.
+
+## Stages 203–205 — readout, ablation, report
+
+```bash
+python scripts/203_lens_readout.py --model deepseek-coder-1.3b \
+    --suite data/lens_eval/code-semantics-deepseek-coder-1.3b.jsonl
+python scripts/204_lens_ablate.py  --model deepseek-coder-1.3b \
+    --suite data/lens_eval/code-semantics-deepseek-coder-1.3b.jsonl \
+    --readout results/workspace_lens/deepseek-coder-1.3b/readout/workspace_lens_rows.csv
+python scripts/205_lens_report.py  --model deepseek-coder-1.3b
+```
+
+Or `make lens MODEL=...` for 200→205 in order, or `jobs/workspace_lens.csh` on the
+GPU host. `make lens-smoke` checks the whole path on toy CPU models plus the
+reference implementation's own test suite — no weights, no network, a few seconds.
+
+
+---
+
 # Part G — Make targets and the GPU-host workflow
 
 ## G.1 Make targets
@@ -840,11 +943,11 @@ make smoke                       # tiny end-to-end run on this machine (1.3b)
 make data / data-real / extract / probes / context / obfuscation / assets
 
 # instrument validation
-make jlens-validate / rlens-validate
+make clens-validate / clrp-validate
 
-# E16: the observational R-lens readout of E13's binding pairs
-make binding-relevance / binding-relevance-report / binding-rlens
-make binding-rlens-smoke
+# E16: the observational conserving cotangent lens readout of E13's binding pairs
+make binding-relevance / binding-relevance-report / binding-clrp
+make binding-clrp-smoke
 
 # archived E17: prompted verbalisation
 make binding-verbal                    # 150 -> 153, one model at a time
@@ -852,7 +955,7 @@ make binding-verbal-discover / binding-verbal-behaviour
 make binding-verbal-relevance / binding-verbal-report
 make binding-verbal-smoke
 
-# E18: unprompted J-lens vocabulary readout
+# E18: unprompted cotangent lens vocabulary readout
 make binding-lexlens / binding-lexlens-run / binding-lexlens-report
 make binding-lexlens-smoke
 
@@ -919,10 +1022,15 @@ scripts invoke `$PYTHON` directly rather than a bare `python`;
 5. Causal track: `make binding MODEL=deepseek-coder-6.7b` — hard-gated, so it
    stops itself at the first failing gate.
 5b. Observational readout of the same pairs, after stage 101 has recorded H0:
-   `screen -dmS binding-rlens-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_rlens.csh`
+   `screen -dmS binding-clrp-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_clrp.csh`
    (and the same for `deepseek-coder-1.3b`, where it runs despite H1 failing).
    Minutes, not hours.
-6. Anywhere: `make assets`; rsync `results/tables results/figures` back.
+6. E19, the published J-lens/R-lens: `make lens-corpus` locally, rsync
+   `data/lens_corpus data/lens_eval` up, then one screen session per model,
+   sequentially:
+   `screen -dmS lens-1.3b env MODEL=deepseek-coder-1.3b HALVES=--halves jobs/workspace_lens.csh`
+   Run `make lens-fit-dry MODEL=...` first to size it.
+7. Anywhere: `make assets`; rsync `results/tables results/figures` back.
 
 If the cluster has no internet, run `make data-real` locally and rsync `data/`
 (and the HF cache) up. Pre-download model weights once on a network-enabled node.

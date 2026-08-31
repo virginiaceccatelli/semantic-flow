@@ -21,7 +21,7 @@ rate cannot.
 
 Four readouts are compared at every cell, on identical hidden states:
 
-    jlens        the frozen lens from stage A
+    clens        the frozen lens from stage A
     logit        the same construction with no Jacobian correction
     gram_random  random directions with the same Gram matrix (norms + angles)
     probe        a supervised linear probe trained on the *calibration* pairs
@@ -56,12 +56,12 @@ from src.data.counterfactual_pairs import (
     split_pairs,
 )
 from src.models.hooks import extract_hidden_states_and_logits
-from src.models.lens import JLens, load_frozen_lenses
+from src.models.cotangent_lens import CotangentLens, load_frozen_lenses
 
 logger = logging.getLogger(__name__)
 
 VARIANTS = ("source", "target")
-LENS_KINDS = ("jlens", "logit", "gram_random")
+LENS_KINDS = ("clens", "logit", "gram_random")
 
 
 # ── per-program forward pass ─────────────────────────────────────────────────
@@ -227,8 +227,8 @@ def run_jspace_readout(
     layers = sorted(int(l) for l in layers)
     positions = [p for p in positions]
 
-    lenses: dict[str, dict[int, JLens]] = {
-        "jlens": load_frozen_lenses(lens_dir, "jspace"),
+    lenses: dict[str, dict[int, CotangentLens]] = {
+        "clens": load_frozen_lenses(lens_dir, "jspace"),
         "logit": load_frozen_lenses(lens_dir, "jspace_logit"),
         "gram_random": load_frozen_lenses(lens_dir, "jspace_gram_random"),
     }
@@ -296,8 +296,8 @@ def run_jspace_readout(
     rows: list[dict] = []
     for pair in pairs:
         try:
-            idx_source = lenses["jlens"][layers[0]].index_of_token(pair.token_ids["v_source"])
-            idx_target = lenses["jlens"][layers[0]].index_of_token(pair.token_ids["v_target"])
+            idx_source = lenses["clens"][layers[0]].index_of_token(pair.token_ids["v_source"])
+            idx_target = lenses["clens"][layers[0]].index_of_token(pair.token_ids["v_target"])
         except ValueError:
             # A value with no lens row cannot be ranked. This should not happen
             # (stage 70 verifies every value is a single token), so it is a
@@ -453,22 +453,22 @@ def readout_contrasts(
 
     out = []
     for control in [c for c in wide.columns if c not in
-                    ("pair_id", "base_id", "variant", "jlens")]:
-        sub = wide.dropna(subset=["jlens", control])
+                    ("pair_id", "base_id", "variant", "clens")]:
+        sub = wide.dropna(subset=["clens", control])
         if sub.empty:
             continue
-        acc = cluster_bootstrap_ci((sub["jlens"] - sub[control]).to_numpy(float),
+        acc = cluster_bootstrap_ci((sub["clens"] - sub[control]).to_numpy(float),
                                    sub["base_id"].to_numpy(), n_boot=n_boot, seed=seed)
         row = {"split": split, "subset": subset, "position": position, "layer": layer,
-               "contrast": f"jlens - {control}", "accuracy_delta": acc.point,
+               "contrast": f"clens - {control}", "accuracy_delta": acc.point,
                "accuracy_ci_lo": acc.lo, "accuracy_ci_hi": acc.hi,
                "n_rows": acc.n, "n_bases": acc.n_groups,
-               "jlens_exceeds_control": bool(np.isfinite(acc.lo) and acc.lo > 0)}
+               "clens_exceeds_control": bool(np.isfinite(acc.lo) and acc.lo > 0)}
         if not wide_rev.empty and control in wide_rev.columns:
-            rev_sub = wide_rev.dropna(subset=["jlens", control])
+            rev_sub = wide_rev.dropna(subset=["clens", control])
             if not rev_sub.empty:
                 rev = cluster_bootstrap_ci(
-                    (rev_sub["jlens"] - rev_sub[control]).to_numpy(float),
+                    (rev_sub["clens"] - rev_sub[control]).to_numpy(float),
                     rev_sub["base_id"].to_numpy(), n_boot=n_boot, seed=seed)
                 row.update({"reversal_delta": rev.point, "reversal_ci_lo": rev.lo,
                             "reversal_ci_hi": rev.hi})
@@ -483,7 +483,7 @@ def select_layer(
     summary: pd.DataFrame,
     metric: str = SELECT_METRIC,
     position: str = "use",
-    lens: str = "jlens",
+    lens: str = "clens",
     subset: str = "all",
 ) -> Optional[int]:
     """The layer with the best CALIBRATION score — never selected on test.
@@ -491,7 +491,7 @@ def select_layer(
     The metric must be **scale-free**, which is why the default is a rate and
     not `paired_gap`. Margins are dot products with lens vectors whose norms
     grow with depth, against hidden states whose norms also grow with depth,
-    and `src.models.lens` is explicit that score magnitudes are comparable only
+    and `src.models.cotangent_lens` is explicit that score magnitudes are comparable only
     within a position. Selecting on `paired_gap` therefore drifts toward the
     last layer regardless of readout quality — measured on both pilots, it
     chose the final layer both times, which is also the one layer where the

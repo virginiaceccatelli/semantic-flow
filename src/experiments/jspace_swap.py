@@ -34,13 +34,13 @@ reason.
 
 ## Controls, and what each one would explain away
 
-| variant | if it matches `jlens_value`, the finding is... |
+| variant | if it matches `clens_value`, the finding is... |
 |---|---|
 | `logit_value` | the unembedding matrix, not the causal correction |
 | `gram_random` | any 2-d subspace of the same shape — i.e. generic perturbation |
 | `noop_same_value` | numerical noise (this edit is provably the zero vector) |
-| `jlens_answer` | direct answer steering, not an intermediate value |
-| `jlens_offvalue` | perturbing the digit subspace at all, not *these* values |
+| `clens_answer` | direct answer steering, not an intermediate value |
+| `clens_offvalue` | perturbing the digit subspace at all, not *these* values |
 | `probe_basis` | the J-lens basis, not the value being unreadable here |
 | `cf_push_*` | a 2-d edit specifically, not any small edit at all |
 | `whole_state` | not a control but the reference ceiling: everything this position holds |
@@ -53,17 +53,17 @@ coordinates — the positive control is a different kind of thing from the test.
 direction at matched dose, and `probe_basis` fixes the basis by running the
 identical swap on the directions of the *supervised probe that demonstrably
 reads the value out of this very state*. If `probe_basis` moves the output and
-`jlens_value` does not, the value is causally reusable and the J-lens is simply
+`clens_value` does not, the value is causally reusable and the J-lens is simply
 the wrong coordinate system; if neither moves it while the probe still decodes,
 the value is legible and not read. Those are opposite conclusions and one run
 decides between them.
 
-`jlens_offvalue` was added on 2026-08-07, after the answer-position run, and it
+`clens_offvalue` was added on 2026-08-07, after the answer-position run, and it
 is the sharpest of them. `gram_random` uses arbitrary directions of the right
 shape, which leaves a loophole: digit tokens are not arbitrary directions — they
 carry magnitude structure — so an edit anywhere in the digit subspace shifts
 probability mass along the number line and moves widely separated answers more
-than adjacent ones, whatever the program computed. `jlens_offvalue` closes it
+than adjacent ones, whatever the program computed. `clens_offvalue` closes it
 by swapping the coordinates of two *real digit* directions the program never
 mentions, matched to the bound pair's separation. If it moves the output as
 much as the real value swap, the effect is generic digit perturbation and no
@@ -114,7 +114,7 @@ from src.models.jspace import (
     swap_matrix,
     swap_report,
 )
-from src.models.lens import JLens, gram_matched_random, load_frozen_lenses
+from src.models.cotangent_lens import CotangentLens, gram_matched_random, load_frozen_lenses
 
 logger = logging.getLogger(__name__)
 
@@ -128,8 +128,8 @@ VARIANTS = ("source", "target")
 # whole-state patch exactly and is therefore a consistency check on the sweep.
 PUSH_ALPHAS = (0.03, 0.1, 0.3, 1.0)
 
-SWAP_VARIANTS = ("jlens_value", "logit_value", "gram_random",
-                 "noop_same_value", "jlens_answer", "jlens_offvalue",
+SWAP_VARIANTS = ("clens_value", "logit_value", "gram_random",
+                 "noop_same_value", "clens_answer", "clens_offvalue",
                  "probe_basis", "whole_state") + tuple(
                      f"cf_push_{a:g}" for a in PUSH_ALPHAS)
 
@@ -138,7 +138,7 @@ def resolve_variants(spec: Optional[str] = None) -> list[str]:
     """Parse a `--variants` string, defaulting to *every* variant.
 
     The stage CLI must not carry its own copy of the list. It did, and when
-    `jlens_offvalue` was added to `SWAP_VARIANTS` the CLI kept passing the
+    `clens_offvalue` was added to `SWAP_VARIANTS` the CLI kept passing the
     older six — so a full re-run reproduced the previous grid exactly and the
     new control silently never ran. Deriving the default here is the only way
     the two cannot drift.
@@ -165,7 +165,7 @@ def band_label(band: Sequence[int]) -> str:
     return "L" + "+".join(str(int(l)) for l in band)
 
 
-def _digit_rows(lens: JLens) -> dict[int, int]:
+def _digit_rows(lens: CotangentLens) -> dict[int, int]:
     """{digit value: row index} for the lens's numeric candidates."""
     rows: dict[int, int] = {}
     for i, spelling in enumerate(lens.token_strings):
@@ -176,7 +176,7 @@ def _digit_rows(lens: JLens) -> dict[int, int]:
     return rows
 
 
-def _offvalue_pair(lens: JLens, pair: BindingCounterfactual,
+def _offvalue_pair(lens: CotangentLens, pair: BindingCounterfactual,
                    seed: int) -> Optional[tuple[int, int]]:
     """Two digits this program never mentions, separated like the bound pair.
 
@@ -233,41 +233,41 @@ def probe_directions(probe, v_source: int, v_target: int) -> Optional[tuple]:
 
 def _subspace(
     variant: str,
-    lenses: dict[str, JLens],
+    lenses: dict[str, CotangentLens],
     pair: BindingCounterfactual,
     seed: int,
     probe=None,
 ) -> Optional[np.ndarray]:
     """The (d, 2) matrix whose coordinates get exchanged, or None for whole_state."""
-    jlens, logit = lenses["jlens"], lenses["logit"]
+    clens, logit = lenses["clens"], lenses["logit"]
 
-    def rows(lens: JLens, a_key: str, b_key: str) -> tuple[np.ndarray, np.ndarray]:
+    def rows(lens: CotangentLens, a_key: str, b_key: str) -> tuple[np.ndarray, np.ndarray]:
         return (lens.vectors[lens.index_of_token(pair.token_ids[a_key])],
                 lens.vectors[lens.index_of_token(pair.token_ids[b_key])])
 
-    if variant == "jlens_value":
-        return swap_matrix(*rows(jlens, "v_source", "v_target"))
+    if variant == "clens_value":
+        return swap_matrix(*rows(clens, "v_source", "v_target"))
     if variant == "logit_value":
         return swap_matrix(*rows(logit, "v_source", "v_target"))
-    if variant == "jlens_answer":
-        return swap_matrix(*rows(jlens, "answer_source", "answer_target"))
+    if variant == "clens_answer":
+        return swap_matrix(*rows(clens, "answer_source", "answer_target"))
     if variant == "noop_same_value":
-        v = jlens.vectors[jlens.index_of_token(pair.token_ids["v_source"])]
+        v = clens.vectors[clens.index_of_token(pair.token_ids["v_source"])]
         return swap_matrix(v, v)
-    if variant == "jlens_offvalue":
-        digits = _offvalue_pair(jlens, pair, seed)
+    if variant == "clens_offvalue":
+        digits = _offvalue_pair(clens, pair, seed)
         if digits is None:
             return None
-        rows = _digit_rows(jlens)
-        return swap_matrix(jlens.vectors[rows[digits[0]]],
-                           jlens.vectors[rows[digits[1]]])
+        rows = _digit_rows(clens)
+        return swap_matrix(clens.vectors[rows[digits[0]]],
+                           clens.vectors[rows[digits[1]]])
     if variant == "probe_basis":
         if probe is None:
             return None
         directions = probe_directions(probe, pair.v_source, pair.v_target)
         return None if directions is None else swap_matrix(*directions)
     if variant == "gram_random":
-        real = swap_matrix(*rows(jlens, "v_source", "v_target"))
+        real = swap_matrix(*rows(clens, "v_source", "v_target"))
         # Gram-match the two REAL value directions, so the control has the same
         # two norms and the same angle — only the directions are arbitrary.
         # crc32, not hash(): str hashing is salted per process, and a control
@@ -313,7 +313,7 @@ def run_jspace_swap(
     pairs = list(pairs)[:max_pairs] if max_pairs else list(pairs)
 
     frozen = {
-        "jlens": load_frozen_lenses(lens_dir, "jspace"),
+        "clens": load_frozen_lenses(lens_dir, "jspace"),
         "logit": load_frozen_lenses(lens_dir, "jspace_logit"),
     }
     probes: dict[tuple[int, str], object] = {}
@@ -361,7 +361,7 @@ def run_jspace_swap(
                 pos_index = pair.positions[position]
                 for kind, site in sites:
                     site_lenses = {
-                        "jlens": frozen["jlens"][site[0]],
+                        "clens": frozen["clens"][site[0]],
                         "logit": frozen["logit"][site[0]],
                     }
                     for variant in variants:
@@ -556,21 +556,21 @@ def control_contrasts(
     index = ["pair_id", "base_id", "direction", "site"]
     wide = sub.pivot_table(index=index, columns="variant", values="delta_ld").reset_index()
     out = []
-    for control in [v for v in SWAP_VARIANTS if v != "jlens_value"]:
-        if control not in wide.columns or "jlens_value" not in wide.columns:
+    for control in [v for v in SWAP_VARIANTS if v != "clens_value"]:
+        if control not in wide.columns or "clens_value" not in wide.columns:
             continue
-        paired = wide.dropna(subset=["jlens_value", control])
+        paired = wide.dropna(subset=["clens_value", control])
         if paired.empty:
             continue
         ci = cluster_bootstrap_ci(
-            (paired["jlens_value"] - paired[control]).to_numpy(float),
+            (paired["clens_value"] - paired[control]).to_numpy(float),
             paired["base_id"].to_numpy(), n_boot=n_boot, seed=seed)
         out.append({
             "split": split, "position": position, "site": site or "all",
-            "contrast": f"jlens_value - {control}",
+            "contrast": f"clens_value - {control}",
             "delta": ci.point, "ci_lo": ci.lo, "ci_hi": ci.hi,
             "n_rows": ci.n, "n_bases": ci.n_groups,
-            "jlens_exceeds_control": bool(np.isfinite(ci.lo) and ci.lo > 0),
+            "clens_exceeds_control": bool(np.isfinite(ci.lo) and ci.lo > 0),
         })
     return pd.DataFrame(out)
 

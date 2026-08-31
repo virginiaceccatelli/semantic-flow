@@ -13,16 +13,30 @@ The active evidence forms one sequence:
    weakens under competing scopes and control-flow flattening.
 3. **Causal use:** a rank-1 DAS interchange changes which definition the model
    behaves as though the variable refers to.
-4. **Binding attribution:** on the same programs, a conserving R-lens moves
+4. **Binding attribution:** on the same programs, a conserving cotangent lens moves
    answer relevance from the inactive definition toward the active one.
-5. **J-lens lexical alignment:** at the unchanged, unprompted use-token state,
-   several scope-related word contrasts track binding in both crossed value arms,
-   independently of which literal is returned.
+5. **Cotangent-lens lexical alignment:** at the unchanged, unprompted use-token
+   state, several scope-related word contrasts track binding in both crossed
+   value arms, independently of which literal is returned.
+6. **Published J-lens and R-lens (E19, new):** the actual methods of
+   [the 2026 global-workspace paper](https://transformer-circuits.pub/2026/workspace/index.html)
+   and [the R-lens post](https://www.alignmentforum.org/posts/nv8oedrnLXKRzNEL9/),
+   run through the released reference implementation, asking what concepts the
+   lenses surface while these models read code. Built and tested; the fitting
+   run is pending. See [docs/WORKSPACE_LENS.md](docs/WORKSPACE_LENS.md).
 
-The former security benchmark, output-vocabulary study, older standalone J-lens
-experiments, and R-lens taint-routing study remain reproducible and are documented
-in [docs/ARCHIVE.md](docs/ARCHIVE.md). E18 is the active binding-specific J-lens
-test.
+> **Naming.** Items 4 and 5 above are *not* the published J-lens and R-lens.
+> They are a corpus-averaged cotangent readout over a fixed candidate
+> vocabulary — a different estimator, a different target layer, a different
+> fitting corpus, and no normalization before the unembedding. They are now
+> called the **cotangent lens** (`clens`) and the **conserving cotangent lens**
+> (`clrp`) throughout the code, the results and the tables, so the two methods
+> cannot be confused. `docs/WORKSPACE_LENS.md` §1 tabulates the differences.
+
+The former security benchmark, output-vocabulary study, older standalone
+cotangent-lens experiments, and the conserving-cotangent-lens taint-routing study
+remain reproducible and are documented in [docs/ARCHIVE.md](docs/ARCHIVE.md).
+E18 is the active binding-specific cotangent-lens test.
 
 ## Start here
 
@@ -32,11 +46,14 @@ For a first reading:
 2. Read [docs/METHODS.md](docs/METHODS.md) for the constructions, controls, and
    instrument mechanics.
 3. Read the generated [DAS report](results/binding/deepseek-coder-6.7b/e13_report.md)
-   [R-lens report](results/binding/deepseek-coder-6.7b/e16_report.md), and
-   [J-lens verbalisation report](results/binding/deepseek-coder-6.7b/e18_report.md)
+   [conserving cotangent lens report](results/binding/deepseek-coder-6.7b/e16_report.md), and
+   [cotangent lens verbalisation report](results/binding/deepseek-coder-6.7b/e18_report.md)
    for model-specific tables.
-4. Use [docs/PIPELINE.md](docs/PIPELINE.md) to reproduce stages.
-5. Use [docs/ARCHIVE.md](docs/ARCHIVE.md) for displaced tracks, failed designs,
+4. Read [docs/WORKSPACE_LENS.md](docs/WORKSPACE_LENS.md) for the published
+   J-lens / R-lens implementation (E19): configuration, per-model compatibility,
+   and the complete list of deviations.
+5. Use [docs/PIPELINE.md](docs/PIPELINE.md) to reproduce stages.
+6. Use [docs/ARCHIVE.md](docs/ARCHIVE.md) for displaced tracks, failed designs,
    and the methodological history.
 
 ## The controlled binding construction
@@ -105,18 +122,18 @@ installed definition supplies.
 DAS produces the installed answer on 100% of held-out cases in both arms, in
 DeepSeek-Coder 6.7B and StarCoder2 3B.
 
-The controls isolate distinct alternatives. A J-lens-derived answer direction,
+The controls isolate distinct alternatives. A cotangent lens-derived answer direction,
 scaled to the DAS edit norm, tests whether the learned intervention is merely a
 fixed output-token push. Dose-matched and rank-matched random subspaces test
 generic disruption and provide a random rank-1 floor. A no-op detects hook or
 measurement artifacts, a whole-state donor patch verifies that the intervention
 site can affect the answer, and the mean donor−host direction tests the simplest
-non-learned rank-1 alternative. The J-lens does not find the DAS direction; it is
+non-learned rank-1 alternative. The cotangent lens does not find the DAS direction; it is
 used only to construct the answer-direction control at the intervention layer.
 
-### 4. The R-lens attributes the answer to the active definition
+### 4. The conserving cotangent lens attributes the answer to the active definition
 
-The R-lens changes only the backward attribution rules. It leaves the model's
+The conserving cotangent lens changes only the backward attribution rules. It leaves the model's
 forward activations, output scores, and emitted answer unchanged. For compatible
 DeepSeek models, it divides the selected bound-value score among earlier input
 positions while conserving that score.
@@ -133,14 +150,14 @@ fixed-output-token conditions retain the effect, scoring the competing value
 reverses it, and same-binding controls remain flat.
 
 This is attribution, not causation. DAS supports the claim that the binding
-component is used. The R-lens supports the separate claim that the unedited
+component is used. The conserving cotangent lens supports the separate claim that the unedited
 answer score is assigned to the semantically active definition.
 
-The 1.3B R-lens result is not interpreted because the model often assigns a zero
+The 1.3B conserving cotangent lens result is not interpreted because the model often assigns a zero
 or negative score to the bound value in the shadowing condition, making
 normalized relevance shares unstable.
 
-### 5. The binding state aligns with some scope-related J-lens contrasts
+### 5. The binding state aligns with some scope-related cotangent lens contrasts
 
 E18 reads the same unchanged `x` in `return x`, with no appended question or
 answer prompt. Nine predeclared single-token contrasts cover scope
@@ -159,7 +176,7 @@ makes locality, order, proximity, and replacement coincide, so it cannot identif
 which of these correlated properties drives the alignment.
 
 The supported result is therefore **binding-associated lexical alignment**, not
-clear internal verbalisation: several J-lens word margins follow the binding
+clear internal verbalisation: several cotangent lens word margins follow the binding
 independently of value identity, but the construction does not show that the
 model specifically encodes the abstract concept of scope in those words.
 
@@ -177,7 +194,7 @@ The narrow conclusion is:
 This conclusion is deliberately narrow. It does not establish general program
 understanding, causal binding use at every layer or site, or transfer of the
 controlled isolation to real code. It does not show that the DAS direction is
-unique, make R-lens attribution causal, or recover a complete attention
+unique, make conserving cotangent lens attribution causal, or recover a complete attention
 mechanism. E18 establishes value-independent lexical alignment, not uniquely
 scope-semantic or faithful internal verbalisation.
 
@@ -187,7 +204,7 @@ scope-semantic or faithful internal verbalisation.
 src/
   graphs/        AST, CFG, DFG, and program-structure extraction
   data/          controlled pair generation and verification
-  models/        model loading, hooks, probes, DAS, and R-lens rules
+  models/        model loading, hooks, probes, DAS, and conserving cotangent lens rules
   experiments/   experiment implementations
   analysis/      metrics, tables, figures, and bootstrap utilities
 scripts/         numbered pipeline commands
@@ -215,11 +232,16 @@ make extract probes context obfuscation assets MODEL=deepseek-coder-1.3b
 # Causal binding intervention
 make binding-pilot
 
-# Binding R-lens attribution
-make binding-rlens MODEL=deepseek-coder-6.7b
+# Binding conserving cotangent lens attribution
+make binding-clrp MODEL=deepseek-coder-6.7b
 
-# Unprompted J-lens verbalisation
+# Unprompted cotangent lens verbalisation
 make binding-lexlens MODEL=deepseek-coder-6.7b
+
+# The PUBLISHED J-lens and R-lens (E19). Size the fit first — it is the one
+# expensive stage in the repository.
+make lens-fit-dry MODEL=deepseek-coder-6.7b
+make lens         MODEL=deepseek-coder-1.3b LENS_HALVES=--halves
 ```
 
 Read [docs/PIPELINE.md](docs/PIPELINE.md) before running the full model suite.
@@ -228,9 +250,9 @@ Read [docs/PIPELINE.md](docs/PIPELINE.md) before running the full model suite.
 
 | Model | Active role |
 |---|---|
-| `deepseek-coder-1.3b-base` | representation and robustness; binding R-lens not interpretable |
-| `deepseek-coder-6.7b-base` | representation, robustness, DAS, binding R-lens, and J-lens verbalisation |
-| `starcoder2-3b` | robustness and cross-architecture DAS replication; R-lens rules not applicable |
+| `deepseek-coder-1.3b-base` | representation and robustness; binding conserving cotangent lens not interpretable |
+| `deepseek-coder-6.7b-base` | representation, robustness, DAS, binding conserving cotangent lens, and cotangent lens verbalisation |
+| `starcoder2-3b` | robustness and cross-architecture DAS replication; conserving cotangent lens rules not applicable |
 
 Base models are used because the target is the representation learned during
 code pretraining rather than chat behavior.

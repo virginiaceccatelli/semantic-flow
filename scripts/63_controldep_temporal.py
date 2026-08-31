@@ -18,7 +18,7 @@ runs made before that, by re-deriving each case from the source program and
 joining on (example_id, positive_name, negative_name). No GPU, no re-run.
 
     python scripts/63_controldep_temporal.py \\
-        --raw results/tables/jlens_controldep_deepseek-coder-6.7b.csv \\
+        --raw results/tables/clens_controldep_deepseek-coder-6.7b.csv \\
         --model deepseek-coder-6.7b
 """
 
@@ -51,7 +51,7 @@ def main(
 
     from src.data.alignment import TokenAligner, compute_offsets
     from src.data.dataset import CodeProbeDataset
-    from src.experiments.jlens_controldep import _stmt_target_names, summarize
+    from src.experiments.clens_controldep import _stmt_target_names, summarize
     from src.models.loader import MODEL_REGISTRY, load_tokenizer
     from src.probes.builders import _GuardCollector
 
@@ -138,7 +138,7 @@ def main(
     summary = summarize(df)
     pd.set_option("display.width", 200)
 
-    jl = summary[(summary.lens == "jlens") & (summary.comparison == "control_dep")]
+    jl = summary[(summary.lens == "clens") & (summary.comparison == "control_dep")]
     pivot = jl.pivot(index="layer", columns="stratum", values="accuracy")
     console.print("\n[bold]control_dep accuracy by stratum (J-lens, chance = 0.5)[/bold]")
     console.print(pivot.round(3).to_string())
@@ -153,9 +153,9 @@ def main(
     if tables:
         out = Path("results/tables")
         out.mkdir(parents=True, exist_ok=True)
-        df.to_csv(out / f"jlens_controldep_{model}.csv", index=False)
-        summary.to_csv(out / f"jlens_controldep_summary_{model}.csv", index=False)
-        console.print(f"\nrewrote results/tables/jlens_controldep{{,_summary}}_{model}.csv")
+        df.to_csv(out / f"clens_controldep_{model}.csv", index=False)
+        summary.to_csv(out / f"clens_controldep_summary_{model}.csv", index=False)
+        console.print(f"\nrewrote results/tables/clens_controldep{{,_summary}}_{model}.csv")
 
 
 def _significance(df, console):
@@ -169,7 +169,7 @@ def _significance(df, console):
     import numpy as np
     from scipy.stats import binomtest
 
-    matched = df[(df.lens == "jlens") & (df.comparison == "control_dep")
+    matched = df[(df.lens == "clens") & (df.comparison == "control_dep")
                  & (df["negative_after"].astype(bool))]
     layers = sorted(matched["layer"].unique())
     alpha = 0.05 / max(len(layers), 1)
