@@ -314,13 +314,53 @@ def describe_architecture(model: nn.Module) -> ArchitectureReport:
 
 # ── installation ─────────────────────────────────────────────────────────────
 
+def _probe_like(module: nn.Module, width: int, reference: Optional[torch.Tensor] = None
+                ) -> torch.Tensor:
+    """A verification probe matching the module's device, and its dtype if needed.
+
+    Two failures taught this, and both came from building the probe to a guess
+    rather than reading it off the module: a CPU probe against CUDA parameters
+    (passes every CPU test, dies on the first GPU run), and a float32 probe
+    against bfloat16 parameters (`nn.Linear` and `F.layer_norm` refuse mixed
+    dtypes outright). `device_map="auto"` can place blocks on different devices,
+    so this is read per module rather than once per model.
+    """
+    reference = reference if reference is not None else getattr(module, "weight", None)
+    if isinstance(reference, (torch.Tensor, nn.Parameter)):
+        return torch.randn(4, width, dtype=torch.float32,
+                           device=reference.device).to(reference.dtype)
+    return torch.randn(4, width, dtype=torch.float32)
+
+
+def _float32_copy(module: nn.Module) -> nn.Module:
+    """A float32 clone of a *small* module, for a full-precision rule check.
+
+    Only ever used on normalization layers, whose parameters are
+    one-dimensional, so the copy is negligible. It buys a great deal: at
+    bfloat16 the rounding floor is ~8e-3, which would leave the per-module
+    check unable to distinguish a correct rewrite from one that is half a
+    percent wrong. In float32 the same check resolves to ~1e-7, so W5e is
+    exact on both architectures whatever dtype the fit runs in.
+
+    Deliberately NOT done for the gated MLP: its projections are large enough
+    that a float32 clone is hundreds of megabytes on a 6.7B model, and the
+    half-rule needs no help — `0.5*v + 0.5*v == v` is exact in binary floating
+    point at any precision.
+    """
+    import copy
+
+    return copy.deepcopy(module).float()
+
+
 def _verify_value_preserving(module: nn.Module, patched: Callable,
                              probe: torch.Tensor, what: str) -> float:
     """Run the original and the rewrite on `probe`; return the max deviation.
 
     Raises rather than binding a rule that moves a forward value. This is the
     check that makes "forward values are unchanged" a property of the code
-    instead of a claim in a docstring.
+    instead of a claim in a docstring, and it is the *exact* one: it compares a
+    single module against itself with no accumulation, so unlike the end-to-end
+    W4 it can be held to the probe dtype's own rounding floor.
     """
     with torch.no_grad():
         before = module(probe)
@@ -329,11 +369,13 @@ def _verify_value_preserving(module: nn.Module, patched: Callable,
         raise RuntimeError(f"{what}: rewrite changed the output shape")
     deviation = (before.float() - after.float()).abs().max().item()
     scale = max(before.float().abs().max().item(), 1.0)
-    if deviation > 1e-2 * scale:
+    tolerance = max(1e-6, 8.0 * torch.finfo(probe.dtype).eps)
+    if deviation > tolerance * scale:
         raise RuntimeError(
             f"{what}: rewrite is not value-preserving (max |delta| = {deviation:.3e} "
-            f"against a scale of {scale:.3e}). Refusing to install a rule that "
-            "would change the forward pass."
+            f"against a scale of {scale:.3e}; tolerance {tolerance:.1e} at "
+            f"{probe.dtype}). Refusing to install a rule that would change the "
+            "forward pass."
         )
     return deviation
 
@@ -368,10 +410,10 @@ def relp_rules(
                 continue
 
             if ln and isinstance(module, nn.LayerNorm):
-                probe = torch.randn(4, module.normalized_shape[-1],
-                                    dtype=torch.float32)
+                reference = _float32_copy(module)
+                probe = _probe_like(reference, module.normalized_shape[-1])
                 deviations.append(
-                    _verify_value_preserving(module, _layernorm_forward, probe,
+                    _verify_value_preserving(reference, _layernorm_forward, probe,
                                              f"LN-rule/{name}"))
                 module.forward = types.MethodType(_layernorm_forward, module)
                 patched.append((module, "layernorm"))
@@ -381,9 +423,11 @@ def relp_rules(
             eps_attr = rmsnorm_eps_attr(module) if ln else None
             if eps_attr is not None:
                 module._relp_eps_attr = eps_attr
-                probe = torch.randn(4, module.weight.shape[-1], dtype=torch.float32)
+                reference = _float32_copy(module)
+                reference._relp_eps_attr = eps_attr
+                probe = _probe_like(reference, module.weight.shape[-1])
                 deviations.append(
-                    _verify_value_preserving(module, _rmsnorm_forward, probe,
+                    _verify_value_preserving(reference, _rmsnorm_forward, probe,
                                              f"LN-rule/{name}"))
                 module.forward = types.MethodType(_rmsnorm_forward, module)
                 patched.append((module, "rmsnorm"))
@@ -398,8 +442,8 @@ def relp_rules(
                 # `act_fn` is reached on a later pass of this same loop.)
                 width = getattr(module.gate_proj, "in_features", None)
                 if width is not None:
-                    probe = torch.randn(2, width, dtype=torch.float32).to(
-                        module.gate_proj.weight.dtype).to(module.gate_proj.weight.device)
+                    probe = _probe_like(module, width,
+                                        reference=module.gate_proj.weight)
                     deviations.append(
                         _verify_value_preserving(module, _half_rule_mlp_forward,
                                                  probe, f"half-rule/{name}"))

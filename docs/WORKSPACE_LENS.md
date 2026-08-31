@@ -106,6 +106,17 @@ multiply with two multiplies and an add, and the norm rules recompute statistics
 in float32 — so both checks use a tolerance and both **record the measured
 deviation** rather than only a verdict.
 
+The two are held to deliberately different standards, because they can be. The
+per-module check (**W5e**) compares one rewrite against the module it replaces
+with no accumulation, on a float32 *copy* for normalization layers, so it
+resolves to ~1e-7 whatever dtype the fit runs in — a rule half a percent wrong is
+refused and never binds. The end-to-end check (**W4**) cannot do that: `x·σ(x)`
+and a fused `silu(x)` differ in the last ulp, and at bfloat16 (eps ≈ 8e-3, the
+dtype the fits use) that compounds through 24–32 blocks. W4's tolerance therefore
+scales as `eps·√depth`, making it a check on *material* change — the right
+question for it, since a rule leaking into the network as a whole is an O(1)
+effect, not an O(eps) one.
+
 ### 2.4 Activation identification is numeric
 
 `transformers` spells SiLU three ways and GELU at least four. `identify_activation`
@@ -317,8 +328,8 @@ pass@k table without seeing what certified it.
 | W2 | matched pair | yes | J and R differing in anything but the backward graph |
 | W3 | identity anchor reproduces the model's logits | yes | transport orientation, normalization or unembedding wired wrongly |
 | W3b | the readout's `unembed` *is* the model's tail | yes | a readout that is not the model's own head |
-| W4 | RelP forward invariance | yes | an R-lens that is a lens on a different model |
-| W5a–e | rules bind to the right modules, and only those | yes | rules that silently bound to nothing |
+| W4 | RelP forward invariance (tolerance scales as `eps·√depth`) | yes | an R-lens that is a lens on a different model |
+| W5a–e | rules bind to the right modules and only those; each rewrite value-checked to ~1e-7 | yes | rules that silently bound to nothing, or bound wrongly |
 | W5f | the R Jacobian actually differs from the J Jacobian | yes | an "R-lens" that is a J-lens — the quiet failure |
 | W6 | disjoint-half fits agree (worst per-layer cosine) | yes | an estimator that has not converged |
 | W7 | the papers' own qualitative example reproduces | no | reported, not required — see below |
@@ -364,8 +375,9 @@ Complete list. Everything not here follows the published choices.
 5. **Forward invariance is algebraic, not bitwise.** The released artifacts say
    "bit-identical"; that holds when the rules are fused into the kernels. Here the
    half-rule reassociates one multiply and the norm rules recompute statistics in
-   float32, so W4 uses a relative tolerance and records the measured deviation
-   (typically ~1e-7 on the toy models).
+   float32, so both checks use a relative tolerance and record the measured
+   deviation. W5e stays exact (~1e-7, on a float32 copy of each norm); W4's bound
+   scales with the compute dtype's rounding floor and the model's depth.
 6. **Not a deviation, but a difference from this repository's past:** the
    archived q/k-detaching "attn-rule" is not used. Attention is unmodified, as
    published.

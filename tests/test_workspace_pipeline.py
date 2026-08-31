@@ -534,3 +534,74 @@ def test_forcing_bos_is_a_no_op_when_it_is_already_there():
     assert _force_bos_prefix(model, model.tokenizer) is False
     before = model.encode("hello world", max_length=32)
     assert int(before[0, 0]) == model.tokenizer.bos_token_id
+
+
+# ── W4's tolerance ───────────────────────────────────────────────────────────
+
+def test_w4_passes_at_the_dtype_the_fits_actually_use():
+    """A fixed tolerance passed on a toy and would have failed on a real model.
+
+    bfloat16 has eps ~ 8e-3 and the rewrites re-round every activation, so the
+    end-to-end drift grows with depth. Both architectures, both dtypes.
+    """
+    from tests.tiny_lens_models import TinyLNDecoder
+
+    prompts = ["alpha beta gamma delta epsilon zeta eta theta " * 4,
+               "def compute():\n    x = 3\n    return x\n" * 6]
+    for factory in (TinyRMSDecoder, TinyLNDecoder):
+        for dtype in (torch.float32, torch.bfloat16):
+            model = factory(n_layers=6).to(dtype)
+            check = validate.check_w4(model, model, prompts)
+            assert check.passed, f"{factory.__name__} {dtype}: {check.detail}"
+
+
+def test_a_wrong_rule_is_caught_exactly_at_every_dtype():
+    """The division of labour that makes W4's loosened bfloat16 bound honest.
+
+    W5e compares each rewrite against the module it replaces with no
+    accumulation, on a float32 copy for norms, so it resolves to ~1e-7 whatever
+    dtype the fit runs in. A rule that is half a percent wrong — far too small
+    for an end-to-end bfloat16 comparison to see — is refused outright here, and
+    never binds.
+    """
+    import src.workspace_lens.relp as relp_mod
+    from tests.tiny_lens_models import TinyLNDecoder
+
+    original_rms = relp_mod._rmsnorm_forward
+    original_ln = relp_mod._layernorm_forward
+
+    for factor in (1.5, 1.005):
+        def broken_rms(self, h, _f=factor, _o=original_rms):
+            return _o(self, h) * _f
+
+        def broken_ln(self, x, _f=factor, _o=original_ln):
+            return _o(self, x) * _f
+
+        relp_mod._rmsnorm_forward = broken_rms
+        relp_mod._layernorm_forward = broken_ln
+        try:
+            for factory in (TinyRMSDecoder, TinyLNDecoder):
+                for dtype in (torch.float32, torch.bfloat16):
+                    model = factory(n_layers=4).to(dtype)
+                    with pytest.raises(RuntimeError, match="not value-preserving"):
+                        with relp_mod.relp_rules(model):
+                            pass
+                    # ...and nothing was left patched behind the refusal.
+                    assert all("forward" not in vars(m)
+                               for _, m in model.named_modules())
+        finally:
+            relp_mod._rmsnorm_forward = original_rms
+            relp_mod._layernorm_forward = original_ln
+
+
+def test_the_per_module_check_is_tight_even_when_the_model_is_bfloat16():
+    """The measured deviation, not just the verdict: norms are checked in
+    float32, so bfloat16 does not blunt them."""
+    from src.workspace_lens import relp as relp_mod
+    from tests.tiny_lens_models import TinyLNDecoder
+
+    for factory in (TinyRMSDecoder, TinyLNDecoder):
+        model = factory(n_layers=4).to(torch.bfloat16)
+        with relp_mod.relp_rules(model) as bound:
+            assert bound["max_forward_deviation"] < 1e-5, (
+                f"{factory.__name__}: {bound['max_forward_deviation']:.2e}")

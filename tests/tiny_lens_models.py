@@ -157,7 +157,14 @@ class _TinyDecoder(nn.Module):
         return SimpleNamespace(last_hidden_state=hidden)
 
     def unembed(self, residual: torch.Tensor) -> torch.Tensor:
-        return self.lm_head(self.norm(residual.float()))
+        """Mirrors `HFLensModel.unembed`: cast to the head's dtype and device.
+
+        Not cosmetic. Forcing float32 here made the doubles unable to run at all
+        in bfloat16, which is the dtype the real fits use — so the gate could
+        only ever be tested at a precision it never runs at.
+        """
+        target = self.lm_head.weight
+        return self.lm_head(self.norm(residual.to(target.dtype).to(target.device)))
 
 
 class TinyRMSDecoder(_TinyDecoder):

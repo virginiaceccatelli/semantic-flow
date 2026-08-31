@@ -31,6 +31,7 @@ pass/fail, because "comparable" is a quantity.
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import dataclass, field
 from typing import Optional, Sequence
 
@@ -183,9 +184,35 @@ def check_w3b(lens_model, prompt: str, tol: float = 1e-4) -> Check:
 
 # ── W4 ───────────────────────────────────────────────────────────────────────
 
+def forward_tolerance(dtype: torch.dtype, n_layers: int) -> float:
+    """How much end-to-end drift is pure re-rounding, at this dtype and depth.
+
+    The rewrites are algebraically exact, so every deviation W4 sees is
+    accumulated round-off from computing the same value a different way — chiefly
+    `x * sigma(x)` versus a fused `silu(x)`, which differ in the last ulp and
+    then compound through the stack. That floor is a property of the dtype, not
+    of the rules: in float32 it is invisible, and in bfloat16 (eps ~ 8e-3, the
+    dtype the fits actually run in) it reaches a few parts in a thousand after
+    only six blocks.
+
+    A fixed 5e-3 bound therefore passes on a toy and fails on a real 24-layer
+    model for no reason at all. Scaling with `eps * sqrt(depth)` tracks the
+    random-walk accumulation of independent rounding errors instead.
+
+    This deliberately makes W4 a check on *material* change rather than on the
+    last bit. That is the right division of labour: **W5e** compares every
+    rewrite against the module it replaces with no accumulation at all, so a
+    genuinely wrong rule is caught there, exactly, whatever the dtype. W4's job
+    is to catch a rule that leaks into the network as a whole, and a leak is
+    O(1), not O(eps).
+    """
+    eps = torch.finfo(dtype).eps
+    return max(1e-4, 4.0 * eps * math.sqrt(max(n_layers, 1)))
+
+
 @torch.no_grad()
 def check_w4(lens_model, hf_model, prompts: Sequence[str],
-             tol: float = 5e-3) -> Check:
+             tol: Optional[float] = None) -> Check:
     """Installing the RelP rules must not move a single forward value.
 
     Measured on the logits *and* on the residual stream at every block, because
@@ -198,6 +225,9 @@ def check_w4(lens_model, hf_model, prompts: Sequence[str],
     from jlens.hooks import ActivationRecorder
 
     at = list(range(lens_model.n_layers))
+    dtype = next(hf_model.parameters()).dtype
+    if tol is None:
+        tol = forward_tolerance(dtype, lens_model.n_layers)
     worst_hidden, worst_logits = 0.0, 0.0
     for prompt in prompts:
         input_ids = lens_model.encode(prompt, max_length=128)
@@ -224,7 +254,9 @@ def check_w4(lens_model, hf_model, prompts: Sequence[str],
     return Check(
         "W4_relp_forward_invariant", worst <= tol, True,
         f"max relative deviation {worst:.2e} over {len(prompts)} prompts "
-        f"(hidden {worst_hidden:.2e}, logits {worst_logits:.2e})",
+        f"(hidden {worst_hidden:.2e}, logits {worst_logits:.2e}); tolerance "
+        f"{tol:.2e} is the {str(dtype).replace('torch.', '')} rounding floor at "
+        f"depth {lens_model.n_layers} — W5e is the exact per-module check",
         value=worst, threshold=tol)
 
 

@@ -285,3 +285,42 @@ def test_a_value_changing_gate_rewrite_would_be_refused():
 
     with pytest.raises(RuntimeError, match="not value-preserving"):
         relp._verify_value_preserving(mlp, doubled, torch.randn(2, 4), "half-rule/test")
+
+
+# ── device placement ─────────────────────────────────────────────────────────
+
+def test_probes_are_built_on_the_modules_own_device_and_dtype():
+    """The two bugs that only appeared off the CPU-float32 test path.
+
+    `meta` stands in for "not the default device": it needs no GPU and fails
+    against the old hard-coded CPU probe. The dtype half is what `nn.Linear`
+    requires — it refuses mixed dtypes outright, so a float32 probe cannot check
+    a bfloat16 gated MLP at all.
+    """
+    meta_norm = TinyRMSNorm(8)
+    meta_norm.weight = nn.Parameter(torch.empty(8, device="meta"), requires_grad=False)
+    assert relp._probe_like(meta_norm, 8).device.type == "meta"
+
+    ln = nn.LayerNorm(8)
+    ln.weight = nn.Parameter(torch.empty(8, device="meta"), requires_grad=False)
+    assert relp._probe_like(ln, 8).device.type == "meta"
+
+    half_mlp = TinyGatedMLP(4, 6).to(torch.bfloat16)
+    probe = relp._probe_like(half_mlp, 4, reference=half_mlp.gate_proj.weight)
+    assert probe.dtype == torch.bfloat16
+    half_mlp(probe)                       # the check this enables at fit dtype
+
+    # A module with no parameters at all still gets a usable probe.
+    assert relp._probe_like(nn.Identity(), 8).device.type == "cpu"
+
+
+def test_rules_bind_on_a_half_precision_model():
+    """The fitting dtype is bfloat16; installation must survive it end to end."""
+    model = TinyRMSDecoder(n_layers=2).to(torch.bfloat16)
+    ids = model.encode(LONG_PROMPT)
+    with torch.no_grad():
+        before = model(ids).last_hidden_state.clone()
+        with relp.relp_rules(model) as bound:
+            after = model(ids).last_hidden_state.clone()
+    assert bound["ln_rmsnorm"] == 5 and bound["half"] == 2
+    torch.testing.assert_close(before.float(), after.float(), rtol=1e-2, atol=1e-2)
