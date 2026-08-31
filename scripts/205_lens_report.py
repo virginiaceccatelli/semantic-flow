@@ -206,8 +206,10 @@ def _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
         f"| fitting corpus | {corpus.get('dataset_id')}, n={corpus.get('n_prompts')}, "
         f"digest `{str(corpus.get('digest'))[:12]}` |",
         f"| BOS prepended | {prov.get('model', {}).get('bos_prepended')}"
-        + (" (forced: the tokenizer flag had no effect)"
-           if prov.get('model', {}).get('bos_forced') else "") + " |",
+        + (" (forced; the checkpoint declares add_bos_token and the tokenizer "
+           "flag had no effect)" if prov.get('model', {}).get('bos_forced')
+           else " (the checkpoint declares no add_bos_token, so none is added)"
+           if prov.get('model', {}).get('bos_declared') is False else "") + " |",
         f"| RelP rules bound | LN {relp.get('ln_rmsnorm', 0)} RMSNorm + "
         f"{relp.get('ln_layernorm', 0)} LayerNorm, identity {relp.get('identity', 0)}, "
         f"half {relp.get('half', 0)} ({arch.get('half_rule')}) |",

@@ -605,3 +605,22 @@ def test_the_per_module_check_is_tight_even_when_the_model_is_bfloat16():
         with relp_mod.relp_rules(model) as bound:
             assert bound["max_forward_deviation"] < 1e-5, (
                 f"{factory.__name__}: {bound['max_forward_deviation']:.2e}")
+
+
+def test_bos_is_forced_only_when_the_checkpoint_asks_for_one():
+    """The two model families genuinely differ, and the rule must follow them.
+
+    DeepSeek-Coder declares `add_bos_token: true` and is meant to see an
+    attention-sink BOS. StarCoder2 declares nothing — its `bos_token` is
+    `<|endoftext|>`, a document separator — so prepending it to every fitting
+    prompt would feed the model something it never sees at the start of raw
+    text. Forcing unconditionally would be a deviation dressed up as fidelity.
+    """
+    from src.workspace_lens.adapter import declared_add_bos
+
+    assert declared_add_bos("deepseek-ai/deepseek-coder-1.3b-base") is True
+    assert declared_add_bos("deepseek-ai/deepseek-coder-6.7b-base") is True
+    assert declared_add_bos("bigcode/starcoder2-3b") is False
+    # An unreadable checkpoint must not force: that is the conservative side,
+    # since it leaves the released behaviour untouched.
+    assert declared_add_bos("definitely/not-a-real-model-id") is False

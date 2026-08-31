@@ -39,7 +39,9 @@ unembedding are all wired up correctly (`validate.check_w3`).
 from __future__ import annotations
 
 import logging
+import json
 from dataclasses import dataclass, asdict
+from pathlib import Path
 from typing import Optional
 
 import torch
@@ -110,8 +112,12 @@ def load_lens_model(
     hf_model, tokenizer = loader.model, loader.tokenizer
     hf_model.eval()
 
+    # Read the checkpoint's own declaration BEFORE `from_hf` sets
+    # `add_bos_token`, which would otherwise erase the signal.
+    bos_declared = declared_add_bos(cfg.hf_id)
     lens_model = jlens.from_hf(hf_model, tokenizer, force_bos=True)
-    bos_forced = _force_bos_prefix(lens_model, tokenizer) if force_bos else False
+    bos_forced = (_force_bos_prefix(lens_model, tokenizer)
+                  if force_bos and bos_declared else False)
     if len(lens_model.layers) != cfg.n_layers:
         raise RuntimeError(
             f"registry says {name} has {cfg.n_layers} layers but the loaded model "
@@ -127,6 +133,7 @@ def load_lens_model(
         "d_model": lens_model.d_model,
         "vocab_size": int(hf_model.get_output_embeddings().weight.shape[0]),
         "tokenizer_class": type(tokenizer).__name__,
+        "bos_declared": bos_declared,
         "bos_prepended": _bos_is_prepended(lens_model, tokenizer),
         "bos_forced": bos_forced,
         "training_mode": bool(hf_model.training),
@@ -163,16 +170,45 @@ def _bos_is_prepended(lens_model, tokenizer) -> bool:
     return bool(ids[0, 0].item() == bos)
 
 
+def declared_add_bos(hf_id: str) -> bool:
+    """Does this checkpoint's own `tokenizer_config.json` ask for a BOS?
+
+    The deciding question, and the tokenizer object cannot answer it: neither
+    `add_bos_token` nor `init_kwargs` survives the fast-tokenizer load path this
+    repository uses, and `jlens.from_hf(force_bos=True)` sets the attribute on
+    everything regardless. So the checkpoint is read directly.
+
+    It matters because the two model families genuinely differ.
+    DeepSeek-Coder declares `add_bos_token: true` and is meant to see an
+    attention-sink BOS. StarCoder2 declares nothing: it is a GPT-2 style
+    tokenizer whose `bos_token` is `<|endoftext|>`, a document *separator*, and
+    prepending it to every fitting prompt would feed the model a token it never
+    sees at the start of raw text — a deviation from how the model runs, dressed
+    up as fidelity. Following the checkpoint's declaration gets both right.
+
+    A checkpoint that cannot be read returns False: not forcing is the
+    conservative direction, since it leaves the released behaviour untouched.
+    """
+    try:
+        from huggingface_hub import hf_hub_download
+
+        path = hf_hub_download(hf_id, "tokenizer_config.json")
+        return bool(json.loads(Path(path).read_text()).get("add_bos_token", False))
+    except Exception as exc:                                    # noqa: BLE001
+        logger.warning("could not read tokenizer_config.json for %s (%s); "
+                       "not forcing a BOS", hf_id, exc)
+        return False
+
+
 def _force_bos_prefix(lens_model, tokenizer) -> bool:
     """Actually prepend BOS when the tokenizer flag failed to, and say so.
 
-    This is making the released adapter's own intent hold, not departing from
-    it. `from_hf` defaults to `force_bos=True`; DeepSeek-Coder's shipped
-    `tokenizer_config.json` sets `add_bos_token: true`; the reference
-    implementation warns that "raw-text prompts are degraded without an
-    attention-sink BOS". All three agree the model should see one, and only a
-    fast-tokenizer loading quirk prevents it — so the encode path prepends the
-    id directly.
+    Called only when `declared_add_bos` is True, so this makes the checkpoint's
+    and the released adapter's shared intent hold rather than departing from
+    either. `from_hf` defaults to `force_bos=True`; the reference implementation
+    warns that raw-text prompts are "degraded without an attention-sink BOS";
+    and the checkpoint asks for one. Only a fast-tokenizer loading quirk
+    prevents it, so the encode path prepends the id directly.
 
     `max_length` is reduced by one before delegating, so the prompt still ends
     up at exactly the recipe's token budget rather than one over it.
