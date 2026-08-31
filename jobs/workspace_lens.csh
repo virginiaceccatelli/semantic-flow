@@ -65,6 +65,16 @@ set OUT    = "results/workspace_lens/${MODEL}"
 echo "=== stage 200: fitting corpus + probe suite — CPU ==="
 $PYTHON scripts/200_lens_corpus.py --model "$MODEL" --n-prompts "$LENS_N" --corpus pile
 
+echo "=== stage 201 preflight: can this host run the fit? (no weights loaded) ==="
+# Stage 200 above needs only a tokenizer, so it succeeds on a host where the fit
+# cannot run at all — a missing `jlens` install is the usual cause. Fail here,
+# loudly and in seconds, rather than after the queue wait.
+$PYTHON scripts/201_lens_fit.py --model "$MODEL" --corpus "$CORPUS" --check-env
+if ($status != 0) then
+    echo "*** preflight FAILED — not starting the fit. Fix the rows marked FAIL."
+    exit 1
+endif
+
 echo "=== stage 201 cost estimate (no weights loaded) ==="
 $PYTHON scripts/201_lens_fit.py --model "$MODEL" --corpus "$CORPUS" \
     --dim-batch "$DIM_BATCH" --dry-run

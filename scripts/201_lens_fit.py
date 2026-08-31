@@ -59,6 +59,8 @@ def main(
     halves: bool = typer.Option(False, help="Also fit disjoint-half lenses for W6"),
     tag: str = typer.Option("", help="Suffix for the output directory (e.g. 'code-corpus')"),
     dry_run: bool = typer.Option(False, help="Print the cost table and exit"),
+    check_env: bool = typer.Option(False, help="Diagnose whether this host can run "
+                                   "the fit, without loading any weights, and exit"),
 ):
     import torch
 
@@ -71,6 +73,10 @@ def main(
     t0 = time.time()
     kind_list = [k.strip() for k in kinds.split(",") if k.strip()]
     cfg = ModelConfig.from_registry(model)
+
+    if check_env:
+        raise typer.Exit(0 if _check_env(model, cfg, corpus, skip_first,
+                                         max_seq_len, target_layer, dim_batch) else 1)
 
     # A sizing run must not require the artifact it is sizing for: the whole
     # point of --dry-run is to decide whether to commit to the pipeline at all,
@@ -159,6 +165,163 @@ def _print_cost(model, cfg, n_prompts, dim_batch, max_seq_len, kinds, halves):
     table.add_row("saved lens.pt (fp16)", f"{est['saved_lens_gb']:.2f} GB")
     table.add_row("host RAM needed (hint)", f"{est['host_ram_gb_hint']:.1f} GB")
     console.print(table)
+
+
+def _check_env(model, cfg, corpus, skip_first, max_seq_len, target_layer,
+               dim_batch) -> bool:
+    """Can this host run stage 201? Answered without loading a single weight.
+
+    Stage 200 needs only a tokenizer, so it succeeds on a host where stage 201
+    cannot run at all — a missing `jlens` install, a `transformers` too old for
+    the released adapter, a model whose residual stack the adapter cannot find.
+    That asymmetry is exactly how a pipeline appears to start and then silently
+    produces nothing, so it is worth a check that takes seconds.
+
+    The model is built on the **meta** device: every module, every name and
+    every shape is real, and no memory is allocated and no checkpoint is read.
+    That is enough to run the adapter's layout detection and the RelP
+    architecture report, which are the two things most likely to be wrong on a
+    new host.
+    """
+    import os
+    import shutil
+
+    import torch
+    from rich.table import Table as _Table
+
+    rows: list[tuple[str, bool, str]] = []
+
+    def record(name, ok, detail):
+        rows.append((name, ok, detail))
+        return ok
+
+    # 1. the vendored estimator
+    try:
+        import jlens
+        commit_file = Path("third_party/jacobian-lens.COMMIT")
+        commit = commit_file.read_text().strip()[:12] if commit_file.exists() else "?"
+        record("jlens importable", True,
+               f"{Path(jlens.__file__).parent} (vendored commit {commit})")
+    except ImportError as exc:
+        record("jlens importable", False,
+               f"{exc} — run:  pip install --no-deps -e third_party/jacobian-lens")
+        _print_env_table(rows)
+        return False
+
+    # 2. libraries
+    import transformers
+    tf_ok = hasattr(transformers.PretrainedConfig, "get_text_config")
+    record("transformers has get_text_config", tf_ok,
+           f"transformers {transformers.__version__}"
+           + ("" if tf_ok else " — too old for jlens.from_hf; needs >= 4.43"))
+    record("torch", True, f"{torch.__version__}, cuda={torch.cuda.is_available()}")
+
+    # 3. hardware
+    if torch.cuda.is_available():
+        free, total = torch.cuda.mem_get_info()
+        record("GPU memory", True,
+               f"{torch.cuda.get_device_name(0)}: {free/1e9:.1f} GB free of "
+               f"{total/1e9:.1f} GB")
+    else:
+        record("GPU memory", False, "no CUDA device visible — stage 201 needs one")
+    try:
+        ram = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1e9
+    except (ValueError, AttributeError, OSError):
+        ram = float("nan")
+    needed = 3 * (cfg.n_layers - 1) * cfg.d_model ** 2 * 4 / 1e9
+    record("host RAM", not (ram == ram) or ram >= needed,
+           f"{ram:.0f} GB present, ~{needed:.1f} GB needed for the fp32 Jacobian "
+           f"accumulators")
+    disk = shutil.disk_usage(".").free / 1e9
+    want = 2 * (cfg.n_layers - 1) * cfg.d_model ** 2 * 4 / 1e9
+    record("free disk", disk >= want,
+           f"{disk:.0f} GB free, ~{want:.1f} GB for checkpoints + saved lenses")
+
+    # 4. the tokenizer, through this repository's guard
+    from src.models.loader import load_tokenizer
+    try:
+        tok = load_tokenizer(cfg.hf_id)
+        record("tokenizer round-trips code", True, type(tok).__name__)
+    except Exception as exc:                                    # noqa: BLE001
+        record("tokenizer round-trips code", False, str(exc)[:160])
+        _print_env_table(rows)
+        return False
+
+    # 5. the model's structure, on meta
+    try:
+        from transformers import AutoConfig, AutoModelForCausalLM
+
+        hf_cfg = AutoConfig.from_pretrained(cfg.hf_id)
+        with torch.device("meta"):
+            meta_model = AutoModelForCausalLM.from_config(hf_cfg)
+        lens_model = jlens.from_hf(meta_model, tok, force_bos=True)
+        record("jlens locates the residual stack", True,
+               f"{type(meta_model).__name__}: layout {lens_model.layout.path!r}, "
+               f"{lens_model.n_layers} layers, d_model {lens_model.d_model}")
+    except Exception as exc:                                    # noqa: BLE001
+        record("jlens locates the residual stack", False,
+               f"{type(exc).__name__}: {exc}"[:200])
+        _print_env_table(rows)
+        return False
+
+    record("registry matches the checkpoint",
+           lens_model.n_layers == cfg.n_layers and lens_model.d_model == cfg.d_model,
+           f"configs/models.yaml says {cfg.n_layers}x{cfg.d_model}")
+
+    # 6. which RelP rules will bind
+    from src.workspace_lens.relp import describe_architecture
+    arch = describe_architecture(meta_model)
+    ln_ok = (arch.norm_rmsnorm + arch.norm_layernorm) > 0
+    act_ok = sum(arch.activations.values()) > 0 and not arch.activations_unrecognised
+    record("LN-rule will bind", ln_ok,
+           f"{arch.norm_rmsnorm} RMSNorm + {arch.norm_layernorm} LayerNorm "
+           f"({'layernorm-adaptation' if arch.norm_layernorm else 'rmsnorm'}), "
+           f"{len(arch.norm_excluded)} q/k norms excluded as published")
+    record("identity-rule will bind", act_ok,
+           f"activations {arch.activations or 'NONE MATCHED'}"
+           + (f", unrecognised {arch.activations_unrecognised}"
+              if arch.activations_unrecognised else ""))
+    record("half-rule", True,
+           f"{arch.half_rule_status}: {arch.gated_mlps} gated MLPs, "
+           f"{arch.ungated_mlps} ungated")
+
+    # 7. the recipe and the inputs
+    from src.workspace_lens.adapter import resolve_recipe
+    recipe = resolve_recipe(lens_model, skip_first=skip_first,
+                            max_seq_len=max_seq_len, target_layer=target_layer)
+    record("recipe", True,
+           f"target L{recipe.target_layer}, sources L0-L{recipe.source_layers[-1]}, "
+           f"skip_first={recipe.skip_first}, max_seq_len={recipe.max_seq_len}")
+
+    corpus_path = Path(corpus) if corpus else Path(
+        f"data/lens_corpus/pile10k-n100.jsonl")
+    try:
+        from src.workspace_lens.corpus import Corpus
+        c = Corpus.load(corpus_path)
+        record("fitting corpus", True,
+               f"{corpus_path} — {len(c.prompts)} prompts, digest {c.digest[:12]}")
+    except Exception as exc:                                    # noqa: BLE001
+        record("fitting corpus", False, str(exc).splitlines()[0][:160])
+
+    suite_path = Path(f"data/lens_eval/code-semantics-{model}.jsonl")
+    record("probe suite", suite_path.exists(),
+           f"{suite_path}" + ("" if suite_path.exists() else " — run stage 200"))
+
+    ok = _print_env_table(rows)
+    console.print("[green]environment OK — stage 201 can run here[/green]" if ok
+                  else "[red]stage 201 cannot run here until the rows marked FAIL "
+                       "are fixed[/red]")
+    return ok
+
+
+def _print_env_table(rows) -> bool:
+    table = Table(title="stage 201 preflight (no weights loaded)")
+    table.add_column("check"); table.add_column("", justify="center")
+    table.add_column("detail")
+    for name, ok, detail in rows:
+        table.add_row(name, "[green]ok[/green]" if ok else "[red]FAIL[/red]", detail)
+    console.print(table)
+    return all(ok for _, ok, _ in rows)
 
 
 if __name__ == "__main__":

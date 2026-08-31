@@ -89,6 +89,7 @@
 #   make lens-corpus MODEL=...      stage 200 fitting corpus + probe suite (CPU)
 #   make lens-fit MODEL=...         stage 201 fit BOTH lenses — expensive (GPU)
 #   make lens-fit-dry MODEL=...     stage 201 cost estimate only, no model load
+#   make lens-check MODEL=...       stage 201 PREFLIGHT — run this before lens-fit
 #   make lens-validate MODEL=...    stage 202 the seven-check GATE (GPU)
 #   make lens-readout MODEL=...     stage 203 J vs R vs logit over the suite (GPU)
 #   make lens-ablate MODEL=...      stage 204 causal edits along read directions (GPU)
@@ -126,7 +127,7 @@ PROBES := results/probes/$(MODEL)/core
         binding-relevance binding-relevance-report binding-clrp binding-clrp-smoke \
         binding-verbal-discover binding-verbal-behaviour binding-verbal-relevance \
         binding-verbal-report binding-verbal binding-verbal-smoke \
-        lens lens-corpus lens-fit lens-fit-dry lens-validate lens-readout \
+        lens lens-corpus lens-fit lens-fit-dry lens-check lens-validate lens-readout \
         lens-ablate lens-report lens-smoke
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
@@ -584,6 +585,14 @@ lens-corpus:
 lens-fit-dry:
 	$(PY) scripts/201_lens_fit.py --model $(MODEL) --corpus $(LENS_CORPUS) \
 		--dim-batch $(LENS_DIM_BATCH) --dry-run
+
+# Answers "can this host run the fit at all" in seconds, without loading a
+# weight: the jlens install, the transformers version, GPU/RAM/disk, the
+# tokenizer, the residual-stack layout, which RelP rules will bind, and whether
+# the corpus and suite are present. Stage 200 succeeds on hosts where stage 201
+# cannot run, so run this between them.
+lens-check:
+	$(PY) scripts/201_lens_fit.py --model $(MODEL) --corpus $(LENS_CORPUS) --check-env
 
 lens-fit:
 	$(PY) scripts/201_lens_fit.py --model $(MODEL) --corpus $(LENS_CORPUS) \

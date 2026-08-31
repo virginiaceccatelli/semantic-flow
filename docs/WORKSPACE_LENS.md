@@ -370,6 +370,7 @@ Complete list. Everything not here follows the published choices.
 
 ```bash
 make lens-smoke                                    # toy models + the release's own tests
+make lens-check   MODEL=deepseek-coder-6.7b        # can this host run the fit? no weights
 make lens-fit-dry MODEL=deepseek-coder-6.7b        # size the run, no weights loaded
 make lens        MODEL=deepseek-coder-1.3b LENS_HALVES=--halves
 make lens        MODEL=starcoder2-3b

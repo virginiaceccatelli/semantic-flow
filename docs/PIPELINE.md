@@ -875,12 +875,33 @@ tokenizers here segment every multi-digit number, so the usable literal pool is
 
 ## Stage 201 — fit the J-lens and the R-lens (GPU) — the expensive one
 
-**Size it first.** `--dry-run` loads no weights:
+**Preflight first.** Stage 200 needs only a tokenizer, so it succeeds on a host
+where the fit cannot run at all — a missing `jlens` install is the usual cause,
+and the symptom is a pipeline that appears to start and then produces nothing:
+
+```bash
+python scripts/201_lens_fit.py --model deepseek-coder-1.3b --check-env
+```
+
+No weights are loaded. It checks the `jlens` install and its vendored commit,
+the `transformers` version the released adapter needs, GPU/host-RAM/disk against
+this model's actual requirements, the tokenizer's code round-trip, whether
+`jlens` can locate the residual stack, which RelP rules will bind (and, for
+StarCoder2, that the half-rule is correctly reported `n/a`), the resolved
+recipe, and whether the corpus and suite are on disk. It exits non-zero if any
+of that would stop the fit, and `jobs/workspace_lens.csh` refuses to start the
+fit when it does.
+
+**Then size it.** `--dry-run` also loads no weights, and does not need the
+corpus:
 
 ```bash
 python scripts/201_lens_fit.py --model deepseek-coder-6.7b \
     --corpus data/lens_corpus/pile10k-n100.jsonl --dim-batch 16 --dry-run
 ```
+
+(`--corpus` is optional for both `--dry-run` and `--check-env`; add
+`--n-prompts N` to size a run before the corpus exists.)
 
 Then:
 

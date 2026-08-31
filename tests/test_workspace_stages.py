@@ -155,11 +155,23 @@ def test_report_stage_renders_from_the_readout_stage_output(fitted, tmp_path):
     stage205 = _stage("205_lens_report")
     figures = tmp_path / "figures"
 
-    import typer.testing
-    result = typer.testing.CliRunner().invoke(
-        stage205.app, ["--model", "tiny", "--lens-dir", str(out_dir),
-                       "--figures", str(figures), "--k", "10"])
+    # The stage writes a run manifest to a path relative to the working
+    # directory. Without this, a test run leaves a manifest for a model called
+    # "tiny" in the repository's real provenance record — which happened, and
+    # was briefly mistaken for evidence that a real run had occurred.
+    import os
+    cwd = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        import typer.testing
+        result = typer.testing.CliRunner().invoke(
+            stage205.app, ["--model", "tiny", "--lens-dir", str(out_dir),
+                           "--figures", str(figures), "--k", "10"])
+    finally:
+        os.chdir(cwd)
     assert result.exit_code == 0, result.output + str(result.exception)
+    assert not list((Path(cwd) / "results" / "manifests").glob("*_tiny_*")), \
+        "the stage wrote a manifest into the repository during a test"
 
     report = out_dir / "workspace_lens_report.md"
     assert report.exists()
