@@ -1,0 +1,17 @@
+check,passed,required,value,threshold,detail
+W1_corpus_independent,True,True,,,"100 fitting prompts from NeelNanda/pile-10k (digest 483c1e1743d1), 100 eval prompts, 0 exact and 0 substring overlaps at 120 chars"
+W2_matched_pair,True,True,,,"matched on model.hf_id, model.dtype, model.n_layers, model.d_model, model.bos_prepended, model.bos_forced, recipe.target_layer, recipe.source_layers, recipe.skip_first, recipe.max_seq_len, corpus.digest, corpus.n_prompts, dim_batch, n_prompts_used"
+W3_readout_identity_anchor,True,True,0.0,0.02,max |delta logit| = 0.0000 on a scale of 74.5; top-1 agreement 1.000 over 31 positions
+W3b_unembed_is_model_tail,False,True,0.37081339955329895,0.0001,max relative logit difference 3.71e-01
+W4_relp_forward_invariant,True,True,0.015718562874251496,0.15309310892394862,"max relative deviation 1.57e-02 over 4 prompts (hidden 8.20e-03, logits 1.57e-02); tolerance 1.53e-01 is the bfloat16 rounding floor at depth 24 — W5e is the exact per-module check"
+W5a_ln_rule_bound,True,True,,,LN-rule on 49 RMSNorm + 0 LayerNorm of 49 residual norms; 0 q/k norms left unmodified as published
+W5b_identity_rule_bound,True,True,,,identity-rule on 24 activations ({'silu': 24}); 0 unrecognised
+W5c_half_rule_status,True,True,,,half-rule applied: 24 gated MLPs of 24; 0 ungated MLPs have no gate to split
+W5d_attention_untouched,True,False,,,"24 attention blocks and all linear layers left unmodified, as published"
+W5e_forward_deviation_bounded,True,True,4.76837158203125e-07,0.01,largest per-module forward deviation any rewrite introduced: 4.77e-07
+W5f_rlens_differs_from_jlens,True,True,1.1967916802624365,0.001,"relative Frobenius difference across 23 layers: min 6.004e-02, max 1.197e+00"
+W6_build_repeatable,True,True,0.915060818195343,0.9,worst per-layer cosine between disjoint-half fits: 0.9151 at layer 0 (mean 0.9795)
+W6_build_repeatable,True,True,0.9766468405723572,0.9,worst per-layer cosine between disjoint-half fits: 0.9766 at layer 0 (mean 0.9926)
+W7_ascii_face[j-lens],False,False,48.0,25.0,best rank for 'nose' is 48 at layer 21 (final-layer rank 51)
+W7_ascii_face[r-lens],False,False,51.0,25.0,best rank for 'nose' is 51 at layer 22 (final-layer rank 51)
+W7_ascii_face[logit-lens],False,False,51.0,25.0,best rank for 'nose' is 51 at layer 22 (final-layer rank 51)
