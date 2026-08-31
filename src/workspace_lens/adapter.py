@@ -87,6 +87,7 @@ def load_lens_model(
     dtype: torch.dtype = torch.bfloat16,
     device: str = "cuda",
     compile_blocks: bool = False,
+    force_bos: bool = True,
 ):
     """Load a registry model and wrap it for the released `jlens` estimator.
 
@@ -110,6 +111,7 @@ def load_lens_model(
     hf_model.eval()
 
     lens_model = jlens.from_hf(hf_model, tokenizer, force_bos=True)
+    bos_forced = _force_bos_prefix(lens_model, tokenizer) if force_bos else False
     if len(lens_model.layers) != cfg.n_layers:
         raise RuntimeError(
             f"registry says {name} has {cfg.n_layers} layers but the loaded model "
@@ -126,6 +128,7 @@ def load_lens_model(
         "vocab_size": int(hf_model.get_output_embeddings().weight.shape[0]),
         "tokenizer_class": type(tokenizer).__name__,
         "bos_prepended": _bos_is_prepended(lens_model, tokenizer),
+        "bos_forced": bos_forced,
         "training_mode": bool(hf_model.training),
         "any_param_requires_grad": any(p.requires_grad
                                        for p in hf_model.parameters()),
@@ -142,20 +145,62 @@ def load_lens_model(
 
 
 def _bos_is_prepended(lens_model, tokenizer) -> bool:
-    """Is a BOS token actually the first id? Recorded, not assumed.
+    """Is a BOS token actually the first id? Measured, never assumed.
 
     `jlens.from_hf(force_bos=True)` sets `tokenizer.add_bos_token`, which the
     reference implementation itself warns "may have no effect for some
-    fast-tokenizer configurations" — and this repository loads deepseek through
-    `PreTrainedTokenizerFast`, one of those configurations. Whether the fitting
-    corpus carries an attention-sink BOS changes the residual statistics the
-    Jacobian is averaged over, so it goes in the provenance either way.
+    fast-tokenizer configurations". DeepSeek-Coder loaded through
+    `PreTrainedTokenizerFast` — which this repository does deliberately, because
+    `AutoTokenizer` mangles code on transformers 5.x — is exactly one of those:
+    the flag is set and no BOS appears. Whether the fitting corpus carries an
+    attention-sink BOS changes the residual statistics the Jacobian averages
+    over, so this is checked rather than trusted.
     """
     bos = getattr(tokenizer, "bos_token_id", None)
     if bos is None:
         return False
     ids = lens_model.encode("def f():\n    return 1\n", max_length=32)
     return bool(ids[0, 0].item() == bos)
+
+
+def _force_bos_prefix(lens_model, tokenizer) -> bool:
+    """Actually prepend BOS when the tokenizer flag failed to, and say so.
+
+    This is making the released adapter's own intent hold, not departing from
+    it. `from_hf` defaults to `force_bos=True`; DeepSeek-Coder's shipped
+    `tokenizer_config.json` sets `add_bos_token: true`; the reference
+    implementation warns that "raw-text prompts are degraded without an
+    attention-sink BOS". All three agree the model should see one, and only a
+    fast-tokenizer loading quirk prevents it — so the encode path prepends the
+    id directly.
+
+    `max_length` is reduced by one before delegating, so the prompt still ends
+    up at exactly the recipe's token budget rather than one over it.
+
+    Returns True only if a BOS is now really there, so `bos_prepended` in the
+    provenance stays a measurement and never becomes a claim.
+    """
+    bos = getattr(tokenizer, "bos_token_id", None)
+    if bos is None or _bos_is_prepended(lens_model, tokenizer):
+        return False
+
+    original_encode = lens_model.encode
+
+    def encode(text: str, *, max_length: int = 512) -> torch.Tensor:
+        ids = original_encode(text, max_length=max(max_length - 1, 1))
+        if ids.shape[1] and int(ids[0, 0]) == bos:
+            return ids
+        prefix = torch.full((1, 1), bos, dtype=ids.dtype, device=ids.device)
+        return torch.cat([prefix, ids], dim=1)
+
+    lens_model.encode = encode
+    if not _bos_is_prepended(lens_model, tokenizer):
+        raise RuntimeError(
+            "could not prepend a BOS token; the lens would be fitted on residual "
+            "statistics the model never sees at inference"
+        )
+    logger.info("BOS %s prepended explicitly (the tokenizer flag had no effect)", bos)
+    return True
 
 
 def _dropout_active(hf_model) -> bool:

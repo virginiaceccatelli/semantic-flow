@@ -81,6 +81,7 @@ def check_w1(corpus, eval_prompts: Sequence[str]) -> Check:
 MATCHED_FIELDS = (
     ("model", "hf_id"), ("model", "dtype"), ("model", "n_layers"),
     ("model", "d_model"), ("model", "bos_prepended"),
+    ("model", "bos_forced"),
     ("recipe", "target_layer"), ("recipe", "source_layers"),
     ("recipe", "skip_first"), ("recipe", "max_seq_len"),
     ("corpus", "digest"), ("corpus", "n_prompts"),

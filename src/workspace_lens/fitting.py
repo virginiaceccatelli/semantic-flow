@@ -137,6 +137,13 @@ def fit_lens(
     arch = describe_architecture(hf_model)
     started = time.time()
 
+    # The released `_atomic_save` writes straight to `checkpoint_path` and does
+    # not create parents, and `save_lens` only makes the directory once the fit
+    # has finished. Without this the first checkpoint write — prompt 10 of 100,
+    # after minutes of real work — dies on a missing directory.
+    if checkpoint_path is not None:
+        Path(checkpoint_path).parent.mkdir(parents=True, exist_ok=True)
+
     # The rules must be live for the FORWARD pass: the estimator retains that
     # graph and every backward walks it.
     if kind == RLENS_KIND:

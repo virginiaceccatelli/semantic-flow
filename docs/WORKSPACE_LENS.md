@@ -349,12 +349,18 @@ Complete list. Everything not here follows the published choices.
 3. **`n_prompts = 100`** rather than the released 25 or the paper's 1000 (§3),
    at the paper's own stated saturation point. `--n-prompts` reproduces either,
    and 25 is a strict prefix of 100.
-4. **BOS prepending is recorded, not assumed.** `jlens.from_hf(force_bos=True)`
-   sets `tokenizer.add_bos_token`, which the reference implementation itself
-   warns "may have no effect for some fast-tokenizer configurations" — and this
-   repository loads DeepSeek through `PreTrainedTokenizerFast`, one of those. The
-   adapter measures whether a BOS is actually the first id and writes the answer
-   into provenance, since it changes the residual statistics being averaged.
+4. **BOS is prepended explicitly**, and the fact is recorded either way.
+   `jlens.from_hf(force_bos=True)` sets `tokenizer.add_bos_token`, which the
+   reference implementation itself warns "may have no effect for some
+   fast-tokenizer configurations". DeepSeek-Coder is one: the first cluster run
+   recorded `bos_prepended: False` even though the checkpoint's own
+   `tokenizer_config.json` sets `add_bos_token: true` and the reference warns
+   that raw-text prompts are "degraded without an attention-sink BOS". The
+   adapter therefore prepends the id in the encode path and re-measures;
+   provenance carries both `bos_prepended` and `bos_forced`, and gate W2 requires
+   the J and R lenses to agree on both. This makes the released adapter's own
+   intent hold rather than departing from it — but it is a line of our code
+   rather than of theirs, so it is listed here.
 5. **Forward invariance is algebraic, not bitwise.** The released artifacts say
    "bit-identical"; that holds when the rules are fused into the kernels. Here the
    half-rule reassociates one multiply and the norm rules recompute statistics in

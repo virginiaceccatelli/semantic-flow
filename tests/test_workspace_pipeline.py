@@ -474,3 +474,63 @@ def test_a_missing_lens_names_the_stage_and_distinguishes_the_three_causes(tmp_p
             load_lens(directory)
         except FileNotFoundError as exc:
             assert "201_lens_fit.py" in str(exc) and "--check-env" in str(exc)
+
+
+def test_fitting_creates_the_checkpoint_directory_before_the_first_write(tmp_path):
+    """The released `_atomic_save` does not create parents, and `save_lens`
+    only makes the directory after the fit finishes — so a checkpoint path in a
+    fresh tree used to kill the run at prompt 10, after minutes of real work."""
+    model = TinyRMSDecoder(n_layers=4)
+    recipe = LensRecipe.released(4, skip_first=2, max_seq_len=64)
+    info = {"hf_id": "tests/tiny", "dtype": "float32", "n_layers": 4,
+            "d_model": model.d_model, "bos_prepended": True, "device": "cpu"}
+    checkpoint = tmp_path / "does" / "not" / "exist" / "fit_checkpoint.pt"
+    assert not checkpoint.parent.exists()
+
+    result = fit_lens(model, _corpus(), recipe, JLENS_KIND, info, dim_batch=4,
+                      checkpoint_path=checkpoint, checkpoint_every=1)
+    assert checkpoint.exists()
+    assert result.lens.n_prompts == len(PROMPTS)
+
+
+# ── BOS ──────────────────────────────────────────────────────────────────────
+
+def test_bos_is_prepended_when_the_tokenizer_flag_does_not_take():
+    """The cluster run recorded `bos_prepended: False` for DeepSeek-Coder.
+
+    Its own tokenizer_config sets `add_bos_token: true` and the released adapter
+    defaults to `force_bos=True`, so the model is meant to see an attention-sink
+    BOS; only the fast-tokenizer load path drops it. The encode wrapper restores
+    it, and keeps the sequence inside the recipe's token budget.
+    """
+    from src.workspace_lens.adapter import _bos_is_prepended, _force_bos_prefix
+
+    model = TinyRMSDecoder(n_layers=3)
+    tokenizer = model.tokenizer
+
+    class NoBos:
+        """The failure mode: a tokenizer that ignores add_bos_token."""
+        bos_token_id = tokenizer.bos_token_id
+        add_bos_token = True
+
+    original_encode = model.encode
+    model.encode = lambda text, *, max_length=512: original_encode(
+        text, max_length=max_length)[:, 1:]          # strip the BOS
+
+    assert not _bos_is_prepended(model, NoBos)
+    assert _force_bos_prefix(model, NoBos) is True
+    assert _bos_is_prepended(model, NoBos)
+
+    ids = model.encode("some source text here", max_length=16)
+    assert int(ids[0, 0]) == NoBos.bos_token_id
+    assert ids.shape[1] <= 16, "the prefix must not push the prompt over budget"
+
+
+def test_forcing_bos_is_a_no_op_when_it_is_already_there():
+    from src.workspace_lens.adapter import _bos_is_prepended, _force_bos_prefix
+
+    model = TinyRMSDecoder(n_layers=3)
+    assert _bos_is_prepended(model, model.tokenizer)
+    assert _force_bos_prefix(model, model.tokenizer) is False
+    before = model.encode("hello world", max_length=32)
+    assert int(before[0, 0]) == model.tokenizer.bos_token_id
