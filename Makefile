@@ -137,7 +137,7 @@ JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
 # because it is the paper's own saturation point and still affordable at 6.7B.
 LENS_N ?= 100
 LENS_CORPUS_KIND ?= pile
-LENS_CORPUS := data/lens_corpus/pile10k-n$(LENS_N)-seed0.jsonl
+LENS_CORPUS := data/lens_corpus/pile10k-n$(LENS_N).jsonl
 LENS_SUITE := data/lens_eval/code-semantics-$(MODEL).jsonl
 LENS_DIR := results/workspace_lens/$(MODEL)
 LENS_DIM_BATCH ?= 16

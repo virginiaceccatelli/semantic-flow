@@ -44,7 +44,9 @@ N_PARAMS = {"deepseek-coder-1.3b": 1.35e9, "deepseek-coder-6.7b": 6.74e9,
 @app.command()
 def main(
     model: str = typer.Option(...),
-    corpus: Path = typer.Option(..., help="Corpus jsonl from stage 200"),
+    corpus: Optional[Path] = typer.Option(None, help="Corpus jsonl from stage 200"),
+    n_prompts: Optional[int] = typer.Option(None, help="Sizing only: assume this many "
+                                            "prompts when --dry-run has no corpus yet"),
     output: Optional[Path] = typer.Option(None, help="Default results/workspace_lens/{model}"),
     kinds: str = typer.Option("j-lens,r-lens", help="Which lenses to fit"),
     dim_batch: int = typer.Option(16, help="Output dims per backward; memory only"),
@@ -69,11 +71,24 @@ def main(
     t0 = time.time()
     kind_list = [k.strip() for k in kinds.split(",") if k.strip()]
     cfg = ModelConfig.from_registry(model)
-    corpus_obj = Corpus.load(corpus)
 
+    # A sizing run must not require the artifact it is sizing for: the whole
+    # point of --dry-run is to decide whether to commit to the pipeline at all,
+    # and that decision comes before stage 200 has necessarily been run.
     if dry_run:
-        _print_cost(model, cfg, corpus_obj, dim_batch, max_seq_len, kind_list, halves)
+        n = n_prompts
+        if n is None and corpus is not None and Path(corpus).exists():
+            n = len(Corpus.load(corpus).prompts)
+        if n is None:
+            n = 100
+            console.print("[yellow]no corpus on disk; sizing for --n-prompts "
+                          f"{n} (stage 200's default)[/yellow]")
+        _print_cost(model, cfg, n, dim_batch, max_seq_len, kind_list, halves)
         raise typer.Exit(0)
+
+    if corpus is None:
+        raise typer.BadParameter("--corpus is required unless --dry-run is set")
+    corpus_obj = Corpus.load(corpus)
 
     torch_dtype = {"bfloat16": torch.bfloat16, "float16": torch.float16,
                    "float32": torch.float32}[dtype]
@@ -82,7 +97,8 @@ def main(
     recipe = resolve_recipe(lens_model, skip_first=skip_first,
                             max_seq_len=max_seq_len, target_layer=target_layer)
 
-    _print_cost(model, cfg, corpus_obj, dim_batch, max_seq_len, kind_list, halves)
+    _print_cost(model, cfg, len(corpus_obj.prompts), dim_batch, max_seq_len,
+                kind_list, halves)
     console.print(f"recipe: target L{recipe.target_layer} of {recipe.n_layers}, "
                   f"sources L0-L{recipe.source_layers[-1]}, skip_first={recipe.skip_first}, "
                   f"max_seq_len={recipe.max_seq_len}")
@@ -125,13 +141,14 @@ def main(
                   "corpus": corpus_obj.as_dict(), "lenses": written})
 
 
-def _print_cost(model, cfg, corpus_obj, dim_batch, max_seq_len, kinds, halves):
+def _print_cost(model, cfg, n_prompts, dim_batch, max_seq_len, kinds, halves):
     from src.workspace_lens.fitting import estimate_cost
 
     n_lenses = len(kinds) * (3 if halves else 1)
     est = estimate_cost(cfg.d_model, cfg.n_layers, N_PARAMS.get(model, 3e9),
-                        len(corpus_obj.prompts), dim_batch, max_seq_len)
-    table = Table(title=f"cost estimate — {model}, {n_lenses} lens fit(s)")
+                        n_prompts, dim_batch, max_seq_len)
+    table = Table(title=f"cost estimate — {model}, {n_lenses} lens fit(s), "
+                    f"{n_prompts} prompts")
     table.add_column("quantity"); table.add_column("value", justify="right")
     table.add_row("backward passes / lens", f"{est['backward_passes']:,}")
     table.add_row("total work / lens", f"{est['total_pflops']:.1f} PFLOP")

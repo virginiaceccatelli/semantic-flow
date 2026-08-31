@@ -857,12 +857,16 @@ compare their tables with these.
 python scripts/200_lens_corpus.py --model deepseek-coder-1.3b --n-prompts 100
 ```
 
-Downloads `NeelNanda/pile-10k` once and writes
-`data/lens_corpus/pile10k-n100-seed0.jsonl` plus
-`data/lens_eval/code-semantics-{model}.jsonl`. Both files carry a content digest
-that later stages check, so an edited corpus fails loudly rather than producing a
-quietly different lens. `--corpus code` builds the CodeSearchNet sensitivity arm
-instead and needs no network.
+**`data/lens_corpus/pile10k-n100.jsonl` and the three probe suites are already
+committed**, so this stage is only needed to change `n`, to rebuild for a model
+that is not in `data/lens_eval/`, or to build the `--corpus code` sensitivity
+arm. A fitting run on a cluster with no network works from the checkout alone.
+
+When it does run, it downloads `NeelNanda/pile-10k` once (via `datasets`, a
+parquet read, or the HF datasets-server API — all three return identical rows)
+and writes the corpus plus `data/lens_eval/code-semantics-{model}.jsonl`. Both
+files carry a content digest that later stages verify, so an edited corpus fails
+loudly rather than producing a quietly different lens.
 
 The suite adapts to the tokenizer: it selects the integer literals the model
 keeps whole and drops concepts it splits, reporting the counts. Both code
@@ -875,14 +879,14 @@ tokenizers here segment every multi-digit number, so the usable literal pool is
 
 ```bash
 python scripts/201_lens_fit.py --model deepseek-coder-6.7b \
-    --corpus data/lens_corpus/pile10k-n100-seed0.jsonl --dim-batch 16 --dry-run
+    --corpus data/lens_corpus/pile10k-n100.jsonl --dim-batch 16 --dry-run
 ```
 
 Then:
 
 ```bash
 python scripts/201_lens_fit.py --model deepseek-coder-1.3b \
-    --corpus data/lens_corpus/pile10k-n100-seed0.jsonl \
+    --corpus data/lens_corpus/pile10k-n100.jsonl \
     --dim-batch 16 --dtype bfloat16 --halves
 ```
 
@@ -905,7 +909,7 @@ Traps, in the order they bite:
 
 ```bash
 python scripts/202_lens_validate.py --model deepseek-coder-1.3b \
-    --corpus data/lens_corpus/pile10k-n100-seed0.jsonl \
+    --corpus data/lens_corpus/pile10k-n100.jsonl \
     --suite data/lens_eval/code-semantics-deepseek-coder-1.3b.jsonl
 ```
 

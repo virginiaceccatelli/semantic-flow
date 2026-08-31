@@ -137,9 +137,18 @@ written into each lens's `provenance` and its `lens_meta.json` sidecar.
 `n_prompts = 100` rather than the released 25 or the paper's 1000: 25 is what the
 released *artifacts* used, 1000 is what the paper's own lenses used, and the paper
 states quality saturates in between. 100 sits at the saturation point and keeps
-the 6.7B fit affordable. The corpus builder draws rows in a fixed shuffled order,
-so an `n = 25` corpus is a strict prefix of the `n = 100` one and the two are
-directly comparable.
+the 6.7B fit affordable.
+
+The corpus is a **prefix in dataset order**, not a shuffled sample, and the
+resulting file is committed at `data/lens_corpus/pile10k-n100.jsonl` (digest
+`483c1e1743d1`). Both choices are about reproducibility. Three different loaders
+can supply pile-10k rows depending on what a host has installed — `datasets`, a
+parquet read, or the HF datasets-server API — and only document order is
+guaranteed identical across all three; a shuffle would make the lens depend on
+which loader happened to be available, with a quietly differing digest as the
+only symptom. All three paths were checked to return byte-identical rows.
+Committing the file means a fitting run needs no network, and `n = 25` is a
+strict prefix of `n = 100` by construction.
 
 ### 3.1 The corpus is independent, and that is checked
 
@@ -338,7 +347,8 @@ Complete list. Everything not here follows the published choices.
 2. **The half-rule is inapplicable to StarCoder2-3B** (§4.2). No gate exists.
    Recorded as `"n/a"`, distinct from `"off"`.
 3. **`n_prompts = 100`** rather than the released 25 or the paper's 1000 (§3),
-   at the paper's own stated saturation point. `--n-prompts` reproduces either.
+   at the paper's own stated saturation point. `--n-prompts` reproduces either,
+   and 25 is a strict prefix of 100.
 4. **BOS prepending is recorded, not assumed.** `jlens.from_hf(force_bos=True)`
    sets `tokenizer.add_bos_token`, which the reference implementation itself
    warns "may have no effect for some fast-tokenizer configurations" — and this

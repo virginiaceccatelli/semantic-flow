@@ -58,7 +58,7 @@ if (! $?DIM_BATCH) setenv DIM_BATCH 16
 # and reporting it once on the cheapest model is the honest way to buy it.
 if (! $?HALVES)    setenv HALVES "--no-halves"
 
-set CORPUS = "data/lens_corpus/pile10k-n${LENS_N}-seed0.jsonl"
+set CORPUS = "data/lens_corpus/pile10k-n${LENS_N}.jsonl"
 set SUITE  = "data/lens_eval/code-semantics-${MODEL}.jsonl"
 set OUT    = "results/workspace_lens/${MODEL}"
 

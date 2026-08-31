@@ -13,6 +13,7 @@ exercised on every commit rather than only on a GPU run.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 import torch
@@ -400,3 +401,45 @@ def test_cost_estimate_is_independent_of_dim_batch_in_total_work():
     b = estimate_cost(2048, 24, 1.35e9, 100, dim_batch=16)
     assert a["total_pflops"] == pytest.approx(b["total_pflops"], rel=1e-9)
     assert b["backward_passes"] == a["backward_passes"] // 2
+
+
+# ── the committed corpus ─────────────────────────────────────────────────────
+
+def test_the_committed_pile_corpus_loads_and_matches_its_digest():
+    """The fitting corpus ships in-tree, so a run needs no network at all.
+
+    Loading it re-derives the digest from the prompt texts and compares against
+    the header, so an edited or truncated file fails here rather than producing
+    a quietly different lens three stages later.
+    """
+    path = Path(__file__).parent.parent / "data/lens_corpus/pile10k-n100.jsonl"
+    if not path.exists():
+        pytest.skip("pile corpus not built in this checkout")
+    c = corpus_mod.Corpus.load(path)
+    assert len(c.prompts) == 100
+    assert c.dataset_id == corpus_mod.PILE_DATASET
+    assert all(len(p) >= corpus_mod.MIN_CHARS for p in c.prompts)
+    # Row ids are ascending: the corpus is a prefix in dataset order, which is
+    # what makes every loader path produce the identical file.
+    assert list(c.row_ids) == sorted(c.row_ids)
+
+
+def test_the_committed_corpus_is_disjoint_from_every_shipped_probe_suite():
+    """Gate W1's precondition, checked at test time on the real artifacts."""
+    root = Path(__file__).parent.parent
+    corpus_path = root / "data/lens_corpus/pile10k-n100.jsonl"
+    suites = sorted((root / "data/lens_eval").glob("*.jsonl"))
+    if not corpus_path.exists() or not suites:
+        pytest.skip("corpus or suites not built in this checkout")
+    c = corpus_mod.Corpus.load(corpus_path)
+    for suite_path in suites:
+        suite = evalsuite.Suite.load(suite_path)
+        evidence = corpus_mod.assert_disjoint_from(c, suite.prompts())
+        assert evidence["n_exact_overlap"] == 0
+        assert evidence["n_substring_overlap"] == 0
+
+
+def test_a_missing_corpus_names_the_stage_that_builds_it():
+    """A bare FileNotFoundError sent the first cluster run looking in the wrong place."""
+    with pytest.raises(FileNotFoundError, match="200_lens_corpus"):
+        corpus_mod.Corpus.load("data/lens_corpus/does-not-exist.jsonl")

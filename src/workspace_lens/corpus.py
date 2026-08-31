@@ -102,6 +102,17 @@ class Corpus:
 
     @classmethod
     def load(cls, path: str | Path) -> "Corpus":
+        path = Path(path)
+        if not path.exists():
+            raise FileNotFoundError(
+                f"no fitting corpus at {path}.\n"
+                f"  Corpora are built by stage 200, which is CPU-only and takes "
+                f"seconds:\n"
+                f"      python scripts/200_lens_corpus.py --model <model> "
+                f"--n-prompts <n>\n"
+                f"  Add `--corpus code` to build the CodeSearchNet sensitivity "
+                f"arm instead, which needs no network."
+            )
         rows, meta = [], None
         with open(path) as f:
             for line in f:
@@ -135,25 +146,26 @@ class Corpus:
 
 # ── builders ─────────────────────────────────────────────────────────────────
 
-def pile_prompts(n: int = 100, seed: int = 0, max_chars: int = 4000) -> Corpus:
-    """`n` documents from `NeelNanda/pile-10k`, the released artifacts' corpus.
+def pile_prompts(n: int = 100, max_chars: int = 4000) -> Corpus:
+    """The first `n` usable documents of `NeelNanda/pile-10k`, in dataset order.
 
-    Rows are drawn in a fixed shuffled order rather than by taking the first
-    `n`, so the n=25 released recipe and a larger n share a prefix and the
-    larger run is a strict superset of the smaller one. Documents shorter than
-    `MIN_CHARS` are skipped (the estimator raises on prompts that leave no
-    valid positions after `skip_first`); `max_chars` only bounds the tokenizer's
-    work, since the estimator truncates to `max_seq_len` tokens anyway.
+    In dataset order, not shuffled, and that is deliberate. Three different
+    loaders can supply these rows depending on what is installed on the machine
+    (`datasets`, a parquet read, or the datasets-server API), and only document
+    order is guaranteed to be the same across all three. A shuffle would make
+    the corpus — and therefore the lens — depend on which loader happened to be
+    available, and the only symptom would be a digest that quietly differs
+    between two machines that both "used pile-10k". pile-10k is already a random
+    sample of the Pile, so taking a prefix costs nothing, and it makes the n=25
+    released recipe a strict prefix of any larger n by construction.
+
+    Documents shorter than `MIN_CHARS` are skipped (the estimator raises on
+    prompts that leave no valid positions after `skip_first`); `max_chars` only
+    bounds the tokenizer's work, since the estimator truncates to `max_seq_len`
+    tokens anyway.
     """
-    import random
-
-    rows = _load_pile_rows()
-    order = list(range(len(rows)))
-    random.Random(seed).shuffle(order)
-
     prompts, row_ids = [], []
-    for idx in order:
-        text = rows[idx]
+    for idx, text in _iter_pile_rows(limit=None):
         if len(text) < MIN_CHARS:
             continue
         prompts.append(text[:max_chars])
@@ -162,35 +174,95 @@ def pile_prompts(n: int = 100, seed: int = 0, max_chars: int = 4000) -> Corpus:
             break
     if len(prompts) < n:
         raise RuntimeError(f"only {len(prompts)} usable pile-10k rows for n={n}")
-    return Corpus(name=f"pile10k-n{n}-seed{seed}", dataset_id=PILE_DATASET,
+    return Corpus(name=f"pile10k-n{n}", dataset_id=PILE_DATASET,
                   prompts=tuple(prompts), row_ids=tuple(row_ids))
 
 
-def _load_pile_rows() -> list[str]:
-    """pile-10k texts, via `datasets` if present and the parquet file if not."""
+def _iter_pile_rows(limit: Optional[int] = None):
+    """`(row_index, text)` in dataset order, from whichever loader is available.
+
+    Three paths, tried in order, all yielding the same rows in the same order:
+
+      1. `datasets.load_dataset` — the normal case;
+      2. the repo's parquet via `huggingface_hub` + `pyarrow` — the filename
+         carries a content hash, so it is resolved from the file listing rather
+         than guessed;
+      3. the HF datasets-server rows API — needs nothing beyond
+         `huggingface_hub`, and is enough for the corpus sizes this repository
+         uses (100 prompts is a handful of paged requests).
+
+    Path 3 exists because a GPU host with neither `datasets` nor `pyarrow`
+    installed is a normal situation and should not block a run.
+    """
     try:
         from datasets import load_dataset
 
         ds = load_dataset(PILE_DATASET, split="train")
-        return [str(t) for t in ds["text"]]
+        for i, text in enumerate(ds["text"]):
+            yield i, str(text)
+        return
     except Exception as exc:                                   # noqa: BLE001
-        logger.info("datasets unavailable (%s); reading the parquet directly", exc)
-
-    from huggingface_hub import hf_hub_download
+        logger.info("datasets unavailable (%s); trying the parquet", exc)
 
     try:
         import pyarrow.parquet as pq
-    except ImportError as exc:                                  # noqa: BLE001
-        raise RuntimeError(
-            "Building the pile-10k fitting corpus needs either `datasets` or "
-            "`pyarrow`. Install one of them, or build the corpus once on a "
-            "machine that has it and copy data/lens_corpus/*.jsonl across — the "
-            "file is self-describing and refits byte-identically."
-        ) from exc
+        from huggingface_hub import HfApi, hf_hub_download
 
-    path = hf_hub_download(PILE_DATASET, "data/train-00000-of-00001-*.parquet",
-                           repo_type="dataset")
-    return [str(t) for t in pq.read_table(path)["text"].to_pylist()]
+        files = [f for f in HfApi().list_repo_files(PILE_DATASET, repo_type="dataset")
+                 if f.endswith(".parquet")]
+        if not files:
+            raise RuntimeError(f"no parquet files in {PILE_DATASET}")
+        path = hf_hub_download(PILE_DATASET, sorted(files)[0], repo_type="dataset")
+        for i, text in enumerate(pq.read_table(path)["text"].to_pylist()):
+            yield i, str(text)
+        return
+    except Exception as exc:                                   # noqa: BLE001
+        logger.info("parquet read unavailable (%s); trying the rows API", exc)
+
+    yield from _iter_pile_rows_via_api(limit=limit)
+
+
+def _iter_pile_rows_via_api(limit: Optional[int] = None, page: int = 100):
+    """Dataset rows over HTTP, for hosts with no parquet reader.
+
+    Uses `huggingface_hub`'s own session rather than `urllib`: it carries the
+    certifi bundle, the proxy settings and the token this repository already
+    relies on everywhere else, and a bare `urllib.request` fails with an SSL
+    verification error on stock macOS Python — a fallback that only works on
+    some machines is not a fallback.
+
+    Deliberately capped: this is a way to build a 100-prompt corpus on a host
+    that is missing `datasets` and `pyarrow`, not a way to stream 10k documents
+    through a public API. It stops at `_API_ROW_CAP` rows and says so.
+    """
+    from huggingface_hub.utils import get_session
+
+    session = get_session()
+    fetched = 0
+    cap = limit if limit is not None else _API_ROW_CAP
+    while fetched < cap:
+        response = session.get(
+            "https://datasets-server.huggingface.co/rows",
+            params={"dataset": PILE_DATASET, "config": "default", "split": "train",
+                    "offset": fetched, "length": min(page, cap - fetched)},
+            timeout=60)
+        response.raise_for_status()
+        rows = response.json().get("rows", [])
+        if not rows:
+            return
+        for row in rows:
+            yield int(row["row_idx"]), str(row["row"]["text"])
+        fetched += len(rows)
+    logger.warning(
+        "stopped at the %d-row datasets-server cap. If a larger corpus is "
+        "needed, install `datasets` or `pyarrow` on this host, or build the "
+        "corpus where one of them is available and copy the jsonl across — it "
+        "is self-describing and refits byte-identically.", cap)
+
+
+#: How far the HTTP fallback will page. 2000 rows comfortably covers a
+#: 1000-prompt corpus after the MIN_CHARS filter.
+_API_ROW_CAP = 2000
 
 
 def code_prompts(n: int = 100, seed: int = 0,
@@ -280,12 +352,17 @@ def assert_disjoint_from(corpus: Corpus, eval_prompts: Sequence[str],
 
 def build(kind: str, n: int, seed: int = 0,
           out_dir: str | Path = DEFAULT_CORPUS_DIR) -> tuple[Corpus, Path]:
-    """Build (or reuse) a named corpus file and return it with its path."""
-    builders = {"pile": pile_prompts, "code": code_prompts}
-    if kind not in builders:
-        raise ValueError(f"unknown corpus kind {kind!r}; expected one of {sorted(builders)}")
+    """Build (or reuse) a named corpus file and return it with its path.
+
+    `seed` applies to the `code` arm only. The pile arm takes a prefix in
+    dataset order so that every loader path produces the identical corpus —
+    see `pile_prompts`.
+    """
+    if kind not in ("pile", "code"):
+        raise ValueError(f"unknown corpus kind {kind!r}; expected 'pile' or 'code'")
     out_dir = Path(out_dir)
-    corpus = builders[kind](n=n, seed=seed)
+    corpus = (pile_prompts(n=n) if kind == "pile"
+              else code_prompts(n=n, seed=seed))
     path = out_dir / f"{corpus.name}.jsonl"
     if path.exists():
         existing = Corpus.load(path)
