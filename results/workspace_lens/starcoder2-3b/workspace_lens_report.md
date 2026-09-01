@@ -23,7 +23,7 @@ fit under the published RelP backward rules.
 
 | check | required | result | detail |
 |---|---|---|---|
-| W1_corpus_independent | yes | PASS | 100 fitting prompts from NeelNanda/pile-10k (digest 483c1e1743d1), 160 eval prompts, 0 exact and 0 substring overlaps at 120 chars |
+| W1_corpus_independent | yes | PASS | 100 fitting prompts from NeelNanda/pile-10k (digest 483c1e1743d1), 280 eval prompts, 0 exact and 0 substring overlaps at 120 chars |
 | W2_matched_pair | yes | PASS | matched on model.hf_id, model.dtype, model.n_layers, model.d_model, model.bos_prepended, model.bos_forced, model.bos_declared, recipe.target_layer, recipe.source_layers, recipe.skip_first, recipe.max_seq_len, corpus.digest, corpus.n_prompts, dim_batch, n_prompts_used |
 | W3_readout_identity_anchor | yes | PASS | max |delta logit| = 0.0000 on a scale of 25.8; top-1 agreement 1.000 over 28 positions |
 | W3b_unembed_is_model_tail | yes | PASS | max relative logit difference 2.35e-02 against the causal-LM head (tolerance 6.2e-02 is one rounding step of the compute dtype) |
