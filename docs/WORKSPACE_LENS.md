@@ -352,9 +352,15 @@ are recorded either way.
 Complete list. Everything not here follows the published choices.
 
 1. **LayerNorm LN-rule on StarCoder2-3B** (§4.2). The published rule is stated
-   for RMSNorm. The analogue detaches the same denominator and leaves the
-   centring and the bias alone. Labelled in provenance as
-   `ln_rule: "layernorm-adaptation"`. DeepSeek-Coder is unaffected.
+   for RMSNorm, so the default StarCoder2 R-lens is **not** an exact
+   implementation of the published dense recipe. The analogue detaches the same
+   denominator and leaves the centring and the bias alone; it is labelled in
+   provenance as `ln_rule: "layernorm-adaptation"`. Because "how much does the
+   adaptation change?" is a measurable question rather than an arguable one,
+   `make lens-fit-paperminimal MODEL=starcoder2-3b` fits the arm that IS exact —
+   identity-rule only, LN-rule off — into a `-paperminimal` directory, so the
+   two can be read side by side. DeepSeek-Coder is unaffected: all three
+   published rules apply to it verbatim.
 2. **The half-rule is inapplicable to StarCoder2-3B** (§4.2). No gate exists.
    Recorded as `"n/a"`, distinct from `"off"`.
 3. **`n_prompts = 100`** rather than the released 25 or the paper's 1000 (§3),

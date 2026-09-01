@@ -61,7 +61,8 @@ def main(
 
     from src.workspace_lens.ablation import (make_erase, make_inject,
                                              norm_matched_random,
-                                             read_direction, run_ablation)
+                                             read_direction, run_ablation,
+                                             scaled_random_edit, stable_seed)
     from src.workspace_lens.adapter import load_lens_model
     from src.workspace_lens.evalsuite import (Suite, resolve_position,
                                               target_token_ids)
@@ -124,10 +125,17 @@ def main(
                 "jlens": read_direction(lens_j, layer, target_ids, gain, W_U),
                 "rlens": read_direction(lens_r, layer, target_ids, gain, W_U),
                 "logit": read_direction(None, layer, target_ids, gain, W_U),
-                "offtarget": read_direction(lens_j, layer, distractor_ids, gain, W_U),
+                # One off-target arm per lens: comparing an R-lens result against
+                # a J-lens-derived control is not a controlled comparison.
+                "offtarget_j": read_direction(lens_j, layer, distractor_ids,
+                                              gain, W_U),
+                "offtarget_r": read_direction(lens_r, layer, distractor_ids,
+                                              gain, W_U),
             }
+            seed = stable_seed(item.item_id, layer)
             directions["random"] = norm_matched_random(directions["jlens"],
-                                                       seed=abs(hash(item.item_id)) % 10000)
+                                                       seed=seed)
+            arm_results: dict[str, dict] = {}
             for arm, direction in directions.items():
                 edits = [("erase", make_erase(direction))]
                 if inject_alpha:
@@ -136,16 +144,40 @@ def main(
                 for edit_name, edit in edits:
                     res = run_ablation(lens_model, hf_model, item.prompt, layer,
                                        position, edit, target_ids, distractor_ids)
+                    arm_results[f"{arm}|{edit_name}"] = res
                     rows.append({
                         "model": model, "item_id": item.item_id,
                         "family": item.family, "pair_id": item.pair_id,
-                        "arm": item.arm, "layer": layer, "direction": arm,
-                        "edit": edit_name,
+                        "arm": item.arm, "read": getattr(item, "read", "use"),
+                        "layer": layer, "direction": arm, "edit": edit_name,
                         "clean_logit_diff": clean["logit_diff"],
                         "ablated_logit_diff": res["logit_diff"],
                         "delta_logit_diff": res["logit_diff"] - clean["logit_diff"],
                         "edit_norm_ratio": res["edit_norm_ratio"],
                     })
+
+            # The magnitude-matched control has to come last: it is defined by
+            # how far the J-lens erase actually moved this state, which is only
+            # known once that arm has run.
+            reference = arm_results.get("jlens|erase")
+            if reference is not None:
+                delta_norm = reference["edit_norm_ratio"] * reference["state_norm"]
+                res = run_ablation(
+                    lens_model, hf_model, item.prompt, layer, position,
+                    scaled_random_edit(delta_norm, W_U.shape[1],
+                                       stable_seed(item.item_id, layer, "matched"),
+                                       W_U.device, W_U.dtype),
+                    target_ids, distractor_ids)
+                rows.append({
+                    "model": model, "item_id": item.item_id,
+                    "family": item.family, "pair_id": item.pair_id,
+                    "arm": item.arm, "read": getattr(item, "read", "use"),
+                    "layer": layer, "direction": "random_matched", "edit": "erase",
+                    "clean_logit_diff": clean["logit_diff"],
+                    "ablated_logit_diff": res["logit_diff"],
+                    "delta_logit_diff": res["logit_diff"] - clean["logit_diff"],
+                    "edit_norm_ratio": res["edit_norm_ratio"],
+                })
         if (n + 1) % 10 == 0:
             console.print(f"  {n + 1}/{len(items)} items")
 
@@ -162,15 +194,22 @@ def main(
                      .reset_index())
         summary.to_csv(output / "workspace_lens_ablation_summary.csv", index=False)
 
-        table = Table(title=f"stage 204 — {model}: change in the model's own "
-                            f"logit difference after erasing the read direction")
-        table.add_column("layer", justify="right"); table.add_column("direction")
-        table.add_column("mean delta", justify="right")
-        table.add_column("|edit|/|h|", justify="right")
-        for _, r in summary[summary["edit"] == "erase"].iterrows():
-            table.add_row(str(int(r["layer"])), r["direction"],
-                          f"{r['mean_delta']:+.3f}", f"{r['mean_edit_norm']:.3f}")
+        contrasts = _paired_contrasts(df)
+        contrasts.to_csv(output / "workspace_lens_ablation_contrasts.csv",
+                         index=False)
+
+        table = Table(title=f"stage 204 — {model}: paired contrasts, "
+                            f"95% cluster bootstrap over programs")
+        table.add_column("layer", justify="right"); table.add_column("contrast")
+        table.add_column("mean", justify="right"); table.add_column("95% CI")
+        table.add_column("", justify="center")
+        for _, r in contrasts.iterrows():
+            excl = "*" if (r["lo"] > 0) or (r["hi"] < 0) else ""
+            table.add_row(str(int(r["layer"])), r["contrast"],
+                          f"{r['mean']:+.3f}", f"[{r['lo']:+.3f}, {r['hi']:+.3f}]",
+                          excl)
         console.print(table)
+        console.print("* = the interval excludes zero")
 
     if tables:
         dest = Path("results/tables"); dest.mkdir(parents=True, exist_ok=True)
@@ -182,6 +221,55 @@ def main(
         "inject_alpha": inject_alpha, "dtype": dtype, "device": device,
     }, t0, extra={"n_items": len(items), "layers": layer_list,
                   "layer_source": layer_source})
+
+
+#: The comparisons the causal claim actually rests on. Each is a *paired*
+#: difference on the same programs at the same layer, so program-to-program
+#: variation — which dwarfs the effect — cancels instead of being averaged over.
+CONTRASTS = (
+    ("jlens_vs_offtarget", "jlens", "offtarget_j"),
+    ("rlens_vs_offtarget", "rlens", "offtarget_r"),
+    ("jlens_vs_random_matched", "jlens", "random_matched"),
+    ("rlens_vs_random_matched", "rlens", "random_matched"),
+    ("jlens_vs_logit", "jlens", "logit"),
+    ("rlens_vs_jlens", "rlens", "jlens"),
+)
+
+
+def _paired_contrasts(df, n_boot: int = 2000, seed: int = 42):
+    """Paired cluster-bootstrap CIs for every contrast, at every layer.
+
+    Clustered on `pair_id` where the design has one (the binding arms are two
+    measurements of one construction, so resampling them independently would
+    understate the uncertainty) and on `item_id` otherwise. Rows are aligned by
+    item before differencing, so an item missing from one arm drops from that
+    contrast rather than shifting it.
+    """
+    import pandas as pd
+
+    from src.analysis.bootstrap import paired_cluster_bootstrap_ci
+
+    erase = df[df["edit"] == "erase"]
+    out = []
+    for layer in sorted(erase["layer"].unique()):
+        at = erase[erase["layer"] == layer]
+        wide = at.pivot_table(index=["item_id", "pair_id", "family"],
+                              columns="direction", values="delta_logit_diff")
+        for name, a, b in CONTRASTS:
+            if a not in wide.columns or b not in wide.columns:
+                continue
+            paired = wide[[a, b]].dropna()
+            if len(paired) < 3:
+                continue
+            groups = [pid if isinstance(pid, str) and pid else iid
+                      for iid, pid, _ in paired.index]
+            ci = paired_cluster_bootstrap_ci(paired[a].to_numpy(),
+                                             paired[b].to_numpy(),
+                                             groups, n_boot=n_boot, seed=seed)
+            out.append({"layer": int(layer), "contrast": name, "n": len(paired),
+                        "mean": ci.point, "lo": ci.lo, "hi": ci.hi,
+                        "excludes_zero": bool(ci.lo > 0 or ci.hi < 0)})
+    return pd.DataFrame(out)
 
 
 def _final_norm_gain(lens_model, W_U):

@@ -62,7 +62,27 @@ import torch
 
 logger = logging.getLogger(__name__)
 
-ARMS = ("jlens", "rlens", "logit", "random", "offtarget")
+#: Every arm the ablation runs. Two off-target arms, one per lens, because an
+#: R-lens result compared against a J-lens-derived control is not a controlled
+#: comparison; and two random arms, because norm-matching the *direction* and
+#: matching the *edit magnitude* are different controls that answer different
+#: objections (see `norm_matched_random` and `scaled_random_edit`).
+ARMS = ("jlens", "rlens", "logit", "offtarget_j", "offtarget_r",
+        "random", "random_matched")
+
+
+def stable_seed(*parts: object) -> int:
+    """A seed that is the same in every process, on every machine.
+
+    Python's `hash()` is randomized per process unless PYTHONHASHSEED is set, so
+    seeding a control from `hash(item_id)` silently produces a different control
+    on every run — the one thing a control must never do. CRC32 over the
+    UTF-8 bytes is stable, cheap, and enough entropy for a direction draw.
+    """
+    import zlib
+
+    key = "|".join(str(p) for p in parts).encode("utf-8")
+    return int(zlib.crc32(key) & 0x7FFFFFFF)
 
 
 def read_direction(lens, layer: int, token_ids: Sequence[int],
@@ -95,6 +115,34 @@ def norm_matched_random(reference: torch.Tensor, seed: int = 0) -> torch.Tensor:
     raw = torch.randn(reference.shape, generator=g, dtype=torch.float32)
     raw = raw / raw.norm()
     return (raw.to(reference.device) * reference.norm()).to(reference.dtype)
+
+
+def scaled_random_edit(reference_delta_norm: float, d_model: int, seed: int,
+                       device, dtype) -> Callable[[torch.Tensor], torch.Tensor]:
+    """Move the state by EXACTLY `reference_delta_norm`, in a random direction.
+
+    The magnitude-matched control, and the one the norm-matched random arm
+    cannot be. Erasing along a random direction removes almost nothing: in
+    2048-4096 dimensions a random unit vector has vanishing overlap with `h`, so
+    that arm moves ~0.013 of the state's norm where a lens direction moves
+    ~0.12. It therefore floors "does *this direction* matter" but says nothing
+    about "does an edit of *this size* matter" — which is the objection a
+    sceptic actually raises.
+
+    This arm answers that one instead: it displaces the state by the same
+    distance the lens erase did, along a direction drawn independently of it. If
+    the lens arms beat this, the effect is about where the edit points, not how
+    far it goes.
+    """
+    g = torch.Generator().manual_seed(seed)
+    raw = torch.randn(d_model, generator=g, dtype=torch.float32)
+    unit = (raw / raw.norm()).to(device)
+
+    def edit(h: torch.Tensor) -> torch.Tensor:
+        h32 = h.float()
+        return h32 + reference_delta_norm * unit.to(h32.device)
+
+    return edit
 
 
 def make_erase(direction: torch.Tensor) -> Callable[[torch.Tensor], torch.Tensor]:
@@ -178,6 +226,11 @@ def run_ablation(
         "target_logit": target,
         "distractor_logit": distractor,
         "edit_norm_ratio": (moved["delta"] / moved["norm"]) if moved["norm"] else 0.0,
+        # The absolute norms too: the magnitude-matched control is defined by
+        # how far this edit actually moved THIS state, which a ratio alone
+        # cannot reconstruct.
+        "edit_norm": moved["delta"],
+        "state_norm": moved["norm"],
     }
 
 

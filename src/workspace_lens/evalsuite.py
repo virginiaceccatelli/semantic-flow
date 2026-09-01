@@ -174,17 +174,51 @@ def _answer_suffix(tokenizer, fname: str) -> str:
     return choose_answer_suffix(tokenizer).replace("f()", f"{fname}()")
 
 
-def _answer_item(source: ProbeItem, suffix: str) -> ProbeItem:
-    """The same program, read where the value must actually be emitted."""
-    return ProbeItem(
-        item_id=f"{source.item_id}-answer", family=source.family,
-        pair_id=source.pair_id, arm=source.arm, read="answer",
-        prompt=source.prompt + suffix, anchor=suffix,
-        target_words=list(source.target_words),
-        distractor_words=list(source.distractor_words),
-        target_in_prompt=source.target_in_prompt,
-        notes=f"{source.notes}; read at the answer position",
-    )
+def _positioned_items(source: ProbeItem, suffix: str) -> list[ProbeItem]:
+    """The same program read at every valid position between use and answer.
+
+    One read position cannot carry a null. "The bound value is not verbalizable
+    at the use token" is a claim about the model; "…at the one position we
+    happened to pick" is a claim about the experiment, and only replication
+    across positions tells them apart.
+
+    Four reads on one prompt, all unambiguous substrings of it, ordered by how
+    far the computation has progressed:
+
+        use       the variable's use token — binding is resolved, nothing emitted
+        post_use  the first token after the function body closes
+        call      the call site's closing paren — the value is being produced
+        answer    the position where the value IS the next token
+
+    Every one is *valid*: the binding is determined at all four, and none is
+    after the answer. If the value is verbalizable anywhere before it must be
+    emitted, one of these should show it — and if none does, the null is about
+    the model rather than about a position choice.
+    """
+    full = source.prompt + suffix
+    call_anchor = suffix.rstrip()[:-3].rstrip() if suffix.rstrip().endswith("==") \
+        else suffix.split("==")[0].rstrip()
+
+    def item(tag: str, anchor: str) -> Optional[ProbeItem]:
+        if full.count(anchor) != 1:
+            return None                      # ambiguous here; drop rather than guess
+        return ProbeItem(
+            item_id=f"{source.item_id}-{tag}", family=source.family,
+            pair_id=source.pair_id, arm=source.arm, read=tag,
+            prompt=full, anchor=anchor,
+            target_words=list(source.target_words),
+            distractor_words=list(source.distractor_words),
+            target_in_prompt=source.target_in_prompt,
+            notes=f"{source.notes}; read at the {tag} position",
+        )
+
+    candidates = [
+        ("use", source.anchor),
+        ("post_use", source.anchor + "\nassert"),
+        ("call", call_anchor),
+        ("answer", suffix),
+    ]
+    return [i for i in (item(tag, a) for tag, a in candidates) if i is not None]
 
 
 def _binding_pair(pair: int, outer: int, inner: int, fname: str, other: str):
@@ -442,9 +476,8 @@ def build_suite(tokenizer, n_per_family: int = 10, name: str = "code-semantics")
         a, b = arith_pairs[i % len(arith_pairs)]
         arith = _arith(i, a, b)
 
-        items += binding
+        value_items = [*binding, defuse, alias, call, arith]
         items += _scopeword_pair(i, outer, inner, fname, other)
-        items += [defuse, alias, call, arith]
 
         # The same value-carrying programs, read where the value must actually
         # be emitted. Entry points differ per family, so the suffix is built per
@@ -455,11 +488,17 @@ def build_suite(tokenizer, n_per_family: int = 10, name: str = "code-semantics")
         # all: the answer position is an addition to the design, and losing it
         # should cost that addition, not everything else. Why it was lost is
         # recorded on the suite and printed by stage 200.
+        # One prompt, four read positions — not one prompt per position. The
+        # four reads are then differences in *where* the lens looks, with the
+        # program held exactly fixed; emitting a separate un-suffixed prompt for
+        # the use read would confound position with prompt.
         if answer_reads == "built":
             for source, entry in ((binding[0], fname), (binding[1], fname),
                                   (defuse, "compute"), (alias, "run"),
                                   (call, "main"), (arith, "total")):
-                items.append(_answer_item(source, _answer_suffix(tokenizer, entry)))
+                items += _positioned_items(source, _answer_suffix(tokenizer, entry))
+        else:
+            items += value_items
 
         literal, targets, distractors, tname = _TYPES[i % len(_TYPES)]
         items.append(_typeof(i, literal, targets, distractors, tname))

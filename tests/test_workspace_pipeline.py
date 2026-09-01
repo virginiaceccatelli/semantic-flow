@@ -656,13 +656,15 @@ def test_w3b_compares_against_the_lm_head_not_the_normed_hidden_state():
     assert rel > 1e-2, "the doubles no longer reproduce the double-norm error"
 
 
-def test_value_families_are_read_at_both_the_use_and_the_answer_position():
-    """The design fix the first 1.3B run forced.
+def test_value_families_are_read_at_four_positions_on_one_prompt():
+    """The design the first two 1.3B runs forced, in two steps.
 
     Reading only at the use token returned an exact null whose top-k showed the
-    model was poised to say an operator, not a value — so the null answered a
-    question nobody asked. Every value-carrying family now also gets a read at
-    the position where the value must actually be emitted.
+    model was poised to say an operator, not a value. Adding an answer-position
+    read fixed the question but left the null resting on a single position, so
+    every value-carrying program is now read at four — use, post_use, call,
+    answer — on ONE prompt, holding the program fixed so the reads differ only
+    in where the lens looks.
     """
     suite = evalsuite.build_suite(_WordTokenizer(), n_per_family=3)
     assert suite.answer_reads == "built", suite.answer_reads
@@ -672,19 +674,26 @@ def test_value_families_are_read_at_both_the_use_and_the_answer_position():
         by_read.setdefault((item.family, item.read), []).append(item)
 
     for family in ("binding", "defuse", "alias", "call", "arith"):
-        assert (family, "use") in by_read, family
-        assert (family, "answer") in by_read, family
+        for read in ("use", "post_use", "call", "answer"):
+            assert (family, read) in by_read, (family, read)
     # Concept families have no single emitted answer, so they stay use-only.
     for family in ("typeof", "loopvar", "scopeword"):
         assert (family, "answer") not in by_read, family
 
-    # An answer item is the same program plus the suffix, read at the suffix.
-    answer = by_read[("binding", "answer")][0]
-    use = next(i for i in by_read[("binding", "use")]
-               if answer.item_id.startswith(i.item_id))
-    assert answer.prompt.startswith(use.prompt)
-    assert answer.anchor in answer.prompt and answer.anchor.startswith("\nassert")
-    assert answer.target_words == use.target_words
+    # One prompt per program, four positions into it, ordered use -> answer.
+    binding = [i for i in suite.items if i.family == "binding"]
+    per_prompt = {}
+    for i in binding:
+        per_prompt.setdefault(i.prompt, set()).add(i.read)
+    assert per_prompt and all(v == {"use", "post_use", "call", "answer"}
+                              for v in per_prompt.values())
+    for prompt, _ in per_prompt.items():
+        # The read position is the anchor's LAST token, so order by where each
+        # anchor ends, not where it starts: `use` and `post_use` share a start.
+        reads = {i.read: prompt.index(i.anchor) + len(i.anchor)
+                 for i in binding if i.prompt == prompt}
+        assert reads["use"] < reads["post_use"] <= reads["answer"]
+        assert prompt.count("assert") == 1
 
 
 def test_a_tokenizer_without_a_valid_answer_suffix_still_yields_a_suite():

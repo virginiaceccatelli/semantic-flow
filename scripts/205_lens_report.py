@@ -300,6 +300,23 @@ def _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
                   "floors direction, not magnitude.", "",
                   "| layer | direction | n | mean delta | median delta | \\|edit\\|/\\|h\\| |",
                   "|---|---|---|---|---|---|"]
+        contrasts_path = lens_dir / name / "workspace_lens_ablation_contrasts.csv"
+        if contrasts_path.exists():
+            c = pd.read_csv(contrasts_path)
+            lines += ["**Paired contrasts**, 95% cluster bootstrap over programs. "
+                      "Each is a difference on the *same* programs at the same "
+                      "layer, so program-to-program variation cancels rather than "
+                      "being averaged over. `*` marks an interval excluding zero.",
+                      "",
+                      "| layer | contrast | n | mean | 95% CI | |",
+                      "|---|---|---|---|---|---|"]
+            for _, r in c.iterrows():
+                mark = "*" if r["excludes_zero"] else ""
+                lines.append(f"| {int(r['layer'])} | {r['contrast']} | {int(r['n'])} "
+                             f"| {r['mean']:+.3f} | [{r['lo']:+.3f}, {r['hi']:+.3f}] "
+                             f"| {mark} |")
+            lines.append("")
+
         grouped = (erase.groupby(["layer", "direction"])
                         .agg(n=("delta_logit_diff", "size"),
                              mean=("delta_logit_diff", "mean"),

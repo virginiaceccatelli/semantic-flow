@@ -58,6 +58,9 @@ def main(
     checkpoint_every: int = typer.Option(10, help="Prompts between resumable writes"),
     halves: bool = typer.Option(False, help="Also fit disjoint-half lenses for W6"),
     tag: str = typer.Option("", help="Suffix for the output directory (e.g. 'code-corpus')"),
+    relp_flags: Optional[str] = typer.Option(
+        None, help="Ablate RelP rules, e.g. 'ln=False' for the paper-minimal "
+                   "StarCoder2 arm (identity-rule only, no LayerNorm adaptation)"),
     dry_run: bool = typer.Option(False, help="Print the cost table and exit"),
     check_env: bool = typer.Option(False, help="Diagnose whether this host can run "
                                    "the fit, without loading any weights, and exit"),
@@ -114,6 +117,13 @@ def main(
     root = Path(output or Path("results/workspace_lens") / model)
     if tag:
         root = root.parent / f"{root.name}-{tag}"
+    flags = None
+    if relp_flags:
+        flags = {k.strip(): v.strip().lower() == "true"
+                 for k, v in (kv.split("=") for kv in relp_flags.split(","))}
+        console.print(f"[yellow]RelP rules ablated: {flags} — this is NOT the "
+                      f"published configuration[/yellow]")
+
     jobs: list[tuple[str, str, "Corpus"]] = [(k, k, corpus_obj) for k in kind_list]
     if halves:
         n_half = len(corpus_obj.prompts) // 2
@@ -129,6 +139,7 @@ def main(
             dim_batch=dim_batch,
             checkpoint_path=root / subdir / "fit_checkpoint.pt",
             checkpoint_every=checkpoint_every,
+            relp_flags=flags if kind == "r-lens" else None,
         )
         path = save_lens(result, root / subdir)
         written.append({"kind": kind, "dir": str(root / subdir),
@@ -142,7 +153,7 @@ def main(
         "model": model, "corpus": str(corpus), "kinds": kinds, "dim_batch": dim_batch,
         "dtype": dtype, "device": device, "skip_first": skip_first,
         "max_seq_len": max_seq_len, "target_layer": target_layer, "halves": halves,
-        "tag": tag,
+        "tag": tag, "relp_flags": relp_flags,
     }, t0, extra={"model_info": info, "recipe": recipe.as_dict(),
                   "corpus": corpus_obj.as_dict(), "lenses": written})
 

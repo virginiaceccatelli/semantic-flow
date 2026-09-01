@@ -128,7 +128,8 @@ PROBES := results/probes/$(MODEL)/core
         binding-relevance binding-relevance-report binding-clrp binding-clrp-smoke \
         binding-verbal-discover binding-verbal-behaviour binding-verbal-relevance \
         binding-verbal-report binding-verbal binding-verbal-smoke \
-        lens lens-corpus lens-fit lens-fit-dry lens-check lens-validate lens-readout \
+        lens lens-corpus lens-fit lens-fit-dry lens-fit-paperminimal lens-check \
+        lens-validate lens-readout \
         lens-ablate lens-report lens-smoke
 
 JSPACE_PAIRS := data/synthetic/jspace_pairs_$(MODEL).jsonl
@@ -599,6 +600,17 @@ lens-check:
 lens-fit:
 	$(PY) scripts/201_lens_fit.py --model $(MODEL) --corpus $(LENS_CORPUS) \
 		--dim-batch $(LENS_DIM_BATCH) --dtype $(LENS_DTYPE) $(LENS_HALVES)
+
+# StarCoder2 only. Its LN-rule is a LayerNorm analogue of a rule the post states
+# for RMSNorm, so the default R-lens there is not an exact implementation of the
+# published dense recipe. This fits the arm that IS exact — identity-rule only,
+# no LayerNorm adaptation — into `r-lens` of a `-paperminimal` directory, so the
+# two can be compared and the adaptation's contribution measured rather than
+# argued about.
+lens-fit-paperminimal:
+	$(PY) scripts/201_lens_fit.py --model $(MODEL) --corpus $(LENS_CORPUS) \
+		--dim-batch $(LENS_DIM_BATCH) --dtype $(LENS_DTYPE) \
+		--kinds j-lens,r-lens --relp-flags ln=False --tag paperminimal
 
 lens-validate:
 	$(PY) scripts/202_lens_validate.py --model $(MODEL) --corpus $(LENS_CORPUS) \
