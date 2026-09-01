@@ -93,6 +93,7 @@
 #   make lens-validate MODEL=...    stage 202 the seven-check GATE (GPU)
 #   make lens-readout MODEL=...     stage 203 J vs R vs logit over the suite (GPU)
 #   make lens-ablate MODEL=...      stage 204 causal edits along read directions (GPU)
+#                                   add LENS_ABLATE_LAYERS=12,16,20 for a mid-network sweep
 #   make lens-report MODEL=...      stage 205 tables, figures, report (CPU)
 #   make lens MODEL=...             stages 200→205 in order (202 gates 203-205)
 #   make lens-smoke                 tiny CPU check of the whole path (no weights)
@@ -141,6 +142,7 @@ LENS_CORPUS_KIND ?= pile
 LENS_CORPUS := data/lens_corpus/pile10k-n$(LENS_N).jsonl
 LENS_SUITE := data/lens_eval/code-semantics-$(MODEL).jsonl
 LENS_DIR := results/workspace_lens/$(MODEL)
+COMMA := ,
 LENS_DIM_BATCH ?= 16
 LENS_DTYPE ?= bfloat16
 LENS_HALVES ?= --no-halves
@@ -606,9 +608,22 @@ lens-readout:
 	$(PY) scripts/203_lens_readout.py --model $(MODEL) --suite $(LENS_SUITE) \
 		--dtype $(LENS_DTYPE)
 
+# LENS_ABLATE_LAYERS overrides the layer choice. Left empty, stage 204 picks the
+# layers where the J-lens rank is best — which, with half the suite read at the
+# answer position, lands two layers from the output. Erasing the answer direction
+# there and watching the answer logit fall is close to tautological, so a
+# mid-network sweep is the more informative run:
+#     make lens-ablate MODEL=deepseek-coder-6.7b LENS_ABLATE_LAYERS=12,16,20
+# Results land in a separate directory per layer set, so a mid-network run never
+# overwrites the default one and the two can be compared.
+LENS_ABLATE_LAYERS ?=
+LENS_ABLATE_ARGS := $(if $(LENS_ABLATE_LAYERS),--layers $(LENS_ABLATE_LAYERS) \
+	--output $(LENS_DIR)/ablate-L$(subst $(COMMA),-,$(LENS_ABLATE_LAYERS)),)
+
 lens-ablate:
 	$(PY) scripts/204_lens_ablate.py --model $(MODEL) --suite $(LENS_SUITE) \
-		--readout $(LENS_DIR)/readout/workspace_lens_rows.csv --dtype $(LENS_DTYPE)
+		--readout $(LENS_DIR)/readout/workspace_lens_rows.csv --dtype $(LENS_DTYPE) \
+		$(LENS_ABLATE_ARGS)
 
 lens-report:
 	$(PY) scripts/205_lens_report.py --model $(MODEL)

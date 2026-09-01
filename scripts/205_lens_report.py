@@ -70,8 +70,17 @@ def main(
 
     gate_path = lens_dir / "validate" / "workspace_lens_gate.csv"
     gate = pd.read_csv(gate_path) if gate_path.exists() else None
-    abl_path = lens_dir / "ablate" / "workspace_lens_ablation.csv"
-    ablation = pd.read_csv(abl_path) if abl_path.exists() else None
+    # Every ablation run, not just the default one: a mid-network sweep lands in
+    # `ablate-L12-16-20/` so it cannot overwrite the default, which would make it
+    # invisible here unless the report goes looking.
+    ablations = {}
+    for d in sorted(lens_dir.glob("ablate*")):
+        csv = d / "workspace_lens_ablation.csv"
+        if csv.exists():
+            frame = pd.read_csv(csv)
+            if not frame.empty:
+                ablations[d.name] = frame
+    ablation = ablations.get("ablate", next(iter(ablations.values()), None))
     _, prov = load_lens(lens_dir / "j-lens")
     _, prov_r = load_lens(lens_dir / "r-lens")
 
@@ -164,7 +173,7 @@ def main(
 
     # ── report ───────────────────────────────────────────────────────────────
     report = _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
-                           gate, ablation, k)
+                           gate, ablations, k)
     console.print(f"report -> {report}")
 
     write_manifest("205_lens_report", {"model": model, "lens_dir": str(lens_dir),
@@ -181,7 +190,7 @@ def _save(fig, stem: Path):
 
 
 def _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
-                  gate, ablation, k) -> Path:
+                  gate, ablations, k) -> Path:
     import pandas as pd
 
     recipe = prov.get("recipe", {})
@@ -270,13 +279,26 @@ def _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
         lines.append(f"| {family} | " + " | ".join(cells) + " |")
     lines.append("")
 
-    if ablation is not None and not ablation.empty:
-        erase = ablation[ablation["edit"] == "erase"]
-        lines += ["## Causal ablation — erasing the lens read direction", "",
-                  "Change in the **model's own** logit difference between the target "
-                  "and distractor answers. `offtarget` and `random` are the controls "
-                  "that make a non-zero effect interpretable.", "",
-                  "| layer | direction | n | mean delta | median delta | |edit|/|h| |",
+    for name, frame in (ablations or {}).items():
+        erase = frame[frame["edit"] == "erase"]
+        if erase.empty:
+            continue
+        layers = sorted(erase["layer"].unique())
+        depth = int(rows["layer"].max()) + 1
+        where = ("near the output — erasing the answer direction this late and "
+                 "watching the answer logit fall is close to tautological"
+                 if min(layers) > 0.7 * depth else "mid-network")
+        lines += [f"## Causal ablation — erasing the lens read direction "
+                  f"(`{name}`, layers {layers}, {where})", "",
+                  "Change in the **model's own** logit difference between the "
+                  "target and distractor answers. `offtarget` is the load-bearing "
+                  "control: it uses the same construction for the *distractor* "
+                  "token, so a target erase that hurts while a distractor erase "
+                  "helps is a double dissociation, not an edit-size effect. "
+                  "`random` moves far less of the state's norm (a random "
+                  "direction barely overlaps `h` in this many dimensions), so it "
+                  "floors direction, not magnitude.", "",
+                  "| layer | direction | n | mean delta | median delta | \\|edit\\|/\\|h\\| |",
                   "|---|---|---|---|---|---|"]
         grouped = (erase.groupby(["layer", "direction"])
                         .agg(n=("delta_logit_diff", "size"),
@@ -292,7 +314,7 @@ def _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
               f"- `results/figures/workspace_lens_passk_{model}.png`",
               f"- `results/figures/workspace_lens_rank_{model}.png`",
               f"- `results/figures/workspace_lens_earliest_{model}.png`"]
-    if ablation is not None and not ablation.empty:
+    if ablations:
         lines.append(f"- `results/figures/workspace_lens_ablation_{model}.png`")
     lines.append("")
 
