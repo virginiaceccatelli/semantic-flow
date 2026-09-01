@@ -1,0 +1,42 @@
+{
+  "stage": "204_lens_ablate",
+  "timestamp": "20260901_104333",
+  "git_sha": "9085838",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/204_lens_ablate.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--suite",
+    "data/lens_eval/code-semantics-deepseek-coder-1.3b.jsonl",
+    "--readout",
+    "results/workspace_lens/deepseek-coder-1.3b/readout/workspace_lens_rows.csv",
+    "--dtype",
+    "bfloat16",
+    "--layers",
+    "12,16,20",
+    "--output",
+    "results/workspace_lens/deepseek-coder-1.3b/ablate-L12-16-20"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "suite": "data/lens_eval/code-semantics-deepseek-coder-1.3b.jsonl",
+    "lens_dir": "results/workspace_lens/deepseek-coder-1.3b",
+    "families": "binding,defuse,alias,call,arith",
+    "layers": "12,16,20",
+    "n_layers_each": "3",
+    "inject_alpha": "0.0",
+    "dtype": "bfloat16",
+    "device": "cuda"
+  },
+  "wall_time_s": 112.4,
+  "extra": {
+    "n_items": 240,
+    "layers": [
+      12,
+      16,
+      20
+    ],
+    "layer_source": "explicit"
+  }
+}

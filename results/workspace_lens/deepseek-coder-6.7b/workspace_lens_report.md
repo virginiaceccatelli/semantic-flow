@@ -141,21 +141,50 @@ Change in the **model's own** logit difference between the target and distractor
 
 | layer | direction | n | mean delta | median delta | \|edit\|/\|h\| |
 |---|---|---|---|---|---|
-| 12 | jlens | 100 | -0.055 | +0.000 | 0.037 |
-| 12 | logit | 100 | -0.027 | +0.000 | 0.024 |
-| 12 | offtarget | 100 | +0.025 | +0.000 | 0.028 |
-| 12 | random | 100 | -0.002 | +0.000 | 0.012 |
-| 12 | rlens | 100 | -0.055 | -0.031 | 0.051 |
-| 16 | jlens | 100 | -0.115 | -0.062 | 0.029 |
-| 16 | logit | 100 | -0.077 | -0.062 | 0.027 |
-| 16 | offtarget | 100 | +0.070 | +0.062 | 0.024 |
-| 16 | random | 100 | -0.001 | +0.000 | 0.012 |
-| 16 | rlens | 100 | -0.170 | -0.125 | 0.047 |
-| 20 | jlens | 100 | -0.242 | -0.125 | 0.053 |
-| 20 | logit | 100 | -0.184 | -0.125 | 0.051 |
-| 20 | offtarget | 100 | +0.211 | +0.125 | 0.033 |
-| 20 | random | 100 | +0.003 | +0.000 | 0.012 |
-| 20 | rlens | 100 | -0.311 | -0.219 | 0.068 |
+**Paired contrasts**, 95% cluster bootstrap over programs. Each is a difference on the *same* programs at the same layer, so program-to-program variation cancels rather than being averaged over. `*` marks an interval excluding zero.
+
+| layer | contrast | n | mean | 95% CI | |
+|---|---|---|---|---|---|
+| 12 | jlens_vs_offtarget | 200 | +0.001 | [-0.008, +0.010] |  |
+| 12 | rlens_vs_offtarget | 200 | +0.013 | [+0.002, +0.025] | * |
+| 12 | jlens_vs_random_matched | 200 | +0.009 | [+0.001, +0.018] | * |
+| 12 | rlens_vs_random_matched | 200 | +0.011 | [-0.000, +0.020] |  |
+| 12 | jlens_vs_logit | 200 | +0.011 | [+0.002, +0.020] | * |
+| 12 | rlens_vs_jlens | 200 | +0.001 | [-0.009, +0.012] |  |
+| 16 | jlens_vs_offtarget | 200 | -0.019 | [-0.033, -0.008] | * |
+| 16 | rlens_vs_offtarget | 200 | -0.025 | [-0.039, -0.012] | * |
+| 16 | jlens_vs_random_matched | 200 | -0.001 | [-0.010, +0.008] |  |
+| 16 | rlens_vs_random_matched | 200 | -0.013 | [-0.023, -0.003] | * |
+| 16 | jlens_vs_logit | 200 | +0.003 | [-0.005, +0.010] |  |
+| 16 | rlens_vs_jlens | 200 | -0.012 | [-0.021, -0.003] | * |
+| 20 | jlens_vs_offtarget | 200 | -0.069 | [-0.094, -0.047] | * |
+| 20 | rlens_vs_offtarget | 200 | -0.071 | [-0.093, -0.049] | * |
+| 20 | jlens_vs_random_matched | 200 | -0.018 | [-0.033, -0.002] | * |
+| 20 | rlens_vs_random_matched | 200 | -0.024 | [-0.037, -0.008] | * |
+| 20 | jlens_vs_logit | 200 | +0.000 | [-0.011, +0.013] |  |
+| 20 | rlens_vs_jlens | 200 | -0.006 | [-0.015, +0.004] |  |
+
+| 12 | jlens | 200 | +0.007 | +0.000 | 0.032 |
+| 12 | logit | 200 | -0.004 | +0.000 | 0.015 |
+| 12 | offtarget_j | 200 | +0.006 | +0.000 | 0.026 |
+| 12 | offtarget_r | 200 | -0.005 | +0.000 | 0.031 |
+| 12 | random | 200 | +0.000 | +0.000 | 0.012 |
+| 12 | random_matched | 200 | -0.003 | +0.000 | 0.032 |
+| 12 | rlens | 200 | +0.008 | +0.000 | 0.039 |
+| 16 | jlens | 200 | -0.003 | +0.000 | 0.023 |
+| 16 | logit | 200 | -0.006 | +0.000 | 0.016 |
+| 16 | offtarget_j | 200 | +0.017 | +0.000 | 0.019 |
+| 16 | offtarget_r | 200 | +0.010 | +0.000 | 0.028 |
+| 16 | random | 200 | +0.000 | +0.000 | 0.013 |
+| 16 | random_matched | 200 | -0.002 | +0.000 | 0.023 |
+| 16 | rlens | 200 | -0.014 | +0.000 | 0.036 |
+| 20 | jlens | 200 | -0.017 | +0.000 | 0.038 |
+| 20 | logit | 200 | -0.017 | +0.000 | 0.033 |
+| 20 | offtarget_j | 200 | +0.052 | +0.000 | 0.025 |
+| 20 | offtarget_r | 200 | +0.048 | +0.000 | 0.032 |
+| 20 | random | 200 | +0.000 | +0.000 | 0.011 |
+| 20 | random_matched | 200 | +0.001 | +0.000 | 0.038 |
+| 20 | rlens | 200 | -0.022 | +0.000 | 0.049 |
 
 ## Figures
 
