@@ -1,0 +1,153 @@
+{
+  "stage": "202_lens_validate",
+  "timestamp": "20260901_074759",
+  "git_sha": "20be8b9",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/202_lens_validate.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--corpus",
+    "data/lens_corpus/pile10k-n100.jsonl",
+    "--suite",
+    "data/lens_eval/code-semantics-deepseek-coder-6.7b.jsonl",
+    "--dtype",
+    "bfloat16"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "corpus": "data/lens_corpus/pile10k-n100.jsonl",
+    "suite": "data/lens_eval/code-semantics-deepseek-coder-6.7b.jsonl",
+    "lens_dir": "results/workspace_lens/deepseek-coder-6.7b",
+    "dtype": "bfloat16",
+    "device": "cuda",
+    "n_forward": "4"
+  },
+  "wall_time_s": 9.4,
+  "extra": {
+    "passed": true,
+    "failures": [],
+    "checks": [
+      {
+        "check": "W1_corpus_independent",
+        "passed": true,
+        "required": true,
+        "value": null,
+        "threshold": null,
+        "detail": "100 fitting prompts from NeelNanda/pile-10k (digest 483c1e1743d1), 160 eval prompts, 0 exact and 0 substring overlaps at 120 chars"
+      },
+      {
+        "check": "W2_matched_pair",
+        "passed": true,
+        "required": true,
+        "value": null,
+        "threshold": null,
+        "detail": "matched on model.hf_id, model.dtype, model.n_layers, model.d_model, model.bos_prepended, model.bos_forced, model.bos_declared, recipe.target_layer, recipe.source_layers, recipe.skip_first, recipe.max_seq_len, corpus.digest, corpus.n_prompts, dim_batch, n_prompts_used"
+      },
+      {
+        "check": "W3_readout_identity_anchor",
+        "passed": true,
+        "required": true,
+        "value": 0.0,
+        "threshold": 0.02,
+        "detail": "max |delta logit| = 0.0000 on a scale of 38.8; top-1 agreement 1.000 over 31 positions"
+      },
+      {
+        "check": "W3b_unembed_is_model_tail",
+        "passed": true,
+        "required": true,
+        "value": 0.004699247889220715,
+        "threshold": 0.0625,
+        "detail": "max relative logit difference 4.70e-03 against the causal-LM head (tolerance 6.2e-02 is one rounding step of the compute dtype)"
+      },
+      {
+        "check": "W4_relp_forward_invariant",
+        "passed": true,
+        "required": true,
+        "value": 0.007518796992481203,
+        "threshold": 0.1767766952966369,
+        "detail": "max relative deviation 7.52e-03 over 4 prompts (hidden 4.37e-03, logits 7.52e-03); tolerance 1.77e-01 is the bfloat16 rounding floor at depth 32 \u2014 W5e is the exact per-module check"
+      },
+      {
+        "check": "W5a_ln_rule_bound",
+        "passed": true,
+        "required": true,
+        "value": null,
+        "threshold": null,
+        "detail": "LN-rule on 65 RMSNorm + 0 LayerNorm of 65 residual norms; 0 q/k norms left unmodified as published"
+      },
+      {
+        "check": "W5b_identity_rule_bound",
+        "passed": true,
+        "required": true,
+        "value": null,
+        "threshold": null,
+        "detail": "identity-rule on 32 activations ({'silu': 32}); 0 unrecognised"
+      },
+      {
+        "check": "W5c_half_rule_status",
+        "passed": true,
+        "required": true,
+        "value": null,
+        "threshold": null,
+        "detail": "half-rule applied: 32 gated MLPs of 32; 0 ungated MLPs have no gate to split"
+      },
+      {
+        "check": "W5d_attention_untouched",
+        "passed": true,
+        "required": false,
+        "value": null,
+        "threshold": null,
+        "detail": "32 attention blocks and all linear layers left unmodified, as published"
+      },
+      {
+        "check": "W5e_forward_deviation_bounded",
+        "passed": true,
+        "required": true,
+        "value": 4.76837158203125e-07,
+        "threshold": 0.01,
+        "detail": "largest per-module forward deviation any rewrite introduced: 4.77e-07"
+      },
+      {
+        "check": "W5f_rlens_differs_from_jlens",
+        "passed": true,
+        "required": true,
+        "value": 1.0060639151412127,
+        "threshold": 0.001,
+        "detail": "relative Frobenius difference across 31 layers: min 4.512e-02, max 1.006e+00"
+      },
+      {
+        "check": "W6_build_repeatable",
+        "passed": false,
+        "required": false,
+        "value": null,
+        "threshold": null,
+        "detail": "SKIPPED \u2014 no half-corpus lenses; re-run stage 201 with --halves"
+      },
+      {
+        "check": "W7_ascii_face[j-lens]",
+        "passed": false,
+        "required": false,
+        "value": 211.0,
+        "threshold": 25.0,
+        "detail": "best rank for 'nose' is 211 at layer 24 (final-layer rank 1148)"
+      },
+      {
+        "check": "W7_ascii_face[r-lens]",
+        "passed": false,
+        "required": false,
+        "value": 316.0,
+        "threshold": 25.0,
+        "detail": "best rank for 'nose' is 316 at layer 24 (final-layer rank 1148)"
+      },
+      {
+        "check": "W7_ascii_face[logit-lens]",
+        "passed": false,
+        "required": false,
+        "value": 320.0,
+        "threshold": 25.0,
+        "detail": "best rank for 'nose' is 320 at layer 25 (final-layer rank 1148)"
+      }
+    ]
+  }
+}

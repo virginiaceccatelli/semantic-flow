@@ -1,8 +1,8 @@
 check,passed,required,value,threshold,detail
-W1_corpus_independent,True,True,,,"100 fitting prompts from NeelNanda/pile-10k (digest 483c1e1743d1), 100 eval prompts, 0 exact and 0 substring overlaps at 120 chars"
-W2_matched_pair,True,True,,,"matched on model.hf_id, model.dtype, model.n_layers, model.d_model, model.bos_prepended, model.bos_forced, recipe.target_layer, recipe.source_layers, recipe.skip_first, recipe.max_seq_len, corpus.digest, corpus.n_prompts, dim_batch, n_prompts_used"
+W1_corpus_independent,True,True,,,"100 fitting prompts from NeelNanda/pile-10k (digest 483c1e1743d1), 160 eval prompts, 0 exact and 0 substring overlaps at 120 chars"
+W2_matched_pair,True,True,,,"matched on model.hf_id, model.dtype, model.n_layers, model.d_model, model.bos_prepended, model.bos_forced, model.bos_declared, recipe.target_layer, recipe.source_layers, recipe.skip_first, recipe.max_seq_len, corpus.digest, corpus.n_prompts, dim_batch, n_prompts_used"
 W3_readout_identity_anchor,True,True,0.0,0.02,max |delta logit| = 0.0000 on a scale of 74.5; top-1 agreement 1.000 over 31 positions
-W3b_unembed_is_model_tail,False,True,0.37081339955329895,0.0001,max relative logit difference 3.71e-01
+W3b_unembed_is_model_tail,True,True,0.005988024175167084,0.0625,max relative logit difference 5.99e-03 against the causal-LM head (tolerance 6.2e-02 is one rounding step of the compute dtype)
 W4_relp_forward_invariant,True,True,0.015718562874251496,0.15309310892394862,"max relative deviation 1.57e-02 over 4 prompts (hidden 8.20e-03, logits 1.57e-02); tolerance 1.53e-01 is the bfloat16 rounding floor at depth 24 — W5e is the exact per-module check"
 W5a_ln_rule_bound,True,True,,,LN-rule on 49 RMSNorm + 0 LayerNorm of 49 residual norms; 0 q/k norms left unmodified as published
 W5b_identity_rule_bound,True,True,,,identity-rule on 24 activations ({'silu': 24}); 0 unrecognised

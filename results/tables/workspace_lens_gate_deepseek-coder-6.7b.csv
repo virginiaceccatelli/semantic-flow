@@ -1,0 +1,16 @@
+check,passed,required,value,threshold,detail
+W1_corpus_independent,True,True,,,"100 fitting prompts from NeelNanda/pile-10k (digest 483c1e1743d1), 160 eval prompts, 0 exact and 0 substring overlaps at 120 chars"
+W2_matched_pair,True,True,,,"matched on model.hf_id, model.dtype, model.n_layers, model.d_model, model.bos_prepended, model.bos_forced, model.bos_declared, recipe.target_layer, recipe.source_layers, recipe.skip_first, recipe.max_seq_len, corpus.digest, corpus.n_prompts, dim_batch, n_prompts_used"
+W3_readout_identity_anchor,True,True,0.0,0.02,max |delta logit| = 0.0000 on a scale of 38.8; top-1 agreement 1.000 over 31 positions
+W3b_unembed_is_model_tail,True,True,0.004699247889220715,0.0625,max relative logit difference 4.70e-03 against the causal-LM head (tolerance 6.2e-02 is one rounding step of the compute dtype)
+W4_relp_forward_invariant,True,True,0.007518796992481203,0.1767766952966369,"max relative deviation 7.52e-03 over 4 prompts (hidden 4.37e-03, logits 7.52e-03); tolerance 1.77e-01 is the bfloat16 rounding floor at depth 32 — W5e is the exact per-module check"
+W5a_ln_rule_bound,True,True,,,LN-rule on 65 RMSNorm + 0 LayerNorm of 65 residual norms; 0 q/k norms left unmodified as published
+W5b_identity_rule_bound,True,True,,,identity-rule on 32 activations ({'silu': 32}); 0 unrecognised
+W5c_half_rule_status,True,True,,,half-rule applied: 32 gated MLPs of 32; 0 ungated MLPs have no gate to split
+W5d_attention_untouched,True,False,,,"32 attention blocks and all linear layers left unmodified, as published"
+W5e_forward_deviation_bounded,True,True,4.76837158203125e-07,0.01,largest per-module forward deviation any rewrite introduced: 4.77e-07
+W5f_rlens_differs_from_jlens,True,True,1.0060639151412127,0.001,"relative Frobenius difference across 31 layers: min 4.512e-02, max 1.006e+00"
+W6_build_repeatable,False,False,,,SKIPPED — no half-corpus lenses; re-run stage 201 with --halves
+W7_ascii_face[j-lens],False,False,211.0,25.0,best rank for 'nose' is 211 at layer 24 (final-layer rank 1148)
+W7_ascii_face[r-lens],False,False,316.0,25.0,best rank for 'nose' is 316 at layer 24 (final-layer rank 1148)
+W7_ascii_face[logit-lens],False,False,320.0,25.0,best rank for 'nose' is 320 at layer 25 (final-layer rank 1148)
