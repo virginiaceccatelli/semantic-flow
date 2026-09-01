@@ -32,7 +32,7 @@ fit under the published RelP backward rules.
 | W5b_identity_rule_bound | yes | PASS | identity-rule on 30 activations ({'gelu_tanh': 30}); 0 unrecognised |
 | W5c_half_rule_status | yes | PASS | half-rule n/a: 0 gated MLPs of 0; 30 ungated MLPs have no gate to split |
 | W5d_attention_untouched | no | PASS | 30 attention blocks and all linear layers left unmodified, as published |
-| W5e_forward_deviation_bounded | yes | PASS | largest per-module forward deviation any rewrite introduced: 3.81e-06 |
+| W5e_forward_deviation_bounded | yes | PASS | largest per-module forward deviation any rewrite introduced: 2.86e-06 |
 | W5f_rlens_differs_from_jlens | yes | PASS | relative Frobenius difference across 29 layers: min 1.465e-01, max 1.017e+05 |
 | W6_build_repeatable | no | n/a | SKIPPED — no half-corpus lenses; re-run stage 201 with --halves |
 | W7_ascii_face[j-lens] | no | n/a | best rank for 'nose' is 34 at layer 27 (final-layer rank 106) |
