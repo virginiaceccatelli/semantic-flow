@@ -14,16 +14,39 @@ on held-out bases in BOTH arms.
        v_b" or "the answer" scores positive on `ab` and negative on `ba`; only
        one encoding which definition is in scope survives both.
 
-The `answer_direction` control is the positive control for the falsification
-itself: an explicit, known answer direction (the unembedding row of the answer
-arm `ab` demands) MUST pass on `ab` and MUST fail on `ba`. If it does not fail,
-the held-out arm cannot tell an answer encoder from a binding encoder and no
-verdict about the learned subspace is licensed.
+The `answer_direction_jlens` control is the positive control for the
+falsification itself: an explicit, known answer direction MUST pass on `ab` and
+MUST fail on `ba`. If it does not fail, the held-out arm cannot tell an answer
+encoder from a binding encoder and no verdict about the learned subspace is
+licensed.
+
+That direction is the PUBLISHED J-lens read direction at the intervention layer,
+
+    u_w(l) = J_l^T ( g * W_U[w] ),   d = u_installed(l) - u_own(l)
+
+built from the artifact **stage 201 fitted** — released estimator, independent
+pretraining-like corpus, full `d_model x d_model` Jacobian. Nothing is fitted
+here. Before 2026-09-01 this stage fitted its own corpus-averaged cotangent
+readout over the two answer tokens and called the result "J-lens vectors"; that
+is a different estimator (`docs/WORKSPACE_LENS.md` §1), its numbers are
+archived, and it is neither imported nor built any more.
+
+The published R-lens supplies a second, DESCRIPTIVE arm on identical tokens,
+layer, site, per-row dose, seed and split. It gates nothing.
+
+**Two phases, and only the second needs a lens.** The DAS subspace is fitted and
+its rank selected with no lens involvement whatsoever — that is what keeps DAS
+lens-independent — and the lens artifacts are opened afterwards, for the
+control-evaluation grid alone. So stage 201 must precede the J/R-dependent
+*portion* of this stage, not the DAS fit. The artifacts are nonetheless
+PREFLIGHTED (existence, model, d_model, tokenizer, layer) in the first seconds,
+from the `lens_meta.json` sidecar, so a missing lens fails before the fit rather
+than after it.
 
     python scripts/106_binding_interchange.py --model deepseek-coder-1.3b \\
         --layers 12 --ranks 1,2,4,8
 
-Requires **H0-H3**. Records **H4** and **H5**.
+Requires **H0-H3**, and stage 201 for the control arms. Records **H4** and **H5**.
 """
 
 from __future__ import annotations
@@ -54,10 +77,29 @@ def main(
     site: str = typer.Option("", help="Default: the site stage 105 chose on calibration"),
     sites: str = typer.Option("def_source,use", help="Sites the grid is run over"),
     variants: str = typer.Option(
-        "das_binding,mean_difference,answer_direction,"
-        "answer_direction_unembedding,random_rank,random_norm,noop,whole_state"),
-    lens_samples_n: int = typer.Option(
-        60, help="Calibration programs used to build the J-lens per layer"),
+        "das_binding,mean_difference,answer_direction_jlens,"
+        "answer_direction_rlens,answer_direction_unembedding,"
+        "random_rank,random_norm,noop,whole_state"),
+    jlens: Optional[Path] = typer.Option(
+        None, help="Fitted J-lens directory from stage 201. Default "
+                   "results/workspace_lens/{model}/j-lens. Nothing is fitted "
+                   "here; the artifact is loaded."),
+    rlens: Optional[Path] = typer.Option(
+        None, help="Fitted R-lens directory from stage 201. Default "
+                   "results/workspace_lens/{model}/r-lens."),
+    require_rlens: bool = typer.Option(
+        False, "--require-rlens/--no-require-rlens",
+        help="Refuse to run without a fitted R-lens. Off by default: the "
+             "R-lens arm is a secondary descriptive diagnostic and its absence "
+             "must not block the J-lens discriminator H5 reads."),
+    rlens_paperminimal: Optional[Path] = typer.Option(
+        None, help="OPTIONAL separately named arm from the -paperminimal "
+                   "sensitivity fit (StarCoder2: LayerNorm analogue off). Never "
+                   "substituted for --rlens. Pass 'auto' to use "
+                   "results/workspace_lens/{model}-paperminimal/r-lens if present."),
+    lens_checksum: bool = typer.Option(
+        True, help="SHA-256 each loaded lens.pt into the manifest (a few "
+                   "seconds per GB; the artifact identity is part of the result)."),
     steps: int = typer.Option(200),
     batch_size: int = typer.Option(8, help="DAS training batch (not the grid)"),
     lr: float = typer.Option(1e-2),
@@ -86,7 +128,13 @@ def main(
     from src.data.binding_pairs import BINDINGS, load_pairs, resolve_pairs_path
     from src.data.counterfactual_pairs import encode_prompt
     from src.experiments.binding_interchange import (
+        ANSWER_DIRECTION_JLENS,
+        ANSWER_DIRECTION_RLENS,
+        ANSWER_DIRECTION_RLENS_PAPERMINIMAL,
+        ANSWER_DIRECTION_UNEMBEDDING,
+        LEGACY_ANSWER_DIRECTION,
         TRAIN_ARM,
+        answer_direction_panel,
         binding_difference_vectors,
         collect_states,
         control_contrasts,
@@ -101,9 +149,21 @@ def main(
     from src.experiments.store_gates import BINDING, GateFailure, load_gates, record_gate, require_gates
     from src.models.das import (AlignmentExample, learn_alignment,
                                 mean_difference_subspace)
-    from src.models.cotangent_lens import LensSample, compute_lens_vectors, get_output_unembedding
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
+    # The PUBLISHED lens, loaded — never fitted here, and never the archived
+    # cotangent readout that used to live at src/models/cotangent_lens.py.
+    from src.workspace_lens.answer_direction import (
+        JLENS_DIRNAME,
+        LensMismatch,
+        RLENS_DIRNAME,
+        answer_directions,
+        default_lens_dir,
+        default_paperminimal_dir,
+        final_norm_gain,
+        gain_behaviour,
+        preflight,
+    )
 
     t0 = time.time()
     pairs_path = resolve_pairs_path(model, pairs)
@@ -133,21 +193,89 @@ def main(
     # gates read, since the claim-bearing cell is pre-committed.
     layer_list = ([int(x) for x in layers.split(",") if x.strip()]
                   if layers else [int(h3.get("layer", config.probe_layers[len(config.probe_layers) // 2]))])
+
+    if LEGACY_ANSWER_DIRECTION in variant_list:
+        console.print(f"[red]'{LEGACY_ANSWER_DIRECTION}' is the ARCHIVED "
+                      f"cotangent-lens control and is no longer built. Ask for "
+                      f"'{ANSWER_DIRECTION_JLENS}' (the published J-lens) or "
+                      f"'{ANSWER_DIRECTION_UNEMBEDDING}'.[/red]")
+        raise typer.Exit(2)
+
+    # ── PREFLIGHT the published lens artifacts ───────────────────────────────
+    # Reads only the `lens_meta.json` sidecar, so it costs milliseconds and runs
+    # before a single weight is loaded. A missing or mismatched lens must fail
+    # in the first seconds of the stage, never after the DAS fit — but nothing
+    # here is loaded into the fit, which is what keeps DAS lens-independent.
+    wanted_lenses: dict = {}
+    if ANSWER_DIRECTION_JLENS in variant_list:
+        wanted_lenses[ANSWER_DIRECTION_JLENS] = (
+            Path(jlens or default_lens_dir(model, JLENS_DIRNAME)), JLENS_DIRNAME, True)
+    if ANSWER_DIRECTION_RLENS in variant_list:
+        wanted_lenses[ANSWER_DIRECTION_RLENS] = (
+            Path(rlens or default_lens_dir(model, RLENS_DIRNAME)), RLENS_DIRNAME,
+            require_rlens)
+    if rlens_paperminimal is not None:
+        pm = (default_paperminimal_dir(model) if str(rlens_paperminimal) == "auto"
+              else Path(rlens_paperminimal))
+        wanted_lenses[ANSWER_DIRECTION_RLENS_PAPERMINIMAL] = (pm, RLENS_DIRNAME, False)
+        if ANSWER_DIRECTION_RLENS_PAPERMINIMAL not in variant_list:
+            variant_list.append(ANSWER_DIRECTION_RLENS_PAPERMINIMAL)
+
+    artifacts: dict = {}
+    skipped_lenses: dict = {}
+    for arm, (directory, kind, required) in wanted_lenses.items():
+        try:
+            artifacts[arm] = preflight(
+                directory, kind=kind, arm=arm, model=model,
+                d_model=config.d_model, layers=layer_list,
+                tokenizer_class=None, checksum=lens_checksum)
+            console.print(f"  lens [bold]{arm}[/bold] <- {directory} "
+                          f"(checksum {str(artifacts[arm].checksum)[:12]})")
+        except (FileNotFoundError, LensMismatch) as exc:
+            if required:
+                console.print(f"[red]{arm}: {exc}[/red]")
+                raise typer.Exit(2)
+            skipped_lenses[arm] = str(exc).splitlines()[0]
+            variant_list = [v for v in variant_list if v != arm]
+            console.print(f"  [yellow]{arm} NOT RUN — {skipped_lenses[arm]}[/yellow]")
+    if ANSWER_DIRECTION_JLENS not in artifacts and ANSWER_DIRECTION_JLENS in wanted_lenses:
+        console.print("[red]no J-lens: H5's discriminator cannot be built.[/red]")
+        raise typer.Exit(2)
+
     loader = ModelLoader(config)
     device_t = next(loader.model.parameters()).device
     console.print(f"[bold]E13 stage 106 — {model}[/bold]  layers {layer_list}, "
                   f"ranks {rank_list}, site '{chosen_site}' (from H3), "
                   f"training arm '{TRAIN_ARM}'")
 
-    # The answer-direction control needs rows for both answer tokens of every
-    # record, in TWO bases: the raw unembedding (kept for comparison) and the
-    # J-lens at the intervention layer, which is the direction that actually
-    # pushes the output head toward a token at that depth (E10-0). The first
-    # 6.7B run used only the unembedding and the control failed to reverse.
-    W_U = get_output_unembedding(loader.model)
+    # Every answer-direction arm needs rows for both answer tokens of every
+    # record. `W_U` is read exactly as E19 reads it (`get_output_embeddings`),
+    # and `g` through the shared helper stage 204 uses, so a J-lens direction in
+    # E13 is the same object as a J-lens direction in E19.
+    W_U = loader.model.get_output_embeddings().weight.detach()
+    gain = final_norm_gain(loader.model, config.d_model, device=W_U.device)
+    gain_info = gain_behaviour(loader.model)
     needed = sorted({t for record in records for t in
                      (record.token_ids["v_a"], record.token_ids["v_b"])})
+    if max(needed) >= int(W_U.shape[0]):
+        console.print(f"[red]answer token {max(needed)} is outside the model's "
+                      f"{int(W_U.shape[0])}-row unembedding; the corpus was "
+                      f"tokenized by a different tokenizer.[/red]")
+        raise typer.Exit(2)
     unembedding = {int(t): W_U[int(t)].detach().float().cpu().numpy() for t in needed}
+
+    # The tokenizer check the sidecar could not make: a lens fitted through a
+    # different tokenizer indexes different rows of `W_U`, so the two answer
+    # tokens would be the wrong two rows and the control would be a direction
+    # toward arbitrary vocabulary items.
+    tokenizer_class = type(loader.tokenizer).__name__
+    for arm, artifact in artifacts.items():
+        fitted_tok = (artifact.provenance.get("model", {}) or {}).get("tokenizer_class")
+        if fitted_tok and fitted_tok != tokenizer_class:
+            console.print(f"[red]{arm}: {artifact.path} was fitted through a "
+                          f"{fitted_tok}; this run loaded a {tokenizer_class}. "
+                          f"Token ids are not comparable across tokenizers.[/red]")
+            raise typer.Exit(2)
 
     # Calibration is split again: the subspace is FITTED on one part and the
     # rank is SELECTED on the other. Selecting the rank on the same bases the
@@ -160,42 +288,24 @@ def main(
                   f"{len(calib_select)} held out to select the rank")
 
     frames, select_frames, fits = [], [], []
-    lens_rows: list[dict] = []
     # Everything the post-loop test grid consumes is keyed BY LAYER. The first
-    # version bound `states_test`, `lens_vectors`, `mean_direction` and `fitted`
-    # as plain locals inside this loop, so a multi-layer run evaluated the
-    # claim-bearing grid at `chosen_layer` while holding the LAST layer's
-    # states, J-lens and subspace. A single-layer run cannot show it — first and
+    # version bound `states_test`, the lens vectors, `mean_direction` and
+    # `fitted` as plain locals inside this loop, so a multi-layer run evaluated
+    # the claim-bearing grid at `chosen_layer` while holding the LAST layer's
+    # states, lens and subspace. A single-layer run cannot show it — first and
     # last are the same layer — which is why the 6.7B result is unaffected. On
     # starcoder2-3b (`--layers 7,11,15`) it put layer-15 states through a
     # layer-7 intervention: the `noop` structural zero read 7.19e-01 instead of
     # 0, and calibration says_installed 1.000 collapsed to 0.239 on test at the
     # identical cell.
     states_test_by_layer: dict = {}
-    lens_by_layer: dict = {}
     mean_direction_by_layer: dict = {}
     fitted_by_layer: dict = {}
     if len(layer_list) > 1:
         console.print(f"  [yellow]fitting at layers {layer_list}; the test grid "
                       f"runs ONCE, at layer {int(layer_list[0])}[/yellow]")
+    # ── phase 1: DAS. No lens is opened anywhere in this loop. ───────────────
     for layer in layer_list:
-        # One J-lens per intervention layer, built on the CALIBRATION programs
-        # only, over the answer-token vocabulary.
-        lens_samples = [
-            LensSample(input_ids=torch.tensor([encode_prompt(
-                loader.tokenizer, r.prompt(TRAIN_ARM, "source"))]),
-                t=r.positions[chosen_site],
-                t_primes=[r.positions["answer"]])
-            for r in calib[:lens_samples_n]]
-        lens = compute_lens_vectors(loader.model, layer=int(layer),
-                                    samples=lens_samples, token_ids=needed)
-        lens_vectors = {int(t): np.asarray(v, dtype=np.float64)
-                        for t, v in zip(lens.token_ids, lens.vectors)}
-        lens_by_layer[int(layer)] = lens_vectors
-        lens_rows.append({"layer": int(layer), "n_samples": len(lens_samples),
-                          "n_tokens": len(needed)})
-        console.print(f"  layer {layer}: J-lens built over {len(needed)} answer "
-                      f"tokens from {len(lens_samples)} calibration programs")
         states_calib = collect_states(loader.model, loader.tokenizer, calib, layer,
                                       sites=site_list)
         states_test_by_layer[int(layer)] = collect_states(
@@ -258,11 +368,13 @@ def main(
             # runs ONCE, at the rank calibration chose — running every rank on
             # test and then picking is the winner's curse the split exists to
             # prevent, and it costs five times the GPU time to invite it.
+            # Two variants, neither of which is a lens arm: rank selection is
+            # as lens-free as the fit it selects for.
             select_frames.append(run_grid(
                 loader.model, loader.tokenizer, calib_select, states_select,
                 layer=layer, variants=("das_binding", "whole_state"),
                 sites=[chosen_site], rank=rank, subspace=fit.subspace,
-                unembedding=unembedding, lens_vectors=lens_vectors, seed=seed,
+                unembedding=unembedding, seed=seed,
                 provenance=provenance, batch_size=grid_batch_size, progress_every=0))
             console.print(f"  layer {layer} rank {rank}: alignment fitted, "
                           f"{len(select_frames[-1])} calibration rows")
@@ -290,7 +402,6 @@ def main(
     # `chosen_layer` rather than inheriting whatever the loop left behind is the
     # whole point: a KeyError here is a bug in layer_list, not a silent mismatch.
     states_test = states_test_by_layer[chosen_layer]
-    lens_vectors = lens_by_layer[chosen_layer]
     mean_direction = mean_direction_by_layer[chosen_layer]
     fitted = fitted_by_layer[chosen_layer]
 
@@ -307,6 +418,40 @@ def main(
                           f"[/red]")
             raise typer.Exit(2)
 
+    # ── phase 2: the controls. The lens artifacts open HERE, and only here. ──
+    # The DAS fit and the rank selection above are already finished and frozen;
+    # nothing below can reach back into them. Loading a multi-GB `lens.pt` is
+    # deferred to this point so the expensive read happens once, at the one
+    # layer the pre-committed cell actually uses, rather than per fitting layer.
+    answer_vectors: dict = {}
+    lens_manifest: list[dict] = []
+    for arm, artifact in artifacts.items():
+        try:
+            directions = answer_directions(artifact, chosen_layer, needed, gain, W_U)
+        except (FileNotFoundError, LensMismatch) as exc:
+            required = wanted_lenses[arm][2] or arm == ANSWER_DIRECTION_JLENS
+            if required:
+                console.print(f"[red]{arm}: {exc}[/red]")
+                raise typer.Exit(2)
+            skipped_lenses[arm] = str(exc).splitlines()[0]
+            variant_list = [v for v in variant_list if v != arm]
+            console.print(f"  [yellow]{arm} NOT RUN — {skipped_lenses[arm]}[/yellow]")
+            continue
+        answer_vectors[arm] = directions.vectors
+        lens_manifest.append({**directions.as_manifest(),
+                              "normalization_gain": gain_info})
+        console.print(f"  {arm}: {len(directions.vectors)} answer-token read "
+                      f"directions at layer {chosen_layer} from {artifact.path}")
+    lens_rows = [
+        {"arm": row["arm"], "kind": row["kind"], "path": row["path"],
+         "checksum_sha256": row["checksum_sha256"], "source_layer": row["source_layer"],
+         "n_tokens": row["n_tokens"],
+         "jacobian_lens_commit": row["jacobian_lens_commit"],
+         "fitting_corpus": row["fitting_corpus"]["name"],
+         "fitting_corpus_digest": row["fitting_corpus"]["digest"],
+         "gain_source": gain_info["source"], "norm_class": gain_info["norm_class"]}
+        for row in lens_manifest]
+
     # The claim-bearing grid: every variant, at the pre-committed cell. The
     # structural-zero site needs only enough rows to verify a provable identity.
     test_ranks = rank_list if test_all_ranks else [chosen_rank]
@@ -315,14 +460,14 @@ def main(
             loader.model, loader.tokenizer, test, states_test, layer=chosen_layer,
             variants=variant_list, sites=[chosen_site], rank=rank,
             subspace=fitted[rank], unembedding=unembedding,
-            lens_vectors=lens_vectors, mean_direction=mean_direction, seed=seed,
+            answer_vectors=answer_vectors, mean_direction=mean_direction, seed=seed,
             provenance=provenance, batch_size=grid_batch_size))
     frames.append(run_grid(
         loader.model, loader.tokenizer, test[:zero_check_n], states_test,
         layer=chosen_layer, variants=("noop", "whole_state"),
         sites=[s for s in site_list if s != chosen_site], rank=chosen_rank,
         subspace=fitted[chosen_rank], unembedding=unembedding,
-        lens_vectors=lens_vectors, seed=seed, provenance=provenance,
+        answer_vectors=answer_vectors, seed=seed, provenance=provenance,
         batch_size=grid_batch_size, progress_every=0))
 
     frame = pd.concat(frames, ignore_index=True)
@@ -354,6 +499,13 @@ def main(
                                   n_boot=n_boot, seed=seed)
     contrasts.to_csv(root / "interchange_contrasts.csv", index=False)
 
+    # The reading surface stage 107 renders: every arm, in BOTH arms of the
+    # design, with the exact edit norm, |edit|/||h||, and paired intervals
+    # against the treatment on the same rows.
+    panel = answer_direction_panel(frame, site=chosen_site, layer=chosen_layer,
+                                   rank=chosen_rank, n_boot=n_boot, seed=seed)
+    panel.to_csv(root / "interchange_panel.csv", index=False)
+
     passed4, value4, detail4 = evaluate_gate_h4(summary, contrasts, chosen_site,
                                                 chosen_layer, chosen_rank)
     record_gate(model, "H4", passed4, detail4, stage="106_binding_interchange",
@@ -373,19 +525,46 @@ def main(
 
     console.print(summary.to_string(index=False))
     console.print("\n" + contrasts.to_string(index=False))
+    if not panel.empty:
+        console.print("\n[bold]answer-direction panel (both arms)[/bold]")
+        console.print(panel.to_string(index=False))
     console.print(f"\n  H4: {'[green]PASS[/green]' if passed4 else '[red]FAIL[/red]'} — {detail4}")
     console.print(f"  H5: {'[green]PASS[/green]' if passed5 else '[red]FAIL[/red]'} — {detail5}")
     console.print("[dim]H4 without H5 is E11 again: an effect on the training arm alone "
                   "cannot separate a binding subspace from an answer direction.[/dim]")
+    console.print(f"[dim]H5's discriminator is {ANSWER_DIRECTION_JLENS} (the published "
+                  f"J-lens). The R-lens arm is reported, not gated.[/dim]")
+    if skipped_lenses:
+        console.print("[yellow]arms not run: "
+                      + "; ".join(f"{k} ({v})" for k, v in skipped_lenses.items())
+                      + "[/yellow]")
 
     write_manifest("106_binding_interchange", {
         "model": model, "layers": str(layer_list), "ranks": ranks, "site": chosen_site,
         "selected_layer": chosen_layer, "selected_rank": chosen_rank,
         "steps": steps, "dtype": dtype, "seed": seed,
         "batch_size": batch_size, "grid_batch_size": grid_batch_size,
+        "variants": ",".join(variant_list),
+        "jlens": str(jlens or default_lens_dir(model, JLENS_DIRNAME)),
+        "rlens": str(rlens or default_lens_dir(model, RLENS_DIRNAME)),
+        "require_rlens": require_rlens,
+        "rlens_paperminimal": str(rlens_paperminimal) if rlens_paperminimal else None,
         "test_all_ranks": test_all_ranks}, t0,
         extra={"H4": passed4, "H5": passed5, "train_arm_fraction": value4,
-               "held_out_fraction": value5, **provenance})
+               "held_out_fraction": value5,
+               # Everything needed to say WHICH lens produced the control, and
+               # to notice if it is ever silently swapped: kind, path, checksum,
+               # vendored-release commit, fitting-corpus provenance, the source
+               # layer the direction was read at, and how `g` was resolved.
+               "answer_direction_lenses": lens_manifest,
+               "normalization_gain": gain_info,
+               "answer_direction_discriminator": ANSWER_DIRECTION_JLENS,
+               "rlens_arm_run": ANSWER_DIRECTION_RLENS in answer_vectors,
+               "rlens_paperminimal_arm_run":
+                   ANSWER_DIRECTION_RLENS_PAPERMINIMAL in answer_vectors,
+               "answer_direction_arms_not_run": skipped_lenses,
+               "das_is_lens_independent": True,
+               **provenance})
     # `broken` fails the run too: a gate that passed on numbers taken from the
     # wrong layer is worse than a gate that failed, because it reads as a result.
     if strict and (broken or not (passed4 and passed5)):

@@ -643,6 +643,98 @@ the unchanged variable-use position with a small, predeclared semantic lexicon.
 `results/binding/*/e17_report.{md,yaml}`; and the E17 entry in
 `results/STATUS.yaml`.
 
+## 4.10 Binding cotangent-lens attribution and lexical alignment (E16/E18)
+
+**Why these results are archived.** E16 and E18 used the repository's earlier
+cotangent constructions, not the published 2026 J-lens or R-lens. The cotangent
+lens averages token-specific vector–Jacobian products over a fixed candidate
+vocabulary; the conserving cotangent lens applies the repository's earlier
+modified backward rules. Neither fits the published full `d_model × d_model`
+Jacobian transport or performs the published full-vocabulary readout. Calling
+their findings “J-lens” or “R-lens” would therefore misidentify the instrument.
+
+**E16 result retained.** On DeepSeek-Coder 6.7B binding pairs, the conserving
+cotangent lens moved normalized answer relevance from the inactive outer
+definition toward the active inner value on 280/280 held-out bases, peaking near
+22% of the selected answer score. Crossed value arms, fixed-output scoring,
+competing-value reversal, and same-binding controls supported the attribution
+within that earlier rule system. The 1.3B normalized result was uninterpretable
+because selected scores were often non-positive; StarCoder2 was outside those
+rules. This remains a valid archived attribution result, not a published R-lens
+result and not causal evidence.
+
+**E18 result retained.** At the unchanged use token on DeepSeek-Coder 6.7B,
+several predeclared cotangent-lens word margins followed the binding across both
+crossed value arms: `nested/module` reached 1.000/1.000 at L16 and
+`local/global` 0.996/1.000 at L20. Positional and action contrasts were also
+strong, so the single template did not identify unique scope semantics or
+faithful verbalization. This remains archived lexical-association evidence, not
+a published J-lens workspace result.
+
+**Preserved:** stages 140–141 and 160–161; `results/binding/*/e16_report.*`,
+`results/binding/*/e18_report.*`, and their supporting CSVs.
+
+---
+
+# 4b. The cotangent `answer_direction` control (retired 2026-09-01)
+
+**Retired because it was a different instrument wearing the name of another
+one**, not because it failed. Its arithmetic was correct and its numbers stand
+as measurements of what they measured.
+
+**What it was.** E13 stage 106 needed a direction at the intervention layer
+along which a residual state moves the model's output toward a given answer
+token — the raw unembedding row is a poor proxy for that away from the last
+layer, which the first 6.7B run demonstrated when the unit-norm unembedding
+control did nothing on either arm. The stage therefore built, per intervention
+layer, a **corpus-averaged cotangent readout over the two answer tokens**,
+fitted inside the stage from its own DAS calibration programs
+(`src/models/cotangent_lens.py::compute_lens_vectors`), and used the difference
+of the two tokens' vectors as the control direction. The arm was called
+`answer_direction` and the object "J-lens vectors".
+
+**Why that had to change.** It is not the published J-lens. The differences are
+tabulated in [WORKSPACE_LENS.md §1](WORKSPACE_LENS.md): a fixed-candidate
+vocabulary rather than the full `d_model × d_model` Jacobian, the final
+normalizer dropped, the *task programs* as the fitting corpus rather than an
+independent pretraining-like one, and the final block as the target rather than
+the released penultimate one. With E19 in the repository, two different objects
+were being called the same thing in two tracks, and the E13 control could not be
+read against the E19 results at all.
+
+**What replaced it.** Stage 106 now loads the artifact stage 201 fitted and
+builds `u_w(l) = J_lᵀ(g·W_U[w])` through the same
+`workspace_lens.ablation.read_direction` E19's causal stage uses. The arms are
+named for the lens that built them — `answer_direction_jlens` (H5's
+discriminator), `answer_direction_rlens` (descriptive),
+`answer_direction_unembedding` (the no-transport floor), and an optional
+`answer_direction_rlens_paperminimal` for StarCoder2. Nothing is fitted inside
+stage 106 any more, and DAS is untouched: it is neither initialized,
+constrained nor trained with a lens, and its subspace and rank are frozen before
+a lens file is opened.
+
+**The archived numbers.** These are what the cotangent control measured. They
+are **not translated, rescaled or reused**, and they are not comparable to the
+published-J-lens arm that replaces them:
+
+| model | site/layer/rank | `answer_direction` on `ab` | on `ba` | H5 verdict at the time |
+|---|---|---|---|---|
+| deepseek-coder-6.7b | use / L8 / r1 | +2.322 [2.157, 2.482], installed 27.9% | +0.335 [0.208, 0.456], installed 4.3%; arm ratio 0.154 vs transport 1.025 | PASS |
+| starcoder2-3b | use / L11 / r1 | +1.674 [1.512, 1.827], installed 44.8% | installed 18.4%, `delta_ld` −0.263; arm ratio 0.410 vs transport 0.979 | PASS |
+
+**Every E13 verdict that rested on them is marked superseded, not carried
+forward.** `scripts/107_binding_report.py` detects an H5 record whose detail
+names the retired arm and reports **SUPERSEDED — RERUN REQUIRED** instead of a
+verdict; `evaluate_gate_h5` refuses to score the retired arm as the
+discriminator and reports it NOT MEASURED; `scripts/108_binding_diagnose.py`
+says so rather than reading the ratio. All three are pinned by tests. The
+verdicts return when stage 106 has run again against the stage-201 artifacts.
+
+**Preserved:** `results/binding/*/interchange*.csv` and the `gates.yaml` /
+`e13_report.*` files as they stood, plus `src/models/cotangent_lens.py` itself,
+which the archived stages (60–63, 70–75, 110, 125–131, 140–141, 150–153,
+160–161) still use and which still runs.
+
 ---
 
 # 5. A gate criterion that was changed after seeing data
@@ -692,6 +784,14 @@ threshold that the observed 4.3% happens to clear; switching metrics on conditio
 1 as well, where the verdict is unchanged either way (188% of ceiling on the
 margin, 114% on the argmax); or making the change without leaving the old numbers
 on the record.
+
+**These `answer_direction` numbers are themselves archived.** The control they
+describe was retired on 2026-09-01 (§4b) and replaced by the published J-lens
+arm `answer_direction_jlens`. The metric change recorded here is unaffected —
+it is about *which statistic* condition 3 reads, not about which direction the
+control edits along — and the new rule applies unchanged to the new arm. But the
+values in the table above belong to the retired instrument and must not be read
+as the current control's.
 
 Runs predating `says_installed` still evaluate under the old rule—the fallback is
 explicit in `evaluate_gate_h5` and pinned by a test. The 6.7B files originally

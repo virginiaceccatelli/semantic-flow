@@ -66,6 +66,14 @@ From Decodable Structure to Causal Use}
 \maketitle
 \vspace{-2.2em}
 
+\begin{center}
+\fcolorbox{red!60!black}{red!5}{\parbox{0.92\linewidth}{\textbf{Archived manuscript.}
+The lens results in this version use superseded prompt-specific cotangent and
+conserving-cotangent methods, not the published J-lens and R-lens. The active
+paper and main results are maintained in \texttt{docs/PAPER\_DRAFT.md} and
+\texttt{docs/RESULTS.md}.}}
+\end{center}
+
 \begin{abstract}
 \noindent
 Code models increasingly inspect vulnerabilities, modify repositories, and
@@ -233,7 +241,7 @@ propagation \citep{bach2015lrp} has been adapted to transformers with
 conservation-respecting rules for normalization and attention
 \citep{ali2022xai,achtibat2024attnlrp}, in contrast to gradient attributions
 \citep{sundararajan2017ig,chefer2021transformer}. We use both families as
-\emph{descriptive} instruments: a prompt-specific Jacobian vocabulary readout and
+\emph{descriptive} instruments: an archived prompt-specific cotangent vocabulary readout and
 a conservative relevance decomposition. The latter predates and differs from the
 2026 R-lens because it decomposes one answer score across source tokens. Neither
 instrument establishes causal necessity. DAS supplies the causal test.
@@ -715,15 +723,15 @@ name. This is observational evidence that complements, but does not amplify, the
 causal status of DAS; because all bases share one template, the effect is best
 read as a property of the template-level contrast (Appendix~\ref{app:rlens}).
 
-\subsection{Prompt-specific Jacobian readout of lexical alignment (P5)}
+\subsection{Archived prompt-specific cotangent readout of lexical alignment (P5)}
 \label{sec:jlens}
 
 \paragraph{What the experiment establishes.} The final question is whether the
 binding state is expressed in the model's \emph{output vocabulary} at the
-unprompted use token, with no appended question. The instrument is a
-prompt-specific Jacobian vocabulary readout. The logit lens
+unprompted use token, with no appended question. This archived instrument is a
+prompt-specific cotangent vocabulary readout, not the published J-lens. The logit lens
 reads a hidden state directly through the unembedding
-\citep{nostalgebraist2020logitlens}, the prompt-specific Jacobian readout estimates how the remaining layers
+\citep{nostalgebraist2020logitlens}, the prompt-specific cotangent readout estimates how the remaining layers
 map a change at the read position to the output, which is the relevant map when
 the state is read mid-network. We report the plain logit lens alongside it to
 separate vocabulary alignment from an effect introduced by the Jacobian
@@ -760,7 +768,7 @@ vocabulary is thus not, on this evidence, a faithful readout of the causal state
 \begin{table}[t]
 \centering
 \small
-\caption{prompt-specific Jacobian crossed-arm reversal rate (fraction of held-out programs on which
+\caption{Archived prompt-specific cotangent crossed-arm reversal rate (fraction of held-out programs on which
 the margin moves with the binding), DeepSeek-Coder 6.7B, at representative
 layers. Scope pairs track the binding, but a positional confound tracks it as
 strongly, so alignment is not uniquely scope.}
@@ -856,7 +864,7 @@ observational; conservation verifies an accounting identity, not that the
 resulting partition is the unique causal explanation, and freezing the attention
 pattern precludes attributing the query/key formation. Because every base shares
 one template, a mismatched-base control reproduces the mean shift, so effect sizes
-should be read as properties of the controlled contrast. The prompt-specific Jacobian readout has limited
+should be read as properties of the controlled contrast. The archived prompt-specific cotangent readout has limited
 early-layer stability (independent-build sign agreement exceeds $0.90$ only at
 L24), its next-token validation is small, and its single template changes scope,
 order, distance, and replacement together; broader templates that break these

@@ -1,6 +1,6 @@
 # E13 binding interchange — deepseek-coder-6.7b
 
-**Verdict: BINDING TRANSPORTED**
+**Verdict: SUPERSEDED — RERUN REQUIRED**
 
 Does a low-rank, magnitude-free interchange at the site where a variable binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token or an answer direction?
 
@@ -15,15 +15,32 @@ The same binding flip demands opposite token movements in the two value assignme
 - **PASS** `H2` (which definition is in scope is decodable at the use anchor) — best layer 8: binding decodable at 1.000 (selectivity 0.524) against a MEASURED surface baseline of 0.500; margin +0.500. Thresholds 0.8 and 0.1. The floor is pinned by construction here: the anchor token is identical across the counterfactual and the mutation is outside the baseline's window.
 - **PASS** `H3` (whole-state interchange flips the answer — the ceiling, per arm) — site use, layer 8 (both chosen on calibration): ab: +4.781 [+4.683, +4.878], flip rate 0.857; ba: +4.799 [+4.694, +4.903], flip rate 0.879 (thresholds: CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says nothing.
 - **PASS** `H4` (low-rank interchange beats matched controls on the TRAINING arm) — ab @ use L8 r1: +9.029 [+8.952, +9.108] = 189% of the whole-state ceiling +4.781 (threshold 50%); controls cleared: True; edit moved 0.479 of ||h||
-- **PASS** `H5` (the same subspace transfers to the HELD-OUT value assignment, where an answer direction cannot) — ba @ use L8 r1: das_binding installed 100.0% = 114% of the held-out ceiling (threshold 50%); margin +9.009 [+8.933, +9.089] = 188% of it; discriminator — answer_direction ab +2.322 [+2.157, +2.482], installed 27.9% (passes: True); ba/ab argmax ratio 0.154 against transport's 1.025 (bar 0.513) (fails: True)
+- **SUPERSEDED (was PASS)** `H5` (the same subspace transfers to the HELD-OUT value assignment, where an answer direction cannot) — ba @ use L8 r1: das_binding installed 100.0% = 114% of the held-out ceiling (threshold 50%); margin +9.009 [+8.933, +9.089] = 188% of it; discriminator — answer_direction ab +2.322 [+2.157, +2.482], installed 27.9% (passes: True); ba/ab argmax ratio 0.154 against transport's 1.025 (bar 0.513) (fails: True)
 - **PASS** `H6` (the relevance readout is mechanically sound: the LRP rules actually installed so relevance conserves, the token roles partition every token exactly once, the per-role deltas close to the difference of the two conservation ratios, every binding_flip pair differs at exactly one measured token index, the fixed-target conditions really do score both members at one token, and every declared cell exists) — 25600 readings and 51200 paired contrasts over 4 contrasts x 8 layers x 4 target conditions; median |rho-1| 8.61e-08; conserving layers [0, 3, 7, 11, 15, 19, 23, 27]; LRP rules bound {'ln': 65, 'mlp': 32, 'attn': 32}
 - **PASS** `H7` (the candidate vocabulary is mechanically sound: every declared lexicon pair is kept whole or dropped whole with a reason, enough pairs survive from more than one family, discovery ran on calibration bases only and the frozen file records which, and the candidate set contains the lexicon, the discovered pool and the random controls without duplicates) — 10 lexicon pairs from 4 families, 15 mechanism words, 221 candidates (160 discovered, 32 random) over 120 calib bases
 - **PASS** `H8` (the forced choice is mechanically sound: every declared (base, cell, question) is scored, the rendered question is identical in all four cells of a base, no question names the inner definition, both choices are distinct single tokens, both variants of every word style ran, and the value positive control ran) — 14400 scored choices over 9 questions x 400 bases x 4 cells; report split test
 - **PASS** `H9` (the verbalisation relevance readout is mechanically sound: H6's checks on the verbalisation prompt, plus a positive-score condition — `R_t / s` is a share only when the score is positive, and conservation holds for negative scores too) — 38400 readings and 64000 paired contrasts over 4 contrasts x 8 layers x 5 target conditions for scope/direct; median |rho-1| 1.27e-07; readable layers [0, 3, 7, 11, 15, 19, 23, 27]; LRP rules bound {'ln': 65, 'mlp': 32, 'attn': 32}
+- **PASS** `H10` (the unprompted vocabulary readout is mechanically sound: every declared lexicon pair kept whole or dropped whole with a reason, the candidate row order the margin arithmetic assumes, all three readouts carrying the same rows with their kinds declared and the random control actually Gram-matched, the scored text being E13's program verbatim with the encodings agreeing through the use position, the use token identical in all four cells, every declared cell present in both arms over the declared layer grid, and the positive control fitted on calibration and read on test) — 108000 reversal rows over 400 bases x 2 arms x 5 layers x 3 readouts x 9 pairs; probe succeeds at layers [8, 12, 16, 20, 24]; report split test
+
+> **The `H5` line above is archived, not current.** H5's recorded verdict was decided by the ARCHIVED `answer_direction` control — the corpus-averaged cotangent readout stage 106 fitted for itself before 2026-09-01. That is a different estimator from the published J-lens (`docs/WORKSPACE_LENS.md` §1), so the discriminator behind this verdict no longer exists in the pipeline. The number is not translated, rescaled or reused: stage 106 must run again against the stage-201 J-lens artifact.
+
+## Diagnostic
+
+H5's recorded verdict was decided by the ARCHIVED `answer_direction` control — the corpus-averaged cotangent readout stage 106 fitted for itself before 2026-09-01. That is a different estimator from the published J-lens (`docs/WORKSPACE_LENS.md` §1), so the discriminator behind this verdict no longer exists in the pipeline. The number is not translated, rescaled or reused: stage 106 must run again against the stage-201 J-lens artifact.
+
+Re-run after fixing: `make lens-fit MODEL=deepseek-coder-6.7b && make binding-interchange MODEL=deepseek-coder-6.7b && make binding-report MODEL=deepseek-coder-6.7b`
+
+> **ARCHIVED.** H5's recorded verdict was decided by the ARCHIVED `answer_direction` control — the corpus-averaged cotangent readout stage 106 fitted for itself before 2026-09-01. That is a different estimator from the published J-lens (`docs/WORKSPACE_LENS.md` §1), so the discriminator behind this verdict no longer exists in the pipeline. The number is not translated, rescaled or reused: stage 106 must run again against the stage-201 J-lens artifact.
+
+## Controls
+
+No `interchange_panel.csv`. Stage 106 has not been re-run since the answer-direction control moved to the published J-lens (2026-09-01), so there is no current control table to show. The archived `answer_direction` numbers from earlier runs are **not** substituted here: that arm is a different estimator (`docs/WORKSPACE_LENS.md` §1). Re-run `make binding-interchange` after `make lens-fit`.
 
 ## Do not claim
 
 - that the model 'understands' scope — the claim is transport at one site
 - anything about real code, other languages, or other model families
 - that H4 alone supports the conclusion; without H5 it is E11 again
-- a null from H5 without checking that answer_direction failed on `ba` too
+- a null from H5 without checking that answer_direction_jlens failed on `ba` too
+- that the R-lens arm gates anything — it is reported, never gated
+- any number from the ARCHIVED `answer_direction` arm; it is a different estimator (docs/WORKSPACE_LENS.md §1) and is not comparable

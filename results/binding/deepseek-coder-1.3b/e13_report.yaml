@@ -1,6 +1,6 @@
 experiment: E13
-model: deepseek-coder-6.7b
-verdict: "SUPERSEDED \u2014 RERUN REQUIRED"
+model: deepseek-coder-1.3b
+verdict: INCOMPLETE
 question: Does a low-rank, magnitude-free interchange at the site where a variable
   binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token
   or an answer direction?
@@ -15,14 +15,9 @@ do_not_claim:
 - "that the R-lens arm gates anything \u2014 it is reported, never gated"
 - "any number from the ARCHIVED `answer_direction` arm; it is a different estimator\
   \ (docs/WORKSPACE_LENS.md \xA71) and is not comparable"
-first_blocking_gate: null
+first_blocking_gate: H1
 gates_run_under_override: []
-superseded: "H5's recorded verdict was decided by the ARCHIVED `answer_direction`\
-  \ control \u2014 the corpus-averaged cotangent readout stage 106 fitted for itself\
-  \ before 2026-09-01. That is a different estimator from the published J-lens (`docs/WORKSPACE_LENS.md`\
-  \ \xA71), so the discriminator behind this verdict no longer exists in the pipeline.\
-  \ The number is not translated, rescaled or reused: stage 106 must run again against\
-  \ the stage-201 J-lens artifact."
+superseded: null
 gates:
 - gate: H0
   meaning: 'the four-program factorial verifies: invariants, alignment, execution
@@ -32,7 +27,7 @@ gates:
   passed: true
   value: 1.0
   override: false
-  detail: '1.0000 of 400 bases agree with an independent interpreter and satisfy every
+  detail: '1.0000 of 200 bases agree with an independent interpreter and satisfy every
     invariant, including the arm crossing that makes the held-out test a falsification
     (threshold 0.999). Per check: semantics_agree 1.0000, arms_crossed 1.0000, mutation_distance_ok
     1.0000, anchors_ordered 1.0000, values_distinct 1.0000, tokens_distinct 1.0000'
@@ -40,54 +35,44 @@ gates:
   meaning: the model returns the correctly bound variable (behavioural accuracy)
   owner_stage: 102_binding_behaviour
   recorded: true
-  passed: true
-  value: 1.0
+  passed: false
+  value: 0.8089285714285714
   override: false
-  detail: overall 1.000 [1.000, 1.000] against 0.85; weakest cell ab_source 1.000
+  detail: overall 0.809 [0.779, 0.838] against 0.85; weakest cell ab_target 0.571
     against 0.75
 - gate: H2
   meaning: which definition is in scope is decodable at the use anchor
   owner_stage: 104_binding_decode
-  recorded: true
-  passed: true
-  value: 1.0
+  recorded: false
+  passed: false
+  value: null
   override: false
-  detail: 'best layer 8: binding decodable at 1.000 (selectivity 0.524) against a
-    MEASURED surface baseline of 0.500; margin +0.500. Thresholds 0.8 and 0.1. The
-    floor is pinned by construction here: the anchor token is identical across the
-    counterfactual and the mutation is outside the baseline''s window.'
+  detail: not recorded
 - gate: H3
   meaning: "whole-state interchange flips the answer \u2014 the ceiling, per arm"
   owner_stage: 105_binding_ceiling
-  recorded: true
-  passed: true
-  value: 4.790164618859333
+  recorded: false
+  passed: false
+  value: null
   override: false
-  detail: 'site use, layer 8 (both chosen on calibration): ab: +4.781 [+4.683, +4.878],
-    flip rate 0.857; ba: +4.799 [+4.694, +4.903], flip rate 0.879 (thresholds: CI
-    above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says nothing.'
+  detail: not recorded
 - gate: H4
   meaning: low-rank interchange beats matched controls on the TRAINING arm
   owner_stage: 106_binding_interchange
-  recorded: true
-  passed: true
-  value: 1.888461584268005
+  recorded: false
+  passed: false
+  value: null
   override: false
-  detail: 'ab @ use L8 r1: +9.029 [+8.952, +9.108] = 189% of the whole-state ceiling
-    +4.781 (threshold 50%); controls cleared: True; edit moved 0.479 of ||h||'
+  detail: not recorded
 - gate: H5
   meaning: the same subspace transfers to the HELD-OUT value assignment, where an
     answer direction cannot
   owner_stage: 106_binding_interchange
-  recorded: true
-  passed: true
-  value: 1.1382113821138211
+  recorded: false
+  passed: false
+  value: null
   override: false
-  detail: "ba @ use L8 r1: das_binding installed 100.0% = 114% of the held-out ceiling\
-    \ (threshold 50%); margin +9.009 [+8.933, +9.089] = 188% of it; discriminator\
-    \ \u2014 answer_direction ab +2.322 [+2.157, +2.482], installed 27.9% (passes:\
-    \ True); ba/ab argmax ratio 0.154 against transport's 1.025 (bar 0.513) (fails:\
-    \ True)"
+  detail: not recorded
 - gate: H6
   meaning: 'the relevance readout is mechanically sound: the LRP rules actually installed
     so relevance conserves, the token roles partition every token exactly once, the
@@ -98,11 +83,11 @@ gates:
   owner_stage: 140_binding_relevance
   recorded: true
   passed: true
-  value: 51200.0
+  value: 19200.0
   override: false
-  detail: '25600 readings and 51200 paired contrasts over 4 contrasts x 8 layers x
-    4 target conditions; median |rho-1| 8.61e-08; conserving layers [0, 3, 7, 11,
-    15, 19, 23, 27]; LRP rules bound {''ln'': 65, ''mlp'': 32, ''attn'': 32}'
+  detail: '9600 readings and 19200 paired contrasts over 4 contrasts x 6 layers x
+    4 target conditions; median |rho-1| 1.56e-07; conserving layers [0, 3, 7, 11,
+    15, 19]; LRP rules bound {''ln'': 49, ''mlp'': 24, ''attn'': 24}'
 - gate: H7
   meaning: 'the candidate vocabulary is mechanically sound: every declared lexicon
     pair is kept whole or dropped whole with a reason, enough pairs survive from more
@@ -112,10 +97,10 @@ gates:
   owner_stage: 150_binding_verbal_discover
   recorded: true
   passed: true
-  value: 221.0
+  value: 225.0
   override: false
-  detail: 10 lexicon pairs from 4 families, 15 mechanism words, 221 candidates (160
-    discovered, 32 random) over 120 calib bases
+  detail: 10 lexicon pairs from 4 families, 15 mechanism words, 225 candidates (160
+    discovered, 32 random) over 60 calib bases
 - gate: H8
   meaning: 'the forced choice is mechanically sound: every declared (base, cell, question)
     is scored, the rendered question is identical in all four cells of a base, no
@@ -124,9 +109,9 @@ gates:
   owner_stage: 151_binding_verbal_behaviour
   recorded: true
   passed: true
-  value: 14400.0
+  value: 7200.0
   override: false
-  detail: 14400 scored choices over 9 questions x 400 bases x 4 cells; report split
+  detail: 7200 scored choices over 9 questions x 200 bases x 4 cells; report split
     test
 - gate: H9
   meaning: "the verbalisation relevance readout is mechanically sound: H6's checks\
@@ -136,12 +121,11 @@ gates:
   owner_stage: 152_binding_verbal_relevance
   recorded: true
   passed: true
-  value: 64000.0
+  value: 24000.0
   override: false
-  detail: '38400 readings and 64000 paired contrasts over 4 contrasts x 8 layers x
-    5 target conditions for scope/direct; median |rho-1| 1.27e-07; readable layers
-    [0, 3, 7, 11, 15, 19, 23, 27]; LRP rules bound {''ln'': 65, ''mlp'': 32, ''attn'':
-    32}'
+  detail: '14400 readings and 24000 paired contrasts over 4 contrasts x 6 layers x
+    5 target conditions for scope/direct; median |rho-1| 3.03e-07; readable layers
+    [0, 3, 7, 11, 15, 19]; LRP rules bound {''ln'': 49, ''mlp'': 24, ''attn'': 24}'
 - gate: H10
   meaning: 'the unprompted vocabulary readout is mechanically sound: every declared
     lexicon pair kept whole or dropped whole with a reason, the candidate row order
@@ -152,19 +136,16 @@ gates:
     in both arms over the declared layer grid, and the positive control fitted on
     calibration and read on test'
   owner_stage: 160_binding_lexlens
-  recorded: true
-  passed: true
-  value: 108000.0
+  recorded: false
+  passed: false
+  value: null
   override: false
-  detail: 108000 reversal rows over 400 bases x 2 arms x 5 layers x 3 readouts x 9
-    pairs; probe succeeds at layers [8, 12, 16, 20, 24]; report split test
-diagnostic: "H5's recorded verdict was decided by the ARCHIVED `answer_direction`\
-  \ control \u2014 the corpus-averaged cotangent readout stage 106 fitted for itself\
-  \ before 2026-09-01. That is a different estimator from the published J-lens (`docs/WORKSPACE_LENS.md`\
-  \ \xA71), so the discriminator behind this verdict no longer exists in the pipeline.\
-  \ The number is not translated, rescaled or reused: stage 106 must run again against\
-  \ the stage-201 J-lens artifact."
-rerun_after_fix: make lens-fit MODEL=deepseek-coder-6.7b && make binding-interchange
-  MODEL=deepseek-coder-6.7b && make binding-report MODEL=deepseek-coder-6.7b
+  detail: not recorded
+diagnostic: "The task is a variable lookup with no arithmetic. If this fails, check\
+  \ behaviour.csv for a constant responder (group by argmax_token) before blaming\
+  \ the model, then check the weakest CELL \u2014 a model that handles the outer binding\
+  \ but not the shadowed one fails the only thing E13 measures."
+rerun_after_fix: python scripts/103_binding_extract.py --model deepseek-coder-1.3b
+  --layers <layers>
 control_panel: []
 answer_direction_arms: []

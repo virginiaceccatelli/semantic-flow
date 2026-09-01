@@ -279,11 +279,34 @@ stage106_binding_interchange:          # H4, H5
   training_arm: ab
   held_out_arm: ba
   ranks: [1, 2, 4, 8]
-  variants: [das_binding, answer_direction, random_rank, random_norm, noop, whole_state]
+  variants: [das_binding, mean_difference, answer_direction_jlens,
+             answer_direction_rlens, answer_direction_unembedding,
+             random_rank, random_norm, noop, whole_state]
   alignment: {steps: 200, batch_size: 8, lr: 0.01, trained_on: calibration_split_and_training_arm_only}
   min_train_arm_fraction: 0.50         # H4, fraction of the ceiling
   min_transfer_fraction: 0.50          # H5, fraction of the HELD-OUT arm's ceiling
-  decisive_control: answer_direction   # must pass `ab` and FAIL `ba`
+  # The discriminator is the PUBLISHED J-lens (stage 201), never a lens fitted
+  # inside this stage. It must pass `ab` and FAIL `ba`.
+  decisive_control: answer_direction_jlens
+  # Secondary and DESCRIPTIVE: the same construction through the published
+  # R-lens. It gates nothing; adding a gate would be a change to the experiment.
+  secondary_control: answer_direction_rlens
+  # StarCoder2 only, optional and separately named. Never a substitute for the
+  # default R-lens (docs/WORKSPACE_LENS.md §8).
+  sensitivity_control: answer_direction_rlens_paperminimal
+  answer_direction:
+    formula: "u_w(l) = J_l^T (g * W_U[w]); d = u_installed(l) - u_own(l)"
+    lens: published                     # stage 201 artifacts; nothing is fitted here
+    lens_dir: results/workspace_lens/{model}
+    normalization_gain: final_norm.weight   # E19 readout/ablation behaviour
+    fixed_from_arm: ab                  # held fixed when evaluated on `ba`
+    dose: matched_per_row_to_das_edit_norm
+  das_is_lens_independent: true         # no lens initializes, constrains or trains DAS
+  requires_stage: 201_lens_fit          # for the control-evaluation phase only
+  # RETIRED 2026-09-01: `answer_direction`, a corpus-averaged cotangent readout
+  # fitted inside this stage over the two answer tokens. A different estimator
+  # (docs/WORKSPACE_LENS.md §1); its numbers are archived, not carried forward.
+  retired_variants: [answer_direction]
 
 stage107_binding_report:
   verdicts: [BINDING TRANSPORTED, NOT SUPPORTED, INCOMPLETE]

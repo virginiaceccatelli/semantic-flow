@@ -12,9 +12,10 @@
 #
 #   200  corpus + probe suite     CPU        seconds   tokenizer only
 #   201  fit J-lens AND R-lens    GPU        HOURS     the whole cost of E19
-#   202  the seven-check gate     GPU        minutes   REQUIRED before 203-205
+#   202  the seven-check gate     GPU        minutes   REQUIRED before 203-206
 #   203  J vs R vs logit readout  GPU        minutes   one forward per item
 #   204  causal ablation          GPU        minutes   ~20 forwards per item
+#   206  semantic-concept panel   GPU        minutes   full-vocabulary ranks
 #   205  tables, figures, report  CPU        seconds
 #
 # ** RUN `make lens-fit-dry` FIRST. ** Stage 201 costs about `2 * d_model`
@@ -59,6 +60,7 @@ source jobs/common.csh
 if (! $?DTYPE)     setenv DTYPE bfloat16
 if (! $?LENS_N)    setenv LENS_N 100
 if (! $?DIM_BATCH) setenv DIM_BATCH 16
+if (! $?CONCEPT_BASES) setenv CONCEPT_BASES 100
 # --halves fits two extra lenses per kind on disjoint corpus halves, which is
 # what gate W6 (build repeatability) reads. It triples stage 201, so it is on
 # for the 1.3b run only; W6 is a property of the estimator, not of the model,
@@ -95,7 +97,7 @@ $PYTHON scripts/201_lens_fit.py --model "$MODEL" --corpus "$CORPUS" \
 # only one that says anything — scrolls off the top of the log.
 if ($status != 0) then
     echo ""
-    echo "*** stage 201 FAILED. Stopping here: 202-205 all read lens.pt and"
+    echo "*** stage 201 FAILED. Stopping here: 202-206 all read lens.pt and"
     echo "*** would only produce FileNotFoundError on top of the real error."
     echo "*** The real error is immediately above this line."
     if (-e "${OUT}/j-lens/fit_checkpoint.pt") then
@@ -124,6 +126,13 @@ $PYTHON scripts/204_lens_ablate.py --model "$MODEL" --suite "$SUITE" \
 # section, which looks exactly like a report that never asked for one.
 set ABLATE = $status
 if ($ABLATE != 0) echo "*** stage 204 FAILED (exit $ABLATE) — the report will have no ablation section."
+
+echo "=== stage 206: semantic-concept J/R/logit panel — GPU ==="
+$PYTHON scripts/206_lens_concepts.py --model "$MODEL" --lens-dir "$OUT" \
+    --output "${OUT}/concepts" --dtype "$DTYPE" \
+    --n-bases "$CONCEPT_BASES"
+set CONCEPTS = $status
+if ($CONCEPTS != 0) echo "*** stage 206 FAILED (exit $CONCEPTS) — the report will mark the semantic-concept panel not run."
 
 echo "=== stage 205: tables, figures, report — CPU ==="
 $PYTHON scripts/205_lens_report.py --model "$MODEL"

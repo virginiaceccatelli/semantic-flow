@@ -1,7 +1,9 @@
 # E19 — the published J-lens and R-lens on code models
 
 **Status: complete at canonical scale on DeepSeek-Coder 1.3B and 6.7B and
-StarCoder2-3B.** Both lenses were fitted on 100 independent prompts, passed the
+StarCoder2-3B, except the semantic-concept panel (§6.2, stage 206) and E13's
+re-run against these lenses (§6.4), both of which are built and tested but
+awaiting GPU time.** Both lenses were fitted on 100 independent prompts, passed the
 required gates, and were evaluated observationally and causally. StarCoder2 is
 also reported with a paper-minimal sensitivity R-lens that omits the unpublished
 LayerNorm analogue.
@@ -50,7 +52,26 @@ reproducible. The new names are:
 
 The rename reaches the label strings inside the archived CSVs as well, so a table
 from the old method cannot be read as if it came from the new one. The full
-existing test suite (682 tests) passes unchanged after the rename.
+The full current suite passes (746 tests; one optional test skipped), including
+the published-lens answer-direction and semantic-concept tests.
+
+**2026-09-01: the last active consumer moved over.** One place still *fitted* the
+archived estimator inside an active stage — E13 stage 106's `answer_direction`
+control, a corpus-averaged cotangent readout over the two answer tokens built
+from the DAS calibration programs and labelled "J-lens vectors". It now loads
+the published artifact instead (§6.4) and the arms are named for the lens that
+built them:
+
+| was | is now |
+|---|---|
+| `answer_direction` (cotangent, fitted inside stage 106) | `answer_direction_jlens` (published J-lens, stage 201 artifact) |
+| — | `answer_direction_rlens` (published R-lens; descriptive) |
+| — | `answer_direction_rlens_paperminimal` (optional StarCoder2 sensitivity arm) |
+| `answer_direction_unembedding` | unchanged — the no-transport floor |
+
+`src/models/cotangent_lens.py` and `cotangent_lrp.py` are preserved and still
+reproducible, and the archived stages listed above still import them. No active
+stage, report, gate or conclusion depends on them.
 
 ---
 
@@ -306,7 +327,65 @@ dropped rather than scored on their first piece — scoring a fragment would rep
 the tokenizer's segmentation as a finding about the model — and the count of what
 was dropped is printed by stage 200 and stored on the suite.
 
-### 6.2 Causal ablation
+### 6.2 The semantic-concept vocabulary panel (stage 206)
+
+A **separate** panel, kept in its own tables under `{lens_dir}/concepts/`,
+asking a different question of the same instrument: at the same four read
+positions, does the lens surface the *language of binding* rather than the bound
+value? A null in one panel says nothing about the other, so they are never
+pooled and neither answers the other.
+
+Predeclared in `src/workspace_lens/concepts.py` before any number was read: the
+concept sets and their spellings, the four read positions, the controls, and the
+four conditions a positive must meet. The binding concepts are `local`,
+`global`, `inner`, `outer`, `scope`, `scoped`, `shadow`, `shadowed`, `binding`,
+`bound`, `active`, `inactive`, `definition`, `variable`, `value`.
+
+A concept is a **set** of single-token spellings — space-prefixed, bare, and
+capitalisation variants, since which case a BPE table keeps whole is a fact
+about the merge table rather than about the model's semantics — and scores as
+the best rank over that set, from the same `readout.rank_of` the value families
+use, over the full vocabulary. A word the tokenizer *splits* is recorded as
+unavailable and scored on nothing; it is never reduced to an unrelated first
+token, because that would report the merge table as a finding about the model.
+Every accepted token id and decoded spelling, and every rejection, is written
+into `workspace_lens_concept_tokens.json`, the manifest and the report.
+
+The programs are §6's shadowing construction crossed on the **value assignment**
+as well as on the binding, so all four required contrasts exist in one corpus:
+binding-flipped arms token-identical at the read position; value-crossed `ab`/
+`ba` arms with the literals swapped; values changed across bases; and matched
+controls — unrelated code vocabulary of comparable frequency and tokenization,
+size- and frequency-band-matched random concept sets, and positional/action
+wording (`earlier`/`later`, `kept`/`replaced`) carried explicitly as a **confound
+diagnostic**, never as binding semantics.
+
+Reported per (lens, layer, read, concept): full-vocabulary rank, pass@k for
+k ∈ {1, 5, 10, 50, 100}, the earliest layer entering each threshold, the paired
+inner-minus-outer lens-score difference with a cluster bootstrap over base
+programs, its agreement across the crossed value arms, and its invariance to
+which literal is in scope.
+
+A supported positive requires **all four** of: predeclared binding concepts
+moving consistently with the binding; agreement across the crossed value arms;
+stronger movement than the matched generic and positional controls; and
+replication across prompts, preferably across models. Nothing is redefined
+afterwards around whichever word ranked well — one word such as `local` ranking
+highly does not show the model represents lexical *scope*, which is what the
+positional controls exist to catch. A **null** means only that the published
+linear token-indexed J/R lenses do not surface these concepts at these
+positions; it does not contradict the probe or DAS evidence, which read a
+different object by a different method.
+
+The per-model call scans several predeclared concepts, layers, and read
+positions using pointwise bootstrap intervals; it is not a family-wise
+error-controlled discovery test. Accordingly, a one-model `SUPPORTED` call is a
+candidate semantic-lens signal. The stronger standard is replication of the
+same named concept and qualitative layer/read pattern in another model, using
+the complete predeclared table rather than selecting a new vocabulary after the
+first run.
+
+### 6.3 Causal ablation
 
 A rank is a readout, and the paper's framing is a causal claim. Stage 204 erases
 the lens's own read direction `u_w = J_lᵀ(g · W_U[w])` from the residual stream at
@@ -317,6 +396,45 @@ random projection, a random displacement matched exactly to the J-lens erase
 magnitude, and a distractor-token direction constructed separately with the J
 and R lenses. Effects use paired 95% cluster-bootstrap intervals over programs,
 and the fraction of state norm moved is recorded per example.
+
+---
+
+---
+
+### 6.4 The fitted lenses are also E13's answer-direction control
+
+Stage 201's artifacts have a second consumer. E13's H5 turns on an explicit,
+known answer direction that must work on the arm it was built from and fail on
+the crossed arm; away from the last layer the raw unembedding row is not that
+direction, and the lens read direction is. Since 2026-09-01 stage 106 therefore
+loads the **published** J-lens and builds
+
+    u_w(l) = J_lᵀ ( g · W_U[w] ),   d = u_installed(l) − u_own(l)
+
+normalised and dosed to the DAS edit norm on that row. It uses
+`ablation.read_direction` — the same function §6.3's erase arm calls — through
+`src/workspace_lens/answer_direction.py`, which adds only the plumbing: finding
+the artifact, refusing the wrong one, and turning answer tokens into per-token
+vectors. The gain `g` comes from one shared helper, so a J-lens direction in E13
+is the same object as a J-lens direction in E19, LayerNorm behaviour included
+(§4.2: gain only, the bias and the centring left in `norm`).
+
+The arms are named `answer_direction_jlens`, `answer_direction_rlens` and
+`answer_direction_unembedding`, with an optional
+`answer_direction_rlens_paperminimal` for StarCoder2. H5's discriminator is the
+J-lens arm; the R-lens arm is descriptive.
+
+**This replaces a differently-defined control.** Stage 106 previously fitted its
+own corpus-averaged cotangent readout over the two answer tokens, from the DAS
+calibration programs, and called it "J-lens vectors" — §1's archived method, not
+this one. Its numbers are archived rather than carried forward, and stage 107
+marks any E13 verdict that rests on them **SUPERSEDED — RERUN REQUIRED** rather
+than translating them. `docs/METHODS.md` §5.4 and `docs/ARCHIVE.md` record the
+change.
+
+DAS itself is unaffected and stays lens-independent: no lens initializes,
+constrains or trains the alignment, and stage 106 freezes the subspace and its
+rank before opening a lens file.
 
 ---
 
@@ -413,9 +531,27 @@ make lens        MODEL=starcoder2-3b
 make lens        MODEL=deepseek-coder-6.7b
 ```
 
+`make lens` is now 200 → 206, with stage 206's semantic-concept panel between
+the ablation and the report. E13's stage 106 depends on stage 201's artifacts,
+so run `make lens-fit MODEL=...` before `make binding-interchange MODEL=...`:
+
+```bash
+make lens-fit            MODEL=deepseek-coder-6.7b
+make binding-interchange MODEL=deepseek-coder-6.7b
+# StarCoder2 only: add the separately named sensitivity arm
+make lens-fit-paperminimal MODEL=starcoder2-3b
+make binding-interchange   MODEL=starcoder2-3b BINDING_RLENS_PAPERMINIMAL=auto
+```
+
 On the GPU host, run `jobs/workspace_lens.csh` in a screen session instead, one
 model at a time (`device_map="auto"` will otherwise offload a co-resident model's
-tail to meta placeholders). Stage-by-stage commands are in `docs/PIPELINE.md`.
+tail to meta placeholders). It now runs stage 206 before regenerating stage 205.
+After the lens artifacts exist, `jobs/binding_jr_controls.csh` reruns only E13
+stages 106–108 against them; it does not repeat the expensive lens fit.
+`jobs/lens_concepts.csh` similarly runs only stages 206 and 205 against existing
+artifacts. The cluster jobs use 100 concept-panel bases by default; override
+with `N_BASES` (concept-only job) or `CONCEPT_BASES` (full lens job).
+Stage-by-stage commands are in `docs/PIPELINE.md`.
 
 ---
 

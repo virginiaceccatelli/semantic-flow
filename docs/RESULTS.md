@@ -11,25 +11,18 @@ show that variable binding and definition-to-use relations become linearly
 recoverable in middle layers. Second, frozen probes show that this representation
 survives many surface changes but weakens under scope interference and
 control-flow flattening. Third, a DAS intervention shows that a rank-1 binding
-component is causally used at the variable-use site. Fourth, an conserving cotangent lens analysis
-of the same programs shows that the answer score is reassigned from the inactive
-definition toward the active one. Fifth, an unprompted cotangent lens readout asks
-whether that same binding state aligns with scope-related output vocabulary at
-the use token. Several margins follow the binding in both crossed answer-token
-arms, but positional and action margins do too. The result is therefore lexical
-association, not uniquely scope-semantic or faithful verbalisation.
+component is causally used at the variable-use site. Fourth, the published
+J-lens and R-lens test whether the needed values occupy a verbalizable workspace.
 
-The security, output-vocabulary, older standalone cotangent lens, and taint-routing
-studies are preserved in [ARCHIVE.md](ARCHIVE.md). E18, the binding-specific
-cotangent lens verbalisation test, is active and reported in Part IV below. E19
-then applies the actual published J- and R-lenses as a separate full-vocabulary
-workspace test in Part V.
+The earlier cotangent-lens and conserving-cotangent-lens studies, including E16
+and E18, are preserved in [ARCHIVE.md](ARCHIVE.md). They are method development,
+not results from the published J-lens or R-lens. Part IV reports only E19 using
+the actual J-lens and R-lens.
 
 Every active result below completed at canonical scale and is paired with the
 control that could have falsified it. Read “represented” as *recoverable from a
 hidden state*, “robust” as *the same frozen readout still transfers*, “used” only
-where an intervention changes the downstream answer, and “attributed” as an
-observational decomposition of an unchanged output score.
+where an intervention changes the downstream answer.
 
 ### Contents
 
@@ -37,9 +30,9 @@ observational decomposition of an unchanged output score.
 - [Status at a glance](#status-at-a-glance)
 - [Part I — The relation is represented](#part-i--the-relation-is-represented)
 - [Part II — Robustness and failure boundaries](#part-ii--robustness-and-failure-boundaries)
-- [Part III — Causal use and binding attribution](#part-iii--causal-use-and-binding-attribution)
-- [Part IV — cotangent lens verbalisation](#part-iv--cotangent-lens-verbalisation)
-- [Part V — published J-lens and R-lens](#part-v--published-j-lens-and-r-lens)
+- [Part III — Causal use](#part-iii--causal-use)
+- [Part IV — Lenses](#part-iv--lenses)
+  - [J-lens and R-lens](#e19--j-lens-and-r-lens--full-vocabulary-workspace-readout)
 - [Synthesis](#synthesis-the-main-finding)
 - [Boundaries](#boundaries-what-this-project-does-not-claim)
 - [Open items](#open-items)
@@ -70,19 +63,10 @@ value selected by the installed binding on 100% of held-out cases in both arms,
 in DeepSeek-Coder 6.7B and StarCoder2 3B. A fixed answer direction attenuates or
 reverses, and dose-matched random edits are much weaker.
 
-**4. Binding attribution.** On the same contrast in DeepSeek-Coder 6.7B, the
-conserving cotangent lens assigns less answer relevance to the definition that leaves scope and more
-to the one that enters scope. The effect is carried almost entirely by unchanged
-definition tokens, survives crossed and fixed-output-token controls, reverses
-when the competing answer is scored, and is absent when values change without a
-binding change. This is observational and does not extend the causal claim.
-
-**5. cotangent lens lexical alignment.** At the unchanged use token, the binding probe
-stays at 1.000 across all five tested layers. `local/global` reaches 0.996/1.000
-reversal at L20 and `nested/module` reaches 1.000/1.000 at L16 in the `ab`/`ba`
-arms. Because answer identity reverses between arms, these margins follow the
-binding rather than one literal answer token. Positional and action contrasts
-also move strongly, so the template does not isolate scope verbalisation.
+**4. J-lens and R-lens.** Both published lenses recover the target value
+perfectly at the answer position but essentially never at the use, post-use, or
+call positions. Their mid-network causal effects provide no consistent advantage
+over the logit lens.
 
 ---
 
@@ -93,12 +77,9 @@ also move strongly, so the template does not isolate scope verbalisation.
 | **representation** | controlled linear probe | binding reaches ~0.984 over a 0.500 floor | DeepSeek 1.3B/6.7B; partial StarCoder2 replication |
 | **robustness** | frozen-probe transfer | resilient to distance and renaming; fragile to scope interference and flattening | three tested models where reported |
 | **causal use (R10/E13)** | rank-1 DAS interchange | 100% installed answer in both crossed arms | DeepSeek 6.7B and StarCoder2 3B |
-| **binding attribution (R11/E16)** | conserving cotangent lens | 280/280 shifts on 6.7B; peak ~22% of answer score | interpretable on DeepSeek 6.7B only |
-| **cotangent lens lexical alignment (R12/E18)** | unprompted cotangent lens + crossed `ab`/`ba` arms | several pairs follow binding independently of answer identity | descriptive result on DeepSeek 6.7B; not identified verbalisation |
-| **published workspace lenses (E19)** | released full-Jacobian J-lens + RelP R-lens | value absent before emission; no consistent transport advantage over logit lens | gated negative result on three code models |
+| **lenses (E19)** | published full-Jacobian J-lens + RelP R-lens | value absent before emission; no consistent transport advantage over logit lens | gated negative result on three code models |
 
-The R10/R11 labels are retained because generated reports and artifact names use
-them. Missing numbers R5–R9 refer to studies now documented in
+Missing result numbers refer to studies now documented in
 [ARCHIVE.md](ARCHIVE.md), not to missing active experiments.
 
 ---
@@ -407,36 +388,24 @@ map of when a tool built on these representations should not be trusted.
 
 ---
 
-# Part III — Causal use and binding attribution
+# Part III — Causal use
 
 Part I established that binding and def–use relations are recoverable from hidden
 states. Part II showed where those readouts remain stable and where they fail.
-Part III asks what happens after a binding representation has formed. Does the
-model use it to choose an answer? Can the unchanged answer be traced back to the
-definition that is actually in scope?
+Part III asks what happens after a binding representation has formed: does the
+model use it to choose an answer? DAS changes one learned component at the
+unchanged variable-use token and tests whether the emitted value follows the
+donor program's binding.
 
-Two experiments use the same controlled binding programs. DAS changes one
-learned component at the unchanged variable-use token and tests whether the
-emitted value follows the donor program's binding; this is the causal result.
-The conserving cotangent lens changes no forward activation or output and instead divides the
-unchanged answer score among input roles; this is an attribution result.
-
-Reading them together is useful because each adds a different link. DAS
-establishes causal use at a tested site and layer. The conserving cotangent lens describes how the
-unedited answer is attributed across the source program. A positive lens result
-is not extra causal evidence, and a null lens result would not undo DAS.
-
-The security benchmark, output-vocabulary study, standalone cotangent lens experiments,
-and conserving cotangent lens taint-routing experiment remain reproducible but are no longer part of
-the main argument. Their methods, results, limitations, and artifact locations
-are preserved in [ARCHIVE.md](ARCHIVE.md).
+Earlier cotangent-lens attribution and lexical experiments are reproducible but
+are not published J-lens/R-lens results. They are preserved in
+[ARCHIVE.md](ARCHIVE.md).
 
 ## Where the evidence lives
 
 | Claim | Active method | Detailed generated reports |
 |---|---|---|
 | causal binding transport | [METHODS §5](METHODS.md#5-das--causal-interchange-of-a-binding-component) | [DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e13_report.md), [StarCoder2 3B](../results/binding/starcoder2-3b/e13_report.md) |
-| binding attribution | [METHODS §6](METHODS.md#6-r-lens-attribution-on-the-binding-programs) | [DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e16_report.md), [DeepSeek-Coder 1.3B](../results/binding/deepseek-coder-1.3b/e16_report.md) |
 
 ## R10 — DAS: the binding representation is causally used
 
@@ -496,19 +465,39 @@ resulting edit norm is measured afterward.
 | Control | Why it is needed | Expected result if DAS carries binding |
 |---|---|---|
 | **crossed `ba` arm** | separates binding from a fixed answer token | DAS follows the reversed answer requirement |
-| **answer direction** | tests whether DAS is merely an output-token push | works better on fitted `ab`, then attenuates or reverses on `ba` |
+| **`answer_direction_jlens`** | tests whether DAS is merely an output-token push, using the **published** J-lens read direction at the intervention layer | works on fitted `ab`, then attenuates or reverses on `ba`. **This is H5's discriminator** |
+| **`answer_direction_rlens`** | the same construction through the published R-lens | a second reading of the same diagnostic; **descriptive, gates nothing** |
+| **`answer_direction_unembedding`** | `W_U[installed] − W_U[own]`, no transport | the no-transport floor: beating it is what shows the Jacobian transport does work |
 | **dose-matched random subspace** | tests generic disruption at a comparable edit size | much weaker than DAS |
 | **rank-matched random subspace** | provides a simple random rank-1 floor | near zero |
 | **no-op** | detects hook or measurement artifacts | exactly zero |
 | **whole-state donor patch** | verifies that this site can change the answer in each arm | moves the answer in both arms |
 | **mean donor−host direction** | tests the cheapest non-learned rank-1 alternative | may transport, but should be less effective or require a larger edit |
 
-The answer-direction control is deliberately strong. It uses the validated
-cotangent lens mapping to construct an effective `a → b` output push at the middle layer
-and is scaled on every row to match DAS's edit norm. The cotangent lens does **not** find
-the DAS direction; it is used only to implement this competing explanation.
+The answer-direction control is deliberately strong. At the intervention layer
+it constructs the effective `a → b` output push as the **published J-lens read
+direction**, `u_w(l) = J_lᵀ(g·W_U[w])`, taken from the stage-201 artifact — the
+same object E19's causal stage erases — and scales it on every row to match
+DAS's edit norm. Nothing about the lens touches the DAS fit: the subspace is
+fitted and its rank selected before any lens file is opened, and the lens only
+implements the competing explanation.
+
+> **Changed 2026-09-01.** This control previously used a *corpus-averaged
+> cotangent readout over the two answer tokens*, fitted inside stage 106 from
+> the DAS calibration programs. That is a different estimator from the published
+> J-lens ([WORKSPACE_LENS §1](WORKSPACE_LENS.md)), and the numbers it produced
+> are archived in [ARCHIVE §4b](ARCHIVE.md), not carried forward.
 
 ### Result
+
+> **PENDING RE-RUN.** The rows below marked *archived* were produced with the
+> retired cotangent control. The DAS, whole-state, mean-difference and random
+> arms are unaffected by the 2026-09-01 change — no lens enters their
+> construction — but **H5's verdict rested on the answer-direction row**, and
+> that discriminator is now the published J-lens. The E13 gate reports carry
+> `SUPERSEDED — RERUN REQUIRED` until stage 106 runs again against the stage-201
+> artifacts; see [Reproducing](#reproducing) for the commands. No number here
+> has been rescaled or translated.
 
 The experiment succeeds in DeepSeek-Coder 6.7B and StarCoder2 3B, two different
 architecture families:
@@ -518,14 +507,23 @@ architecture families:
 | **DAS rank 1** | **100.0%** | **100.0%** | **100.0%** | **100.0%** |
 | whole state | 85.7% | 87.9% | 68.8% | 67.3% |
 | mean difference | 76.1% | 76.8% | 54.6% | 54.5% |
-| answer direction | 27.9% | 4.3% | 44.8% | 18.4% |
+| answer direction *(archived cotangent arm)* | 27.9% | 4.3% | 44.8% | 18.4% |
+| `answer_direction_jlens` | pending | pending | pending | pending |
+| `answer_direction_rlens` | pending | pending | pending | pending |
+| `answer_direction_unembedding` | pending | pending | pending | pending |
 | dose-matched random | 2.1% | 1.8% | 30.9% | 30.4% |
 
 The headline outcome is the full-vocabulary emitted token: whether the model
 actually says the value selected by the installed binding. DAS reaches 100% in
-both crossed arms. The explicit answer direction attenuates 6.9-fold on
-DeepSeek and reverses in the relevant logit contrast on StarCoder2. DAS therefore
-does not behave like a fixed push toward the answer required during fitting.
+both crossed arms.
+
+The archived cotangent answer direction attenuated 6.9-fold on DeepSeek and
+reversed in the relevant logit contrast on StarCoder2 — the pattern the design
+predicts for a token account. **That reading is not restated as current.**
+Whether the published J-lens answer direction behaves the same way is exactly
+what the re-run measures, and until it does, "DAS does not behave like a fixed
+push toward the answer required during fitting" is supported by the crossed-arm
+DAS result alone and not by a lens-derived discriminator.
 
 The closed-form mean direction is a real positive baseline, not a dead control:
 it transports much of the binding. DAS nevertheless reaches 100% while changing
@@ -543,184 +541,16 @@ per model. The rank-1 edit also outperforms the whole-state patch, so the latter
 is not a true numerical ceiling; the plausible explanation that a full patch
 adds both helpful and opposing components remains to be tested.
 
-## R11 — conserving cotangent lens: the answer is attributed to the active definition
+# Part IV — Lenses
 
-### Question
+This section contains only findings from the published, full-vocabulary J-lens
+and R-lens. Earlier partial cotangent constructions are archived.
 
-R11 reuses the same binding programs but asks a different question. When the
-binding flips, does the model's own answer score become attributed less to the
-definition that leaves scope and more to the definition that enters scope?
+## E19 — J-lens and R-lens: full-vocabulary workspace readout
 
-Unlike DAS, the conserving cotangent lens changes no activation and no output. It is observational.
-Its value is that it connects the final answer back to named syntactic roles on
-the same corpus where causal use has already been established independently.
-
-### What the conserving cotangent lens measures
-
-The conserving cotangent lens propagates the score of the bound value backward through the model
-using layer-wise relevance rules. It divides the score among input positions and
-then sums positions into roles: outer definition, inner definition name and
-value, use site, signature, `return`, suffix, and residual text.
-
-Before interpreting the decomposition, the experiment verifies that the special
-backward rules leave the forward output unchanged and actually attach to the
-intended normalization, attention, and gated-MLP modules. It then checks that
-relevance over all positions sums back to the selected output score, that every
-input token belongs to exactly one role, and that reading the same program twice
-produces exactly zero redistribution.
-
-These checks pass with conservation error near numerical precision on the tested
-DeepSeek models. The rules do not match StarCoder2's architecture, so no conserving cotangent lens
-claim is reported for that model.
-
-### Isolation and controls
-
-Within a binding-flip pair, exactly one of roughly 21 tokens changes: the inner
-definition's **name**. The outer definition, inner value, use token, signature,
-and answer suffix remain identical at the same token indices. The main statistic
-therefore ignores the changed name and asks whether relevance moves between the
-unchanged definitions.
-
-| Control | What it rules out |
-|---|---|
-| **token-identical roles** | a local response to the changed name, token length, or positional drift |
-| **crossed value arm** | attribution tied to one particular output token |
-| **fixed-output-token conditions** | the same artifact under the strict condition that both programs are scored at literally the same token id |
-| **competing-value score** | predicts that a binding-sensitive attribution should reverse |
-| **same-binding pairs** | movement caused by changing values without changing the binding |
-| **same-program reread** | numerical or backward-pass nondeterminism |
-
-### Result on DeepSeek-Coder 6.7B
-
-The attribution moves in the predicted direction on all 280 held-out bases. At
-the first reported layer, the unchanged inner value belonging to the newly active
-definition gains about 4.9% of the answer score, while the newly inactive outer
-definition loses about 7.8%. The combined redistribution is about 12.6% there,
-rises smoothly to approximately 21.9% near the middle of the network, and falls
-to about 2.5% near the end.
-
-The single token that differs between the programs contributes only about 1.5%
-of the movement. Both crossed arms agree. Fixed-output-token conditions retain
-the effect, scoring the competing value reverses it, and the two same-binding
-controls remain approximately zero. The result is therefore not explained by
-the changed token or by which answer token was selected for decomposition.
-
-One control exposes an important limit. Pairing source and target programs from
-different generated bases reproduces the average effect because every base uses
-the same underlying template. The finding is consequently best described as a
-stable property of this **binding contrast**, not as evidence of diverse
-program-by-program routing. Effect sizes are more meaningful here than extremely
-small p-values.
-
-### Why the 1.3B result is not interpreted
-
-DeepSeek-Coder 1.3B does not reliably solve the shadowing condition. About 7.6%
-of the bound-value scores being decomposed are zero or negative. Dividing by a
-near-zero or negative score makes the purported relevance shares unstable or
-inverted, even though raw relevance still conserves. The observed directional
-tendency is therefore suggestive but does not support an attribution claim for
-this model.
-
-### Conclusion and limits
-
-On DeepSeek-Coder 6.7B, changing the binding reallocates the final answer score
-from the definition that becomes inactive toward the one that becomes active,
-mostly through tokens that did not change. This is consistent with the DAS
-result but does not strengthen its causal status: DAS intervenes and measures an
-answer change; the conserving cotangent lens decomposes an unchanged forward computation.
-
-The layer profile indicates where attribution under these backward rules is
-redistributed, not where binding is computed. The attention rule also freezes
-query/key pattern formation, so the experiment cannot establish the intuitive
-mechanism “the model attends to the correct definition.” E18 tests the separate
-semantic-vocabulary question directly in Part IV rather than reinterpreting this
-attribution profile.
-
-
-# Part IV — cotangent lens verbalisation
-
-*Instrument 5: an unprompted cotangent lens vocabulary readout with crossed answer-token
-arms ([METHODS §6.8](METHODS.md#68-e18-unprompted-lexical-expression-of-the-binding-state)).*
-
-## R12 / E18 — Binding-associated lexical alignment at the use token
-
-### Question
-
-The probe and DAS establish that the unchanged `x` in `return x` carries a
-binding distinction that the model uses. Is that distinction already written in
-recognisable scope vocabulary—such as `local/global`, `inner/outer`, or
-`nested/module`—before any question or answer prompt is appended?
-
-### Method and decisive control
-
-E18 reads the original, unprompted variable-use state at layers 8, 12, 16, 20,
-and 24. Nine predeclared single-token pairs cover four scope contrasts, three
-positional contrasts, and two action contrasts. For each pair, the outcome is
-the fraction of 280 held-out programs on which its inner-minus-outer cotangent lens
-margin moves in the predicted direction when the binding flips. Both crossed
-value arms must agree.
-
-The `ab`/`ba` crossing is the decisive control available in this experiment.
-When the inner definition becomes active, the returned literal changes from `a`
-to `b` in `ab`, but from `b` to `a` in `ba`. A lexical margin that moves in the
-same binding-relative direction in both arms cannot be explained as a fixed push
-toward literal `a` or `b`. The calibration-trained binding probe on the same
-states is the positive control: it checks that failure of a word pair is not
-caused by reading a state that lacks binding information.
-
-### Finding overview
-
-| Check | Finding |
-|---|---|
-| Mechanical validity | H10 passed; all 1,600 exactness cells passed; all 9 pairs survived tokenisation |
-| Binding present | probe accuracy 1.000 at L8, L12, L16, L20, and L24 |
-| Strongest scope raw rate | `nested/module` 1.000/1.000 at L16; `local/global` 0.996/1.000 at L20 |
-| Crossed-arm consistency | both strongest scope pairs move in the predicted direction in `ab` and `ba` |
-| Important comparison | positional `later/earlier` and action `replaced/kept` also move strongly |
-| Weak literal scope pair | `inner/outer` is inconsistent and much weaker |
-| Interpretation | binding-associated lexical alignment; not uniquely scope verbalisation |
-
-### Result
-
-Several lexical contrasts have clear crossed-arm profiles. `local/global` is
-0.964/0.968 at L16, 0.996/1.000 at L20, and 0.986/0.993 at L24.
-`nested/module` reaches 1.000/1.000 at L16 and 0.993/0.996 at L24. Because the
-required literal answer movement reverses between arms, these profiles are not
-simple tracking of output token `a` or `b`. The matched probe is perfect at every
-tested layer, so the lexical measurements are made where binding is present.
-
-The family comparison prevents a stronger interpretation. `later/earlier` is
-also 1.000/1.000 at L8–L16, and `replaced/kept` becomes comparably strong in
-middle layers, whereas the directly phrased `inner/outer` contrast is weak. In
-this template, changing the binding simultaneously changes which definition is
-local, later, nearer, second, and retained. The experiment cannot distinguish
-which of those correlated properties a cotangent lens margin reflects. Independent
-cotangent lens builds exceed 0.90 sign agreement only at L24, and V2 contains 13
-held-out lexical-token positions, so early-layer details should also be treated
-cautiously.
-
-### Conclusion and limits
-
-> In DeepSeek-Coder 6.7B, several cotangent lens word margins reliably follow the binding
-> counterfactual in both crossed value arms at the unprompted variable-use
-> position, but the design cannot identify this alignment uniquely as scope
-> vocabulary or faithful internal verbalisation.
-
-The experiment therefore answers a simpler question than whether the model
-“thinks in words”: selected lexical directions covary with an internal binding
-change independently of literal answer identity. Prompted explanation, faithful
-self-report, and uniquely semantic scope vocabulary remain outside the result.
-
-Primary artifacts: [E18 report](../results/binding/deepseek-coder-6.7b/e18_report.md)
-and [`lexlens_pair_directions.csv`](../results/binding/deepseek-coder-6.7b/lexlens/lexlens_pair_directions.csv).
-
----
-
-# Part V — published J-lens and R-lens
-
-E19 asks a narrower and more demanding question than E18: does the full,
-published vocabulary lens surface the program-semantic value among the model's
-top tokens while that value is being used? It uses the released Anthropic
+E19 explicitly uses the published J-lens and R-lens: do these full-vocabulary
+lenses surface the program-semantic value among the model's top tokens while
+that value is being used? It uses the released Anthropic
 estimator, an independent 100-prompt fitting corpus, the published RelP rules,
 and the model's complete vocabulary. The older cotangent-lens results are not
 substituted for it.
@@ -782,37 +612,38 @@ patch, and a closed-form difference-of-means baseline rule out generic
 disruption, implementation error, an unresponsive site, and the cheapest
 non-learned alternative.
 
-**Fourth, the answer is observationally attributed to the selected
-definition.** On the same binding contrast in DeepSeek-Coder 6.7B, the conserving
-conserving cotangent lens moves answer relevance away from the definition that leaves scope and
-toward the definition that enters scope. The movement is carried almost entirely
-by token-identical text, not by the single changed name token. It appears in both
-crossed arms, survives fixed-output-token conditions, reverses when the competing
-value is scored, and is absent in same-binding controls.
+**Fourth, the published J-lens and R-lens do not expose a value workspace.**
+Both lenses recover values perfectly at emission, establishing a working
+positive control, but essentially never surface them at the three preceding
+positions. Mid-network direction erasures are null or small and do not provide a
+consistent advantage over the logit lens.
 
-**Fifth, that binding state has descriptive lexical alignment.** E18 reads the
-unchanged use-token state with an unprompted cotangent lens. `local/global` and
-`nested/module` follow the binding on nearly every held-out program in both
-crossed value arms at middle and later layers. This rules out simple tracking of
-literal `a` or `b`. Positional and action contrasts can be equally strong,
-however, and the single template changes those properties together with scope.
-The result is therefore binding-associated lexical alignment, not a uniquely
-semantic or faithful verbalisation claim.
+**Fifth, the semantic-concept panel (stage 206) is a separate question and is
+pending.** Value recovery asks whether the lens surfaces *the bound value*; the
+concept panel asks whether it surfaces *the language of binding* — `local`,
+`global`, `shadowed`, `scope`, `bound` — at the same four predeclared read
+positions. The concept sets, the four read positions, the matched controls
+(generic code vocabulary, positional/action wording as a confound diagnostic,
+size- and frequency-matched random sets) and the four conditions a positive must
+meet were all fixed before any number was read. **No result is available until
+stage 206 runs on GPU.** A null there would say only that these published
+linear, token-indexed lenses do not surface these concepts; it would not
+contradict the probe or DAS evidence, which read a different object by a
+different method. Nor would a single well-ranked word be a positive: one word
+such as `local` ranking highly does not show the model represents lexical scope,
+which is why the positional controls exist.
 
 The strongest conclusion is therefore deliberately narrow:
 
 > In these controlled programs, variable binding becomes linearly represented,
 > remains stable under many surface changes but is fragile to structural
-> interference, is causally read from a rank-1 component at the use site, is
-> reflected in how the final answer is attributed to the active definition, and
-> is associated with several lexical contrasts at that unprompted state, without
-> being identifiable as uniquely scope-semantic verbalisation.
+> interference, and is causally read from a rank-1 component at the use site,
+> while the published J-lens and R-lens do not surface the needed value as a
+> mid-network verbalizable workspace representation.
 
-These clauses are complementary, not interchangeable. DAS supports causal use;
-the conserving cotangent lens supports attribution. Neither establishes a complete mechanism.
-E18 answers only whether selected cotangent lens margins follow the crossed binding
-contrast; it does not establish faithful verbalisation under this or any other
-prompt, position, lexicon, or nonlinear readout.
+These clauses are complementary, not contradictory. The J-lens/R-lens null is a
+null for those published linear readouts, not evidence that binding is absent;
+the probe and DAS independently establish representation and causal use.
 
 ---
 
@@ -828,15 +659,6 @@ prompt, position, lexicon, or nonlinear readout.
   one use site and one selected layer per model, on one synthetic construction.
 - **Not that the DAS direction is unique.** The closed-form mean direction also
   transports binding, less reliably and with a larger edit.
-- **Not that the conserving cotangent lens proves causation.** It decomposes an unchanged answer
-  score. Its agreement with DAS is a conjunction of two different findings.
-- **Not that the conserving cotangent lens identifies the attention mechanism or computation
-  layer.** Its rules freeze attention-pattern formation, and its layer profile is
-  a profile of attribution under those rules.
-- **Not that lexical alignment is faithful verbalisation.** E18 finds crossed-arm
-  association in several word pairs, but its single template confounds scope
-  with position and replacement. Prompted answers, other words, and other
-  positions are different questions.
 - **Not that the J/R null proves the value is absent.** It proves that the
   published linear, token-indexed workspace readouts do not surface it at the
   tested positions. The successful probes and DAS intervention independently
@@ -862,5 +684,4 @@ Ordered by how directly they would strengthen the active narrative.
    reader cannot express the global feature “inner definition name equals use
    name.”
 5. **Reconcile the configured and generated layer grids.** This would make
-   cross-model relative-depth comparisons and the DAS/conserving cotangent lens layer comparison
-   easier to audit.
+   cross-model relative-depth comparisons easier to audit.

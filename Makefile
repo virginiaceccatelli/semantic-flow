@@ -79,6 +79,9 @@
 #   make binding-decode MODEL=...     stage 104 binding decodable — H2 (CPU)
 #   make binding-ceiling MODEL=...    stage 105 whole-state, per arm — H3 (GPU)
 #   make binding-interchange MODEL=.. stage 106 DAS + held-out arm — H4, H5 (GPU)
+#                                     NEEDS `make lens-fit MODEL=...` first: the
+#                                     answer-direction controls read the
+#                                     published J/R-lens artifacts (stage 201)
 #   make binding-report MODEL=...     stage 107 gated report (CPU)
 #   make binding-diagnose MODEL=...   stage 108 DID IT RUN WELL? (CPU, read-only)
 #   make binding MODEL=...            stages 100→107; each refuses on a failed gate
@@ -94,8 +97,9 @@
 #   make lens-readout MODEL=...     stage 203 J vs R vs logit over the suite (GPU)
 #   make lens-ablate MODEL=...      stage 204 causal edits along read directions (GPU)
 #                                   add LENS_ABLATE_LAYERS=12,16,20 for a mid-network sweep
+#   make lens-concepts MODEL=...    stage 206 semantic-concept panel (GPU)
 #   make lens-report MODEL=...      stage 205 tables, figures, report (CPU)
-#   make lens MODEL=...             stages 200→205 in order (202 gates 203-205)
+#   make lens MODEL=...             stages 200→206 in order (202 gates 203-206)
 #   make lens-smoke                 tiny CPU check of the whole path (no weights)
 #
 #   make assets               stage 90 tables + figures, archived excluded (CPU)
@@ -120,6 +124,7 @@ PROBES := results/probes/$(MODEL)/core
         binding binding-pairs binding-verify binding-behaviour binding-extract \
         binding-decode binding-ceiling binding-interchange binding-report \
         binding-diagnose binding-pilot \
+        lens-concepts \
         sinkflow sinkflow-generate sinkflow-extract sinkflow-probe sinkflow-obf \
         sinkflow-report sinkflow-smoke sinkflow-vocab sinkflow-vocab-discover \
         sinkflow-vocab-report sinkflow-vocab-all sinkflow-vocab-smoke \
@@ -150,6 +155,7 @@ COMMA := ,
 LENS_DIM_BATCH ?= 16
 LENS_DTYPE ?= bfloat16
 LENS_HALVES ?= --no-halves
+LENS_CONCEPT_BASES ?= 100
 STORE_LAYERS ?= 6,12,18
 BINDING_LAYERS ?= 6,12,18
 BINDING_RANKS ?= 1,2,4,8
@@ -300,9 +306,25 @@ binding-decode:
 binding-ceiling:
 	$(PY) scripts/105_binding_ceiling.py --model $(MODEL) --layers $(BINDING_LAYERS)
 
+# NEEDS STAGE 201. The answer-direction controls are built from the PUBLISHED
+# J-lens and R-lens artifacts (`make lens-fit MODEL=...`), not from a lens fitted
+# here. The DAS fit itself is lens-independent and runs first; the artifacts are
+# opened only for the control-evaluation phase, but they are preflighted in the
+# first seconds so a missing lens fails before the fit rather than after it.
+#
+# BINDING_JLENS / BINDING_RLENS override the artifact directories;
+# BINDING_RLENS_PAPERMINIMAL=auto adds the separately named StarCoder2
+# sensitivity arm.
+BINDING_JLENS ?= $(LENS_DIR)/j-lens
+BINDING_RLENS ?= $(LENS_DIR)/r-lens
+BINDING_RLENS_PAPERMINIMAL ?=
+BINDING_LENS_ARGS := --jlens $(BINDING_JLENS) --rlens $(BINDING_RLENS) \
+	$(if $(BINDING_RLENS_PAPERMINIMAL),--rlens-paperminimal $(BINDING_RLENS_PAPERMINIMAL),)
+
 binding-interchange:
 	$(PY) scripts/106_binding_interchange.py --model $(MODEL) \
-		--layers $(BINDING_LAYERS) --ranks $(BINDING_RANKS)
+		--layers $(BINDING_LAYERS) --ranks $(BINDING_RANKS) \
+		$(BINDING_LENS_ARGS)
 
 binding-report:
 	$(PY) scripts/107_binding_report.py --model $(MODEL)
@@ -312,6 +334,11 @@ binding-report:
 binding-diagnose:
 	$(PY) scripts/108_binding_diagnose.py --model $(MODEL) --verbose
 
+# `binding-interchange` reads the stage-201 lens artifacts, so `lens-fit` must
+# have run for this model. It is NOT a prerequisite of this target: the fit is
+# hours of GPU time and is shared with E19, so it is ordered explicitly rather
+# than triggered implicitly. Stage 106 refuses in its first seconds if it is
+# missing.
 binding: binding-pairs binding-verify binding-behaviour binding-extract \
          binding-decode binding-ceiling binding-interchange binding-report \
          binding-diagnose
@@ -644,10 +671,20 @@ lens-ablate:
 		$(LENS_ABLATE_ARGS) \
 		--lens-dir $(LENS_DIR)
 
+# The semantic-concept vocabulary panel: does the lens surface the LANGUAGE of
+# binding (`local`, `shadowed`, `scope`) at the four predeclared read positions?
+# A separate question from runtime-value recovery, with its own predeclared
+# concept sets, matched controls and four-condition verdict.
+lens-concepts:
+	$(PY) scripts/206_lens_concepts.py --model $(MODEL) --dtype $(LENS_DTYPE) \
+		--lens-dir $(LENS_DIR) --output $(LENS_DIR)/concepts \
+		--n-bases $(LENS_CONCEPT_BASES)
+
 lens-report:
 	$(PY) scripts/205_lens_report.py --model $(MODEL)
 
-lens: lens-corpus lens-fit lens-validate lens-readout lens-ablate lens-report
+lens: lens-corpus lens-fit lens-validate lens-readout lens-ablate lens-concepts \
+      lens-report
 
 # The whole path on toy CPU models plus the reference implementation's own
 # tests: no weights, no network, a few seconds. This is what to run after any

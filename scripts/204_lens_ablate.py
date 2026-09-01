@@ -63,6 +63,7 @@ def main(
                                              norm_matched_random,
                                              read_direction, run_ablation,
                                              scaled_random_edit, stable_seed)
+    from src.workspace_lens.answer_direction import final_norm_gain
     from src.workspace_lens.adapter import load_lens_model
     from src.workspace_lens.evalsuite import (Suite, resolve_position,
                                               target_token_ids)
@@ -106,7 +107,10 @@ def main(
     console.print(f"ablating at layers {layer_list} ({layer_source})")
 
     W_U = hf_model.get_output_embeddings().weight.detach()
-    gain = _final_norm_gain(lens_model, W_U)
+    # One implementation of the gain, shared with stage 106's answer-direction
+    # control: the two stages must fold in exactly the same `g` or a J-lens
+    # direction in E13 is not the J-lens direction in E19.
+    gain = final_norm_gain(lens_model, W_U.shape[1], device=W_U.device)
 
     rows = []
     for n, item in enumerate(items):
@@ -270,16 +274,6 @@ def _paired_contrasts(df, n_boot: int = 2000, seed: int = 42):
                         "mean": ci.point, "lo": ci.lo, "hi": ci.hi,
                         "excludes_zero": bool(ci.lo > 0 or ci.hi < 0)})
     return pd.DataFrame(out)
-
-
-def _final_norm_gain(lens_model, W_U):
-    """The final norm's elementwise gain, or ones if it has none."""
-    import torch
-
-    weight = getattr(lens_model._final_norm, "weight", None)
-    if weight is None:
-        return torch.ones(W_U.shape[1], device=W_U.device)
-    return weight.detach().to(W_U.device)
 
 
 if __name__ == "__main__":

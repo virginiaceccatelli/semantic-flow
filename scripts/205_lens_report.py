@@ -182,6 +182,56 @@ def main(
                    extra={"report": str(report), "n_items": int(rows["item_id"].nunique())})
 
 
+def _concept_section(lens_dir: Path) -> list[str]:
+    """Stage 206's headline, with a pointer to its own report."""
+    import pandas as pd
+
+    directory = lens_dir / "concepts"
+    contrasts_path = directory / "workspace_lens_concept_contrasts.csv"
+    summary_path = directory / "workspace_lens_concept_summary.csv"
+    panel_path = directory / "workspace_lens_concepts.md"
+    if not summary_path.exists():
+        return ["", "## Semantic-concept vocabulary panel", "",
+                "Not run. `make lens-concepts MODEL=...` (stage 206) asks "
+                "whether the lenses surface the *language of binding* — "
+                "`local`, `shadowed`, `scope` — at the four predeclared read "
+                "positions. It is a separate question from the value recovery "
+                "above and neither answers the other.", ""]
+
+    summary = pd.read_csv(summary_path)
+    lines = ["", "## Semantic-concept vocabulary panel", "",
+             "A **separate** question from runtime-value recovery: does the lens "
+             "surface the *language of binding* at the four predeclared read "
+             "positions? Predeclared concept sets, matched generic-code and "
+             "random controls, and positional wording carried as a confound "
+             "diagnostic rather than as semantics. Full panel: "
+             f"`{panel_path}`.", "",
+             "| read | family | j-lens | r-lens | logit lens |", "|---|---|---|---|---|"]
+    for read in ("use", "post_use", "call", "answer"):
+        for family in ("binding_concept", "generic_code", "positional",
+                       "random_concepts"):
+            sub = summary[(summary["read"] == read) & (summary["family"] == family)]
+            if sub.empty:
+                continue
+            cells = []
+            for lens in LENS_ORDER:
+                col = sub[sub["lens"] == lens]["pass@10"]
+                cells.append(f"{col.max():.3f}" if len(col) else "—")
+            lines.append(f"| {read} | {family} | " + " | ".join(cells) + " |")
+    lines += ["", "(best pass@10 over layers; `positional` is a confound "
+              "diagnostic, never a binding positive)"]
+
+    if contrasts_path.exists():
+        contrasts = pd.read_csv(contrasts_path)
+        from src.workspace_lens.concepts import verdict
+
+        call = verdict(contrasts)
+        lines += ["", f"**{'SUPPORTED' if call['supported'] else 'NULL'}** — "
+                  f"{call['reason']}"]
+    lines.append("")
+    return lines
+
+
 def _save(fig, stem: Path):
     for ext in ("png", "pdf"):
         fig.savefig(f"{stem}.{ext}", dpi=150, bbox_inches="tight")
@@ -337,6 +387,12 @@ def _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
                              f"| {r['mean']:+.3f} | [{r['lo']:+.3f}, {r['hi']:+.3f}] "
                              f"| {mark} |")
             lines.append("")
+
+    # The semantic-concept panel is a SEPARATE question from value recovery, so
+    # it is summarised and linked rather than merged into the tables above:
+    # pooling "did the lens surface the value" with "did it surface the word
+    # `local`" would let a hit on one cover a miss on the other.
+    lines += _concept_section(lens_dir)
 
     lines += ["## Figures", "",
               f"- `results/figures/workspace_lens_passk_{model}.png`",

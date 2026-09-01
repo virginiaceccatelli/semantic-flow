@@ -29,7 +29,11 @@ from src.data.binding_pairs import (
 from src.data.counterfactual_pairs import encode_prompt
 from src.data.store_semantics import cross_check_scoped, interpret_scoped
 from src.experiments.binding_interchange import (
+    ANSWER_DIRECTION_JLENS,
+    ANSWER_DIRECTION_RLENS,
+    ANSWER_DIRECTION_UNEMBEDDING,
     HELD_OUT_ARM,
+    LEGACY_ANSWER_DIRECTION,
     TRAIN_ARM,
     donor_of,
     evaluate_gate_h5,
@@ -405,8 +409,8 @@ def _h5_summary(das_installed, control_ba_installed, das_delta=0.6,
                      das_delta + 0.2, installed=das_installed),
         _summary_row(TRAIN_ARM, "whole_state", "use", 1.0, 0.8, 1.2, installed=1.0),
         _summary_row(HELD_OUT_ARM, "whole_state", "use", 1.0, 0.8, 1.2, installed=1.0),
-        _summary_row(TRAIN_ARM, "answer_direction", "use", 0.7, 0.5, 0.9, installed=0.7),
-        _summary_row(HELD_OUT_ARM, "answer_direction", "use", control_ba_delta,
+        _summary_row(TRAIN_ARM, ANSWER_DIRECTION_JLENS, "use", 0.7, 0.5, 0.9, installed=0.7),
+        _summary_row(HELD_OUT_ARM, ANSWER_DIRECTION_JLENS, "use", control_ba_delta,
                      control_ba_delta - 0.2, control_ba_delta + 0.2,
                      installed=control_ba_installed),
     ])
@@ -455,9 +459,9 @@ def test_h5_reads_the_argmax_not_the_biased_margin():
                      installed=0.857, layer=8, rank=1),
         _summary_row(HELD_OUT_ARM, "whole_state", "use", 4.799, 4.694, 4.903,
                      installed=0.879, layer=8, rank=1),
-        _summary_row(TRAIN_ARM, "answer_direction", "use", 2.322, 2.157, 2.482,
+        _summary_row(TRAIN_ARM, ANSWER_DIRECTION_JLENS, "use", 2.322, 2.157, 2.482,
                      installed=0.279, layer=8, rank=1),
-        _summary_row(HELD_OUT_ARM, "answer_direction", "use", 0.335, 0.208, 0.456,
+        _summary_row(HELD_OUT_ARM, ANSWER_DIRECTION_JLENS, "use", 0.335, 0.208, 0.456,
                      installed=0.043, layer=8, rank=1),
     ])
     passed, fraction, detail = evaluate_gate_h5(summary, "use", 8, 1)
@@ -493,15 +497,21 @@ def test_answer_direction_is_norm_matched_to_the_treatment(records):
     d = 64
     host, donor = rng.standard_normal(d), rng.standard_normal(d)
     unembedding = {t: rng.standard_normal(d) for t in records[0].token_ids.values()}
-    lens = {t: rng.standard_normal(d) for t in records[0].token_ids.values()}
-    # Both arms: the J-lens direction (the one that functions at the layer) and
-    # the raw unembedding row (kept for comparison after it failed to reverse).
-    for variant, extra in (("answer_direction", {"lens_vectors": lens}),
-                           ("answer_direction_unembedding", {})):
+    answer_vectors = {
+        ANSWER_DIRECTION_JLENS: {t: rng.standard_normal(d)
+                                 for t in records[0].token_ids.values()},
+        ANSWER_DIRECTION_RLENS: {t: rng.standard_normal(d)
+                                 for t in records[0].token_ids.values()},
+    }
+    # Every fixed answer direction: the published J-lens, the published R-lens
+    # and the raw unembedding row (kept as the no-transport floor).
+    for variant in (ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
+                    ANSWER_DIRECTION_UNEMBEDDING):
         for target in (0.5, 3.7, 12.0):
             basis, synthetic = build_subspace(
                 variant, records[0], "ab", "source", host, donor,
-                d, 1, None, unembedding, 0, target_edit_norm=target, **extra)
+                d, 1, None, unembedding, 0, target_edit_norm=target,
+                answer_vectors=answer_vectors)
             assert interchange_report(host, synthetic, basis)["edit_norm"] == pytest.approx(target)
 
 
@@ -514,13 +524,31 @@ def test_answer_direction_refuses_a_degenerate_direction(records):
     d = 64
     same = np.ones(d)
     degenerate = {t: same for t in records[0].token_ids.values()}
-    with pytest.raises(ValueError, match="identical"):
-        build_subspace("answer_direction", records[0], "ab", "source",
-                       np.zeros(d), np.ones(d), d, 1, None, degenerate, 0,
-                       target_edit_norm=1.0, lens_vectors=degenerate)
-    with pytest.raises(ValueError, match="identical"):
-        build_subspace("answer_direction_unembedding", records[0], "ab", "source",
-                       np.zeros(d), np.ones(d), d, 1, None, degenerate, 0,
+    for variant in (ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
+                    ANSWER_DIRECTION_UNEMBEDDING):
+        with pytest.raises(ValueError, match="identical"):
+            build_subspace(variant, records[0], "ab", "source",
+                           np.zeros(d), np.ones(d), d, 1, None, degenerate, 0,
+                           target_edit_norm=1.0,
+                           answer_vectors={ANSWER_DIRECTION_JLENS: degenerate,
+                                           ANSWER_DIRECTION_RLENS: degenerate})
+
+
+def test_the_archived_cotangent_control_cannot_be_rebuilt(records):
+    """`answer_direction` was a DIFFERENT estimator; it must not come back.
+
+    The bare name meant a corpus-averaged cotangent readout fitted inside stage
+    106 until 2026-09-01. Reviving it silently would put an archived number in a
+    column a reader would take for the published J-lens.
+    """
+    import numpy as np
+
+    from src.experiments.binding_interchange import build_subspace
+
+    d = 8
+    with pytest.raises(ValueError, match="ARCHIVED"):
+        build_subspace(LEGACY_ANSWER_DIRECTION, records[0], "ab", "source",
+                       np.zeros(d), np.ones(d), d, 1, None, {}, 0,
                        target_edit_norm=1.0)
 
 
@@ -586,13 +614,104 @@ def test_reading_is_withheld_when_the_discriminator_transfers_too():
     summary = pd.DataFrame([
         _summary_row(HELD_OUT_ARM, "das_binding", "use", 0.65, 0.5, 0.8),
         _summary_row(HELD_OUT_ARM, "whole_state", "use", 1.0, 0.8, 1.2),
-        _summary_row(TRAIN_ARM, "answer_direction", "use", 0.8, 0.65, 0.95),
-        _summary_row(HELD_OUT_ARM, "answer_direction", "use", 0.6, 0.45, 0.75),
+        _summary_row(TRAIN_ARM, ANSWER_DIRECTION_JLENS, "use", 0.8, 0.65, 0.95),
+        _summary_row(HELD_OUT_ARM, ANSWER_DIRECTION_JLENS, "use", 0.6, 0.45, 0.75),
     ])
     passed, fraction, detail = evaluate_gate_h5(summary, "use", 12, 2)
     assert not passed                      # das_binding looks fine on its own...
     assert fraction >= 0.5                 # ...and it does clear the fraction...
     assert "fails: False" in detail        # ...but the discriminator did not work
+
+
+def test_h5_refuses_to_score_the_archived_cotangent_arm():
+    """A pre-2026-09-01 summary must not have its old control read as the new one.
+
+    The bare `answer_direction` arm was a corpus-averaged cotangent readout
+    fitted inside stage 106 — a different estimator from the published J-lens
+    (docs/WORKSPACE_LENS.md §1). Scoring it as the discriminator would put an
+    archived number behind a current verdict.
+    """
+    import pandas as pd
+
+    summary = pd.DataFrame([
+        _summary_row(HELD_OUT_ARM, "das_binding", "use", 0.6, 0.4, 0.8, installed=0.6),
+        _summary_row(TRAIN_ARM, "whole_state", "use", 1.0, 0.8, 1.2, installed=1.0),
+        _summary_row(HELD_OUT_ARM, "whole_state", "use", 1.0, 0.8, 1.2, installed=1.0),
+        _summary_row(TRAIN_ARM, LEGACY_ANSWER_DIRECTION, "use", 2.3, 2.1, 2.5,
+                     installed=0.28),
+        _summary_row(HELD_OUT_ARM, LEGACY_ANSWER_DIRECTION, "use", 0.3, 0.2, 0.4,
+                     installed=0.04),
+    ])
+    passed, _, detail = evaluate_gate_h5(summary, "use", 12, 2)
+    assert not passed
+    assert "archived" in detail and "NOT MEASURED" in detail
+
+
+def test_the_rlens_arm_does_not_gate_h5():
+    """H5's discriminator is the J-lens arm. The R-lens arm is descriptive.
+
+    Present it failing while the J-lens arm works: the gate must still pass.
+    Adding an R-lens condition would be a change to the experiment, and the
+    brief says to report it descriptively unless a new gate is justified.
+    """
+    import pandas as pd
+
+    rows = list(_h5_summary(das_installed=0.6, control_ba_installed=0.05).to_dict("records"))
+    rows += [_summary_row(TRAIN_ARM, ANSWER_DIRECTION_RLENS, "use", 0.7, 0.5, 0.9,
+                          installed=0.7),
+             _summary_row(HELD_OUT_ARM, ANSWER_DIRECTION_RLENS, "use", 0.7, 0.5, 0.9,
+                          installed=0.7)]
+    passed, _, detail = evaluate_gate_h5(pd.DataFrame(rows), "use", 12, 2)
+    assert passed, detail
+    assert ANSWER_DIRECTION_JLENS in detail
+    assert ANSWER_DIRECTION_RLENS not in detail
+
+
+def test_the_panel_shows_both_arms_with_the_dose_and_paired_intervals():
+    """The reading surface stage 107 renders, checked for what it must contain."""
+    import numpy as np
+    import pandas as pd
+
+    from src.experiments.binding_interchange import answer_direction_panel
+
+    rng = np.random.default_rng(0)
+    rows = []
+    for base in range(12):
+        for arm in (TRAIN_ARM, HELD_OUT_ARM):
+            for binding in ("source", "target"):
+                for variant, delta in (("das_binding", 2.0),
+                                       (ANSWER_DIRECTION_JLENS,
+                                        2.0 if arm == TRAIN_ARM else -1.0),
+                                       (ANSWER_DIRECTION_RLENS, 1.0),
+                                       (ANSWER_DIRECTION_UNEMBEDDING, 0.1),
+                                       ("random_norm", 0.05),
+                                       ("whole_state", 3.0)):
+                    rows.append({
+                        "base_id": f"b{base}", "split": "test", "arm": arm,
+                        "binding": binding, "site": "use", "variant": variant,
+                        "layer": 8, "rank": 1 if variant != "whole_state" else 4096,
+                        "delta_ld": delta + rng.normal(0, 0.05),
+                        "flipped": int(delta > 1), "says_installed": int(delta > 1),
+                        "says_own": 0, "says_other": 0,
+                        "edit_fraction": 0.48, "edit_norm": 7.5, "state_norm": 15.6})
+    panel = answer_direction_panel(pd.DataFrame(rows), site="use", layer=8,
+                                   rank=1, n_boot=200)
+    assert set(panel["arm"]) == {TRAIN_ARM, HELD_OUT_ARM}
+    for variant in ("das_binding", ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
+                    ANSWER_DIRECTION_UNEMBEDDING, "random_norm", "whole_state"):
+        assert variant in set(panel["variant"]), variant
+    # the exact edit norm AND the ratio, both required by the report
+    assert panel["edit_norm"].to_numpy() == pytest.approx(7.5)
+    assert panel["edit_fraction"].to_numpy() == pytest.approx(0.48)
+    # paired intervals against the treatment, on the same rows, except for the
+    # treatment itself
+    das = panel[panel["variant"] == "das_binding"]
+    assert das["vs_das_binding"].isna().all()
+    controls = panel[panel["variant"] != "das_binding"]
+    assert controls["vs_das_binding"].notna().all()
+    # and the crossing the design is read on: the J-lens arm reverses on `ba`
+    jlens = panel[panel["variant"] == ANSWER_DIRECTION_JLENS].set_index("arm")
+    assert jlens.loc[TRAIN_ARM, "delta_ld"] > 0 > jlens.loc[HELD_OUT_ARM, "delta_ld"]
 
 
 def test_structural_zeros_are_checked_not_assumed():

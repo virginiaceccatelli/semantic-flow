@@ -33,7 +33,7 @@ operation between the value and the answer, E11 had to forbid `answer == value`
 to avoid circularity, and paid for it with a capability requirement. Here the
 answer IS the bound value and the arm swap breaks the circularity instead.
 
-**Why `answer_direction` exists.** A null on `ba` has two readings — the
+**Why the answer-direction controls exist.** A null on `ba` has two readings — the
 subspace encodes the answer, or `ba` is simply not measurable. The control that
 separates them is an explicit, known answer direction, fixed by the TRAINING
 arm. It MUST pass on `ab` and MUST fail on `ba`. If it does not fail on `ba`,
@@ -53,15 +53,44 @@ rather than becoming a push: with the synthetic donor `h + alpha*r`,
 **And the direction must be one that FUNCTIONS at the intervention layer.**
 Norm-matching alone was not enough: at layer 8 of 32 the raw unembedding row is
 not the direction that moves the output head toward a token, and the control
-came out *positive on both arms* rather than reversing. That is the premise of
-the whole J-lens track (E10-0): `v_w = J_l^T (g W_U[w])` is the direction at
-layer `l` whose component pushes the model's own output toward `w`, and the
-plain unembedding row is a poor proxy for it away from the last layer. E10-0 is
-the one surviving piece of that track, it was validated to cosine 1.0000 against
-a closed-form answer, and it is exactly the instrument this control needs. The
-control therefore uses the **J-lens difference** `v_installed - v_own` at the
-intervention layer, with the raw unembedding row kept behind
-`--answer-direction unembedding` for comparison.
+came out *positive on both arms* rather than reversing. The direction that does
+move the output head toward `w` from depth `l` is a lens read direction,
+
+    u_w(l) = J_l^T ( g * W_U[w] )
+
+and the answer movement the training arm demands is the difference of two of
+them, `u_installed(l) - u_own(l)`, normalised and dosed to the DAS edit norm.
+
+**Which lens — the 2026-09-01 change.** The control is now built from the
+**published** J-lens artifact stage 201 fits: the released estimator, an
+independent pretraining-like corpus, the full `d_model x d_model` Jacobian. The
+arm is named `answer_direction_jlens` so it cannot be read as anything else.
+It previously fitted a *corpus-averaged cotangent readout over the two answer
+tokens*, inside this stage, from the DAS calibration programs
+(`src/models/cotangent_lens.py`). That is a different estimator — see
+`docs/WORKSPACE_LENS.md` §1 — and calling its output "J-lens vectors" made the
+E13 control unreadable next to E19. Every number the old arm produced is
+ARCHIVED, not carried forward.
+
+Three answer-direction arms now run, from the same answer tokens, layer, site,
+per-row dose, seed and test split, so they differ only in which map produced
+the direction:
+
+    answer_direction_jlens          the published J-lens — H5's discriminator
+    answer_direction_rlens          the published R-lens — a secondary,
+                                    DESCRIPTIVE diagnostic, not a gate
+    answer_direction_unembedding    `W_U[installed] - W_U[own]`, no transport;
+                                    the "does the transport matter" floor
+
+StarCoder2 additionally has an optional `answer_direction_rlens_paperminimal`
+arm from the `-paperminimal` sensitivity fit (the LayerNorm analogue switched
+off). It is a separately named arm and is never substituted for the default
+R-lens.
+
+**DAS stays lens-independent.** No lens initializes, constrains or trains the
+alignment: the subspace is fitted and its rank selected before any lens file is
+opened. A lens supplies controls the fitted subspace is compared against, and
+nothing else.
 """
 
 from __future__ import annotations
@@ -104,9 +133,32 @@ MIN_TRANSFER_FRACTION = 0.50        # H5 — fraction of the ceiling on `ba`
 TRAIN_ARM = "ab"
 HELD_OUT_ARM = "ba"
 
-VARIANTS = ("das_binding", "mean_difference", "answer_direction",
-            "answer_direction_unembedding", "random_rank", "random_norm",
-            "noop", "whole_state")
+#: The published J-lens control — H5's discriminator. Explicitly named after
+#: the lens that builds it, because "answer_direction" was ambiguous: it meant a
+#: corpus-averaged cotangent readout fitted inside this stage until 2026-09-01.
+ANSWER_DIRECTION_JLENS = "answer_direction_jlens"
+#: The published R-lens control. Secondary and DESCRIPTIVE — it gates nothing.
+ANSWER_DIRECTION_RLENS = "answer_direction_rlens"
+#: StarCoder2 only, optional: the `-paperminimal` sensitivity R-lens (LayerNorm
+#: analogue off). Never substituted for `ANSWER_DIRECTION_RLENS`.
+ANSWER_DIRECTION_RLENS_PAPERMINIMAL = "answer_direction_rlens_paperminimal"
+#: No transport at all — the floor that shows whether the transport did work.
+ANSWER_DIRECTION_UNEMBEDDING = "answer_direction_unembedding"
+
+#: Every arm that is "a fixed answer movement, dosed to the DAS edit norm".
+ANSWER_DIRECTIONS = (ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
+                     ANSWER_DIRECTION_RLENS_PAPERMINIMAL,
+                     ANSWER_DIRECTION_UNEMBEDDING)
+
+#: The archived name. Runs before 2026-09-01 wrote their cotangent-lens control
+#: under it. It is never produced any more, and the H5 gate refuses to read it
+#: as the discriminator rather than silently scoring an archived arm as the
+#: published one.
+LEGACY_ANSWER_DIRECTION = "answer_direction"
+
+VARIANTS = ("das_binding", "mean_difference", ANSWER_DIRECTION_JLENS,
+            ANSWER_DIRECTION_RLENS, ANSWER_DIRECTION_UNEMBEDDING,
+            "random_rank", "random_norm", "noop", "whole_state")
 
 # Sites, in program order. `def_source` precedes the mutation, so the host and
 # donor states there are provably identical and the interchange is exactly the
@@ -235,6 +287,57 @@ def collect_states(
     return out
 
 
+def _answer_movement(
+    variant: str,
+    record: BindingFactorial,
+    binding: str,
+    host: np.ndarray,
+    vectors: dict,
+    target_edit_norm: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """One answer-direction arm: `(basis, synthetic_donor)`.
+
+    The movement is always the TRAINING arm's, held fixed when the row being
+    evaluated belongs to the crossed arm — that is the whole discriminator. In
+    `ab` a source-host must move from `v_a` to `v_b`; the same fixed direction
+    is then applied to `ba`, where the binding flip demands the opposite token,
+    so an answer account must attenuate or reverse there while a binding account
+    must not:
+
+        d = u(installed_answer_on_ab) - u(own_answer_on_ab)
+
+    Normalised, then installed through a SYNTHETIC donor `h + alpha*d`. The
+    interchange `interchange(h, h + alpha*d, d)` is exactly `h + alpha*d`, so
+    the edit norm is `alpha` by construction — set to the treatment's own edit
+    norm on this row, because a control at a different dose is not a control.
+    """
+    installed = vectors.get(record.other_answer_token(TRAIN_ARM, binding))
+    own = vectors.get(record.answer_token(TRAIN_ARM, binding))
+    if installed is None or own is None:
+        raise ValueError(
+            f"{variant}: no direction for one of {record.base_id}'s answer "
+            f"tokens. The vectors must cover every answer token in the corpus.")
+    direction = np.asarray(installed - own, dtype=np.float64).reshape(-1, 1)
+    if not np.all(np.isfinite(direction)):
+        raise ValueError(
+            f"{record.base_id}: the {variant} direction is not finite.")
+    norm = float(np.linalg.norm(direction))
+    if norm <= 0:
+        # The generator guarantees the two answer tokens differ, so a zero
+        # direction means the lookup is wrong. Fail loudly: a silently dead
+        # control reads as "it failed on the held-out arm", which is
+        # indistinguishable from the discriminator working.
+        raise ValueError(
+            f"{record.base_id}: the two answer tokens have identical {variant} "
+            f"rows, so the control would be the zero edit. Check the rows "
+            f"passed in for tokens "
+            f"{record.answer_token(TRAIN_ARM, binding)} and "
+            f"{record.other_answer_token(TRAIN_ARM, binding)}.")
+    direction /= norm
+    alpha = float(target_edit_norm if target_edit_norm else norm)
+    return direction, (host + alpha * direction.reshape(-1))
+
+
 def build_subspace(
     variant: str,
     record: BindingFactorial,
@@ -245,26 +348,40 @@ def build_subspace(
     d_model: int,
     rank: int,
     subspace: Optional[AlignedSubspace],
-    unembedding: Optional[np.ndarray],
+    unembedding: Optional[dict],
     seed: int,
     target_edit_norm: float = 0.0,
-    lens_vectors: Optional[dict] = None,
+    answer_vectors: Optional[dict] = None,
     mean_direction: Optional[np.ndarray] = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """(basis, donor_state) for one control arm.
 
     `target_edit_norm` is the treatment's ||delta h|| on this row, used to
-    norm-match `answer_direction`. Any control compared against a treatment at
-    a different dose is not a control.
+    norm-match every answer-direction arm. Any control compared against a
+    treatment at a different dose is not a control.
+
+    `answer_vectors` maps an answer-direction variant name to its
+    `{token_id: vector}` table:
+
+        answer_direction_jlens   `u_w = J_l^T (g W_U[w])` from the PUBLISHED
+                                 J-lens artifact of stage 201
+        answer_direction_rlens   the same from the published R-lens
+        answer_direction_unembedding
+                                 `W_U[w]` itself — supplied via `unembedding`,
+                                 so the raw-row floor needs no lens at all
+
+    The arms are constructed identically and differ only in that table, which is
+    what makes "did the transport matter?" a readable comparison rather than an
+    argument.
     """
     if variant == "das_binding":
         if subspace is None:
             raise ValueError("das_binding needs a learned subspace")
         return subspace.basis, donor
-    if variant == "answer_direction_unembedding":
-        # A direction that explicitly encodes the answer arm `ab` would demand,
-        # NORM-MATCHED to the treatment. It must pass on `ab` and fail on `ba`;
-        # that is what makes a `ba` null about the subspace rather than the arm.
+    if variant in ANSWER_DIRECTIONS:
+        # An explicit, KNOWN answer direction, norm-matched to the treatment.
+        # It must pass on `ab` and fail on `ba`; that is what makes a `ba` null
+        # about the subspace rather than about the arm.
         #
         # The first version of this control was a unit-norm unembedding row, and
         # it was worthless: an interchange along a unit direction unaligned with
@@ -272,49 +389,26 @@ def build_subspace(
         # ||h|| at d=4096 — while DAS *optimises* its direction to align with
         # that difference and moved 48%. Comparing them asked which of a large
         # edit and a negligible one works, which is the E11 dose error rebuilt
-        # inside the control. Measured on 6.7b: answer_direction +0.001 on both
-        # arms, i.e. it did nothing anywhere, so it discriminated nothing.
-        #
-        # The fix keeps it an exact interchange rather than switching to a push:
-        # with a synthetic donor `h + alpha*r`, `interchange(h, h + alpha*r, r)`
-        # is exactly `h + alpha*r`, so the edit norm is `alpha` by construction
-        # and can be set to the treatment's.
-        if unembedding is None:
-            raise ValueError("answer_direction needs the unembedding matrix")
-        installed = unembedding[record.other_answer_token(TRAIN_ARM, binding)]
-        own = unembedding[record.answer_token(TRAIN_ARM, binding)]
-        direction = np.asarray(installed - own, dtype=np.float64).reshape(-1, 1)
-        norm = float(np.linalg.norm(direction))
-        if norm <= 0:
-            # The generator guarantees the two answer tokens differ, so a zero
-            # direction means the unembedding lookup is wrong. Fail loudly: a
-            # silently dead control reads as "it failed on the held-out arm",
-            # which is indistinguishable from the discriminator working.
-            raise ValueError(
-                f"{record.base_id}: the two answer tokens have identical "
-                f"unembedding rows, so the answer_direction control would be "
-                f"the zero edit. Check the rows passed in `unembedding`.")
-        direction /= norm
-        alpha = float(target_edit_norm if target_edit_norm else norm)
-        return direction, (host + alpha * direction.reshape(-1))
-    if variant == "answer_direction":
-        # Same construction, but on the J-LENS rows rather than the unembedding
-        # rows: at the intervention layer the J-lens direction is the one whose
-        # component pushes the output head toward the token, which the raw
-        # unembedding row is not away from the last layer (E10-0).
-        if lens_vectors is None:
-            raise ValueError("answer_direction needs J-lens vectors at this layer")
-        installed = lens_vectors[record.other_answer_token(TRAIN_ARM, binding)]
-        own = lens_vectors[record.answer_token(TRAIN_ARM, binding)]
-        direction = np.asarray(installed - own, dtype=np.float64).reshape(-1, 1)
-        norm = float(np.linalg.norm(direction))
-        if norm <= 0:
-            raise ValueError(
-                f"{record.base_id}: the two answer tokens have identical J-lens "
-                f"rows, so the answer_direction control would be the zero edit.")
-        direction /= norm
-        alpha = float(target_edit_norm if target_edit_norm else norm)
-        return direction, (host + alpha * direction.reshape(-1))
+        # inside the control. Measured on 6.7b: +0.001 on both arms, i.e. it did
+        # nothing anywhere, so it discriminated nothing.
+        if variant == ANSWER_DIRECTION_UNEMBEDDING:
+            vectors = unembedding
+            missing = "the unembedding matrix"
+        else:
+            vectors = (answer_vectors or {}).get(variant)
+            missing = (f"fitted lens directions at this layer; stage 201 must "
+                       f"run before the control-evaluation phase of stage 106")
+        if not vectors:
+            raise ValueError(f"{variant} needs {missing}")
+        return _answer_movement(variant, record, binding, host, vectors,
+                                target_edit_norm)
+    if variant == LEGACY_ANSWER_DIRECTION:
+        raise ValueError(
+            f"'{LEGACY_ANSWER_DIRECTION}' is the ARCHIVED cotangent-lens control "
+            f"and is no longer built. Use '{ANSWER_DIRECTION_JLENS}' (the "
+            f"published J-lens) or '{ANSWER_DIRECTION_UNEMBEDDING}'. The old "
+            f"arm's numbers are archived in docs/ARCHIVE.md and are not "
+            f"comparable to the new ones.")
     if variant == "mean_difference":
         # The baseline the alignment measurement demands. On 6.7b the learned
         # rank-1 direction sits at |cos| 0.673 from the mean donor-host
@@ -360,8 +454,8 @@ def run_grid(
     sites: Sequence[str],
     rank: int,
     subspace: Optional[AlignedSubspace] = None,
-    unembedding: Optional[np.ndarray] = None,
-    lens_vectors: Optional[dict] = None,
+    unembedding: Optional[dict] = None,
+    answer_vectors: Optional[dict] = None,
     mean_direction: Optional[np.ndarray] = None,
     seed: int = 42,
     provenance: Optional[dict] = None,
@@ -376,7 +470,7 @@ def run_grid(
     **Two phases, because the arithmetic and the forward passes have very
     different costs.** Phase 1 builds every cell's basis and donor in numpy —
     no GPU, and it is where the per-row edit norm of the treatment is computed
-    so `answer_direction` can be norm-matched to it on the same row. Phase 2
+    so every answer-direction arm can be norm-matched to it on the same row. Phase 2
     runs the forward passes in batches: E13's prompts are uniformly 21 tokens
     (asserted in `tests/test_binding.py`), so no padding is needed and row `i`
     of a batch receives exactly the edit it would have received alone. The
@@ -412,7 +506,7 @@ def run_grid(
                             variant, record, arm, binding, host, donor,
                             d_model, rank, subspace, unembedding, seed,
                             target_edit_norm=treatment_norm,
-                            lens_vectors=lens_vectors,
+                            answer_vectors=answer_vectors,
                             mean_direction=mean_direction)
                         report = interchange_report(host, donor_state, basis)
                         if variant == "das_binding":
@@ -460,6 +554,11 @@ def run_grid(
                 "says_own": int(argmax_id == own_id),
                 "says_other": int(argmax_id not in (installed_id, own_id)),
                 "edit_fraction": report["edit_fraction"],
+                # The absolute norm as well as the ratio: the report has to show
+                # the exact |edit| beside |edit|/|h|, and a ratio alone cannot
+                # reconstruct it once rows with different ||h|| are pooled.
+                "edit_norm": report["edit_norm"],
+                "state_norm": report["state_norm"],
                 "effective_rank": int(report.get("rank", rank)),
                 "degenerate": bool(report["degenerate"]),
                 **(provenance or {}),
@@ -515,6 +614,13 @@ def interchange_summary(frame: pd.DataFrame, split: str = "test",
                      "says_other_rate": float(part["says_other"].mean())
                      if "says_other" in part else float("nan"),
                      "edit_fraction": float(part["edit_fraction"].mean()),
+                     # `edit_fraction` is |edit|/|h|; the report must show the
+                     # exact |edit| too, and it cannot be recovered from the
+                     # ratio once rows with different ||h|| are pooled.
+                     "edit_norm": float(part["edit_norm"].mean())
+                     if "edit_norm" in part else float("nan"),
+                     "state_norm": float(part["state_norm"].mean())
+                     if "state_norm" in part else float("nan"),
                      "n": ci.n, "n_bases": ci.n_groups})
     return pd.DataFrame(rows)
 
@@ -552,6 +658,85 @@ def control_contrasts(frame: pd.DataFrame, site: str, arm: str, layer: int,
                      "n_bases": ci.n_groups,
                      "edit_fraction_treatment": float(treated.loc[shared, "edit_fraction"].mean()),
                      "edit_fraction_control": float(other.loc[shared, "edit_fraction"].mean())})
+    return pd.DataFrame(rows)
+
+
+#: What the E13 report has to show for BOTH arms, in this order. The treatment
+#: first, then every fixed answer direction (published J-lens, published R-lens,
+#: raw unembedding), then the dose-matched random floors and the ceiling.
+PANEL_VARIANTS = ("das_binding", ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
+                  ANSWER_DIRECTION_RLENS_PAPERMINIMAL,
+                  ANSWER_DIRECTION_UNEMBEDDING, "mean_difference",
+                  "random_rank", "random_norm", "whole_state")
+
+
+def answer_direction_panel(frame: pd.DataFrame, site: str, layer: int,
+                           rank: Optional[int] = None, split: str = "test",
+                           n_boot: int = 2000, seed: int = 42) -> pd.DataFrame:
+    """The H4/H5 reading surface: every arm, in both arms of the design.
+
+    One row per (arm, variant), carrying what the interpretation needs and
+    nothing it does not:
+
+      * `delta_ld` with a cluster-bootstrap interval over base programs, and
+        `says_installed_rate`, the full-vocabulary argmax the gates actually
+        read (`delta_ld` is positively biased here — see the module docstring);
+      * `edit_norm` and `edit_fraction` = |edit| / ||h||, so a reader can see at
+        a glance that the fixed answer directions were dosed to the treatment's
+        own per-row edit rather than being compared against it at another size;
+      * `vs_das_binding`, a PAIRED difference on the same rows within the same
+        arm, with its own interval — the only form in which two arms of this
+        design may be compared, since program-to-program variation dwarfs the
+        effect.
+
+    Arms absent from the run (an R-lens that was not required, a paper-minimal
+    fit that only exists for StarCoder2) are simply not rows. Their absence is
+    reported by the stage rather than filled with a placeholder.
+    """
+    subset = frame[(frame.site == site) & (frame.layer == layer)]
+    subset = subset[subset.split == split] if split != "all" else subset
+    if rank is not None:
+        subset = subset[subset.variant.isin(RANK_IS_AN_OUTCOME)
+                        | (subset["rank"] == rank)]
+    rows = []
+    for arm in ARMS:
+        at_arm = subset[subset.arm == arm]
+        treated = at_arm[at_arm.variant == "das_binding"].set_index(
+            ["base_id", "binding"])
+        for variant in PANEL_VARIANTS:
+            part = at_arm[at_arm.variant == variant]
+            if part.empty:
+                continue
+            ci = cluster_bootstrap_ci(part["delta_ld"].to_numpy(),
+                                      part["base_id"].to_numpy(),
+                                      n_boot=n_boot, seed=seed)
+            row = {
+                "arm": arm, "variant": variant, "site": site,
+                "layer": int(layer), "split": split,
+                "delta_ld": ci.point, "ci_lo": ci.lo, "ci_hi": ci.hi,
+                "says_installed_rate": float(part["says_installed"].mean())
+                if "says_installed" in part else float("nan"),
+                "says_other_rate": float(part["says_other"].mean())
+                if "says_other" in part else float("nan"),
+                "flip_rate": float(part["flipped"].mean()),
+                "edit_norm": float(part["edit_norm"].mean())
+                if "edit_norm" in part else float("nan"),
+                "edit_fraction": float(part["edit_fraction"].mean()),
+                "n": ci.n, "n_bases": ci.n_groups,
+                "vs_das_binding": float("nan"),
+                "vs_das_lo": float("nan"), "vs_das_hi": float("nan"),
+            }
+            other = part.set_index(["base_id", "binding"])
+            shared = treated.index.intersection(other.index)
+            if variant != "das_binding" and len(shared) >= 3:
+                paired = paired_cluster_bootstrap_ci(
+                    treated.loc[shared, "delta_ld"].to_numpy(),
+                    other.loc[shared, "delta_ld"].to_numpy(),
+                    treated.loc[shared].reset_index()["base_id"].to_numpy(),
+                    n_boot=n_boot, seed=seed)
+                row.update({"vs_das_binding": paired.point,
+                            "vs_das_lo": paired.lo, "vs_das_hi": paired.hi})
+            rows.append(row)
     return pd.DataFrame(rows)
 
 
@@ -800,7 +985,15 @@ def evaluate_gate_h3(summary: pd.DataFrame, site: str, layer: int) -> tuple[bool
 
 def evaluate_gate_h4(summary: pd.DataFrame, contrasts: pd.DataFrame,
                      site: str, layer: int, rank: int) -> tuple[bool, float, str]:
-    """H4: on the TRAINING arm, the low-rank interchange clears its controls."""
+    """H4: on the TRAINING arm, the low-rank interchange clears its controls.
+
+    The controls here are the dose-matched random arms and the no-op, NOT the
+    answer-direction arms. A fixed answer direction built from the training
+    arm's own required movement is *designed* to work on the training arm — that
+    is what makes its failure on the held-out arm informative — so demanding
+    `das_binding` beat it on `ab` would fail the experiment for behaving as
+    specified. The answer arms are read on the crossing, by H5.
+    """
     das = _cell(summary, TRAIN_ARM, "das_binding", site, layer, rank)
     ceiling = _cell(summary, TRAIN_ARM, "whole_state", site, layer)
     if das is None or ceiling is None:
@@ -811,12 +1004,13 @@ def evaluate_gate_h4(summary: pd.DataFrame, contrasts: pd.DataFrame,
     passed = bool(das["ci_lo"] > 0 and np.isfinite(fraction)
                   and fraction >= MIN_TRAIN_ARM_FRACTION and cleared)
     failing = [] if contrasts.empty else contrasts[contrasts["ci_lo"] <= 0]["contrast"].tolist()
+    edit_norm = float(das.get("edit_norm", float("nan")))
     detail = (f"{TRAIN_ARM} @ {site} L{layer} r{rank}: {das['delta_ld']:+.3f} "
               f"[{das['ci_lo']:+.3f}, {das['ci_hi']:+.3f}] = {fraction:.0%} of the "
               f"whole-state ceiling {ceiling['delta_ld']:+.3f} (threshold "
               f"{MIN_TRAIN_ARM_FRACTION:.0%}); controls cleared: {cleared}"
               + (f" (failing: {failing})" if failing else "")
-              + f"; edit moved {das['edit_fraction']:.3f} of ||h||")
+              + f"; edit |{edit_norm:.3f}| = {das['edit_fraction']:.3f} of ||h||")
     return passed, fraction, detail
 
 
@@ -829,9 +1023,21 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
          reaches a decent fraction of the ceiling;
       2. it is not merely the training arm leaking — `ba` is measurable, which
          H3 established;
-      3. the explicit `answer_direction` control, which passes on `ab`, FAILS
-         on `ba`. If it does not fail, the discriminator cannot tell an answer
-         encoder from a binding encoder and no verdict is licensed.
+      3. the explicit `answer_direction_jlens` control, which passes on `ab`,
+         FAILS on `ba`. If it does not fail, the discriminator cannot tell an
+         answer encoder from a binding encoder and no verdict is licensed.
+
+    The discriminator is the PUBLISHED J-lens arm, and only that arm. The
+    R-lens arm (`answer_direction_rlens`) runs on identical tokens, layer, site,
+    dose, seed and split and is reported descriptively beside it; it is a second
+    reading of the same diagnostic, not a second gate, and adding one would be a
+    change to the experiment. The raw-unembedding arm is the no-transport floor.
+
+    An `interchange.csv` written before 2026-09-01 carries the ARCHIVED
+    cotangent-lens control under the bare name `answer_direction`. That arm is a
+    different estimator (`docs/WORKSPACE_LENS.md` §1) and is refused here rather
+    than scored as the published one: silently reading it would make an archived
+    number look like a current verdict.
 
     **Conditions 1 and 3 are read on `says_installed`, the full-vocabulary
     argmax, not on `delta_ld`.** This module's design section says so and always
@@ -856,10 +1062,20 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
     das_ba = _cell(summary, HELD_OUT_ARM, "das_binding", site, layer, rank)
     ceiling_ba = _cell(summary, HELD_OUT_ARM, "whole_state", site, layer)
     ceiling_ab = _cell(summary, TRAIN_ARM, "whole_state", site, layer)
-    answer_ab = _cell(summary, TRAIN_ARM, "answer_direction", site, layer)
-    answer_ba = _cell(summary, HELD_OUT_ARM, "answer_direction", site, layer)
+    answer_ab = _cell(summary, TRAIN_ARM, ANSWER_DIRECTION_JLENS, site, layer)
+    answer_ba = _cell(summary, HELD_OUT_ARM, ANSWER_DIRECTION_JLENS, site, layer)
     if das_ba is None or ceiling_ba is None:
         return False, float("nan"), "missing held-out-arm rows"
+    legacy = (answer_ab is None and answer_ba is None
+              and _cell(summary, TRAIN_ARM, LEGACY_ANSWER_DIRECTION, site, layer)
+              is not None)
+    if legacy:
+        return False, float("nan"), (
+            f"this summary carries the archived '{LEGACY_ANSWER_DIRECTION}' arm "
+            f"(the cotangent readout fitted inside stage 106 before 2026-09-01) "
+            f"and no '{ANSWER_DIRECTION_JLENS}' arm. The discriminator is NOT "
+            f"MEASURED: re-run stage 106 against the stage-201 J-lens rather "
+            f"than reading an archived control as the published one.")
 
     def installed(cell) -> float:
         if cell is None:
@@ -893,7 +1109,8 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
             shape = (f"{HELD_OUT_ARM} {answer_ba['delta_ld']:+.3f} "
                      f"[{answer_ba['ci_lo']:+.3f}, {answer_ba['ci_hi']:+.3f}]")
         discriminates = passes_train and fails_heldout
-        discriminator = (f"answer_direction {TRAIN_ARM} {answer_ab['delta_ld']:+.3f} "
+        discriminator = (f"{ANSWER_DIRECTION_JLENS} {TRAIN_ARM} "
+                         f"{answer_ab['delta_ld']:+.3f} "
                          f"[{answer_ab['ci_lo']:+.3f}, {answer_ab['ci_hi']:+.3f}], "
                          f"installed {installed(answer_ab):.1%} (passes: {passes_train}); "
                          f"{shape} (fails: {fails_heldout})")

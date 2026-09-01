@@ -7,14 +7,16 @@ experiments. It first generates programs whose binding and def–use labels are
 known exactly, then runs a frozen language model and stores hidden states at
 specific token positions. CPU analysis applies probes, controls, and statistical
 summaries to those states. The later GPU stages test two distinct consequences:
-DAS asks whether the model causally uses a binding component, and the conserving cotangent lens
-attributes the unchanged answer on the same programs.
+DAS asks whether the model causally uses a binding component. The published
+J-lens and R-lens then test whether the needed values occupy a verbalizable
+workspace.
 
-The active reproduction path is **Part C → Part F → Part F.2**. Stage 60 is
-supporting validation for DAS's answer-direction control, and stage 110 validates
-the conserving cotangent lens backward rules. The security and standalone lens tracks remain
-runnable but are archived scientifically; they are retained here only so their
-artifacts can be reproduced.
+The active reproduction paths are **Part C → Part F** for causal use and
+**Part H** for the published J-lens/R-lens result. Stage 60 supports DAS's
+answer-direction control. The earlier cotangent-lens tracks, including Parts F.2
+and F.3 and their stage-110 rules, remain runnable but are archived
+scientifically; they are retained here only so their artifacts can be
+reproduced.
 
 Each numbered stage below states where it runs, what earlier artifacts it
 requires, what command launches it, and what files it produces. A **gate** is a
@@ -37,8 +39,8 @@ What it *found*: [RESULTS.md](RESULTS.md).
 - [Part D — Supporting lens validation (60, 110)](#part-d--supporting-lens-validation-60-110)
 - [Part E — Archived security and lens tracks (120–131)](#part-e--archived-security-and-lens-tracks-120131)
 - [Part F — The causal track (100–108)](#part-f--the-causal-track-100108)
-- [Part F.2 — The observational conserving cotangent lens readout of the same pairs (140–141)](#part-f2--the-observational-conserving-cotangent-lens-readout-of-the-same-pairs-140141)
-- [Part F.3 — Unprompted cotangent lens vocabulary readout (160–161)](#part-f3--unprompted-cotangent-lens-vocabulary-readout-160161)
+- [Archived E16 — conserving cotangent-lens readout (140–141)](#archived-e16--conserving-cotangent-lens-readout-140141)
+- [Archived E18 — cotangent-lens vocabulary readout (160–161)](#archived-e18--cotangent-lens-vocabulary-readout-160161)
 - [Archived E17 — prompted verbalisation (150–153)](#archived-e17--prompted-verbalisation-150153)
 - [Part H — E19: the published J-lens and R-lens (200–205)](#part-h--e19-the-published-j-lens-and-r-lens-200205)
 - [Part G — Make targets and the GPU-host workflow](#part-g--make-targets-and-the-gpu-host-workflow)
@@ -63,7 +65,7 @@ pip install -e ".[dev]"                # or: pip install -r requirements.txt
 Verify:
 
 ```bash
-pytest tests/ -v          # 489 tests, CPU-only, no model download
+pytest tests/ -v          # 746 tests, CPU-only, no model download
 python -c "import torch; print(torch.backends.mps.is_available())"   # True on M-series
 ```
 
@@ -140,11 +142,14 @@ FOUNDATION — representation and robustness (Instruments 1 and 2)
   data  extr  probes  R4   R5                               assets
               R1-R3
 
-SUPPORTING VALIDATION
+ACTIVE LENS TRACK
 
   200-205 PUBLISHED J-lens / R-lens (E19)  see docs/WORKSPACE_LENS.md
-  60   cotangent lens validation   GPU        — a GATE (instrument only)
-  110  conserving cotangent lens rule validation GPU     — a GATE
+
+SUPPORTING / ARCHIVED VALIDATION
+
+  60   cotangent lens validation   GPU        — supports DAS control only
+  110  conserving cotangent lens rule validation GPU     — archived track
 
 ARCHIVED TRACKS — reproducible, not part of the active claim
 
@@ -155,10 +160,10 @@ ARCHIVED TRACKS — reproducible, not part of the active claim
 ACTIVE CAUSAL TRACK — DAS interchange
 
   100 → 101 → … → 108                    R10     H0-H5
-  140 → 141                              R11     H6
 
 RETIRED / PARKED — still runnable; see ARCHIVE.md
   40 lead time · 50 patching · 61-62 cotangent lens uses · 70-74 cotangent-space · 80-89 store
+  140-141 E16 conserving cotangent lens · 160-161 E18 cotangent vocabulary
 ```
 
 **Two gate strengths.** Stages 60 and 110 are gates in the weak sense: they exit
@@ -442,7 +447,7 @@ assignments, so the alignment is fitted on arm `ab` and the claim is read on arm
 | 103 | `103_binding_extract.py --model M --layers L` | GPU, ~3 min | — | `acts/{arm}_{binding}_L*.npz` |
 | 104 | `104_binding_decode.py --model M` | CPU, minutes | **H2** | `decode.csv`, `decoders/*.pkl` |
 | 105 | `105_binding_ceiling.py --model M --layers L` | GPU, ~15 min | **H3** | `ceiling{,_summary}.csv` |
-| 106 | `106_binding_interchange.py --model M --ranks R` | GPU, 1–2 h | **H4, H5** | `interchange{,_summary,_contrasts,_alignments,_rank_selection}.csv`, `subspaces/*.pkl` |
+| 106 | `106_binding_interchange.py --model M --ranks R` | GPU, 1–2 h | **H4, H5** | `interchange{,_summary,_contrasts,_panel,_alignments,_lens,_rank_selection}.csv`, `subspaces/*.pkl` |
 | 107 | `107_binding_report.py --model M` | CPU, seconds | — | `e13_report.{yaml,md}`, `e13_gates.csv`, `e13_transfer_ratios.csv` |
 | 108 | `108_binding_diagnose.py --model M` | CPU, seconds | — | `e13_diagnosis.csv` |
 
@@ -450,6 +455,56 @@ Everything lands under `results/binding/{model}/`. Prompts are ~21 tokens, so a
 full 6.7b run is ≈ 1.5–3 GPU-hours, dominated by stage 106's backward passes —
 the only backward pass in the track. Use `--dtype float32` if fp16 goes
 non-finite.
+
+### Stage 106 depends on stage 201
+
+**`201_lens_fit.py` must have run for this model before stage 106.** Since
+2026-09-01 the answer-direction controls are built from the *published* J-lens
+and R-lens artifacts (E19, `results/workspace_lens/{model}/{j,r}-lens/lens.pt`)
+rather than from a lens stage 106 fitted for itself. The ordering is:
+
+```
+100 → 101 → 102 → 103 → 104 → 105 ─┐
+                                   ├→ 106 → 107 → 108
+200 → 201 (→ 202 gate) ────────────┘
+```
+
+The dependency is on the **control-evaluation phase of stage 106**, not on the
+DAS fit:
+
+| phase of stage 106 | needs a lens? |
+|---|---|
+| preflight the artifacts (sidecar only, milliseconds, no weights) | reads `lens_meta.json` |
+| collect states, fit the DAS subspace, select the rank on calibration | **no** |
+| load `lens.pt`, build `u_w(l) = J_lᵀ(g·W_U[w])` at the chosen layer | yes |
+| the test grid, the panel, H4/H5 | yes |
+
+That separation is why DAS stays lens-independent: no lens initializes,
+constrains or trains the alignment, and the subspace and its rank are frozen
+before a lens file is opened. The preflight nonetheless runs first, so a missing
+or mismatched artifact fails in the stage's first seconds rather than after the
+fit.
+
+Options:
+
+```bash
+--jlens PATH                 # default results/workspace_lens/{model}/j-lens
+--rlens PATH                 # default results/workspace_lens/{model}/r-lens
+--require-rlens              # refuse to run without one (default: --no-require-rlens,
+                             #   because the R-lens arm is descriptive and its
+                             #   absence must not block H5's discriminator)
+--rlens-paperminimal auto    # StarCoder2 only: add the separately named
+                             #   sensitivity arm from {model}-paperminimal/r-lens
+--no-lens-checksum           # skip the SHA-256 of lens.pt (seconds per GB)
+```
+
+Stage 106 refuses, with the reason named, when the J-lens artifact is missing,
+the intervention layer was never fitted, `d_model` or the model provenance does
+not match, the fitted lens used a different tokenizer, or a resulting direction
+is zero or non-finite. Its manifest records, per arm: lens kind, artifact path,
+SHA-256, the vendored `jacobian-lens` commit, the fitting corpus and its digest,
+the source layer, how the normalization gain was resolved, and whether the
+R-lens and paper-minimal arms ran.
 
 ## Reading the gates
 
@@ -460,7 +515,7 @@ non-finite.
 | **H2** | `decode.csv` — the *measured* surface baseline column, not just accuracy |
 | **H3** | `ceiling_summary.csv` — **both arms** must be alive, or a null in either says nothing. Structural zeros should be `0.00e+00`; see the fp16 note below before treating a non-zero one as a fault |
 | **H4** | `interchange_contrasts.csv` — all three control contrasts must clear zero, and `edit_fraction` must be comparable across arms |
-| **H5** | Read the `answer_direction` rows **first**. This is a cotangent lens `a`-to-`b` output push learned from `ab`, matched to DAS's per-row edit norm. It should affect `ab` but attenuate or reverse on `ba`, where the required answer movement is `b` to `a`. If it succeeds like DAS in both arms, the design has not separated binding transport from an answer-token direction and no verdict is licensed |
+| **H5** | Read the `answer_direction_jlens` rows **first** — the *published* J-lens `a`-to-`b` output push fixed from `ab` and matched to DAS's per-row edit norm. It should affect `ab` but attenuate or reverse on `ba`, where the required answer movement is `b` to `a`. If it succeeds like DAS in both arms, the design has not separated binding transport from a lens-visible answer direction and no verdict is licensed. `answer_direction_rlens` is the same diagnostic through the published R-lens and is **descriptive**; `answer_direction_unembedding` is the no-transport floor. `interchange_panel.csv` has all of them, both arms, with the exact edit norm and paired intervals |
 
 ## Three warnings
 
@@ -473,7 +528,7 @@ claim-bearing cell. Passing a list makes the test grid run at the *first* entry,
 which is not necessarily the layer H3 selected — the 2026-08-19 starcoder2-3b run
 passed `7,11,15`, evaluated at layer 7, and reported FAIL at a layer H3 had not
 chosen. (Until 2026-08-24 it also mixed layers outright: the per-layer states,
-cotangent lens, subspace and difference-in-means baseline leaked out of the loop, so the
+lens vectors, subspace and difference-in-means baseline leaked out of the loop, so the
 grid ran at the first layer holding the *last* layer's objects. Fixed; every
 per-layer object is now keyed by layer and the selected subspace's recorded layer
 is asserted against `chosen_layer`.)
@@ -501,7 +556,10 @@ full reason for the rule correction.
 
 ---
 
-# Part F.2 — The observational conserving cotangent lens readout of the same pairs (140–141)
+# Archived E16 — conserving cotangent-lens readout (140–141)
+
+This section reproduces an archived method-development experiment. It is not an
+R-lens result and does not contribute to the active findings.
 
 E16 reuses E13's four-program factorial, model hooks, frozen calib/test split and
 reporting conventions, and reads it with the conserving cotangent lens validated at stage 110. The
@@ -680,7 +738,7 @@ screen -dmS verbal-1.3b env MODEL=deepseek-coder-1.3b jobs/binding_verbal.csh
 screen -dmS verbal-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_verbal.csh
 ```
 
-**Run the two models one at a time.** Same VRAM trap as Part F.2 — see [The VRAM
+**Run the two models one at a time.** Same VRAM trap as archived E16 — see [The VRAM
 trap, and why it looks like a lens bug](#the-vram-trap-and-why-it-looks-like-a-lens-bug).
 Stage 150 is the most VRAM-hungry of the four despite being the cheapest in time,
 because it materialises the full unembedding as float32 (about half a gigabyte on
@@ -808,7 +866,10 @@ on starcoder2 even though the attribution half is not. That is why
 
 ---
 
-# Part F.3 — Unprompted cotangent lens vocabulary readout (160–161)
+# Archived E18 — cotangent-lens vocabulary readout (160–161)
+
+This section reproduces an archived method-development experiment. It is not a
+J-lens result and does not contribute to the active findings.
 
 Stage 160 reads the unchanged E13 use-token state with the predeclared scope,
 positional, and action word pairs. It writes per-pair cotangent lens reversals separately
@@ -830,7 +891,7 @@ column is an informative negative when the probe succeeds.
 
 ---
 
-# Part H — E19: the published J-lens and R-lens (200–205)
+# Part H — E19: the published J-lens and R-lens (200–206)
 
 The methods of the 2026 global-workspace paper and the R-lens post, run through
 the released reference implementation vendored at `third_party/jacobian-lens`.
@@ -848,8 +909,13 @@ compare their tables with these.
   202  the seven-check gate           GPU      minutes  REQUIRED before 203-205
   203  J vs R vs logit readout        GPU      minutes
   204  causal ablation                GPU      minutes
+  206  semantic-concept panel         GPU      minutes
   205  tables, figures, report        CPU      seconds
 ```
+
+Stage 201's artifacts are also read by **E13 stage 106**, whose answer-direction
+controls are the published J-lens and R-lens read directions. See
+[Stage 106 depends on stage 201](#stage-106-depends-on-stage-201).
 
 ## Stage 200 — fitting corpus and probe suite (CPU)
 
@@ -940,7 +1006,7 @@ Exits non-zero on a failed required check. W6 reports **skipped** rather than
 passed if stage 201 was run without `--halves`. Stage 205 reproduces this table
 at the top of its report.
 
-## Stages 203–205 — readout, ablation, report
+## Stages 203–206 — readout, ablation, concepts, report
 
 ```bash
 python scripts/203_lens_readout.py --model deepseek-coder-1.3b \
@@ -948,6 +1014,7 @@ python scripts/203_lens_readout.py --model deepseek-coder-1.3b \
 python scripts/204_lens_ablate.py  --model deepseek-coder-1.3b \
     --suite data/lens_eval/code-semantics-deepseek-coder-1.3b.jsonl \
     --readout results/workspace_lens/deepseek-coder-1.3b/readout/workspace_lens_rows.csv
+python scripts/206_lens_concepts.py --model deepseek-coder-1.3b
 python scripts/205_lens_report.py  --model deepseek-coder-1.3b
 ```
 
@@ -958,7 +1025,21 @@ and a random displacement matched exactly to the J-lens erase magnitude. Stage
 205 can regenerate reports from committed CSVs and `lens_meta.json` sidecars;
 the multi-GB `lens.pt` files need not be copied back from the GPU host.
 
-Or `make lens MODEL=...` for 200→205 in order, or `jobs/workspace_lens.csh` on the
+**Stage 206 is the semantic-concept vocabulary panel** and asks a *different*
+question from 203: not whether the lens surfaces the runtime value, but whether
+it surfaces the **language of binding** (`local`, `shadowed`, `scope`, …) at the
+same four read positions. The two are never pooled — a null in one says nothing
+about the other. Its concept sets, controls and four-condition verdict are
+predeclared in `src/workspace_lens/concepts.py`; the panel writes
+`concepts/workspace_lens_concept_{rows,summary,earliest,contrasts}.csv`, the
+accepted token ids and decoded spellings as
+`concepts/workspace_lens_concept_tokens.json`, and its own
+`concepts/workspace_lens_concepts.md`, which stage 205 summarises and links.
+Controls are matched generic code vocabulary, size- and frequency-band-matched
+random concept sets, and positional/action wording carried explicitly as a
+**confound diagnostic**, never as a binding positive.
+
+Or `make lens MODEL=...` for 200→206 in order, or `jobs/workspace_lens.csh` on the
 GPU host. `make lens-smoke` checks the whole path on toy CPU models plus the
 reference implementation's own test suite — no weights, no network, a few seconds.
 
@@ -999,8 +1080,15 @@ make sinkflow-vocab-all          # 125 → 127
 make sinkflow-lens-all           # 128 → 131
 make sinkflow-smoke / sinkflow-vocab-smoke / sinkflow-lens-smoke
 
-# the causal track
-make binding                     # 100 → 107
+# E19: the published J-lens and R-lens
+make lens                        # 200 → 206 (202 gates 203-206)
+make lens-check / lens-fit-dry / lens-fit / lens-fit-paperminimal
+make lens-validate / lens-readout / lens-ablate / lens-concepts / lens-report
+make lens-smoke
+
+# the causal track — `binding-interchange` READS the stage-201 lens artifacts,
+# so `make lens-fit MODEL=...` must have run for this model first
+make binding                     # 100 → 108
 make binding-pilot               # the cheap 1.3b pilot
 make binding-diagnose
 
@@ -1053,8 +1141,9 @@ scripts invoke `$PYTHON` directly rather than a bare `python`;
    `make probes context obfuscation MODEL=deepseek-coder-6.7b`.
 4. Security track: `jobs/sinkflow_extract.csh`, then `make sinkflow-probe
    sinkflow-obf sinkflow-report`, then `jobs/sinkflow_vocab.csh`.
-5. Causal track: `make binding MODEL=deepseek-coder-6.7b` — hard-gated, so it
-   stops itself at the first failing gate.
+5. Causal prerequisites: run binding stages 100–105. Stage 106 now waits for
+   the published lens artifacts from step 6; `make binding` is appropriate only
+   after those artifacts already exist.
 5b. Observational readout of the same pairs, after stage 101 has recorded H0:
    `screen -dmS binding-clrp-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_clrp.csh`
    (and the same for `deepseek-coder-1.3b`, where it runs despite H1 failing).
@@ -1063,8 +1152,15 @@ scripts invoke `$PYTHON` directly rather than a bare `python`;
    `data/lens_corpus data/lens_eval` up, then one screen session per model,
    sequentially:
    `screen -dmS lens-1.3b env MODEL=deepseek-coder-1.3b HALVES=--halves jobs/workspace_lens.csh`
-   Run `make lens-fit-dry MODEL=...` first to size it.
-7. Anywhere: `make assets`; rsync `results/tables results/figures` back.
+   Run `make lens-fit-dry MODEL=...` first to size it. The job now includes the
+   stage-206 semantic-concept panel and regenerates the E19 report afterwards.
+7. Re-run E13's claim-bearing stages with the same published lenses:
+   `screen -L -Logfile binding-jr-6.7b.log -dmS binding-jr-6.7b env
+   MODEL=deepseek-coder-6.7b jobs/binding_jr_controls.csh`. This runs only
+   106–108 and reuses H0–H3 plus the stage-201 artifacts. Run models one at a
+   time. For StarCoder2 the job automatically adds the paper-minimal R-lens arm
+   when that sensitivity artifact exists.
+8. Anywhere: `make assets`; rsync `results/tables results/figures` back.
 
 If the cluster has no internet, run `make data-real` locally and rsync `data/`
 (and the HF cache) up. Pre-download model weights once on a network-enabled node.

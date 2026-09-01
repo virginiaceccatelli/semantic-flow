@@ -63,11 +63,16 @@ def main(
     import pandas as pd
 
     from src.experiments.binding_interchange import (
+        ANSWER_DIRECTION_JLENS,
+        ANSWER_DIRECTION_RLENS,
+        ANSWER_DIRECTION_UNEMBEDDING,
         HELD_OUT_ARM,
+        LEGACY_ANSWER_DIRECTION,
         MIN_TRAIN_ARM_FRACTION,
         MIN_TRANSFER_FRACTION,
         RANK_IS_AN_OUTCOME,
         TRAIN_ARM,
+        answer_direction_panel,
         control_contrasts,
         interchange_summary,
         difference_direction_alignment,
@@ -198,12 +203,31 @@ def main(
     ratios = transfer_ratios(summary, site=site, layer=layer, rank=rank)
     ratios.to_csv(root / "e13_transfer_ratios.csv", index=False)
 
+    # The reading surface, rebuilt from the raw rows for the same reason the
+    # summary is: it is a derived aggregate, and an aggregation fix must not
+    # wait for a 30-hour GPU stage to re-run before it can be seen.
+    panel = answer_direction_panel(grid, site=site, layer=layer, rank=rank,
+                                   n_boot=n_boot)
+    if not panel.empty:
+        panel.to_csv(root / "interchange_panel.csv", index=False)
+
     def ratio_of(variant):
         hit = ratios[ratios.variant == variant]
         return None if hit.empty else float(hit["transfer_ratio"].iloc[0])
 
-    r_whole, r_das, r_answer = (ratio_of("whole_state"), ratio_of("das_binding"),
-                                ratio_of("answer_direction"))
+    r_whole, r_das = ratio_of("whole_state"), ratio_of("das_binding")
+    # The discriminator is the PUBLISHED J-lens arm. The R-lens and raw-
+    # unembedding arms are printed beside it and gate nothing.
+    r_answer = ratio_of(ANSWER_DIRECTION_JLENS)
+    r_answer_r = ratio_of(ANSWER_DIRECTION_RLENS)
+    r_answer_u = ratio_of(ANSWER_DIRECTION_UNEMBEDDING)
+    if r_answer is None and ratio_of(LEGACY_ANSWER_DIRECTION) is not None:
+        console.print(f"  [yellow]this run carries the ARCHIVED "
+                      f"'{LEGACY_ANSWER_DIRECTION}' arm (the cotangent readout "
+                      f"stage 106 fitted for itself before 2026-09-01) and no "
+                      f"'{ANSWER_DIRECTION_JLENS}'. Its numbers are archived and "
+                      f"are NOT read as the published J-lens discriminator; "
+                      f"re-run stage 106 against the stage-201 lens.[/yellow]")
     if r_whole is None or r_das is None:
         check("discriminator_works", False, "missing whole_state or das rows",
               "without the known-good reference there is nothing to read the "
@@ -213,15 +237,21 @@ def main(
         like_transport = abs(r_das - r_whole) <= 0.25
         answer_differs = (r_answer is None or abs(r_answer - r_whole) > 0.25)
         strength = (f"das {r_das:+.3f} vs whole_state {r_whole:+.3f}"
-                    + (f", answer_direction {r_answer:+.3f}" if r_answer is not None
-                       else ", answer_direction MISSING"))
+                    + (f", {ANSWER_DIRECTION_JLENS} {r_answer:+.3f}"
+                       if r_answer is not None
+                       else f", {ANSWER_DIRECTION_JLENS} MISSING")
+                    + (f", {ANSWER_DIRECTION_RLENS} {r_answer_r:+.3f}"
+                       if r_answer_r is not None else "")
+                    + (f", {ANSWER_DIRECTION_UNEMBEDDING} {r_answer_u:+.3f}"
+                       if r_answer_u is not None else ""))
         check("treatment_transfers_like_transport", like_transport,
               strength,
               "the treatment must transfer like installing the entire donor state "
               "does. A token or answer account cannot: the held-out arm demands "
               "the opposite token, so it predicts reversal or strong attenuation")
-        check("answer_direction_does_not", answer_differs,
-              f"answer_direction ratio {r_answer if r_answer is None else round(r_answer, 3)}"
+        check("answer_direction_jlens_does_not", answer_differs,
+              f"{ANSWER_DIRECTION_JLENS} ratio "
+              f"{r_answer if r_answer is None else round(r_answer, 3)}"
               f" against whole_state {r_whole:.3f}",
               "if an explicit answer direction transfers as well as the treatment "
               "does, the held-out arm cannot separate the two accounts and no "
@@ -361,6 +391,26 @@ def main(
                   f"{'[green]PASS[/green]' if h5_ok else '[red]FAIL[/red]'}")
     console.print(f"  controls cleared on the training arm: {controls_cleared}")
     console.print(f"  discriminator strength: {strength}")
+
+    if not panel.empty:
+        console.print("\n[bold]Both arms, every fixed answer direction[/bold] "
+                      "(paired intervals against das_binding on the same rows):")
+        table = Table(show_header=True, header_style="bold")
+        for column in ("arm", "variant", "delta_ld", "95% CI", "installed",
+                       "|edit|", "|edit|/|h|", "vs das (paired)"):
+            table.add_column(column, overflow="fold")
+        for _, r in panel.iterrows():
+            table.add_row(
+                str(r["arm"]), str(r["variant"]), f"{r['delta_ld']:+.3f}",
+                f"[{r['ci_lo']:+.3f}, {r['ci_hi']:+.3f}]",
+                "—" if r["says_installed_rate"] != r["says_installed_rate"]
+                else f"{r['says_installed_rate']:.1%}",
+                "—" if r["edit_norm"] != r["edit_norm"] else f"{r['edit_norm']:.3f}",
+                f"{r['edit_fraction']:.3f}",
+                "—" if r["vs_das_binding"] != r["vs_das_binding"]
+                else f"{r['vs_das_binding']:+.3f} "
+                     f"[{r['vs_das_lo']:+.3f}, {r['vs_das_hi']:+.3f}]")
+        console.print(table)
 
     if h4_ok and h5_ok:
         reading = ("BINDING TRANSPORTED. The same rank-%d subspace moves the answer "
