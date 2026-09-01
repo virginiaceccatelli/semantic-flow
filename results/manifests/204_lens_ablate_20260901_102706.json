@@ -1,0 +1,38 @@
+{
+  "stage": "204_lens_ablate",
+  "timestamp": "20260901_102706",
+  "git_sha": "b4bd395",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/204_lens_ablate.py",
+    "--model",
+    "starcoder2-3b",
+    "--suite",
+    "data/lens_eval/code-semantics-starcoder2-3b.jsonl",
+    "--readout",
+    "results/workspace_lens/starcoder2-3b/readout/workspace_lens_rows.csv",
+    "--dtype",
+    "bfloat16"
+  ],
+  "args": {
+    "model": "starcoder2-3b",
+    "suite": "data/lens_eval/code-semantics-starcoder2-3b.jsonl",
+    "lens_dir": "results/workspace_lens/starcoder2-3b",
+    "families": "binding,defuse,alias,call,arith",
+    "layers": "None",
+    "n_layers_each": "3",
+    "inject_alpha": "0.0",
+    "dtype": "bfloat16",
+    "device": "cuda"
+  },
+  "wall_time_s": 125.4,
+  "extra": {
+    "n_items": 240,
+    "layers": [
+      24,
+      25,
+      26
+    ],
+    "layer_source": "best median j-lens rank in results/workspace_lens/starcoder2-3b/readout/workspace_lens_rows.csv"
+  }
+}

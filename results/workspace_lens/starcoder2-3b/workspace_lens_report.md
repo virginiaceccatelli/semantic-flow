@@ -46,14 +46,24 @@ fit under the published RelP backward rules.
 | family | read | j-lens | r-lens | logit lens | target in prompt |
 |---|---|---|---|---|---|
 | alias | answer | 1.000 | 1.000 | 1.000 | yes |
+| alias | call | 0.000 | 0.000 | 0.000 | yes |
+| alias | post_use | 0.000 | 0.000 | 0.000 | yes |
 | alias | use | 0.000 | 0.000 | 0.000 | yes |
 | arith | answer | 1.000 | 1.000 | 1.000 | no |
+| arith | call | 0.000 | 0.000 | 0.000 | no |
+| arith | post_use | 0.000 | 0.000 | 0.000 | no |
 | arith | use | 0.000 | 0.000 | 0.000 | no |
 | binding | answer | 1.000 | 1.000 | 1.000 | yes |
+| binding | call | 0.000 | 0.000 | 0.000 | yes |
+| binding | post_use | 0.000 | 0.000 | 0.000 | yes |
 | binding | use | 0.000 | 0.000 | 0.000 | yes |
 | call | answer | 1.000 | 1.000 | 1.000 | yes |
+| call | call | 0.000 | 0.000 | 0.000 | yes |
+| call | post_use | 0.000 | 0.000 | 0.000 | yes |
 | call | use | 0.000 | 0.000 | 0.000 | yes |
 | defuse | answer | 1.000 | 1.000 | 1.000 | yes |
+| defuse | call | 0.000 | 0.000 | 0.000 | yes |
+| defuse | post_use | 0.000 | 0.000 | 0.000 | yes |
 | defuse | use | 0.000 | 0.000 | 0.000 | yes |
 | loopvar | use | 1.000 | 1.000 | 1.000 | no |
 | scopeword | use | 0.200 | 0.200 | 0.150 | no |
@@ -65,36 +75,65 @@ Median over the items that ever reach it; the share that do is in brackets, beca
 
 | family | j-lens | r-lens | logit lens |
 |---|---|---|---|
-| alias | 20 (10/20) | 20 (10/20) | 20 (10/20) |
-| arith | 22 (10/20) | 23 (10/20) | 21 (10/20) |
-| binding | 20 (20/40) | 20 (20/40) | 20 (20/40) |
-| call | 18 (10/20) | 20 (10/20) | 20 (10/20) |
-| defuse | 22 (10/20) | 22 (10/20) | 22 (10/20) |
+| alias | 20 (10/40) | 20 (10/40) | 20 (10/40) |
+| arith | 22 (10/40) | 23 (10/40) | 21 (10/40) |
+| binding | 20 (20/80) | 20 (20/80) | 20 (20/80) |
+| call | 18 (10/40) | 20 (10/40) | 20 (10/40) |
+| defuse | 22 (10/40) | 22 (10/40) | 22 (10/40) |
 | loopvar | 20 (10/10) | 19 (10/10) | 17 (10/10) |
 | scopeword | 21 (4/20) | 21 (4/20) | 21 (3/20) |
 | typeof | 20 (10/10) | 19 (10/10) | 21 (10/10) |
 
-## Causal ablation — erasing the lens read direction (`ablate`, layers [np.int64(22), np.int64(24), np.int64(28)], near the output — erasing the answer direction this late and watching the answer logit fall is close to tautological)
+## Causal ablation — erasing the lens read direction (`ablate`, layers [np.int64(24), np.int64(25), np.int64(26)], near the output — erasing the answer direction this late and watching the answer logit fall is close to tautological)
 
 Change in the **model's own** logit difference between the target and distractor answers. `offtarget` is the load-bearing control: it uses the same construction for the *distractor* token, so a target erase that hurts while a distractor erase helps is a double dissociation, not an edit-size effect. `random` moves far less of the state's norm (a random direction barely overlaps `h` in this many dimensions), so it floors direction, not magnitude.
 
 | layer | direction | n | mean delta | median delta | \|edit\|/\|h\| |
 |---|---|---|---|---|---|
-| 22 | jlens | 100 | +0.104 | +0.000 | 0.066 |
-| 22 | logit | 100 | -0.179 | -0.125 | 0.060 |
-| 22 | offtarget | 100 | +0.065 | +0.000 | 0.037 |
-| 22 | random | 100 | +0.004 | +0.000 | 0.014 |
-| 22 | rlens | 100 | +0.243 | +0.125 | 0.066 |
-| 24 | jlens | 100 | +0.017 | +0.000 | 0.074 |
-| 24 | logit | 100 | -0.249 | -0.250 | 0.070 |
-| 24 | offtarget | 100 | +0.219 | +0.125 | 0.041 |
-| 24 | random | 100 | -0.006 | +0.000 | 0.014 |
-| 24 | rlens | 100 | +0.250 | +0.125 | 0.074 |
-| 28 | jlens | 100 | -4.456 | -3.250 | 0.125 |
-| 28 | logit | 100 | -4.456 | -3.250 | 0.125 |
-| 28 | offtarget | 100 | +3.722 | +3.125 | 0.098 |
-| 28 | random | 100 | +0.001 | +0.000 | 0.013 |
-| 28 | rlens | 100 | -4.456 | -3.250 | 0.125 |
+**Paired contrasts**, 95% cluster bootstrap over programs. Each is a difference on the *same* programs at the same layer, so program-to-program variation cancels rather than being averaged over. `*` marks an interval excluding zero.
+
+| layer | contrast | n | mean | 95% CI | |
+|---|---|---|---|---|---|
+| 24 | jlens_vs_offtarget | 200 | -0.165 | [-0.216, -0.117] | * |
+| 24 | rlens_vs_offtarget | 200 | -0.129 | [-0.172, -0.090] | * |
+| 24 | jlens_vs_random_matched | 200 | -0.073 | [-0.097, -0.050] | * |
+| 24 | rlens_vs_random_matched | 200 | -0.063 | [-0.090, -0.040] | * |
+| 24 | jlens_vs_logit | 200 | +0.027 | [+0.008, +0.049] | * |
+| 24 | rlens_vs_jlens | 200 | +0.010 | [-0.010, +0.029] |  |
+| 25 | jlens_vs_offtarget | 200 | -0.260 | [-0.335, -0.190] | * |
+| 25 | rlens_vs_offtarget | 200 | -0.251 | [-0.319, -0.184] | * |
+| 25 | jlens_vs_random_matched | 200 | -0.092 | [-0.118, -0.064] | * |
+| 25 | rlens_vs_random_matched | 200 | -0.106 | [-0.133, -0.077] | * |
+| 25 | jlens_vs_logit | 200 | +0.027 | [+0.005, +0.052] | * |
+| 25 | rlens_vs_jlens | 200 | -0.013 | [-0.030, +0.003] |  |
+| 26 | jlens_vs_offtarget | 200 | -0.364 | [-0.467, -0.266] | * |
+| 26 | rlens_vs_offtarget | 200 | -0.314 | [-0.407, -0.223] | * |
+| 26 | jlens_vs_random_matched | 200 | -0.111 | [-0.141, -0.078] | * |
+| 26 | rlens_vs_random_matched | 200 | -0.097 | [-0.126, -0.068] | * |
+| 26 | jlens_vs_logit | 200 | +0.069 | [+0.041, +0.103] | * |
+| 26 | rlens_vs_jlens | 200 | +0.013 | [-0.002, +0.029] |  |
+
+| 24 | jlens | 200 | -0.058 | +0.000 | 0.042 |
+| 24 | logit | 200 | -0.085 | +0.000 | 0.041 |
+| 24 | offtarget_j | 200 | +0.107 | +0.000 | 0.029 |
+| 24 | offtarget_r | 200 | +0.081 | +0.000 | 0.030 |
+| 24 | random | 200 | -0.005 | +0.000 | 0.014 |
+| 24 | random_matched | 200 | +0.015 | +0.000 | 0.042 |
+| 24 | rlens | 200 | -0.048 | +0.000 | 0.044 |
+| 25 | jlens | 200 | -0.085 | +0.000 | 0.042 |
+| 25 | logit | 200 | -0.111 | +0.000 | 0.038 |
+| 25 | offtarget_j | 200 | +0.176 | +0.000 | 0.030 |
+| 25 | offtarget_r | 200 | +0.153 | +0.000 | 0.029 |
+| 25 | random | 200 | -0.003 | +0.000 | 0.014 |
+| 25 | random_matched | 200 | +0.007 | +0.000 | 0.042 |
+| 25 | rlens | 200 | -0.098 | +0.000 | 0.040 |
+| 26 | jlens | 200 | -0.095 | +0.000 | 0.047 |
+| 26 | logit | 200 | -0.164 | +0.000 | 0.045 |
+| 26 | offtarget_j | 200 | +0.269 | +0.000 | 0.035 |
+| 26 | offtarget_r | 200 | +0.232 | +0.000 | 0.033 |
+| 26 | random | 200 | +0.004 | +0.000 | 0.015 |
+| 26 | random_matched | 200 | +0.016 | +0.000 | 0.047 |
+| 26 | rlens | 200 | -0.082 | +0.000 | 0.045 |
 
 ## Causal ablation — erasing the lens read direction (`ablate-L12-16-20`, layers [np.int64(12), np.int64(16), np.int64(20)], mid-network)
 
