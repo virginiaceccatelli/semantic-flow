@@ -75,11 +75,11 @@ Median over the items that ever reach it; the share that do is in brackets, beca
 | scopeword | — (0/20) | — (0/20) | 10 (3/20) |
 | typeof | 13 (10/10) | 13 (10/10) | 3 (10/10) |
 
-## Causal ablation — erasing the lens read direction
+## Causal ablation — erasing the lens read direction (`ablate`, layers [np.int64(19), np.int64(21), np.int64(22)], near the output — erasing the answer direction this late and watching the answer logit fall is close to tautological)
 
-Change in the **model's own** logit difference between the target and distractor answers. `offtarget` and `random` are the controls that make a non-zero effect interpretable.
+Change in the **model's own** logit difference between the target and distractor answers. `offtarget` is the load-bearing control: it uses the same construction for the *distractor* token, so a target erase that hurts while a distractor erase helps is a double dissociation, not an edit-size effect. `random` moves far less of the state's norm (a random direction barely overlaps `h` in this many dimensions), so it floors direction, not magnitude.
 
-| layer | direction | n | mean delta | median delta | |edit|/|h| |
+| layer | direction | n | mean delta | median delta | \|edit\|/\|h\| |
 |---|---|---|---|---|---|
 | 19 | jlens | 100 | +0.437 | +0.332 | 0.098 |
 | 19 | logit | 100 | -0.411 | -0.250 | 0.110 |
@@ -96,6 +96,28 @@ Change in the **model's own** logit difference between the target and distractor
 | 22 | offtarget | 100 | -0.142 | -0.250 | 0.093 |
 | 22 | random | 100 | +0.005 | +0.000 | 0.017 |
 | 22 | rlens | 100 | -0.831 | -0.625 | 0.142 |
+
+## Causal ablation — erasing the lens read direction (`ablate-L12-16-20`, layers [np.int64(12), np.int64(16), np.int64(20)], mid-network)
+
+Change in the **model's own** logit difference between the target and distractor answers. `offtarget` is the load-bearing control: it uses the same construction for the *distractor* token, so a target erase that hurts while a distractor erase helps is a double dissociation, not an edit-size effect. `random` moves far less of the state's norm (a random direction barely overlaps `h` in this many dimensions), so it floors direction, not magnitude.
+
+| layer | direction | n | mean delta | median delta | \|edit\|/\|h\| |
+|---|---|---|---|---|---|
+| 12 | jlens | 100 | +0.109 | +0.000 | 0.039 |
+| 12 | logit | 100 | -0.151 | -0.125 | 0.059 |
+| 12 | offtarget | 100 | -0.122 | -0.031 | 0.036 |
+| 12 | random | 100 | +0.004 | +0.000 | 0.016 |
+| 12 | rlens | 100 | +0.087 | +0.000 | 0.038 |
+| 16 | jlens | 100 | +0.345 | +0.250 | 0.066 |
+| 16 | logit | 100 | -0.199 | -0.172 | 0.072 |
+| 16 | offtarget | 100 | -0.362 | -0.234 | 0.053 |
+| 16 | random | 100 | +0.017 | +0.000 | 0.017 |
+| 16 | rlens | 100 | +0.250 | +0.125 | 0.065 |
+| 20 | jlens | 100 | +0.344 | +0.379 | 0.129 |
+| 20 | logit | 100 | -0.151 | +0.141 | 0.137 |
+| 20 | offtarget | 100 | -0.243 | -0.250 | 0.073 |
+| 20 | random | 100 | +0.006 | +0.000 | 0.018 |
+| 20 | rlens | 100 | +0.217 | +0.424 | 0.135 |
 
 ## Figures
 

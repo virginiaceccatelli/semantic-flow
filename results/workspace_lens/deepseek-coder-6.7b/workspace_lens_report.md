@@ -74,27 +74,49 @@ Median over the items that ever reach it; the share that do is in brackets, beca
 | scopeword | 13 (20/20) | 13 (20/20) | 13 (20/20) |
 | typeof | 16 (10/10) | 11 (10/10) | 6 (10/10) |
 
-## Causal ablation — erasing the lens read direction
+## Causal ablation — erasing the lens read direction (`ablate`, layers [np.int64(28), np.int64(29), np.int64(30)], near the output — erasing the answer direction this late and watching the answer logit fall is close to tautological)
 
-Change in the **model's own** logit difference between the target and distractor answers. `offtarget` and `random` are the controls that make a non-zero effect interpretable.
+Change in the **model's own** logit difference between the target and distractor answers. `offtarget` is the load-bearing control: it uses the same construction for the *distractor* token, so a target erase that hurts while a distractor erase helps is a double dissociation, not an edit-size effect. `random` moves far less of the state's norm (a random direction barely overlaps `h` in this many dimensions), so it floors direction, not magnitude.
 
-| layer | direction | n | mean delta | median delta | |edit|/|h| |
+| layer | direction | n | mean delta | median delta | \|edit\|/\|h\| |
 |---|---|---|---|---|---|
 | 28 | jlens | 100 | -1.110 | -0.562 | 0.109 |
 | 28 | logit | 100 | -1.087 | -0.375 | 0.103 |
 | 28 | offtarget | 100 | +1.086 | +0.781 | 0.055 |
-| 28 | random | 100 | -0.005 | +0.000 | 0.014 |
+| 28 | random | 100 | +0.002 | +0.000 | 0.012 |
 | 28 | rlens | 100 | -1.213 | -0.500 | 0.109 |
 | 29 | jlens | 100 | -2.454 | -0.969 | 0.127 |
 | 29 | logit | 100 | -2.033 | -0.750 | 0.115 |
 | 29 | offtarget | 100 | +1.514 | +1.312 | 0.073 |
-| 29 | random | 100 | +0.002 | +0.000 | 0.013 |
+| 29 | random | 100 | +0.007 | +0.000 | 0.012 |
 | 29 | rlens | 100 | -2.183 | -0.812 | 0.124 |
 | 30 | jlens | 100 | -5.042 | -1.125 | 0.132 |
 | 30 | logit | 100 | -5.042 | -1.125 | 0.132 |
 | 30 | offtarget | 100 | +1.978 | +1.906 | 0.084 |
-| 30 | random | 100 | +0.002 | +0.000 | 0.013 |
+| 30 | random | 100 | +0.004 | +0.000 | 0.011 |
 | 30 | rlens | 100 | -5.042 | -1.125 | 0.132 |
+
+## Causal ablation — erasing the lens read direction (`ablate-L12-16-20`, layers [np.int64(12), np.int64(16), np.int64(20)], mid-network)
+
+Change in the **model's own** logit difference between the target and distractor answers. `offtarget` is the load-bearing control: it uses the same construction for the *distractor* token, so a target erase that hurts while a distractor erase helps is a double dissociation, not an edit-size effect. `random` moves far less of the state's norm (a random direction barely overlaps `h` in this many dimensions), so it floors direction, not magnitude.
+
+| layer | direction | n | mean delta | median delta | \|edit\|/\|h\| |
+|---|---|---|---|---|---|
+| 12 | jlens | 100 | -0.055 | +0.000 | 0.037 |
+| 12 | logit | 100 | -0.027 | +0.000 | 0.024 |
+| 12 | offtarget | 100 | +0.025 | +0.000 | 0.028 |
+| 12 | random | 100 | -0.002 | +0.000 | 0.012 |
+| 12 | rlens | 100 | -0.055 | -0.031 | 0.051 |
+| 16 | jlens | 100 | -0.115 | -0.062 | 0.029 |
+| 16 | logit | 100 | -0.077 | -0.062 | 0.027 |
+| 16 | offtarget | 100 | +0.070 | +0.062 | 0.024 |
+| 16 | random | 100 | -0.001 | +0.000 | 0.012 |
+| 16 | rlens | 100 | -0.170 | -0.125 | 0.047 |
+| 20 | jlens | 100 | -0.242 | -0.125 | 0.053 |
+| 20 | logit | 100 | -0.184 | -0.125 | 0.051 |
+| 20 | offtarget | 100 | +0.211 | +0.125 | 0.033 |
+| 20 | random | 100 | +0.003 | +0.000 | 0.012 |
+| 20 | rlens | 100 | -0.311 | -0.219 | 0.068 |
 
 ## Figures
 
