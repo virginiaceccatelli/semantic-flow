@@ -119,6 +119,11 @@ $PYTHON scripts/203_lens_readout.py --model "$MODEL" --suite "$SUITE" --dtype "$
 echo "=== stage 204: causal ablation of the read directions — GPU ==="
 $PYTHON scripts/204_lens_ablate.py --model "$MODEL" --suite "$SUITE" \
     --readout "${OUT}/readout/workspace_lens_rows.csv" --dtype "$DTYPE"
+# Not fatal — the readout tables stand on their own — but it must be SAID.
+# Unguarded, a dead stage 204 let stage 205 render a report with no ablation
+# section, which looks exactly like a report that never asked for one.
+set ABLATE = $status
+if ($ABLATE != 0) echo "*** stage 204 FAILED (exit $ABLATE) — the report will have no ablation section."
 
 echo "=== stage 205: tables, figures, report — CPU ==="
 $PYTHON scripts/205_lens_report.py --model "$MODEL"

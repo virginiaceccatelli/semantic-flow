@@ -83,9 +83,18 @@ def read_direction(lens, layer: int, token_ids: Sequence[int],
 
 
 def norm_matched_random(reference: torch.Tensor, seed: int = 0) -> torch.Tensor:
+    """A random direction with the same norm as `reference`, on its device.
+
+    The generator stays on the CPU so the draw is reproducible across machines
+    and backends; only the finished vector moves. Normalising before the move
+    matters: `reference.norm()` lives on the reference's device, and multiplying
+    a CPU tensor by it is a device mismatch — which is what silently killed
+    stage 204 on every model, since the control arm is built for every item.
+    """
     g = torch.Generator().manual_seed(seed)
-    raw = torch.randn(reference.shape, generator=g)
-    return raw / raw.norm() * reference.norm()
+    raw = torch.randn(reference.shape, generator=g, dtype=torch.float32)
+    raw = raw / raw.norm()
+    return (raw.to(reference.device) * reference.norm()).to(reference.dtype)
 
 
 def make_erase(direction: torch.Tensor) -> Callable[[torch.Tensor], torch.Tensor]:
