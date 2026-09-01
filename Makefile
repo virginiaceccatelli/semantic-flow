@@ -142,7 +142,10 @@ LENS_N ?= 100
 LENS_CORPUS_KIND ?= pile
 LENS_CORPUS := data/lens_corpus/pile10k-n$(LENS_N).jsonl
 LENS_SUITE := data/lens_eval/code-semantics-$(MODEL).jsonl
-LENS_DIR := results/workspace_lens/$(MODEL)
+# Override to point every stage at an alternative arm, e.g. the
+# exact-published-recipe StarCoder2 lens:
+#   make lens-validate ... LENS_DIR=results/workspace_lens/starcoder2-3b-paperminimal
+LENS_DIR ?= results/workspace_lens/$(MODEL)
 COMMA := ,
 LENS_DIM_BATCH ?= 16
 LENS_DTYPE ?= bfloat16
@@ -180,7 +183,8 @@ patching:
 
 # ── E10 cotangent lens (stage 60 gates 61/62 — it exits non-zero if a check fails) ───
 clens-validate:
-	$(PY) scripts/60_clens_validate.py --model $(MODEL)
+	$(PY) scripts/60_clens_validate.py --model $(MODEL) \
+		--lens-dir $(LENS_DIR)
 
 clens-taint:
 	$(PY) scripts/61_clens_taint.py --model $(MODEL) --probes $(PROBES)
@@ -420,7 +424,8 @@ sinkflow-relevance:
 	$(PY) scripts/130_sinkflow_relevance.py --model $(MODEL)
 
 sinkflow-lens-report:
-	$(PY) scripts/131_sinkflow_lens_report.py --model $(MODEL)
+	$(PY) scripts/131_sinkflow_lens_report.py --model $(MODEL) \
+		--lens-dir $(LENS_DIR)
 
 sinkflow-lens-all:
 	$(PY) scripts/128_sinkflow_align.py --model $(MODEL)
@@ -618,7 +623,8 @@ lens-validate:
 
 lens-readout:
 	$(PY) scripts/203_lens_readout.py --model $(MODEL) --suite $(LENS_SUITE) \
-		--dtype $(LENS_DTYPE)
+		--dtype $(LENS_DTYPE) \
+		--lens-dir $(LENS_DIR)
 
 # LENS_ABLATE_LAYERS overrides the layer choice. Left empty, stage 204 picks the
 # layers where the J-lens rank is best — which, with half the suite read at the
@@ -635,7 +641,8 @@ LENS_ABLATE_ARGS := $(if $(LENS_ABLATE_LAYERS),--layers $(LENS_ABLATE_LAYERS) \
 lens-ablate:
 	$(PY) scripts/204_lens_ablate.py --model $(MODEL) --suite $(LENS_SUITE) \
 		--readout $(LENS_DIR)/readout/workspace_lens_rows.csv --dtype $(LENS_DTYPE) \
-		$(LENS_ABLATE_ARGS)
+		$(LENS_ABLATE_ARGS) \
+		--lens-dir $(LENS_DIR)
 
 lens-report:
 	$(PY) scripts/205_lens_report.py --model $(MODEL)
