@@ -81,8 +81,8 @@ def main(
             if not frame.empty:
                 ablations[d.name] = frame
     ablation = ablations.get("ablate", next(iter(ablations.values()), None))
-    _, prov = load_lens(lens_dir / "j-lens")
-    _, prov_r = load_lens(lens_dir / "r-lens")
+    prov = _load_provenance(lens_dir / "j-lens", load_lens)
+    prov_r = _load_provenance(lens_dir / "r-lens", load_lens)
 
     # ── figure 1: pass@k across layers, per lens, pooled and per family ──────
     layers = sorted(rows["layer"].unique())
@@ -157,7 +157,8 @@ def main(
     # ── figure 4: causal ablation ────────────────────────────────────────────
     if ablation is not None and not ablation.empty:
         erase = ablation[ablation["edit"] == "erase"]
-        order = ["jlens", "rlens", "logit", "offtarget", "random"]
+        order = ["jlens", "rlens", "logit", "offtarget_j", "offtarget_r",
+                 "random", "random_matched"]
         fig, ax = plt.subplots(figsize=(7, 4))
         for i, layer in enumerate(sorted(erase["layer"].unique())):
             sub = erase[erase["layer"] == layer]
@@ -187,6 +188,15 @@ def _save(fig, stem: Path):
     import matplotlib.pyplot as plt
     plt.close(fig)
     console.print(f"figure -> {stem}.png")
+
+
+def _load_provenance(directory: Path, load_lens):
+    """Read the retained sidecar when the multi-GB fitted tensor is off-host."""
+    meta = directory / "lens_meta.json"
+    if meta.exists():
+        return json.loads(meta.read_text())
+    _, provenance = load_lens(directory)
+    return provenance
 
 
 def _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
@@ -283,40 +293,25 @@ def _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
         erase = frame[frame["edit"] == "erase"]
         if erase.empty:
             continue
-        layers = sorted(erase["layer"].unique())
+        layers = [int(layer) for layer in sorted(erase["layer"].unique())]
         depth = int(rows["layer"].max()) + 1
-        where = ("near the output — erasing the answer direction this late and "
-                 "watching the answer logit fall is close to tautological"
-                 if min(layers) > 0.7 * depth else "mid-network")
+        if name == "ablate":
+            where = "rank-selected layers"
+        else:
+            where = ("near the output" if min(layers) > 0.7 * depth
+                     else "predeclared mid-network sweep")
         lines += [f"## Causal ablation — erasing the lens read direction "
                   f"(`{name}`, layers {layers}, {where})", "",
                   "Change in the **model's own** logit difference between the "
-                  "target and distractor answers. `offtarget` is the load-bearing "
-                  "control: it uses the same construction for the *distractor* "
-                  "token, so a target erase that hurts while a distractor erase "
-                  "helps is a double dissociation, not an edit-size effect. "
-                  "`random` moves far less of the state's norm (a random "
-                  "direction barely overlaps `h` in this many dimensions), so it "
-                  "floors direction, not magnitude.", "",
+                  "target and distractor answers. `offtarget_j` and "
+                  "`offtarget_r` use the matching lens construction for the "
+                  "*distractor* token, so a target erase that hurts while its "
+                  "distractor erase helps is a double dissociation. `random` "
+                  "floors a generic random projection; `random_matched` moves "
+                  "the state by exactly the J-lens erase magnitude and is the "
+                  "edit-size control.", "",
                   "| layer | direction | n | mean delta | median delta | \\|edit\\|/\\|h\\| |",
                   "|---|---|---|---|---|---|"]
-        contrasts_path = lens_dir / name / "workspace_lens_ablation_contrasts.csv"
-        if contrasts_path.exists():
-            c = pd.read_csv(contrasts_path)
-            lines += ["**Paired contrasts**, 95% cluster bootstrap over programs. "
-                      "Each is a difference on the *same* programs at the same "
-                      "layer, so program-to-program variation cancels rather than "
-                      "being averaged over. `*` marks an interval excluding zero.",
-                      "",
-                      "| layer | contrast | n | mean | 95% CI | |",
-                      "|---|---|---|---|---|---|"]
-            for _, r in c.iterrows():
-                mark = "*" if r["excludes_zero"] else ""
-                lines.append(f"| {int(r['layer'])} | {r['contrast']} | {int(r['n'])} "
-                             f"| {r['mean']:+.3f} | [{r['lo']:+.3f}, {r['hi']:+.3f}] "
-                             f"| {mark} |")
-            lines.append("")
-
         grouped = (erase.groupby(["layer", "direction"])
                         .agg(n=("delta_logit_diff", "size"),
                              mean=("delta_logit_diff", "mean"),
@@ -326,6 +321,22 @@ def _write_report(model, lens_dir, prov, prov_r, rows, summary, earliest,
             lines.append(f"| {int(r['layer'])} | {r['direction']} | {int(r['n'])} | "
                          f"{r['mean']:+.3f} | {r['median']:+.3f} | {r['norm']:.3f} |")
         lines.append("")
+
+        contrasts_path = lens_dir / name / "workspace_lens_ablation_contrasts.csv"
+        if contrasts_path.exists():
+            c = pd.read_csv(contrasts_path)
+            lines += ["**Paired contrasts**, 95% cluster bootstrap over programs. "
+                      "Each is a difference on the *same* programs at the same "
+                      "layer, so program-to-program variation cancels rather than "
+                      "being averaged over. `*` marks an interval excluding zero.",
+                      "", "| layer | contrast | n | mean | 95% CI | |",
+                      "|---|---|---|---|---|---|"]
+            for _, r in c.iterrows():
+                mark = "*" if r["excludes_zero"] else ""
+                lines.append(f"| {int(r['layer'])} | {r['contrast']} | {int(r['n'])} "
+                             f"| {r['mean']:+.3f} | [{r['lo']:+.3f}, {r['hi']:+.3f}] "
+                             f"| {mark} |")
+            lines.append("")
 
     lines += ["## Figures", "",
               f"- `results/figures/workspace_lens_passk_{model}.png`",

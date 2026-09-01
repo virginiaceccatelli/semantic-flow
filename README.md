@@ -18,12 +18,14 @@ The active evidence forms one sequence:
 5. **Cotangent-lens lexical alignment:** at the unchanged, unprompted use-token
    state, several scope-related word contrasts track binding in both crossed
    value arms, independently of which literal is returned.
-6. **Published J-lens and R-lens (E19, new):** the actual methods of
+6. **Published J-lens and R-lens (E19):** the actual methods of
    [the 2026 global-workspace paper](https://transformer-circuits.pub/2026/workspace/index.html)
    and [the R-lens post](https://www.alignmentforum.org/posts/nv8oedrnLXKRzNEL9/),
-   run through the released reference implementation, asking what concepts the
-   lenses surface while these models read code. Built and tested; the fitting
-   run is pending. See [docs/WORKSPACE_LENS.md](docs/WORKSPACE_LENS.md).
+   run through the released reference implementation on three code models. The
+   gated result is negative: needed values surface at the answer position but
+   essentially not at three earlier use-to-call positions, and Jacobian
+   transport has no consistent advantage over the logit lens. See
+   [docs/WORKSPACE_LENS.md](docs/WORKSPACE_LENS.md).
 
 > **Naming.** Items 4 and 5 above are *not* the published J-lens and R-lens.
 > They are a corpus-averaged cotangent readout over a fixed candidate
@@ -50,8 +52,8 @@ For a first reading:
    [cotangent lens verbalisation report](results/binding/deepseek-coder-6.7b/e18_report.md)
    for model-specific tables.
 4. Read [docs/WORKSPACE_LENS.md](docs/WORKSPACE_LENS.md) for the published
-   J-lens / R-lens implementation (E19): configuration, per-model compatibility,
-   and the complete list of deviations.
+   J-lens / R-lens experiment (E19): implementation, compatibility, deviations,
+   controls, and the completed three-model result.
 5. Use [docs/PIPELINE.md](docs/PIPELINE.md) to reproduce stages.
 6. Use [docs/ARCHIVE.md](docs/ARCHIVE.md) for displaced tracks, failed designs,
    and the methodological history.

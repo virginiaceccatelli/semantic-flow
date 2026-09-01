@@ -20,7 +20,7 @@ benchmarks rarely distinguish a model that resolves program structure from one
 that exploits surface regularities. We present a controlled audit of variable
 binding in pretrained code models. Our design holds the queried token, its
 position, and bounded local context fixed while changing which definition is in
-scope. We then test five progressively stronger properties of the resulting
+scope. We then test six separable properties of the resulting
 internal representation: linear recoverability, robustness under
 meaning-preserving and structure-changing perturbations, causal use in forming
 the answer, attribution of the answer to the active definition, and explicit
@@ -37,7 +37,10 @@ one entering scope, peaking near 22% of the answer score. An unprompted cotangen
 also finds that `local/global` and `nested/module` margins follow the binding in
 both crossed value arms, ruling out simple tracking of one literal answer token.
 Positional and action contrasts are also strong, however, so the single-template
-design cannot identify this alignment uniquely as scope verbalisation. These
+design cannot identify this alignment uniquely as scope verbalisation. Finally,
+the released full-vocabulary J- and R-lenses recover every value at the answer
+position but essentially never at three preceding use-to-call positions; their
+Jacobian transport supplies no consistent advantage over the logit lens. These
 findings show a representation that is recoverable, structurally fragile,
 causally used, attributionally connected to the answer, and associated with
 human vocabulary without being transparently verbalised. We argue that
@@ -89,7 +92,7 @@ definition. This construction lets us ask not simply whether a model gets an
 answer right, but what information it forms, how that information changes under
 perturbation, and whether downstream computation actually depends on it.
 
-Our audit separates five questions that are often collapsed:
+Our audit separates six questions that are often collapsed:
 
 1. **Representation:** Is binding linearly recoverable above a measured surface
    floor?
@@ -102,6 +105,8 @@ Our audit separates five questions that are often collapsed:
 5. **Explicit extraction:** Is the representation transparently aligned with
    scope vocabulary in the model's output coordinates at the same unprompted
    state?
+6. **Workspace verbalizability:** Does the published full-vocabulary J-space
+   readout surface the needed value before the model emits it?
 
 The resulting picture is neither “only lexical pattern matching” nor “a fully
 explicit symbolic interpreter.” Binding becomes linearly available in early to
@@ -124,6 +129,8 @@ Our contributions are:
   dominant failure mode of the frozen representation; and
 - a crossed-arm cotangent lens test showing binding-associated lexical alignment while
   exposing why alignment on one template is not faithful verbalisation.
+- a gated three-model test showing that the published J/R lenses do not expose
+  the needed value as a mid-network verbalizable workspace representation.
 
 ## 2. Security and governance framing
 
@@ -524,7 +531,23 @@ the representation explicitly verbalises “scope.” This distinction matters f
 interpretability: lexical alignment is evidence about an association, not a
 faithful natural-language rendering of the causal state.
 
-### 6.6 Findings in one view
+### 6.6 The published workspace lenses give a bounded negative result
+
+The released Anthropic J-lens and RelP R-lens were fitted on an independent
+100-prompt corpus for all three models. Required implementation and applicability
+gates pass. Across the use token, following token, and call site, the required
+program value is essentially absent from the top ten; at the answer position,
+all lenses reach pass@10 = 1.000. The result therefore separates a valid readout
+from a pre-emission workspace null.
+
+Causal erasures use separate J/R distractor directions, stable random controls,
+exact edit-magnitude matching, and paired cluster-bootstrap intervals. Effects
+are large near the output head. At L12/L16/L20, StarCoder2 is null, DeepSeek
+6.7B shows only a small L20 effect that does not beat the logit direction, and
+DeepSeek 1.3B's logit direction is stronger than J. A paper-minimal StarCoder2
+fit omitting the unpublished LayerNorm analogue gives the same conclusion.
+
+### 6.7 Findings in one view
 
 | Audit link | Outcome | What is established | What is not established |
 |---|---|---|---|
@@ -533,6 +556,7 @@ faithful natural-language rendering of the causal state.
 | Causal use | Pass | rank-1 interchange controls the answer according to binding | causal use at every layer, site, or program family |
 | Attribution | Pass on 6.7B | answer relevance shifts toward the active definition | a causal explanation or complete mechanism |
 | Lexical alignment | Descriptive positive | several margins follow binding across reversed answer identities | unique scope semantics or faithful verbalisation |
+| Published J/R workspace | Gated negative | value appears at emission, not while used; transport does not consistently beat logit | a verbalizable mid-network value workspace in these models |
 
 ## 7. Discussion
 
@@ -658,7 +682,7 @@ component of trustworthy reasoning, not a complete safety case.
 Trustworthy code agents require more than fluent outputs and benchmark success.
 When lexical patterns conflict with program meaning, consequential decisions
 should be governed by the underlying semantics. We introduced a controlled audit
-of this requirement through variable binding and separated five claims that are
+of this requirement through variable binding and separated six claims that are
 often conflated.
 
 The tested code models construct a linearly recoverable binding relation that is
@@ -689,6 +713,7 @@ git revisions. The principal generated reports are:
 - [DAS binding report, StarCoder2 3B](../results/binding/starcoder2-3b/e13_report.md)
 - [conserving cotangent lens binding report, DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e16_report.md)
 - [cotangent lens verbalisation report, DeepSeek-Coder 6.7B](../results/binding/deepseek-coder-6.7b/e18_report.md)
+- [published J/R-lens technical report](WORKSPACE_LENS.md)
 - [Complete methods](METHODS.md), [results](RESULTS.md), and
   [reproduction pipeline](PIPELINE.md)
 

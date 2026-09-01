@@ -21,7 +21,9 @@ association, not uniquely scope-semantic or faithful verbalisation.
 
 The security, output-vocabulary, older standalone cotangent lens, and taint-routing
 studies are preserved in [ARCHIVE.md](ARCHIVE.md). E18, the binding-specific
-cotangent lens verbalisation test, is active and reported in Part IV below.
+cotangent lens verbalisation test, is active and reported in Part IV below. E19
+then applies the actual published J- and R-lenses as a separate full-vocabulary
+workspace test in Part V.
 
 Every active result below completed at canonical scale and is paired with the
 control that could have falsified it. Read “represented” as *recoverable from a
@@ -37,6 +39,7 @@ observational decomposition of an unchanged output score.
 - [Part II — Robustness and failure boundaries](#part-ii--robustness-and-failure-boundaries)
 - [Part III — Causal use and binding attribution](#part-iii--causal-use-and-binding-attribution)
 - [Part IV — cotangent lens verbalisation](#part-iv--cotangent-lens-verbalisation)
+- [Part V — published J-lens and R-lens](#part-v--published-j-lens-and-r-lens)
 - [Synthesis](#synthesis-the-main-finding)
 - [Boundaries](#boundaries-what-this-project-does-not-claim)
 - [Open items](#open-items)
@@ -92,6 +95,7 @@ also move strongly, so the template does not isolate scope verbalisation.
 | **causal use (R10/E13)** | rank-1 DAS interchange | 100% installed answer in both crossed arms | DeepSeek 6.7B and StarCoder2 3B |
 | **binding attribution (R11/E16)** | conserving cotangent lens | 280/280 shifts on 6.7B; peak ~22% of answer score | interpretable on DeepSeek 6.7B only |
 | **cotangent lens lexical alignment (R12/E18)** | unprompted cotangent lens + crossed `ab`/`ba` arms | several pairs follow binding independently of answer identity | descriptive result on DeepSeek 6.7B; not identified verbalisation |
+| **published workspace lenses (E19)** | released full-Jacobian J-lens + RelP R-lens | value absent before emission; no consistent transport advantage over logit lens | gated negative result on three code models |
 
 The R10/R11 labels are retained because generated reports and artifact names use
 them. Missing numbers R5–R9 refer to studies now documented in
@@ -712,6 +716,44 @@ and [`lexlens_pair_directions.csv`](../results/binding/deepseek-coder-6.7b/lexle
 
 ---
 
+# Part V — published J-lens and R-lens
+
+E19 asks a narrower and more demanding question than E18: does the full,
+published vocabulary lens surface the program-semantic value among the model's
+top tokens while that value is being used? It uses the released Anthropic
+estimator, an independent 100-prompt fitting corpus, the published RelP rules,
+and the model's complete vocabulary. The older cotangent-lens results are not
+substituted for it.
+
+All required gates pass on DeepSeek-Coder 1.3B/6.7B and StarCoder2-3B. The
+answer-position control reaches pass@10 = 1.000 for every value family and every
+lens. Across the use token, following token, and call site, however, the needed
+values are essentially absent. The null includes arithmetic values absent from
+the prompt and therefore cannot be explained by failure to distinguish a copied
+target from a computed one.
+
+R sometimes surfaces answer concepts earlier than J, but the logit lens is
+normally as early or earlier. Mid-network causal erasures tell the same story.
+StarCoder2 has no coherent effect relative to the exactly magnitude-matched
+random arm. DeepSeek 6.7B has a small L20 target effect (J minus matched random
+−0.018, 95% CI [−0.033, −0.002]; R −0.024 [−0.037, −0.008]), but J
+and R do not beat the logit direction. DeepSeek 1.3B develops an L20 effect, but
+the logit direction is stronger than J (`J − logit = +0.204`, [0.149,
+0.270]). Large effects at the final layers are direction-specific but largely
+measure the output head's neighbourhood.
+
+The controls that were missing from the preliminary analysis are now present:
+stable seeds, separate J/R distractor directions, an exact edit-magnitude random
+arm, four read positions, and paired cluster-bootstrap intervals. StarCoder2 is
+also replicated with a paper-minimal R-lens that disables the unpublished
+LayerNorm analogue; the conclusion is unchanged.
+
+The supported result is negative but complete within scope. These models can
+represent and causally use binding without placing the needed value in a form
+that the published J/R lenses surface as a mid-network verbalizable workspace.
+The R-lens yields modest local improvements over J on DeepSeek, not the broad
+early-layer recovery reported in its source post.
+
 # Synthesis: the main finding
 
 The active evidence now forms one cumulative argument.
@@ -767,7 +809,7 @@ The strongest conclusion is therefore deliberately narrow:
 > being identifiable as uniquely scope-semantic verbalisation.
 
 These clauses are complementary, not interchangeable. DAS supports causal use;
-the conserving cotangent lens supports attribution. Neither establishes a complete mechanism. It
+the conserving cotangent lens supports attribution. Neither establishes a complete mechanism.
 E18 answers only whether selected cotangent lens margins follow the crossed binding
 contrast; it does not establish faithful verbalisation under this or any other
 prompt, position, lexicon, or nonlinear readout.
@@ -795,6 +837,10 @@ prompt, position, lexicon, or nonlinear readout.
   association in several word pairs, but its single template confounds scope
   with position and replacement. Prompted answers, other words, and other
   positions are different questions.
+- **Not that the J/R null proves the value is absent.** It proves that the
+  published linear, token-indexed workspace readouts do not surface it at the
+  tested positions. The successful probes and DAS intervention independently
+  show that binding information is present and used.
 - **Not that the controlled isolation transfers to real code.** The exact 0.500
   floor relies on the synthetic paired construction.
 

@@ -4,7 +4,7 @@
 
 This document explains exactly how each experiment was run. It starts by
 defining what counts as a semantic representation, then explains how program
-structure becomes exact token-level labels, and finally describes the four
+structure becomes exact token-level labels, and finally describes the five
 steps of the active argument. Each step answers a different question:
 
 - a **linear probe** asks whether information is present in a hidden state;
@@ -14,6 +14,8 @@ steps of the active argument. Each step answers a different question:
   binding component changes the downstream answer;
 - the **conserving cotangent lens** asks the separate observational question: whether the answer
   score is attributed to the definition selected by the binding.
+- the **published J/R lenses** ask whether needed program values occupy a
+  full-vocabulary verbalizable workspace before emission.
 
 The controls are part of the method, not optional checks. Grouped splits prevent
 nearly identical rows from leaking across train and test; shuffled labels test
@@ -792,6 +794,35 @@ contain binding information. Because the one template changes scope, textual
 order, distance, and replacement status together, even a high crossed-arm rate
 supports only binding-associated lexical alignment, not uniquely scope-semantic
 or faithful verbalisation.
+
+## 6.9 E19: the published J-lens and R-lens
+
+E19 is a separate instrument, not a relabelling of §6.8. It vendors Anthropic's
+released Jacobian-lens implementation at commit `581d398`, fits the full
+`d_model × d_model` transport from every source layer to the released
+penultimate-layer target, and reads with the model's own final normalization and
+unembedding over the complete vocabulary. J and R use the same independent
+100-prompt `NeelNanda/pile-10k` prefix; R differs only through the published LN,
+activation-identity, and gated-product half rules.
+
+The evaluation fixes target concepts from program execution. Value programs are
+read at four positions in one prompt: use, post-use, call, and answer. The answer
+position is the positive control; the earlier three test availability for
+verbal report before emission. Target-absent concepts distinguish computation
+from copying.
+
+The causal arm projects out `J_lᵀ(gW_U[w])` or its R-lens analogue and scores the
+model's own target-minus-distractor answer margin. Controls are the plain
+unembedding direction, a stable-seeded random projection, an independent random
+displacement with exactly the J erase magnitude, and separate J/R distractor
+directions. Contrasts are paired within program and layer with 95% cluster-
+bootstrap intervals.
+
+Required gates cover corpus independence, matched provenance, identity-anchor
+readout, equivalence to the LM head, RelP forward invariance, complete rule
+binding, and a nontrivial J/R difference. StarCoder2's LayerNorm rule is a
+documented analogue, so a paper-minimal sensitivity fit disables it and retains
+only the exact GELU identity-rule. See [WORKSPACE_LENS.md](WORKSPACE_LENS.md).
 
 
 # 7. Statistics, gates and reproducibility

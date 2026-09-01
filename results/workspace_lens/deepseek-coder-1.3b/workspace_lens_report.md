@@ -85,12 +85,34 @@ Median over the items that ever reach it; the share that do is in brackets, beca
 | scopeword | — (0/20) | — (0/20) | 10 (3/20) |
 | typeof | 13 (10/10) | 13 (10/10) | 3 (10/10) |
 
-## Causal ablation — erasing the lens read direction (`ablate`, layers [np.int64(20), np.int64(21), np.int64(22)], near the output — erasing the answer direction this late and watching the answer logit fall is close to tautological)
+## Causal ablation — erasing the lens read direction (`ablate`, layers [20, 21, 22], rank-selected layers)
 
-Change in the **model's own** logit difference between the target and distractor answers. `offtarget` is the load-bearing control: it uses the same construction for the *distractor* token, so a target erase that hurts while a distractor erase helps is a double dissociation, not an edit-size effect. `random` moves far less of the state's norm (a random direction barely overlaps `h` in this many dimensions), so it floors direction, not magnitude.
+Change in the **model's own** logit difference between the target and distractor answers. `offtarget_j` and `offtarget_r` use the matching lens construction for the *distractor* token, so a target erase that hurts while its distractor erase helps is a double dissociation. `random` floors a generic random projection; `random_matched` moves the state by exactly the J-lens erase magnitude and is the edit-size control.
 
 | layer | direction | n | mean delta | median delta | \|edit\|/\|h\| |
 |---|---|---|---|---|---|
+| 20 | jlens | 200 | -0.151 | +0.000 | 0.072 |
+| 20 | logit | 200 | -0.355 | +0.000 | 0.079 |
+| 20 | offtarget_j | 200 | +0.134 | +0.000 | 0.046 |
+| 20 | offtarget_r | 200 | +0.133 | +0.000 | 0.048 |
+| 20 | random | 200 | -0.009 | +0.000 | 0.018 |
+| 20 | random_matched | 200 | -0.002 | +0.000 | 0.072 |
+| 20 | rlens | 200 | -0.242 | +0.000 | 0.075 |
+| 21 | jlens | 200 | -0.390 | +0.000 | 0.076 |
+| 21 | logit | 200 | -0.616 | +0.000 | 0.078 |
+| 21 | offtarget_j | 200 | +0.219 | +0.000 | 0.057 |
+| 21 | offtarget_r | 200 | +0.226 | +0.000 | 0.058 |
+| 21 | random | 200 | -0.006 | +0.000 | 0.016 |
+| 21 | random_matched | 200 | -0.013 | +0.000 | 0.076 |
+| 21 | rlens | 200 | -0.483 | +0.000 | 0.077 |
+| 22 | jlens | 200 | -0.858 | +0.000 | 0.082 |
+| 22 | logit | 200 | -0.858 | +0.000 | 0.082 |
+| 22 | offtarget_j | 200 | +0.430 | +0.000 | 0.065 |
+| 22 | offtarget_r | 200 | +0.430 | +0.000 | 0.065 |
+| 22 | random | 200 | -0.005 | +0.000 | 0.018 |
+| 22 | random_matched | 200 | +0.016 | +0.000 | 0.082 |
+| 22 | rlens | 200 | -0.858 | +0.000 | 0.082 |
+
 **Paired contrasts**, 95% cluster bootstrap over programs. Each is a difference on the *same* programs at the same layer, so program-to-program variation cancels rather than being averaged over. `*` marks an interval excluding zero.
 
 | layer | contrast | n | mean | 95% CI | |
@@ -114,6 +136,26 @@ Change in the **model's own** logit difference between the target and distractor
 | 22 | jlens_vs_logit | 200 | +0.000 | [+0.000, +0.000] |  |
 | 22 | rlens_vs_jlens | 200 | +0.000 | [+0.000, +0.000] |  |
 
+## Causal ablation — erasing the lens read direction (`ablate-L12-16-20`, layers [12, 16, 20], predeclared mid-network sweep)
+
+Change in the **model's own** logit difference between the target and distractor answers. `offtarget_j` and `offtarget_r` use the matching lens construction for the *distractor* token, so a target erase that hurts while its distractor erase helps is a double dissociation. `random` floors a generic random projection; `random_matched` moves the state by exactly the J-lens erase magnitude and is the edit-size control.
+
+| layer | direction | n | mean delta | median delta | \|edit\|/\|h\| |
+|---|---|---|---|---|---|
+| 12 | jlens | 200 | +0.004 | +0.000 | 0.051 |
+| 12 | logit | 200 | -0.041 | +0.000 | 0.043 |
+| 12 | offtarget_j | 200 | +0.000 | +0.000 | 0.046 |
+| 12 | offtarget_r | 200 | -0.011 | +0.000 | 0.041 |
+| 12 | random | 200 | -0.008 | +0.000 | 0.018 |
+| 12 | random_matched | 200 | +0.000 | +0.000 | 0.051 |
+| 12 | rlens | 200 | -0.007 | +0.000 | 0.041 |
+| 16 | jlens | 200 | -0.002 | +0.000 | 0.059 |
+| 16 | logit | 200 | -0.094 | +0.000 | 0.046 |
+| 16 | offtarget_j | 200 | -0.020 | +0.000 | 0.050 |
+| 16 | offtarget_r | 200 | -0.021 | +0.000 | 0.045 |
+| 16 | random | 200 | -0.004 | +0.000 | 0.019 |
+| 16 | random_matched | 200 | -0.001 | +0.000 | 0.059 |
+| 16 | rlens | 200 | -0.027 | +0.000 | 0.052 |
 | 20 | jlens | 200 | -0.151 | +0.000 | 0.072 |
 | 20 | logit | 200 | -0.355 | +0.000 | 0.079 |
 | 20 | offtarget_j | 200 | +0.134 | +0.000 | 0.046 |
@@ -121,27 +163,7 @@ Change in the **model's own** logit difference between the target and distractor
 | 20 | random | 200 | -0.009 | +0.000 | 0.018 |
 | 20 | random_matched | 200 | -0.002 | +0.000 | 0.072 |
 | 20 | rlens | 200 | -0.242 | +0.000 | 0.075 |
-| 21 | jlens | 200 | -0.390 | +0.000 | 0.076 |
-| 21 | logit | 200 | -0.616 | +0.000 | 0.078 |
-| 21 | offtarget_j | 200 | +0.219 | +0.000 | 0.057 |
-| 21 | offtarget_r | 200 | +0.226 | +0.000 | 0.058 |
-| 21 | random | 200 | -0.006 | +0.000 | 0.016 |
-| 21 | random_matched | 200 | -0.013 | +0.000 | 0.076 |
-| 21 | rlens | 200 | -0.483 | +0.000 | 0.077 |
-| 22 | jlens | 200 | -0.858 | +0.000 | 0.082 |
-| 22 | logit | 200 | -0.858 | +0.000 | 0.082 |
-| 22 | offtarget_j | 200 | +0.430 | +0.000 | 0.065 |
-| 22 | offtarget_r | 200 | +0.430 | +0.000 | 0.065 |
-| 22 | random | 200 | -0.005 | +0.000 | 0.018 |
-| 22 | random_matched | 200 | +0.016 | +0.000 | 0.082 |
-| 22 | rlens | 200 | -0.858 | +0.000 | 0.082 |
 
-## Causal ablation — erasing the lens read direction (`ablate-L12-16-20`, layers [np.int64(12), np.int64(16), np.int64(20)], mid-network)
-
-Change in the **model's own** logit difference between the target and distractor answers. `offtarget` is the load-bearing control: it uses the same construction for the *distractor* token, so a target erase that hurts while a distractor erase helps is a double dissociation, not an edit-size effect. `random` moves far less of the state's norm (a random direction barely overlaps `h` in this many dimensions), so it floors direction, not magnitude.
-
-| layer | direction | n | mean delta | median delta | \|edit\|/\|h\| |
-|---|---|---|---|---|---|
 **Paired contrasts**, 95% cluster bootstrap over programs. Each is a difference on the *same* programs at the same layer, so program-to-program variation cancels rather than being averaged over. `*` marks an interval excluding zero.
 
 | layer | contrast | n | mean | 95% CI | |
@@ -164,28 +186,6 @@ Change in the **model's own** logit difference between the target and distractor
 | 20 | rlens_vs_random_matched | 200 | -0.239 | [-0.313, -0.176] | * |
 | 20 | jlens_vs_logit | 200 | +0.204 | [+0.149, +0.270] | * |
 | 20 | rlens_vs_jlens | 200 | -0.091 | [-0.121, -0.063] | * |
-
-| 12 | jlens | 200 | +0.004 | +0.000 | 0.051 |
-| 12 | logit | 200 | -0.041 | +0.000 | 0.043 |
-| 12 | offtarget_j | 200 | +0.000 | +0.000 | 0.046 |
-| 12 | offtarget_r | 200 | -0.011 | +0.000 | 0.041 |
-| 12 | random | 200 | -0.008 | +0.000 | 0.018 |
-| 12 | random_matched | 200 | +0.000 | +0.000 | 0.051 |
-| 12 | rlens | 200 | -0.007 | +0.000 | 0.041 |
-| 16 | jlens | 200 | -0.002 | +0.000 | 0.059 |
-| 16 | logit | 200 | -0.094 | +0.000 | 0.046 |
-| 16 | offtarget_j | 200 | -0.020 | +0.000 | 0.050 |
-| 16 | offtarget_r | 200 | -0.021 | +0.000 | 0.045 |
-| 16 | random | 200 | -0.004 | +0.000 | 0.019 |
-| 16 | random_matched | 200 | -0.001 | +0.000 | 0.059 |
-| 16 | rlens | 200 | -0.027 | +0.000 | 0.052 |
-| 20 | jlens | 200 | -0.151 | +0.000 | 0.072 |
-| 20 | logit | 200 | -0.355 | +0.000 | 0.079 |
-| 20 | offtarget_j | 200 | +0.134 | +0.000 | 0.046 |
-| 20 | offtarget_r | 200 | +0.133 | +0.000 | 0.048 |
-| 20 | random | 200 | -0.009 | +0.000 | 0.018 |
-| 20 | random_matched | 200 | -0.002 | +0.000 | 0.072 |
-| 20 | rlens | 200 | -0.242 | +0.000 | 0.075 |
 
 ## Figures
 

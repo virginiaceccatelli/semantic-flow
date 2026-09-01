@@ -22,6 +22,10 @@ the conserving cotangent lens attributes the unedited answer to the active defin
 the unprompted cotangent lens tests whether lexical contrasts follow that state
         ↓
 some contrasts track the binding in both crossed value arms
+        ↓
+the published J/R lenses test whether needed values occupy a verbalizable workspace
+        ↓
+they do not surface before emission, and transport does not consistently beat the logit lens
 ```
 
 The security, output-vocabulary, older standalone cotangent lens, and taint-routing tracks
@@ -149,6 +153,31 @@ weak. E18 therefore establishes binding-associated lexical alignment, but does
 not identify a uniquely scope-semantic vocabulary or faithful verbalisation.
 The full result and limitations are in [RESULTS.md, Part IV](RESULTS.md#part-iv--j-lens-verbalisation).
 
+## 6. Published J-lens and R-lens
+
+E19 uses Anthropic's released full-Jacobian estimator and the published RelP
+rules, fitted on an independent 100-prompt corpus for DeepSeek-Coder 1.3B/6.7B
+and StarCoder2-3B. Required applicability, matched-pair, identity-anchor,
+forward-invariance, and rule-binding gates pass.
+
+Each value program is read at the use token, the following token, the call site,
+and the answer position. All three lenses reach pass@10 = 1.000 at the answer
+position. At the preceding three positions, the needed value is essentially
+absent on all models, including arithmetic answers absent from the prompt.
+
+Causal erasures use lens-specific distractor directions, stable random
+directions, exactly magnitude-matched random displacements, and paired
+cluster-bootstrap intervals. Large effects occur near the output. Mid-network,
+StarCoder2 is null; DeepSeek 6.7B has only a small L20 effect that does not beat
+the logit direction; and DeepSeek 1.3B's L20 logit direction is stronger than J.
+R has modest local improvements over J, but no consistent advantage over the
+logit lens. A paper-minimal StarCoder2 fit omitting the unpublished LayerNorm
+analogue leaves the conclusion unchanged.
+
+These models represent and causally use binding according to the probe and DAS
+evidence, but the published J-space readout does not expose the needed value as a
+mid-network verbalizable workspace representation.
+
 ## The combined conclusion
 
 The strongest supported statement is:
@@ -158,7 +187,9 @@ The strongest supported statement is:
 > is causally read from a rank-1 component at the use site, is reflected in how
 > the final answer is attributed to the active definition, and its unprompted
 > state aligns with several lexical contrasts, although that alignment is not
-> uniquely identifiable as scope verbalisation.
+> uniquely identifiable as scope verbalisation. Under the published full-
+> vocabulary J- and R-lenses, the needed values are not surfaced while they are
+> used and Jacobian transport does not consistently improve on the logit lens.
 
 DAS and the conserving cotangent lens are deliberately not merged into one claim. DAS edits the
 model and establishes causal use. The conserving cotangent lens edits nothing and establishes
@@ -177,4 +208,5 @@ other readouts remain separate questions.
 - [StarCoder2 DAS report](../results/binding/starcoder2-3b/e13_report.md).
 - [DeepSeek binding conserving cotangent lens report](../results/binding/deepseek-coder-6.7b/e16_report.md).
 - [DeepSeek cotangent lens verbalisation report](../results/binding/deepseek-coder-6.7b/e18_report.md).
+- [Published J/R-lens technical report](WORKSPACE_LENS.md).
 - [ARCHIVE.md](ARCHIVE.md): displaced studies and failed designs.

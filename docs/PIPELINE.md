@@ -914,6 +914,8 @@ python scripts/201_lens_fit.py --model deepseek-coder-1.3b \
 Both lenses come from one call with one corpus in one process, so they differ
 only in the backward graph. `--halves` additionally fits disjoint-half lenses,
 which is what gate W6 reads; it triples the stage, so run it once, on 1.3b.
+For StarCoder2, `make lens-fit-paperminimal MODEL=starcoder2-3b` builds the
+sensitivity pair whose R arm disables the unpublished LayerNorm analogue.
 
 Traps, in the order they bite:
 
@@ -948,6 +950,13 @@ python scripts/204_lens_ablate.py  --model deepseek-coder-1.3b \
     --readout results/workspace_lens/deepseek-coder-1.3b/readout/workspace_lens_rows.csv
 python scripts/205_lens_report.py  --model deepseek-coder-1.3b
 ```
+
+Stage 203 reads each value program at use, post-use, call, and answer positions.
+Stage 204 writes both arm summaries and paired cluster-bootstrap contrasts. Its
+controls include separate J/R distractor directions, a stable random projection,
+and a random displacement matched exactly to the J-lens erase magnitude. Stage
+205 can regenerate reports from committed CSVs and `lens_meta.json` sidecars;
+the multi-GB `lens.pt` files need not be copied back from the GPU host.
 
 Or `make lens MODEL=...` for 200→205 in order, or `jobs/workspace_lens.csh` on the
 GPU host. `make lens-smoke` checks the whole path on toy CPU models plus the

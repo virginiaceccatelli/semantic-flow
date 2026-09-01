@@ -1,10 +1,10 @@
 # E19 — the published J-lens and R-lens on code models
 
-**Status: implemented, tested, and validated on toy models; not yet fitted at
-scale.** The fitting stage needs a GPU and has not been run. Everything below
-that describes *what was measured* is marked as pending; everything else
-describes the implementation, the configuration, and the compatibility analysis,
-all of which are complete.
+**Status: complete at canonical scale on DeepSeek-Coder 1.3B and 6.7B and
+StarCoder2-3B.** Both lenses were fitted on 100 independent prompts, passed the
+required gates, and were evaluated observationally and causally. StarCoder2 is
+also reported with a paper-minimal sensitivity R-lens that omits the unpublished
+LayerNorm analogue.
 
 This document is the technical report the implementation was asked for. It says
 what was built, which published choices it follows, which models can carry the
@@ -280,7 +280,13 @@ Half the items have **targets that appear nowhere in the prompt** (`arith`,
 `typeof`, `loopvar`, `scopeword`), so a hit there cannot be attention copying an
 input token forward. That subset is plotted separately.
 
-Reported per (lens, layer, family): top-k tokens, target-concept rank over the
+Value programs are read at four predeclared positions in the same prompt: the
+variable use, the following token, the call site, and the answer position. The
+first three test the value while it is used; the last is the positive control
+where it is about to be emitted. This replaces the initial single-position
+design.
+
+Reported per (lens, layer, family, read position): top-k tokens, target-concept rank over the
 full vocabulary, pass@k for k ∈ {1, 10, 25}, and the earliest layer at which the
 concept enters the top k — the quantity the R-lens post claims to improve. Ranks
 rather than probabilities, because a lens fitted as an average carries no
@@ -305,13 +311,12 @@ was dropped is printed by stage 200 and stored on the suite.
 A rank is a readout, and the paper's framing is a causal claim. Stage 204 erases
 the lens's own read direction `u_w = J_lᵀ(g · W_U[w])` from the residual stream at
 the read position and measures the change in the **model's own** answer logit
-difference — not the lens's score, which would be a tautology. Three controls,
-each ruling out a different alternative: the logit-lens direction (`J = I`, so
-beating it is what shows the *transport* does work), a norm-matched random
-direction (the floor for "an edit of this size here changes the answer"), and the
-direction built for the *distractor* token (controls for "any lens direction here
-is disruptive"). The fraction of the state's norm each edit moved is recorded per
-example, so a null is interpretable rather than ambiguous.
+difference — not the lens's score, which would be a tautology. Four controls
+answer distinct objections: the logit-lens direction (`J = I`), a stable-seeded
+random projection, a random displacement matched exactly to the J-lens erase
+magnitude, and a distractor-token direction constructed separately with the J
+and R lenses. Effects use paired 95% cluster-bootstrap intervals over programs,
+and the fraction of state norm moved is recorded per example.
 
 ---
 
@@ -363,6 +368,9 @@ Complete list. Everything not here follows the published choices.
    published rules apply to it verbatim.
 2. **The half-rule is inapplicable to StarCoder2-3B** (§4.2). No gate exists.
    Recorded as `"n/a"`, distinct from `"off"`.
+   The paper-minimal StarCoder2 sensitivity fit disables the LayerNorm analogue
+   and retains only the exact GELU identity-rule. Its results do not change the
+   substantive conclusion.
 3. **`n_prompts = 100`** rather than the released 25 or the paper's 1000 (§3),
    at the paper's own stated saturation point. `--n-prompts` reproduces either,
    and 25 is a strict prefix of 100.
@@ -413,9 +421,36 @@ tail to meta placeholders). Stage-by-stage commands are in `docs/PIPELINE.md`.
 
 ## 10. Results
 
-**Pending the fitting run.** No lens has been fitted at scale, so this section is
-empty by design rather than by omission. When stage 205 has run it writes
-`results/workspace_lens/{model}/workspace_lens_report.md` with the gate table,
-the pass@k tables, the earliest-layer tables and the ablation table, and the
-figures listed there. Nothing in this document should be read as a measurement
-until that report exists.
+All required gates pass on the three canonical models. The disjoint-half build
+check also passes on DeepSeek-Coder 1.3B (worst layer cosine 0.915 for J and
+0.977 for R).
+
+The answer-position positive control is perfect: every value family reaches
+pass@10 = 1.000 under J, R and logit lenses. At the three earlier positions,
+however, the needed program values are essentially absent, including arithmetic
+targets that never occur in the prompt. DeepSeek 6.7B has a few isolated J-lens
+hits on prompt-present values (at most 0.15), but they do not replicate in R or
+the other models. The representation-versus-verbalizability dissociation
+therefore survives the expanded positional test.
+
+R often reaches answer concepts earlier than J, but the logit lens is usually
+equally early or earlier. Target-absent `loopvar` and `typeof` concepts surface
+under all three lenses, generally first under the logit lens: they validate the
+evaluation without supplying a J-space-specific result.
+
+Late-layer erasures survive separate distractor controls and exactly
+magnitude-matched random edits, but are close to the output head. In the
+predeclared L12/L16/L20 sweep, StarCoder2 has no coherent effect that reliably
+beats the magnitude-matched control. DeepSeek 6.7B has a small L20 effect (J
+minus matched random −0.018, 95% CI [−0.033, −0.002]; R −0.024
+[−0.037, −0.008]), but neither transport beats the logit direction there.
+DeepSeek 1.3B has a later L20 effect, yet the logit direction is substantially
+stronger than J (`J − logit = +0.204` [0.149, 0.270]).
+
+This is a complete, gated negative workspace result on these code models: the
+published J-lens does not surface needed program-semantic values while they are
+used, and Jacobian transport supplies no consistent causal or earliest-layer
+advantage over the logit lens. R provides modest local improvements over J on
+DeepSeek, but not the qualitative early-layer recovery reported in the R-lens
+post. Exact tables and intervals are in the generated model reports, with the
+StarCoder2 paper-minimal sensitivity report stored alongside them.
