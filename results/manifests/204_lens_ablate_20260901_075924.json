@@ -1,0 +1,38 @@
+{
+  "stage": "204_lens_ablate",
+  "timestamp": "20260901_075924",
+  "git_sha": "51f529b",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/204_lens_ablate.py",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--suite",
+    "data/lens_eval/code-semantics-deepseek-coder-1.3b.jsonl",
+    "--readout",
+    "results/workspace_lens/deepseek-coder-1.3b/readout/workspace_lens_rows.csv",
+    "--dtype",
+    "bfloat16"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "suite": "data/lens_eval/code-semantics-deepseek-coder-1.3b.jsonl",
+    "lens_dir": "results/workspace_lens/deepseek-coder-1.3b",
+    "families": "binding,defuse,alias,call,arith",
+    "layers": "None",
+    "n_layers_each": "3",
+    "inject_alpha": "0.0",
+    "dtype": "bfloat16",
+    "device": "cuda"
+  },
+  "wall_time_s": 43.4,
+  "extra": {
+    "n_items": 120,
+    "layers": [
+      19,
+      21,
+      22
+    ],
+    "layer_source": "best median j-lens rank in results/workspace_lens/deepseek-coder-1.3b/readout/workspace_lens_rows.csv"
+  }
+}

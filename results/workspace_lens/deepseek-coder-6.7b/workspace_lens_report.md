@@ -74,9 +74,32 @@ Median over the items that ever reach it; the share that do is in brackets, beca
 | scopeword | 13 (20/20) | 13 (20/20) | 13 (20/20) |
 | typeof | 16 (10/10) | 11 (10/10) | 6 (10/10) |
 
+## Causal ablation — erasing the lens read direction
+
+Change in the **model's own** logit difference between the target and distractor answers. `offtarget` and `random` are the controls that make a non-zero effect interpretable.
+
+| layer | direction | n | mean delta | median delta | |edit|/|h| |
+|---|---|---|---|---|---|
+| 28 | jlens | 100 | -1.110 | -0.562 | 0.109 |
+| 28 | logit | 100 | -1.087 | -0.375 | 0.103 |
+| 28 | offtarget | 100 | +1.086 | +0.781 | 0.055 |
+| 28 | random | 100 | -0.005 | +0.000 | 0.014 |
+| 28 | rlens | 100 | -1.213 | -0.500 | 0.109 |
+| 29 | jlens | 100 | -2.454 | -0.969 | 0.127 |
+| 29 | logit | 100 | -2.033 | -0.750 | 0.115 |
+| 29 | offtarget | 100 | +1.514 | +1.312 | 0.073 |
+| 29 | random | 100 | +0.002 | +0.000 | 0.013 |
+| 29 | rlens | 100 | -2.183 | -0.812 | 0.124 |
+| 30 | jlens | 100 | -5.042 | -1.125 | 0.132 |
+| 30 | logit | 100 | -5.042 | -1.125 | 0.132 |
+| 30 | offtarget | 100 | +1.978 | +1.906 | 0.084 |
+| 30 | random | 100 | +0.002 | +0.000 | 0.013 |
+| 30 | rlens | 100 | -5.042 | -1.125 | 0.132 |
+
 ## Figures
 
 - `results/figures/workspace_lens_passk_deepseek-coder-6.7b.png`
 - `results/figures/workspace_lens_rank_deepseek-coder-6.7b.png`
 - `results/figures/workspace_lens_earliest_deepseek-coder-6.7b.png`
+- `results/figures/workspace_lens_ablation_deepseek-coder-6.7b.png`
 

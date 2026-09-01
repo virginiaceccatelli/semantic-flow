@@ -15,7 +15,7 @@ fit under the published RelP backward rules.
 | skip_first | 4 |
 | max_seq_len | 128 |
 | fitting corpus | NeelNanda/pile-10k, n=100, digest `483c1e1743d1` |
-| BOS prepended | True (forced: the tokenizer flag had no effect) |
+| BOS prepended | True (forced; the checkpoint declares add_bos_token and the tokenizer flag had no effect) |
 | RelP rules bound | LN 49 RMSNorm + 0 LayerNorm, identity 24, half 24 (applied) |
 | max forward deviation from the rules | 4.77e-07 |
 
@@ -23,10 +23,10 @@ fit under the published RelP backward rules.
 
 | check | required | result | detail |
 |---|---|---|---|
-| W1_corpus_independent | yes | PASS | 100 fitting prompts from NeelNanda/pile-10k (digest 483c1e1743d1), 100 eval prompts, 0 exact and 0 substring overlaps at 120 chars |
-| W2_matched_pair | yes | PASS | matched on model.hf_id, model.dtype, model.n_layers, model.d_model, model.bos_prepended, model.bos_forced, recipe.target_layer, recipe.source_layers, recipe.skip_first, recipe.max_seq_len, corpus.digest, corpus.n_prompts, dim_batch, n_prompts_used |
+| W1_corpus_independent | yes | PASS | 100 fitting prompts from NeelNanda/pile-10k (digest 483c1e1743d1), 160 eval prompts, 0 exact and 0 substring overlaps at 120 chars |
+| W2_matched_pair | yes | PASS | matched on model.hf_id, model.dtype, model.n_layers, model.d_model, model.bos_prepended, model.bos_forced, model.bos_declared, recipe.target_layer, recipe.source_layers, recipe.skip_first, recipe.max_seq_len, corpus.digest, corpus.n_prompts, dim_batch, n_prompts_used |
 | W3_readout_identity_anchor | yes | PASS | max |delta logit| = 0.0000 on a scale of 74.5; top-1 agreement 1.000 over 31 positions |
-| W3b_unembed_is_model_tail | yes | **FAIL** | max relative logit difference 3.71e-01 |
+| W3b_unembed_is_model_tail | yes | PASS | max relative logit difference 5.99e-03 against the causal-LM head (tolerance 6.2e-02 is one rounding step of the compute dtype) |
 | W4_relp_forward_invariant | yes | PASS | max relative deviation 1.57e-02 over 4 prompts (hidden 8.20e-03, logits 1.57e-02); tolerance 1.53e-01 is the bfloat16 rounding floor at depth 24 — W5e is the exact per-module check |
 | W5a_ln_rule_bound | yes | PASS | LN-rule on 49 RMSNorm + 0 LayerNorm of 49 residual norms; 0 q/k norms left unmodified as published |
 | W5b_identity_rule_bound | yes | PASS | identity-rule on 24 activations ({'silu': 24}); 0 unrecognised |
@@ -42,16 +42,23 @@ fit under the published RelP backward rules.
 
 ## What the lenses surface (pass@10, best over layers)
 
-| family | j-lens | r-lens | logit lens | target in prompt |
-|---|---|---|---|---|
-| alias | 0.000 | 0.000 | 0.000 | yes |
-| arith | 0.000 | 0.000 | 0.000 | no |
-| binding | 0.000 | 0.000 | 0.000 | yes |
-| call | 0.000 | 0.000 | 0.000 | yes |
-| defuse | 0.000 | 0.000 | 0.000 | yes |
-| loopvar | 1.000 | 1.000 | 1.000 | no |
-| scopeword | 0.000 | 0.000 | 0.150 | no |
-| typeof | 1.000 | 1.000 | 1.000 | no |
+`read = answer` is the position where the value must actually be emitted; `read = use` is the variable's use token. They are never pooled: a null at `use` beside a hit at `answer` is a finding about verbalizability, while a null at both is a null about the instrument's reach.
+
+| family | read | j-lens | r-lens | logit lens | target in prompt |
+|---|---|---|---|---|---|
+| alias | answer | 1.000 | 1.000 | 1.000 | yes |
+| alias | use | 0.000 | 0.000 | 0.000 | yes |
+| arith | answer | 1.000 | 1.000 | 1.000 | no |
+| arith | use | 0.000 | 0.000 | 0.000 | no |
+| binding | answer | 1.000 | 1.000 | 1.000 | yes |
+| binding | use | 0.000 | 0.000 | 0.000 | yes |
+| call | answer | 1.000 | 1.000 | 1.000 | yes |
+| call | use | 0.000 | 0.000 | 0.000 | yes |
+| defuse | answer | 1.000 | 1.000 | 1.000 | yes |
+| defuse | use | 0.000 | 0.000 | 0.000 | yes |
+| loopvar | use | 1.000 | 1.000 | 1.000 | no |
+| scopeword | use | 0.000 | 0.000 | 0.150 | no |
+| typeof | use | 1.000 | 1.000 | 1.000 | no |
 
 ## Earliest layer the target enters the top 10
 
@@ -59,18 +66,41 @@ Median over the items that ever reach it; the share that do is in brackets, beca
 
 | family | j-lens | r-lens | logit lens |
 |---|---|---|---|
-| alias | — (0/10) | — (0/10) | — (0/10) |
-| arith | — (0/10) | — (0/10) | — (0/10) |
-| binding | — (0/20) | — (0/20) | — (0/20) |
-| call | — (0/10) | — (0/10) | — (0/10) |
-| defuse | — (0/10) | — (0/10) | — (0/10) |
+| alias | 15 (10/20) | 12 (10/20) | 10 (10/20) |
+| arith | 18 (10/20) | 16 (10/20) | 15 (10/20) |
+| binding | 17 (20/40) | 15 (20/40) | 14 (20/40) |
+| call | 12 (10/20) | 10 (10/20) | 8 (10/20) |
+| defuse | 14 (10/20) | 11 (10/20) | 9 (10/20) |
 | loopvar | 12 (10/10) | 12 (10/10) | 5 (10/10) |
 | scopeword | — (0/20) | — (0/20) | 10 (3/20) |
 | typeof | 13 (10/10) | 13 (10/10) | 3 (10/10) |
+
+## Causal ablation — erasing the lens read direction
+
+Change in the **model's own** logit difference between the target and distractor answers. `offtarget` and `random` are the controls that make a non-zero effect interpretable.
+
+| layer | direction | n | mean delta | median delta | |edit|/|h| |
+|---|---|---|---|---|---|
+| 19 | jlens | 100 | +0.437 | +0.332 | 0.098 |
+| 19 | logit | 100 | -0.411 | -0.250 | 0.110 |
+| 19 | offtarget | 100 | -0.411 | -0.250 | 0.062 |
+| 19 | random | 100 | -0.014 | +0.000 | 0.019 |
+| 19 | rlens | 100 | +0.344 | +0.219 | 0.103 |
+| 21 | jlens | 100 | +0.079 | -0.012 | 0.133 |
+| 21 | logit | 100 | -0.549 | -0.281 | 0.138 |
+| 21 | offtarget | 100 | -0.299 | -0.223 | 0.084 |
+| 21 | random | 100 | +0.003 | +0.000 | 0.017 |
+| 21 | rlens | 100 | -0.104 | -0.059 | 0.136 |
+| 22 | jlens | 100 | -0.831 | -0.625 | 0.142 |
+| 22 | logit | 100 | -0.831 | -0.625 | 0.142 |
+| 22 | offtarget | 100 | -0.142 | -0.250 | 0.093 |
+| 22 | random | 100 | +0.005 | +0.000 | 0.017 |
+| 22 | rlens | 100 | -0.831 | -0.625 | 0.142 |
 
 ## Figures
 
 - `results/figures/workspace_lens_passk_deepseek-coder-1.3b.png`
 - `results/figures/workspace_lens_rank_deepseek-coder-1.3b.png`
 - `results/figures/workspace_lens_earliest_deepseek-coder-1.3b.png`
+- `results/figures/workspace_lens_ablation_deepseek-coder-1.3b.png`
 

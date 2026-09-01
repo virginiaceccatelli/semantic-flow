@@ -74,9 +74,32 @@ Median over the items that ever reach it; the share that do is in brackets, beca
 | scopeword | 21 (4/20) | 21 (4/20) | 21 (3/20) |
 | typeof | 20 (10/10) | 19 (10/10) | 21 (10/10) |
 
+## Causal ablation — erasing the lens read direction
+
+Change in the **model's own** logit difference between the target and distractor answers. `offtarget` and `random` are the controls that make a non-zero effect interpretable.
+
+| layer | direction | n | mean delta | median delta | |edit|/|h| |
+|---|---|---|---|---|---|
+| 22 | jlens | 100 | +0.104 | +0.000 | 0.066 |
+| 22 | logit | 100 | -0.179 | -0.125 | 0.060 |
+| 22 | offtarget | 100 | +0.065 | +0.000 | 0.037 |
+| 22 | random | 100 | +0.004 | +0.000 | 0.014 |
+| 22 | rlens | 100 | +0.243 | +0.125 | 0.066 |
+| 24 | jlens | 100 | +0.017 | +0.000 | 0.074 |
+| 24 | logit | 100 | -0.249 | -0.250 | 0.070 |
+| 24 | offtarget | 100 | +0.219 | +0.125 | 0.041 |
+| 24 | random | 100 | -0.006 | +0.000 | 0.014 |
+| 24 | rlens | 100 | +0.250 | +0.125 | 0.074 |
+| 28 | jlens | 100 | -4.456 | -3.250 | 0.125 |
+| 28 | logit | 100 | -4.456 | -3.250 | 0.125 |
+| 28 | offtarget | 100 | +3.722 | +3.125 | 0.098 |
+| 28 | random | 100 | +0.001 | +0.000 | 0.013 |
+| 28 | rlens | 100 | -4.456 | -3.250 | 0.125 |
+
 ## Figures
 
 - `results/figures/workspace_lens_passk_starcoder2-3b.png`
 - `results/figures/workspace_lens_rank_starcoder2-3b.png`
 - `results/figures/workspace_lens_earliest_starcoder2-3b.png`
+- `results/figures/workspace_lens_ablation_starcoder2-3b.png`
 
