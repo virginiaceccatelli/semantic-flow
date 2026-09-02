@@ -1,0 +1,41 @@
+{
+  "stage": "105_binding_ceiling",
+  "timestamp": "20260902_081114",
+  "git_sha": "d0e4309",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/105_binding_ceiling.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--layers",
+    "6,12,18"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "layers": "[6, 12, 18]",
+    "sites": "def_source,def_target,mutation,use",
+    "dtype": "float16",
+    "seed": "42"
+  },
+  "wall_time_s": 186.9,
+  "extra": {
+    "H3": true,
+    "site": "use",
+    "layer": 6,
+    "structural_zeros": {
+      "noop": {
+        "max_abs_delta_ld": 0.0156252384185791,
+        "passed": false,
+        "n": 19200
+      },
+      "pre_mutation_whole_state": {
+        "max_abs_delta_ld": 0.03125,
+        "passed": false,
+        "n": 4800
+      }
+    },
+    "gates_required": "H0,H1,H2",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

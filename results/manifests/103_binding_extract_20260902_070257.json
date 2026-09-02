@@ -1,0 +1,41 @@
+{
+  "stage": "103_binding_extract",
+  "timestamp": "20260902_070257",
+  "git_sha": "d0e4309",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/103_binding_extract.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--layers",
+    "6,12,18"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "pairs": "data/synthetic/binding_pairs_deepseek-coder-6.7b.jsonl",
+    "layers": "[6, 12, 18]",
+    "anchors": "def_source,def_target,mutation,use,answer",
+    "dtype": "float16",
+    "n_bases": "400"
+  },
+  "wall_time_s": 143.5,
+  "extra": {
+    "files": [
+      "results/binding/deepseek-coder-6.7b/acts/ab_source_L6.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_source_L12.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_source_L18.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_target_L6.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_target_L12.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ab_target_L18.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_source_L6.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_source_L12.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_source_L18.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_target_L6.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_target_L12.npz",
+      "results/binding/deepseek-coder-6.7b/acts/ba_target_L18.npz"
+    ],
+    "gates_required": "H0,H1",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

@@ -1,6 +1,6 @@
 experiment: E13
 model: deepseek-coder-6.7b
-updated: '2026-08-28 12:28:43'
+updated: '2026-09-02 08:20:37'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -13,7 +13,7 @@ gates:
       (threshold 0.999). Per check: semantics_agree 1.0000, arms_crossed 1.0000, mutation_distance_ok
       1.0000, anchors_ordered 1.0000, values_distinct 1.0000, tokens_distinct 1.0000'
     stage: 101_binding_verify
-    timestamp: '2026-08-10 13:41:21'
+    timestamp: '2026-09-02 06:59:04'
     override: false
     override_reason: ''
     extra:
@@ -32,7 +32,7 @@ gates:
     detail: overall 1.000 [1.000, 1.000] against 0.85; weakest cell ab_source 1.000
       against 0.75
     stage: 102_binding_behaviour
-    timestamp: '2026-08-10 13:42:18'
+    timestamp: '2026-09-02 07:00:15'
     override: false
     override_reason: ''
     extra:
@@ -41,84 +41,83 @@ gates:
     name: H2
     passed: true
     value: 1.0
-    detail: 'best layer 8: binding decodable at 1.000 (selectivity 0.524) against
+    detail: 'best layer 6: binding decodable at 1.000 (selectivity 0.521) against
       a MEASURED surface baseline of 0.500; margin +0.500. Thresholds 0.8 and 0.1.
       The floor is pinned by construction here: the anchor token is identical across
       the counterfactual and the mutation is outside the baseline''s window.'
     stage: 104_binding_decode
-    timestamp: '2026-08-10 13:55:43'
+    timestamp: '2026-09-02 07:33:41'
     override: false
     override_reason: ''
     extra:
-      best_layer: 8
+      best_layer: 6
       surface: 0.5
       anchor: use
       override: false
   H3:
     name: H3
     passed: true
-    value: 4.790164618859333
-    detail: 'site use, layer 8 (both chosen on calibration): ab: +4.781 [+4.683, +4.878],
-      flip rate 0.857; ba: +4.799 [+4.694, +4.903], flip rate 0.879 (thresholds: CI
+    value: 4.020563613836254
+    detail: 'site use, layer 6 (both chosen on calibration): ab: +4.024 [+3.922, +4.134],
+      flip rate 0.738; ba: +4.017 [+3.905, +4.125], flip rate 0.734 (thresholds: CI
       above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says
       nothing.'
     stage: 105_binding_ceiling
-    timestamp: '2026-08-10 15:24:08'
+    timestamp: '2026-09-02 08:11:14'
     override: false
     override_reason: ''
     extra:
       site: use
-      layer: 8
+      layer: 6
       structural_zeros:
         noop:
-          max_abs_delta_ld: 0.0
-          passed: true
-          n: 32000
+          max_abs_delta_ld: 0.0156252384185791
+          passed: false
+          n: 19200
         pre_mutation_whole_state:
-          max_abs_delta_ld: 0.0
-          passed: true
-          n: 8000
+          max_abs_delta_ld: 0.03125
+          passed: false
+          n: 4800
       override: false
   H4:
     name: H4
     passed: true
-    value: 1.888461584268005
-    detail: 'ab @ use L8 r1: +9.029 [+8.952, +9.108] = 189% of the whole-state ceiling
-      +4.781 (threshold 50%); controls cleared: True; edit moved 0.479 of ||h||'
+    value: 2.0147409268682055
+    detail: 'ab @ use L6 r1: +8.115 [+8.037, +8.195] = 201% of the whole-state ceiling
+      +4.028 (threshold 50%); controls cleared: True; edit |18.480| = 0.416 of ||h||'
     stage: 106_binding_interchange
-    timestamp: '2026-08-13 11:49:05'
+    timestamp: '2026-09-02 08:20:37'
     override: false
     override_reason: ''
     extra:
       site: use
-      layer: 8
+      layer: 6
       rank: 1
       override: false
   H5:
     name: H5
     passed: true
-    value: 1.1382113821138211
-    detail: "ba @ use L8 r1: das_binding installed 100.0% = 114% of the held-out ceiling\
-      \ (threshold 50%); margin +9.009 [+8.933, +9.089] = 188% of it; discriminator\
-      \ \u2014 answer_direction ab +2.322 [+2.157, +2.482], installed 27.9% (passes:\
-      \ True); ba/ab argmax ratio 0.154 against transport's 1.025 (bar 0.513) (fails:\
-      \ True)"
+    value: 1.3725490196078431
+    detail: "ba @ use L6 r1: das_binding installed 100.0% = 137% of the held-out ceiling\
+      \ (threshold 50%); margin +8.089 [+8.003, +8.173] = 201% of it; discriminator\
+      \ \u2014 answer_direction_jlens ab +0.096 [+0.080, +0.113], installed 0.0% (passes:\
+      \ True); ba -0.008 [-0.026, +0.010] (fails: True)"
     stage: 106_binding_interchange
-    timestamp: '2026-08-13 11:49:05'
+    timestamp: '2026-09-02 08:20:37'
     override: false
     override_reason: ''
     extra:
       site: use
-      layer: 8
+      layer: 6
       rank: 1
       structural_zeros:
         noop:
-          max_abs_delta_ld: 0.0
-          passed: true
+          max_abs_delta_ld: 0.25
+          passed: false
           n: 1360
         pre_mutation_whole_state:
-          max_abs_delta_ld: 0.0
-          passed: true
+          max_abs_delta_ld: 0.25
+          passed: false
           n: 240
       override: false
   H6:

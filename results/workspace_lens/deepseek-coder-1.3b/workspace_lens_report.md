@@ -187,6 +187,34 @@ Change in the **model's own** logit difference between the target and distractor
 | 20 | jlens_vs_logit | 200 | +0.204 | [+0.149, +0.270] | * |
 | 20 | rlens_vs_jlens | 200 | -0.091 | [-0.121, -0.063] | * |
 
+
+## Semantic-concept vocabulary panel
+
+A **separate** question from runtime-value recovery: does the lens surface the *language of binding* at the four predeclared read positions? Predeclared concept sets, matched generic-code and random controls, and positional wording carried as a confound diagnostic rather than as semantics. Full panel: `results/workspace_lens/deepseek-coder-1.3b/concepts/workspace_lens_concepts.md`.
+
+| read | family | j-lens | r-lens | logit lens |
+|---|---|---|---|---|
+| use | binding_concept | 0.415 | 0.674 | 0.438 |
+| use | generic_code | 0.210 | 0.379 | 0.879 |
+| use | positional | 0.500 | 0.500 | 0.000 |
+| use | random_concepts | 0.000 | 0.000 | 0.000 |
+| post_use | binding_concept | 0.500 | 0.496 | 0.522 |
+| post_use | generic_code | 0.054 | 0.062 | 0.732 |
+| post_use | positional | 0.000 | 0.000 | 0.000 |
+| post_use | random_concepts | 0.000 | 0.000 | 0.000 |
+| call | binding_concept | 0.000 | 0.000 | 0.000 |
+| call | generic_code | 0.134 | 0.143 | 0.004 |
+| call | positional | 0.004 | 0.000 | 0.000 |
+| call | random_concepts | 0.000 | 0.000 | 0.000 |
+| answer | binding_concept | 0.353 | 0.406 | 0.710 |
+| answer | generic_code | 0.621 | 0.241 | 0.219 |
+| answer | positional | 0.000 | 0.000 | 0.000 |
+| answer | random_concepts | 0.000 | 0.000 | 0.000 |
+
+(best pass@10 over layers; `positional` is a confound diagnostic, never a binding positive)
+
+**SUPPORTED** — predeclared binding concepts separate the arms in both value arms, agree in sign, are invariant to the literal, and beat every matched control
+
 ## Figures
 
 - `results/figures/workspace_lens_passk_deepseek-coder-1.3b.png`
