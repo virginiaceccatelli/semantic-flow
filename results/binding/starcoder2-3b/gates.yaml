@@ -1,6 +1,6 @@
 experiment: E13
 model: starcoder2-3b
-updated: '2026-08-24 15:08:51'
+updated: '2026-09-02 12:28:03'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -57,67 +57,100 @@ gates:
   H3:
     name: H3
     passed: true
-    value: 1.745535714259105
-    detail: 'site use, layer 11 (both chosen on calibration): ab: +1.729 [+1.671,
-      +1.788], flip rate 0.659; ba: +1.762 [+1.704, +1.820], flip rate 0.662 (thresholds:
+    value: 1.6434570297066655
+    detail: 'site use, layer 12 (both chosen on calibration): ab: +1.627 [+1.568,
+      +1.683], flip rate 0.596; ba: +1.660 [+1.602, +1.718], flip rate 0.632 (thresholds:
       CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says
       nothing.'
     stage: 105_binding_ceiling
-    timestamp: '2026-08-19 18:53:50'
+    timestamp: '2026-09-02 12:10:28'
     override: false
     override_reason: ''
     extra:
       site: use
-      layer: 11
+      layer: 12
       structural_zeros:
         noop:
-          max_abs_delta_ld: 0.0625
-          passed: false
+          max_abs_delta_ld: 0.0
+          passed: true
+          tolerance: 0.0001
           n: 19200
+          max_abs_edit_norm: 0.0
+          edit_is_the_zero_vector: true
+          max_abs_clean_path_shift: 0.0625
         pre_mutation_whole_state:
-          max_abs_delta_ld: 0.0625
-          passed: false
+          max_abs_delta_ld: 0.0
+          passed: true
+          tolerance: 0.0001
           n: 4800
+          max_abs_edit_norm: 0.0
+          edit_is_the_zero_vector: true
+          max_abs_clean_path_shift: 0.0625
       override: false
   H4:
     name: H4
     passed: true
-    value: 4.3397114556449745
-    detail: 'ab @ use L11 r1: +7.512 [+7.437, +7.586] = 434% of the whole-state ceiling
-      +1.731 (threshold 50%); controls cleared: True; edit moved 0.478 of ||h||'
+    value: 4.7572795631918146
+    detail: 'ab @ use L12 r1: +7.740 [+7.662, +7.816] = 476% of the whole-state ceiling
+      +1.627 (threshold 50%); controls cleared: True; edit |14.884| = 0.466 of ||h||'
     stage: 106_binding_interchange
-    timestamp: '2026-08-24 15:08:51'
+    timestamp: '2026-09-02 12:28:03'
     override: false
     override_reason: ''
     extra:
       site: use
-      layer: 11
+      layer: 12
       rank: 1
+      structural_zeros:
+        noop:
+          max_abs_delta_ld: 0.0
+          passed: true
+          tolerance: 0.0001
+          n: 1360
+          max_abs_edit_norm: 0.0
+          edit_is_the_zero_vector: true
+          max_abs_clean_path_shift: 0.03125011920928955
+        pre_mutation_whole_state:
+          max_abs_delta_ld: 0.0
+          passed: true
+          tolerance: 0.0001
+          n: 240
+          max_abs_edit_norm: 0.0
+          edit_is_the_zero_vector: true
+          max_abs_clean_path_shift: 0.03125011920928955
       override: false
   H5:
     name: H5
     passed: true
-    value: 1.4854111405835542
-    detail: "ba @ use L11 r1: das_binding installed 100.0% = 149% of the held-out\
-      \ ceiling (threshold 50%); margin +7.528 [+7.454, +7.597] = 427% of it; discriminator\
-      \ \u2014 answer_direction ab +1.674 [+1.512, +1.827], installed 44.8% (passes:\
-      \ True); ba/ab argmax ratio 0.410 against transport's 0.979 (bar 0.490) (fails:\
+    value: 1.5469613259668507
+    detail: "ba @ use L12 r1: das_binding installed 100.0% = 155% of the held-out\
+      \ ceiling (threshold 50%); margin +7.765 [+7.693, +7.834] = 468% of it; discriminator\
+      \ \u2014 answer_direction_jlens ab +0.207 [+0.191, +0.224], installed 4.6% (passes:\
+      \ True); ba/ab argmax ratio 0.346 against transport's 1.031 (bar 0.516) (fails:\
       \ True)"
     stage: 106_binding_interchange
-    timestamp: '2026-08-24 15:08:51'
+    timestamp: '2026-09-02 12:28:03'
     override: false
     override_reason: ''
     extra:
       site: use
-      layer: 11
+      layer: 12
       rank: 1
       structural_zeros:
         noop:
-          max_abs_delta_ld: 0.0625
-          passed: false
+          max_abs_delta_ld: 0.0
+          passed: true
+          tolerance: 0.0001
           n: 1360
+          max_abs_edit_norm: 0.0
+          edit_is_the_zero_vector: true
+          max_abs_clean_path_shift: 0.03125011920928955
         pre_mutation_whole_state:
-          max_abs_delta_ld: 0.031250059604644775
-          passed: false
+          max_abs_delta_ld: 0.0
+          passed: true
+          tolerance: 0.0001
           n: 240
+          max_abs_edit_norm: 0.0
+          edit_is_the_zero_vector: true
+          max_abs_clean_path_shift: 0.03125011920928955
       override: false

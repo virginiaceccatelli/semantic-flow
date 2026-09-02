@@ -1,6 +1,6 @@
 # E13 binding interchange — deepseek-coder-6.7b
 
-**Verdict: MACHINERY BROKEN — NO VERDICT**
+**Verdict: BINDING TRANSPORTED**
 
 Does a low-rank, magnitude-free interchange at the site where a variable binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token or an answer direction?
 
@@ -13,20 +13,14 @@ The same binding flip demands opposite token movements in the two value assignme
 - **PASS** `H0` (the four-program factorial verifies: invariants, alignment, execution truth) — 1.0000 of 400 bases agree with an independent interpreter and satisfy every invariant, including the arm crossing that makes the held-out test a falsification (threshold 0.999). Per check: semantics_agree 1.0000, arms_crossed 1.0000, mutation_distance_ok 1.0000, anchors_ordered 1.0000, values_distinct 1.0000, tokens_distinct 1.0000
 - **PASS** `H1` (the model returns the correctly bound variable (behavioural accuracy)) — overall 1.000 [1.000, 1.000] against 0.85; weakest cell ab_source 1.000 against 0.75
 - **PASS** `H2` (which definition is in scope is decodable at the use anchor) — best layer 6: binding decodable at 1.000 (selectivity 0.521) against a MEASURED surface baseline of 0.500; margin +0.500. Thresholds 0.8 and 0.1. The floor is pinned by construction here: the anchor token is identical across the counterfactual and the mutation is outside the baseline's window.
-- **PASS** `H3` (whole-state interchange flips the answer — the ceiling, per arm) — site use, layer 6 (both chosen on calibration): ab: +4.024 [+3.922, +4.134], flip rate 0.738; ba: +4.017 [+3.905, +4.125], flip rate 0.734 (thresholds: CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says nothing.
-- **PASS** `H4` (low-rank interchange beats matched controls on the TRAINING arm) — ab @ use L6 r1: +8.115 [+8.037, +8.195] = 201% of the whole-state ceiling +4.028 (threshold 50%); controls cleared: True; edit |18.480| = 0.416 of ||h||
-- **PASS** `H5` (the same subspace transfers to the HELD-OUT value assignment, where an answer direction cannot) — ba @ use L6 r1: das_binding installed 100.0% = 137% of the held-out ceiling (threshold 50%); margin +8.089 [+8.003, +8.173] = 201% of it; discriminator — answer_direction_jlens ab +0.096 [+0.080, +0.113], installed 0.0% (passes: True); ba -0.008 [-0.026, +0.010] (fails: True)
+- **PASS** `H3` (whole-state interchange flips the answer — the ceiling, per arm) — site use, layer 6 (both chosen on calibration): ab: +4.025 [+3.923, +4.135], flip rate 0.738; ba: +4.017 [+3.905, +4.125], flip rate 0.734 (thresholds: CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says nothing.
+- **PASS** `H4` (low-rank interchange beats matched controls on the TRAINING arm) — ab @ use L6 r1: +8.119 [+8.040, +8.199] = 202% of the whole-state ceiling +4.025 (threshold 50%); controls cleared: True; edit |18.457| = 0.416 of ||h||
+- **PASS** `H5` (the same subspace transfers to the HELD-OUT value assignment, where an answer direction cannot) — ba @ use L6 r1: das_binding installed 100.0% = 136% of the held-out ceiling (threshold 50%); margin +8.096 [+8.014, +8.179] = 202% of it; discriminator — answer_direction_jlens ab +0.098 [+0.083, +0.113], installed 0.0% (passes: True); ba -0.010 [-0.028, +0.007] (fails: True)
 - **PASS** `H6` (the relevance readout is mechanically sound: the LRP rules actually installed so relevance conserves, the token roles partition every token exactly once, the per-role deltas close to the difference of the two conservation ratios, every binding_flip pair differs at exactly one measured token index, the fixed-target conditions really do score both members at one token, and every declared cell exists) — 25600 readings and 51200 paired contrasts over 4 contrasts x 8 layers x 4 target conditions; median |rho-1| 8.61e-08; conserving layers [0, 3, 7, 11, 15, 19, 23, 27]; LRP rules bound {'ln': 65, 'mlp': 32, 'attn': 32}
 - **PASS** `H7` (the candidate vocabulary is mechanically sound: every declared lexicon pair is kept whole or dropped whole with a reason, enough pairs survive from more than one family, discovery ran on calibration bases only and the frozen file records which, and the candidate set contains the lexicon, the discovered pool and the random controls without duplicates) — 10 lexicon pairs from 4 families, 15 mechanism words, 221 candidates (160 discovered, 32 random) over 120 calib bases
 - **PASS** `H8` (the forced choice is mechanically sound: every declared (base, cell, question) is scored, the rendered question is identical in all four cells of a base, no question names the inner definition, both choices are distinct single tokens, both variants of every word style ran, and the value positive control ran) — 14400 scored choices over 9 questions x 400 bases x 4 cells; report split test
 - **PASS** `H9` (the verbalisation relevance readout is mechanically sound: H6's checks on the verbalisation prompt, plus a positive-score condition — `R_t / s` is a share only when the score is positive, and conservation holds for negative scores too) — 38400 readings and 64000 paired contrasts over 4 contrasts x 8 layers x 5 target conditions for scope/direct; median |rho-1| 1.27e-07; readable layers [0, 3, 7, 11, 15, 19, 23, 27]; LRP rules bound {'ln': 65, 'mlp': 32, 'attn': 32}
 - **PASS** `H10` (the unprompted vocabulary readout is mechanically sound: every declared lexicon pair kept whole or dropped whole with a reason, the candidate row order the margin arithmetic assumes, all three readouts carrying the same rows with their kinds declared and the random control actually Gram-matched, the scored text being E13's program verbatim with the encodings agreeing through the use position, the use token identical in all four cells, every declared cell present in both arms over the declared layer grid, and the positive control fitted on calibration and read on test) — 108000 reversal rows over 400 bases x 2 arms x 5 layers x 3 readouts x 9 pairs; probe succeeds at layers [8, 12, 16, 20, 24]; report split test
-
-## Diagnostic
-
-STRUCTURAL ZEROS FAILED — H3/noop: max |Δ logit-diff| = 1.56e-02 over 19200 rows, against a tolerance of 1e-04; H3/pre_mutation_whole_state: max |Δ logit-diff| = 3.12e-02 over 4800 rows, against a tolerance of 1e-04; H5/noop: max |Δ logit-diff| = 2.50e-01 over 1360 rows, against a tolerance of 1e-04; H5/pre_mutation_whole_state: max |Δ logit-diff| = 2.50e-01 over 240 rows, against a tolerance of 1e-04. These are provable zeros: the no-op edit is the zero vector and the pre-mutation site's host and donor are the same state, so the model's output cannot move. Movement means the clean and patched log-probs did not come from the same execution path (a float16 LM-head matmul is a different kernel at a different batch shape, and one fp16 ulp at |logit| ~ 64 is 0.0625 — powers of two in this column are quantization, not transport), or the hooks, anchors or dtypes are wrong. No claim from this run is licensed, including the ones that look good.
-
-Re-run after fixing: `make binding-ceiling MODEL=deepseek-coder-6.7b && make binding-interchange MODEL=deepseek-coder-6.7b && make binding-report MODEL=deepseek-coder-6.7b`
 
 ## Controls — both arms
 
@@ -34,22 +28,22 @@ Re-run after fixing: `make binding-ceiling MODEL=deepseek-coder-6.7b && make bin
 
 | arm | variant | delta_ld | 95% CI | installed | flip | \|edit\| | \|edit\|/\|h\| | vs das (paired, 95% CI) | n | bases |
 |---|---|---|---|---|---|---|---|---|---|---|
-| ab | `das_binding` | +8.115 | [+8.037, +8.195] | 100.0% | 100.0% | 18.480 | 0.416 | — | 560 | 280 |
-| ab | `answer_direction_jlens` | +0.096 | [+0.080, +0.113] | 0.0% | 0.0% | 18.480 | 0.416 | +8.019 [+7.944, +8.094] | 560 | 280 |
-| ab | `answer_direction_rlens` | +0.098 | [+0.081, +0.115] | 0.0% | 0.0% | 18.480 | 0.416 | +8.017 [+7.940, +8.096] | 560 | 280 |
-| ab | `answer_direction_unembedding` | +0.003 | [-0.009, +0.016] | 0.0% | 0.0% | 18.480 | 0.416 | +8.112 [+8.032, +8.196] | 560 | 280 |
-| ab | `mean_difference` | +3.733 | [+3.624, +3.840] | 68.4% | 68.0% | 25.689 | 0.579 | +4.382 [+4.276, +4.498] | 560 | 280 |
-| ab | `random_rank` | -0.004 | [-0.011, +0.002] | 0.0% | 0.0% | 0.590 | 0.013 | +8.120 [+8.041, +8.200] | 560 | 280 |
-| ab | `random_norm` | +0.607 | [+0.530, +0.683] | 2.0% | 2.0% | 19.852 | 0.447 | +7.508 [+7.392, +7.624] | 560 | 280 |
-| ab | `whole_state` | +4.028 | [+3.925, +4.135] | 72.7% | 72.1% | 30.907 | 0.696 | +4.087 [+3.974, +4.204] | 560 | 280 |
-| ba | `das_binding` | +8.089 | [+8.003, +8.173] | 100.0% | 100.0% | 18.477 | 0.416 | — | 560 | 280 |
-| ba | `answer_direction_jlens` | -0.008 | [-0.026, +0.010] | 0.0% | 0.0% | 18.477 | 0.416 | +8.097 [+8.010, +8.183] | 560 | 280 |
-| ba | `answer_direction_rlens` | +0.042 | [+0.023, +0.061] | 0.0% | 0.0% | 18.477 | 0.416 | +8.047 [+7.963, +8.132] | 560 | 280 |
-| ba | `answer_direction_unembedding` | +0.071 | [+0.060, +0.083] | 0.0% | 0.0% | 18.477 | 0.416 | +8.018 [+7.933, +8.104] | 560 | 280 |
-| ba | `mean_difference` | +3.725 | [+3.617, +3.838] | 67.5% | 67.0% | 25.693 | 0.579 | +4.364 [+4.259, +4.467] | 560 | 280 |
-| ba | `random_rank` | -0.004 | [-0.009, +0.002] | 0.0% | 0.0% | 0.586 | 0.013 | +8.093 [+8.008, +8.176] | 560 | 280 |
-| ba | `random_norm` | +0.546 | [+0.477, +0.625] | 2.0% | 2.0% | 19.640 | 0.442 | +7.544 [+7.422, +7.657] | 560 | 280 |
-| ba | `whole_state` | +4.017 | [+3.904, +4.125] | 72.9% | 72.1% | 30.931 | 0.696 | +4.072 [+3.966, +4.181] | 560 | 280 |
+| ab | `das_binding` | +8.119 | [+8.040, +8.199] | 100.0% | 100.0% | 18.457 | 0.416 | — | 560 | 280 |
+| ab | `answer_direction_jlens` | +0.098 | [+0.083, +0.113] | 0.0% | 0.0% | 18.457 | 0.416 | +8.020 [+7.946, +8.095] | 560 | 280 |
+| ab | `answer_direction_rlens` | +0.095 | [+0.079, +0.111] | 0.0% | 0.0% | 18.457 | 0.416 | +8.024 [+7.946, +8.103] | 560 | 280 |
+| ab | `answer_direction_unembedding` | +0.004 | [-0.006, +0.014] | 0.0% | 0.0% | 18.457 | 0.416 | +8.114 [+8.035, +8.197] | 560 | 280 |
+| ab | `mean_difference` | +3.732 | [+3.625, +3.839] | 68.2% | 68.2% | 25.677 | 0.579 | +4.386 [+4.282, +4.500] | 560 | 280 |
+| ab | `random_rank` | -0.001 | [-0.001, +0.000] | 0.0% | 0.0% | 0.588 | 0.013 | +8.119 [+8.041, +8.200] | 560 | 280 |
+| ab | `random_norm` | +0.542 | [+0.474, +0.614] | 1.6% | 1.4% | 19.682 | 0.444 | +7.577 [+7.472, +7.681] | 560 | 280 |
+| ab | `whole_state` | +4.025 | [+3.923, +4.135] | 73.8% | 73.8% | 30.911 | 0.697 | +4.093 [+3.983, +4.211] | 560 | 280 |
+| ba | `das_binding` | +8.096 | [+8.014, +8.179] | 100.0% | 100.0% | 18.452 | 0.416 | — | 560 | 280 |
+| ba | `answer_direction_jlens` | -0.010 | [-0.028, +0.007] | 0.0% | 0.0% | 18.452 | 0.416 | +8.107 [+8.019, +8.192] | 560 | 280 |
+| ba | `answer_direction_rlens` | +0.043 | [+0.025, +0.060] | 0.0% | 0.0% | 18.452 | 0.416 | +8.054 [+7.969, +8.135] | 560 | 280 |
+| ba | `answer_direction_unembedding` | +0.074 | [+0.065, +0.083] | 0.0% | 0.0% | 18.452 | 0.416 | +8.023 [+7.939, +8.107] | 560 | 280 |
+| ba | `mean_difference` | +3.729 | [+3.622, +3.842] | 67.5% | 67.5% | 25.675 | 0.579 | +4.367 [+4.265, +4.470] | 560 | 280 |
+| ba | `random_rank` | -0.001 | [-0.002, -0.000] | 0.0% | 0.0% | 0.584 | 0.013 | +8.098 [+8.015, +8.180] | 560 | 280 |
+| ba | `random_norm` | +0.532 | [+0.461, +0.604] | 1.8% | 1.8% | 19.673 | 0.443 | +7.565 [+7.450, +7.675] | 560 | 280 |
+| ba | `whole_state` | +4.017 | [+3.905, +4.125] | 73.4% | 73.4% | 30.927 | 0.697 | +4.079 [+3.973, +4.186] | 560 | 280 |
 
 | variant | what it is |
 |---|---|

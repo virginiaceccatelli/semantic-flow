@@ -1,6 +1,6 @@
 experiment: E13
 model: deepseek-coder-6.7b
-updated: '2026-09-02 08:20:37'
+updated: '2026-09-02 12:04:45'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -57,13 +57,13 @@ gates:
   H3:
     name: H3
     passed: true
-    value: 4.020563613836254
-    detail: 'site use, layer 6 (both chosen on calibration): ab: +4.024 [+3.922, +4.134],
+    value: 4.021219307237438
+    detail: 'site use, layer 6 (both chosen on calibration): ab: +4.025 [+3.923, +4.135],
       flip rate 0.738; ba: +4.017 [+3.905, +4.125], flip rate 0.734 (thresholds: CI
       above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says
       nothing.'
     stage: 105_binding_ceiling
-    timestamp: '2026-09-02 08:11:14'
+    timestamp: '2026-09-02 11:27:50'
     override: false
     override_reason: ''
     extra:
@@ -71,39 +71,30 @@ gates:
       layer: 6
       structural_zeros:
         noop:
-          max_abs_delta_ld: 0.0156252384185791
-          passed: false
+          max_abs_delta_ld: 0.0
+          passed: true
+          tolerance: 0.0001
           n: 19200
+          max_abs_edit_norm: 0.0
+          edit_is_the_zero_vector: true
+          max_abs_clean_path_shift: 0.0156252384185791
         pre_mutation_whole_state:
-          max_abs_delta_ld: 0.03125
-          passed: false
+          max_abs_delta_ld: 0.0
+          passed: true
+          tolerance: 0.0001
           n: 4800
+          max_abs_edit_norm: 0.0
+          edit_is_the_zero_vector: true
+          max_abs_clean_path_shift: 0.03125
       override: false
   H4:
     name: H4
     passed: true
-    value: 2.0147409268682055
-    detail: 'ab @ use L6 r1: +8.115 [+8.037, +8.195] = 201% of the whole-state ceiling
-      +4.028 (threshold 50%); controls cleared: True; edit |18.480| = 0.416 of ||h||'
+    value: 2.0169203682700707
+    detail: 'ab @ use L6 r1: +8.119 [+8.040, +8.199] = 202% of the whole-state ceiling
+      +4.025 (threshold 50%); controls cleared: True; edit |18.457| = 0.416 of ||h||'
     stage: 106_binding_interchange
-    timestamp: '2026-09-02 08:20:37'
-    override: false
-    override_reason: ''
-    extra:
-      site: use
-      layer: 6
-      rank: 1
-      override: false
-  H5:
-    name: H5
-    passed: true
-    value: 1.3725490196078431
-    detail: "ba @ use L6 r1: das_binding installed 100.0% = 137% of the held-out ceiling\
-      \ (threshold 50%); margin +8.089 [+8.003, +8.173] = 201% of it; discriminator\
-      \ \u2014 answer_direction_jlens ab +0.096 [+0.080, +0.113], installed 0.0% (passes:\
-      \ True); ba -0.008 [-0.026, +0.010] (fails: True)"
-    stage: 106_binding_interchange
-    timestamp: '2026-09-02 08:20:37'
+    timestamp: '2026-09-02 12:04:45'
     override: false
     override_reason: ''
     extra:
@@ -112,13 +103,55 @@ gates:
       rank: 1
       structural_zeros:
         noop:
-          max_abs_delta_ld: 0.25
-          passed: false
+          max_abs_delta_ld: 0.0
+          passed: true
+          tolerance: 0.0001
           n: 1360
+          max_abs_edit_norm: 0.0
+          edit_is_the_zero_vector: true
+          max_abs_clean_path_shift: 0.03125
         pre_mutation_whole_state:
-          max_abs_delta_ld: 0.25
-          passed: false
+          max_abs_delta_ld: 0.0
+          passed: true
+          tolerance: 0.0001
           n: 240
+          max_abs_edit_norm: 0.0
+          edit_is_the_zero_vector: true
+          max_abs_clean_path_shift: 0.03125
+      override: false
+  H5:
+    name: H5
+    passed: true
+    value: 1.3625304136253042
+    detail: "ba @ use L6 r1: das_binding installed 100.0% = 136% of the held-out ceiling\
+      \ (threshold 50%); margin +8.096 [+8.014, +8.179] = 202% of it; discriminator\
+      \ \u2014 answer_direction_jlens ab +0.098 [+0.083, +0.113], installed 0.0% (passes:\
+      \ True); ba -0.010 [-0.028, +0.007] (fails: True)"
+    stage: 106_binding_interchange
+    timestamp: '2026-09-02 12:04:45'
+    override: false
+    override_reason: ''
+    extra:
+      site: use
+      layer: 6
+      rank: 1
+      structural_zeros:
+        noop:
+          max_abs_delta_ld: 0.0
+          passed: true
+          tolerance: 0.0001
+          n: 1360
+          max_abs_edit_norm: 0.0
+          edit_is_the_zero_vector: true
+          max_abs_clean_path_shift: 0.03125
+        pre_mutation_whole_state:
+          max_abs_delta_ld: 0.0
+          passed: true
+          tolerance: 0.0001
+          n: 240
+          max_abs_edit_norm: 0.0
+          edit_is_the_zero_vector: true
+          max_abs_clean_path_shift: 0.03125
       override: false
   H6:
     name: H6

@@ -13,16 +13,14 @@ The same binding flip demands opposite token movements in the two value assignme
 - **PASS** `H0` (the four-program factorial verifies: invariants, alignment, execution truth) — 1.0000 of 400 bases agree with an independent interpreter and satisfy every invariant, including the arm crossing that makes the held-out test a falsification (threshold 0.999). Per check: semantics_agree 1.0000, arms_crossed 1.0000, mutation_distance_ok 1.0000, anchors_ordered 1.0000, values_distinct 1.0000, tokens_distinct 1.0000
 - **PASS** `H1` (the model returns the correctly bound variable (behavioural accuracy)) — overall 0.981 [0.973, 0.988] against 0.85; weakest cell ab_target 0.954 against 0.75
 - **PASS** `H2` (which definition is in scope is decodable at the use anchor) — best layer 7: binding decodable at 1.000 (selectivity 0.519) against a MEASURED surface baseline of 0.500; margin +0.500. Thresholds 0.8 and 0.1. The floor is pinned by construction here: the anchor token is identical across the counterfactual and the mutation is outside the baseline's window.
-- **PASS** `H3` (whole-state interchange flips the answer — the ceiling, per arm) — site use, layer 11 (both chosen on calibration): ab: +1.729 [+1.671, +1.788], flip rate 0.659; ba: +1.762 [+1.704, +1.820], flip rate 0.662 (thresholds: CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says nothing.
-- **PASS** `H4` (low-rank interchange beats matched controls on the TRAINING arm) — ab @ use L11 r1: +7.512 [+7.437, +7.586] = 434% of the whole-state ceiling +1.731 (threshold 50%); controls cleared: True; edit moved 0.478 of ||h||
-- **SUPERSEDED (was PASS)** `H5` (the same subspace transfers to the HELD-OUT value assignment, where an answer direction cannot) — ba @ use L11 r1: das_binding installed 100.0% = 149% of the held-out ceiling (threshold 50%); margin +7.528 [+7.454, +7.597] = 427% of it; discriminator — answer_direction ab +1.674 [+1.512, +1.827], installed 44.8% (passes: True); ba/ab argmax ratio 0.410 against transport's 0.979 (bar 0.490) (fails: True)
+- **PASS** `H3` (whole-state interchange flips the answer — the ceiling, per arm) — site use, layer 12 (both chosen on calibration): ab: +1.627 [+1.568, +1.683], flip rate 0.596; ba: +1.660 [+1.602, +1.718], flip rate 0.632 (thresholds: CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says nothing.
+- **PASS** `H4` (low-rank interchange beats matched controls on the TRAINING arm) — ab @ use L12 r1: +7.740 [+7.662, +7.816] = 476% of the whole-state ceiling +1.627 (threshold 50%); controls cleared: True; edit |14.884| = 0.466 of ||h||
+- **PASS** `H5` (the same subspace transfers to the HELD-OUT value assignment, where an answer direction cannot) — ba @ use L12 r1: das_binding installed 100.0% = 155% of the held-out ceiling (threshold 50%); margin +7.765 [+7.693, +7.834] = 468% of it; discriminator — answer_direction_jlens ab +0.207 [+0.191, +0.224], installed 4.6% (passes: True); ba/ab argmax ratio 0.346 against transport's 1.031 (bar 0.516) (fails: True)
 - **NOT RUN** `H6` (the relevance readout is mechanically sound: the LRP rules actually installed so relevance conserves, the token roles partition every token exactly once, the per-role deltas close to the difference of the two conservation ratios, every binding_flip pair differs at exactly one measured token index, the fixed-target conditions really do score both members at one token, and every declared cell exists) — not recorded
 - **NOT RUN** `H7` (the candidate vocabulary is mechanically sound: every declared lexicon pair is kept whole or dropped whole with a reason, enough pairs survive from more than one family, discovery ran on calibration bases only and the frozen file records which, and the candidate set contains the lexicon, the discovered pool and the random controls without duplicates) — not recorded
 - **NOT RUN** `H8` (the forced choice is mechanically sound: every declared (base, cell, question) is scored, the rendered question is identical in all four cells of a base, no question names the inner definition, both choices are distinct single tokens, both variants of every word style ran, and the value positive control ran) — not recorded
 - **NOT RUN** `H9` (the verbalisation relevance readout is mechanically sound: H6's checks on the verbalisation prompt, plus a positive-score condition — `R_t / s` is a share only when the score is positive, and conservation holds for negative scores too) — not recorded
 - **NOT RUN** `H10` (the unprompted vocabulary readout is mechanically sound: every declared lexicon pair kept whole or dropped whole with a reason, the candidate row order the margin arithmetic assumes, all three readouts carrying the same rows with their kinds declared and the random control actually Gram-matched, the scored text being E13's program verbatim with the encodings agreeing through the use position, the use token identical in all four cells, every declared cell present in both arms over the declared layer grid, and the positive control fitted on calibration and read on test) — not recorded
-
-> **The `H5` line above is archived, not current.** H5's recorded verdict was decided by the ARCHIVED `answer_direction` control — the corpus-averaged cotangent readout stage 106 fitted for itself before 2026-09-01. That is a different estimator from the published J-lens (`docs/WORKSPACE_LENS.md` §1), so the discriminator behind this verdict no longer exists in the pipeline. The number is not translated, rescaled or reused: stage 106 must run again against the stage-201 J-lens artifact.
 
 ## Diagnostic
 
@@ -30,15 +28,49 @@ results/binding/starcoder2-3b/e16_*.csv — MECHANICAL, so a failure is an appar
 
 Re-run after fixing: `python scripts/140_binding_relevance.py --model starcoder2-3b`
 
-## Machinery
+## Controls — both arms
 
-STRUCTURAL ZEROS FAILED — H3/noop: max |Δ logit-diff| = 6.25e-02 over 19200 rows, against a tolerance of 1e-04; H3/pre_mutation_whole_state: max |Δ logit-diff| = 6.25e-02 over 4800 rows, against a tolerance of 1e-04; H5/noop: max |Δ logit-diff| = 6.25e-02 over 1360 rows, against a tolerance of 1e-04; H5/pre_mutation_whole_state: max |Δ logit-diff| = 3.13e-02 over 240 rows, against a tolerance of 1e-04. These are provable zeros: the no-op edit is the zero vector and the pre-mutation site's host and donor are the same state, so the model's output cannot move. Movement means the clean and patched log-probs did not come from the same execution path (a float16 LM-head matmul is a different kernel at a different batch shape, and one fp16 ulp at |logit| ~ 64 is 0.0625 — powers of two in this column are quantization, not transport), or the hooks, anchors or dtypes are wrong. No claim from this run is licensed, including the ones that look good.
+`ab` is the arm the DAS subspace and every fixed answer direction were built on; `ba` is the crossed arm, where the identical binding flip demands the opposite token. `delta_ld` is the paired logit-difference shift with a 95% cluster-bootstrap interval over base programs; `installed` is the full-vocabulary argmax rate, which the gates read because `delta_ld` is positively biased at ceiling accuracy. `|edit|` and `|edit|/|h|` show the dose: every fixed answer direction is matched to the treatment's own per-row edit norm, so no arm is compared against another at a different size. `vs das` is a paired difference on the *same* rows.
 
-> **ARCHIVED.** H5's recorded verdict was decided by the ARCHIVED `answer_direction` control — the corpus-averaged cotangent readout stage 106 fitted for itself before 2026-09-01. That is a different estimator from the published J-lens (`docs/WORKSPACE_LENS.md` §1), so the discriminator behind this verdict no longer exists in the pipeline. The number is not translated, rescaled or reused: stage 106 must run again against the stage-201 J-lens artifact.
+| arm | variant | delta_ld | 95% CI | installed | flip | \|edit\| | \|edit\|/\|h\| | vs das (paired, 95% CI) | n | bases |
+|---|---|---|---|---|---|---|---|---|---|---|
+| ab | `das_binding` | +7.740 | [+7.662, +7.816] | 100.0% | 97.7% | 14.884 | 0.466 | — | 560 | 280 |
+| ab | `answer_direction_jlens` | +0.207 | [+0.191, +0.224] | 4.6% | 2.1% | 14.884 | 0.466 | +7.533 [+7.455, +7.607] | 560 | 280 |
+| ab | `answer_direction_rlens` | +0.569 | [+0.532, +0.606] | 11.8% | 9.5% | 14.884 | 0.466 | +7.172 [+7.094, +7.246] | 560 | 280 |
+| ab | `answer_direction_rlens_paperminimal` | +0.589 | [+0.549, +0.630] | 13.0% | 10.5% | 14.884 | 0.466 | +7.151 [+7.072, +7.227] | 560 | 280 |
+| ab | `answer_direction_unembedding` | +0.156 | [+0.137, +0.173] | 4.1% | 2.0% | 14.884 | 0.466 | +7.585 [+7.507, +7.658] | 560 | 280 |
+| ab | `mean_difference` | +1.066 | [+1.025, +1.107] | 47.1% | 44.8% | 22.252 | 0.697 | +6.674 [+6.604, +6.742] | 560 | 280 |
+| ab | `random_rank` | +0.003 | [+0.002, +0.005] | 2.3% | 0.0% | 0.422 | 0.013 | +7.737 [+7.658, +7.813] | 560 | 280 |
+| ab | `random_norm` | +0.417 | [+0.379, +0.454] | 21.2% | 18.4% | 16.441 | 0.515 | +7.323 [+7.241, +7.402] | 560 | 280 |
+| ab | `whole_state` | +1.627 | [+1.568, +1.683] | 62.7% | 59.6% | 24.951 | 0.781 | +6.113 [+6.031, +6.189] | 560 | 280 |
+| ba | `das_binding` | +7.765 | [+7.693, +7.834] | 100.0% | 98.8% | 14.910 | 0.467 | — | 560 | 280 |
+| ba | `answer_direction_jlens` | +0.032 | [+0.016, +0.050] | 1.6% | 0.4% | 14.910 | 0.467 | +7.733 [+7.661, +7.804] | 560 | 280 |
+| ba | `answer_direction_rlens` | +0.447 | [+0.410, +0.481] | 8.0% | 6.8% | 14.910 | 0.467 | +7.318 [+7.242, +7.392] | 560 | 280 |
+| ba | `answer_direction_rlens_paperminimal` | +0.465 | [+0.428, +0.503] | 8.4% | 7.3% | 14.910 | 0.467 | +7.300 [+7.225, +7.372] | 560 | 280 |
+| ba | `answer_direction_unembedding` | +0.105 | [+0.087, +0.124] | 1.8% | 0.4% | 14.910 | 0.467 | +7.660 [+7.588, +7.727] | 560 | 280 |
+| ba | `mean_difference` | +1.078 | [+1.039, +1.117] | 45.9% | 44.3% | 22.290 | 0.698 | +6.687 [+6.618, +6.752] | 560 | 280 |
+| ba | `random_rank` | +0.004 | [+0.002, +0.005] | 1.4% | 0.0% | 0.419 | 0.013 | +7.761 [+7.689, +7.831] | 560 | 280 |
+| ba | `random_norm` | +0.423 | [+0.388, +0.458] | 22.3% | 20.5% | 16.425 | 0.514 | +7.342 [+7.267, +7.415] | 560 | 280 |
+| ba | `whole_state` | +1.660 | [+1.602, +1.718] | 64.6% | 63.2% | 24.984 | 0.783 | +6.105 [+6.026, +6.185] | 560 | 280 |
 
-## Controls
+| variant | what it is |
+|---|---|
+| `das_binding` | the treatment — a learned low-rank interchange |
+| `answer_direction_jlens` | PUBLISHED J-lens answer direction (H5's discriminator) |
+| `answer_direction_rlens` | published R-lens answer direction (descriptive) |
+| `answer_direction_rlens_paperminimal` | paper-minimal R-lens sensitivity arm (StarCoder2; LayerNorm analogue off) |
+| `answer_direction_unembedding` | raw unembedding rows — no transport (floor) |
+| `mean_difference` | difference-in-means direction — the no-optimiser baseline |
+| `random_rank` | a random subspace of the same rank |
+| `random_norm` | a random subspace matched to the treatment's edit fraction |
+| `whole_state` | the whole-state ceiling — what transport looks like here |
 
-No `interchange_panel.csv`. Stage 106 has not been re-run since the answer-direction control moved to the published J-lens (2026-09-01), so there is no current control table to show. The archived `answer_direction` numbers from earlier runs are **not** substituted here: that arm is a different estimator (`docs/WORKSPACE_LENS.md` §1). Re-run `make binding-interchange` after `make lens-fit`.
+### How to read it
+
+1. **DAS follows binding** if it succeeds in *both* crossed arms.
+2. **A fixed answer direction** should work in the training arm `ab` and attenuate or reverse in the crossed arm `ba` — it was built from `ab`'s required movement and held fixed.
+3. If `answer_direction_jlens` **also succeeds like DAS in both arms**, H5 does not distinguish binding transport from a lens-visible answer direction, and the causal verdict must not pass.
+4. `answer_direction_rlens` provides the same secondary diagnostic through the published R-lens. It is reported, not gated.
 
 ## Do not claim
 

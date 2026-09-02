@@ -1,0 +1,186 @@
+{
+  "stage": "106_binding_interchange",
+  "timestamp": "20260902_122803",
+  "git_sha": "f7d852a",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/106_binding_interchange.py",
+    "--model",
+    "starcoder2-3b",
+    "--ranks",
+    "1,2,4,8",
+    "--dtype",
+    "float16",
+    "--jlens",
+    "results/workspace_lens/starcoder2-3b/j-lens",
+    "--rlens",
+    "results/workspace_lens/starcoder2-3b/r-lens",
+    "--require-rlens",
+    "--rlens-paperminimal",
+    "auto"
+  ],
+  "args": {
+    "model": "starcoder2-3b",
+    "layers": "[12]",
+    "ranks": "1,2,4,8",
+    "site": "use",
+    "selected_layer": "12",
+    "selected_rank": "1",
+    "steps": "200",
+    "dtype": "float16",
+    "seed": "42",
+    "batch_size": "8",
+    "grid_batch_size": "32",
+    "variants": "das_binding,mean_difference,answer_direction_jlens,answer_direction_rlens,answer_direction_unembedding,random_rank,random_norm,noop,whole_state,answer_direction_rlens_paperminimal",
+    "jlens": "results/workspace_lens/starcoder2-3b/j-lens",
+    "rlens": "results/workspace_lens/starcoder2-3b/r-lens",
+    "require_rlens": "True",
+    "rlens_paperminimal": "auto",
+    "test_all_ranks": "False"
+  },
+  "wall_time_s": 1048.0,
+  "extra": {
+    "H4": true,
+    "H5": true,
+    "train_arm_fraction": 4.7572795631918146,
+    "held_out_fraction": 1.5469613259668507,
+    "answer_direction_lenses": [
+      {
+        "arm": "answer_direction_jlens",
+        "kind": "j-lens",
+        "path": "results/workspace_lens/starcoder2-3b/j-lens/lens.pt",
+        "checksum_sha256": "90fbbc262591f608b4e74c003ffd19bfe3d77da90c1a2e47d65d9bf153bae0e0",
+        "jacobian_lens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+        "estimator": "jlens.fitting.fit (vendored release, unmodified)",
+        "fitting_corpus": {
+          "dataset_id": "NeelNanda/pile-10k",
+          "name": "pile10k-n100",
+          "n_prompts": 100,
+          "digest": "483c1e1743d1293d3953ecdd23b3c23fa3a256ef10983da69076dac379f71482"
+        },
+        "recipe": {
+          "target_layer": 28,
+          "n_layers": 30,
+          "skip_first": 4,
+          "max_seq_len": 128
+        },
+        "relp_flags": null,
+        "fitted_for": {
+          "model": "starcoder2-3b",
+          "hf_id": "bigcode/starcoder2-3b",
+          "d_model": 3072,
+          "dtype": "bfloat16",
+          "tokenizer_class": "PreTrainedTokenizerFast"
+        },
+        "source_layer": 12,
+        "n_tokens": 6,
+        "normalization_gain": {
+          "source": "final_norm.weight",
+          "norm_class": "LayerNorm",
+          "has_gain": true,
+          "has_bias": true,
+          "bias_folded_in": false,
+          "centring_folded_in": false,
+          "compatibility": "E19 readout/ablation (gain only; see WORKSPACE_LENS.md \u00a74.2)"
+        }
+      },
+      {
+        "arm": "answer_direction_rlens",
+        "kind": "r-lens",
+        "path": "results/workspace_lens/starcoder2-3b/r-lens/lens.pt",
+        "checksum_sha256": "38e40d2a063f10cead7e670c14d9175db69a821028687925609273292a158338",
+        "jacobian_lens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+        "estimator": "jlens.fitting.fit (vendored release, unmodified)",
+        "fitting_corpus": {
+          "dataset_id": "NeelNanda/pile-10k",
+          "name": "pile10k-n100",
+          "n_prompts": 100,
+          "digest": "483c1e1743d1293d3953ecdd23b3c23fa3a256ef10983da69076dac379f71482"
+        },
+        "recipe": {
+          "target_layer": 28,
+          "n_layers": 30,
+          "skip_first": 4,
+          "max_seq_len": 128
+        },
+        "relp_flags": {},
+        "fitted_for": {
+          "model": "starcoder2-3b",
+          "hf_id": "bigcode/starcoder2-3b",
+          "d_model": 3072,
+          "dtype": "bfloat16",
+          "tokenizer_class": "PreTrainedTokenizerFast"
+        },
+        "source_layer": 12,
+        "n_tokens": 6,
+        "normalization_gain": {
+          "source": "final_norm.weight",
+          "norm_class": "LayerNorm",
+          "has_gain": true,
+          "has_bias": true,
+          "bias_folded_in": false,
+          "centring_folded_in": false,
+          "compatibility": "E19 readout/ablation (gain only; see WORKSPACE_LENS.md \u00a74.2)"
+        }
+      },
+      {
+        "arm": "answer_direction_rlens_paperminimal",
+        "kind": "r-lens",
+        "path": "results/workspace_lens/starcoder2-3b-paperminimal/r-lens/lens.pt",
+        "checksum_sha256": "4c564a59e66bc54fbd0221b29b6e3c0ff3e24531e3a96efd5993ebc6e7f1bad2",
+        "jacobian_lens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+        "estimator": "jlens.fitting.fit (vendored release, unmodified)",
+        "fitting_corpus": {
+          "dataset_id": "NeelNanda/pile-10k",
+          "name": "pile10k-n100",
+          "n_prompts": 100,
+          "digest": "483c1e1743d1293d3953ecdd23b3c23fa3a256ef10983da69076dac379f71482"
+        },
+        "recipe": {
+          "target_layer": 28,
+          "n_layers": 30,
+          "skip_first": 4,
+          "max_seq_len": 128
+        },
+        "relp_flags": {
+          "ln": false
+        },
+        "fitted_for": {
+          "model": "starcoder2-3b",
+          "hf_id": "bigcode/starcoder2-3b",
+          "d_model": 3072,
+          "dtype": "bfloat16",
+          "tokenizer_class": "PreTrainedTokenizerFast"
+        },
+        "source_layer": 12,
+        "n_tokens": 6,
+        "normalization_gain": {
+          "source": "final_norm.weight",
+          "norm_class": "LayerNorm",
+          "has_gain": true,
+          "has_bias": true,
+          "bias_folded_in": false,
+          "centring_folded_in": false,
+          "compatibility": "E19 readout/ablation (gain only; see WORKSPACE_LENS.md \u00a74.2)"
+        }
+      }
+    ],
+    "normalization_gain": {
+      "source": "final_norm.weight",
+      "norm_class": "LayerNorm",
+      "has_gain": true,
+      "has_bias": true,
+      "bias_folded_in": false,
+      "centring_folded_in": false,
+      "compatibility": "E19 readout/ablation (gain only; see WORKSPACE_LENS.md \u00a74.2)"
+    },
+    "answer_direction_discriminator": "answer_direction_jlens",
+    "rlens_arm_run": true,
+    "rlens_paperminimal_arm_run": true,
+    "answer_direction_arms_not_run": {},
+    "das_is_lens_independent": true,
+    "gates_required": "H0,H1,H2,H3",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

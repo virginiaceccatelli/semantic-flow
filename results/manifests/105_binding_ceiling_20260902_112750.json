@@ -1,0 +1,52 @@
+{
+  "stage": "105_binding_ceiling",
+  "timestamp": "20260902_112750",
+  "git_sha": "f7d852a",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/105_binding_ceiling.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--layers",
+    "6,12,18",
+    "--dtype",
+    "float16",
+    "--strict"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "layers": "[6, 12, 18]",
+    "sites": "def_source,def_target,mutation,use",
+    "dtype": "float16",
+    "seed": "42"
+  },
+  "wall_time_s": 348.6,
+  "extra": {
+    "H3": true,
+    "site": "use",
+    "layer": 6,
+    "structural_zeros": {
+      "noop": {
+        "max_abs_delta_ld": 0.0,
+        "passed": true,
+        "tolerance": 0.0001,
+        "n": 19200,
+        "max_abs_edit_norm": 0.0,
+        "edit_is_the_zero_vector": true,
+        "max_abs_clean_path_shift": 0.0156252384185791
+      },
+      "pre_mutation_whole_state": {
+        "max_abs_delta_ld": 0.0,
+        "passed": true,
+        "tolerance": 0.0001,
+        "n": 4800,
+        "max_abs_edit_norm": 0.0,
+        "edit_is_the_zero_vector": true,
+        "max_abs_clean_path_shift": 0.03125
+      }
+    },
+    "gates_required": "H0,H1,H2",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

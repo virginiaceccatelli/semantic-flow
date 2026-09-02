@@ -1,0 +1,143 @@
+{
+  "stage": "106_binding_interchange",
+  "timestamp": "20260902_120445",
+  "git_sha": "f7d852a",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/106_binding_interchange.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--ranks",
+    "1,2,4,8",
+    "--dtype",
+    "float16",
+    "--jlens",
+    "results/workspace_lens/deepseek-coder-6.7b/j-lens",
+    "--rlens",
+    "results/workspace_lens/deepseek-coder-6.7b/r-lens",
+    "--require-rlens"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "layers": "[6]",
+    "ranks": "1,2,4,8",
+    "site": "use",
+    "selected_layer": "6",
+    "selected_rank": "1",
+    "steps": "200",
+    "dtype": "float16",
+    "seed": "42",
+    "batch_size": "8",
+    "grid_batch_size": "32",
+    "variants": "das_binding,mean_difference,answer_direction_jlens,answer_direction_rlens,answer_direction_unembedding,random_rank,random_norm,noop,whole_state",
+    "jlens": "results/workspace_lens/deepseek-coder-6.7b/j-lens",
+    "rlens": "results/workspace_lens/deepseek-coder-6.7b/r-lens",
+    "require_rlens": "True",
+    "rlens_paperminimal": "None",
+    "test_all_ranks": "False"
+  },
+  "wall_time_s": 2207.6,
+  "extra": {
+    "H4": true,
+    "H5": true,
+    "train_arm_fraction": 2.0169203682700707,
+    "held_out_fraction": 1.3625304136253042,
+    "answer_direction_lenses": [
+      {
+        "arm": "answer_direction_jlens",
+        "kind": "j-lens",
+        "path": "results/workspace_lens/deepseek-coder-6.7b/j-lens/lens.pt",
+        "checksum_sha256": "aa75daa8b3d78a2535129051b52fc082b5b7b2c3c43bdcb13a99d726bab037ed",
+        "jacobian_lens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+        "estimator": "jlens.fitting.fit (vendored release, unmodified)",
+        "fitting_corpus": {
+          "dataset_id": "NeelNanda/pile-10k",
+          "name": "pile10k-n100",
+          "n_prompts": 100,
+          "digest": "483c1e1743d1293d3953ecdd23b3c23fa3a256ef10983da69076dac379f71482"
+        },
+        "recipe": {
+          "target_layer": 30,
+          "n_layers": 32,
+          "skip_first": 4,
+          "max_seq_len": 128
+        },
+        "relp_flags": null,
+        "fitted_for": {
+          "model": "deepseek-coder-6.7b",
+          "hf_id": "deepseek-ai/deepseek-coder-6.7b-base",
+          "d_model": 4096,
+          "dtype": "bfloat16",
+          "tokenizer_class": "PreTrainedTokenizerFast"
+        },
+        "source_layer": 6,
+        "n_tokens": 6,
+        "normalization_gain": {
+          "source": "final_norm.weight",
+          "norm_class": "LlamaRMSNorm",
+          "has_gain": true,
+          "has_bias": false,
+          "bias_folded_in": false,
+          "centring_folded_in": false,
+          "compatibility": "E19 readout/ablation (gain only; see WORKSPACE_LENS.md \u00a74.2)"
+        }
+      },
+      {
+        "arm": "answer_direction_rlens",
+        "kind": "r-lens",
+        "path": "results/workspace_lens/deepseek-coder-6.7b/r-lens/lens.pt",
+        "checksum_sha256": "d4d2bcf2ff856c892c179c0494b902c58908b1f655266655d534a2d23bb43b63",
+        "jacobian_lens_commit": "581d398613e5602a5af361e1c34d3a92ea82ba8e",
+        "estimator": "jlens.fitting.fit (vendored release, unmodified)",
+        "fitting_corpus": {
+          "dataset_id": "NeelNanda/pile-10k",
+          "name": "pile10k-n100",
+          "n_prompts": 100,
+          "digest": "483c1e1743d1293d3953ecdd23b3c23fa3a256ef10983da69076dac379f71482"
+        },
+        "recipe": {
+          "target_layer": 30,
+          "n_layers": 32,
+          "skip_first": 4,
+          "max_seq_len": 128
+        },
+        "relp_flags": {},
+        "fitted_for": {
+          "model": "deepseek-coder-6.7b",
+          "hf_id": "deepseek-ai/deepseek-coder-6.7b-base",
+          "d_model": 4096,
+          "dtype": "bfloat16",
+          "tokenizer_class": "PreTrainedTokenizerFast"
+        },
+        "source_layer": 6,
+        "n_tokens": 6,
+        "normalization_gain": {
+          "source": "final_norm.weight",
+          "norm_class": "LlamaRMSNorm",
+          "has_gain": true,
+          "has_bias": false,
+          "bias_folded_in": false,
+          "centring_folded_in": false,
+          "compatibility": "E19 readout/ablation (gain only; see WORKSPACE_LENS.md \u00a74.2)"
+        }
+      }
+    ],
+    "normalization_gain": {
+      "source": "final_norm.weight",
+      "norm_class": "LlamaRMSNorm",
+      "has_gain": true,
+      "has_bias": false,
+      "bias_folded_in": false,
+      "centring_folded_in": false,
+      "compatibility": "E19 readout/ablation (gain only; see WORKSPACE_LENS.md \u00a74.2)"
+    },
+    "answer_direction_discriminator": "answer_direction_jlens",
+    "rlens_arm_run": true,
+    "rlens_paperminimal_arm_run": false,
+    "answer_direction_arms_not_run": {},
+    "das_is_lens_independent": true,
+    "gates_required": "H0,H1,H2,H3",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}
