@@ -552,24 +552,48 @@ rounding allowance, not a fitted threshold — and **H3, H4 and H5 all carry the
 check as a precondition**: a run whose provable zeros do not hold has produced no
 result, so no claim gate may pass on it.
 
-Making that check mean anything requires the clean and patched log-probs to come
-from the *same execution path*. They did not, until 2026-09-02. The clean
-baseline came from `collect_states`, which runs one prompt per forward call,
-while the patched logits come from a batch of 32 — and in float16 the LM head's
+Making that check mean anything requires the reference and the treatment to run
+through the *same execution path*. They did not, until 2026-09-02, and there
+were **two** distinct faults — the second only visible once the first was fixed.
+
+**Fault one: the logits were compared across batch shapes.** The clean baseline
+came from `collect_states`, which runs one prompt per forward call, while the
+patched logits come from a batch of 32 — and in reduced precision the LM head's
 matmul is a different cuBLAS kernel at a different shape. On DeepSeek-Coder 6.7B
-that surfaced as no-op deltas of exactly 0, ±0.125 and ±0.25: powers of two,
-because one fp16 ulp at |logit| ≈ 64 is 0.0625. The edits in those rows were
-exactly the zero vector (`edit_norm == 0.0`, computed in numpy and unable to be
-affected by anything the GPU does), so the arithmetic was never in doubt — the
-comparison was. `run_grid` now runs a clean pass over the **same batch**, with
-the same hook installed and the same shapes, differing only in the value written
-at the edited position; rows of a batched matmul are independent and the kernel
-is chosen by shape, so a zero edit now yields a bit-identical row and a delta of
-exactly `0.0`. The old discrepancy is retained per row as `batch_shape_shift`,
-so a precision effect that was once mistaken for a failed zero stays visible
-rather than being silently corrected away. The cost is one extra forward pass
-per batch, which at E13's uniform 21-token prompts is the cheapest part of the
-stage. **The tolerance was not widened to fit the failure.**
+that surfaced as no-op deltas of exactly 0, ±0.125 and ±0.25 (bfloat16, one ulp
+at |logit| ≈ 64 being 0.25), and ±0.0156 in the float16 ceiling. The edits in
+those rows were exactly the zero vector — `edit_norm == 0.0`, computed in numpy
+and unable to be affected by anything the GPU does — so the arithmetic was never
+in doubt; the comparison was.
+
+**Fault two: the states are cached at batch 1 and injected at batch 32.**
+`collect_states` captures the residual stream one prompt at a time, and the grid
+writes it back inside a batch, so a cached state differs from the live one by
+about an ulp per component *even when it is the right state*. `noop` hides this
+— its edit is a low-rank projection of that difference, which rounds away, and
+in stage 105 the basis is rank 0 so nothing is written at all — but
+`whole_state` at the pre-mutation site installs the cached state wholesale and
+does not. That is why fixing fault one left `noop` at exactly `0.0` while
+`pre_mutation_whole_state` stayed at `0.03125` with `edit_norm` exactly `0.0`:
+the two conditions were never testing the same thing.
+
+**The fix for both is one change.** The clean reference is now the
+**self-interchange** — each variant's own operator with the donor replaced by
+the host's *own cached state* — run over the same batch as the treatment. In
+exact arithmetic `interchange(h, h, R) == h`, so this is still "no edit"; in
+finite precision the reference and the treatment now carry the identical
+cached-vs-live offset and it cancels out of their difference. At the
+pre-mutation site the donor state *is* the host state bit for bit, so the two
+passes are the same pass and `delta_ld` is exactly `0.0`. Everywhere else the
+measured effect is exactly the donor-minus-host state difference, with the
+injection artifact removed from both sides rather than from neither — which
+makes the whole-state ceiling itself slightly cleaner than before.
+
+Both discrepancies are retained per row as `clean_path_shift`, so precision
+effects once mistaken for failed zeros stay visible rather than being silently
+corrected away. The cost is one extra forward pass per batch, which at E13's
+uniform 21-token prompts is the cheapest part of the stage. **The tolerance was
+not widened to fit the failure.**
 
 **Why `random_norm` and not just `random_rank`.** For an orthogonal projector
 only `span(R)` matters, so matching the Gram matrix of the rows says nothing. A

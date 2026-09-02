@@ -816,6 +816,12 @@ zeros on DeepSeek-Coder 6.7B:
 | ceiling `noop` | 0.0156 | 1e-4 |
 | ceiling pre-mutation | 0.0312 | 1e-4 |
 
+The two stages also ran at **different precisions** — the ceiling in `float16`
+and the interchange in `bfloat16` — so H4 and H5 were normalising against a
+ceiling measured at another precision. bfloat16 carries three fewer mantissa
+bits, which is why the interchange's artifact was 16× the ceiling's.
+`jobs/binding_jr_controls.csh` now drives both stages from one `DTYPE`.
+
 **It was not a J-lens failure and not an anchor or hook failure.** Two facts
 settled that before anything else was examined:
 
@@ -837,15 +843,44 @@ place. The no-op comparison was therefore never comparing numerically identical
 execution paths, and the "provable zero" was being measured against the wrong
 number.
 
-**Fix.** `run_grid` computes the clean baseline inside the same loop, over the
-**same batch**, with the same hook installed and the same shapes — differing from
-the patched pass only in the value written at the edited position. Rows of a
-batched matmul are independent and the kernel is selected by shape, so a row
-whose edit is the zero vector now comes out bit-identical and its `delta_ld` is
-exactly `0.0`. The tolerance was **not** widened. The former discrepancy is kept
-per row as `batch_shape_shift`, and `verify_structural_zeros` reports
-`max_abs_edit_norm` beside `max_abs_delta_ld` so a future failure says at once
-whether the arithmetic or the forward pass is at fault.
+**A second fault, visible only once the first was fixed.** Batching the clean
+pass took `noop` to exactly `0.0` across 19,200 rows and left
+`pre_mutation_whole_state` at `0.03125` — with `edit_norm` still exactly `0.0`,
+so donor and host cached states were bit-identical and the edit was still moving
+the logits. The two conditions were never testing the same thing:
+
+* `noop` writes `h_live + R Rᵀ(h_cached − h_live)`. In stage 105 the basis is
+  **rank 0** (`subspace=None, rank=0`), so that term is identically the zero
+  vector and the live tensor is written back untouched. Even in stage 106, where
+  the basis is real, a rank-1-to-8 projection of an ulp-scale difference in 4096
+  dimensions rounds away in fp16.
+* `whole_state` has `basis=None` and writes the cached state **wholesale**.
+
+And `collect_states` captures the residual stream at **batch 1** while the grid
+injects it at **batch 32** — so a cached state differs from the live one by about
+an ulp per component *even when it is the correct state*. `whole_state` exposed
+that; `noop` could not.
+
+**Fix — one change for both faults.** The clean reference is now the
+**self-interchange**: each variant's own operator with the donor replaced by the
+host's *own cached state*, run over the same batch as the treatment. In exact
+arithmetic `interchange(h, h, R) == h`, so it is still "no edit". In finite
+precision the reference and the treatment now carry the identical cached-vs-live
+offset and it cancels out of their difference. At the pre-mutation site the donor
+state *is* the host state bit for bit, so the two passes are literally the same
+pass and `delta_ld` is exactly `0.0`; everywhere else the measured effect is
+exactly the donor-minus-host state difference, which makes the whole-state
+ceiling itself slightly cleaner than it was.
+
+The tolerance was **not** widened. Both discrepancies are kept per row as
+`clean_path_shift`, and `verify_structural_zeros` reports `max_abs_edit_norm`
+beside `max_abs_delta_ld` so a future failure says at once whether the
+arithmetic or the forward pass is at fault.
+
+**The general lesson.** A structural zero is only as good as the path its
+reference runs through. Anything cached outside the measured forward pass — a
+state, a logit, a baseline — must be re-injected through that same path before
+it can be subtracted, or the check measures the caching rather than the claim.
 
 **Second fault, found in the same run.** Stage 107 printed `BINDING TRANSPORTED`
 while stage 108 refused to give any reading from the same data, because the

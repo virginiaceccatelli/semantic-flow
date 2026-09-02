@@ -714,6 +714,161 @@ def test_the_panel_shows_both_arms_with_the_dose_and_paired_intervals():
     assert jlens.loc[TRAIN_ARM, "delta_ld"] > 0 > jlens.loc[HELD_OUT_ARM, "delta_ld"]
 
 
+def _fake_grid(variants, donor_state_differs_from_live=True, batch_size=8):
+    """Run `run_grid` against a model that reproduces BOTH precision faults.
+
+    * its logits depend on the BATCH SIZE, as a float16 LM head's do, because
+      the matmul is a different kernel at a different shape;
+    * the state it is handed at the edited position is not the state that was
+      live there, as a state cached at batch 1 and injected at batch 32 is not.
+
+    The second is modelled by having the fake forward read the injected value:
+    a row whose injected state differs from the live one moves the logits, which
+    is exactly what `whole_state` at the pre-mutation site did on the 6.7B run.
+    """
+    import numpy as np
+    import torch
+
+    from src.experiments import binding_interchange as bi
+
+    # the cached state, offset from the "live" one by a small constant
+    live = np.zeros(8)
+    cached = live + (0.5 if donor_state_differs_from_live else 0.0)
+
+    def fake_batched(model, ids, layer, positions, fns):
+        batch = ids.shape[0]
+        out = torch.zeros(batch, 1, 8)
+        out[:, 0, 3] = 5.0 + 0.125 * batch          # the batch-shape signature
+        out[:, 0, 5] = 1.0
+        for row, fn in enumerate(fns):
+            injected = fn(torch.zeros(8))           # the LIVE state is zeros
+            out[row, 0, 3] += float(injected.sum())
+        return out
+
+    class _Rec:
+        base_id, split = "b0", "test"
+        positions = {"use": 0}
+
+        def answer(self, a, b):
+            return 3
+
+        def other_answer(self, a, b):
+            return 5
+
+        def answer_token(self, a, b):
+            return 3
+
+        def other_answer_token(self, a, b):
+            return 5
+
+    entry = {"states": {"use": cached},
+             "log_probs": np.log(np.ones(8) / 8),
+             "ids": torch.zeros(1, 4, dtype=torch.long)}
+    states = {("b0", "ab", "source"): entry, ("b0", "ab", "target"): entry}
+
+    monkey = bi.transform_positions_batched
+    bi.transform_positions_batched = fake_batched
+    try:
+        return bi.run_grid(
+            model=None, tokenizer=None, records=[_Rec()], states=states,
+            layer=0, variants=variants, sites=["use"], rank=1,
+            subspace=None, unembedding=None, seed=0, batch_size=batch_size,
+            progress_every=0)
+    finally:
+        bi.transform_positions_batched = monkey
+
+
+def test_the_pre_mutation_zero_survives_a_cached_state_that_is_not_the_live_one():
+    """The second fault, pinned. `whole_state` installs the cached state WHOLE.
+
+    On the 6.7B run of 2026-09-02 `noop` came out at exactly 0.0 while
+    `pre_mutation_whole_state` stayed at 0.03125 with `edit_norm` exactly 0.0 —
+    donor and host cached states identical, and the edit still moving the
+    logits. The cause is that a state captured at batch 1 is not the state that
+    is live at batch 32, and `whole_state` (basis `None`) writes it back
+    wholesale while `noop` only writes a low-rank projection of the difference
+    (rank ZERO in stage 105, so nothing at all).
+
+    The clean reference is therefore the SELF-interchange — the same operator
+    with the donor replaced by the host's own cached state — so the offset is
+    present on both sides and cancels.
+    """
+    frame = _fake_grid(("noop", "whole_state"), donor_state_differs_from_live=True)
+    for variant in ("noop", "whole_state"):
+        rows = frame[frame.variant == variant]
+        assert not rows.empty
+        # the edit is provably the zero vector in numpy...
+        assert (rows["edit_norm"].abs() < 1e-12).all()
+        # ...and now the model's output does not move either
+        assert (rows["delta_ld"].abs() < 1e-12).all(), (
+            f"{variant}: {rows[['delta_ld', 'edit_norm', 'clean_path_shift']]}")
+    # the offset that used to be reported as a failed zero is still RECORDED
+    assert (frame["clean_path_shift"].abs() > 0).any()
+
+
+def test_a_real_edit_still_registers_after_the_baseline_change():
+    """The cancellation must not cancel the treatment along with the artifact."""
+    frame = _fake_grid(("whole_state",), donor_state_differs_from_live=True)
+    # host and donor are the same cached state here, so whole_state is a zero.
+    assert (frame["delta_ld"].abs() < 1e-12).all()
+
+    # Now make the donor genuinely different and check the effect survives.
+    import numpy as np
+    import torch
+
+    from src.experiments import binding_interchange as bi
+
+    def fake_batched(model, ids, layer, positions, fns):
+        batch = ids.shape[0]
+        out = torch.zeros(batch, 1, 8)
+        out[:, 0, 3] = 5.0 + 0.125 * batch
+        # token 5 is the INSTALLED answer, so a bigger injected state pushes
+        # the metric positive and the expected sign is the readable one.
+        out[:, 0, 5] = 1.0
+        for row, fn in enumerate(fns):
+            out[row, 0, 5] += float(fn(torch.zeros(8)).sum())
+        return out
+
+    class _Rec:
+        base_id, split = "b0", "test"
+        positions = {"use": 0}
+
+        def answer(self, a, b):
+            return 3
+
+        def other_answer(self, a, b):
+            return 5
+
+        def answer_token(self, a, b):
+            return 3
+
+        def other_answer_token(self, a, b):
+            return 5
+
+    host = np.full(8, 0.5)
+    donor = np.full(8, 2.5)              # a real, large state difference
+    base = {"log_probs": np.log(np.ones(8) / 8),
+            "ids": torch.zeros(1, 4, dtype=torch.long)}
+    states = {("b0", "ab", "source"): {"states": {"use": host}, **base},
+              ("b0", "ab", "target"): {"states": {"use": donor}, **base}}
+
+    monkey = bi.transform_positions_batched
+    bi.transform_positions_batched = fake_batched
+    try:
+        frame = bi.run_grid(
+            model=None, tokenizer=None, records=[_Rec()], states=states,
+            layer=0, variants=("whole_state",), sites=["use"], rank=1,
+            subspace=None, unembedding=None, seed=0, batch_size=8,
+            progress_every=0)
+    finally:
+        bi.transform_positions_batched = monkey
+
+    source = frame[frame.binding == "source"].iloc[0]
+    # 8 components x (2.5 - 0.5) = 16.0 of movement toward the installed answer
+    assert source["edit_norm"] > 0
+    assert abs(source["delta_ld"] - 16.0) < 1e-6, source["delta_ld"]
+
+
 def test_the_clean_baseline_comes_from_the_same_batch_as_the_patched_one():
     """The 2026-09-02 fix, pinned on the shape of the bug that forced it.
 
@@ -792,8 +947,8 @@ def test_the_clean_baseline_comes_from_the_same_batch_as_the_patched_one():
     assert (noop["delta_ld"].abs() < 1e-12).all(), noop[
         ["delta_ld", "clean_logit_diff", "clean_logit_diff_unbatched"]]
     # and the artifact that used to be reported as a failure is now RECORDED
-    assert "batch_shape_shift" in noop
-    assert (noop["batch_shape_shift"].abs() > 0).any(), (
+    assert "clean_path_shift" in noop
+    assert (noop["clean_path_shift"].abs() > 0).any(), (
         "the fake model was built so the two paths disagree; if the shift is "
         "zero the test is no longer exercising the bug")
     assert bi.verify_structural_zeros(frame)["noop"]["passed"]
@@ -812,13 +967,13 @@ def test_structural_zeros_report_the_edit_norm_and_the_batch_shift():
     from src.experiments.binding_interchange import verify_structural_zeros
 
     rows = [{"variant": "noop", "site": "use", "delta_ld": 0.25,
-             "edit_norm": 0.0, "batch_shape_shift": 0.25}] * 4
+             "edit_norm": 0.0, "clean_path_shift": 0.25}] * 4
     zeros = verify_structural_zeros(pd.DataFrame(rows))
     check = zeros["noop"]
     assert not check["passed"]
     assert check["edit_is_the_zero_vector"] is True
     assert check["max_abs_edit_norm"] == 0.0
-    assert check["max_abs_batch_shape_shift"] == 0.25
+    assert check["max_abs_clean_path_shift"] == 0.25
     assert check["tolerance"] == 1e-4
 
 

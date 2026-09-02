@@ -255,12 +255,12 @@ def donor_of(binding: str) -> str:
 
 
 def _identity(vec: torch.Tensor) -> torch.Tensor:
-    """The clean pass's transform: hand back the state unchanged.
+    """Hand the state back unchanged — the *unedited* reference.
 
-    Deliberately not `make_interchange_fn(basis, host)`, which would be
-    arithmetically the same but would round-trip the state through float64
-    numpy. The clean baseline must differ from an unhooked forward pass by
-    nothing at all, so it writes back the same values.
+    Kept for tests and callers that want a literal no-op. `run_grid` does NOT
+    use it: its clean reference is the self-interchange, which additionally
+    cancels the offset between a state cached at batch 1 and the same state
+    live at batch `batch_size`. See the clean pass there.
 
     Cloned rather than returned as the view the hook handed in: the hook assigns
     the result back into the tensor it was sliced from, and a self-assignment is
@@ -531,6 +531,10 @@ def run_grid(
                             "record": record, "arm": arm, "binding": binding,
                             "site": site, "variant": variant,
                             "basis": basis, "donor_state": donor_state,
+                            # The clean reference is the SELF-interchange: the
+                            # same operator with the donor replaced by the host's
+                            # own cached state. See the clean pass in phase 2.
+                            "host_state": host,
                             "report": report, "installed_id": installed_id,
                             "own_id": own_id, "clean_ld": clean_ld,
                             "ids": host_entry["ids"],
@@ -543,34 +547,47 @@ def run_grid(
         ids = torch.cat([c["ids"] for c in batch], dim=0)
         positions = [c["record"].positions[c["site"]] for c in batch]
 
-        # ── the clean baseline, through the SAME execution path ─────────────
-        # This pass exists because the structural zeros failed without it, and
-        # they failed for a reason that had nothing to do with the edit.
+        # ── the clean baseline: the SELF-INTERCHANGE, in the same batch ─────
+        # The reference for every variant is that variant's own operator with
+        # the donor replaced by the HOST's own cached state. In exact arithmetic
+        # `interchange(h, h, R) == h`, so this is the identity and the reference
+        # is "no edit" — which is what it has to mean. In finite precision it is
+        # strictly better than running no edit at all, and both structural zeros
+        # are why.
         #
-        # `interchange(h, h, R)` is exactly `h`, and `collect_states` records
-        # `edit_norm == 0.0` for the `noop` and pre-mutation cells, so the state
-        # written back by the hook is bit-identical to the state that was there.
-        # The forward pass is nonetheless not the same forward pass: the clean
-        # log-probs used to come from `collect_states`, which runs ONE prompt per
-        # call, while the patched log-probs come from a batch of `batch_size`.
-        # In float16 the LM head's matmul is a different cuBLAS kernel at a
-        # different shape, so the two disagree by a few units in the last place
-        # of the logits — and at |logit| ~ 64, one fp16 ulp is 0.0625. On the
-        # 6.7B run that surfaced as `noop` deltas of exactly 0, +/-0.125 and
-        # +/-0.25: powers of two, quantization, not transport. The provable zero
-        # was being measured against the wrong number.
+        # There are two distinct precision faults here and the 6.7B run of
+        # 2026-09-02 hit them in sequence.
         #
-        # So the clean pass runs here, in the same loop, over the same batch,
-        # with the same hook installed and the same shapes — differing from the
-        # patched pass ONLY in the value written at the edited position. Rows of
-        # a batched matmul are independent and the kernel is chosen by shape, so
-        # a row whose edit is the zero vector now comes out bit-identical and
-        # its `delta_ld` is exactly 0.0. That costs one extra forward per batch;
-        # at E13's 21 tokens it is the cheapest part of the stage, and a
-        # structural zero that cannot be trusted makes every other number in the
-        # stage unreadable.
+        # ONE — the LOGITS were compared across batch shapes. Clean log-probs
+        # came from `collect_states`, one prompt per forward call; patched came
+        # from a batch of `batch_size`. In float16 the LM head's matmul is a
+        # different cuBLAS kernel at a different shape, so the two disagreed by
+        # a few ulps: `noop` deltas of exactly 0, +/-0.125 and +/-0.25 at
+        # |logit| ~ 64. Powers of two — quantization, not transport.
+        #
+        # TWO — the STATES are captured at batch 1 and injected at batch 32, so
+        # `host_state` differs from the live activation by about one fp16 ulp
+        # per component even when it is the right state. `noop` hides that (its
+        # edit is a projection of that difference onto a low-rank basis, which
+        # rounds away, and in stage 105 the basis is rank 0 so the edit is
+        # identically zero and the live tensor is written back untouched), but
+        # `whole_state` at the pre-mutation site does not: it installs the
+        # cached state wholesale. That is why fixing ONE left `noop` at exactly
+        # 0.0 while `pre_mutation_whole_state` stayed at 0.03125 with
+        # `edit_norm` exactly 0.0 — the two conditions were never testing the
+        # same thing.
+        #
+        # Installing the host's own cached state fixes TWO by cancellation: the
+        # reference and the treatment now carry the identical cached-vs-live
+        # offset, and it drops out of their difference. At the pre-mutation site
+        # `donor_state` IS `host_state` bit for bit, so the two passes are the
+        # same pass and `delta_ld` is exactly 0.0. Everywhere else the measured
+        # effect is exactly the donor-minus-host state difference, with the
+        # injection artifact removed from both sides rather than from neither.
+        clean_fns = [make_interchange_fn(c["basis"], c["host_state"])
+                     for c in batch]
         clean_logits = transform_positions_batched(
-            model, ids, int(layer), positions, [_identity] * len(batch))
+            model, ids, int(layer), positions, clean_fns)
         clean_log_probs = torch.log_softmax(
             clean_logits[:, -1].float(), dim=-1).cpu().numpy()
 
@@ -599,14 +616,16 @@ def run_grid(
                 "clean_logit_diff": clean_ld,
                 "patched_logit_diff": patched_ld,
                 "delta_ld": patched_ld - clean_ld,
-                # The single-example baseline, kept beside the batched one so the
-                # precision effect that broke the structural zeros stays VISIBLE
-                # rather than becoming invisible once it is corrected for. On a
-                # float16 6.7B these differ by a few fp16 ulps of the logits;
-                # `batch_shape_shift` is that difference, per row, and it is the
-                # quantity that used to be reported as a failed provable zero.
+                # The single-example, no-edit baseline, kept beside the one
+                # actually used so the precision effects that broke the
+                # structural zeros stay VISIBLE rather than becoming invisible
+                # once they are corrected for. `clean_path_shift` is the sum of
+                # both of them per row — the batch-shape effect on the logits
+                # and the cached-vs-live offset on the injected state — and it
+                # is the quantity that used to be reported as a failed provable
+                # zero. It is a diagnostic, never a gate.
                 "clean_logit_diff_unbatched": cell["clean_ld"],
-                "batch_shape_shift": clean_ld - cell["clean_ld"],
+                "clean_path_shift": clean_ld - cell["clean_ld"],
                 "flipped": int(patched_ld > 0 >= clean_ld),
                 "says_installed": int(argmax_id == installed_id),
                 "says_own": int(argmax_id == own_id),
@@ -843,9 +862,9 @@ def verify_structural_zeros(frame: pd.DataFrame) -> dict:
             edit = float(np.nanmax(np.abs(part["edit_norm"].to_numpy())))
             entry["max_abs_edit_norm"] = edit
             entry["edit_is_the_zero_vector"] = bool(edit == 0.0)
-        if "batch_shape_shift" in part:
-            entry["max_abs_batch_shape_shift"] = float(
-                np.nanmax(np.abs(part["batch_shape_shift"].to_numpy())))
+        if "clean_path_shift" in part:
+            entry["max_abs_clean_path_shift"] = float(
+                np.nanmax(np.abs(part["clean_path_shift"].to_numpy())))
         out[name] = entry
     return out
 

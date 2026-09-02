@@ -551,21 +551,30 @@ was wrong, and following it is why a real measurement error survived several
 runs. The right response to a non-zero provable zero is to fix the comparison,
 not to characterise it.
 
-The cause was never the dtype of the *edit*. It was that the two sides of the
-comparison ran through different execution paths: clean log-probs came from
-`collect_states`, one prompt per forward call, while patched log-probs came from
-a batch of `--grid-batch-size` (32). In float16 the LM head's matmul is a
-different cuBLAS kernel at a different shape, so the two disagree by a few ulps.
-`run_grid` now computes the clean baseline over the **same batch**, so a zero
-edit gives a bit-identical row and `delta_ld` is exactly `0.0`. The tolerance
-stays `1e-4`.
+The cause was never the dtype of the *edit*, and there were two faults, the
+second only visible once the first was fixed.
+
+1. **The logits were compared across batch shapes.** Clean log-probs came from
+   `collect_states`, one prompt per forward call; patched came from a batch of
+   `--grid-batch-size` (32). In reduced precision the LM head's matmul is a
+   different kernel at a different shape.
+2. **The states are cached at batch 1 and injected at batch 32.** A cached
+   residual differs from the live one by about an ulp per component even when it
+   is the right state. `noop` hides that — its edit is a low-rank projection of
+   the difference, and in stage 105 the basis is rank 0, so nothing is written —
+   but `whole_state` installs the cached state wholesale and does not.
+
+Both are fixed by one change: the clean reference is now the **self-interchange**
+(each variant's own operator with the donor replaced by the host's own cached
+state), run over the same batch. The reference and the treatment then carry the
+identical offset and it cancels. The tolerance stays `1e-4`.
 
 When a structural zero now fails, read two columns before anything else:
 
 | column | reading |
 |---|---|
 | `max_abs_edit_norm` | `0.0` ⇒ the edit really was the zero vector and the arithmetic is right; the fault is in the forward pass or the anchors. Non-zero ⇒ the basis or the donor state is wrong |
-| `max_abs_batch_shape_shift` | how far the batched and single-example clean baselines were from each other. Large here with `edit_norm == 0` is the 2026-09-02 artifact returning |
+| `max_abs_clean_path_shift` | how far the reference path is from a plain single-example unedited pass. It is expected to be a few ulps and is a **diagnostic, never a gate**; it is only alarming if a zero also fails |
 
 Powers of two in `delta_ld` (0.0625, 0.125, 0.25 at |logit| ≈ 64; 0.0156,
 0.0312 at smaller scales) are the artifact's signature: they are fp16 logit

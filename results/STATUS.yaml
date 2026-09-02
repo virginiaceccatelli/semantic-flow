@@ -890,13 +890,25 @@ experiments:
     #    0.0312 (ceiling), against a 1e-4 tolerance. The edits themselves were
     #    exactly the zero vector — `edit_norm == 0.0` in every one of those rows
     #    — so the arithmetic was right and the discrepancy was in the forward
-    #    pass: clean log-probs came from a batch-of-one pass in `collect_states`
-    #    while patched log-probs came from a batch of 32, and in float16 the LM
-    #    head's matmul is a different kernel at a different shape. Every nonzero
-    #    value was a power of two (0.125, 0.25 at |logit| ~ 64; one fp16 ulp
-    #    there is 0.0625) — quantization, not transport. `run_grid` now computes
-    #    the clean baseline in the SAME batch, and records the old discrepancy
-    #    per row as `batch_shape_shift` so it stays measurable.
+    #    pass. TWO faults, the second visible only once the first was fixed:
+    #      (a) the LOGITS were compared across batch shapes — clean from a
+    #          batch-of-one pass in `collect_states`, patched from a batch of 32,
+    #          and in reduced precision the LM head's matmul is a different
+    #          kernel at a different shape. Every nonzero value was a power of
+    #          two, which is quantization and not transport;
+    #      (b) the STATES are cached at batch 1 and injected at batch 32, so a
+    #          cached state differs from the live one by ~1 ulp per component
+    #          even when correct. `noop` hides that — rank-0 basis in stage 105,
+    #          so nothing is written at all — while `whole_state` installs the
+    #          cached state wholesale. Fixing (a) alone left `noop` at exactly
+    #          0.0 and pre-mutation at 0.03125 with `edit_norm` still 0.0.
+    #    Both are fixed by one change: the clean reference is now the
+    #    SELF-INTERCHANGE — the same operator with the donor replaced by the
+    #    host's own cached state — run over the same batch, so the offset sits on
+    #    both sides and cancels. Recorded per row as `clean_path_shift`.
+    # 1b. THE DTYPE SPLIT. The ceiling ran in float16 and the interchange in
+    #    bfloat16, so H4/H5 normalised against a ceiling measured at another
+    #    precision. jobs/binding_jr_controls.csh now drives both from one DTYPE.
     # 2. THE CONTROL CHANGED. `answer_direction` was a corpus-averaged cotangent
     #    readout fitted inside stage 106; H5's discriminator is now the published
     #    J-lens artifact from stage 201. Different estimator, not comparable.
