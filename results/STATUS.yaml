@@ -22,8 +22,8 @@
 # See docs/RESULTS.md for what is currently supported and docs/ARCHIVE.md
 # for the retired interpretation and why each piece of it was retired.
 
-version: 5
-updated: 2026-08-31
+version: 6
+updated: 2026-09-02
 
 experiments:
 
@@ -877,9 +877,9 @@ experiments:
       readout, and E4 — the result it was interrogating — is itself mostly a
       statement about local syntax.
 
-  E13:
-    name: binding interchange, falsified by the value assignment
-    status: partial
+  E13_archived_development:
+    name: archived E13 development runs (superseded controls and machinery)
+    status: archived
     stage: "100,101,102,103,104,105,106,107,108"
     model: "deepseek-coder-6.7b, starcoder2-3b"
     # ── 2026-09-02: EVERY NUMBER BELOW IS SUPERSEDED. Two independent reasons,
@@ -1238,17 +1238,50 @@ experiments:
         that decodes the value from the same state (reversal 0.402 vs 0.025
         floor at the marked use).
 
+  E13:
+    name: binding interchange with matched answer-only causal control
+    status: validated_foundation
+    stage: "100-108"
+    model: "deepseek-coder-6.7b, starcoder2-3b"
+    claim: >
+      H0-H5 pass on both architecture families. Rank-1 binding DAS installs the
+      answer selected by the donor binding on 100.0% of held-out examples in
+      both crossed value arms. The separately trained answer-only DAS control
+      works on fitted ab but attenuates on crossed ba: 76.8% to 21.1% on
+      DeepSeek-Coder 6.7B and 96.6% to 45.2% on StarCoder2-3B. Its transfer
+      ratios, 0.274 and 0.468, fall below the predeclared whole-state-relative
+      cutoffs, while binding DAS remains perfect. Exact no-op and pre-mutation
+      structural zeros are 0.00e+00.
+    identification: >
+      Binding and value assignment are crossed. The same binding installation
+      requires a-to-b in the fitted arm and b-to-a in the held-out arm. The
+      answer-only control uses the same layer, optimiser, steps, split and
+      per-row edit norm as binding DAS but never sees donor binding states.
+    lens_role: >
+      None. J/R read directions are optional descriptive diagnostics and do not
+      initialize, constrain, train, or gate DAS. Earlier attempts to use them
+      as causal actuators are retained under E13_archived_development.
+    tables:
+      - results/binding/deepseek-coder-6.7b/e13_report.md
+      - results/binding/starcoder2-3b/e13_report.md
+
   E19:
-    name: the PUBLISHED J-lens and R-lens on code models
-    status: active
-    stage: "200-205"
+    name: published J-lens on code models, with R-lens supporting replication
+    status: supporting
+    stage: "200-206"
     tables: [workspace_lens_gate_, workspace_lens_summary_, workspace_lens_rows_,
              workspace_lens_ablation_]
     claim: >
-      NO CLAIM YET. Implemented, unit-tested and validated on toy CPU models;
-      the fitting run has not been executed, so no measurement exists. Any
-      statement about what these lenses surface is pending
-      results/workspace_lens/{model}/workspace_lens_report.md.
+      All required gates pass on DeepSeek-Coder 1.3B/6.7B and StarCoder2-3B.
+      The J-lens reads every tested value family at pass@10 1.000 at the answer
+      position, but essentially not at use, post-use, or call. Mid-network J
+      erasure is null on StarCoder2, small and no better than logit on 6.7B,
+      and weaker than logit on 1.3B; strong effects are late/output-adjacent.
+      A separate semantic-concept panel passes on the two completed DeepSeek
+      models (`scope` at L9 on 1.3B; `global` at L20 on 6.7B), supporting an
+      abstract binding-vocabulary signal without an early concrete-value token.
+      StarCoder2 has no completed concept panel. R-lens closely replicates the
+      J-lens findings and is supporting rather than a second main study.
     method: >
       The estimator is the reference implementation released with "Verbalizable
       Representations Form a Global Workspace in Language Models" (2026),

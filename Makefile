@@ -78,17 +78,14 @@
 #   make binding-extract MODEL=...    stage 103 cache anchor states (GPU)
 #   make binding-decode MODEL=...     stage 104 binding decodable — H2 (CPU)
 #   make binding-ceiling MODEL=...    stage 105 whole-state, per arm — H3 (GPU)
-#   make binding-interchange MODEL=.. stage 106 DAS + held-out arm — H4, H5 (GPU)
-#                                     NEEDS `make lens-fit MODEL=...` first: the
-#                                     answer-direction controls read the
-#                                     published J/R-lens artifacts (stage 201)
+#   make binding-interchange MODEL=.. stage 106 DAS + matched answer-only control — H4, H5 (GPU)
+#                                     lens-independent; no stage-201 artifact needed
 #   make binding-report MODEL=...     stage 107 gated report (CPU)
 #   make binding-diagnose MODEL=...   stage 108 DID IT RUN WELL? (CPU, read-only)
 #   make binding MODEL=...            stages 100→107; each refuses on a failed gate
 #   make binding-pilot                the 1.3b pilot
 #
-#   ── E19, the PUBLISHED J-lens and R-lens (transformer-circuits.pub/2026/workspace
-#      + the R-lens post), via the vendored reference implementation ──
+#   ── E19, the PUBLISHED J-lens, with R-lens supporting replication ──
 #   make lens-corpus MODEL=...      stage 200 fitting corpus + probe suite (CPU)
 #   make lens-fit MODEL=...         stage 201 fit BOTH lenses — expensive (GPU)
 #   make lens-fit-dry MODEL=...     stage 201 cost estimate only, no model load
@@ -306,11 +303,8 @@ binding-decode:
 binding-ceiling:
 	$(PY) scripts/105_binding_ceiling.py --model $(MODEL) --layers $(BINDING_LAYERS)
 
-# NEEDS STAGE 201. The answer-direction controls are built from the PUBLISHED
-# J-lens and R-lens artifacts (`make lens-fit MODEL=...`), not from a lens fitted
-# here. The DAS fit itself is lens-independent and runs first; the artifacts are
-# opened only for the control-evaluation phase, but they are preflighted in the
-# first seconds so a missing lens fails before the fit rather than after it.
+# Lens-independent. H5 is gated by the trained `das_answer_control`; optional
+# J/R artifact arguments below add descriptive diagnostics only.
 #
 # BINDING_JLENS / BINDING_RLENS override the artifact directories;
 # BINDING_RLENS_PAPERMINIMAL=auto adds the separately named StarCoder2
@@ -605,7 +599,7 @@ assets-all:
 	$(PY) scripts/90_make_paper_assets.py --include-archived
 
 
-# ── E19: the published J-lens and R-lens ─────────────────────────────────────
+# ── E19: published J-lens, with R-lens supporting replication ────────────────
 # Stage 202 is a GATE: it exits non-zero on a failed required check, and stages
 # 203-205 are not interpretable until it passes.
 #

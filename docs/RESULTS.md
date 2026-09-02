@@ -12,7 +12,8 @@ recoverable in middle layers. Second, frozen probes show that this representatio
 survives many surface changes but weakens under scope interference and
 control-flow flattening. Third, a DAS intervention shows that a rank-1 binding
 component is causally used at the variable-use site. Fourth, the published
-J-lens and R-lens test whether the needed values occupy a verbalizable workspace.
+J-lens tests whether the needed values occupy a verbalizable
+workspace; the R-lens is retained as a supporting replication of that test.
 
 The earlier cotangent-lens and conserving-cotangent-lens studies, including E16
 and E18, are preserved in [ARCHIVE.md](ARCHIVE.md). They are method development,
@@ -32,7 +33,7 @@ where an intervention changes the downstream answer.
 - [Part II — Robustness and failure boundaries](#part-ii--robustness-and-failure-boundaries)
 - [Part III — Causal use](#part-iii--causal-use)
 - [Part IV — Lenses](#part-iv--lenses)
-  - [J-lens and R-lens](#e19--j-lens-and-r-lens--full-vocabulary-workspace-readout)
+  - [J-lens, with R-lens replication](#e19--j-lens-full-vocabulary-workspace-readout-with-r-lens-replication)
 - [Synthesis](#synthesis-the-main-finding)
 - [Boundaries](#boundaries-what-this-project-does-not-claim)
 - [Open items](#open-items)
@@ -63,10 +64,11 @@ value selected by the installed binding on 100% of held-out cases in both arms,
 in DeepSeek-Coder 6.7B and StarCoder2 3B. A fixed answer direction attenuates or
 reverses, and dose-matched random edits are much weaker.
 
-**4. J-lens and R-lens.** Both published lenses recover the target value
+**4. J-lens, with an R-lens replication.** The J-lens recovers the target value
 perfectly at the answer position but essentially never at the use, post-use, or
-call positions. Their mid-network causal effects provide no consistent advantage
-over the logit lens.
+call positions. Its mid-network causal effects provide no consistent advantage
+over the logit lens. The R-lens closely reproduces this pattern, so it is treated
+as supporting evidence rather than a second headline experiment.
 
 ---
 
@@ -465,22 +467,36 @@ resulting edit norm is measured afterward.
 | Control | Why it is needed | Expected result if DAS carries binding |
 |---|---|---|
 | **crossed `ba` arm** | separates binding from a fixed answer token | DAS follows the reversed answer requirement |
-| **`answer_direction_jlens`** | tests whether DAS is merely an output-token push, using the **published** J-lens read direction at the intervention layer | works on fitted `ab`, then attenuates or reverses on `ba`. **This is H5's discriminator** |
-| **`answer_direction_rlens`** | the same construction through the published R-lens | a second reading of the same diagnostic; **descriptive, gates nothing** |
-| **`answer_direction_unembedding`** | `W_U[installed] − W_U[own]`, no transport | the no-transport floor: beating it is what shows the Jacobian transport does work |
+| **`das_answer_control`** | learns answer-token actuator vectors at the same site, with the same optimiser, steps, split and per-row edit norm as binding DAS, but never receives the donor binding state | must work on fitted `ab`, then attenuate on crossed `ba`. **This is H5's discriminator** |
+| **J-lens and R-lens answer directions** | apply the published lens read directions as interventions | supporting diagnostics only: a direction can be a valid readout yet a poor actuator |
 | **dose-matched random subspace** | tests generic disruption at a comparable edit size | much weaker than DAS |
 | **rank-matched random subspace** | provides a simple random rank-1 floor | near zero |
 | **no-op** | detects hook or measurement artifacts | exactly zero |
 | **whole-state donor patch** | verifies that this site can change the answer in each arm | moves the answer in both arms |
 | **mean donor−host direction** | tests the cheapest non-learned rank-1 alternative | may transport, but should be less effective or require a larger edit |
 
-The answer-direction control is deliberately strong. At the intervention layer
-it constructs the effective `a → b` output push as the **published J-lens read
-direction**, `u_w(l) = J_lᵀ(g·W_U[w])`, taken from the stage-201 artifact — the
-same object E19's causal stage erases — and scales it on every row to match
-DAS's edit norm. Nothing about the lens touches the DAS fit: the subspace is
-fitted and its rank selected before any lens file is opened, and the lens only
-implements the competing explanation.
+The answer-only control is deliberately simple and directly matched. It learns
+a vector `u_w` for each answer token on calibration data. To push from answer
+`a` toward answer `b`, it adds the normalized direction `u_b − u_a`. The edit
+length is not tuned: on every example it is set to the edit length produced by
+binding DAS. Thus, if the control fails, it cannot be dismissed as receiving a
+smaller intervention. Its direction is defined from the fitted `ab` arm and
+held fixed on `ba`, where the correct answer movement reverses.
+
+This control differs from binding DAS in exactly the way the causal question
+requires. Binding DAS receives the donor program's hidden state and can copy a
+component that says which definition is active. `das_answer_control` receives
+no donor binding state; it can only learn how to push toward answer tokens.
+Both use the same model, layer, position, Adam optimiser, 200 steps,
+calibration/test division and row-wise dose.
+
+The published J- and R-lens answer directions were also tested during
+development. They were valid lens read directions but causally dead at the DAS
+layers: on the training arm they installed fewer answers than a norm-matched
+random edit. They therefore could not serve as H5's positive control. This is
+not a failure of J-lens as a readout. Reading information and exerting causal
+control are different jobs. Those runs and the reason they were superseded are
+recorded in [ARCHIVE §4d](ARCHIVE.md).
 
 > **Changed 2026-09-01.** This control previously used a *corpus-averaged
 > cotangent readout over the two answer tokens*, fitted inside stage 106 from
@@ -490,51 +506,59 @@ implements the competing explanation.
 
 ### Result
 
-> **PENDING RE-RUN.** The rows below marked *archived* were produced with the
-> retired cotangent control. The DAS, whole-state, mean-difference and random
-> arms are unaffected by the 2026-09-01 change — no lens enters their
-> construction — but **H5's verdict rested on the answer-direction row**, and
-> that discriminator is now the published J-lens. The E13 gate reports carry
-> `SUPERSEDED — RERUN REQUIRED` until stage 106 runs again against the stage-201
-> artifacts; see [Reproducing](#reproducing) for the commands. No number here
-> has been rescaled or translated.
-
-The experiment succeeds in DeepSeek-Coder 6.7B and StarCoder2 3B, two different
-architecture families:
+The completed experiment passes H0–H5 on DeepSeek-Coder 6.7B and
+StarCoder2-3B, two different architecture families. All provable structural
+zeros are exactly zero, all five fits per model converge, and the selected
+subspace is rank 1. The headline outcome below is the fraction of held-out
+test examples on which the model's full-vocabulary argmax is the value selected
+by the installed intervention.
 
 | intervention | DeepSeek `ab` | DeepSeek `ba` | StarCoder2 `ab` | StarCoder2 `ba` |
 |---|---:|---:|---:|---:|
 | **DAS rank 1** | **100.0%** | **100.0%** | **100.0%** | **100.0%** |
-| whole state | 85.7% | 87.9% | 68.8% | 67.3% |
-| mean difference | 76.1% | 76.8% | 54.6% | 54.5% |
-| answer direction *(archived cotangent arm)* | 27.9% | 4.3% | 44.8% | 18.4% |
-| `answer_direction_jlens` | pending | pending | pending | pending |
-| `answer_direction_rlens` | pending | pending | pending | pending |
-| `answer_direction_unembedding` | pending | pending | pending | pending |
-| dose-matched random | 2.1% | 1.8% | 30.9% | 30.4% |
+| **answer-only DAS control** | **76.8%** | **21.1%** | **96.6%** | **45.2%** |
+| whole state | 73.8% | 73.4% | 62.7% | 64.6% |
+| mean difference | 68.2% | 67.5% | 47.1% | 45.9% |
+| dose-matched random | 1.6% | 1.8% | 21.2% | 22.3% |
+| rank-matched random | 0.0% | 0.0% | 2.3% | 1.4% |
 
-The headline outcome is the full-vocabulary emitted token: whether the model
-actually says the value selected by the installed binding. DAS reaches 100% in
-both crossed arms.
+The first important comparison is within binding DAS itself. It installs the
+correct donor-selected value on 100% of `ab` examples and 100% of `ba` examples.
+The value assignment reversal therefore produces no attenuation at all. The
+learned component follows the relation “which definition is active,” not the
+literal that happened to be correct during training.
 
-The archived cotangent answer direction attenuated 6.9-fold on DeepSeek and
-reversed in the relevant logit contrast on StarCoder2 — the pattern the design
-predicts for a token account. **That reading is not restated as current.**
-Whether the published J-lens answer direction behaves the same way is exactly
-what the re-run measures, and until it does, "DAS does not behave like a fixed
-push toward the answer required during fitting" is supported by the crossed-arm
-DAS result alone and not by a lens-derived discriminator.
+The second comparison establishes that the answer-only control is genuinely
+alive. On its fitted `ab` arm it installs 76.8% of answers on DeepSeek and 96.6%
+on StarCoder2, far above the corresponding random floors of 1.6% and 21.2%.
+This repairs the dead-control problem of the earlier J-lens intervention.
+
+The third comparison is the crossed test. When `a` and `b` exchange semantic
+roles, the answer-only control falls from 76.8% to 21.1% on DeepSeek and from
+96.6% to 45.2% on StarCoder2. Its crossed/training installed-answer ratio is
+0.274 on DeepSeek and 0.468 on StarCoder2. H5 compares this with half the
+whole-state transport ratio: the respective cutoffs are 0.498 and 0.516. Both
+models pass. The StarCoder2 separation is narrower and should be described as
+attenuation, not as complete failure of the answer control.
 
 The closed-form mean direction is a real positive baseline, not a dead control:
-it transports much of the binding. DAS nevertheless reaches 100% while changing
-about 0.48 of the hidden-state norm, whereas the mean direction changes about
-0.71. The learned direction works more reliably with a smaller edit.
+it transports 68% of DeepSeek examples and roughly 46% of StarCoder2 examples.
+This tells us that a broad average difference between the two program states
+already contains some binding signal. DAS nevertheless reaches 100% with a
+smaller edit: about 0.416 of the hidden-state norm on DeepSeek and 0.466 on
+StarCoder2, compared with roughly 0.58 and 0.70 for the mean direction.
+
+The whole-state patch reaching only 73–74% and 63–65% is not a numerical
+contradiction. A whole-state patch copies every difference between donor and
+host, including irrelevant or competing components. Rank-1 DAS can preserve the
+host computation while changing the one component most useful for the answer.
 
 ### Conclusion and limits
 
 At the tested use position and layer, downstream computation reads a compact
-component whose effect follows **which definition is in scope** rather than a
-fixed answer token. This is the project's causal finding.
+component whose effect follows **which definition is in scope** rather than the
+answer token associated with the fitted value assignment. This is the project's
+causal finding, supported by a live, matched answer-only control.
 
 It remains local to one synthetic binding construction, one site and one layer
 per model. The rank-1 edit also outperforms the whole-state patch, so the latter
@@ -546,43 +570,122 @@ adds both helpful and opposing components remains to be tested.
 This section contains only findings from the published, full-vocabulary J-lens
 and R-lens. Earlier partial cotangent constructions are archived.
 
-## E19 — J-lens and R-lens: full-vocabulary workspace readout
+## E19 — J-lens: full-vocabulary workspace readout, with R-lens replication
 
-E19 explicitly uses the published J-lens and R-lens: do these full-vocabulary
-lenses surface the program-semantic value among the model's top tokens while
-that value is being used? It uses the released Anthropic
-estimator, an independent 100-prompt fitting corpus, the published RelP rules,
-and the model's complete vocabulary. The older cotangent-lens results are not
-substituted for it.
+The J-lens is the primary lens in E19. It asks whether a hidden state can be
+translated into the model's vocabulary after accounting for the transformation
+performed by the remaining layers. Concretely, it estimates the average full
+Jacobian from an intermediate layer to the late residual stream, then transports
+each vocabulary direction back through that Jacobian. The result is a score and
+rank for every token in the model's vocabulary—not merely a hand-chosen list.
 
-All required gates pass on DeepSeek-Coder 1.3B/6.7B and StarCoder2-3B. The
-answer-position control reaches pass@10 = 1.000 for every value family and every
-lens. Across the use token, following token, and call site, however, the needed
-values are essentially absent. The null includes arithmetic values absent from
-the prompt and therefore cannot be explained by failure to distinguish a copied
-target from a computed one.
+The R-lens repeats the same measurement while applying the published RelP
+backward rules. Because its findings track J-lens closely throughout this study,
+it is treated as a supporting replication rather than a second main instrument.
+The ordinary logit lens is the simpler comparison: it reads the vocabulary
+directly without Jacobian transport.
 
-R sometimes surfaces answer concepts earlier than J, but the logit lens is
-normally as early or earlier. Mid-network causal erasures tell the same story.
-StarCoder2 has no coherent effect relative to the exactly magnitude-matched
-random arm. DeepSeek 6.7B has a small L20 target effect (J minus matched random
-−0.018, 95% CI [−0.033, −0.002]; R −0.024 [−0.037, −0.008]), but J
-and R do not beat the logit direction. DeepSeek 1.3B develops an L20 effect, but
-the logit direction is stronger than J (`J − logit = +0.204`, [0.149,
-0.270]). Large effects at the final layers are direction-specific but largely
-measure the output head's neighbourhood.
+All active results use the released 2026 implementation, an independent
+100-prompt fitting corpus and the complete model vocabulary. The repository's
+older cotangent and conserving-cotangent constructions are different methods
+and remain archived.
 
-The controls that were missing from the preliminary analysis are now present:
+### Question 1: is the concrete runtime value verbalized early?
+
+All required gates pass on DeepSeek-Coder 1.3B/6.7B and StarCoder2-3B. At the
+answer position, J-lens reaches pass@10 = 1.000 for every value family. This is
+the essential positive control: when the model has prepared the answer for
+emission, the lens reads it perfectly.
+
+At the variable-use token, the following token, and the later call site, the
+needed values are essentially absent from J-lens's top vocabulary predictions.
+This includes computed arithmetic targets that never occur in the prompt, so
+the result cannot be dismissed as merely confusing copied and computed values.
+
+The simple interpretation is not that the model lacks the information. The
+probe and DAS experiments show that binding information is present and used.
+Rather, the operative mid-network state is not yet organized as the vocabulary
+token naming the final value. **Representation** and **verbalizability** are
+therefore different properties.
+
+### Question 2: is the J-lens value direction causally used mid-network?
+
+The causal test erases the J-lens direction for the correct value and measures
+the change in the model's own target-versus-distractor margin. Erasing a matched
+distractor direction, a random direction and an exactly magnitude-matched
+random edit prevents generic damage from being mistaken for semantic use.
+
+- On StarCoder2, the mid-network J-lens effect is indistinguishable from the
+  matched-random floor.
+- On DeepSeek 6.7B, layer 20 shows a small target-specific effect: J minus the
+  magnitude-matched random control is −0.018, 95% CI [−0.033, −0.002]. J-lens
+  nevertheless does not beat the ordinary logit direction.
+- On DeepSeek 1.3B, layer 20 also shows an effect, but the logit direction is
+  substantially stronger (`J − logit = +0.204`, [0.149, 0.270]).
+
+Near the final layers, erasures become much larger and target/distractor effects
+separate cleanly. That result mainly describes the neighbourhood of the output
+head, where vocabulary alignment is expected. It does not establish an early
+global workspace.
+
+The controls that were missing from the preliminary analysis are present:
 stable seeds, separate J/R distractor directions, an exact edit-magnitude random
 arm, four read positions, and paired cluster-bootstrap intervals. StarCoder2 is
 also replicated with a paper-minimal R-lens that disables the unpublished
 LayerNorm analogue; the conclusion is unchanged.
 
-The supported result is negative but complete within scope. These models can
-represent and causally use binding without placing the needed value in a form
-that the published J/R lenses surface as a mid-network verbalizable workspace.
-The R-lens yields modest local improvements over J on DeepSeek, not the broad
-early-layer recovery reported in its source post.
+R-lens closely replicates this pattern. It sometimes produces a slightly larger
+effect or an earlier rank than J-lens, especially on DeepSeek, but it does not
+change any model-level conclusion and does not consistently outperform the
+logit lens. It is therefore supporting evidence for the robustness of the
+J-lens finding, not the headline result.
+
+### Question 3: does J-lens surface abstract binding language?
+
+Concrete values and semantic concepts are different targets. A model might not
+encode the token `7` at `return x`, yet its state could still align with words
+such as `scope`, `global`, `local`, `binding` or `variable`. Stage 206 tests this
+using predeclared concept sets, both crossed value assignments, matched generic
+code words, positional/action confounds, and frequency/size-matched random word
+sets.
+
+The two completed DeepSeek panels support such an abstract vocabulary signal:
+
+| model | J-lens use-position binding pass@10 | clearest crossed J-lens concept |
+|---|---:|---|
+| DeepSeek-Coder 1.3B | 0.415 | `scope`, L9: +7.645 / +7.637 across the two value arms |
+| DeepSeek-Coder 6.7B | 0.938 | `global`, L20: −9.199 / −9.040 across the two value arms |
+
+In each case the concept changes with the binding in both value assignments,
+while the difference between value assignments contains zero. In plain terms:
+the word-level signal follows which definition is active, not whether the
+literal happens to be `a` or `b`. R-lens reproduces the same candidates closely
+and is sometimes numerically stronger. The logit lens also shows related
+effects, so this is evidence for vocabulary alignment, not evidence that
+Jacobian transport uniquely discovers it.
+
+This positive semantic-concept result does not contradict the negative value
+result. Together they say that the model can expose an abstract signal related
+to binding before it exposes the concrete answer token. StarCoder2 does not yet
+have this semantic-concept panel, so the concept result is scoped to the two
+DeepSeek models. Because the strongest named word differs across model sizes,
+the replicated claim is at the **binding-concept family** level, not that every
+model internally uses one universal word such as `scope`.
+
+### Lens conclusion
+
+The complete lens result is mixed and informative:
+
+1. J-lens works technically and reads the answer perfectly when it is ready for
+   emission.
+2. It does not reveal a general mid-network vocabulary representation of the
+   concrete runtime value.
+3. Its value directions have little or no special causal purchase mid-network
+   beyond simpler directions.
+4. It does reveal binding-related vocabulary signals in the two completed
+   DeepSeek semantic panels.
+5. R-lens closely supports these conclusions without supplying a distinct main
+   finding.
 
 # Synthesis: the main finding
 
@@ -612,37 +715,39 @@ patch, and a closed-form difference-of-means baseline rule out generic
 disruption, implementation error, an unresponsive site, and the cheapest
 non-learned alternative.
 
-**Fourth, the published J-lens and R-lens do not expose a value workspace.**
-Both lenses recover values perfectly at emission, establishing a working
-positive control, but essentially never surface them at the three preceding
-positions. Mid-network direction erasures are null or small and do not provide a
-consistent advantage over the logit lens.
+**Fourth, the published J-lens does not expose the concrete value as an early
+workspace token.** It recovers values perfectly at emission, establishing a
+working positive control, but essentially never surfaces them at the three
+preceding positions. Mid-network direction erasures are null or small and do not
+provide a consistent advantage over the logit lens. The R-lens closely
+replicates this conclusion.
 
-**Fifth, the semantic-concept panel (stage 206) is a separate question and is
-pending.** Value recovery asks whether the lens surfaces *the bound value*; the
-concept panel asks whether it surfaces *the language of binding* — `local`,
-`global`, `shadowed`, `scope`, `bound` — at the same four predeclared read
-positions. The concept sets, the four read positions, the matched controls
-(generic code vocabulary, positional/action wording as a confound diagnostic,
-size- and frequency-matched random sets) and the four conditions a positive must
-meet were all fixed before any number was read. **No result is available until
-stage 206 runs on GPU.** A null there would say only that these published
-linear, token-indexed lenses do not surface these concepts; it would not
-contradict the probe or DAS evidence, which read a different object by a
-different method. Nor would a single well-ranked word be a positive: one word
-such as `local` ranking highly does not show the model represents lexical scope,
-which is why the positional controls exist.
+**Fifth, the semantic-concept panel gives a qualified positive.** This is a
+different question from recovering the concrete bound value. It asks whether
+the J-lens surfaces the *language of binding*—words such as `scope`, `local`, or
+`global`—at the use site. Both completed DeepSeek panels pass their predeclared
+controls: `scope` is the strongest J-lens contrast for 1.3B at layer 9
+(+7.645 and +7.637 in the crossed value arms), and `global` is strongest for
+6.7B at layer 20 (-9.199 and -9.040). The near equality across the two value
+assignments is important: the signal follows binding structure, not which
+concrete value happens to be returned. The R-lens reproduces the result, often
+with a somewhat larger contrast, and the logit lens also carries part of it.
+Therefore the positive is a family-level binding-vocabulary signal, not a claim
+that J-lens uniquely discovers one canonical word. StarCoder2 has no completed
+semantic-concept panel, so cross-architecture replication is still absent for
+this particular finding.
 
 The strongest conclusion is therefore deliberately narrow:
 
 > In these controlled programs, variable binding becomes linearly represented,
 > remains stable under many surface changes but is fragile to structural
 > interference, and is causally read from a rank-1 component at the use site,
-> while the published J-lens and R-lens do not surface the needed value as a
-> mid-network verbalizable workspace representation.
+> while the published J-lens does not surface the needed concrete value as a
+> mid-network verbalizable token. It does surface controlled binding-related
+> vocabulary in two DeepSeek models; the R-lens supports both conclusions.
 
-These clauses are complementary, not contradictory. The J-lens/R-lens null is a
-null for those published linear readouts, not evidence that binding is absent;
+These clauses are complementary, not contradictory. The concrete-value J-lens
+null is a null for that published linear readout, not evidence that binding is absent;
 the probe and DAS independently establish representation and causal use.
 
 ---
@@ -659,10 +764,10 @@ the probe and DAS independently establish representation and causal use.
   one use site and one selected layer per model, on one synthetic construction.
 - **Not that the DAS direction is unique.** The closed-form mean direction also
   transports binding, less reliably and with a larger edit.
-- **Not that the J/R null proves the value is absent.** It proves that the
-  published linear, token-indexed workspace readouts do not surface it at the
-  tested positions. The successful probes and DAS intervention independently
-  show that binding information is present and used.
+- **Not that the J-lens concrete-value null proves the value is absent.** It
+  proves that this published linear, token-indexed readout does not surface it
+  at the tested positions. The successful probes and DAS intervention
+  independently show that binding information is present and used.
 - **Not that the controlled isolation transfers to real code.** The exact 0.500
   floor relies on the synthetic paired construction.
 

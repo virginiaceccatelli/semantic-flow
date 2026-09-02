@@ -1,5 +1,7 @@
 #!/bin/csh
-# Re-run E13 stages 105-108 with the PUBLISHED stage-201 J/R lenses.
+# ARCHIVED DIAGNOSTIC ONLY: re-run E13 stages 105-108 with published J/R
+# read directions. These arms do not gate the completed DAS claim. For the
+# active matched causal control use jobs/binding_das_answer_control.csh.
 #
 # DAS is fitted independently; the lenses are loaded only for the
 # answer-direction controls. Existing H0-H2 artifacts are reused, so do not run

@@ -8,12 +8,12 @@ known exactly, then runs a frozen language model and stores hidden states at
 specific token positions. CPU analysis applies probes, controls, and statistical
 summaries to those states. The later GPU stages test two distinct consequences:
 DAS asks whether the model causally uses a binding component. The published
-J-lens and R-lens then test whether the needed values occupy a verbalizable
-workspace.
+J-lens then tests whether the needed values occupy a verbalizable workspace;
+R-lens is a supporting replication.
 
 The active reproduction paths are **Part C → Part F** for causal use and
-**Part H** for the published J-lens/R-lens result. Stage 60 supports DAS's
-answer-direction control. The earlier cotangent-lens tracks, including Parts F.2
+**Part H** for the published J-lens result and R-lens replication. DAS uses its
+own matched answer-only control and has no lens dependency. The earlier cotangent-lens tracks, including Parts F.2
 and F.3 and their stage-110 rules, remain runnable but are archived
 scientifically; they are retained here only so their artifacts can be
 reproduced.
@@ -42,7 +42,7 @@ What it *found*: [RESULTS.md](RESULTS.md).
 - [Archived E16 — conserving cotangent-lens readout (140–141)](#archived-e16--conserving-cotangent-lens-readout-140141)
 - [Archived E18 — cotangent-lens vocabulary readout (160–161)](#archived-e18--cotangent-lens-vocabulary-readout-160161)
 - [Archived E17 — prompted verbalisation (150–153)](#archived-e17--prompted-verbalisation-150153)
-- [Part H — E19: the published J-lens and R-lens (200–205)](#part-h--e19-the-published-j-lens-and-r-lens-200205)
+- [Part H — E19: J-lens with R-lens replication (200–206)](#part-h--e19-j-lens-with-r-lens-supporting-replication-200206)
 - [Part G — Make targets and the GPU-host workflow](#part-g--make-targets-and-the-gpu-host-workflow)
 
 ---
@@ -456,34 +456,21 @@ full 6.7b run is ≈ 1.5–3 GPU-hours, dominated by stage 106's backward passes
 the only backward pass in the track. Use `--dtype float32` if fp16 goes
 non-finite.
 
-### Stage 106 depends on stage 201
+### Stage 106 is lens-independent
 
-**`201_lens_fit.py` must have run for this model before stage 106.** Since
-2026-09-01 the answer-direction controls are built from the *published* J-lens
-and R-lens artifacts (E19, `results/workspace_lens/{model}/{j,r}-lens/lens.pt`)
-rather than from a lens stage 106 fitted for itself. The ordering is:
+Stage 106 does **not** require stage 201 or any lens artifact. Its decisive H5
+discriminator is `das_answer_control`, a rank-1 answer actuator trained at the
+same layer with the same optimiser, steps, split and per-row edit norm as binding
+DAS, but without the donor binding state. The two tracks can run independently:
 
 ```
-100 → 101 → 102 → 103 → 104 → 105 ─┐
-                                   ├→ 106 → 107 → 108
-200 → 201 (→ 202 gate) ────────────┘
+100 → 101 → 102 → 103 → 104 → 105 → 106 → 107 → 108
+200 → 201 → 202 → 203/204/206 → 205
 ```
 
-The dependency is on the **control-evaluation phase of stage 106**, not on the
-DAS fit:
-
-| phase of stage 106 | needs a lens? |
-|---|---|
-| preflight the artifacts (sidecar only, milliseconds, no weights) | reads `lens_meta.json` |
-| collect states, fit the DAS subspace, select the rank on calibration | **no** |
-| load `lens.pt`, build `u_w(l) = J_lᵀ(g·W_U[w])` at the chosen layer | yes |
-| the test grid, the panel, H4/H5 | yes |
-
-That separation is why DAS stays lens-independent: no lens initializes,
-constrains or trains the alignment, and the subspace and its rank are frozen
-before a lens file is opened. The preflight nonetheless runs first, so a missing
-or mismatched artifact fails in the stage's first seconds rather than after the
-fit.
+J/R answer-direction arms remain optional historical diagnostics. They do not
+gate H5 because the completed runs showed that valid lens read directions can be
+causally dead at the DAS intervention site.
 
 Options:
 
@@ -521,7 +508,7 @@ R-lens and paper-minimal arms ran.
 | **H2** | `decode.csv` — the *measured* surface baseline column, not just accuracy |
 | **H3** | `ceiling_summary.csv` — **both arms** must be alive, or a null in either says nothing. Structural zeros must be `0.00e+00` — H3 fails outright otherwise; see the structural-zero note below for which column names the cause |
 | **H4** | `interchange_contrasts.csv` — all three control contrasts must clear zero, and `edit_fraction` must be comparable across arms |
-| **H5** | Read the `answer_direction_jlens` rows **first** — the *published* J-lens `a`-to-`b` output push fixed from `ab` and matched to DAS's per-row edit norm. It should affect `ab` but attenuate or reverse on `ba`, where the required answer movement is `b` to `a`. If it succeeds like DAS in both arms, the design has not separated binding transport from a lens-visible answer direction and no verdict is licensed. `answer_direction_rlens` is the same diagnostic through the published R-lens and is **descriptive**; `answer_direction_unembedding` is the no-transport floor. `interchange_panel.csv` has all of them, both arms, with the exact edit norm and paired intervals |
+| **H5** | Read `das_answer_control` first. It must work on fitted `ab` (≥25% and above dose-matched random) and attenuate on crossed `ba`, while binding DAS stays above half the whole-state effect. J/R arms are descriptive only. |
 
 ## Three warnings
 
@@ -586,11 +573,11 @@ not hold, and stage 107 re-reads it from `gates.yaml` and returns
 the gates, and stage 107 printed `BINDING TRANSPORTED` from a run whose zeros
 were at 0.25 while stage 108 refused to give any reading from the same data.
 
-**Current state on disk:** every E13 interchange and ceiling result predates the
-fix and is **superseded** — `results/STATUS.yaml` marks E13 `rerun_required` and
-keeps the pre-fix numbers under `provisional_unlicensed`, cited nowhere.
-Stages 105 → 108 must be re-run for each model.
-[ARCHIVE.md §4c](ARCHIVE.md) records the artifact in full.
+**Current state on disk:** the final DeepSeek-Coder 6.7B and StarCoder2-3B runs
+have exact structural zeros and pass H0–H5. Binding DAS installs the answer on
+100% of both arms. The matched answer-only control attenuates from 76.8% to
+21.1% and from 96.6% to 45.2%, respectively. Earlier broken or lens-controlled
+runs remain in [ARCHIVE.md](ARCHIVE.md).
 
 ---
 
@@ -929,7 +916,7 @@ column is an informative negative when the probe succeeds.
 
 ---
 
-# Part H — E19: the published J-lens and R-lens (200–206)
+# Part H — E19: J-lens, with R-lens supporting replication (200–206)
 
 The methods of the 2026 global-workspace paper and the R-lens post, run through
 the released reference implementation vendored at `third_party/jacobian-lens`.
@@ -943,7 +930,7 @@ compare their tables with these.
 
 ```
   200  fitting corpus + probe suite   CPU      seconds  tokenizer only
-  201  fit BOTH lenses                GPU      HOURS    the whole cost of E19
+  201  fit J-lens + supporting R-lens GPU      HOURS    the whole cost of E19
   202  the seven-check gate           GPU      minutes  REQUIRED before 203-205
   203  J vs R vs logit readout        GPU      minutes
   204  causal ablation                GPU      minutes
@@ -951,9 +938,8 @@ compare their tables with these.
   205  tables, figures, report        CPU      seconds
 ```
 
-Stage 201's artifacts are also read by **E13 stage 106**, whose answer-direction
-controls are the published J-lens and R-lens read directions. See
-[Stage 106 depends on stage 201](#stage-106-depends-on-stage-201).
+Stage 201 artifacts are used only by E19 and optional descriptive diagnostics;
+they are not required by DAS.
 
 ## Stage 200 — fitting corpus and probe suite (CPU)
 
@@ -1127,7 +1113,7 @@ make sinkflow-vocab-all          # 125 → 127
 make sinkflow-lens-all           # 128 → 131
 make sinkflow-smoke / sinkflow-vocab-smoke / sinkflow-lens-smoke
 
-# E19: the published J-lens and R-lens
+# E19: published J-lens with R-lens supporting replication
 make lens                        # 200 → 206 (202 gates 203-206)
 make lens-check / lens-fit-dry / lens-fit / lens-fit-paperminimal
 make lens-validate / lens-readout / lens-ablate / lens-concepts / lens-report
@@ -1188,25 +1174,20 @@ scripts invoke `$PYTHON` directly rather than a bare `python`;
    `make probes context obfuscation MODEL=deepseek-coder-6.7b`.
 4. Security track: `jobs/sinkflow_extract.csh`, then `make sinkflow-probe
    sinkflow-obf sinkflow-report`, then `jobs/sinkflow_vocab.csh`.
-5. Causal prerequisites: run binding stages 100–105. Stage 106 now waits for
-   the published lens artifacts from step 6; `make binding` is appropriate only
-   after those artifacts already exist.
+5. Causal experiment: run binding stages 100–108. It is self-contained and does
+   not wait for lens artifacts.
 5b. Observational readout of the same pairs, after stage 101 has recorded H0:
    `screen -dmS binding-clrp-6.7b env MODEL=deepseek-coder-6.7b jobs/binding_clrp.csh`
    (and the same for `deepseek-coder-1.3b`, where it runs despite H1 failing).
    Minutes, not hours.
-6. E19, the published J-lens/R-lens: `make lens-corpus` locally, rsync
+6. E19, published J-lens with R-lens replication: `make lens-corpus` locally, rsync
    `data/lens_corpus data/lens_eval` up, then one screen session per model,
    sequentially:
    `screen -dmS lens-1.3b env MODEL=deepseek-coder-1.3b HALVES=--halves jobs/workspace_lens.csh`
    Run `make lens-fit-dry MODEL=...` first to size it. The job now includes the
    stage-206 semantic-concept panel and regenerates the E19 report afterwards.
-7. Re-run E13's claim-bearing stages with the same published lenses:
-   `screen -L -Logfile binding-jr-6.7b.log -dmS binding-jr-6.7b env
-   MODEL=deepseek-coder-6.7b jobs/binding_jr_controls.csh`. This runs only
-   106–108 and reuses H0–H3 plus the stage-201 artifacts. Run models one at a
-   time. For StarCoder2 the job automatically adds the paper-minimal R-lens arm
-   when that sensitivity artifact exists.
+7. For the final DAS control run, use `jobs/binding_das_answer_control.csh` from
+   tcsh/csh. It runs stages 106–108 and reuses H0–H3; no J/R artifact is needed.
 8. Anywhere: `make assets`; rsync `results/tables results/figures` back.
 
 If the cluster has no internet, run `make data-real` locally and rsync `data/`

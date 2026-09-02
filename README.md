@@ -13,7 +13,8 @@ The active evidence forms one sequence:
    weakens under competing scopes and control-flow flattening.
 3. **Causal use:** a rank-1 DAS interchange changes which definition the model
    behaves as though the variable refers to.
-4. **Lenses:** the published **J-lens and R-lens** of
+4. **Lenses:** the published **J-lens**, with the R-lens as a supporting
+   replication, from
    [the 2026 global-workspace paper](https://transformer-circuits.pub/2026/workspace/index.html)
    and [the R-lens post](https://www.alignmentforum.org/posts/nv8oedrnLXKRzNEL9/),
    recover values at the answer position but essentially not at three earlier
@@ -115,43 +116,37 @@ installed definition supplies.
 DAS produces the installed answer on 100% of held-out cases in both arms, in
 DeepSeek-Coder 6.7B and StarCoder2 3B.
 
-The controls isolate distinct alternatives. An answer direction built from the
-**published** J-lens (`u_w(l) = J_lᵀ(g·W_U[w])`, from the fitted artifact of
-stage 201) and scaled to the DAS edit norm tests whether the learned
-intervention is merely a fixed output-token push; the published R-lens supplies
-the same diagnostic descriptively, and the raw unembedding row supplies a
-no-transport floor. Dose-matched and rank-matched random subspaces test generic
+The decisive alternative is a separately trained rank-1 answer-token actuator
+at the same site. It uses the same optimiser, steps, split, and per-row edit
+norm as binding DAS, but never receives the donor binding state. It works on
+the fitted `ab` arm and attenuates on crossed `ba`, whereas binding DAS remains
+perfect. Dose-matched and rank-matched random subspaces test generic
 disruption and provide a random rank-1 floor. A no-op detects hook or
 measurement artifacts, a whole-state donor patch verifies that the intervention
 site can affect the answer, and the mean donor−host direction tests the simplest
-non-learned rank-1 alternative. No lens finds or constrains the DAS direction:
-the subspace is fitted and its rank selected before any lens file is opened, and
-the artifacts are read only to build the controls.
+non-learned rank-1 alternative. The completed H0–H5 reports pass on both models.
+No lens finds, initializes, or constrains the DAS direction. Earlier attempts to
+use lens read directions as causal answer actuators are archived.
 
-> **The 100% figures above predate a 2026-09-01 change and are superseded.**
-> Until then the answer-direction control was a *corpus-averaged cotangent
-> readout* fitted inside stage 106 — a different estimator from the published
-> J-lens ([WORKSPACE_LENS.md §1](docs/WORKSPACE_LENS.md)). H5's verdict rested on
-> that control, so it is marked superseded rather than translated, and stage 106
-> must run again against the stage-201 artifact. The archived numbers are in
-> [ARCHIVE.md §4b](docs/ARCHIVE.md).
+### 4. Lenses: J-lens, with R-lens supporting replication
 
-### 4. Lenses: the published J-lens and R-lens
-
-E19 applies the released full-vocabulary J-lens and RelP R-lens to
+E19 applies the released full-vocabulary J-lens to
 DeepSeek-Coder 1.3B/6.7B and StarCoder2-3B. All required implementation gates
 pass. Both lenses recover every value family at pass@10 = 1.000 when the value
 is about to be emitted, but the value is essentially absent at the use token,
 the following token, and the call site. This includes computed arithmetic
 targets that never appear in the prompt.
 
-J-lens and R-lens direction erasures use separate distractor controls, stable
+J-lens direction erasures use separate distractor controls, stable
 random controls, exact edit-magnitude matching, and paired cluster-bootstrap
 intervals. Strong effects occur beside the output head. Mid-network,
 StarCoder2 is null; DeepSeek 6.7B has only a small L20 effect that does not beat
 the logit direction; and on DeepSeek 1.3B the logit direction is stronger than
-J-lens. R-lens makes some local improvements over J-lens, but does not recover a
-broad early-layer advantage on these code models.
+J-lens. The R-lens study closely replicates this pattern. It makes some local
+improvements but does not recover a broad early-layer advantage. In the two
+completed DeepSeek semantic panels, J-lens also surfaces controlled
+binding-related vocabulary (`scope` or `global`) without surfacing the concrete
+runtime value; R-lens supports that positive result as well.
 
 
 ## What the active evidence supports
@@ -161,13 +156,14 @@ The narrow conclusion is:
 > In controlled programs, variable binding becomes linearly represented, remains
 > stable under many surface changes but is fragile to structural interference,
 > is causally read from a rank-1 component at the use site, but is not surfaced
-> as a mid-network value workspace by the published J-lens or R-lens.
+> as a mid-network concrete-value token by the published J-lens. The R-lens
+> independently supports this conclusion.
 
 This conclusion is deliberately narrow. It does not establish general program
 understanding, causal binding use at every layer or site, or transfer of the
 controlled isolation to real code. It does not show that the DAS direction is
-unique or recover a complete attention mechanism. A J-lens/R-lens null means
-the published token-indexed linear readouts do not surface the value; it does
+unique or recover a complete attention mechanism. A J-lens value null means
+the published token-indexed linear readout does not surface the value; it does
 not contradict the probe and DAS evidence that binding is represented and used.
 
 ## Repository map
@@ -204,7 +200,7 @@ make extract probes context obfuscation assets MODEL=deepseek-coder-1.3b
 # Causal binding intervention
 make binding-pilot
 
-# J-lens and R-lens (E19). Size the fit first — it is the one
+# J-lens with supporting R-lens replication (E19). Size the fit first — it is the one
 # expensive stage in the repository.
 make lens-fit-dry MODEL=deepseek-coder-6.7b
 make lens         MODEL=deepseek-coder-1.3b LENS_HALVES=--halves
@@ -216,9 +212,9 @@ Read [docs/PIPELINE.md](docs/PIPELINE.md) before running the full model suite.
 
 | Model | Active role |
 |---|---|
-| `deepseek-coder-1.3b-base` | representation, robustness, and J-lens/R-lens evaluation |
-| `deepseek-coder-6.7b-base` | representation, robustness, DAS, and J-lens/R-lens evaluation |
-| `starcoder2-3b` | robustness, cross-architecture DAS replication, and J-lens/R-lens evaluation |
+| `deepseek-coder-1.3b-base` | representation, robustness, J-lens, and R-lens replication |
+| `deepseek-coder-6.7b-base` | representation, robustness, DAS, J-lens, and R-lens replication |
+| `starcoder2-3b` | robustness, cross-architecture DAS, J-lens, and R-lens replication |
 
 Base models are used because the target is the representation learned during
 code pretraining rather than chat behavior.

@@ -1,6 +1,6 @@
 experiment: E13
 model: starcoder2-3b
-verdict: NOT SUPPORTED
+verdict: BINDING TRANSPORTED
 question: Does a low-rank, magnitude-free interchange at the site where a variable
   binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token
   or an answer direction?
@@ -15,7 +15,7 @@ do_not_claim:
 - "that the R-lens arm gates anything \u2014 it is reported, never gated"
 - "any number from the ARCHIVED `answer_direction` arm; it is a different estimator\
   \ (docs/WORKSPACE_LENS.md \xA71) and is not comparable"
-first_blocking_gate: H6
+first_blocking_gate: null
 gates_run_under_override: []
 superseded: null
 structural_zeros_broken: null
@@ -84,75 +84,7 @@ gates:
     \ \u2014 das_answer_control ab +4.752 [+4.595, +4.900], installed 96.6% (passes:\
     \ True); ba/ab argmax ratio 0.468 against transport's 1.031 (bar 0.516) (fails:\
     \ True)"
-- gate: H6
-  meaning: 'the relevance readout is mechanically sound: the LRP rules actually installed
-    so relevance conserves, the token roles partition every token exactly once, the
-    per-role deltas close to the difference of the two conservation ratios, every
-    binding_flip pair differs at exactly one measured token index, the fixed-target
-    conditions really do score both members at one token, and every declared cell
-    exists'
-  owner_stage: 140_binding_relevance
-  recorded: false
-  passed: false
-  value: null
-  override: false
-  detail: not recorded
-- gate: H7
-  meaning: 'the candidate vocabulary is mechanically sound: every declared lexicon
-    pair is kept whole or dropped whole with a reason, enough pairs survive from more
-    than one family, discovery ran on calibration bases only and the frozen file records
-    which, and the candidate set contains the lexicon, the discovered pool and the
-    random controls without duplicates'
-  owner_stage: 150_binding_verbal_discover
-  recorded: false
-  passed: false
-  value: null
-  override: false
-  detail: not recorded
-- gate: H8
-  meaning: 'the forced choice is mechanically sound: every declared (base, cell, question)
-    is scored, the rendered question is identical in all four cells of a base, no
-    question names the inner definition, both choices are distinct single tokens,
-    both variants of every word style ran, and the value positive control ran'
-  owner_stage: 151_binding_verbal_behaviour
-  recorded: false
-  passed: false
-  value: null
-  override: false
-  detail: not recorded
-- gate: H9
-  meaning: "the verbalisation relevance readout is mechanically sound: H6's checks\
-    \ on the verbalisation prompt, plus a positive-score condition \u2014 `R_t / s`\
-    \ is a share only when the score is positive, and conservation holds for negative\
-    \ scores too"
-  owner_stage: 152_binding_verbal_relevance
-  recorded: false
-  passed: false
-  value: null
-  override: false
-  detail: not recorded
-- gate: H10
-  meaning: 'the unprompted vocabulary readout is mechanically sound: every declared
-    lexicon pair kept whole or dropped whole with a reason, the candidate row order
-    the margin arithmetic assumes, all three readouts carrying the same rows with
-    their kinds declared and the random control actually Gram-matched, the scored
-    text being E13''s program verbatim with the encodings agreeing through the use
-    position, the use token identical in all four cells, every declared cell present
-    in both arms over the declared layer grid, and the positive control fitted on
-    calibration and read on test'
-  owner_stage: 160_binding_lexlens
-  recorded: false
-  passed: false
-  value: null
-  override: false
-  detail: not recorded
-diagnostic: "results/binding/starcoder2-3b/e16_*.csv \u2014 MECHANICAL, so a failure\
-  \ is an apparatus fault and never a negative result. Read the LRP rule counts first:\
-  \ on a LayerNorm model with a non-gated MLP (starcoder2) the homogenising rules\
-  \ bind to nothing, relevance does not conserve, and the readout is NOT APPLICABLE\
-  \ rather than failing. This is the ARCHIVED cotangent method, not the published\
-  \ R-lens \u2014 see docs/WORKSPACE_LENS.md \xA71."
-rerun_after_fix: python scripts/140_binding_relevance.py --model starcoder2-3b
+next_step: "write it up \u2014 both outcomes are reportable; see docs/RESULTS.md R13"
 control_panel:
 - arm: ab
   variant: das_binding
@@ -219,8 +151,8 @@ control_panel:
   says_installed_rate: 0.0232142857142857
   says_other_rate: 0.0
   flip_rate: 0.0
-  edit_norm: 0.421957494808365
-  edit_fraction: 0.0132179291805528
+  edit_norm: 0.4219574948083649
+  edit_fraction: 0.0132179291805527
   n: 560
   n_bases: 280
   vs_das_binding: 7.737053571588227
@@ -259,7 +191,7 @@ control_panel:
   edit_fraction: 0.7812725816730232
   n: 560
   n_bases: 280
-  vs_das_binding: 6.113337056072695
+  vs_das_binding: 6.1133370560726945
   vs_das_lo: 6.031276505107858
   vs_das_hi: 6.188847661515964
 - arm: ba
@@ -268,13 +200,13 @@ control_panel:
   layer: 12
   split: test
   delta_ld: 7.764871653222612
-  ci_lo: 7.692935967277735
+  ci_lo: 7.692935967277736
   ci_hi: 7.834213171085077
   says_installed_rate: 1.0
   says_other_rate: 0.0
   flip_rate: 0.9875
-  edit_norm: 14.910400930479655
-  edit_fraction: 0.4670444341104444
+  edit_norm: 14.910400930479652
+  edit_fraction: 0.4670444341104443
   n: 560
   n_bases: 280
   vs_das_binding: .nan

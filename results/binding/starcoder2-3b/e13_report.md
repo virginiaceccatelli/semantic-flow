@@ -1,6 +1,6 @@
 # E13 binding interchange — starcoder2-3b
 
-**Verdict: NOT SUPPORTED**
+**Verdict: BINDING TRANSPORTED**
 
 Does a low-rank, magnitude-free interchange at the site where a variable binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token or an answer direction?
 
@@ -16,21 +16,10 @@ The same binding flip demands opposite token movements in the two value assignme
 - **PASS** `H3` (whole-state interchange flips the answer — the ceiling, per arm) — site use, layer 12 (both chosen on calibration): ab: +1.627 [+1.568, +1.683], flip rate 0.596; ba: +1.660 [+1.602, +1.718], flip rate 0.632 (thresholds: CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says nothing.
 - **PASS** `H4` (low-rank interchange beats matched controls on the TRAINING arm) — ab @ use L12 r1: +7.740 [+7.662, +7.816] = 476% of the whole-state ceiling +1.627 (threshold 50%); controls cleared: True; edit |14.884| = 0.466 of ||h||
 - **PASS** `H5` (the same subspace transfers to the HELD-OUT value assignment, where an answer direction cannot) — ba @ use L12 r1: das_binding installed 100.0% = 155% of the held-out ceiling (threshold 50%); margin +7.765 [+7.693, +7.834] = 468% of it; discriminator — das_answer_control ab +4.752 [+4.595, +4.900], installed 96.6% (passes: True); ba/ab argmax ratio 0.468 against transport's 1.031 (bar 0.516) (fails: True)
-- **NOT RUN** `H6` (the relevance readout is mechanically sound: the LRP rules actually installed so relevance conserves, the token roles partition every token exactly once, the per-role deltas close to the difference of the two conservation ratios, every binding_flip pair differs at exactly one measured token index, the fixed-target conditions really do score both members at one token, and every declared cell exists) — not recorded
-- **NOT RUN** `H7` (the candidate vocabulary is mechanically sound: every declared lexicon pair is kept whole or dropped whole with a reason, enough pairs survive from more than one family, discovery ran on calibration bases only and the frozen file records which, and the candidate set contains the lexicon, the discovered pool and the random controls without duplicates) — not recorded
-- **NOT RUN** `H8` (the forced choice is mechanically sound: every declared (base, cell, question) is scored, the rendered question is identical in all four cells of a base, no question names the inner definition, both choices are distinct single tokens, both variants of every word style ran, and the value positive control ran) — not recorded
-- **NOT RUN** `H9` (the verbalisation relevance readout is mechanically sound: H6's checks on the verbalisation prompt, plus a positive-score condition — `R_t / s` is a share only when the score is positive, and conservation holds for negative scores too) — not recorded
-- **NOT RUN** `H10` (the unprompted vocabulary readout is mechanically sound: every declared lexicon pair kept whole or dropped whole with a reason, the candidate row order the margin arithmetic assumes, all three readouts carrying the same rows with their kinds declared and the random control actually Gram-matched, the scored text being E13's program verbatim with the encodings agreeing through the use position, the use token identical in all four cells, every declared cell present in both arms over the declared layer grid, and the positive control fitted on calibration and read on test) — not recorded
-
-## Diagnostic
-
-results/binding/starcoder2-3b/e16_*.csv — MECHANICAL, so a failure is an apparatus fault and never a negative result. Read the LRP rule counts first: on a LayerNorm model with a non-gated MLP (starcoder2) the homogenising rules bind to nothing, relevance does not conserve, and the readout is NOT APPLICABLE rather than failing. This is the ARCHIVED cotangent method, not the published R-lens — see docs/WORKSPACE_LENS.md §1.
-
-Re-run after fixing: `python scripts/140_binding_relevance.py --model starcoder2-3b`
 
 ## Controls — both arms
 
-`ab` is the arm the DAS subspace and every fixed answer direction were built on; `ba` is the crossed arm, where the identical binding flip demands the opposite token. `delta_ld` is the paired logit-difference shift with a 95% cluster-bootstrap interval over base programs; `installed` is the full-vocabulary argmax rate, which the gates read because `delta_ld` is positively biased at ceiling accuracy. `|edit|` and `|edit|/|h|` show the dose: every fixed answer direction is matched to the treatment's own per-row edit norm, so no arm is compared against another at a different size. `vs das` is a paired difference on the *same* rows.
+`ab` is the arm on which binding DAS and the answer-only control were fitted; `ba` is the crossed arm, where the identical binding flip demands the opposite token. `delta_ld` is the paired logit-difference shift with a 95% cluster-bootstrap interval over base programs; `installed` is the full-vocabulary argmax rate, which the gates read because `delta_ld` is positively biased at ceiling accuracy. `|edit|` and `|edit|/|h|` show the dose: the answer-only control and optional lens directions are matched to the treatment's own per-row edit norm, so no arm is compared at a different size. `vs das` is a paired difference on the *same* rows.
 
 | arm | variant | delta_ld | 95% CI | installed | flip | \|edit\| | \|edit\|/\|h\| | vs das (paired, 95% CI) | n | bases |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -59,7 +48,7 @@ Re-run after fixing: `python scripts/140_binding_relevance.py --model starcoder2
 ### How to read it
 
 1. **DAS follows binding** if it succeeds in *both* crossed arms.
-2. **A fixed answer direction** should work in the training arm `ab` and attenuate or reverse in the crossed arm `ba` — it was built from `ab`'s required movement and held fixed.
+2. **The trained answer-only control** should work in `ab` and attenuate or reverse in `ba`: its fitted answer orientation is frozen.
 3. `das_answer_control` must work above the matched-random floor on `ab` and attenuate or reverse on `ba`. Otherwise H5 does not identify binding transport.
 4. Published J/R directions are reported as lens diagnostics; they do not gate the causal experiment.
 

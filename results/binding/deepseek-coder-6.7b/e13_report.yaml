@@ -84,76 +84,6 @@ gates:
     \ \u2014 das_answer_control ab +4.773 [+4.580, +4.965], installed 76.8% (passes:\
     \ True); ba/ab argmax ratio 0.274 against transport's 0.995 (bar 0.498) (fails:\
     \ True)"
-- gate: H6
-  meaning: 'the relevance readout is mechanically sound: the LRP rules actually installed
-    so relevance conserves, the token roles partition every token exactly once, the
-    per-role deltas close to the difference of the two conservation ratios, every
-    binding_flip pair differs at exactly one measured token index, the fixed-target
-    conditions really do score both members at one token, and every declared cell
-    exists'
-  owner_stage: 140_binding_relevance
-  recorded: true
-  passed: true
-  value: 51200.0
-  override: false
-  detail: '25600 readings and 51200 paired contrasts over 4 contrasts x 8 layers x
-    4 target conditions; median |rho-1| 8.61e-08; conserving layers [0, 3, 7, 11,
-    15, 19, 23, 27]; LRP rules bound {''ln'': 65, ''mlp'': 32, ''attn'': 32}'
-- gate: H7
-  meaning: 'the candidate vocabulary is mechanically sound: every declared lexicon
-    pair is kept whole or dropped whole with a reason, enough pairs survive from more
-    than one family, discovery ran on calibration bases only and the frozen file records
-    which, and the candidate set contains the lexicon, the discovered pool and the
-    random controls without duplicates'
-  owner_stage: 150_binding_verbal_discover
-  recorded: true
-  passed: true
-  value: 221.0
-  override: false
-  detail: 10 lexicon pairs from 4 families, 15 mechanism words, 221 candidates (160
-    discovered, 32 random) over 120 calib bases
-- gate: H8
-  meaning: 'the forced choice is mechanically sound: every declared (base, cell, question)
-    is scored, the rendered question is identical in all four cells of a base, no
-    question names the inner definition, both choices are distinct single tokens,
-    both variants of every word style ran, and the value positive control ran'
-  owner_stage: 151_binding_verbal_behaviour
-  recorded: true
-  passed: true
-  value: 14400.0
-  override: false
-  detail: 14400 scored choices over 9 questions x 400 bases x 4 cells; report split
-    test
-- gate: H9
-  meaning: "the verbalisation relevance readout is mechanically sound: H6's checks\
-    \ on the verbalisation prompt, plus a positive-score condition \u2014 `R_t / s`\
-    \ is a share only when the score is positive, and conservation holds for negative\
-    \ scores too"
-  owner_stage: 152_binding_verbal_relevance
-  recorded: true
-  passed: true
-  value: 64000.0
-  override: false
-  detail: '38400 readings and 64000 paired contrasts over 4 contrasts x 8 layers x
-    5 target conditions for scope/direct; median |rho-1| 1.27e-07; readable layers
-    [0, 3, 7, 11, 15, 19, 23, 27]; LRP rules bound {''ln'': 65, ''mlp'': 32, ''attn'':
-    32}'
-- gate: H10
-  meaning: 'the unprompted vocabulary readout is mechanically sound: every declared
-    lexicon pair kept whole or dropped whole with a reason, the candidate row order
-    the margin arithmetic assumes, all three readouts carrying the same rows with
-    their kinds declared and the random control actually Gram-matched, the scored
-    text being E13''s program verbatim with the encodings agreeing through the use
-    position, the use token identical in all four cells, every declared cell present
-    in both arms over the declared layer grid, and the positive control fitted on
-    calibration and read on test'
-  owner_stage: 160_binding_lexlens
-  recorded: true
-  passed: true
-  value: 108000.0
-  override: false
-  detail: 108000 reversal rows over 400 bases x 2 arms x 5 layers x 3 readouts x 9
-    pairs; probe succeeds at layers [8, 12, 16, 20, 24]; report split test
 next_step: "write it up \u2014 both outcomes are reportable; see docs/RESULTS.md R13"
 control_panel:
 - arm: ab
@@ -168,7 +98,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 1.0
   edit_norm: 18.456817636920647
-  edit_fraction: 0.4160653447875792
+  edit_fraction: 0.4160653447875791
   n: 560
   n_bases: 280
   vs_das_binding: .nan
@@ -190,7 +120,7 @@ control_panel:
   n: 560
   n_bases: 280
   vs_das_binding: 3.3455357130616905
-  vs_das_lo: 3.1658244967181237
+  vs_das_lo: 3.1658244967181233
   vs_das_hi: 3.534888391992343
 - arm: ab
   variant: mean_difference
@@ -222,7 +152,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 0.0
   edit_norm: 0.5884767898650503
-  edit_fraction: 0.0132077474519532
+  edit_fraction: 0.0132077474519531
   n: 560
   n_bases: 280
   vs_das_binding: 8.119140625
@@ -239,7 +169,7 @@ control_panel:
   says_installed_rate: 0.0160714285714285
   says_other_rate: 0.0
   flip_rate: 0.0142857142857142
-  edit_norm: 19.68163939988225
+  edit_norm: 19.681639399882258
   edit_fraction: 0.4435632278871744
   n: 560
   n_bases: 280
@@ -257,7 +187,7 @@ control_panel:
   says_installed_rate: 0.7375
   says_other_rate: 0.0
   flip_rate: 0.7375
-  edit_norm: 30.910847491610877
+  edit_norm: 30.910847491610873
   edit_fraction: 0.6967767909072117
   n: 560
   n_bases: 280
@@ -311,7 +241,7 @@ control_panel:
   says_installed_rate: 0.675
   says_other_rate: 0.0
   flip_rate: 0.675
-  edit_norm: 25.67549962143132
+  edit_norm: 25.675499621431317
   edit_fraction: 0.5786281224524952
   n: 560
   n_bases: 280
@@ -330,7 +260,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 0.0
   edit_norm: 0.5840562620339274
-  edit_fraction: 0.0131047580939738
+  edit_fraction: 0.0131047580939737
   n: 560
   n_bases: 280
   vs_das_binding: 8.09760045089892

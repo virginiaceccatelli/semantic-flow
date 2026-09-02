@@ -124,22 +124,24 @@ def main(
     import pandas as pd
     import yaml
 
-    from src.experiments.store_gates import BINDING, first_blocking_gate, gate_table, load_gates
+    from src.experiments.store_gates import BINDING, gate_table, load_gates
     from src.utils import write_manifest
 
     t0 = time.time()
     root = output or BINDING.root_for(model)
     root.mkdir(parents=True, exist_ok=True)
 
-    rows = gate_table(model, root=root, spec=BINDING)
+    all_rows = gate_table(model, root=root, spec=BINDING)
     gates = load_gates(model, root=root, spec=BINDING)
-    blocking = first_blocking_gate(model, root=root, spec=BINDING)
     # This is the E13 report. H6-H10 are later archived experiments which share
     # the gate store; their absence must not turn a complete H0-H5 DAS run into
     # INCOMPLETE.
     e13_gates = set(BINDING.order[:6])
-    recorded = [r for r in rows if r["recorded"] and r["gate"] in e13_gates]
+    rows = [r for r in all_rows if r["gate"] in e13_gates]
+    recorded = [r for r in rows if r["recorded"]]
     overridden = [r["gate"] for r in rows if r["override"]]
+    blocking = next((r["gate"] for r in rows
+                     if r["recorded"] and not r["passed"]), None)
 
     # ── the reading surface the interpretation is stated against ────────────
     # Written by stage 106 (and rebuilt by stage 108 from the raw rows). It is
@@ -406,15 +408,15 @@ def _panel_section(panel, superseded: Optional[str] = None) -> list[str]:
                 "`make binding-interchange`."]
 
     lines = stale + ["", "## Controls — both arms", "",
-             "`ab` is the arm the DAS subspace and every fixed answer direction "
-             "were built on; `ba` is the crossed arm, where the identical "
+             "`ab` is the arm on which binding DAS and the answer-only control "
+             "were fitted; `ba` is the crossed arm, where the identical "
              "binding flip demands the opposite token. `delta_ld` is the paired "
              "logit-difference shift with a 95% cluster-bootstrap interval over "
              "base programs; `installed` is the full-vocabulary argmax rate, "
              "which the gates read because `delta_ld` is positively biased at "
-             "ceiling accuracy. `|edit|` and `|edit|/|h|` show the dose: every "
-             "fixed answer direction is matched to the treatment's own per-row "
-             "edit norm, so no arm is compared against another at a different "
+             "ceiling accuracy. `|edit|` and `|edit|/|h|` show the dose: the "
+             "answer-only control and optional lens directions are matched to "
+             "the treatment's own per-row edit norm, so no arm is compared at a different "
              "size. `vs das` is a paired difference on the *same* rows.", "",
              r"| arm | variant | delta_ld | 95% CI | installed | flip | \|edit\| | "
              r"\|edit\|/\|h\| | vs das (paired, 95% CI) | n | bases |",
@@ -441,9 +443,8 @@ def _panel_section(panel, superseded: Optional[str] = None) -> list[str]:
 
     lines += ["", "### How to read it", "",
               "1. **DAS follows binding** if it succeeds in *both* crossed arms.",
-              "2. **A fixed answer direction** should work in the training arm "
-              "`ab` and attenuate or reverse in the crossed arm `ba` — it was "
-              "built from `ab`'s required movement and held fixed.",
+              "2. **The trained answer-only control** should work in `ab` and "
+              "attenuate or reverse in `ba`: its fitted answer orientation is frozen.",
               "3. `das_answer_control` must work above the matched-random floor "
               "on `ab` and attenuate or reverse on `ba`. Otherwise H5 does not "
               "identify binding transport.",

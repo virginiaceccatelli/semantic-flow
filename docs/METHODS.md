@@ -12,8 +12,9 @@ steps of the active argument. Each step answers a different question:
   rewrite;
 - **DAS interchange** asks the causal question: whether changing only a learned
   binding component changes the downstream answer;
-- the published **J-lens and R-lens** ask whether needed program values occupy a
-  full-vocabulary verbalizable workspace before emission.
+- the published **J-lens** asks whether needed program values occupy a
+  full-vocabulary verbalizable workspace before emission; **R-lens** repeats
+  the analysis as a supporting replication.
 
 The controls are part of the method, not optional checks. Grouped splits prevent
 nearly identical rows from leaking across train and test; shuffled labels test
@@ -46,7 +47,7 @@ published lens readout rather than treating decodability as verbalizability.
 - [§4 Instrument 2 — frozen transfer and the obfuscation ladder](#4-instrument-2--frozen-transfer-and-the-obfuscation-ladder)
 - [Part III — From representation to causal use](#part-iii--from-representation-to-causal-use)
 - [§5 DAS — causal interchange of a binding component](#5-das--causal-interchange-of-a-binding-component)
-- [§6 Lenses — the published J-lens and R-lens, and the semantic-concept panel](#6-lenses)
+- [§6 Lenses — J-lens, R-lens replication, and the semantic-concept panel](#6-lenses)
 - [§7 Statistics, gates and reproducibility](#7-statistics-gates-and-reproducibility)
 
 ---
@@ -426,7 +427,7 @@ it says.
 Parts I and II use probes to establish that binding is represented and to measure
 the stability of that representation. Part III asks whether replacing one
 learned binding component makes the answer follow the installed binding. The
-published J-lens and R-lens are then evaluated separately in §6.
+published J-lens is then evaluated separately in §6, with R-lens replication.
 
 The former security benchmark, earlier general output-vocabulary experiments,
 standalone cotangent-lens studies, including E16 and E18, are preserved in
@@ -530,13 +531,11 @@ tokens*, fitted inside stage 106 from the DAS calibration programs. That is a
 different estimator from the published J-lens — a fixed-candidate-vocabulary
 readout with the final normalizer dropped, tabulated against the published
 method in [WORKSPACE_LENS.md §1](WORKSPACE_LENS.md) — and naming its output
-"J-lens vectors" made the E13 control unreadable next to E19. The active
-pipeline now loads the artifact stage 201 fitted (released estimator,
-independent pretraining-like corpus, full `d_model × d_model` Jacobian) and
-neither imports nor fits the archived code. **The old arm's numbers are
-archived, not carried forward**: they are not translated, rescaled or reused,
-and every verdict that rested on them is marked superseded until stage 106 runs
-again. See [ARCHIVE.md](ARCHIVE.md).
+"J-lens vectors" made the E13 control unreadable next to E19. A later attempt
+used the actual stage-201 read directions, but those were causally dead at the
+chosen site. Both attempts are archived, not carried forward. The active H5
+discriminator is the trained `das_answer_control`; no lens artifact is required.
+See [ARCHIVE.md](ARCHIVE.md).
 
 **DAS itself remains lens-independent.** No lens initializes, constrains,
 trains or gates the alignment. Stage 106 can run the complete H4/H5 experiment
@@ -664,7 +663,7 @@ it **b → a**. **Fit the alignment on `ab`; read the claim on `ba`.**
 
 In concrete terms, three outcomes have different meanings:
 
-- If both DAS and `answer_direction_jlens` worked equally in both arms, the
+- If both binding DAS and `das_answer_control` worked equally in both arms, the
   experiment could not distinguish binding transport from a lens-visible answer
   direction, and the causal verdict must not pass.
 - If neither worked in the held-out arm, that arm might simply be insensitive to
@@ -726,9 +725,9 @@ model can do the task *before* building an instrument on top of it.
 
 # 6. Lenses
 
-## 6.1 The published J-lens and R-lens
+## 6.1 The published J-lens, with R-lens supporting replication
 
-E19 is a separate instrument, not a relabelling of §6.8. It vendors Anthropic's
+E19's primary instrument is the J-lens. It is a separate instrument, not a relabelling of §6.8. It vendors Anthropic's
 released Jacobian-lens implementation at commit `581d398`, fits the full
 `d_model × d_model` transport from every source layer to the released
 penultimate-layer target, and reads with the model's own final normalization and

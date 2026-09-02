@@ -1,5 +1,5 @@
 #!/bin/csh
-# E19 — the PUBLISHED J-lens and R-lens, on the code models.
+# E19 — the PUBLISHED J-lens, with R-lens as a supporting replication.
 #
 # This is NOT the repository's earlier lens work. The estimator here is the
 # reference implementation released with "Verbalizable Representations Form a

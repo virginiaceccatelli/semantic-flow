@@ -970,3 +970,24 @@ installed on the training arm — because it was fitted *on the task programs, a
 the intervention layer, targeting the answer position*. It is a worse lens by
 every readout criterion in `WORKSPACE_LENS.md` §1 and a better actuator here.
 Those are different jobs, and the substitution swapped one for the other.
+
+## Resolution: the final matched answer-only control
+
+The unfinished H5 question above was resolved on 2026-09-02 without modifying
+the J-lens or inventing another readout. Stage 106 now trains the simplest
+causal alternative directly: a rank-1 answer-token actuator at the same layer,
+with the same Adam optimiser, number of steps, calibration/test split and
+per-row edit norm as binding DAS, but with no donor binding state. Its fitted
+`a→b` orientation is frozen before the crossed `b→a` arm is evaluated.
+
+This control is live on its training arm and attenuates when the required answer
+direction reverses: 76.8% to 21.1% installed answers on DeepSeek-Coder 6.7B,
+and 96.6% to 45.2% on StarCoder2-3B. Binding DAS remains at 100.0% in both arms
+and both models. The control transfer ratios are 0.274 and 0.468, below the
+predeclared whole-state-relative cutoffs; all structural zeros are exactly zero.
+H0–H5 therefore pass in the active reports.
+
+The J/R intervention rows in this archived section remain useful evidence that
+a good read direction need not be a good causal actuator. They are not part of
+the final DAS discriminator and must not be substituted back into the active
+result.

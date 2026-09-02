@@ -214,8 +214,26 @@ def main(
         panel.to_csv(root / "interchange_panel.csv", index=False)
 
     def ratio_of(variant):
-        hit = ratios[ratios.variant == variant]
-        return None if hit.empty else float(hit["transfer_ratio"].iloc[0])
+        """Crossed/training ratio of the full-vocabulary installed-answer rate.
+
+        H5 is gated on the emitted token, not the positively biased logit
+        margin. Keep the diagnostic on the same outcome as the gate.
+        """
+        # `whole_state` records rank=d and `random_norm` records the rank needed
+        # to match the dose. There is only one summary row per variant at the
+        # selected site/layer, so filtering those rows by DAS's rank would drop
+        # the very references the ratio needs.
+        ab = _cell(summary, arm=TRAIN_ARM, variant=variant, site=site,
+                   layer=layer)
+        ba = _cell(summary, arm=HELD_OUT_ARM, variant=variant, site=site,
+                   layer=layer)
+        if ab is None or ba is None:
+            return None
+        denominator = float(ab.get("says_installed_rate", float("nan")))
+        numerator = float(ba.get("says_installed_rate", float("nan")))
+        if not np.isfinite(denominator) or not denominator:
+            return None
+        return numerator / denominator
 
     r_whole, r_das = ratio_of("whole_state"), ratio_of("das_binding")
     # The discriminator is the causally fitted answer actuator. J/R and raw
@@ -394,7 +412,7 @@ def main(
     console.print(f"  discriminator strength: {strength}")
 
     if not panel.empty:
-        console.print("\n[bold]Both arms, every fixed answer direction[/bold] "
+        console.print("\n[bold]Both arms and matched controls[/bold] "
                       "(paired intervals against das_binding on the same rows):")
         table = Table(show_header=True, header_style="bold")
         for column in ("arm", "variant", "delta_ld", "95% CI", "installed",
@@ -416,7 +434,7 @@ def main(
     if h4_ok and h5_ok:
         reading = ("BINDING TRANSPORTED. The same rank-%d subspace moves the answer "
                    "toward the value the installed binding selects in BOTH value "
-                   "assignments, where an explicit answer direction manages only one. "
+                   "assignments, where the matched answer-only actuator manages mainly one. "
                    "A token- or answer-encoding account is refuted, not merely "
                    "unsupported." % rank)
     elif h4_ok and reversed_ba:

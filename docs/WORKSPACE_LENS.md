@@ -1,9 +1,9 @@
-# E19 — the published J-lens and R-lens on code models
+# E19 — the published J-lens on code models, with R-lens replication
 
 **Status: complete at canonical scale on DeepSeek-Coder 1.3B and 6.7B and
-StarCoder2-3B, except the semantic-concept panel (§6.2, stage 206) and E13's
-re-run against these lenses (§6.4), both of which are built and tested but
-awaiting GPU time.** Both lenses were fitted on 100 independent prompts, passed the
+StarCoder2-3B. The semantic-concept panel is complete on both DeepSeek models
+and not run on StarCoder2. DAS is separately complete and lens-independent.**
+Both lenses were fitted on 100 independent prompts, passed the
 required gates, and were evaluated observationally and causally. StarCoder2 is
 also reported with a paper-minimal sensitivity R-lens that omits the unpublished
 LayerNorm analogue.
@@ -55,12 +55,12 @@ from the old method cannot be read as if it came from the new one. The full
 The full current suite passes (749 tests; one optional test skipped), including
 the published-lens answer-direction and semantic-concept tests.
 
-**2026-09-01: the last active consumer moved over.** One place still *fitted* the
+**Archived DAS-control history.** One place still *fitted* the
 archived estimator inside an active stage — E13 stage 106's `answer_direction`
 control, a corpus-averaged cotangent readout over the two answer tokens built
-from the DAS calibration programs and labelled "J-lens vectors". It now loads
-the published artifact instead (§6.4) and the arms are named for the lens that
-built them:
+from the DAS calibration programs and labelled "J-lens vectors". A subsequent
+run used the actual published artifacts. Both were retired as H5 discriminators
+after the lens directions proved causally dead at the chosen DAS site:
 
 | was | is now |
 |---|---|
@@ -414,40 +414,20 @@ and the fraction of state norm moved is recorded per example.
 
 ---
 
-### 6.4 The fitted lenses are also E13's answer-direction control
+### 6.4 Lens directions are not the DAS discriminator
 
-Stage 201's artifacts have a second consumer. E13's H5 turns on an explicit,
-known answer direction that must work on the arm it was built from and fail on
-the crossed arm; away from the last layer the raw unembedding row is not that
-direction, and the lens read direction is. Since 2026-09-01 stage 106 therefore
-loads the **published** J-lens and builds
+The released J-lens is a readout instrument. Earlier development runs also used
+J- and R-lens read directions as answer-token interventions inside E13. Those
+directions were valid readouts but causally dead at the chosen DAS site, so they
+could not establish the crossed-arm alternative. That attempt is archived.
 
-    u_w(l) = J_lᵀ ( g · W_U[w] ),   d = u_installed(l) − u_own(l)
-
-normalised and dosed to the DAS edit norm on that row. It uses
-`ablation.read_direction` — the same function §6.3's erase arm calls — through
-`src/workspace_lens/answer_direction.py`, which adds only the plumbing: finding
-the artifact, refusing the wrong one, and turning answer tokens into per-token
-vectors. The gain `g` comes from one shared helper, so a J-lens direction in E13
-is the same object as a J-lens direction in E19, LayerNorm behaviour included
-(§4.2: gain only, the bias and the centring left in `norm`).
-
-The arms are named `answer_direction_jlens`, `answer_direction_rlens` and
-`answer_direction_unembedding`, with an optional
-`answer_direction_rlens_paperminimal` for StarCoder2. H5's discriminator is the
-J-lens arm; the R-lens arm is descriptive.
-
-**This replaces a differently-defined control.** Stage 106 previously fitted its
-own corpus-averaged cotangent readout over the two answer tokens, from the DAS
-calibration programs, and called it "J-lens vectors" — §1's archived method, not
-this one. Its numbers are archived rather than carried forward, and stage 107
-marks any E13 verdict that rests on them **SUPERSEDED — RERUN REQUIRED** rather
-than translating them. `docs/METHODS.md` §5.4 and `docs/ARCHIVE.md` record the
-change.
-
-DAS itself is unaffected and stays lens-independent: no lens initializes,
-constrains or trains the alignment, and stage 106 freezes the subspace and its
-rank before opening a lens file.
+The completed E13 experiment instead uses `das_answer_control`: a separately
+trained rank-1 answer actuator with the same layer, optimiser, steps, split and
+per-row edit norm as binding DAS, but no donor binding state. It works on its
+fitted arm and attenuates on the crossed arm. Lens artifacts are therefore not
+required by DAS and do not gate its verdict. This cleanly separates the two
+questions: DAS tests causal binding transport; J-lens tests vocabulary-aligned
+readout, with R-lens as supporting replication.
 
 ---
 
@@ -544,23 +524,20 @@ make lens        MODEL=starcoder2-3b
 make lens        MODEL=deepseek-coder-6.7b
 ```
 
-`make lens` is now 200 → 206, with stage 206's semantic-concept panel between
-the ablation and the report. E13's stage 106 depends on stage 201's artifacts,
-so run `make lens-fit MODEL=...` before `make binding-interchange MODEL=...`:
+`make lens` is 200 → 206, with stage 206's semantic-concept panel between the
+ablation and the report. E13 is independent and may be run in either order:
 
 ```bash
 make lens-fit            MODEL=deepseek-coder-6.7b
 make binding-interchange MODEL=deepseek-coder-6.7b
-# StarCoder2 only: add the separately named sensitivity arm
-make lens-fit-paperminimal MODEL=starcoder2-3b
-make binding-interchange   MODEL=starcoder2-3b BINDING_RLENS_PAPERMINIMAL=auto
+make lens-fit-paperminimal MODEL=starcoder2-3b  # optional R-lens sensitivity
 ```
 
 On the GPU host, run `jobs/workspace_lens.csh` in a screen session instead, one
 model at a time (`device_map="auto"` will otherwise offload a co-resident model's
 tail to meta placeholders). It now runs stage 206 before regenerating stage 205.
-After the lens artifacts exist, `jobs/binding_jr_controls.csh` reruns only E13
-stages 106–108 against them; it does not repeat the expensive lens fit.
+For final DAS use `jobs/binding_das_answer_control.csh`; the old
+`binding_jr_controls.csh` job reproduces archived diagnostics only.
 `jobs/lens_concepts.csh` similarly runs only stages 206 and 205 against existing
 artifacts. The cluster jobs use 100 concept-panel bases by default; override
 with `N_BASES` (concept-only job) or `CONCEPT_BASES` (full lens job).
@@ -596,10 +573,21 @@ minus matched random −0.018, 95% CI [−0.033, −0.002]; R −0.024
 DeepSeek 1.3B has a later L20 effect, yet the logit direction is substantially
 stronger than J (`J − logit = +0.204` [0.149, 0.270]).
 
-This is a complete, gated negative workspace result on these code models: the
-published J-lens does not surface needed program-semantic values while they are
-used, and Jacobian transport supplies no consistent causal or earliest-layer
-advantage over the logit lens. R provides modest local improvements over J on
-DeepSeek, but not the qualitative early-layer recovery reported in the R-lens
-post. Exact tables and intervals are in the generated model reports, with the
+The concrete-value result is therefore a complete, gated negative on all three
+models: J-lens does not surface the needed runtime value while it is used, and
+Jacobian transport supplies no consistent causal or earliest-layer advantage
+over the logit lens. R provides modest local improvements but closely supports
+the same conclusion.
+
+The semantic-concept question is separately positive on the two completed
+DeepSeek panels. At the use position, J-lens binding-family pass@10 is 0.415 on
+1.3B and 0.938 on 6.7B. The clearest controlled candidates are `scope` at L9
+on 1.3B (+7.645/+7.637 across the crossed value arms) and `global` at L20 on
+6.7B (-9.199/-9.040). The close agreement across value arms means the contrast
+follows binding rather than the literal value. R-lens replicates it, sometimes
+more strongly, while logit-lens directions also carry related signal. The claim
+is therefore at the binding-vocabulary-family level, not that J uniquely finds
+one universal internal word. StarCoder2 has no completed concept panel.
+
+Exact tables and intervals are in the generated model reports, with the
 StarCoder2 paper-minimal sensitivity report stored alongside them.

@@ -1,4 +1,4 @@
-"""The published J-lens and R-lens, applied to code models.
+"""The published J-lens, with R-lens supporting replication, on code models.
 
 This package is the *published* method, not an adaptation of it. The estimator
 is the reference implementation released with "Verbalizable Representations Form
