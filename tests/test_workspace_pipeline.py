@@ -341,6 +341,57 @@ def test_all_three_readouts_come_from_one_forward_pass():
                               out[readout.LOGIT_LENS].logits[0])
 
 
+def test_batched_unembedding_matches_one_row_calls():
+    """The stage-206 speed path must not change any lens score or rank."""
+    model = TinyRMSDecoder(n_layers=4)
+    j, r, recipe, _ = _fit_pair(model)
+    layers = [0, 1, recipe.target_layer]
+    lenses = {"j-lens": j.lens, "r-lens": r.lens}
+    scalar = readout.read_prompt(
+        model, LONG_PROMPT, layers, [-1], lenses, unembed_batch_size=1)
+    batched = readout.read_prompt(
+        model, LONG_PROMPT, layers, [-1], lenses, unembed_batch_size=32)
+    assert scalar.keys() == batched.keys()
+    for name in scalar:
+        for layer in layers:
+            torch.testing.assert_close(
+                scalar[name].logits[layer], batched[name].logits[layer],
+                rtol=1e-5, atol=1e-5)
+
+
+def test_batched_unembedding_reduces_vocabulary_head_launches():
+    model = TinyRMSDecoder(n_layers=4)
+    j, r, recipe, _ = _fit_pair(model)
+    layers = [0, 1, recipe.target_layer]
+    original = model.unembed
+    calls = []
+
+    def counted(states):
+        calls.append(int(states.shape[0]))
+        return original(states)
+
+    model.unembed = counted
+    readout.read_prompt(
+        model, LONG_PROMPT, layers, [-1],
+        {"j-lens": j.lens, "r-lens": r.lens}, unembed_batch_size=32)
+    # One final-model read plus one batch containing 3 lenses x 3 layers.
+    assert calls == [1, 9]
+
+
+def test_place_lens_jacobians_is_idempotent_and_counts_bytes():
+    model = TinyRMSDecoder(n_layers=4)
+    j, r, recipe, _ = _fit_pair(model)
+    lenses = {"j-lens": j.lens, "r-lens": r.lens}
+    layers = [0, 1, recipe.target_layer]
+    first = readout.place_lens_jacobians(lenses, layers, torch.device("cpu"))
+    second = readout.place_lens_jacobians(lenses, layers, torch.device("cpu"))
+    assert first == second
+    expected = sum(j.lens.jacobians[layer].numel()
+                   * j.lens.jacobians[layer].element_size() for layer in layers)
+    assert first["j-lens"] == expected
+    assert all(matrix.device.type == "cpu" for matrix in j.lens.jacobians.values())
+
+
 # ── ablation ─────────────────────────────────────────────────────────────────
 
 def test_erase_removes_exactly_the_read_component():

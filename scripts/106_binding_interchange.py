@@ -110,8 +110,15 @@ def main(
     seed: int = typer.Option(42),
     grid_batch_size: int = typer.Option(
         32, help="Prompts per forward pass in the evaluation grid. E13 prompts "
-                 "are uniformly 21 tokens, so no padding is needed and the "
-                 "arithmetic is unchanged (verified bit-identical)."),
+                 "are uniformly 21 tokens, so no padding is needed and row i "
+                 "receives exactly the edit it would have received alone. Note "
+                 "that this holds WITHIN a batch shape, not across shapes: a "
+                 "reduced-precision LM head is a different kernel at a "
+                 "different batch size, which is why the clean baseline is now "
+                 "measured in the same batch as the patched pass rather than "
+                 "one prompt at a time. Changing this value changes the "
+                 "logits' last few bits; it does not change which rows the "
+                 "structural zeros land on."),
     zero_check_n: int = typer.Option(
         60, help="Bases used for the structural-zero site. Verifying a PROVABLE "
                  "zero does not need the full test split."),
@@ -506,20 +513,28 @@ def main(
                                    rank=chosen_rank, n_boot=n_boot, seed=seed)
     panel.to_csv(root / "interchange_panel.csv", index=False)
 
+    # `zeros` is a PRECONDITION on both claim gates, not a note beside them.
+    # The first 6.7B run of this stage recorded H4 and H5 as PASS while its own
+    # provable zeros sat at 0.25, and stage 107 then printed BINDING
+    # TRANSPORTED from that gate file while stage 108 refused to give a reading
+    # at all. Passing the checks in means the two stages cannot disagree.
     passed4, value4, detail4 = evaluate_gate_h4(summary, contrasts, chosen_site,
-                                                chosen_layer, chosen_rank)
+                                                chosen_layer, chosen_rank,
+                                                zeros=zeros)
     record_gate(model, "H4", passed4, detail4, stage="106_binding_interchange",
                 value=value4, extra={"site": chosen_site, "layer": chosen_layer,
                                      "rank": chosen_rank,
+                                     "structural_zeros": zeros,
                                      "override": provenance.get("gate_override", False)},
                 root=root, spec=BINDING)
 
     passed5, value5, detail5 = evaluate_gate_h5(summary, chosen_site,
-                                               chosen_layer, chosen_rank)
+                                               chosen_layer, chosen_rank,
+                                               zeros=zeros)
     record_gate(model, "H5", passed5, detail5, stage="106_binding_interchange",
                 value=value5, extra={"site": chosen_site, "layer": chosen_layer,
                                      "rank": chosen_rank,
-                                     "structural_zeros": verify_structural_zeros(frame),
+                                     "structural_zeros": zeros,
                                      "override": provenance.get("gate_override", False)},
                 root=root, spec=BINDING)
 

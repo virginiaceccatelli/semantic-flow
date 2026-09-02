@@ -1,6 +1,6 @@
 # E13 binding interchange — deepseek-coder-6.7b
 
-**Verdict: BINDING TRANSPORTED**
+**Verdict: MACHINERY BROKEN — NO VERDICT**
 
 Does a low-rank, magnitude-free interchange at the site where a variable binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token or an answer direction?
 
@@ -21,6 +21,12 @@ The same binding flip demands opposite token movements in the two value assignme
 - **PASS** `H8` (the forced choice is mechanically sound: every declared (base, cell, question) is scored, the rendered question is identical in all four cells of a base, no question names the inner definition, both choices are distinct single tokens, both variants of every word style ran, and the value positive control ran) — 14400 scored choices over 9 questions x 400 bases x 4 cells; report split test
 - **PASS** `H9` (the verbalisation relevance readout is mechanically sound: H6's checks on the verbalisation prompt, plus a positive-score condition — `R_t / s` is a share only when the score is positive, and conservation holds for negative scores too) — 38400 readings and 64000 paired contrasts over 4 contrasts x 8 layers x 5 target conditions for scope/direct; median |rho-1| 1.27e-07; readable layers [0, 3, 7, 11, 15, 19, 23, 27]; LRP rules bound {'ln': 65, 'mlp': 32, 'attn': 32}
 - **PASS** `H10` (the unprompted vocabulary readout is mechanically sound: every declared lexicon pair kept whole or dropped whole with a reason, the candidate row order the margin arithmetic assumes, all three readouts carrying the same rows with their kinds declared and the random control actually Gram-matched, the scored text being E13's program verbatim with the encodings agreeing through the use position, the use token identical in all four cells, every declared cell present in both arms over the declared layer grid, and the positive control fitted on calibration and read on test) — 108000 reversal rows over 400 bases x 2 arms x 5 layers x 3 readouts x 9 pairs; probe succeeds at layers [8, 12, 16, 20, 24]; report split test
+
+## Diagnostic
+
+STRUCTURAL ZEROS FAILED — H3/noop: max |Δ logit-diff| = 1.56e-02 over 19200 rows, against a tolerance of 1e-04; H3/pre_mutation_whole_state: max |Δ logit-diff| = 3.12e-02 over 4800 rows, against a tolerance of 1e-04; H5/noop: max |Δ logit-diff| = 2.50e-01 over 1360 rows, against a tolerance of 1e-04; H5/pre_mutation_whole_state: max |Δ logit-diff| = 2.50e-01 over 240 rows, against a tolerance of 1e-04. These are provable zeros: the no-op edit is the zero vector and the pre-mutation site's host and donor are the same state, so the model's output cannot move. Movement means the clean and patched log-probs did not come from the same execution path (a float16 LM-head matmul is a different kernel at a different batch shape, and one fp16 ulp at |logit| ~ 64 is 0.0625 — powers of two in this column are quantization, not transport), or the hooks, anchors or dtypes are wrong. No claim from this run is licensed, including the ones that look good.
+
+Re-run after fixing: `make binding-ceiling MODEL=deepseek-coder-6.7b && make binding-interchange MODEL=deepseek-coder-6.7b && make binding-report MODEL=deepseek-coder-6.7b`
 
 ## Controls — both arms
 

@@ -1,6 +1,6 @@
 experiment: E13
 model: deepseek-coder-6.7b
-verdict: BINDING TRANSPORTED
+verdict: "MACHINERY BROKEN \u2014 NO VERDICT"
 question: Does a low-rank, magnitude-free interchange at the site where a variable
   binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token
   or an answer direction?
@@ -18,6 +18,19 @@ do_not_claim:
 first_blocking_gate: null
 gates_run_under_override: []
 superseded: null
+structural_zeros_broken: "STRUCTURAL ZEROS FAILED \u2014 H3/noop: max |\u0394 logit-diff|\
+  \ = 1.56e-02 over 19200 rows, against a tolerance of 1e-04; H3/pre_mutation_whole_state:\
+  \ max |\u0394 logit-diff| = 3.12e-02 over 4800 rows, against a tolerance of 1e-04;\
+  \ H5/noop: max |\u0394 logit-diff| = 2.50e-01 over 1360 rows, against a tolerance\
+  \ of 1e-04; H5/pre_mutation_whole_state: max |\u0394 logit-diff| = 2.50e-01 over\
+  \ 240 rows, against a tolerance of 1e-04. These are provable zeros: the no-op edit\
+  \ is the zero vector and the pre-mutation site's host and donor are the same state,\
+  \ so the model's output cannot move. Movement means the clean and patched log-probs\
+  \ did not come from the same execution path (a float16 LM-head matmul is a different\
+  \ kernel at a different batch shape, and one fp16 ulp at |logit| ~ 64 is 0.0625\
+  \ \u2014 powers of two in this column are quantization, not transport), or the hooks,\
+  \ anchors or dtypes are wrong. No claim from this run is licensed, including the\
+  \ ones that look good."
 gates:
 - gate: H0
   meaning: 'the four-program factorial verifies: invariants, alignment, execution
@@ -152,7 +165,21 @@ gates:
   override: false
   detail: 108000 reversal rows over 400 bases x 2 arms x 5 layers x 3 readouts x 9
     pairs; probe succeeds at layers [8, 12, 16, 20, 24]; report split test
-next_step: "write it up \u2014 both outcomes are reportable; see docs/RESULTS.md R13"
+diagnostic: "STRUCTURAL ZEROS FAILED \u2014 H3/noop: max |\u0394 logit-diff| = 1.56e-02\
+  \ over 19200 rows, against a tolerance of 1e-04; H3/pre_mutation_whole_state: max\
+  \ |\u0394 logit-diff| = 3.12e-02 over 4800 rows, against a tolerance of 1e-04; H5/noop:\
+  \ max |\u0394 logit-diff| = 2.50e-01 over 1360 rows, against a tolerance of 1e-04;\
+  \ H5/pre_mutation_whole_state: max |\u0394 logit-diff| = 2.50e-01 over 240 rows,\
+  \ against a tolerance of 1e-04. These are provable zeros: the no-op edit is the\
+  \ zero vector and the pre-mutation site's host and donor are the same state, so\
+  \ the model's output cannot move. Movement means the clean and patched log-probs\
+  \ did not come from the same execution path (a float16 LM-head matmul is a different\
+  \ kernel at a different batch shape, and one fp16 ulp at |logit| ~ 64 is 0.0625\
+  \ \u2014 powers of two in this column are quantization, not transport), or the hooks,\
+  \ anchors or dtypes are wrong. No claim from this run is licensed, including the\
+  \ ones that look good."
+rerun_after_fix: make binding-ceiling MODEL=deepseek-coder-6.7b && make binding-interchange
+  MODEL=deepseek-coder-6.7b && make binding-report MODEL=deepseek-coder-6.7b
 control_panel:
 - arm: ab
   variant: das_binding
@@ -165,7 +192,7 @@ control_panel:
   says_installed_rate: 1.0
   says_other_rate: 0.0
   flip_rate: 1.0
-  edit_norm: 18.47976564659829
+  edit_norm: 18.479765646598292
   edit_fraction: 0.4162595011798484
   n: 560
   n_bases: 280
@@ -184,7 +211,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 0.0
   edit_norm: 18.479765646598324
-  edit_fraction: 0.4162595011798491
+  edit_fraction: 0.416259501179849
   n: 560
   n_bases: 280
   vs_das_binding: 8.019196419630731
@@ -202,7 +229,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 0.0
   edit_norm: 18.47976564659832
-  edit_fraction: 0.4162595011798491
+  edit_fraction: 0.416259501179849
   n: 560
   n_bases: 280
   vs_das_binding: 8.017187491910798
@@ -219,7 +246,7 @@ control_panel:
   says_installed_rate: 0.0
   says_other_rate: 0.0
   flip_rate: 0.0
-  edit_norm: 18.47976564659829
+  edit_norm: 18.479765646598292
   edit_fraction: 0.4162595011798484
   n: 560
   n_bases: 280
@@ -256,7 +283,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 0.0
   edit_norm: 0.5897072542857004
-  edit_fraction: 0.0132245053922927
+  edit_fraction: 0.0132245053922926
   n: 560
   n_bases: 280
   vs_das_binding: 8.119642846924918
@@ -291,7 +318,7 @@ control_panel:
   says_installed_rate: 0.7267857142857143
   says_other_rate: 0.0
   flip_rate: 0.7214285714285714
-  edit_norm: 30.90658988186681
+  edit_norm: 30.906589881866804
   edit_fraction: 0.696146383643168
   n: 560
   n_bases: 280
@@ -309,7 +336,7 @@ control_panel:
   says_installed_rate: 1.0
   says_other_rate: 0.0
   flip_rate: 1.0
-  edit_norm: 18.477304075856797
+  edit_norm: 18.477304075856793
   edit_fraction: 0.4160606371395415
   n: 560
   n_bases: 280
@@ -363,7 +390,7 @@ control_panel:
   says_installed_rate: 0.0
   says_other_rate: 0.0
   flip_rate: 0.0
-  edit_norm: 18.4773040758568
+  edit_norm: 18.477304075856797
   edit_fraction: 0.4160606371395415
   n: 560
   n_bases: 280
@@ -430,7 +457,7 @@ control_panel:
   layer: 6
   split: test
   delta_ld: 4.017410709176745
-  ci_lo: 3.904436379627192
+  ci_lo: 3.904436379627191
   ci_hi: 4.125485484847532
   says_installed_rate: 0.7285714285714285
   says_other_rate: 0.0
@@ -440,7 +467,7 @@ control_panel:
   n: 560
   n_bases: 280
   vs_das_binding: 4.071651783585549
-  vs_das_lo: 3.965842630776709
+  vs_das_lo: 3.9658426307767094
   vs_das_hi: 4.180580355976043
 answer_direction_arms:
 - answer_direction_jlens

@@ -65,7 +65,7 @@ pip install -e ".[dev]"                # or: pip install -r requirements.txt
 Verify:
 
 ```bash
-pytest tests/ -v          # 746 tests, CPU-only, no model download
+pytest tests/ -v          # 749 tests, CPU-only, no model download
 python -c "import torch; print(torch.backends.mps.is_available())"   # True on M-series
 ```
 
@@ -498,6 +498,12 @@ Options:
 --no-lens-checksum           # skip the SHA-256 of lens.pt (seconds per GB)
 ```
 
+The evaluation grid runs **two** forward passes per batch, not one: a clean pass
+and the edited pass, over the same batch with the same shapes. That is what makes
+the structural zeros exact (see below); it roughly doubles the grid's forward
+cost, which at E13's uniform 21-token prompts is a small part of the stage next
+to the DAS fit.
+
 Stage 106 refuses, with the reason named, when the J-lens artifact is missing,
 the intervention layer was never fitted, `d_model` or the model provenance does
 not match, the fitted lens used a different tokenizer, or a resulting direction
@@ -513,7 +519,7 @@ R-lens and paper-minimal arms ran.
 | **H0** | `verification.csv` — which of the six invariant checks dropped below 0.999. The arm crossing is the one that makes H5 a falsification |
 | **H1** | `behaviour_summary.csv` per cell. If the model cannot return the bound variable, no instrument built on top of it means anything |
 | **H2** | `decode.csv` — the *measured* surface baseline column, not just accuracy |
-| **H3** | `ceiling_summary.csv` — **both arms** must be alive, or a null in either says nothing. Structural zeros should be `0.00e+00`; see the fp16 note below before treating a non-zero one as a fault |
+| **H3** | `ceiling_summary.csv` — **both arms** must be alive, or a null in either says nothing. Structural zeros must be `0.00e+00` — H3 fails outright otherwise; see the structural-zero note below for which column names the cause |
 | **H4** | `interchange_contrasts.csv` — all three control contrasts must clear zero, and `edit_fraction` must be comparable across arms |
 | **H5** | Read the `answer_direction_jlens` rows **first** — the *published* J-lens `a`-to-`b` output push fixed from `ab` and matched to DAS's per-row edit norm. It should affect `ab` but attenuate or reverse on `ba`, where the required answer movement is `b` to `a`. If it succeeds like DAS in both arms, the design has not separated binding transport from a lens-visible answer direction and no verdict is licensed. `answer_direction_rlens` is the same diagnostic through the published R-lens and is **descriptive**; `answer_direction_unembedding` is the no-transport floor. `interchange_panel.csv` has all of them, both arms, with the exact edit norm and paired intervals |
 
@@ -537,22 +543,45 @@ is asserted against `chosen_layer`.)
 design that was retracted. Read [RESULTS.md R10](RESULTS.md#r10--das-the-binding-representation-is-causally-used)
 before interpreting either.
 
-**On structural zeros in fp16.** `verify_structural_zeros` uses an *absolute*
-`< 1e-4` bound. That is below fp16's resolution at a typical logit scale, so an
-fp16 run can report `False` on arithmetic that is as exact as the dtype permits.
-Diagnose it before treating it as a fault: look at the *distribution* of `noop`
-`delta_ld`, not the maximum. StarCoder2-3B's 2026-08-24 run has 58.6% of rows at
-exactly zero, every non-zero row a multiple of `0.03125` — one fp16 ulp at that
-model's logit scale — a maximum of two ulps, and a mean whose interval straddles
-zero. A genuine fault looks different: the pre-fix run on the same model was
-`−0.129 [−0.141, −0.119]` with a maximum of 0.719, systematically biased and 23
-ulps wide.
+**On structural zeros in fp16 — fixed 2026-09-02, do not tolerate a non-zero.**
+This note used to say that an fp16 run could report `False` on arithmetic as
+exact as the dtype permits, and to diagnose the *distribution* of `noop`
+`delta_ld` rather than its maximum before treating it as a fault. That advice
+was wrong, and following it is why a real measurement error survived several
+runs. The right response to a non-zero provable zero is to fix the comparison,
+not to characterise it.
 
-**Current state on disk:** both 6.7B and StarCoder2 now record H5 as PASS under
-the `says_installed` discriminator. The 6.7B report was regenerated from the
-existing measured rows on 2026-08-27; no model output or interchange row was
-changed. [ARCHIVE.md](ARCHIVE.md) preserves the superseded margin verdict and the
-full reason for the rule correction.
+The cause was never the dtype of the *edit*. It was that the two sides of the
+comparison ran through different execution paths: clean log-probs came from
+`collect_states`, one prompt per forward call, while patched log-probs came from
+a batch of `--grid-batch-size` (32). In float16 the LM head's matmul is a
+different cuBLAS kernel at a different shape, so the two disagree by a few ulps.
+`run_grid` now computes the clean baseline over the **same batch**, so a zero
+edit gives a bit-identical row and `delta_ld` is exactly `0.0`. The tolerance
+stays `1e-4`.
+
+When a structural zero now fails, read two columns before anything else:
+
+| column | reading |
+|---|---|
+| `max_abs_edit_norm` | `0.0` ⇒ the edit really was the zero vector and the arithmetic is right; the fault is in the forward pass or the anchors. Non-zero ⇒ the basis or the donor state is wrong |
+| `max_abs_batch_shape_shift` | how far the batched and single-example clean baselines were from each other. Large here with `edit_norm == 0` is the 2026-09-02 artifact returning |
+
+Powers of two in `delta_ld` (0.0625, 0.125, 0.25 at |logit| ≈ 64; 0.0156,
+0.0312 at smaller scales) are the artifact's signature: they are fp16 logit
+quantization, not transport.
+
+**H3, H4 and H5 all carry the check as a precondition** and fail when it does
+not hold, and stage 107 re-reads it from `gates.yaml` and returns
+`MACHINERY BROKEN — NO VERDICT`. Before 2026-09-02 the check was a note beside
+the gates, and stage 107 printed `BINDING TRANSPORTED` from a run whose zeros
+were at 0.25 while stage 108 refused to give any reading from the same data.
+
+**Current state on disk:** every E13 interchange and ceiling result predates the
+fix and is **superseded** — `results/STATUS.yaml` marks E13 `rerun_required` and
+keeps the pre-fix numbers under `provisional_unlicensed`, cited nowhere.
+Stages 105 → 108 must be re-run for each model.
+[ARCHIVE.md §4c](ARCHIVE.md) records the artifact in full.
 
 ---
 
@@ -1017,6 +1046,15 @@ python scripts/204_lens_ablate.py  --model deepseek-coder-1.3b \
 python scripts/206_lens_concepts.py --model deepseek-coder-1.3b
 python scripts/205_lens_report.py  --model deepseek-coder-1.3b
 ```
+
+Stage 206 keeps both fitted Jacobian stacks resident on the GPU and batches the
+full-vocabulary unembedding (`--unembed-batch-size 32`). It checkpoints rows
+every five items to `concepts/workspace_lens_concept_rows.csv` plus
+`concepts/workspace_lens_concept_checkpoint.json`; the same command resumes
+automatically. This matters especially for StarCoder2: the earlier unoptimised
+path repeatedly copied roughly 2 GB of J/R matrices over PCIe per item and could
+take several days. An interrupted pre-checkpoint run cannot recover its
+in-memory partial rows; update the code and restart once with this version.
 
 Stage 203 reads each value program at use, post-use, call, and answer positions.
 Stage 204 writes both arm summaries and paired cluster-bootstrap contrasts. Its

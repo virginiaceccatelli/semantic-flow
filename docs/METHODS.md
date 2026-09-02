@@ -544,6 +544,33 @@ control-evaluation phase. They are *preflighted* in the stage's first seconds
 (existence, model, `d_model`, tokenizer, layer) from the `lens_meta.json`
 sidecar, so a missing lens fails before the fit rather than after it.
 
+**The structural zeros, and why the clean pass is batched.** `noop` and the
+pre-mutation `def_source` site are *provable* zeros: the no-op edit is the zero
+vector and at `def_source` the host and donor are the same state, so the model's
+output cannot move. Both are checked against a `1e-4` tolerance — a float32
+rounding allowance, not a fitted threshold — and **H3, H4 and H5 all carry the
+check as a precondition**: a run whose provable zeros do not hold has produced no
+result, so no claim gate may pass on it.
+
+Making that check mean anything requires the clean and patched log-probs to come
+from the *same execution path*. They did not, until 2026-09-02. The clean
+baseline came from `collect_states`, which runs one prompt per forward call,
+while the patched logits come from a batch of 32 — and in float16 the LM head's
+matmul is a different cuBLAS kernel at a different shape. On DeepSeek-Coder 6.7B
+that surfaced as no-op deltas of exactly 0, ±0.125 and ±0.25: powers of two,
+because one fp16 ulp at |logit| ≈ 64 is 0.0625. The edits in those rows were
+exactly the zero vector (`edit_norm == 0.0`, computed in numpy and unable to be
+affected by anything the GPU does), so the arithmetic was never in doubt — the
+comparison was. `run_grid` now runs a clean pass over the **same batch**, with
+the same hook installed and the same shapes, differing only in the value written
+at the edited position; rows of a batched matmul are independent and the kernel
+is chosen by shape, so a zero edit now yields a bit-identical row and a delta of
+exactly `0.0`. The old discrepancy is retained per row as `batch_shape_shift`,
+so a precision effect that was once mistaken for a failed zero stays visible
+rather than being silently corrected away. The cost is one extra forward pass
+per batch, which at E13's uniform 21-token prompts is the cheapest part of the
+stage. **The tolerance was not widened to fit the failure.**
+
 **Why `random_norm` and not just `random_rank`.** For an orthogonal projector
 only `span(R)` matters, so matching the Gram matrix of the rows says nothing. A
 random rank-`r` subspace of a `d`-dimensional stream captures on average `r/d` of

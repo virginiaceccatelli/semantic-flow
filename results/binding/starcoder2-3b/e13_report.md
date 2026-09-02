@@ -30,6 +30,10 @@ results/binding/starcoder2-3b/e16_*.csv — MECHANICAL, so a failure is an appar
 
 Re-run after fixing: `python scripts/140_binding_relevance.py --model starcoder2-3b`
 
+## Machinery
+
+STRUCTURAL ZEROS FAILED — H3/noop: max |Δ logit-diff| = 6.25e-02 over 19200 rows, against a tolerance of 1e-04; H3/pre_mutation_whole_state: max |Δ logit-diff| = 6.25e-02 over 4800 rows, against a tolerance of 1e-04; H5/noop: max |Δ logit-diff| = 6.25e-02 over 1360 rows, against a tolerance of 1e-04; H5/pre_mutation_whole_state: max |Δ logit-diff| = 3.13e-02 over 240 rows, against a tolerance of 1e-04. These are provable zeros: the no-op edit is the zero vector and the pre-mutation site's host and donor are the same state, so the model's output cannot move. Movement means the clean and patched log-probs did not come from the same execution path (a float16 LM-head matmul is a different kernel at a different batch shape, and one fp16 ulp at |logit| ~ 64 is 0.0625 — powers of two in this column are quantization, not transport), or the hooks, anchors or dtypes are wrong. No claim from this run is licensed, including the ones that look good.
+
 > **ARCHIVED.** H5's recorded verdict was decided by the ARCHIVED `answer_direction` control — the corpus-averaged cotangent readout stage 106 fitted for itself before 2026-09-01. That is a different estimator from the published J-lens (`docs/WORKSPACE_LENS.md` §1), so the discriminator behind this verdict no longer exists in the pipeline. The number is not translated, rescaled or reused: stage 106 must run again against the stage-201 J-lens artifact.
 
 ## Controls

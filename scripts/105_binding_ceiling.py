@@ -119,7 +119,7 @@ def main(
     calib = interchange_summary(frame, split="calib", n_boot=200, seed=seed)
     site, layer = select_on_calibration(calib, site_list)
 
-    passed, value, detail = evaluate_gate_h3(summary, site, layer)
+    passed, value, detail = evaluate_gate_h3(summary, site, layer, zeros=zeros)
     record_gate(model, "H3", passed,
                 f"site {site}, layer {layer} (both chosen on calibration): {detail}",
                 stage="105_binding_ceiling", value=value,

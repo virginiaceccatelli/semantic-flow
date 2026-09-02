@@ -61,6 +61,7 @@ if (! $?DTYPE)     setenv DTYPE bfloat16
 if (! $?LENS_N)    setenv LENS_N 100
 if (! $?DIM_BATCH) setenv DIM_BATCH 16
 if (! $?CONCEPT_BASES) setenv CONCEPT_BASES 100
+if (! $?UNEMBED_BATCH) setenv UNEMBED_BATCH 32
 # --halves fits two extra lenses per kind on disjoint corpus halves, which is
 # what gate W6 (build repeatability) reads. It triples stage 201, so it is on
 # for the 1.3b run only; W6 is a property of the estimator, not of the model,
@@ -130,7 +131,8 @@ if ($ABLATE != 0) echo "*** stage 204 FAILED (exit $ABLATE) — the report will 
 echo "=== stage 206: semantic-concept J/R/logit panel — GPU ==="
 $PYTHON scripts/206_lens_concepts.py --model "$MODEL" --lens-dir "$OUT" \
     --output "${OUT}/concepts" --dtype "$DTYPE" \
-    --n-bases "$CONCEPT_BASES"
+    --n-bases "$CONCEPT_BASES" --unembed-batch-size "$UNEMBED_BATCH" \
+    --checkpoint-every 5 --resume
 set CONCEPTS = $status
 if ($CONCEPTS != 0) echo "*** stage 206 FAILED (exit $CONCEPTS) — the report will mark the semantic-concept panel not run."
 

@@ -65,6 +65,7 @@ def read_prompt(
     positions: Sequence[int],
     lenses: dict[str, object],
     max_seq_len: int = 512,
+    unembed_batch_size: int = 32,
 ) -> dict[str, Readout]:
     """Apply every named lens (plus the logit lens) to ONE forward pass.
 
@@ -90,8 +91,18 @@ def read_prompt(
     out: dict[str, Readout] = {}
     model_logits = lens_model.unembed(residuals[final_layer][idx].float()).float().cpu()
 
+    # Build every transported state first, then unembed them in reasonably
+    # sized batches. The old implementation called the 49k-row StarCoder LM
+    # head once per (lens, layer), turning one matrix-matrix multiply into 87
+    # tiny matrix-vector launches per prompt. Besides poor GPU utilisation that
+    # reread the full unembedding matrix for every row. Batching is numerically
+    # the same operation (the final norm acts independently on the last axis)
+    # and is dramatically faster on the semantic panel's all-layer sweep.
+    pending: list[tuple[str, int, torch.Tensor]] = []
     for name, lens in list(lenses.items()) + [(LOGIT_LENS, None)]:
-        per_layer: dict[int, torch.Tensor] = {}
+        out[name] = Readout(lens_name=name, logits={},
+                            model_logits=model_logits, input_ids=input_ids,
+                            positions=idx)
         for layer in layers:
             h = residuals[layer][idx].float()
             if lens is not None:
@@ -99,11 +110,54 @@ def read_prompt(
                     logger.warning("%s has no J at layer %d; skipping", name, layer)
                     continue
                 h = lens.transport(h, layer)
-            per_layer[layer] = lens_model.unembed(h).float().cpu()
-        out[name] = Readout(lens_name=name, logits=per_layer,
-                            model_logits=model_logits, input_ids=input_ids,
-                            positions=idx)
+            pending.append((name, int(layer), h))
+
+    batch_size = max(1, int(unembed_batch_size))
+    for start in range(0, len(pending), batch_size):
+        chunk = pending[start:start + batch_size]
+        # All calls in this repository currently select the same number of
+        # positions for every layer (one in stages 203/206). Keep the fallback
+        # explicit so the shared helper remains correct for a future mixed call.
+        widths = {int(h.shape[0]) for _, _, h in chunk}
+        if len(widths) == 1:
+            width = widths.pop()
+            states = torch.cat([h for _, _, h in chunk], dim=0)
+            logits = lens_model.unembed(states).float().cpu()
+            for offset, (name, layer, _) in enumerate(chunk):
+                lo, hi = offset * width, (offset + 1) * width
+                out[name].logits[layer] = logits[lo:hi]
+        else:
+            for name, layer, h in chunk:
+                out[name].logits[layer] = lens_model.unembed(h).float().cpu()
     return out
+
+
+def place_lens_jacobians(lenses: dict[str, object], layers: Sequence[int],
+                         device: torch.device) -> dict[str, int]:
+    """Move requested fitted Jacobians to their read device exactly once.
+
+    `JacobianLens.transport` correctly calls ``J.to(h.device)`` but does not
+    cache the result. Lenses load on CPU, so an item-wise loop otherwise copies
+    every d_model² matrix across PCIe again for every prompt. On StarCoder's 29
+    layers and a J/R pair that was roughly 2 GB of repeated transfers *per
+    item*, which explains the multi-day stage-206 run.
+
+    Mutating the loaded artifact is intentional and local to the process. The
+    saved lens is untouched. Returns byte counts for provenance and diagnostics.
+    """
+    moved: dict[str, int] = {}
+    for name, lens in lenses.items():
+        total = 0
+        for layer in layers:
+            if layer not in lens.jacobians:
+                continue
+            matrix = lens.jacobians[layer]
+            if matrix.device != device:
+                matrix = matrix.to(device)
+                lens.jacobians[layer] = matrix
+            total += matrix.numel() * matrix.element_size()
+        moved[name] = total
+    return moved
 
 
 # ── per-position statistics ──────────────────────────────────────────────────

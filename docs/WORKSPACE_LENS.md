@@ -52,7 +52,7 @@ reproducible. The new names are:
 
 The rename reaches the label strings inside the archived CSVs as well, so a table
 from the old method cannot be read as if it came from the new one. The full
-The full current suite passes (746 tests; one optional test skipped), including
+The full current suite passes (749 tests; one optional test skipped), including
 the published-lens answer-direction and semantic-concept tests.
 
 **2026-09-01: the last active consumer moved over.** One place still *fitted* the
@@ -384,6 +384,19 @@ candidate semantic-lens signal. The stronger standard is replication of the
 same named concept and qualitative layer/read pattern in another model, using
 the complete predeclared table rather than selecting a new vocabulary after the
 first run.
+
+**StarCoder performance and restart safety.** Stage 206 keeps the requested J/R
+Jacobians resident on the read device for the duration of the run. Without this,
+the released `transport()` call moves each CPU-loaded matrix to the residual's
+device on every item—about 2 GB of repeated PCIe traffic per StarCoder item for
+the 29-layer J/R pair. Transported states are also unembedded in batches
+(`--unembed-batch-size`, default 32), rather than issuing one 49k-vocabulary
+matrix-vector call per lens and layer. Rows are appended every five completed
+items by default and accompanied by
+`workspace_lens_concept_checkpoint.json`; rerunning the identical command
+resumes from that checkpoint. A changed model, layer grid, concept tokenization,
+or item set refuses to mix with the checkpoint. Use `--no-resume` only when the
+existing output is intentionally being replaced.
 
 ### 6.3 Causal ablation
 

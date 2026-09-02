@@ -80,6 +80,12 @@ def main(
     seed: int = typer.Option(42),
     dtype: str = typer.Option("bfloat16"),
     device: str = typer.Option("cuda"),
+    unembed_batch_size: int = typer.Option(
+        32, help="Transported states sent through the vocabulary head per call"),
+    checkpoint_every: int = typer.Option(
+        5, help="Items between append-only row checkpoints"),
+    resume: bool = typer.Option(
+        True, "--resume/--no-resume", help="Resume a compatible partial item loop"),
     limit: Optional[int] = typer.Option(None, help="First N items (smoke runs)"),
     tables: bool = typer.Option(True),
 ):
@@ -92,7 +98,8 @@ def main(
     from src.workspace_lens.adapter import load_lens_model
     from src.workspace_lens.evalsuite import resolve_position
     from src.workspace_lens.fitting import load_lens
-    from src.workspace_lens.readout import LOGIT_LENS, rank_of, read_prompt
+    from src.workspace_lens.readout import (LOGIT_LENS, place_lens_jacobians,
+                                            rank_of, read_prompt)
     from src.utils import write_manifest
 
     t0 = time.time()
@@ -138,14 +145,73 @@ def main(
     fitted = sorted(lens_j.jacobians)
     layer_list = ([int(x) for x in layers.split(",")] if layers
                   else fitted[::layer_stride])
+
+    # Lenses load on CPU. `JacobianLens.transport` moves a matrix to the hidden
+    # state's device on demand but does not cache it, which used to copy every
+    # 3072x3072 StarCoder matrix over PCIe again for every item. Keep the
+    # requested J/R stack resident for the whole run. On an H100 this is about
+    # 2.2 GB for both 29-layer float32 stacks, comfortably below the model's
+    # footprint and vastly cheaper than ~2 GB of transfers per prompt.
+    read_device = next(hf_model.parameters()).device
+    resident_bytes = place_lens_jacobians(lenses, layer_list, read_device)
+    console.print("resident lens Jacobians: " + ", ".join(
+        f"{name}={n / 2**30:.2f} GiB on {read_device}"
+        for name, n in resident_bytes.items()))
+
     console.print(f"{len(items)} items x {len(layer_list)} layers x "
                   f"{len(lenses) + 1} readouts x {len(available)} concepts")
 
-    rows = []
-    for n, item in enumerate(items):
+    rows_path = output / "workspace_lens_concept_rows.csv"
+    state_path = output / "workspace_lens_concept_checkpoint.json"
+    run_signature = {
+        "model": model, "layers": layer_list,
+        "item_ids": [item.item_id for item in items],
+        "concepts": [{"name": c.name, "family": c.family,
+                      "token_ids": c.token_ids} for c in available],
+        "lenses": sorted(lenses) + [LOGIT_LENS], "seed": seed,
+    }
+    completed: set[str] = set()
+    if resume and rows_path.exists():
+        if not state_path.exists():
+            raise typer.BadParameter(
+                f"{rows_path} exists without {state_path}; it may be a completed "
+                "older-format run and cannot be resumed safely. Move the output "
+                "directory aside or pass --no-resume to replace it.")
+        saved = json.loads(state_path.read_text())
+        if saved.get("signature") != run_signature:
+            raise typer.BadParameter(
+                f"checkpoint configuration differs from this run: {state_path}. "
+                "Use the original options or pass --no-resume to replace it.")
+        completed = set(saved.get("completed_item_ids", []))
+        console.print(f"resuming after {len(completed)}/{len(items)} completed items")
+    elif not resume:
+        rows_path.unlink(missing_ok=True)
+        state_path.unlink(missing_ok=True)
+
+    rows_buffer: list[dict] = []
+
+    def flush_checkpoint() -> None:
+        if not rows_buffer:
+            return
+        import os
+
+        pd.DataFrame(rows_buffer).to_csv(
+            rows_path, mode="a", header=not rows_path.exists(), index=False)
+        rows_buffer.clear()
+        temporary = state_path.with_suffix(".tmp")
+        temporary.write_text(json.dumps({
+            "signature": run_signature,
+            "completed_item_ids": sorted(completed),
+        }, indent=2, sort_keys=True) + "\n")
+        os.replace(temporary, state_path)
+
+    pending_items = [item for item in items if item.item_id not in completed]
+    for n, item in enumerate(pending_items, start=1):
         ids = lens_model.encode(item.prompt, max_length=512)[0].tolist()
         position = resolve_position(tokenizer, item.prompt, item.anchor, ids)
-        readouts = read_prompt(lens_model, item.prompt, layer_list, [position], lenses)
+        readouts = read_prompt(
+            lens_model, item.prompt, layer_list, [position], lenses,
+            unembed_batch_size=unembed_batch_size)
         for lens_name, readout in readouts.items():
             for layer, logits in readout.logits.items():
                 vec = logits[0]
@@ -154,7 +220,7 @@ def main(
                     # rank is over the FULL vocabulary — the same `rank_of` the
                     # value families use, so the two panels are comparable.
                     score = max(float(vec[i]) for i in concept.token_ids)
-                    rows.append({
+                    rows_buffer.append({
                         "model": model, "item_id": item.item_id,
                         "base_id": item.base_id, "cell": item.cell,
                         "value_arm": item.value_arm,
@@ -168,12 +234,16 @@ def main(
                         "answer_value": item.answer_value,
                         "other_value": item.other_value,
                     })
-        if (n + 1) % 20 == 0:
-            console.print(f"  {n + 1}/{len(items)} items")
+        completed.add(item.item_id)
+        if n % max(1, checkpoint_every) == 0:
+            flush_checkpoint()
+            console.print(f"  {len(completed)}/{len(items)} items (checkpointed)")
+    flush_checkpoint()
 
-    frame = pd.DataFrame(rows)
-    rows_path = output / "workspace_lens_concept_rows.csv"
-    frame.to_csv(rows_path, index=False)
+    if not rows_path.exists():
+        raise RuntimeError("concept loop produced no rows")
+    frame = pd.read_csv(rows_path)
+    rows = frame.to_dict(orient="records")
 
     summary = concept_mod.summarise(rows)
     summary.to_csv(output / "workspace_lens_concept_summary.csv", index=False)
@@ -222,6 +292,8 @@ def main(
         "layer_stride": layer_stride, "n_bases": n_bases,
         "n_random_sets": n_random_sets, "n_boot": n_boot, "seed": seed,
         "dtype": dtype, "device": device, "limit": limit,
+        "unembed_batch_size": unembed_batch_size,
+        "checkpoint_every": checkpoint_every, "resume": resume,
     }, t0, extra={
         "n_items": len(items), "layers_read": layer_list,
         "lenses": sorted(lenses) + [LOGIT_LENS],
@@ -230,6 +302,7 @@ def main(
         # a reader never has to guess what "the concept `shadowed`" was scored on.
         "concepts": [c.as_dict() for c in resolved],
         "concepts_unavailable": [c.name for c in unavailable],
+        "resident_jacobian_bytes": resident_bytes,
         "verdict": call,
     })
 

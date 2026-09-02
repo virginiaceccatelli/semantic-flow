@@ -714,6 +714,151 @@ def test_the_panel_shows_both_arms_with_the_dose_and_paired_intervals():
     assert jlens.loc[TRAIN_ARM, "delta_ld"] > 0 > jlens.loc[HELD_OUT_ARM, "delta_ld"]
 
 
+def test_the_clean_baseline_comes_from_the_same_batch_as_the_patched_one():
+    """The 2026-09-02 fix, pinned on the shape of the bug that forced it.
+
+    A fake model whose logits depend on the BATCH SIZE — which is what float16
+    does on a real one, because the LM head's matmul is a different cuBLAS
+    kernel at a different shape. The no-op edit is provably the zero vector, so
+    `delta_ld` must be exactly 0.0 whatever the batch size. It is only 0.0 if
+    the clean log-probs came from the same batched pass as the patched ones;
+    reading them from a batch-of-one forward reintroduces the artifact.
+    """
+    import numpy as np
+    import pandas as pd
+    import torch
+
+    from src.experiments import binding_interchange as bi
+
+    seen = {}
+
+    def fake_batched(model, ids, layer, positions, fns):
+        # A per-batch-size offset, exactly as fp16 kernel selection produces.
+        batch = ids.shape[0]
+        seen.setdefault("sizes", set()).add(batch)
+        base = torch.zeros(batch, 1, 8)
+        base[:, 0, 3] = 5.0 + 0.125 * batch      # the quantization signature
+        base[:, 0, 5] = 1.0
+        for row, fn in enumerate(fns):
+            edited = fn(torch.zeros(8))
+            base[row, 0, 3] += float(edited.sum())
+        return base
+
+    monkey = bi.transform_positions_batched
+    bi.transform_positions_batched = fake_batched
+    try:
+        # A single cell, one variant: `noop`, whose donor IS the host.
+        host = np.zeros(8)
+        states = {
+            ("b0", "ab", "source"): {
+                "states": {"use": host},
+                # the UNBATCHED clean log-probs, at a different batch size and
+                # therefore a different value — this is the trap
+                "log_probs": np.log(np.ones(8) / 8),
+                "ids": torch.zeros(1, 4, dtype=torch.long)},
+            ("b0", "ab", "target"): {
+                "states": {"use": host},
+                "log_probs": np.log(np.ones(8) / 8),
+                "ids": torch.zeros(1, 4, dtype=torch.long)},
+        }
+
+        class _Rec:
+            base_id, split = "b0", "test"
+            positions = {"use": 0}
+
+            def answer(self, a, b):
+                return 3
+
+            def other_answer(self, a, b):
+                return 5
+
+            def answer_token(self, a, b):
+                return 3
+
+            def other_answer_token(self, a, b):
+                return 5
+
+        frame = bi.run_grid(
+            model=None, tokenizer=None, records=[_Rec()], states=states,
+            layer=0, variants=("noop",), sites=["use"], rank=1,
+            subspace=None, unembedding=None, seed=0, batch_size=8,
+            progress_every=0)
+    finally:
+        bi.transform_positions_batched = monkey
+
+    noop = frame[frame.variant == "noop"]
+    assert not noop.empty
+    # exactly zero, not "small": this is arithmetic
+    assert (noop["delta_ld"].abs() < 1e-12).all(), noop[
+        ["delta_ld", "clean_logit_diff", "clean_logit_diff_unbatched"]]
+    # and the artifact that used to be reported as a failure is now RECORDED
+    assert "batch_shape_shift" in noop
+    assert (noop["batch_shape_shift"].abs() > 0).any(), (
+        "the fake model was built so the two paths disagree; if the shift is "
+        "zero the test is no longer exercising the bug")
+    assert bi.verify_structural_zeros(frame)["noop"]["passed"]
+
+
+def test_structural_zeros_report_the_edit_norm_and_the_batch_shift():
+    """A failure must say WHICH of the two things went wrong.
+
+    `edit_norm == 0` means the arithmetic is right and the discrepancy is in the
+    forward pass; a nonzero `edit_norm` means the basis or the donor is wrong.
+    Reporting only `delta_ld` cannot distinguish them, and on the 6.7B run the
+    distinction was the whole diagnosis.
+    """
+    import pandas as pd
+
+    from src.experiments.binding_interchange import verify_structural_zeros
+
+    rows = [{"variant": "noop", "site": "use", "delta_ld": 0.25,
+             "edit_norm": 0.0, "batch_shape_shift": 0.25}] * 4
+    zeros = verify_structural_zeros(pd.DataFrame(rows))
+    check = zeros["noop"]
+    assert not check["passed"]
+    assert check["edit_is_the_zero_vector"] is True
+    assert check["max_abs_edit_norm"] == 0.0
+    assert check["max_abs_batch_shape_shift"] == 0.25
+    assert check["tolerance"] == 1e-4
+
+
+def test_h3_h4_and_h5_fail_when_the_provable_zeros_do_not_hold():
+    """No claim gate may pass on an apparatus that did not work.
+
+    The 6.7B run recorded H4 and H5 as PASS with its provable zeros at 0.25,
+    and stage 107 then printed BINDING TRANSPORTED while stage 108 refused to
+    give a reading from the same data.
+    """
+    import pandas as pd
+
+    from src.experiments.binding_interchange import (evaluate_gate_h3,
+                                                     evaluate_gate_h4)
+
+    broken = {"noop": {"passed": False, "max_abs_delta_ld": 0.25, "n": 1360,
+                       "tolerance": 1e-4}}
+    summary = _h5_summary(das_installed=0.6, control_ba_installed=0.05)
+    summary = pd.concat([summary, pd.DataFrame([
+        _summary_row(TRAIN_ARM, "das_binding", "use", 0.9, 0.8, 1.0, installed=0.9),
+    ])], ignore_index=True)
+    contrasts = pd.DataFrame([{"contrast": "das_binding - random_rank",
+                               "delta": 1.0, "ci_lo": 0.5, "ci_hi": 1.5, "n": 100}])
+
+    for passed, _, detail in (
+            evaluate_gate_h3(summary, "use", 12, zeros=broken),
+            evaluate_gate_h4(summary, contrasts, "use", 12, 2, zeros=broken),
+            evaluate_gate_h5(summary, "use", 12, 2, zeros=broken)):
+        assert not passed
+        assert "STRUCTURAL ZEROS FAILED" in detail
+
+    # ...and they are unaffected when the zeros hold.
+    fine = {"noop": {"passed": True, "max_abs_delta_ld": 0.0, "n": 1360,
+                     "tolerance": 1e-4}}
+    passed, _, detail = evaluate_gate_h5(summary, "use", 12, 2, zeros=fine)
+    assert passed, detail
+    # and when they were never recorded, the gate is not blocked by their absence
+    assert evaluate_gate_h5(summary, "use", 12, 2, zeros=None)[0]
+
+
 def test_structural_zeros_are_checked_not_assumed():
     import pandas as pd
 
@@ -883,3 +1028,34 @@ def test_matched_rank_snaps_up_so_the_control_is_never_under_dosed():
     assert len(distinct) <= 32, f"{len(distinct)} ranks would still thrash the cache"
     assert _snap(5, floor=1, ceiling=4096) == 5          # small ranks stay exact
     assert _snap(9000, floor=1, ceiling=4096) == 4096    # and the ceiling holds
+
+
+def test_the_gated_report_cannot_contradict_the_diagnostic():
+    """Stage 107 must not print a pass verdict on broken machinery.
+
+    Read from the gate file rather than recomputed, because stage 107 is
+    CPU-only. Both stages 105 and 106 write `structural_zeros` into their gate's
+    `extra`, so a failure in either is visible.
+    """
+    import importlib.util
+    from types import SimpleNamespace
+
+    spec = importlib.util.spec_from_file_location(
+        "s107", "scripts/107_binding_report.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    broken = {"H5": SimpleNamespace(extra={"structural_zeros": {
+        "noop": {"passed": False, "max_abs_delta_ld": 0.25, "n": 1360,
+                 "tolerance": 1e-4}}})}
+    reason = module._structural_zero_failure(broken)
+    assert reason and "STRUCTURAL ZEROS FAILED" in reason
+    assert "2.50e-01" in reason
+
+    fine = {"H5": SimpleNamespace(extra={"structural_zeros": {
+        "noop": {"passed": True, "max_abs_delta_ld": 0.0, "n": 1360}}})}
+    assert module._structural_zero_failure(fine) is None
+    # A gate file with no recorded zeros is UNVERIFIED, not failed: older runs
+    # must still produce a report rather than a false alarm.
+    assert module._structural_zero_failure({"H5": SimpleNamespace(extra={})}) is None
+    assert module._structural_zero_failure({}) is None

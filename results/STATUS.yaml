@@ -879,9 +879,33 @@ experiments:
 
   E13:
     name: binding interchange, falsified by the value assignment
-    status: active
+    status: rerun_required
     stage: "100,101,102,103,104,105,106,107,108"
     model: "deepseek-coder-6.7b, starcoder2-3b"
+    # ── 2026-09-02: EVERY NUMBER BELOW IS SUPERSEDED. Two independent reasons,
+    # and either alone would be enough.
+    #
+    # 1. STRUCTURAL ZEROS. The first run against the published J-lens returned
+    #    provable zeros at 0.25 (interchange no-op and pre-mutation) and 0.0156 /
+    #    0.0312 (ceiling), against a 1e-4 tolerance. The edits themselves were
+    #    exactly the zero vector — `edit_norm == 0.0` in every one of those rows
+    #    — so the arithmetic was right and the discrepancy was in the forward
+    #    pass: clean log-probs came from a batch-of-one pass in `collect_states`
+    #    while patched log-probs came from a batch of 32, and in float16 the LM
+    #    head's matmul is a different kernel at a different shape. Every nonzero
+    #    value was a power of two (0.125, 0.25 at |logit| ~ 64; one fp16 ulp
+    #    there is 0.0625) — quantization, not transport. `run_grid` now computes
+    #    the clean baseline in the SAME batch, and records the old discrepancy
+    #    per row as `batch_shape_shift` so it stays measurable.
+    # 2. THE CONTROL CHANGED. `answer_direction` was a corpus-averaged cotangent
+    #    readout fitted inside stage 106; H5's discriminator is now the published
+    #    J-lens artifact from stage 201. Different estimator, not comparable.
+    #
+    # The pre-fix run's substantive numbers were promising and are recorded
+    # under `provisional_unlicensed` below. They are NOT claims: a provable zero
+    # that is not zero is not a weak result, it is not a result.
+    superseded_on: 2026-09-02
+    rerun: "make binding-ceiling && make binding-interchange && make binding-report"
     tables:
       - results/binding/deepseek-coder-6.7b/interchange_summary.csv
       - results/binding/deepseek-coder-6.7b/interchange_contrasts.csv
@@ -889,8 +913,24 @@ experiments:
       - results/binding/starcoder2-3b/interchange_summary.csv
       - results/binding/starcoder2-3b/interchange_contrasts.csv
       - results/binding/starcoder2-3b/e13_diagnosis.csv
+    # What the pre-fix published-J-lens run showed on deepseek-coder-6.7b. Kept
+    # because it is the reason to re-run rather than to redesign, and discarded
+    # as evidence because its structural zeros did not hold. Nothing here may be
+    # cited, carried into a table, or compared against a later run.
+    provisional_unlicensed:
+      run: 2026-09-02, deepseek-coder-6.7b, layer 6, published J-lens control
+      licensed: false
+      why_not: "interchange no-op 0.25 and pre-mutation 0.25; ceiling no-op
+        0.0156 and pre-mutation 0.0312, against a 1e-4 tolerance"
+      das_vs_whole_state_transfer_ratio: "0.997 vs 0.997"
+      answer_direction_jlens_transfer_ratio: "-0.086 — reverses, as the design predicts"
+      answer_direction_rlens_transfer_ratio: "+0.426 — intermediate; DESCRIPTIVE, gates nothing"
+      random_norm_share_of_das: "0.07"
+      das_says_installed: "1.000 of rows"
     claim: >
-      H0-H5 ALL PASS ON TWO ARCHITECTURE FAMILIES. A rank-1, magnitude-free
+      SUPERSEDED 2026-09-02 — see `superseded_on` above; this text describes the
+      pre-fix runs and is retained only so the re-run has something to check
+      against. H0-H5 ALL PASS ON TWO ARCHITECTURE FAMILIES. A rank-1, magnitude-free
       interchange at the use anchor makes the model emit the value the INSTALLED
       binding selects on 100.0% of held-out rows in BOTH value assignments —
       including the arm the subspace was never fitted on, where a token or

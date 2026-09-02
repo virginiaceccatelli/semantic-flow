@@ -798,3 +798,66 @@ explicit in `evaluate_gate_h5` and pinned by a test. The 6.7B files originally
 belonged to that class and read H5 FAIL. On 2026-08-27, the gate and report were
 regenerated from the unchanged measured rows under the corrected evaluator and
 now read H5 PASS. The table above preserves both verdicts.
+
+---
+
+# 4c. The batch-shape structural-zero artifact (fixed 2026-09-02)
+
+**Not an archived claim — an archived *measurement error*, recorded because the
+failure mode is generic and will recur in any batched patching harness.**
+
+The first E13 run against the published J-lens returned four broken provable
+zeros on DeepSeek-Coder 6.7B:
+
+| check | reported max \|Δ logit-diff\| | tolerance |
+|---|---|---|
+| interchange `noop` | 0.25 | 1e-4 |
+| interchange pre-mutation (`whole_state` @ `def_source`) | 0.25 | 1e-4 |
+| ceiling `noop` | 0.0156 | 1e-4 |
+| ceiling pre-mutation | 0.0312 | 1e-4 |
+
+**It was not a J-lens failure and not an anchor or hook failure.** Two facts
+settled that before anything else was examined:
+
+* `edit_norm` was **exactly 0.0** on every one of those rows. That quantity is
+  computed in numpy from the basis and the donor state and cannot be touched by
+  the GPU, so the edit really was the zero vector and the interchange arithmetic
+  was correct.
+* every nonzero `delta_ld` was a **power of two** — 0, ±0.125, ±0.25 in the
+  interchange, ±0.0156 and ±0.0312 in the ceiling — with a scattering of ~1e-7
+  float32 residue. That is the signature of reduced-precision quantization, not
+  of a representation being transported. One fp16 ulp at |logit| ≈ 64 is 0.0625,
+  and the statistic is a *difference of two* logits.
+
+**Cause.** Clean log-probs came from `collect_states`, which runs one prompt per
+forward call. Patched log-probs came from `transform_positions_batched` at
+`grid_batch_size = 32`. In float16 the LM head's matmul is a different cuBLAS
+kernel at a different shape, so the two paths disagree by a few units in the last
+place. The no-op comparison was therefore never comparing numerically identical
+execution paths, and the "provable zero" was being measured against the wrong
+number.
+
+**Fix.** `run_grid` computes the clean baseline inside the same loop, over the
+**same batch**, with the same hook installed and the same shapes — differing from
+the patched pass only in the value written at the edited position. Rows of a
+batched matmul are independent and the kernel is selected by shape, so a row
+whose edit is the zero vector now comes out bit-identical and its `delta_ld` is
+exactly `0.0`. The tolerance was **not** widened. The former discrepancy is kept
+per row as `batch_shape_shift`, and `verify_structural_zeros` reports
+`max_abs_edit_norm` beside `max_abs_delta_ld` so a future failure says at once
+whether the arithmetic or the forward pass is at fault.
+
+**Second fault, found in the same run.** Stage 107 printed `BINDING TRANSPORTED`
+while stage 108 refused to give any reading from the same data, because the
+structural zeros were a note beside the claim gates rather than a precondition on
+them. H3, H4 and H5 now all fail when the zeros do not hold, and stage 107
+re-checks them from the recorded gate file and returns
+`MACHINERY BROKEN — NO VERDICT`. A gated report that contradicts its own
+diagnostic is worse than either verdict alone.
+
+**The pre-fix substantive numbers**, retained in `results/STATUS.yaml` under
+`provisional_unlicensed` and cited nowhere else: DAS transfer ratio 0.997 against
+whole-state transport's 0.997; `answer_direction_jlens` at −0.086 (reversing, as
+the design predicts); `answer_direction_rlens` at +0.426; norm-matched random at
+7% of the DAS effect; `says_installed` 1.000. **None of it is licensed.** A
+provable zero that is not zero is not a weak result — it is not a result.

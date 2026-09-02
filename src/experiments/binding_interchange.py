@@ -254,6 +254,22 @@ def donor_of(binding: str) -> str:
     return "target" if binding == "source" else "source"
 
 
+def _identity(vec: torch.Tensor) -> torch.Tensor:
+    """The clean pass's transform: hand back the state unchanged.
+
+    Deliberately not `make_interchange_fn(basis, host)`, which would be
+    arithmetically the same but would round-trip the state through float64
+    numpy. The clean baseline must differ from an unhooked forward pass by
+    nothing at all, so it writes back the same values.
+
+    Cloned rather than returned as the view the hook handed in: the hook assigns
+    the result back into the tensor it was sliced from, and a self-assignment is
+    a copy whose source and destination alias. It is well defined, but a clone
+    of `d_model` floats costs nothing measurable and removes the question.
+    """
+    return vec.clone()
+
+
 @torch.no_grad()
 def collect_states(
     model,
@@ -526,15 +542,49 @@ def run_grid(
         batch = cells[start:start + batch_size]
         ids = torch.cat([c["ids"] for c in batch], dim=0)
         positions = [c["record"].positions[c["site"]] for c in batch]
+
+        # ── the clean baseline, through the SAME execution path ─────────────
+        # This pass exists because the structural zeros failed without it, and
+        # they failed for a reason that had nothing to do with the edit.
+        #
+        # `interchange(h, h, R)` is exactly `h`, and `collect_states` records
+        # `edit_norm == 0.0` for the `noop` and pre-mutation cells, so the state
+        # written back by the hook is bit-identical to the state that was there.
+        # The forward pass is nonetheless not the same forward pass: the clean
+        # log-probs used to come from `collect_states`, which runs ONE prompt per
+        # call, while the patched log-probs come from a batch of `batch_size`.
+        # In float16 the LM head's matmul is a different cuBLAS kernel at a
+        # different shape, so the two disagree by a few units in the last place
+        # of the logits — and at |logit| ~ 64, one fp16 ulp is 0.0625. On the
+        # 6.7B run that surfaced as `noop` deltas of exactly 0, +/-0.125 and
+        # +/-0.25: powers of two, quantization, not transport. The provable zero
+        # was being measured against the wrong number.
+        #
+        # So the clean pass runs here, in the same loop, over the same batch,
+        # with the same hook installed and the same shapes — differing from the
+        # patched pass ONLY in the value written at the edited position. Rows of
+        # a batched matmul are independent and the kernel is chosen by shape, so
+        # a row whose edit is the zero vector now comes out bit-identical and
+        # its `delta_ld` is exactly 0.0. That costs one extra forward per batch;
+        # at E13's 21 tokens it is the cheapest part of the stage, and a
+        # structural zero that cannot be trusted makes every other number in the
+        # stage unreadable.
+        clean_logits = transform_positions_batched(
+            model, ids, int(layer), positions, [_identity] * len(batch))
+        clean_log_probs = torch.log_softmax(
+            clean_logits[:, -1].float(), dim=-1).cpu().numpy()
+
         fns = [make_interchange_fn(c["basis"], c["donor_state"]) for c in batch]
         logits = transform_positions_batched(model, ids, int(layer), positions, fns)
         log_probs = torch.log_softmax(logits[:, -1].float(), dim=-1).cpu().numpy()
 
         for row_index, cell in enumerate(batch):
             patched = log_probs[row_index]
+            clean_row = clean_log_probs[row_index]
             record, report = cell["record"], cell["report"]
             installed_id, own_id = cell["installed_id"], cell["own_id"]
             patched_ld = float(patched[installed_id] - patched[own_id])
+            clean_ld = float(clean_row[installed_id] - clean_row[own_id])
             # Full-vocabulary argmax, not the two-way margin: with clean
             # accuracy at ceiling any disruptive edit raises the margin.
             argmax_id = int(np.argmax(patched))
@@ -546,10 +596,18 @@ def run_grid(
                 "rank": int(report.get("rank", rank)),
                 "own_answer": record.answer(cell["arm"], cell["binding"]),
                 "installed_answer": record.other_answer(cell["arm"], cell["binding"]),
-                "clean_logit_diff": cell["clean_ld"],
+                "clean_logit_diff": clean_ld,
                 "patched_logit_diff": patched_ld,
-                "delta_ld": patched_ld - cell["clean_ld"],
-                "flipped": int(patched_ld > 0 >= cell["clean_ld"]),
+                "delta_ld": patched_ld - clean_ld,
+                # The single-example baseline, kept beside the batched one so the
+                # precision effect that broke the structural zeros stays VISIBLE
+                # rather than becoming invisible once it is corrected for. On a
+                # float16 6.7B these differ by a few fp16 ulps of the logits;
+                # `batch_shape_shift` is that difference, per row, and it is the
+                # quantity that used to be reported as a failed provable zero.
+                "clean_logit_diff_unbatched": cell["clean_ld"],
+                "batch_shape_shift": clean_ld - cell["clean_ld"],
+                "flipped": int(patched_ld > 0 >= clean_ld),
                 "says_installed": int(argmax_id == installed_id),
                 "says_own": int(argmax_id == own_id),
                 "says_other": int(argmax_id not in (installed_id, own_id)),
@@ -740,6 +798,14 @@ def answer_direction_panel(frame: pd.DataFrame, site: str, layer: int,
     return pd.DataFrame(rows)
 
 
+#: A provable zero is arithmetic, not statistics, so the tolerance is a float32
+#: rounding allowance and nothing more. It is NOT widened to accommodate a
+#: precision artifact: when these failed at 0.125 and 0.25 on the 6.7B run the
+#: answer was to compare identical execution paths (see `run_grid`), not to
+#: raise the bar until the failure fit under it.
+STRUCTURAL_ZERO_TOLERANCE = 1e-4
+
+
 def verify_structural_zeros(frame: pd.DataFrame) -> dict:
     """`noop` and the pre-mutation site must move the logits by nothing.
 
@@ -747,18 +813,40 @@ def verify_structural_zeros(frame: pd.DataFrame) -> dict:
     `def_source` the host and donor states are identical because the programs
     are token-identical up to the mutation. Movement in either means the hooks,
     anchors or dtypes are wrong and every other number in the stage is suspect.
+
+    Two things are checked per condition and they answer different questions:
+
+      * `max_abs_edit_norm` — did the *edit* come out as the zero vector? This
+        is pure numpy and cannot be affected by anything the GPU does. If it is
+        nonzero the basis or the donor is wrong.
+      * `max_abs_delta_ld` — did the model's output actually not move? This is
+        the end-to-end claim, and it is only meaningful if the clean and patched
+        log-probs came from the same execution path. They do since `run_grid`
+        computes the clean baseline in the same batch; `max_abs_batch_shape_shift`
+        records how far apart the two paths were, which is what a failure here
+        used to be measuring.
     """
     out: dict = {}
-    noop = frame[frame.variant == "noop"]
-    if not noop.empty:
-        worst = float(np.nanmax(np.abs(noop["delta_ld"].to_numpy())))
-        out["noop"] = {"max_abs_delta_ld": worst, "passed": bool(worst < 1e-4),
-                       "n": int(len(noop))}
-    pre = frame[(frame.site == "def_source") & (frame.variant == "whole_state")]
-    if not pre.empty:
-        worst = float(np.nanmax(np.abs(pre["delta_ld"].to_numpy())))
-        out["pre_mutation_whole_state"] = {
-            "max_abs_delta_ld": worst, "passed": bool(worst < 1e-4), "n": int(len(pre))}
+    conditions = {
+        "noop": frame[frame.variant == "noop"],
+        "pre_mutation_whole_state": frame[(frame.site == "def_source")
+                                          & (frame.variant == "whole_state")],
+    }
+    for name, part in conditions.items():
+        if part.empty:
+            continue
+        worst = float(np.nanmax(np.abs(part["delta_ld"].to_numpy())))
+        entry = {"max_abs_delta_ld": worst,
+                 "passed": bool(worst < STRUCTURAL_ZERO_TOLERANCE),
+                 "tolerance": STRUCTURAL_ZERO_TOLERANCE, "n": int(len(part))}
+        if "edit_norm" in part:
+            edit = float(np.nanmax(np.abs(part["edit_norm"].to_numpy())))
+            entry["max_abs_edit_norm"] = edit
+            entry["edit_is_the_zero_vector"] = bool(edit == 0.0)
+        if "batch_shape_shift" in part:
+            entry["max_abs_batch_shape_shift"] = float(
+                np.nanmax(np.abs(part["batch_shape_shift"].to_numpy())))
+        out[name] = entry
     return out
 
 
@@ -955,13 +1043,20 @@ def select_rank(calib_summary: pd.DataFrame, site: str, layer: int,
     return None
 
 
-def evaluate_gate_h3(summary: pd.DataFrame, site: str, layer: int) -> tuple[bool, float, str]:
+def evaluate_gate_h3(summary: pd.DataFrame, site: str, layer: int,
+                     zeros: Optional[dict] = None) -> tuple[bool, float, str]:
     """H3: whole-state interchange flips the answer — in BOTH arms.
 
     Per arm, because the held-out arm's measurability is exactly what makes an
     H5 null interpretable. A ceiling that only works on the training arm would
     leave `ba` untestable and the whole design mute.
     """
+    broken = structural_zero_failure(zeros)
+    if broken:
+        return False, float("nan"), (
+            f"STRUCTURAL ZEROS FAILED — {broken}. The ceiling is what every "
+            f"later fraction is measured against, so a run whose provable zeros "
+            f"do not hold cannot establish it.")
     verdicts, details, values = [], [], []
     for arm in ARMS:
         row = _cell(summary, arm, "whole_state", site, layer)
@@ -983,8 +1078,37 @@ def evaluate_gate_h3(summary: pd.DataFrame, site: str, layer: int) -> tuple[bool
     return passed, (float(np.mean(values)) if values else float("nan")), detail
 
 
+def structural_zero_failure(zeros: Optional[dict]) -> Optional[str]:
+    """The precondition every claim gate carries: did the apparatus work?
+
+    `verify_structural_zeros` answers a question about the INSTRUMENT, and its
+    answer is a precondition on H4 and H5 rather than a separate note beside
+    them. The 6.7B run made the case: stage 108 refused to give a reading
+    because the provable zeros were at 0.25, and stage 107 printed "BINDING
+    TRANSPORTED" from the same run's gate file. A gated report that contradicts
+    its own diagnostic is worse than either verdict alone, because a reader has
+    no way to tell which one to believe.
+
+    Returns None when the zeros hold (or were not recorded, which is the
+    pre-2026-09 case and is reported as unverified rather than as passed), and a
+    human-readable reason when they do not.
+    """
+    if not zeros:
+        return None
+    broken = {name: check for name, check in zeros.items()
+              if not check.get("passed", False)}
+    if not broken:
+        return None
+    return "; ".join(
+        f"{name} moved the logits by {check.get('max_abs_delta_ld', float('nan')):.2e} "
+        f"over {check.get('n', 0)} rows (tolerance "
+        f"{check.get('tolerance', STRUCTURAL_ZERO_TOLERANCE):.0e})"
+        for name, check in broken.items())
+
+
 def evaluate_gate_h4(summary: pd.DataFrame, contrasts: pd.DataFrame,
-                     site: str, layer: int, rank: int) -> tuple[bool, float, str]:
+                     site: str, layer: int, rank: int,
+                     zeros: Optional[dict] = None) -> tuple[bool, float, str]:
     """H4: on the TRAINING arm, the low-rank interchange clears its controls.
 
     The controls here are the dose-matched random arms and the no-op, NOT the
@@ -998,6 +1122,13 @@ def evaluate_gate_h4(summary: pd.DataFrame, contrasts: pd.DataFrame,
     ceiling = _cell(summary, TRAIN_ARM, "whole_state", site, layer)
     if das is None or ceiling is None:
         return False, float("nan"), "missing das_binding or whole_state rows"
+    broken = structural_zero_failure(zeros)
+    if broken:
+        return False, float("nan"), (
+            f"STRUCTURAL ZEROS FAILED — {broken}. A provable zero that is not "
+            f"zero means the clean and patched log-probs did not come from the "
+            f"same execution path, or the hooks, anchors or dtypes are wrong. "
+            f"No claim about the interchange is licensed from this run.")
     fraction = (float(das["delta_ld"]) / float(ceiling["delta_ld"])
                 if ceiling["delta_ld"] else float("nan"))
     cleared = bool(not contrasts.empty and (contrasts["ci_lo"] > 0).all())
@@ -1015,7 +1146,8 @@ def evaluate_gate_h4(summary: pd.DataFrame, contrasts: pd.DataFrame,
 
 
 def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
-                     rank: int) -> tuple[bool, float, str]:
+                     rank: int, zeros: Optional[dict] = None
+                     ) -> tuple[bool, float, str]:
     """H5: the same subspace transfers to the held-out value assignment.
 
     Three conditions, and the third is what makes a null mean anything:
@@ -1066,6 +1198,13 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
     answer_ba = _cell(summary, HELD_OUT_ARM, ANSWER_DIRECTION_JLENS, site, layer)
     if das_ba is None or ceiling_ba is None:
         return False, float("nan"), "missing held-out-arm rows"
+    broken = structural_zero_failure(zeros)
+    if broken:
+        return False, float("nan"), (
+            f"STRUCTURAL ZEROS FAILED — {broken}. A provable zero that is not "
+            f"zero means the clean and patched log-probs did not come from the "
+            f"same execution path, or the hooks, anchors or dtypes are wrong. "
+            f"No claim about transfer is licensed from this run.")
     legacy = (answer_ab is None and answer_ba is None
               and _cell(summary, TRAIN_ARM, LEGACY_ANSWER_DIRECTION, site, layer)
               is not None)

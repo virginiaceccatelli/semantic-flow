@@ -94,6 +94,11 @@ DIAGNOSTIC = {
            "position. Build the lenses in float16 (stage 71's dtype).",
 }
 
+#: What has to be re-run when the provable zeros did not hold.
+RERUN_STRUCTURAL_ZEROS = (
+    "make binding-ceiling MODEL={model} && make binding-interchange MODEL={model} "
+    "&& make binding-report MODEL={model}")
+
 #: What has to be re-run when H5's stored verdict predates the lens change.
 RERUN_WITH_PUBLISHED_LENS = (
     "make lens-fit MODEL={model} && make binding-interchange MODEL={model} && "
@@ -143,9 +148,18 @@ def main(
     # floors, the exact edit norm and |edit|/|h|, and paired intervals.
     panel = _load_panel(root)
     superseded = _superseded_reason(gates, panel)
+    # The apparatus check, read straight off the recorded gates. Stage 106 now
+    # refuses to record H4/H5 as PASS when its provable zeros do not hold, but
+    # this stage checks again from the gate file rather than trusting it: the
+    # 6.7B run printed BINDING TRANSPORTED here while stage 108 refused to give
+    # a reading from the same data, and a gated report that contradicts its own
+    # diagnostic tells a reader nothing.
+    machinery = _structural_zero_failure(gates)
 
     if len(recorded) < len(BINDING.order):
         verdict = "INCOMPLETE"
+    elif machinery:
+        verdict = "MACHINERY BROKEN — NO VERDICT"
     elif superseded:
         # H5's recorded verdict was decided by the ARCHIVED cotangent control.
         # It is not upgraded, not downgraded and not translated — it is marked
@@ -180,6 +194,7 @@ def main(
         "first_blocking_gate": blocking,
         "gates_run_under_override": overridden,
         "superseded": superseded,
+        "structural_zeros_broken": machinery,
         "gates": rows,
     }
     if blocking:
@@ -194,6 +209,9 @@ def main(
             f"(results/binding/{{model}}/gates.yaml names the stage)."
         ).format(model=model)
         report["rerun_after_fix"] = NEXT_STEP.get(blocking, "").format(model=model)
+    elif machinery:
+        report["diagnostic"] = machinery
+        report["rerun_after_fix"] = RERUN_STRUCTURAL_ZEROS.format(model=model)
     elif superseded:
         report["diagnostic"] = superseded
         report["rerun_after_fix"] = RERUN_WITH_PUBLISHED_LENS.format(model=model)
@@ -229,9 +247,14 @@ def main(
         lines.append(f"- **{mark}** `{row['gate']}` ({row['meaning']}) — {row['detail']}")
     if superseded:
         lines += ["", "> **The `H5` line above is archived, not current.** " + superseded]
-    if blocking or superseded:
+    if blocking or machinery or superseded:
         lines += ["", "## Diagnostic", "", report["diagnostic"], "",
                   f"Re-run after fixing: `{report['rerun_after_fix']}`"]
+    # Reported even when it is not the verdict, for the same reason `superseded`
+    # is: "the provable zeros did not hold" is not a fact a reader should have
+    # to open the YAML to find.
+    if machinery and verdict != "MACHINERY BROKEN — NO VERDICT":
+        lines += ["", "## Machinery", "", machinery]
     lines += _panel_section(panel, superseded)
     lines += ["", "## Do not claim", ""] + [f"- {item}" for item in report["do_not_claim"]]
     if overridden:
@@ -245,9 +268,10 @@ def main(
                   else "yellow" if row["override"] or not row["recorded"] else "red")
         state = ("PASS" if row["passed"] else "FAIL") if row["recorded"] else "NOT RUN"
         console.print(f"  [{colour}]{state:8}[/{colour}] {row['gate']}: {row['detail'][:110]}")
-    colour = "green" if verdict == "BINDING TRANSPORTED" else "yellow"
+    colour = ("green" if verdict == "BINDING TRANSPORTED"
+              else "red" if verdict == "MACHINERY BROKEN — NO VERDICT" else "yellow")
     console.print(f"\n[{colour}]{verdict}[/{colour}] → {root / 'e13_report.yaml'}")
-    if blocking or superseded:
+    if blocking or machinery or superseded:
         console.print(f"[dim]{report['diagnostic']}[/dim]")
 
     write_manifest("107_binding_report", {"model": model}, t0,
@@ -255,6 +279,44 @@ def main(
                           "overrides": overridden})
     if strict and verdict != "BINDING TRANSPORTED":
         raise typer.Exit(1)
+
+
+def _structural_zero_failure(gates):
+    """Did any recorded gate carry a failed provable zero?
+
+    Read from `gates.yaml` rather than recomputed, because this stage is CPU-only
+    and must work from whatever the GPU stages left behind. Stages 105 and 106
+    both write `structural_zeros` into their gate's `extra`, so a failure in
+    either is visible here.
+
+    A provable zero that is not zero is not a weak result — it is not a result.
+    The no-op edit IS the zero vector (`edit_norm` is exactly 0.0 in numpy) and
+    at `def_source` host and donor are the same state, so any movement means the
+    clean and patched log-probs did not come from the same execution path, or
+    the hooks, anchors or dtypes are wrong.
+    """
+    broken = []
+    for name, gate in (gates or {}).items():
+        zeros = (getattr(gate, "extra", None) or {}).get("structural_zeros") or {}
+        for check, result in zeros.items():
+            if isinstance(result, dict) and not result.get("passed", True):
+                broken.append(
+                    f"{name}/{check}: max |Δ logit-diff| = "
+                    f"{result.get('max_abs_delta_ld', float('nan')):.2e} over "
+                    f"{result.get('n', 0)} rows, against a tolerance of "
+                    f"{result.get('tolerance', 1e-4):.0e}")
+    if not broken:
+        return None
+    return ("STRUCTURAL ZEROS FAILED — " + "; ".join(broken) + ". These are "
+            "provable zeros: the no-op edit is the zero vector and the "
+            "pre-mutation site's host and donor are the same state, so the "
+            "model's output cannot move. Movement means the clean and patched "
+            "log-probs did not come from the same execution path (a float16 "
+            "LM-head matmul is a different kernel at a different batch shape, "
+            "and one fp16 ulp at |logit| ~ 64 is 0.0625 — powers of two in this "
+            "column are quantization, not transport), or the hooks, anchors or "
+            "dtypes are wrong. No claim from this run is licensed, including "
+            "the ones that look good.")
 
 
 def _superseded_reason(gates, panel):
@@ -358,8 +420,8 @@ def _panel_section(panel, superseded: Optional[str] = None) -> list[str]:
              "fixed answer direction is matched to the treatment's own per-row "
              "edit norm, so no arm is compared against another at a different "
              "size. `vs das` is a paired difference on the *same* rows.", "",
-             "| arm | variant | delta_ld | 95% CI | installed | flip | \|edit\| | "
-             "\|edit\|/\|h\| | vs das (paired, 95% CI) | n | bases |",
+             r"| arm | variant | delta_ld | 95% CI | installed | flip | \|edit\| | "
+             r"\|edit\|/\|h\| | vs das (paired, 95% CI) | n | bases |",
              "|---|---|---|---|---|---|---|---|---|---|---|"]
 
     def num(value, fmt="{:+.3f}"):

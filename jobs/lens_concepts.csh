@@ -9,6 +9,7 @@ if (! $?MODEL) setenv MODEL deepseek-coder-6.7b
 source jobs/common.csh
 if (! $?DTYPE) setenv DTYPE bfloat16
 if (! $?N_BASES) setenv N_BASES 100
+if (! $?UNEMBED_BATCH) setenv UNEMBED_BATCH 32
 
 set OUT = "results/workspace_lens/${MODEL}"
 if (! -e "${OUT}/j-lens/lens.pt") then
@@ -23,6 +24,7 @@ endif
 echo "=== stage 206: semantic-concept J/R/logit panel — GPU ==="
 $PYTHON scripts/206_lens_concepts.py --model "$MODEL" --lens-dir "$OUT" \
     --output "${OUT}/concepts" --dtype "$DTYPE" --n-bases "$N_BASES" \
+    --unembed-batch-size "$UNEMBED_BATCH" --checkpoint-every 5 --resume \
     --require-rlens
 if ($status != 0) exit 1
 

@@ -309,7 +309,13 @@ stage106_binding_interchange:          # H4, H5
   retired_variants: [answer_direction]
 
 stage107_binding_report:
-  verdicts: [BINDING TRANSPORTED, NOT SUPPORTED, INCOMPLETE]
+  # MACHINERY BROKEN outranks every claim verdict: a provable zero that is not
+  # zero is not a weak result, it is not a result. It exists so the gated report
+  # can never contradict stage 108's diagnostic, which is what the first
+  # published-J-lens run of 6.7b did.
+  verdicts: [BINDING TRANSPORTED, NOT SUPPORTED,
+             "MACHINERY BROKEN — NO VERDICT", "SUPERSEDED — RERUN REQUIRED",
+             INCOMPLETE]
 
 binding_pilot:
   model: deepseek-coder-1.3b
