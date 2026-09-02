@@ -32,6 +32,7 @@ from src.experiments.binding_interchange import (
     ANSWER_DIRECTION_JLENS,
     ANSWER_DIRECTION_RLENS,
     ANSWER_DIRECTION_UNEMBEDDING,
+    DAS_ANSWER_CONTROL,
     HELD_OUT_ARM,
     LEGACY_ANSWER_DIRECTION,
     TRAIN_ARM,
@@ -409,8 +410,8 @@ def _h5_summary(das_installed, control_ba_installed, das_delta=0.6,
                      das_delta + 0.2, installed=das_installed),
         _summary_row(TRAIN_ARM, "whole_state", "use", 1.0, 0.8, 1.2, installed=1.0),
         _summary_row(HELD_OUT_ARM, "whole_state", "use", 1.0, 0.8, 1.2, installed=1.0),
-        _summary_row(TRAIN_ARM, ANSWER_DIRECTION_JLENS, "use", 0.7, 0.5, 0.9, installed=0.7),
-        _summary_row(HELD_OUT_ARM, ANSWER_DIRECTION_JLENS, "use", control_ba_delta,
+        _summary_row(TRAIN_ARM, DAS_ANSWER_CONTROL, "use", 0.7, 0.5, 0.9, installed=0.7),
+        _summary_row(HELD_OUT_ARM, DAS_ANSWER_CONTROL, "use", control_ba_delta,
                      control_ba_delta - 0.2, control_ba_delta + 0.2,
                      installed=control_ba_installed),
     ])
@@ -459,9 +460,9 @@ def test_h5_reads_the_argmax_not_the_biased_margin():
                      installed=0.857, layer=8, rank=1),
         _summary_row(HELD_OUT_ARM, "whole_state", "use", 4.799, 4.694, 4.903,
                      installed=0.879, layer=8, rank=1),
-        _summary_row(TRAIN_ARM, ANSWER_DIRECTION_JLENS, "use", 2.322, 2.157, 2.482,
+        _summary_row(TRAIN_ARM, DAS_ANSWER_CONTROL, "use", 2.322, 2.157, 2.482,
                      installed=0.279, layer=8, rank=1),
-        _summary_row(HELD_OUT_ARM, ANSWER_DIRECTION_JLENS, "use", 0.335, 0.208, 0.456,
+        _summary_row(HELD_OUT_ARM, DAS_ANSWER_CONTROL, "use", 0.335, 0.208, 0.456,
                      installed=0.043, layer=8, rank=1),
     ])
     passed, fraction, detail = evaluate_gate_h5(summary, "use", 8, 1)
@@ -498,6 +499,8 @@ def test_answer_direction_is_norm_matched_to_the_treatment(records):
     host, donor = rng.standard_normal(d), rng.standard_normal(d)
     unembedding = {t: rng.standard_normal(d) for t in records[0].token_ids.values()}
     answer_vectors = {
+        DAS_ANSWER_CONTROL: {t: rng.standard_normal(d)
+                             for t in records[0].token_ids.values()},
         ANSWER_DIRECTION_JLENS: {t: rng.standard_normal(d)
                                  for t in records[0].token_ids.values()},
         ANSWER_DIRECTION_RLENS: {t: rng.standard_normal(d)
@@ -505,7 +508,7 @@ def test_answer_direction_is_norm_matched_to_the_treatment(records):
     }
     # Every fixed answer direction: the published J-lens, the published R-lens
     # and the raw unembedding row (kept as the no-transport floor).
-    for variant in (ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
+    for variant in (DAS_ANSWER_CONTROL, ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
                     ANSWER_DIRECTION_UNEMBEDDING):
         for target in (0.5, 3.7, 12.0):
             basis, synthetic = build_subspace(
@@ -524,14 +527,37 @@ def test_answer_direction_refuses_a_degenerate_direction(records):
     d = 64
     same = np.ones(d)
     degenerate = {t: same for t in records[0].token_ids.values()}
-    for variant in (ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
+    for variant in (DAS_ANSWER_CONTROL, ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
                     ANSWER_DIRECTION_UNEMBEDDING):
         with pytest.raises(ValueError, match="identical"):
             build_subspace(variant, records[0], "ab", "source",
                            np.zeros(d), np.ones(d), d, 1, None, degenerate, 0,
                            target_edit_norm=1.0,
-                           answer_vectors={ANSWER_DIRECTION_JLENS: degenerate,
+                           answer_vectors={DAS_ANSWER_CONTROL: degenerate,
+                                           ANSWER_DIRECTION_JLENS: degenerate,
                                            ANSWER_DIRECTION_RLENS: degenerate})
+
+
+def test_answer_das_holds_the_training_arm_direction_fixed_on_ba(records):
+    """The crossed row must not silently retarget the answer-only control."""
+    import numpy as np
+
+    from src.experiments.binding_interchange import build_subspace
+
+    record = records[0]
+    d = 32
+    vectors = {record.token_ids["v_a"]: np.eye(d)[0],
+               record.token_ids["v_b"]: np.eye(d)[1]}
+    host, donor = np.zeros(d), np.ones(d)
+    ab_basis, _ = build_subspace(
+        DAS_ANSWER_CONTROL, record, "ab", "source", host, donor, d, 1,
+        None, {}, 0, target_edit_norm=2.0,
+        answer_vectors={DAS_ANSWER_CONTROL: vectors})
+    ba_basis, _ = build_subspace(
+        DAS_ANSWER_CONTROL, record, "ba", "source", host, donor, d, 1,
+        None, {}, 0, target_edit_norm=2.0,
+        answer_vectors={DAS_ANSWER_CONTROL: vectors})
+    assert np.allclose(ab_basis, ba_basis)
 
 
 def test_the_archived_cotangent_control_cannot_be_rebuilt(records):
@@ -614,13 +640,91 @@ def test_reading_is_withheld_when_the_discriminator_transfers_too():
     summary = pd.DataFrame([
         _summary_row(HELD_OUT_ARM, "das_binding", "use", 0.65, 0.5, 0.8),
         _summary_row(HELD_OUT_ARM, "whole_state", "use", 1.0, 0.8, 1.2),
-        _summary_row(TRAIN_ARM, ANSWER_DIRECTION_JLENS, "use", 0.8, 0.65, 0.95),
-        _summary_row(HELD_OUT_ARM, ANSWER_DIRECTION_JLENS, "use", 0.6, 0.45, 0.75),
+        _summary_row(TRAIN_ARM, DAS_ANSWER_CONTROL, "use", 0.8, 0.65, 0.95),
+        _summary_row(HELD_OUT_ARM, DAS_ANSWER_CONTROL, "use", 0.6, 0.45, 0.75),
     ])
     passed, fraction, detail = evaluate_gate_h5(summary, "use", 12, 2)
     assert not passed                      # das_binding looks fine on its own...
     assert fraction >= 0.5                 # ...and it does clear the fraction...
     assert "fails: False" in detail        # ...but the discriminator did not work
+
+
+def test_h5_refuses_a_dead_control_that_never_emits_the_installed_answer():
+    """The 2026-09-02 gate fix, pinned on the numbers that forced it.
+
+    On the published-J-lens run the control was correctly dose-matched (edit
+    norm identical to DAS's, 0.416 of ||h||) and still produced the installed
+    answer on 0.0% of `ab` rows on 6.7b and 4.6% on starcoder2 — below the
+    dose-matched RANDOM floor of 1.6% and 21.2%. Its `delta_ld` interval
+    nonetheless cleared zero (+0.098 [0.083, 0.113]), because `delta_ld` is
+    positively biased at ceiling accuracy: a large edit disrupts a confident
+    distribution and lifts the margin with nothing transported.
+
+    The old rule read that margin and scored the control as "passes on ab", so
+    H5 passed on a discriminator that did nothing anywhere. A control that fails
+    on `ba` because it fails EVERYWHERE separates nothing.
+    """
+    import pandas as pd
+
+    summary = pd.DataFrame([
+        _summary_row(HELD_OUT_ARM, "das_binding", "use", 8.096, 8.014, 8.179,
+                     installed=1.000, layer=6, rank=1),
+        _summary_row(TRAIN_ARM, "whole_state", "use", 4.025, 3.923, 4.135,
+                     installed=0.738, layer=6, rank=1),
+        _summary_row(HELD_OUT_ARM, "whole_state", "use", 4.017, 3.905, 4.125,
+                     installed=0.734, layer=6, rank=1),
+        # the dose-matched random floor, which the control has to clear
+        _summary_row(TRAIN_ARM, "random_norm", "use", 0.542, 0.474, 0.614,
+                     installed=0.016, layer=6, rank=1),
+        _summary_row(TRAIN_ARM, DAS_ANSWER_CONTROL, "use", 0.098, 0.083, 0.113,
+                     installed=0.000, layer=6, rank=1),
+        _summary_row(HELD_OUT_ARM, DAS_ANSWER_CONTROL, "use", -0.010, -0.028,
+                     0.007, installed=0.000, layer=6, rank=1),
+    ])
+    passed, _, detail = evaluate_gate_h5(summary, "use", 6, 1)
+    assert not passed
+    assert "DEAD CONTROL" in detail
+    assert "passes: False" in detail
+    # the margin alone would have called it a pass — that is the bug being pinned
+    assert summary[summary.variant == DAS_ANSWER_CONTROL].iloc[0]["ci_lo"] > 0
+
+
+def test_h5_still_passes_when_the_control_genuinely_works():
+    """The corrected rule must not reject a control that does its job.
+
+    Same shape, but the control emits the installed answer on 27.9% of training
+    rows against a 1.6% random floor — a working answer push — and collapses to
+    4.3% on the crossed arm.
+    """
+    import pandas as pd
+
+    summary = pd.DataFrame([
+        _summary_row(HELD_OUT_ARM, "das_binding", "use", 9.009, 8.933, 9.089,
+                     installed=1.000, layer=8, rank=1),
+        _summary_row(TRAIN_ARM, "whole_state", "use", 4.781, 4.683, 4.878,
+                     installed=0.857, layer=8, rank=1),
+        _summary_row(HELD_OUT_ARM, "whole_state", "use", 4.799, 4.694, 4.903,
+                     installed=0.879, layer=8, rank=1),
+        _summary_row(TRAIN_ARM, "random_norm", "use", 0.542, 0.474, 0.614,
+                     installed=0.016, layer=8, rank=1),
+        _summary_row(TRAIN_ARM, DAS_ANSWER_CONTROL, "use", 2.322, 2.157, 2.482,
+                     installed=0.279, layer=8, rank=1),
+        _summary_row(HELD_OUT_ARM, DAS_ANSWER_CONTROL, "use", 0.335, 0.208,
+                     0.456, installed=0.043, layer=8, rank=1),
+    ])
+    passed, _, detail = evaluate_gate_h5(summary, "use", 8, 1)
+    assert passed, detail
+    assert "passes: True" in detail and "DEAD CONTROL" not in detail
+
+
+def test_h5_requires_a_substantive_answer_control_not_just_one_lucky_argmax():
+    """Above random but below the existing 25% causal floor is still dead."""
+    summary = _h5_summary(das_installed=0.9, control_ba_installed=0.0)
+    summary.loc[summary.variant == DAS_ANSWER_CONTROL,
+                "says_installed_rate"] = [0.24, 0.0]
+    passed, _, detail = evaluate_gate_h5(summary, "use", 12, 2)
+    assert not passed
+    assert "required 25%" in detail
 
 
 def test_h5_refuses_to_score_the_archived_cotangent_arm():
@@ -648,9 +752,9 @@ def test_h5_refuses_to_score_the_archived_cotangent_arm():
 
 
 def test_the_rlens_arm_does_not_gate_h5():
-    """H5's discriminator is the J-lens arm. The R-lens arm is descriptive.
+    """H5's discriminator is answer DAS. The R-lens arm is descriptive.
 
-    Present it failing while the J-lens arm works: the gate must still pass.
+    Present it failing while the answer-DAS arm works: the gate must still pass.
     Adding an R-lens condition would be a change to the experiment, and the
     brief says to report it descriptively unless a new gate is justified.
     """
@@ -663,7 +767,7 @@ def test_the_rlens_arm_does_not_gate_h5():
                           installed=0.7)]
     passed, _, detail = evaluate_gate_h5(pd.DataFrame(rows), "use", 12, 2)
     assert passed, detail
-    assert ANSWER_DIRECTION_JLENS in detail
+    assert DAS_ANSWER_CONTROL in detail
     assert ANSWER_DIRECTION_RLENS not in detail
 
 

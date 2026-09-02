@@ -1,6 +1,6 @@
 experiment: E13
 model: deepseek-coder-6.7b
-verdict: BINDING TRANSPORTED
+verdict: NOT SUPPORTED
 question: Does a low-rank, magnitude-free interchange at the site where a variable
   binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token
   or an answer direction?
@@ -15,7 +15,7 @@ do_not_claim:
 - "that the R-lens arm gates anything \u2014 it is reported, never gated"
 - "any number from the ARCHIVED `answer_direction` arm; it is a different estimator\
   \ (docs/WORKSPACE_LENS.md \xA71) and is not comparable"
-first_blocking_gate: null
+first_blocking_gate: H5
 gates_run_under_override: []
 superseded: null
 structural_zeros_broken: null
@@ -76,13 +76,16 @@ gates:
     answer direction cannot
   owner_stage: 106_binding_interchange
   recorded: true
-  passed: true
+  passed: false
   value: 1.3625304136253042
   override: false
   detail: "ba @ use L6 r1: das_binding installed 100.0% = 136% of the held-out ceiling\
     \ (threshold 50%); margin +8.096 [+8.014, +8.179] = 202% of it; discriminator\
     \ \u2014 answer_direction_jlens ab +0.098 [+0.083, +0.113], installed 0.0% (passes:\
-    \ True); ba -0.010 [-0.028, +0.007] (fails: True)"
+    \ False \u2014 DEAD CONTROL: it does not work on the arm it was built for, so\
+    \ its failure on ba says nothing. installed 0.0% against the dose-matched random\
+    \ floor's 1.6% at the same edit norm. No verdict is licensed.); ba -0.010 [-0.028,\
+    \ +0.007] (fails: True)"
 - gate: H6
   meaning: 'the relevance readout is mechanically sound: the LRP rules actually installed
     so relevance conserves, the token roles partition every token exactly once, the
@@ -153,7 +156,15 @@ gates:
   override: false
   detail: 108000 reversal rows over 400 bases x 2 arms x 5 layers x 3 readouts x 9
     pairs; probe succeeds at layers [8, 12, 16, 20, 24]; report split test
-next_step: "write it up \u2014 both outcomes are reportable; see docs/RESULTS.md R13"
+diagnostic: "The subspace did not transfer to the held-out value assignment. Read\
+  \ the `answer_direction_jlens` rows FIRST \u2014 the published J-lens control, which\
+  \ is H5's discriminator: if it also passes on `ba`, the discriminator is broken\
+  \ and no verdict is licensed. If it fails on `ba` as designed and das_binding fails\
+  \ too, the learned subspace is an answer direction \u2014 which is a real, reportable\
+  \ negative and exactly what E11 could not establish. `answer_direction_rlens` is\
+  \ the same diagnostic read through the published R-lens and is descriptive."
+rerun_after_fix: "write it up \u2014 both outcomes are reportable; see docs/RESULTS.md\
+  \ R13"
 control_panel:
 - arm: ab
   variant: das_binding
@@ -167,7 +178,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 1.0
   edit_norm: 18.456817636920647
-  edit_fraction: 0.4160653447875792
+  edit_fraction: 0.4160653447875791
   n: 560
   n_bases: 280
   vs_das_binding: .nan
@@ -203,7 +214,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 0.0
   edit_norm: 18.45681763692068
-  edit_fraction: 0.4160653447875799
+  edit_fraction: 0.4160653447875798
   n: 560
   n_bases: 280
   vs_das_binding: 8.02391182673829
@@ -257,7 +268,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 0.0
   edit_norm: 0.5884767898650503
-  edit_fraction: 0.0132077474519532
+  edit_fraction: 0.0132077474519531
   n: 560
   n_bases: 280
   vs_das_binding: 8.119140625
@@ -274,7 +285,7 @@ control_panel:
   says_installed_rate: 0.0160714285714285
   says_other_rate: 0.0
   flip_rate: 0.0142857142857142
-  edit_norm: 19.68163939988225
+  edit_norm: 19.681639399882258
   edit_fraction: 0.4435632278871744
   n: 560
   n_bases: 280
@@ -292,7 +303,7 @@ control_panel:
   says_installed_rate: 0.7375
   says_other_rate: 0.0
   flip_rate: 0.7375
-  edit_norm: 30.910847491610877
+  edit_norm: 30.910847491610873
   edit_fraction: 0.6967767909072117
   n: 560
   n_bases: 280
@@ -329,7 +340,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 0.0
   edit_norm: 18.451770766325215
-  edit_fraction: 0.4158079964723967
+  edit_fraction: 0.4158079964723966
   n: 560
   n_bases: 280
   vs_das_binding: 8.106808035075664
@@ -347,7 +358,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 0.0
   edit_norm: 18.45177076632522
-  edit_fraction: 0.4158079964723967
+  edit_fraction: 0.4158079964723966
   n: 560
   n_bases: 280
   vs_das_binding: 8.05362723267504
@@ -364,7 +375,7 @@ control_panel:
   says_installed_rate: 0.0
   says_other_rate: 0.0
   flip_rate: 0.0
-  edit_norm: 18.451770766325183
+  edit_norm: 18.45177076632519
   edit_fraction: 0.415807996472396
   n: 560
   n_bases: 280
@@ -382,7 +393,7 @@ control_panel:
   says_installed_rate: 0.675
   says_other_rate: 0.0
   flip_rate: 0.675
-  edit_norm: 25.67549962143132
+  edit_norm: 25.675499621431317
   edit_fraction: 0.5786281224524952
   n: 560
   n_bases: 280
@@ -401,7 +412,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 0.0
   edit_norm: 0.5840562620339274
-  edit_fraction: 0.0131047580939738
+  edit_fraction: 0.0131047580939737
   n: 560
   n_bases: 280
   vs_das_binding: 8.09760045089892

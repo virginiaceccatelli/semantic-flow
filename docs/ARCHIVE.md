@@ -896,3 +896,77 @@ whole-state transport's 0.997; `answer_direction_jlens` at −0.086 (reversing, 
 the design predicts); `answer_direction_rlens` at +0.426; norm-matched random at
 7% of the DAS effect; `says_installed` 1.000. **None of it is licensed.** A
 provable zero that is not zero is not a weak result — it is not a result.
+
+---
+
+# 4d. The published J-lens does not supply a working answer-direction control
+
+**Not an archived claim — an archived *instrument failure*, and the reason E13's
+H5 is currently unestablished.** Recorded here because the negative is
+informative and because the gate that missed it has been corrected.
+
+## What happened
+
+With the structural zeros repaired (§4c), stages 105–108 re-ran cleanly on
+DeepSeek-Coder 6.7B (layer 6) and StarCoder2-3B (layer 12). All provable zeros
+came out at exactly `0.00e+00`. The DAS result is strong. The **discriminator is
+dead**, at the same edit norm as the treatment:
+
+| arm (training) | `says_installed` | `delta_ld` | `edit_norm` |
+|---|---|---|---|
+| **6.7B** `das_binding` | 1.000 | +8.119 | 18.457 (0.416 ‖h‖) |
+| `answer_direction_jlens` | **0.000** | +0.098 [0.083, 0.113] | 18.457 |
+| `answer_direction_rlens` | 0.000 | +0.095 | 18.457 |
+| `answer_direction_unembedding` | 0.000 | +0.004 | 18.457 |
+| `random_norm` (dose-matched floor) | **0.016** | +0.542 | 19.682 |
+| **StarCoder2** `answer_direction_jlens` | 0.046 | +0.207 | 14.884 (0.466 ‖h‖) |
+| `answer_direction_rlens` | 0.118 | +0.569 | 14.884 |
+| `random_norm` (dose-matched floor) | **0.212** | +0.417 | 16.441 |
+
+Every fixed answer direction — J-lens, R-lens, and the raw unembedding row — is
+**beaten by a norm-matched random direction** on the argmax, on both models. The
+dose is not the problem: `edit_norm` is matched to DAS's per row, and the edit
+moves 42–47% of ‖h‖. The direction simply has no causal purchase on the answer
+at the intervention layer.
+
+This is consistent with E19's own causal stage, which found no reliable
+advantage for Jacobian transport over the logit direction mid-network. It is a
+statement about **where the published lens's read direction is efficacious**,
+not about the lens's readout quality.
+
+## The gate bug it exposed
+
+`evaluate_gate_h5` read the **margin** for "the control passes on the training
+arm" while reading the **argmax** for "it fails on the held-out arm". The module
+docstring had always specified the argmax for both. The two disagree precisely
+here: `delta_ld` is positively biased at ceiling accuracy, so a large disruptive
+edit lifts the margin with nothing transported, and the control's tight
+`+0.098 [0.083, 0.113]` scored as "passes" while its argmax was 0.0%.
+
+Corrected 2026-09-02: both halves read `says_installed`, and the success half
+must additionally clear the **dose-matched random floor**. H5 now fails with an
+explicit `DEAD CONTROL` reason on both models.
+
+## What is and is not licensed
+
+**Licensed.** The machinery (all structural zeros exactly zero); H3, the
+whole-state ceiling alive in both arms; H4 on the training arm with all controls
+cleared. And descriptively, the crossed-arm DAS result itself: `says_installed`
+is **1.000 in both arms** on both models, against a whole-state ceiling of
+0.738/0.734 (6.7B) and 0.627/0.646 (StarCoder2), a difference-in-means baseline
+of ~0.68 and ~0.47, and a dose-matched random floor of 0.016 and 0.212.
+
+**Not licensed.** H5's falsification. The crossed-arm design's *structural*
+argument is untouched — an answer-token account predicts reversal on `ba` and
+DAS shows none — but the positive control that would demonstrate the arm is
+*capable* of exhibiting that reversal did not work, so "no reversal" cannot yet
+be distinguished from "this arm cannot show reversal". Establishing H5 needs an
+answer-direction instrument with demonstrated causal purchase at the
+intervention layer, verified on the training arm before its crossed-arm
+behaviour is read.
+
+The archived cotangent readout (§4b) did have that purchase — 27.9% / 44.8%
+installed on the training arm — because it was fitted *on the task programs, at
+the intervention layer, targeting the answer position*. It is a worse lens by
+every readout criterion in `WORKSPACE_LENS.md` §1 and a better actuator here.
+Those are different jobs, and the substitution swapped one for the other.

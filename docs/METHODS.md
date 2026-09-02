@@ -515,7 +515,8 @@ Two consequences for interpretation:
 |---|---|---|
 | **`whole_state`** | the rank-`d` limit — install the entire donor state | it is the *ceiling*, per arm, and its being alive in both arms is what makes a null in either arm interpretable |
 | **`mean_difference`** | rank-1 span of the **mean** donor−host difference; no optimiser, no labels, one fixed direction for every example | the cheapest thing that could work. A learned direction must *dominate* it, not merely beat zero |
-| **`answer_direction_jlens`** | `u_w(l) = J_lᵀ(g·W_U[w])` from the **published** J-lens (stage 201), for the training arm's installed answer minus its current answer; the direction is held fixed across arms and each edit is scaled to the DAS edit norm on that row | tests the simpler account “the learned subspace just pushes toward the answer token required in the fitted arm”; it should work on that arm and fail or reverse when the crossed arm requires the opposite token. **This is H5's discriminator.** |
+| **`das_answer_control`** | a calibration-fitted table of answer-token actuator vectors. Row `a→b` uses the rank-1 direction `normalize(u_b−u_a)`, at exactly binding DAS's edit norm on that row. It uses the same layer, site, Adam optimiser, steps and split as DAS, but never receives the binding donor state | tests the simpler account “the learned intervention just pushes toward the answer required in the fitted arm.” Its `ab` orientation is frozen on `ba`. **This is H5's discriminator.** |
+| **`answer_direction_jlens`** | `u_w(l) = J_lᵀ(g·W_U[w])` from the published J-lens, held fixed across arms and scaled to the DAS edit norm | descriptive lens diagnostic. It no longer gates H5: the completed run showed that a useful read direction need not be a useful actuator at this layer |
 | **`answer_direction_rlens`** | the same construction on the published R-lens `R_l`, with identical tokens, layer, site, per-row dose, seed and test split | a second reading of the same diagnostic through the RelP backward graph. **Descriptive: it gates nothing.** A `-paperminimal` StarCoder2 variant is available as a separately named optional arm and is never substituted for this one |
 | **`answer_direction_unembedding`** | `W_U[installed] − W_U[own]`, no transport at all, same dose | the no-transport floor. Beating it is what shows the Jacobian transport is doing work rather than the unembedding row alone (at layer 8 of 32 the raw row is not the direction that moves the head toward a token) |
 | **`random_norm`** | a random subspace whose interchange moves the **same fraction of ‖h‖** | disruption. Rank-matching alone is not dose-matching |
@@ -537,12 +538,10 @@ archived, not carried forward**: they are not translated, rescaled or reused,
 and every verdict that rested on them is marked superseded until stage 106 runs
 again. See [ARCHIVE.md](ARCHIVE.md).
 
-**DAS itself remains lens-independent.** No lens initializes, constrains or
-trains the alignment. Stage 106 fits the subspace and selects its rank before
-opening a lens file at all; the artifacts are read only for the
-control-evaluation phase. They are *preflighted* in the stage's first seconds
-(existence, model, `d_model`, tokenizer, layer) from the `lens_meta.json`
-sidecar, so a missing lens fails before the fit rather than after it.
+**DAS itself remains lens-independent.** No lens initializes, constrains,
+trains or gates the alignment. Stage 106 can run the complete H4/H5 experiment
+without a lens artifact. If requested, J/R artifacts are read only for optional
+control-panel diagnostics.
 
 **The structural zeros, and why the clean pass is batched.** `noop` and the
 pre-mutation `def_source` site are *provable* zeros: the no-op edit is the zero
@@ -605,13 +604,27 @@ from `E‖R Rᵀ d‖² = (r/d)‖d‖²`, then bracketed exactly; the rank actu
 is reported, because needing many random dimensions to match one learned
 dimension is itself informative.
 
+**A control has to be shown to work, not assumed to.** The discriminator's job
+is to fail on the crossed arm — but that is only informative if it *succeeds* on
+the arm it was built for. Both halves are therefore read on `says_installed`,
+the full-vocabulary argmax, and the success half additionally has to clear the
+**dose-matched random floor**: the control must emit the installed answer more
+often than a random direction of the same edit norm does. Until 2026-09-02 the
+success half read `delta_ld` instead, and the two disagree exactly when it
+matters — `delta_ld` is positively biased here (H1 is 1.000, so any large edit
+disrupts a confident distribution and lifts the margin with nothing
+transported), so a dead control can show a tight positive interval while never
+once producing the installed answer. On the published-J-lens run it did: the
+control was correctly dose-matched at 0.416 of ‖h‖ and produced the installed
+answer on **0.0%** of training rows against a random floor of 1.6%, while its
+margin interval was `+0.098 [0.083, 0.113]`. That is the E10-3 lesson applied to
+the control itself.
+
 **Why the answer-direction control is decisive.** In the fitted `ab` arm, the
 donor binding changes the required answer from value `a` to value `b`. The
-control therefore constructs a direction that explicitly pushes the model from
-the `a` output direction toward the `b` output direction. It uses cotangent lens vectors,
-not raw final-layer unembedding rows, because the intervention occurs partway
-through the network and the cotangent lens estimates how the remaining layers map a
-change there to the output. A synthetic donor makes the interchange an exact
+control directly learns a causal mid-layer actuator from `a` toward `b`, without
+seeing the donor's binding state. Its dose is fixed by binding DAS rather than
+tuned. A synthetic donor makes the interchange an exact
 push along this direction, and its length is set equal to the DAS edit on that
 same example. The comparison therefore does not give DAS a larger dose.
 
@@ -699,13 +712,12 @@ Each refuses to run downstream stages until it passes.
 | **H2** | which definition is in scope is decodable at the use anchor | ≥ 0.80, and ≥ 0.10 over the *measured* surface baseline |
 | **H3** | whole-state interchange flips the answer **in both arms** | CI > 0, flip rate ≥ 0.25 |
 | **H4** | low-rank interchange beats matched controls on the **training** arm | ≥ 50% of that arm's ceiling |
-| **H5** | the same subspace transfers to the **held-out** arm | ≥ 50% of that arm's ceiling, **and** `answer_direction_jlens` fails there |
+| **H5** | the same subspace transfers to the **held-out** arm | ≥ 50% of that arm's ceiling, **and** `das_answer_control` **works on the training arm and fails on the held-out one**. Both halves are read on `says_installed`; "works" means ≥25% installed answers and more than a random direction at the same edit norm. A control that fails everywhere separates nothing, so H5 fails with it |
 
-H5's discriminator is the **published J-lens** arm and only that arm. The R-lens
-arm runs on identical tokens, layer, site, dose, seed and split and is reported
-beside it; adding a second gate would be a change to the experiment, so it is
-not one. A summary carrying only the archived `answer_direction` arm is refused
-rather than scored: the gate reports the discriminator as NOT MEASURED.
+H5's discriminator is `das_answer_control` and only that arm. Published J/R
+directions may be reported beside it, but they are readout diagnostics and do
+not gate the causal experiment. A summary from an older discriminator is
+refused rather than silently rescored.
 
 H1 exists because of a lesson recorded in [ARCHIVE.md](ARCHIVE.md): check the
 model can do the task *before* building an instrument on top of it.

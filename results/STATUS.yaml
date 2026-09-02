@@ -879,7 +879,7 @@ experiments:
 
   E13:
     name: binding interchange, falsified by the value assignment
-    status: rerun_required
+    status: partial
     stage: "100,101,102,103,104,105,106,107,108"
     model: "deepseek-coder-6.7b, starcoder2-3b"
     # ── 2026-09-02: EVERY NUMBER BELOW IS SUPERSEDED. Two independent reasons,
@@ -918,6 +918,34 @@ experiments:
     # that is not zero is not a weak result, it is not a result.
     superseded_on: 2026-09-02
     rerun: "make binding-ceiling && make binding-interchange && make binding-report"
+    # ── RE-RUN LANDED 2026-09-02. Machinery clean; H5 still not established.
+    # Every structural zero is now exactly 0.00e+00 on both models (n = 19200 /
+    # 4800 / 1360 / 240), with `clean_path_shift` still nonzero — the artifact is
+    # being CANCELLED, not hidden. H0-H4 hold. H5 does NOT: the published J-lens
+    # answer direction is a DEAD CONTROL at the intervention layer. Correctly
+    # dose-matched to DAS (0.416 / 0.466 of ||h||) and it emits the installed
+    # answer on 0.0% (6.7b, layer 6) and 4.6% (starcoder2, layer 12) of training
+    # rows — BELOW the dose-matched random floor of 1.6% and 21.2%. The R-lens
+    # and raw-unembedding arms are dead too. So the control cannot show that the
+    # crossed arm is capable of the reversal an answer account predicts, and
+    # "das_binding does not reverse" is not yet separable from "this arm cannot
+    # show reversal". See docs/ARCHIVE.md §4d.
+    licensed:
+      - "machinery: all provable zeros exactly 0.00e+00, both models"
+      - "H3 ceiling alive in both arms: 6.7b +4.025/+4.017, starcoder2 +1.627/+1.660"
+      - "H4 on the training arm, all controls cleared"
+      - "DESCRIPTIVE: das_binding says_installed 1.000 in BOTH arms on both
+         models, against a whole-state ceiling of 0.738/0.734 (6.7b) and
+         0.627/0.646 (starcoder2), difference-in-means ~0.68 / ~0.47, and a
+         dose-matched random floor of 0.016 / 0.212"
+    not_licensed:
+      - "H5's falsification — the discriminator did not work on the arm it was
+         built for, so its failure on the crossed arm says nothing"
+    blocked_on: >
+      An answer-direction instrument with demonstrated causal purchase at the
+      intervention layer, verified on the training arm BEFORE its crossed-arm
+      behaviour is read. The published J-lens, the published R-lens and the raw
+      unembedding row are all below the dose-matched random floor there.
     tables:
       - results/binding/deepseek-coder-6.7b/interchange_summary.csv
       - results/binding/deepseek-coder-6.7b/interchange_contrasts.csv

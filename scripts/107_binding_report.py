@@ -57,14 +57,11 @@ DIAGNOSTIC = {
           "`random_norm` uncleared means any edit of that size does this; check "
           "edit_fraction_treatment against edit_fraction_control. Also read "
           "interchange_alignments.csv for convergence and orthogonality error.",
-    "H5": "The subspace did not transfer to the held-out value assignment. Read "
-          "the `answer_direction_jlens` rows FIRST — the published J-lens "
-          "control, which is H5's discriminator: if it also passes on `ba`, the "
-          "discriminator is broken and no verdict is licensed. If it fails on "
-          "`ba` as designed and das_binding fails too, the learned subspace is an "
-          "answer direction — which is a real, reportable negative and exactly "
-          "what E11 could not establish. `answer_direction_rlens` is the same "
-          "diagnostic read through the published R-lens and is descriptive.",
+    "H5": "Read the `das_answer_control` rows first. It must emit the requested "
+          "answer above the dose-matched random floor on `ab`, then attenuate or "
+          "reverse on `ba`. If it is dead on `ab`, or follows binding on `ba`, "
+          "the discriminator is uninformative and no identification verdict is "
+          "licensed. Published J/R rows are descriptive lens diagnostics.",
     # H6-H10 belong to the E16/E17/E18 tracks over the same four programs, and
     # every one is MECHANICAL: they ask whether the apparatus was sound, never
     # whether the result was positive. A failure is therefore an instrument
@@ -101,8 +98,7 @@ RERUN_STRUCTURAL_ZEROS = (
 
 #: What has to be re-run when H5's stored verdict predates the lens change.
 RERUN_WITH_PUBLISHED_LENS = (
-    "make lens-fit MODEL={model} && make binding-interchange MODEL={model} && "
-    "make binding-report MODEL={model}")
+    "make binding-interchange MODEL={model} && make binding-report MODEL={model}")
 
 NEXT_STEP = {
     "H0": "python scripts/102_binding_behaviour.py --model {model}",
@@ -138,7 +134,11 @@ def main(
     rows = gate_table(model, root=root, spec=BINDING)
     gates = load_gates(model, root=root, spec=BINDING)
     blocking = first_blocking_gate(model, root=root, spec=BINDING)
-    recorded = [r for r in rows if r["recorded"]]
+    # This is the E13 report. H6-H10 are later archived experiments which share
+    # the gate store; their absence must not turn a complete H0-H5 DAS run into
+    # INCOMPLETE.
+    e13_gates = set(BINDING.order[:6])
+    recorded = [r for r in rows if r["recorded"] and r["gate"] in e13_gates]
     overridden = [r["gate"] for r in rows if r["override"]]
 
     # ── the reading surface the interpretation is stated against ────────────
@@ -156,7 +156,7 @@ def main(
     # diagnostic tells a reader nothing.
     machinery = _structural_zero_failure(gates)
 
-    if len(recorded) < len(BINDING.order):
+    if len(recorded) < len(e13_gates):
         verdict = "INCOMPLETE"
     elif machinery:
         verdict = "MACHINERY BROKEN — NO VERDICT"
@@ -164,7 +164,7 @@ def main(
         # H5's recorded verdict was decided by the ARCHIVED cotangent control.
         # It is not upgraded, not downgraded and not translated — it is marked
         # as no longer current, because the discriminator it rests on is a
-        # different estimator from the published J-lens the design now uses.
+        # different estimator from the current matched actuator.
         verdict = "SUPERSEDED — RERUN REQUIRED"
     elif blocking is None and not overridden:
         verdict = "BINDING TRANSPORTED"
@@ -186,7 +186,7 @@ def main(
             "that the model 'understands' scope — the claim is transport at one site",
             "anything about real code, other languages, or other model families",
             "that H4 alone supports the conclusion; without H5 it is E11 again",
-            "a null from H5 without checking that answer_direction_jlens failed on `ba` too",
+            "a null from H5 without checking that das_answer_control was live on `ab`",
             "that the R-lens arm gates anything — it is reported, never gated",
             "any number from the ARCHIVED `answer_direction` arm; it is a different "
             "estimator (docs/WORKSPACE_LENS.md §1) and is not comparable",
@@ -220,6 +220,7 @@ def main(
 
     if panel is not None:
         report["control_panel"] = panel.to_dict(orient="records")
+        report["h5_discriminator"] = "das_answer_control"
         report["answer_direction_arms"] = sorted(
             v for v in panel["variant"].unique() if v.startswith("answer_direction"))
     else:
@@ -320,15 +321,13 @@ def _structural_zero_failure(gates):
 
 
 def _superseded_reason(gates, panel):
-    """Was H5 decided by the ARCHIVED cotangent control? Then it is not current.
+    """Was H5 decided by an older discriminator? Then it is not current.
 
     Two independent signals, and either is enough:
 
-      * H5's stored detail names the bare `answer_direction` arm and not
-        `answer_direction_jlens`. That arm was a corpus-averaged cotangent
-        readout fitted inside stage 106 over the two answer tokens — a
-        different estimator from the published J-lens (`docs/WORKSPACE_LENS.md`
-        §1), and its numbers are archived rather than comparable.
+      * H5's stored detail does not name `das_answer_control`. Older runs used
+        either the retired cotangent readout or the published J-lens read
+        direction; neither is the current causally fitted actuator.
       * no `interchange_panel.csv`, which only the current stage 106 writes.
 
     The verdict is then neither upgraded nor translated. A verdict is a claim
@@ -339,21 +338,18 @@ def _superseded_reason(gates, panel):
     if h5 is None or not getattr(h5, "detail", ""):
         return None
     detail = str(h5.detail)
-    if "answer_direction_jlens" in detail:
+    if "das_answer_control" in detail:
         return None
     if "answer_direction" in detail:
-        return ("H5's recorded verdict was decided by the ARCHIVED "
-                "`answer_direction` control — the corpus-averaged cotangent "
-                "readout stage 106 fitted for itself before 2026-09-01. That is "
-                "a different estimator from the published J-lens "
-                "(`docs/WORKSPACE_LENS.md` §1), so the discriminator behind this "
-                "verdict no longer exists in the pipeline. The number is not "
-                "translated, rescaled or reused: stage 106 must run again "
-                "against the stage-201 J-lens artifact.")
+        return ("H5's recorded verdict used an older answer-direction "
+                "discriminator (the retired cotangent control or the published "
+                "J-lens read direction), not the current causally fitted "
+                "`das_answer_control`. The old verdict is not translated or "
+                "reused: stage 106 must run again.")
     if panel is None:
         return ("No `interchange_panel.csv`: stage 106 has not run since the "
-                "answer-direction control moved to the published J-lens "
-                "(2026-09-01), so H5's discriminator cannot be shown. Re-run "
+                "answer-direction control moved to `das_answer_control`, so "
+                "H5's discriminator cannot be shown. Re-run "
                 "stage 106.")
     return None
 
@@ -361,9 +357,8 @@ def _superseded_reason(gates, panel):
 def _load_panel(root: Path):
     """`interchange_panel.csv`, or None if stage 106 has not run since the change.
 
-    A run predating 2026-09-01 has no panel file. It is not reconstructed from
-    the archived `answer_direction` arm: that arm is a different estimator, and
-    a table built from it would read as the published J-lens control.
+    An older run may have no panel file. It is not reconstructed from an
+    archived arm because that would make an obsolete discriminator look current.
     """
     import pandas as pd
 
@@ -378,7 +373,8 @@ def _load_panel(root: Path):
 #: travels with the table rather than living only in a doc a reader may not open.
 PANEL_MEANING = {
     "das_binding": "the treatment — a learned low-rank interchange",
-    "answer_direction_jlens": "PUBLISHED J-lens answer direction (H5's discriminator)",
+    "das_answer_control": "causally fitted answer-token actuator (H5's discriminator)",
+    "answer_direction_jlens": "published J-lens answer direction (descriptive)",
     "answer_direction_rlens": "published R-lens answer direction (descriptive)",
     "answer_direction_rlens_paperminimal":
         "paper-minimal R-lens sensitivity arm (StarCoder2; LayerNorm analogue off)",
@@ -401,13 +397,13 @@ def _panel_section(panel, superseded: Optional[str] = None) -> list[str]:
     stale = ([""] + ["> **ARCHIVED.** " + superseded] if superseded else [])
     if panel is None:
         return stale + ["", "## Controls", "",
-                "No `interchange_panel.csv`. Stage 106 has not been re-run since "
-                "the answer-direction control moved to the published J-lens "
-                "(2026-09-01), so there is no current control table to show. "
+                "No `interchange_panel.csv`. Stage 106 has not been re-run with "
+                "the current `das_answer_control`, so there is no current "
+                "control table to show. "
                 "The archived `answer_direction` numbers from earlier runs are "
                 "**not** substituted here: that arm is a different estimator "
                 "(`docs/WORKSPACE_LENS.md` §1). Re-run "
-                "`make binding-interchange` after `make lens-fit`."]
+                "`make binding-interchange`."]
 
     lines = stale + ["", "## Controls — both arms", "",
              "`ab` is the arm the DAS subspace and every fixed answer direction "
@@ -448,13 +444,11 @@ def _panel_section(panel, superseded: Optional[str] = None) -> list[str]:
               "2. **A fixed answer direction** should work in the training arm "
               "`ab` and attenuate or reverse in the crossed arm `ba` — it was "
               "built from `ab`'s required movement and held fixed.",
-              "3. If `answer_direction_jlens` **also succeeds like DAS in both "
-              "arms**, H5 does not distinguish binding transport from a "
-              "lens-visible answer direction, and the causal verdict must not "
-              "pass.",
-              "4. `answer_direction_rlens` provides the same secondary "
-              "diagnostic through the published R-lens. It is reported, not "
-              "gated."]
+              "3. `das_answer_control` must work above the matched-random floor "
+              "on `ab` and attenuate or reverse on `ba`. Otherwise H5 does not "
+              "identify binding transport.",
+              "4. Published J/R directions are reported as lens diagnostics; "
+              "they do not gate the causal experiment."]
     return lines
 
 

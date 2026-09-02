@@ -61,22 +61,20 @@ move the output head toward `w` from depth `l` is a lens read direction,
 and the answer movement the training arm demands is the difference of two of
 them, `u_installed(l) - u_own(l)`, normalised and dosed to the DAS edit norm.
 
-**Which lens — the 2026-09-01 change.** The control is now built from the
-**published** J-lens artifact stage 201 fits: the released estimator, an
-independent pretraining-like corpus, the full `d_model x d_model` Jacobian. The
-arm is named `answer_direction_jlens` so it cannot be read as anything else.
-It previously fitted a *corpus-averaged cotangent readout over the two answer
-tokens*, inside this stage, from the DAS calibration programs
-(`src/models/cotangent_lens.py`). That is a different estimator — see
-`docs/WORKSPACE_LENS.md` §1 — and calling its output "J-lens vectors" made the
-E13 control unreadable next to E19. Every number the old arm produced is
-ARCHIVED, not carried forward.
+**The matched actuator — the final H5 control.** A small table of answer-token
+vectors is fitted causally on calibration at the already selected DAS layer.
+For current token `a` and requested token `b`, it applies the rank-1 direction
+`normalize(u_b-u_a)` at exactly the edit norm binding DAS produced on that row.
+It uses the same optimiser, steps, site and split, but never receives a binding
+counterfactual state. Its `ab` direction is held fixed on `ba`. The arm is named
+`das_answer_control`; it must work on `ab` above the matched-random floor before
+its crossed-arm behaviour can license anything.
 
-Three answer-direction arms now run, from the same answer tokens, layer, site,
+Three lens answer-direction arms may also run, from the same answer tokens, layer, site,
 per-row dose, seed and test split, so they differ only in which map produced
 the direction:
 
-    answer_direction_jlens          the published J-lens — H5's discriminator
+    answer_direction_jlens          the published J-lens — descriptive
     answer_direction_rlens          the published R-lens — a secondary,
                                     DESCRIPTIVE diagnostic, not a gate
     answer_direction_unembedding    `W_U[installed] - W_U[own]`, no transport;
@@ -87,10 +85,8 @@ arm from the `-paperminimal` sensitivity fit (the LayerNorm analogue switched
 off). It is a separately named arm and is never substituted for the default
 R-lens.
 
-**DAS stays lens-independent.** No lens initializes, constrains or trains the
-alignment: the subspace is fitted and its rank selected before any lens file is
-opened. A lens supplies controls the fitted subspace is compared against, and
-nothing else.
+**DAS stays lens-independent.** No lens initializes, constrains, trains or
+gates the alignment. J/R arms are optional diagnostics only.
 """
 
 from __future__ import annotations
@@ -129,13 +125,12 @@ MIN_CEILING_SHIFT = 0.0             # H3 — whole-state, CI lower bound
 MIN_CEILING_FLIP = 0.25             # H3 — fraction of answers actually flipped
 MIN_TRAIN_ARM_FRACTION = 0.50       # H4 — fraction of the ceiling on `ab`
 MIN_TRANSFER_FRACTION = 0.50        # H5 — fraction of the ceiling on `ba`
+MIN_DISCRIMINATOR_INSTALL = MIN_CEILING_FLIP  # H5 control must be substantively live
 
 TRAIN_ARM = "ab"
 HELD_OUT_ARM = "ba"
 
-#: The published J-lens control — H5's discriminator. Explicitly named after
-#: the lens that builds it, because "answer_direction" was ambiguous: it meant a
-#: corpus-averaged cotangent readout fitted inside this stage until 2026-09-01.
+#: The published J-lens direction, retained as a descriptive lens diagnostic.
 ANSWER_DIRECTION_JLENS = "answer_direction_jlens"
 #: The published R-lens control. Secondary and DESCRIPTIVE — it gates nothing.
 ANSWER_DIRECTION_RLENS = "answer_direction_rlens"
@@ -145,8 +140,14 @@ ANSWER_DIRECTION_RLENS_PAPERMINIMAL = "answer_direction_rlens_paperminimal"
 #: No transport at all — the floor that shows whether the transport did work.
 ANSWER_DIRECTION_UNEMBEDDING = "answer_direction_unembedding"
 
+#: The H5 discriminator: a causally fitted answer-token actuator at the DAS
+#: layer.  It is trained with the same optimiser/steps and per-row DAS dose,
+#: but sees only the requested and current answer-token identities.  J/R remain
+#: lens readout diagnostics and no longer have to serve as actuators.
+DAS_ANSWER_CONTROL = "das_answer_control"
+
 #: Every arm that is "a fixed answer movement, dosed to the DAS edit norm".
-ANSWER_DIRECTIONS = (ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
+ANSWER_DIRECTIONS = (DAS_ANSWER_CONTROL, ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
                      ANSWER_DIRECTION_RLENS_PAPERMINIMAL,
                      ANSWER_DIRECTION_UNEMBEDDING)
 
@@ -156,7 +157,7 @@ ANSWER_DIRECTIONS = (ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
 #: published one.
 LEGACY_ANSWER_DIRECTION = "answer_direction"
 
-VARIANTS = ("das_binding", "mean_difference", ANSWER_DIRECTION_JLENS,
+VARIANTS = ("das_binding", DAS_ANSWER_CONTROL, "mean_difference", ANSWER_DIRECTION_JLENS,
             ANSWER_DIRECTION_RLENS, ANSWER_DIRECTION_UNEMBEDDING,
             "random_rank", "random_norm", "noop", "whole_state")
 
@@ -379,6 +380,7 @@ def build_subspace(
     `answer_vectors` maps an answer-direction variant name to its
     `{token_id: vector}` table:
 
+        das_answer_control       causally fitted token-actuator vectors
         answer_direction_jlens   `u_w = J_l^T (g W_U[w])` from the PUBLISHED
                                  J-lens artifact of stage 201
         answer_direction_rlens   the same from the published R-lens
@@ -741,7 +743,8 @@ def control_contrasts(frame: pd.DataFrame, site: str, arm: str, layer: int,
 #: What the E13 report has to show for BOTH arms, in this order. The treatment
 #: first, then every fixed answer direction (published J-lens, published R-lens,
 #: raw unembedding), then the dose-matched random floors and the ceiling.
-PANEL_VARIANTS = ("das_binding", ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
+PANEL_VARIANTS = ("das_binding", DAS_ANSWER_CONTROL,
+                  ANSWER_DIRECTION_JLENS, ANSWER_DIRECTION_RLENS,
                   ANSWER_DIRECTION_RLENS_PAPERMINIMAL,
                   ANSWER_DIRECTION_UNEMBEDDING, "mean_difference",
                   "random_rank", "random_norm", "whole_state")
@@ -1174,15 +1177,15 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
          reaches a decent fraction of the ceiling;
       2. it is not merely the training arm leaking — `ba` is measurable, which
          H3 established;
-      3. the explicit `answer_direction_jlens` control, which passes on `ab`,
+      3. the matched `das_answer_control`, which passes on `ab`,
          FAILS on `ba`. If it does not fail, the discriminator cannot tell an
          answer encoder from a binding encoder and no verdict is licensed.
 
-    The discriminator is the PUBLISHED J-lens arm, and only that arm. The
-    R-lens arm (`answer_direction_rlens`) runs on identical tokens, layer, site,
-    dose, seed and split and is reported descriptively beside it; it is a second
-    reading of the same diagnostic, not a second gate, and adding one would be a
-    change to the experiment. The raw-unembedding arm is the no-transport floor.
+    The discriminator is `das_answer_control`, fitted causally at this exact
+    layer with the same optimiser, steps and per-row dose as binding DAS.  It
+    sees answer-token identity, never the binding counterfactual.  Published
+    J/R and raw-unembedding directions remain descriptive lens diagnostics;
+    their ability to read a state is not assumed to make them good actuators.
 
     An `interchange.csv` written before 2026-09-01 carries the ARCHIVED
     cotangent-lens control under the bare name `answer_direction`. That arm is a
@@ -1213,8 +1216,8 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
     das_ba = _cell(summary, HELD_OUT_ARM, "das_binding", site, layer, rank)
     ceiling_ba = _cell(summary, HELD_OUT_ARM, "whole_state", site, layer)
     ceiling_ab = _cell(summary, TRAIN_ARM, "whole_state", site, layer)
-    answer_ab = _cell(summary, TRAIN_ARM, ANSWER_DIRECTION_JLENS, site, layer)
-    answer_ba = _cell(summary, HELD_OUT_ARM, ANSWER_DIRECTION_JLENS, site, layer)
+    answer_ab = _cell(summary, TRAIN_ARM, DAS_ANSWER_CONTROL, site, layer)
+    answer_ba = _cell(summary, HELD_OUT_ARM, DAS_ANSWER_CONTROL, site, layer)
     if das_ba is None or ceiling_ba is None:
         return False, float("nan"), "missing held-out-arm rows"
     broken = structural_zero_failure(zeros)
@@ -1232,8 +1235,8 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
             f"this summary carries the archived '{LEGACY_ANSWER_DIRECTION}' arm "
             f"(the cotangent readout fitted inside stage 106 before 2026-09-01) "
             f"and no '{ANSWER_DIRECTION_JLENS}' arm. The discriminator is NOT "
-            f"MEASURED: re-run stage 106 against the stage-201 J-lens rather "
-            f"than reading an archived control as the published one.")
+            f"MEASURED: re-run stage 106 with '{DAS_ANSWER_CONTROL}' rather "
+            f"than reading an archived control as the current one.")
 
     def installed(cell) -> float:
         if cell is None:
@@ -1254,7 +1257,42 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
     discriminator = "NOT MEASURED"
     discriminates = False
     if answer_ab is not None and answer_ba is not None:
-        passes_train = bool(answer_ab["ci_lo"] > 0)
+        # "Passes on the training arm" is read on the ARGMAX, exactly as
+        # "fails on the held-out arm" is. The module docstring has always said
+        # conditions 1 and 3 are read on `says_installed`; this line read the
+        # margin until 2026-09-02, and the two disagree precisely when it
+        # matters. `delta_ld` is positively biased here — H1 is 1.000, so any
+        # edit that disrupts a confident distribution lifts the margin with
+        # nothing transported — so a dead control can show a tight positive
+        # interval while never once producing the installed answer.
+        #
+        # It also has to CLEAR THE DOSE-MATCHED RANDOM FLOOR. A control that
+        # moves the argmax no more than a random direction of the same edit norm
+        # is not "an explicit answer direction that works"; it is a perturbation
+        # of that size. `random_norm` is the right reference because it is
+        # already in the table and already matched to the treatment's dose — the
+        # same reason `whole_state` is the reference for transport.
+        #
+        # This is the E10-3 lesson applied to the control itself: a positive
+        # control that does not demonstrably work licenses nothing, and a
+        # discriminator that fails on `ba` because it fails EVERYWHERE cannot
+        # distinguish a binding encoder from an answer encoder.
+        floor = _cell(summary, TRAIN_ARM, "random_norm", site, layer)
+        installed_ab = installed(answer_ab)
+        floor_ab = installed(floor)
+        moves_the_margin = bool(answer_ab["ci_lo"] > 0)
+        if np.isfinite(installed_ab):
+            # The argmax rule: the control must actually produce the installed
+            # answer, and more often than a random direction at the same dose.
+            beats_floor = bool(not np.isfinite(floor_ab) or installed_ab > floor_ab)
+            passes_train = bool(moves_the_margin
+                                and installed_ab >= MIN_DISCRIMINATOR_INSTALL
+                                and beats_floor)
+        else:
+            # No argmax recorded (runs predating `says_installed`): the
+            # pre-2026-08-13 margin rule, which is all such a run supports.
+            beats_floor = True
+            passes_train = moves_the_margin
         transport_ratio = ratio(installed(ceiling_ba), installed(ceiling_ab))
         control_ratio = ratio(installed(answer_ba), installed(answer_ab))
         if np.isfinite(control_ratio) and np.isfinite(transport_ratio):
@@ -1267,11 +1305,21 @@ def evaluate_gate_h5(summary: pd.DataFrame, site: str, layer: int,
             shape = (f"{HELD_OUT_ARM} {answer_ba['delta_ld']:+.3f} "
                      f"[{answer_ba['ci_lo']:+.3f}, {answer_ba['ci_hi']:+.3f}]")
         discriminates = passes_train and fails_heldout
-        discriminator = (f"{ANSWER_DIRECTION_JLENS} {TRAIN_ARM} "
+        why = ""
+        if not passes_train:
+            why = (f" — DEAD CONTROL: it does not work on the arm it was built "
+                   f"for, so its failure on {HELD_OUT_ARM} says nothing. "
+                   f"installed {installed_ab:.1%} (required "
+                   f"{MIN_DISCRIMINATOR_INSTALL:.0%}) against the dose-matched "
+                   f"random floor's {floor_ab:.1%} at the same edit norm. "
+                   f"No verdict is licensed."
+                   if np.isfinite(installed_ab) else
+                   " — the control does not move the training arm at all.")
+        discriminator = (f"{DAS_ANSWER_CONTROL} {TRAIN_ARM} "
                          f"{answer_ab['delta_ld']:+.3f} "
                          f"[{answer_ab['ci_lo']:+.3f}, {answer_ab['ci_hi']:+.3f}], "
-                         f"installed {installed(answer_ab):.1%} (passes: {passes_train}); "
-                         f"{shape} (fails: {fails_heldout})")
+                         f"installed {installed_ab:.1%} (passes: {passes_train}"
+                         f"{why}); {shape} (fails: {fails_heldout})")
 
     passed = bool(transfers and discriminates)
     detail = (f"{HELD_OUT_ARM} @ {site} L{layer} r{rank}: das_binding installed "

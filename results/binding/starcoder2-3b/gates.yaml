@@ -1,6 +1,6 @@
 experiment: E13
 model: starcoder2-3b
-updated: '2026-09-02 12:28:03'
+updated: '2026-09-02 13:46:28'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -121,15 +121,17 @@ gates:
       override: false
   H5:
     name: H5
-    passed: true
+    passed: false
     value: 1.5469613259668507
     detail: "ba @ use L12 r1: das_binding installed 100.0% = 155% of the held-out\
       \ ceiling (threshold 50%); margin +7.765 [+7.693, +7.834] = 468% of it; discriminator\
       \ \u2014 answer_direction_jlens ab +0.207 [+0.191, +0.224], installed 4.6% (passes:\
-      \ True); ba/ab argmax ratio 0.346 against transport's 1.031 (bar 0.516) (fails:\
-      \ True)"
+      \ False \u2014 DEAD CONTROL: it does not work on the arm it was built for, so\
+      \ its failure on ba says nothing. installed 4.6% against the dose-matched random\
+      \ floor's 21.2% at the same edit norm. No verdict is licensed.); ba/ab argmax\
+      \ ratio 0.346 against transport's 1.031 (bar 0.516) (fails: True)"
     stage: 106_binding_interchange
-    timestamp: '2026-09-02 12:28:03'
+    timestamp: '2026-09-02 13:46:28'
     override: false
     override_reason: ''
     extra:
@@ -144,7 +146,7 @@ gates:
           n: 1360
           max_abs_edit_norm: 0.0
           edit_is_the_zero_vector: true
-          max_abs_clean_path_shift: 0.03125011920928955
+          max_abs_clean_path_shift: 0.0312501192092895
         pre_mutation_whole_state:
           max_abs_delta_ld: 0.0
           passed: true
@@ -152,5 +154,6 @@ gates:
           n: 240
           max_abs_edit_norm: 0.0
           edit_is_the_zero_vector: true
-          max_abs_clean_path_shift: 0.03125011920928955
+          max_abs_clean_path_shift: 0.0312501192092895
       override: false
+      regenerated: 2026-09-02 dead-control rule

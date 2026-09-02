@@ -390,6 +390,32 @@ class AlignmentFit:
     converged: bool
 
 
+@dataclass
+class AnswerActuatorExample:
+    """One fixed-answer control row, with its dose fixed by binding DAS.
+
+    Unlike :class:`AlignmentExample`, this row never receives a counterfactual
+    program state.  It receives a synthetic donor in the learned direction
+    ``u[target] - u[base]``.  This makes the control explicitly about answer
+    token identity rather than about the binding counterfactual.
+    """
+
+    input_ids: torch.Tensor
+    position: int
+    target_token_id: int
+    base_token_id: int
+    edit_norm: float
+    group: str = ""
+
+
+@dataclass
+class AnswerActuatorFit:
+    vectors: dict[int, np.ndarray]
+    history: list[dict]
+    n_examples: int
+    converged: bool
+
+
 def learn_alignment(
     model,
     examples: Sequence[AlignmentExample],
@@ -476,3 +502,95 @@ def learn_alignment(
     )
     return AlignmentFit(subspace=subspace, history=history,
                         n_examples=len(examples), converged=converged)
+
+
+def learn_answer_actuator(
+    model,
+    examples: Sequence[AnswerActuatorExample],
+    layer: int,
+    d_model: int,
+    steps: int = 200,
+    batch_size: int = 8,
+    lr: float = 1e-2,
+    seed: int = 42,
+    device: Optional[torch.device] = None,
+    log_every: int = 25,
+) -> AnswerActuatorFit:
+    """Fit the one simple positive control needed by the crossed DAS test.
+
+    A vector ``u_w`` is learned for every answer token seen in calibration.
+    For a row whose clean answer is ``a`` and requested answer is ``b``, the
+    intervention is
+
+        h' = h + alpha * normalize(u_b - u_a)
+
+    where ``alpha`` is *not fitted*: it is the edit norm produced by binding
+    DAS on that same calibration row.  This is exactly a rank-1 interchange
+    with a synthetic donor at ``h + alpha*d``.  Thus the control has the same
+    site, optimiser, step count and per-row dose as the treatment, while its
+    only information is answer-token identity.
+
+    The table is fitted on the training arm and frozen.  Evaluation must keep
+    that arm's token orientation on the crossed arm; `_answer_movement` does
+    this already for every answer-direction table.
+    """
+    from src.models.hooks import transform_positions_with_grad
+
+    if not examples:
+        raise ValueError("answer actuator needs at least one calibration example")
+    if any(not np.isfinite(e.edit_norm) or e.edit_norm <= 0 for e in examples):
+        raise ValueError("answer actuator edit norms must be finite and positive")
+
+    torch.manual_seed(seed)
+    device = device or next(model.parameters()).device
+    for parameter in model.parameters():
+        parameter.requires_grad_(False)
+
+    token_ids = sorted({int(t) for e in examples
+                        for t in (e.base_token_id, e.target_token_id)})
+    token_index = {token_id: i for i, token_id in enumerate(token_ids)}
+    generator = torch.Generator(device="cpu").manual_seed(seed + 1)
+    raw = torch.randn(len(token_ids), d_model, generator=generator,
+                      dtype=torch.float32)
+    raw = (raw / raw.norm(dim=1, keepdim=True)).to(device).requires_grad_(True)
+    optimizer = torch.optim.Adam([raw], lr=lr)
+    rng = np.random.default_rng(seed)
+    order = np.arange(len(examples))
+    history: list[dict] = []
+
+    for step in range(steps):
+        rng.shuffle(order)
+        batch = [examples[i] for i in order[:batch_size]]
+        optimizer.zero_grad(set_to_none=True)
+        losses = []
+        for example in batch:
+            target = raw[token_index[int(example.target_token_id)]]
+            base = raw[token_index[int(example.base_token_id)]]
+            delta = target - base
+            direction = delta / delta.norm().clamp_min(1e-12)
+            alpha = float(example.edit_norm)
+
+            def edit(vec: torch.Tensor, direction=direction,
+                     alpha=alpha) -> torch.Tensor:
+                return vec.detach().float() + alpha * direction
+
+            logits = transform_positions_with_grad(
+                model, example.input_ids.to(device),
+                {int(layer): {int(example.position): edit}})
+            log_probs = torch.log_softmax(logits[0, -1].float(), dim=-1)
+            losses.append(-log_probs[int(example.target_token_id)])
+
+        loss = torch.stack(losses).mean()
+        loss.backward()
+        optimizer.step()
+        if step % log_every == 0 or step == steps - 1:
+            value = float(loss.detach().cpu())
+            history.append({"step": step, "loss": value})
+            logger.info("    answer actuator layer %s step %d: loss %.4f",
+                        layer, step, value)
+
+    vectors = {token_id: raw[index].detach().float().cpu().numpy().astype(np.float64)
+               for token_id, index in token_index.items()}
+    converged = bool(len(history) >= 2 and history[-1]["loss"] <= history[0]["loss"])
+    return AnswerActuatorFit(vectors=vectors, history=history,
+                             n_examples=len(examples), converged=converged)

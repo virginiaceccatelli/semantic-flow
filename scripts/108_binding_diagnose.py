@@ -66,6 +66,7 @@ def main(
         ANSWER_DIRECTION_JLENS,
         ANSWER_DIRECTION_RLENS,
         ANSWER_DIRECTION_UNEMBEDDING,
+        DAS_ANSWER_CONTROL,
         HELD_OUT_ARM,
         LEGACY_ANSWER_DIRECTION,
         MIN_TRAIN_ARM_FRACTION,
@@ -76,6 +77,7 @@ def main(
         control_contrasts,
         interchange_summary,
         difference_direction_alignment,
+        evaluate_gate_h5,
         transfer_ratios,
     )
     from src.experiments.store_gates import BINDING, load_gates
@@ -216,18 +218,18 @@ def main(
         return None if hit.empty else float(hit["transfer_ratio"].iloc[0])
 
     r_whole, r_das = ratio_of("whole_state"), ratio_of("das_binding")
-    # The discriminator is the PUBLISHED J-lens arm. The R-lens and raw-
-    # unembedding arms are printed beside it and gate nothing.
-    r_answer = ratio_of(ANSWER_DIRECTION_JLENS)
+    # The discriminator is the causally fitted answer actuator. J/R and raw
+    # unembedding are printed beside it and gate nothing.
+    r_answer = ratio_of(DAS_ANSWER_CONTROL)
     r_answer_r = ratio_of(ANSWER_DIRECTION_RLENS)
     r_answer_u = ratio_of(ANSWER_DIRECTION_UNEMBEDDING)
     if r_answer is None and ratio_of(LEGACY_ANSWER_DIRECTION) is not None:
         console.print(f"  [yellow]this run carries the ARCHIVED "
                       f"'{LEGACY_ANSWER_DIRECTION}' arm (the cotangent readout "
                       f"stage 106 fitted for itself before 2026-09-01) and no "
-                      f"'{ANSWER_DIRECTION_JLENS}'. Its numbers are archived and "
-                      f"are NOT read as the published J-lens discriminator; "
-                      f"re-run stage 106 against the stage-201 lens.[/yellow]")
+                      f"'{DAS_ANSWER_CONTROL}'. Its numbers are archived and "
+                      f"are not read as the current discriminator; re-run "
+                      f"stage 106.[/yellow]")
     if r_whole is None or r_das is None:
         check("discriminator_works", False, "missing whole_state or das rows",
               "without the known-good reference there is nothing to read the "
@@ -237,9 +239,9 @@ def main(
         like_transport = abs(r_das - r_whole) <= 0.25
         answer_differs = (r_answer is None or abs(r_answer - r_whole) > 0.25)
         strength = (f"das {r_das:+.3f} vs whole_state {r_whole:+.3f}"
-                    + (f", {ANSWER_DIRECTION_JLENS} {r_answer:+.3f}"
+                    + (f", {DAS_ANSWER_CONTROL} {r_answer:+.3f}"
                        if r_answer is not None
-                       else f", {ANSWER_DIRECTION_JLENS} MISSING")
+                       else f", {DAS_ANSWER_CONTROL} MISSING")
                     + (f", {ANSWER_DIRECTION_RLENS} {r_answer_r:+.3f}"
                        if r_answer_r is not None else "")
                     + (f", {ANSWER_DIRECTION_UNEMBEDDING} {r_answer_u:+.3f}"
@@ -249,8 +251,8 @@ def main(
               "the treatment must transfer like installing the entire donor state "
               "does. A token or answer account cannot: the held-out arm demands "
               "the opposite token, so it predicts reversal or strong attenuation")
-        check("answer_direction_jlens_does_not", answer_differs,
-              f"{ANSWER_DIRECTION_JLENS} ratio "
+        check("das_answer_control_does_not", answer_differs,
+              f"{DAS_ANSWER_CONTROL} ratio "
               f"{r_answer if r_answer is None else round(r_answer, 3)}"
               f" against whole_state {r_whole:.3f}",
               "if an explicit answer direction transfers as well as the treatment "
@@ -372,8 +374,7 @@ def main(
                             and (contrasts["ci_lo"] > 0).all())
     h4_ok = bool(das_ab is not None and das_ab["ci_lo"] > 0
                  and frac_ab >= MIN_TRAIN_ARM_FRACTION and controls_cleared)
-    h5_ok = bool(das_ba is not None and das_ba["ci_lo"] > 0
-                 and frac_ba >= MIN_TRANSFER_FRACTION)
+    h5_ok, _, _ = evaluate_gate_h5(summary, site, layer, rank)
     reversed_ba = bool(das_ba is not None and das_ba["ci_hi"] < 0)
 
     for arm, das in ((TRAIN_ARM, das_ab), (HELD_OUT_ARM, das_ba)):

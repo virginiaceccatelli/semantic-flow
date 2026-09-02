@@ -14,39 +14,39 @@ on held-out bases in BOTH arms.
        v_b" or "the answer" scores positive on `ab` and negative on `ba`; only
        one encoding which definition is in scope survives both.
 
-The `answer_direction_jlens` control is the positive control for the
-falsification itself: an explicit, known answer direction MUST pass on `ab` and
-MUST fail on `ba`. If it does not fail, the held-out arm cannot tell an answer
-encoder from a binding encoder and no verdict about the learned subspace is
+The `das_answer_control` is the positive control for the falsification itself.
+It is fitted causally at the same layer, with the same optimiser, steps and
+per-row edit norm as binding DAS, but its only inputs are the current and
+requested answer-token identities.  It MUST pass on `ab` and MUST fail on `ba`.
+If it is dead on `ab`, or does not fail on `ba`, no identification verdict is
 licensed.
 
-That direction is the PUBLISHED J-lens read direction at the intervention layer,
+For comparison only, the optional published J-lens arm uses
 
     u_w(l) = J_l^T ( g * W_U[w] ),   d = u_installed(l) - u_own(l)
 
-built from the artifact **stage 201 fitted** — released estimator, independent
+from the artifact **stage 201 fitted** — released estimator, independent
 pretraining-like corpus, full `d_model x d_model` Jacobian. Nothing is fitted
 here. Before 2026-09-01 this stage fitted its own corpus-averaged cotangent
 readout over the two answer tokens and called the result "J-lens vectors"; that
 is a different estimator (`docs/WORKSPACE_LENS.md` §1), its numbers are
 archived, and it is neither imported nor built any more.
 
-The published R-lens supplies a second, DESCRIPTIVE arm on identical tokens,
+The published R-lens supplies another DESCRIPTIVE arm on identical tokens,
 layer, site, per-row dose, seed and split. It gates nothing.
 
 **Two phases, and only the second needs a lens.** The DAS subspace is fitted and
 its rank selected with no lens involvement whatsoever — that is what keeps DAS
 lens-independent — and the lens artifacts are opened afterwards, for the
 control-evaluation grid alone. So stage 201 must precede the J/R-dependent
-*portion* of this stage, not the DAS fit. The artifacts are nonetheless
-PREFLIGHTED (existence, model, d_model, tokenizer, layer) in the first seconds,
-from the `lens_meta.json` sidecar, so a missing lens fails before the fit rather
-than after it.
+portion of this stage, not the DAS fit. Requested artifacts are preflighted from
+their metadata; a missing optional lens is recorded and skipped.
 
     python scripts/106_binding_interchange.py --model deepseek-coder-1.3b \\
         --layers 12 --ranks 1,2,4,8
 
-Requires **H0-H3**, and stage 201 for the control arms. Records **H4** and **H5**.
+Published J/R directions remain optional descriptive arms.  They are readouts,
+not H5's actuator. Requires **H0-H3** and records **H4** and **H5**.
 """
 
 from __future__ import annotations
@@ -77,7 +77,7 @@ def main(
     site: str = typer.Option("", help="Default: the site stage 105 chose on calibration"),
     sites: str = typer.Option("def_source,use", help="Sites the grid is run over"),
     variants: str = typer.Option(
-        "das_binding,mean_difference,answer_direction_jlens,"
+        "das_binding,das_answer_control,mean_difference,answer_direction_jlens,"
         "answer_direction_rlens,answer_direction_unembedding,"
         "random_rank,random_norm,noop,whole_state"),
     jlens: Optional[Path] = typer.Option(
@@ -91,7 +91,7 @@ def main(
         False, "--require-rlens/--no-require-rlens",
         help="Refuse to run without a fitted R-lens. Off by default: the "
              "R-lens arm is a secondary descriptive diagnostic and its absence "
-             "must not block the J-lens discriminator H5 reads."),
+             "must not block H5; J/R are descriptive readout diagnostics."),
     rlens_paperminimal: Optional[Path] = typer.Option(
         None, help="OPTIONAL separately named arm from the -paperminimal "
                    "sensitivity fit (StarCoder2: LayerNorm analogue off). Never "
@@ -139,6 +139,7 @@ def main(
         ANSWER_DIRECTION_RLENS,
         ANSWER_DIRECTION_RLENS_PAPERMINIMAL,
         ANSWER_DIRECTION_UNEMBEDDING,
+        DAS_ANSWER_CONTROL,
         LEGACY_ANSWER_DIRECTION,
         TRAIN_ARM,
         answer_direction_panel,
@@ -154,8 +155,9 @@ def main(
         verify_structural_zeros,
     )
     from src.experiments.store_gates import BINDING, GateFailure, load_gates, record_gate, require_gates
-    from src.models.das import (AlignmentExample, learn_alignment,
-                                mean_difference_subspace)
+    from src.models.das import (AlignmentExample, AnswerActuatorExample,
+                                learn_alignment, learn_answer_actuator,
+                                interchange_report, mean_difference_subspace)
     from src.models.loader import ModelConfig, ModelLoader
     from src.utils import write_manifest
     # The PUBLISHED lens, loaded — never fitted here, and never the archived
@@ -216,7 +218,7 @@ def main(
     wanted_lenses: dict = {}
     if ANSWER_DIRECTION_JLENS in variant_list:
         wanted_lenses[ANSWER_DIRECTION_JLENS] = (
-            Path(jlens or default_lens_dir(model, JLENS_DIRNAME)), JLENS_DIRNAME, True)
+            Path(jlens or default_lens_dir(model, JLENS_DIRNAME)), JLENS_DIRNAME, False)
     if ANSWER_DIRECTION_RLENS in variant_list:
         wanted_lenses[ANSWER_DIRECTION_RLENS] = (
             Path(rlens or default_lens_dir(model, RLENS_DIRNAME)), RLENS_DIRNAME,
@@ -245,10 +247,6 @@ def main(
             skipped_lenses[arm] = str(exc).splitlines()[0]
             variant_list = [v for v in variant_list if v != arm]
             console.print(f"  [yellow]{arm} NOT RUN — {skipped_lenses[arm]}[/yellow]")
-    if ANSWER_DIRECTION_JLENS not in artifacts and ANSWER_DIRECTION_JLENS in wanted_lenses:
-        console.print("[red]no J-lens: H5's discriminator cannot be built.[/red]")
-        raise typer.Exit(2)
-
     loader = ModelLoader(config)
     device_t = next(loader.model.parameters()).device
     console.print(f"[bold]E13 stage 106 — {model}[/bold]  layers {layer_list}, "
@@ -306,6 +304,7 @@ def main(
     # 0, and calibration says_installed 1.000 collapsed to 0.239 on test at the
     # identical cell.
     states_test_by_layer: dict = {}
+    states_calib_by_layer: dict = {}
     mean_direction_by_layer: dict = {}
     fitted_by_layer: dict = {}
     if len(layer_list) > 1:
@@ -315,6 +314,7 @@ def main(
     for layer in layer_list:
         states_calib = collect_states(loader.model, loader.tokenizer, calib, layer,
                                       sites=site_list)
+        states_calib_by_layer[int(layer)] = states_calib
         states_test_by_layer[int(layer)] = collect_states(
             loader.model, loader.tokenizer, test, layer, sites=site_list)
         states_select = collect_states(loader.model, loader.tokenizer, calib_select,
@@ -412,6 +412,64 @@ def main(
     mean_direction = mean_direction_by_layer[chosen_layer]
     fitted = fitted_by_layer[chosen_layer]
 
+    # Fit exactly one answer-only actuator after rank selection.  Its dose on
+    # every calibration row is the edit norm produced by the already-frozen
+    # binding DAS subspace, so there is no alpha search and no second selection
+    # surface.  The token table is trained only on `ab` and then frozen.
+    answer_actuator_vectors = None
+    answer_actuator_fit = None
+    if DAS_ANSWER_CONTROL in variant_list:
+        actuator_examples = []
+        states_calib = states_calib_by_layer[chosen_layer]
+        binding_subspace = fitted[chosen_rank]
+        for record in calib:
+            for binding in BINDINGS:
+                host_key = (record.base_id, TRAIN_ARM, binding)
+                donor_key = (record.base_id, TRAIN_ARM, donor_of(binding))
+                if host_key not in states_calib or donor_key not in states_calib:
+                    continue
+                host = states_calib[host_key]["states"][chosen_site]
+                donor = states_calib[donor_key]["states"][chosen_site]
+                dose = interchange_report(
+                    host, donor, binding_subspace.basis)["edit_norm"]
+                actuator_examples.append(AnswerActuatorExample(
+                    input_ids=torch.tensor([encode_prompt(
+                        loader.tokenizer, record.prompt(TRAIN_ARM, binding))]),
+                    position=record.positions[chosen_site],
+                    target_token_id=record.other_answer_token(TRAIN_ARM, binding),
+                    base_token_id=record.answer_token(TRAIN_ARM, binding),
+                    edit_norm=dose, group=record.base_id))
+        answer_actuator_fit = learn_answer_actuator(
+            loader.model, actuator_examples, layer=chosen_layer,
+            d_model=config.d_model, steps=steps, batch_size=batch_size,
+            lr=lr, seed=seed, device=device_t)
+        answer_actuator_vectors = answer_actuator_fit.vectors
+        missing_tokens = sorted(set(needed) - set(answer_actuator_vectors))
+        if missing_tokens:
+            console.print(f"[red]{DAS_ANSWER_CONTROL}: calibration did not contain "
+                          f"answer tokens {missing_tokens}. Refusing to use random, "
+                          f"untrained vectors on test.[/red]")
+            raise typer.Exit(2)
+        actuator_path = root / "subspaces" / f"answer_actuator_L{chosen_layer}.npz"
+        actuator_path.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(actuator_path,
+                 token_ids=np.asarray(sorted(answer_actuator_vectors), dtype=np.int64),
+                 vectors=np.stack([answer_actuator_vectors[t]
+                                   for t in sorted(answer_actuator_vectors)]),
+                 layer=np.asarray(chosen_layer), seed=np.asarray(seed),
+                 steps=np.asarray(steps))
+        fits.append({"layer": chosen_layer, "rank": 1,
+                     "variant": DAS_ANSWER_CONTROL,
+                     "n_train": answer_actuator_fit.n_examples,
+                     "converged": answer_actuator_fit.converged,
+                     "orthogonality_error": float("nan"),
+                     "concentration_top5": float("nan"),
+                     "uniform_top5": 5.0 / config.d_model,
+                     "final_loss": (answer_actuator_fit.history[-1]["loss"]
+                                    if answer_actuator_fit.history else None)})
+        console.print(f"  {DAS_ANSWER_CONTROL}: fitted {len(answer_actuator_vectors)} "
+                      f"token actuators on {len(actuator_examples)} calibration rows")
+
     # The invariant the mix-up violated, restated as a check. `AlignedSubspace`
     # records the layer it was fitted at, so this is free, deterministic, and —
     # unlike the structural-zero check below — cannot be confused with
@@ -431,12 +489,14 @@ def main(
     # deferred to this point so the expensive read happens once, at the one
     # layer the pre-committed cell actually uses, rather than per fitting layer.
     answer_vectors: dict = {}
+    if answer_actuator_vectors is not None:
+        answer_vectors[DAS_ANSWER_CONTROL] = answer_actuator_vectors
     lens_manifest: list[dict] = []
     for arm, artifact in artifacts.items():
         try:
             directions = answer_directions(artifact, chosen_layer, needed, gain, W_U)
         except (FileNotFoundError, LensMismatch) as exc:
-            required = wanted_lenses[arm][2] or arm == ANSWER_DIRECTION_JLENS
+            required = wanted_lenses[arm][2]
             if required:
                 console.print(f"[red]{arm}: {exc}[/red]")
                 raise typer.Exit(2)
@@ -547,8 +607,9 @@ def main(
     console.print(f"  H5: {'[green]PASS[/green]' if passed5 else '[red]FAIL[/red]'} — {detail5}")
     console.print("[dim]H4 without H5 is E11 again: an effect on the training arm alone "
                   "cannot separate a binding subspace from an answer direction.[/dim]")
-    console.print(f"[dim]H5's discriminator is {ANSWER_DIRECTION_JLENS} (the published "
-                  f"J-lens). The R-lens arm is reported, not gated.[/dim]")
+    console.print(f"[dim]H5's discriminator is {DAS_ANSWER_CONTROL}, causally fitted "
+                  f"at the same site and DAS-matched dose. J/R arms are reported, "
+                  f"not gated.[/dim]")
     if skipped_lenses:
         console.print("[yellow]arms not run: "
                       + "; ".join(f"{k} ({v})" for k, v in skipped_lenses.items())
@@ -573,7 +634,17 @@ def main(
                # layer the direction was read at, and how `g` was resolved.
                "answer_direction_lenses": lens_manifest,
                "normalization_gain": gain_info,
-               "answer_direction_discriminator": ANSWER_DIRECTION_JLENS,
+               "answer_direction_discriminator": DAS_ANSWER_CONTROL,
+               "answer_actuator": {
+                   "fit_arm": TRAIN_ARM, "layer": chosen_layer,
+                   "site": chosen_site, "steps": steps, "lr": lr,
+                   "batch_size": batch_size,
+                   "n_examples": (answer_actuator_fit.n_examples
+                                  if answer_actuator_fit else 0),
+                   "converged": (answer_actuator_fit.converged
+                                 if answer_actuator_fit else False),
+                   "dose": "per-row binding-DAS edit norm",
+                   "selected": False},
                "rlens_arm_run": ANSWER_DIRECTION_RLENS in answer_vectors,
                "rlens_paperminimal_arm_run":
                    ANSWER_DIRECTION_RLENS_PAPERMINIMAL in answer_vectors,

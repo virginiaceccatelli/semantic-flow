@@ -1,6 +1,6 @@
 experiment: E13
 model: deepseek-coder-6.7b
-updated: '2026-09-02 12:04:45'
+updated: '2026-09-02 13:46:28'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -121,14 +121,17 @@ gates:
       override: false
   H5:
     name: H5
-    passed: true
+    passed: false
     value: 1.3625304136253042
     detail: "ba @ use L6 r1: das_binding installed 100.0% = 136% of the held-out ceiling\
       \ (threshold 50%); margin +8.096 [+8.014, +8.179] = 202% of it; discriminator\
       \ \u2014 answer_direction_jlens ab +0.098 [+0.083, +0.113], installed 0.0% (passes:\
-      \ True); ba -0.010 [-0.028, +0.007] (fails: True)"
+      \ False \u2014 DEAD CONTROL: it does not work on the arm it was built for, so\
+      \ its failure on ba says nothing. installed 0.0% against the dose-matched random\
+      \ floor's 1.6% at the same edit norm. No verdict is licensed.); ba -0.010 [-0.028,\
+      \ +0.007] (fails: True)"
     stage: 106_binding_interchange
-    timestamp: '2026-09-02 12:04:45'
+    timestamp: '2026-09-02 13:46:28'
     override: false
     override_reason: ''
     extra:
@@ -153,6 +156,7 @@ gates:
           edit_is_the_zero_vector: true
           max_abs_clean_path_shift: 0.03125
       override: false
+      regenerated: 2026-09-02 dead-control rule
   H6:
     name: H6
     passed: true
