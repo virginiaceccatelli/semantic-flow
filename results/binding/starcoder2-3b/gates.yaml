@@ -1,6 +1,6 @@
 experiment: E13
 model: starcoder2-3b
-updated: '2026-09-02 13:46:28'
+updated: '2026-09-02 14:40:57'
 note: A passing gate says the measurement works at that step. It is not itself a scientific
   claim.
 gates:
@@ -63,7 +63,7 @@ gates:
       CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says
       nothing.'
     stage: 105_binding_ceiling
-    timestamp: '2026-09-02 12:10:28'
+    timestamp: '2026-09-02 14:22:57'
     override: false
     override_reason: ''
     extra:
@@ -94,7 +94,7 @@ gates:
     detail: 'ab @ use L12 r1: +7.740 [+7.662, +7.816] = 476% of the whole-state ceiling
       +1.627 (threshold 50%); controls cleared: True; edit |14.884| = 0.466 of ||h||'
     stage: 106_binding_interchange
-    timestamp: '2026-09-02 12:28:03'
+    timestamp: '2026-09-02 14:40:56'
     override: false
     override_reason: ''
     extra:
@@ -121,17 +121,15 @@ gates:
       override: false
   H5:
     name: H5
-    passed: false
+    passed: true
     value: 1.5469613259668507
     detail: "ba @ use L12 r1: das_binding installed 100.0% = 155% of the held-out\
       \ ceiling (threshold 50%); margin +7.765 [+7.693, +7.834] = 468% of it; discriminator\
-      \ \u2014 answer_direction_jlens ab +0.207 [+0.191, +0.224], installed 4.6% (passes:\
-      \ False \u2014 DEAD CONTROL: it does not work on the arm it was built for, so\
-      \ its failure on ba says nothing. installed 4.6% against the dose-matched random\
-      \ floor's 21.2% at the same edit norm. No verdict is licensed.); ba/ab argmax\
-      \ ratio 0.346 against transport's 1.031 (bar 0.516) (fails: True)"
+      \ \u2014 das_answer_control ab +4.752 [+4.595, +4.900], installed 96.6% (passes:\
+      \ True); ba/ab argmax ratio 0.468 against transport's 1.031 (bar 0.516) (fails:\
+      \ True)"
     stage: 106_binding_interchange
-    timestamp: '2026-09-02 13:46:28'
+    timestamp: '2026-09-02 14:40:57'
     override: false
     override_reason: ''
     extra:
@@ -146,7 +144,7 @@ gates:
           n: 1360
           max_abs_edit_norm: 0.0
           edit_is_the_zero_vector: true
-          max_abs_clean_path_shift: 0.0312501192092895
+          max_abs_clean_path_shift: 0.03125011920928955
         pre_mutation_whole_state:
           max_abs_delta_ld: 0.0
           passed: true
@@ -154,6 +152,5 @@ gates:
           n: 240
           max_abs_edit_norm: 0.0
           edit_is_the_zero_vector: true
-          max_abs_clean_path_shift: 0.0312501192092895
+          max_abs_clean_path_shift: 0.03125011920928955
       override: false
-      regenerated: 2026-09-02 dead-control rule

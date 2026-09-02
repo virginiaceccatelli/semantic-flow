@@ -1,6 +1,6 @@
 # E13 binding interchange — starcoder2-3b
 
-**Verdict: INCOMPLETE**
+**Verdict: NOT SUPPORTED**
 
 Does a low-rank, magnitude-free interchange at the site where a variable binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token or an answer direction?
 
@@ -15,7 +15,7 @@ The same binding flip demands opposite token movements in the two value assignme
 - **PASS** `H2` (which definition is in scope is decodable at the use anchor) — best layer 7: binding decodable at 1.000 (selectivity 0.519) against a MEASURED surface baseline of 0.500; margin +0.500. Thresholds 0.8 and 0.1. The floor is pinned by construction here: the anchor token is identical across the counterfactual and the mutation is outside the baseline's window.
 - **PASS** `H3` (whole-state interchange flips the answer — the ceiling, per arm) — site use, layer 12 (both chosen on calibration): ab: +1.627 [+1.568, +1.683], flip rate 0.596; ba: +1.660 [+1.602, +1.718], flip rate 0.632 (thresholds: CI above 0.0, flip rate 0.25). Both arms must be measurable or an H5 null says nothing.
 - **PASS** `H4` (low-rank interchange beats matched controls on the TRAINING arm) — ab @ use L12 r1: +7.740 [+7.662, +7.816] = 476% of the whole-state ceiling +1.627 (threshold 50%); controls cleared: True; edit |14.884| = 0.466 of ||h||
-- **FAIL** `H5` (the same subspace transfers to the HELD-OUT value assignment, where an answer direction cannot) — ba @ use L12 r1: das_binding installed 100.0% = 155% of the held-out ceiling (threshold 50%); margin +7.765 [+7.693, +7.834] = 468% of it; discriminator — answer_direction_jlens ab +0.207 [+0.191, +0.224], installed 4.6% (passes: False — DEAD CONTROL: it does not work on the arm it was built for, so its failure on ba says nothing. installed 4.6% against the dose-matched random floor's 21.2% at the same edit norm. No verdict is licensed.); ba/ab argmax ratio 0.346 against transport's 1.031 (bar 0.516) (fails: True)
+- **PASS** `H5` (the same subspace transfers to the HELD-OUT value assignment, where an answer direction cannot) — ba @ use L12 r1: das_binding installed 100.0% = 155% of the held-out ceiling (threshold 50%); margin +7.765 [+7.693, +7.834] = 468% of it; discriminator — das_answer_control ab +4.752 [+4.595, +4.900], installed 96.6% (passes: True); ba/ab argmax ratio 0.468 against transport's 1.031 (bar 0.516) (fails: True)
 - **NOT RUN** `H6` (the relevance readout is mechanically sound: the LRP rules actually installed so relevance conserves, the token roles partition every token exactly once, the per-role deltas close to the difference of the two conservation ratios, every binding_flip pair differs at exactly one measured token index, the fixed-target conditions really do score both members at one token, and every declared cell exists) — not recorded
 - **NOT RUN** `H7` (the candidate vocabulary is mechanically sound: every declared lexicon pair is kept whole or dropped whole with a reason, enough pairs survive from more than one family, discovery ran on calibration bases only and the frozen file records which, and the candidate set contains the lexicon, the discovered pool and the random controls without duplicates) — not recorded
 - **NOT RUN** `H8` (the forced choice is mechanically sound: every declared (base, cell, question) is scored, the rendered question is identical in all four cells of a base, no question names the inner definition, both choices are distinct single tokens, both variants of every word style ran, and the value positive control ran) — not recorded
@@ -24,9 +24,9 @@ The same binding flip demands opposite token movements in the two value assignme
 
 ## Diagnostic
 
-The subspace did not transfer to the held-out value assignment. Read the `answer_direction_jlens` rows FIRST — the published J-lens control, which is H5's discriminator: if it also passes on `ba`, the discriminator is broken and no verdict is licensed. If it fails on `ba` as designed and das_binding fails too, the learned subspace is an answer direction — which is a real, reportable negative and exactly what E11 could not establish. `answer_direction_rlens` is the same diagnostic read through the published R-lens and is descriptive.
+results/binding/starcoder2-3b/e16_*.csv — MECHANICAL, so a failure is an apparatus fault and never a negative result. Read the LRP rule counts first: on a LayerNorm model with a non-gated MLP (starcoder2) the homogenising rules bind to nothing, relevance does not conserve, and the readout is NOT APPLICABLE rather than failing. This is the ARCHIVED cotangent method, not the published R-lens — see docs/WORKSPACE_LENS.md §1.
 
-Re-run after fixing: `write it up — both outcomes are reportable; see docs/RESULTS.md R13`
+Re-run after fixing: `python scripts/140_binding_relevance.py --model starcoder2-3b`
 
 ## Controls — both arms
 
@@ -35,19 +35,13 @@ Re-run after fixing: `write it up — both outcomes are reportable; see docs/RES
 | arm | variant | delta_ld | 95% CI | installed | flip | \|edit\| | \|edit\|/\|h\| | vs das (paired, 95% CI) | n | bases |
 |---|---|---|---|---|---|---|---|---|---|---|
 | ab | `das_binding` | +7.740 | [+7.662, +7.816] | 100.0% | 97.7% | 14.884 | 0.466 | — | 560 | 280 |
-| ab | `answer_direction_jlens` | +0.207 | [+0.191, +0.224] | 4.6% | 2.1% | 14.884 | 0.466 | +7.533 [+7.455, +7.607] | 560 | 280 |
-| ab | `answer_direction_rlens` | +0.569 | [+0.532, +0.606] | 11.8% | 9.5% | 14.884 | 0.466 | +7.172 [+7.094, +7.246] | 560 | 280 |
-| ab | `answer_direction_rlens_paperminimal` | +0.589 | [+0.549, +0.630] | 13.0% | 10.5% | 14.884 | 0.466 | +7.151 [+7.072, +7.227] | 560 | 280 |
-| ab | `answer_direction_unembedding` | +0.156 | [+0.137, +0.173] | 4.1% | 2.0% | 14.884 | 0.466 | +7.585 [+7.507, +7.658] | 560 | 280 |
+| ab | `das_answer_control` | +4.752 | [+4.595, +4.900] | 96.6% | 94.3% | 14.884 | 0.466 | +2.989 [+2.844, +3.153] | 560 | 280 |
 | ab | `mean_difference` | +1.066 | [+1.025, +1.107] | 47.1% | 44.8% | 22.252 | 0.697 | +6.674 [+6.604, +6.742] | 560 | 280 |
 | ab | `random_rank` | +0.003 | [+0.002, +0.005] | 2.3% | 0.0% | 0.422 | 0.013 | +7.737 [+7.658, +7.813] | 560 | 280 |
 | ab | `random_norm` | +0.417 | [+0.379, +0.454] | 21.2% | 18.4% | 16.441 | 0.515 | +7.323 [+7.241, +7.402] | 560 | 280 |
 | ab | `whole_state` | +1.627 | [+1.568, +1.683] | 62.7% | 59.6% | 24.951 | 0.781 | +6.113 [+6.031, +6.189] | 560 | 280 |
 | ba | `das_binding` | +7.765 | [+7.693, +7.834] | 100.0% | 98.8% | 14.910 | 0.467 | — | 560 | 280 |
-| ba | `answer_direction_jlens` | +0.032 | [+0.016, +0.050] | 1.6% | 0.4% | 14.910 | 0.467 | +7.733 [+7.661, +7.804] | 560 | 280 |
-| ba | `answer_direction_rlens` | +0.447 | [+0.410, +0.481] | 8.0% | 6.8% | 14.910 | 0.467 | +7.318 [+7.242, +7.392] | 560 | 280 |
-| ba | `answer_direction_rlens_paperminimal` | +0.465 | [+0.428, +0.503] | 8.4% | 7.3% | 14.910 | 0.467 | +7.300 [+7.225, +7.372] | 560 | 280 |
-| ba | `answer_direction_unembedding` | +0.105 | [+0.087, +0.124] | 1.8% | 0.4% | 14.910 | 0.467 | +7.660 [+7.588, +7.727] | 560 | 280 |
+| ba | `das_answer_control` | +1.105 | [+0.924, +1.277] | 45.2% | 44.3% | 14.910 | 0.467 | +6.660 [+6.500, +6.839] | 560 | 280 |
 | ba | `mean_difference` | +1.078 | [+1.039, +1.117] | 45.9% | 44.3% | 22.290 | 0.698 | +6.687 [+6.618, +6.752] | 560 | 280 |
 | ba | `random_rank` | +0.004 | [+0.002, +0.005] | 1.4% | 0.0% | 0.419 | 0.013 | +7.761 [+7.689, +7.831] | 560 | 280 |
 | ba | `random_norm` | +0.423 | [+0.388, +0.458] | 22.3% | 20.5% | 16.425 | 0.514 | +7.342 [+7.267, +7.415] | 560 | 280 |
@@ -56,10 +50,7 @@ Re-run after fixing: `write it up — both outcomes are reportable; see docs/RES
 | variant | what it is |
 |---|---|
 | `das_binding` | the treatment — a learned low-rank interchange |
-| `answer_direction_jlens` | PUBLISHED J-lens answer direction (H5's discriminator) |
-| `answer_direction_rlens` | published R-lens answer direction (descriptive) |
-| `answer_direction_rlens_paperminimal` | paper-minimal R-lens sensitivity arm (StarCoder2; LayerNorm analogue off) |
-| `answer_direction_unembedding` | raw unembedding rows — no transport (floor) |
+| `das_answer_control` | causally fitted answer-token actuator (H5's discriminator) |
 | `mean_difference` | difference-in-means direction — the no-optimiser baseline |
 | `random_rank` | a random subspace of the same rank |
 | `random_norm` | a random subspace matched to the treatment's edit fraction |
@@ -69,14 +60,14 @@ Re-run after fixing: `write it up — both outcomes are reportable; see docs/RES
 
 1. **DAS follows binding** if it succeeds in *both* crossed arms.
 2. **A fixed answer direction** should work in the training arm `ab` and attenuate or reverse in the crossed arm `ba` — it was built from `ab`'s required movement and held fixed.
-3. If `answer_direction_jlens` **also succeeds like DAS in both arms**, H5 does not distinguish binding transport from a lens-visible answer direction, and the causal verdict must not pass.
-4. `answer_direction_rlens` provides the same secondary diagnostic through the published R-lens. It is reported, not gated.
+3. `das_answer_control` must work above the matched-random floor on `ab` and attenuate or reverse on `ba`. Otherwise H5 does not identify binding transport.
+4. Published J/R directions are reported as lens diagnostics; they do not gate the causal experiment.
 
 ## Do not claim
 
 - that the model 'understands' scope — the claim is transport at one site
 - anything about real code, other languages, or other model families
 - that H4 alone supports the conclusion; without H5 it is E11 again
-- a null from H5 without checking that answer_direction_jlens failed on `ba` too
+- a null from H5 without checking that das_answer_control was live on `ab`
 - that the R-lens arm gates anything — it is reported, never gated
 - any number from the ARCHIVED `answer_direction` arm; it is a different estimator (docs/WORKSPACE_LENS.md §1) and is not comparable

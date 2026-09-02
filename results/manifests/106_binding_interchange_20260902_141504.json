@@ -1,0 +1,73 @@
+{
+  "stage": "106_binding_interchange",
+  "timestamp": "20260902_141504",
+  "git_sha": "d908d7d",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/106_binding_interchange.py",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--ranks",
+    "1,2,4,8",
+    "--dtype",
+    "float16",
+    "--variants",
+    "das_binding,das_answer_control,mean_difference,random_rank,random_norm,noop,whole_state"
+  ],
+  "args": {
+    "model": "deepseek-coder-6.7b",
+    "layers": "[6]",
+    "ranks": "1,2,4,8",
+    "site": "use",
+    "selected_layer": "6",
+    "selected_rank": "1",
+    "steps": "200",
+    "dtype": "float16",
+    "seed": "42",
+    "batch_size": "8",
+    "grid_batch_size": "32",
+    "variants": "das_binding,das_answer_control,mean_difference,random_rank,random_norm,noop,whole_state",
+    "jlens": "results/workspace_lens/deepseek-coder-6.7b/j-lens",
+    "rlens": "results/workspace_lens/deepseek-coder-6.7b/r-lens",
+    "require_rlens": "False",
+    "rlens_paperminimal": "None",
+    "test_all_ranks": "False"
+  },
+  "wall_time_s": 2291.3,
+  "extra": {
+    "H4": true,
+    "H5": true,
+    "train_arm_fraction": 2.0169203682700707,
+    "held_out_fraction": 1.3625304136253042,
+    "answer_direction_lenses": [],
+    "normalization_gain": {
+      "source": "final_norm.weight",
+      "norm_class": "LlamaRMSNorm",
+      "has_gain": true,
+      "has_bias": false,
+      "bias_folded_in": false,
+      "centring_folded_in": false,
+      "compatibility": "E19 readout/ablation (gain only; see WORKSPACE_LENS.md \u00a74.2)"
+    },
+    "answer_direction_discriminator": "das_answer_control",
+    "answer_actuator": {
+      "fit_arm": "ab",
+      "layer": 6,
+      "site": "use",
+      "steps": 200,
+      "lr": 0.01,
+      "batch_size": 8,
+      "n_examples": 160,
+      "converged": true,
+      "dose": "per-row binding-DAS edit norm",
+      "selected": false
+    },
+    "rlens_arm_run": false,
+    "rlens_paperminimal_arm_run": false,
+    "answer_direction_arms_not_run": {},
+    "das_is_lens_independent": true,
+    "gates_required": "H0,H1,H2,H3",
+    "gate_override": false,
+    "gate_override_reason": ""
+  }
+}

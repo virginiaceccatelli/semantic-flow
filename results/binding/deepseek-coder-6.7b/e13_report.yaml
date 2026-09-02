@@ -1,6 +1,6 @@
 experiment: E13
 model: deepseek-coder-6.7b
-verdict: NOT SUPPORTED
+verdict: BINDING TRANSPORTED
 question: Does a low-rank, magnitude-free interchange at the site where a variable
   binding is resolved transport WHICH DEFINITION IS IN SCOPE, rather than a token
   or an answer direction?
@@ -11,11 +11,11 @@ do_not_claim:
 - "that the model 'understands' scope \u2014 the claim is transport at one site"
 - anything about real code, other languages, or other model families
 - that H4 alone supports the conclusion; without H5 it is E11 again
-- a null from H5 without checking that answer_direction_jlens failed on `ba` too
+- a null from H5 without checking that das_answer_control was live on `ab`
 - "that the R-lens arm gates anything \u2014 it is reported, never gated"
 - "any number from the ARCHIVED `answer_direction` arm; it is a different estimator\
   \ (docs/WORKSPACE_LENS.md \xA71) and is not comparable"
-first_blocking_gate: H5
+first_blocking_gate: null
 gates_run_under_override: []
 superseded: null
 structural_zeros_broken: null
@@ -76,16 +76,14 @@ gates:
     answer direction cannot
   owner_stage: 106_binding_interchange
   recorded: true
-  passed: false
+  passed: true
   value: 1.3625304136253042
   override: false
   detail: "ba @ use L6 r1: das_binding installed 100.0% = 136% of the held-out ceiling\
     \ (threshold 50%); margin +8.096 [+8.014, +8.179] = 202% of it; discriminator\
-    \ \u2014 answer_direction_jlens ab +0.098 [+0.083, +0.113], installed 0.0% (passes:\
-    \ False \u2014 DEAD CONTROL: it does not work on the arm it was built for, so\
-    \ its failure on ba says nothing. installed 0.0% against the dose-matched random\
-    \ floor's 1.6% at the same edit norm. No verdict is licensed.); ba -0.010 [-0.028,\
-    \ +0.007] (fails: True)"
+    \ \u2014 das_answer_control ab +4.773 [+4.580, +4.965], installed 76.8% (passes:\
+    \ True); ba/ab argmax ratio 0.274 against transport's 0.995 (bar 0.498) (fails:\
+    \ True)"
 - gate: H6
   meaning: 'the relevance readout is mechanically sound: the LRP rules actually installed
     so relevance conserves, the token roles partition every token exactly once, the
@@ -156,15 +154,7 @@ gates:
   override: false
   detail: 108000 reversal rows over 400 bases x 2 arms x 5 layers x 3 readouts x 9
     pairs; probe succeeds at layers [8, 12, 16, 20, 24]; report split test
-diagnostic: "The subspace did not transfer to the held-out value assignment. Read\
-  \ the `answer_direction_jlens` rows FIRST \u2014 the published J-lens control, which\
-  \ is H5's discriminator: if it also passes on `ba`, the discriminator is broken\
-  \ and no verdict is licensed. If it fails on `ba` as designed and das_binding fails\
-  \ too, the learned subspace is an answer direction \u2014 which is a real, reportable\
-  \ negative and exactly what E11 could not establish. `answer_direction_rlens` is\
-  \ the same diagnostic read through the published R-lens and is descriptive."
-rerun_after_fix: "write it up \u2014 both outcomes are reportable; see docs/RESULTS.md\
-  \ R13"
+next_step: "write it up \u2014 both outcomes are reportable; see docs/RESULTS.md R13"
 control_panel:
 - arm: ab
   variant: das_binding
@@ -178,66 +168,30 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 1.0
   edit_norm: 18.456817636920647
-  edit_fraction: 0.4160653447875791
+  edit_fraction: 0.4160653447875792
   n: 560
   n_bases: 280
   vs_das_binding: .nan
   vs_das_lo: .nan
   vs_das_hi: .nan
 - arm: ab
-  variant: answer_direction_jlens
+  variant: das_answer_control
   site: use
   layer: 6
   split: test
-  delta_ld: 0.0981026776134967
-  ci_lo: 0.0827287946268916
-  ci_hi: 0.113313334757196
-  says_installed_rate: 0.0
-  says_other_rate: 0.0
-  flip_rate: 0.0
-  edit_norm: 18.45681763692068
-  edit_fraction: 0.4160653447875798
-  n: 560
-  n_bases: 280
-  vs_das_binding: 8.020452008502824
-  vs_das_lo: 7.946259068053748
-  vs_das_hi: 8.09524065432804
-- arm: ab
-  variant: answer_direction_rlens
-  site: use
-  layer: 6
-  split: test
-  delta_ld: 0.0946428593780313
-  ci_lo: 0.0787939475077603
-  ci_hi: 0.1114146230529461
-  says_installed_rate: 0.0
-  says_other_rate: 0.0
-  flip_rate: 0.0
-  edit_norm: 18.45681763692068
-  edit_fraction: 0.4160653447875798
-  n: 560
-  n_bases: 280
-  vs_das_binding: 8.02391182673829
-  vs_das_lo: 7.946203957942448
-  vs_das_hi: 8.102935961423707
-- arm: ab
-  variant: answer_direction_unembedding
-  site: use
-  layer: 6
-  split: test
-  delta_ld: 0.0041015626064368
-  ci_lo: -0.0061941981368831
-  ci_hi: 0.0141748055576213
-  says_installed_rate: 0.0
-  says_other_rate: 0.0
-  flip_rate: 0.0
-  edit_norm: 18.45681763692065
+  delta_ld: 4.77301897305463
+  ci_lo: 4.579709123060374
+  ci_hi: 4.964931641157184
+  says_installed_rate: 0.7678571428571429
+  says_other_rate: 0.0017857142857142
+  flip_rate: 0.7660714285714286
+  edit_norm: 18.456817636920647
   edit_fraction: 0.4160653447875792
   n: 560
   n_bases: 280
-  vs_das_binding: 8.114453123509884
-  vs_das_lo: 8.035434567428062
-  vs_das_hi: 8.196502512954176
+  vs_das_binding: 3.3455357130616905
+  vs_das_lo: 3.1658244967181237
+  vs_das_hi: 3.534888391992343
 - arm: ab
   variant: mean_difference
   site: use
@@ -268,7 +222,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 0.0
   edit_norm: 0.5884767898650503
-  edit_fraction: 0.0132077474519531
+  edit_fraction: 0.0132077474519532
   n: 560
   n_bases: 280
   vs_das_binding: 8.119140625
@@ -285,7 +239,7 @@ control_panel:
   says_installed_rate: 0.0160714285714285
   says_other_rate: 0.0
   flip_rate: 0.0142857142857142
-  edit_norm: 19.681639399882258
+  edit_norm: 19.68163939988225
   edit_fraction: 0.4435632278871744
   n: 560
   n_bases: 280
@@ -303,7 +257,7 @@ control_panel:
   says_installed_rate: 0.7375
   says_other_rate: 0.0
   flip_rate: 0.7375
-  edit_norm: 30.910847491610873
+  edit_norm: 30.910847491610877
   edit_fraction: 0.6967767909072117
   n: 560
   n_bases: 280
@@ -329,59 +283,23 @@ control_panel:
   vs_das_lo: .nan
   vs_das_hi: .nan
 - arm: ba
-  variant: answer_direction_jlens
+  variant: das_answer_control
   site: use
   layer: 6
   split: test
-  delta_ld: -0.0103515607970101
-  ci_lo: -0.027660435033696
-  ci_hi: 0.0067250300252011
-  says_installed_rate: 0.0
+  delta_ld: 1.4976841492312296
+  ci_lo: 1.3201450892191913
+  ci_hi: 1.6720500825132645
+  says_installed_rate: 0.2107142857142857
   says_other_rate: 0.0
-  flip_rate: 0.0
-  edit_norm: 18.451770766325215
-  edit_fraction: 0.4158079964723966
-  n: 560
-  n_bases: 280
-  vs_das_binding: 8.106808035075664
-  vs_das_lo: 8.019215959965118
-  vs_das_hi: 8.191659451371857
-- arm: ba
-  variant: answer_direction_rlens
-  site: use
-  layer: 6
-  split: test
-  delta_ld: 0.0428292416036129
-  ci_lo: 0.0254743318419371
-  ci_hi: 0.0604366618022322
-  says_installed_rate: 0.0
-  says_other_rate: 0.0
-  flip_rate: 0.0
-  edit_norm: 18.45177076632522
-  edit_fraction: 0.4158079964723966
-  n: 560
-  n_bases: 280
-  vs_das_binding: 8.05362723267504
-  vs_das_lo: 7.969308037233672
-  vs_das_hi: 8.135473632338856
-- arm: ba
-  variant: answer_direction_unembedding
-  site: use
-  layer: 6
-  split: test
-  delta_ld: 0.0736049102885382
-  ci_lo: 0.064508231628154
-  ci_hi: 0.0825620819468583
-  says_installed_rate: 0.0
-  says_other_rate: 0.0
-  flip_rate: 0.0
-  edit_norm: 18.45177076632519
+  flip_rate: 0.2089285714285714
+  edit_norm: 18.451770766325183
   edit_fraction: 0.415807996472396
   n: 560
   n_bases: 280
-  vs_das_binding: 8.022851563990116
-  vs_das_lo: 7.938976009078323
-  vs_das_hi: 8.107129605872823
+  vs_das_binding: 6.598772325047425
+  vs_das_lo: 6.4305336206273305
+  vs_das_hi: 6.7835463218124845
 - arm: ba
   variant: mean_difference
   site: use
@@ -393,7 +311,7 @@ control_panel:
   says_installed_rate: 0.675
   says_other_rate: 0.0
   flip_rate: 0.675
-  edit_norm: 25.675499621431317
+  edit_norm: 25.67549962143132
   edit_fraction: 0.5786281224524952
   n: 560
   n_bases: 280
@@ -412,7 +330,7 @@ control_panel:
   says_other_rate: 0.0
   flip_rate: 0.0
   edit_norm: 0.5840562620339274
-  edit_fraction: 0.0131047580939737
+  edit_fraction: 0.0131047580939738
   n: 560
   n_bases: 280
   vs_das_binding: 8.09760045089892
@@ -454,7 +372,5 @@ control_panel:
   vs_das_binding: 4.079241073291216
   vs_das_lo: 3.972906671276848
   vs_das_hi: 4.18619001227431
-answer_direction_arms:
-- answer_direction_jlens
-- answer_direction_rlens
-- answer_direction_unembedding
+h5_discriminator: das_answer_control
+answer_direction_arms: []
