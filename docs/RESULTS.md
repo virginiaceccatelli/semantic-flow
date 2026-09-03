@@ -413,6 +413,10 @@ are not published J-lens/R-lens results. They are preserved in
 
 ## R10 — DAS: the binding representation is causally used
 
+For a slower explanation of every step, term, control, gate, and metric, start
+with [METHODS §5.0](METHODS.md#50-plain-language-map-of-one-das-run). This
+section focuses on the result.
+
 ### Question
 
 A linear probe can recover which definition a variable refers to, but that does
@@ -588,6 +592,32 @@ All active results use the released 2026 implementation, an independent
 older cotangent and conserving-cotangent constructions are different methods
 and remain archived.
 
+### Operation audit: what was and was not run
+
+| J-space operation | status in E19 |
+|---|---|
+| **READ** | **Run.** This produces every vocabulary ranking discussed below. |
+| **WRITE** | **Not run.** No concept vector was added to steer the model. |
+| **PATCH** | **Not run with J-lens coordinates.** The earlier DAS interchange is separate and lens-independent. |
+| **ABLATE** | **Modified variant only.** E19 erases one target token's J-lens read direction at one layer, with controls. It does not remove the top 10 gradient-pursuit subframes across a band as in the published ABLATE operation. |
+
+The main result below is therefore a **READ result**. The erasure section is a
+separate causal check on one read direction, not evidence that WRITE or PATCH
+was performed.
+
+### Keep the two READ questions separate
+
+There are two targets, and “the lens found the target” means something different
+in each panel:
+
+| panel | target being searched for | example | scientific question |
+|---|---|---|---|
+| **binding language** | an English/code word describing the relation | `scope`, `local`, `variable` | does the internal state verbalize what kind of relation is active? |
+| **runtime result** | the concrete value this particular program will emit | a single-digit token such as `7` | is the answer token already vocabulary-readable while the variable is being used? |
+
+A binding-language hit is not recovery of the answer, and an answer hit does not
+show that the model names the relation as “scope.”
+
 ### Question 1: does J-lens verbalize the binding representation?
 
 The complete predeclared binding lexicon is `local`, `global`, `inner`, `outer`,
@@ -617,7 +647,69 @@ the candidates; the logit lens also carries related effects. The result is not
 a unique J-lens code or one universal internal word, and StarCoder2's concept
 panel remains incomplete.
 
+#### Exactly which words were tested
+
+The binding family contained these 15 predeclared concepts:
+
+`local`, `global`, `inner`, `outer`, `scope`, `scoped`, `shadow`, `shadowed`,
+`binding`, `bound`, `active`, `inactive`, `definition`, `variable`, `value`.
+
+For each concept, the test tried its declared lowercase and capitalization
+variants, both bare and space-prefixed, but scored only spellings that were one
+token for the model. `definition` also included `def`; `variable` included
+`var`; and `value` included `val`. This is one semantic family, not 15 separate
+post-hoc hypotheses.
+
+Every available spelling was read at four exact places:
+
+| read position | where it is | why it is tested |
+|---|---|---|
+| `use` | the unchanged variable token in `return x` | primary point: the binding is being resolved here |
+| `post_use` | the token immediately after that variable | checks whether verbalization appears one token later |
+| `call` | the later function-call position | checks whether the relation survives until the call/result is requested |
+| `answer` | the position immediately before the output token | positive-control region near verbal emission |
+
+#### Exactly which words were found, and where
+
+“Found” needs two definitions because the analysis records both absolute rank
+and controlled movement:
+
+1. **Top-10 appearance:** did a word enter the ten highest-ranked tokens in the
+   full vocabulary?
+2. **Binding-tracking contrast:** did its lens score move reliably between inner
+   and outer binding while agreeing across reversed value assignments?
+
+Those criteria should not be silently substituted for each other. The clearest
+results are:
+
+| model | top-10 J-lens binding words | strongest controlled J-lens word | location |
+|---|---|---|---|
+| DeepSeek-Coder 1.3B | no concept has a concept-level earliest-top-10 entry; some individual rows nevertheless contribute to use-position pass@10 = 0.415 | `scope` | layer 9, chiefly the `use` read; binding deltas +7.645 and +7.637 in the two value arms |
+| DeepSeek-Coder 6.7B | `value` and `variable` first enter at layer 11; `local` at layer 13; `global` at layer 14 — all at `use` | `global` | layer 20 at `use`; binding deltas −9.199 and −9.040 |
+| StarCoder2-3B | not determined | concept panel not run | — |
+
+Thus, the strongest 1.3B claim is **not** “`scope` was a top-10 prediction.” It
+is that the predeclared `scope` score changed with the binding in both crossed
+arms. For 6.7B there is also direct top-10 vocabulary evidence at the use token,
+but the strongest controlled contrast occurs later and uses `global`. No J-lens
+binding-concept top-10 entries were recorded at `post_use`, `call`, or `answer`
+for these two completed panels under the concept-level threshold-entry summary.
+
+The sign of a binding delta is arbitrary with respect to the names “inner” and
+“outer”; consistency across the two value arms matters, not whether the number
+is positive. This is why 6.7B's two large negative `global` deltas support the
+same kind of result as 1.3B's positive `scope` deltas.
+
 ### Question 2: is the concrete runtime value verbalized early?
+
+Here the tested “words” are not the 15 binding terms above. They are the
+program-specific answer tokens. Because these tokenizers split multi-digit
+numbers, the usable numeric vocabulary is the single-token digits `2` through
+`9`; each item's execution determines which one is the target and which matched
+value is the distractor. The `binding`, `alias`, `call`, and `defuse` families
+test values already present in the prompt. The `arith`, `typeof`, and `loopvar`
+families include targets absent from the prompt, which checks computation rather
+than simple copying.
 
 All required gates pass on DeepSeek-Coder 1.3B/6.7B and StarCoder2-3B. At the
 answer position, J-lens reaches pass@10 = 1.000 for every value family. This is

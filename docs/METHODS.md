@@ -447,6 +447,114 @@ computation happening somewhere else, and no amount of decoding distinguishes
 the two. Phase III needs an intervention, and the requirements are strict enough
 that three earlier designs failed them ([ARCHIVE.md](ARCHIVE.md)).
 
+## 5.0 Plain-language map of one DAS run
+
+The shortest description is: **learn one internal axis that distinguishes which
+definition of a variable is active, then copy only that coordinate from a donor
+program into a host program and see whether the answer follows the donor.**
+
+### First, one concrete example
+
+Suppose the two variable names are `x` and `y`, and the two values are `3` and
+`8`. The experiment builds these four programs:
+
+| cell | program | normal answer | what changed? |
+|---|---|---:|---|
+| `ab_source` | `x = 3; def f(): y = 8; return x` | `3` | inner name is `y`, so it does not replace `x` |
+| `ab_target` | `x = 3; def f(): x = 8; return x` | `8` | inner name is also `x`, so it shadows the outer `x` |
+| `ba_source` | `x = 8; def f(): y = 3; return x` | `8` | same non-shadowing structure, but values are reversed |
+| `ba_target` | `x = 8; def f(): x = 3; return x` | `3` | same shadowing structure, but values are reversed |
+
+`source` and `target` do **not** mean training and test. They name the two
+binding structures inside each arm:
+
+- `source` means the inner assignment uses a different name, so `return x`
+  reads the outer definition.
+- `target` means the inner assignment reuses `x`, so `return x` reads the inner
+  definition.
+
+`ab` and `ba` name the value assignments:
+
+- in `ab`, outer = `3` and inner = `8`;
+- in `ba`, outer = `8` and inner = `3`.
+
+Now take `ab_source` as the **host** and `ab_target` as the **donor**. Both runs
+reach the identical visible token `x` in `return x`. Binding DAS replaces one
+learned internal coordinate of the host state with the donor's coordinate. If
+that coordinate carries which definition of `x` is active, the edited host
+should answer `8` instead of `3`.
+
+That result alone is not enough. A direction that merely pushes the token `8`
+would also pass. The decisive repeat uses `ba`: the same structural change must
+now make the answer move from `8` to `3`. A fixed “push `8`” direction fails,
+whereas a binding coordinate can still succeed because it means “use the inner
+definition,” not “say 8.”
+
+| term | simple meaning |
+|---|---|
+| **host** | the program whose answer we are trying to change |
+| **donor** | the matched program containing the binding we want to install |
+| **site** | the token position where the hidden state is edited; here, the unchanged variable-use token |
+| **layer** | the transformer block at which the edit is made |
+| **subspace / `R`** | the learned internal direction or directions being exchanged |
+| **rank 1** | only one learned direction is exchanged |
+| **interchange** | keep the host state except for its coordinate along `R`, which is replaced by the donor's coordinate |
+| **installed answer** | the value that would be correct if the donor's binding had been installed successfully |
+
+### The run, one small step at a time
+
+One complete run has these steps:
+
+1. Generate four matched programs for each base example: two binding structures
+   crossed with two assignments of the literal values (`ab` and `ba`).
+2. Verify independently that every program has the intended answer and that the
+   crossed arm reverses which literal is required.
+3. Check that the unedited model can solve every cell.
+4. At the same visible use token, check that binding is decodable. This is only
+   a prerequisite, not the causal result.
+5. Split base programs before fitting. The **calibration split** is used to
+   choose the layer, site, and rank and to learn directions. The **test split**
+   is kept unseen for the final numbers.
+6. On calibration examples from `ab` only, learn `R`. The language model itself
+   stays frozen; only the direction `R` changes during optimization.
+7. For each calibration host/donor pair, run the model with the interchange,
+   measure the probability of the donor-selected answer, and update `R` to make
+   that answer more likely. Re-orthonormalizing `R` keeps it a valid projection.
+8. Freeze the layer, site, rank, and learned direction. No test result is used
+   to retune them.
+9. Evaluate the frozen intervention once on held-out `ab`, held-out reversed
+   `ba`, and every control below.
+10. Apply gates H0–H5 in order. H5 supplies the binding-versus-answer
+   discrimination; earlier gates establish that H5 is meaningful.
+
+### Published DAS idea versus this project's design
+
+| component | origin |
+|---|---|
+| Learn a low-dimensional alignment and replace aligned coordinates between causal runs | **Published:** Distributed Alignment Search and interchange interventions (Geiger et al., 2021; 2023). |
+| Projection formula in §5.2 and optimization of an orthonormal `R` | **Published DAS mechanism**, implemented here for this model and site. |
+| Python variable-shadowing programs, four-program factorial, and unchanged use-token anchor | **This project.** |
+| Fit on `ab`, freeze the fit, and test the opposite token requirement on `ba` | **This project.** This separates binding from a fixed answer direction. |
+| Separately trained, row-wise dose-matched `das_answer_control` | **This project.** It tests “the optimizer merely learned to push the fitted answer token.” |
+| H0–H5, structural zeros, surface floor, whole-state reference, mean/random controls, and cluster bootstrap | **This project.** These controls license the narrow claim around the published DAS core. |
+
+### Normal binding DAS versus answer-only DAS
+
+These are **two different trained interventions**, not two output modes of the
+same fit.
+
+| | `das_binding` | `das_answer_control` (“answer-only”) |
+|---|---|---|
+| training information | paired hidden states with different active definitions | current and requested answer-token identities |
+| receives a donor binding state? | **yes** | **no** |
+| what it can learn | a donor-copyable coordinate that may encode which definition is active | a direct actuator such as “move from answer `a` toward answer `b`” |
+| test-time dose | natural donor-coordinate replacement | forced to equal binding DAS's edit norm on the same row |
+| expected on fitted `ab` | succeed | succeed; otherwise it is a dead control |
+| expected on reversed `ba` | still succeed if relational | attenuate or point the wrong way because its fitted token orientation is frozen |
+
+The answer-only control is deliberately capable. Its failure on `ba` is useful
+only after it proves on `ab` that it can move the model at this site.
+
 ## 5.1 What a usable intervention must have
 
 Three properties at once:
@@ -517,18 +625,140 @@ Two consequences for interpretation:
 
 ## 5.4 Controls and competing explanations
 
-| control | construction | what it refutes |
+Here, a **control** is a comparison intervention designed to answer one specific
+objection. A **gate** is a rule that decides whether the run is interpretable.
+A **metric** is merely a number reported by an intervention. These three things
+are different.
+
+### Treatment: `das_binding`
+
+This is the intervention whose claim is being tested. It learns from real
+host/donor binding pairs. At test time it copies the donor's coordinate in the
+learned subspace into the host. It must install the donor-selected answer in
+both value arms. It is not itself a control.
+
+### Main alternative explanation: `das_answer_control`
+
+This control asks: **could an optimizer get the same result by learning how to
+push answer tokens, without learning binding?**
+
+It comes from this project, not from the published DAS recipe. It is deliberately
+trained with nearly every advantage given to binding DAS:
+
+- the same model, layer, token position, calibration/test split, Adam optimizer,
+  number of steps, and random seed;
+- a rank-1 vector for each needed token transition;
+- exactly the same edit length as binding DAS on each test row.
+
+The one crucial difference is its information. It never receives the donor's
+binding state. It sees only “the current answer token is `a`; make the requested
+answer token `b`.” On the fitted `ab` arm it learns that orientation. The vector
+is then frozen. On `ba`, the correct movement reverses, but the control is not
+allowed to relearn the reverse orientation.
+
+Why it is necessary: without this control, successful binding DAS might only be
+a sophisticated answer-token actuator. Why it must pass on `ab`: if it cannot
+move the model anywhere, its later failure on `ba` proves nothing. Why it should
+attenuate on `ba`: that is the behavioral signature of a fixed answer movement,
+which binding DAS must differ from. This is the decisive H5 discriminator.
+
+### Capability reference: `whole_state`
+
+This copies the donor's **entire** hidden state at the same site. It is the
+rank-`d` limit of the same interchange formula. It asks whether that location
+can causally affect the answer at all.
+
+Why it is necessary: if even the whole donor state cannot move the answer in an
+arm, then a low-rank failure there is uninterpretable; the site may simply be
+causally ineffective. It is called a ceiling or reference, but its numerical
+effect need not exceed targeted DAS. Copying everything can also copy irrelevant
+or opposing information, so a clean rank-1 edit can outperform it.
+
+### Simple non-learned baseline: `mean_difference`
+
+For every calibration pair, compute donor state minus host state, average those
+differences, and use the one-dimensional span of that average. There is no
+optimizer and no answer-label training.
+
+Why it is necessary: perhaps the binding difference is so consistent that a
+plain average already transports it. DAS should be compared with that cheap
+explanation, not only with zero. A positive mean baseline is informative: it
+means binding is partly present in a broad average direction, even if DAS is
+more selective and reliable.
+
+### Random floor 1: `random_rank`
+
+Draw a random subspace with the same rank as DAS. Since binding DAS is rank 1,
+this is one random direction.
+
+Why it is necessary: it checks whether any arbitrary direction of the same
+dimensionality changes the output. Its weakness is that a random rank-1 direction
+usually makes a much smaller edit than a learned direction, so rank matching
+alone is not a fair dose comparison.
+
+### Random floor 2: `random_norm`
+
+Draw a random subspace large enough that its actual hidden-state edit matches
+binding DAS's edit magnitude.
+
+Why it is necessary: a large perturbation can damage the model and accidentally
+raise some scores. This control asks whether DAS's effect is special or merely
+what happens when the state is disturbed by the same amount. This is the more
+important random control because it matches **dose**, not just rank.
+
+### Machinery zero 1: `noop`
+
+Apply an edit that is exactly the zero vector.
+
+Why it is necessary: any measured output change must then come from batching,
+precision, hook, or comparison machinery—not semantics. This is an engineering
+correctness check. A nonzero result invalidates the causal run.
+
+### Machinery zero 2: `def_source`
+
+Intervene at a position before the one-token source/target mutation. At this
+point the host and donor states should be identical, so interchange must make no
+change.
+
+Why it is necessary: it independently catches wrong token anchors, wrong cached
+states, and injection artifacts. Like `noop`, it is a provable zero, not a weak
+scientific baseline.
+
+### Optional lens diagnostics
+
+`answer_direction_jlens`, `answer_direction_rlens`, and
+`answer_direction_unembedding` are fixed answer directions derived respectively
+from the published J-lens, the published R-lens, or the raw output embedding.
+They are scaled to the DAS edit norm and use the same test rows.
+
+Why they exist: they diagnose whether a direction useful for **reading** an
+answer also works for **causing** that answer at the DAS layer, and whether
+Jacobian transport adds anything beyond a raw output direction. They do not
+train, initialize, constrain, or validate binding DAS. They are descriptive and
+do not enter H5. Earlier versions mistakenly used a cotangent-lens direction as
+the main answer control; those versions are retired because the direction was
+not a live causal actuator at the selected site.
+
+### All controls at a glance
+
+| item | question it answers | required behavior |
 |---|---|---|
-| **`whole_state`** | the rank-`d` limit — install the entire donor state | it is the *ceiling*, per arm, and its being alive in both arms is what makes a null in either arm interpretable |
-| **`mean_difference`** | rank-1 span of the **mean** donor−host difference; no optimiser, no labels, one fixed direction for every example | the cheapest thing that could work. A learned direction must *dominate* it, not merely beat zero |
-| **`das_answer_control`** | a calibration-fitted table of answer-token actuator vectors. Row `a→b` uses the rank-1 direction `normalize(u_b−u_a)`, at exactly binding DAS's edit norm on that row. It uses the same layer, site, Adam optimiser, steps and split as DAS, but never receives the binding donor state | tests the simpler account “the learned intervention just pushes toward the answer required in the fitted arm.” Its `ab` orientation is frozen on `ba`. **This is H5's discriminator.** |
-| **`answer_direction_jlens`** | `u_w(l) = J_lᵀ(g·W_U[w])` from the published J-lens, held fixed across arms and scaled to the DAS edit norm | descriptive lens diagnostic. It no longer gates H5: the completed run showed that a useful read direction need not be a useful actuator at this layer |
-| **`answer_direction_rlens`** | the same construction on the published R-lens `R_l`, with identical tokens, layer, site, per-row dose, seed and test split | a second reading of the same diagnostic through the RelP backward graph. **Descriptive: it gates nothing.** A `-paperminimal` StarCoder2 variant is available as a separately named optional arm and is never substituted for this one |
-| **`answer_direction_unembedding`** | `W_U[installed] − W_U[own]`, no transport at all, same dose | the no-transport floor. Beating it is what shows the Jacobian transport is doing work rather than the unembedding row alone (at layer 8 of 32 the raw row is not the direction that moves the head toward a token) |
-| **`random_norm`** | a random subspace whose interchange moves the **same fraction of ‖h‖** | disruption. Rank-matching alone is not dose-matching |
-| **`random_rank`** | a random subspace of the same *rank* | the weaker, rank-matched floor, reported alongside |
-| **`noop`** | provably the zero edit | machinery: it must be exactly 0.00e+00 |
-| **`def_source` site** | a site where the programs are token-identical *before* the mutation | a structural zero: any effect here is a bug |
+| `das_binding` | does the learned donor coordinate transport binding? | succeeds on `ab` and reversed `ba` |
+| `das_answer_control` | is ordinary answer pushing a different explanation? | live on `ab`, attenuated on `ba` |
+| `whole_state` | can this site affect the answer? | live in both arms |
+| `mean_difference` | does a simple average direction already work? | measured baseline; DAS should dominate for H4 |
+| `random_rank` | does any rank-1 direction work? | much weaker than DAS |
+| `random_norm` | does any equally large disturbance work? | much weaker than DAS |
+| `noop` | does the apparatus invent change with a zero edit? | exactly zero within tolerance |
+| `def_source` | are anchors, caches, and hooks correct before the mutation? | exactly zero within tolerance |
+| J/R/unembedding directions | do fixed read/output directions steer at this site? | descriptive only; no required causal result |
+
+### Advanced implementation history
+
+The remainder of §5.4 records why older controls were retired and why the zero
+checks use matched execution paths. It is useful for reproducing or auditing the
+code, but it is not required for the first conceptual reading. A first-time
+reader can continue at [§5.5](#55-the-crossed-22-that-identifies-binding).
 
 **Retired 2026-09-01: the cotangent `answer_direction`.** Until then the arm
 above was built from a *corpus-averaged cotangent readout over the two answer
@@ -705,6 +935,21 @@ produce the *correct installed token* as the argmax. Both are recorded on every
 row; the gates read the argmax. The history of that correction — including the
 verdicts under both rules — is in [ARCHIVE.md](ARCHIVE.md).
 
+### Metric dictionary for the run reports
+
+| field | meaning | how to read it |
+|---|---|---|
+| `says_installed` / `installed` | edited model's full-vocabulary top token is the donor-selected answer | primary success measure |
+| `flip` | the original answer became the installed answer | intuitive behavior-change rate; near `installed` when clean accuracy is perfect |
+| `delta_ld` | change in `log P(installed) - log P(own)` | effect size only; generic disruption can raise it |
+| 95% CI | cluster-bootstrap interval over base programs | supports the sign of a mean effect when it excludes zero; does not replace `installed` |
+| `|edit|` | Euclidean length of the hidden-state change | absolute intervention dose |
+| `|edit|/|h|` / `edit_fraction` | edit length divided by state length | comparable dose across layers and models |
+| `% of whole-state ceiling` | low-rank `delta_ld` divided by whole-state `delta_ld` | relative reference, not accuracy; may exceed 100% if the targeted edit avoids competing donor information |
+| `vs das` | paired difference between binding DAS and a control | positive means binding DAS made the larger requested movement |
+| `selectivity` | real-label decoder score relative to shuffled labels | prerequisite check against classifier flexibility |
+| `n` / `bases` | intervention rows / independent base programs | intervals cluster by base because rows from one base are related |
+
 ## 5.7 The six gates
 
 Each refuses to run downstream stages until it passes.
@@ -726,9 +971,83 @@ refused rather than silently rescored.
 H1 exists because of a lesson recorded in [ARCHIVE.md](ARCHIVE.md): check the
 model can do the task *before* building an instrument on top of it.
 
+### Why each gate exists
+
+- **H0 — data are logically correct.** Python execution and a separate
+  scope-aware interpreter must agree. Values and tokens must be distinct, the
+  mutation must be far enough from the use token, and `ab`/`ba` must demand
+  opposite token movements. If H0 fails, the experiment does not test its stated
+  question.
+- **H1 — the model can do the unedited task.** A causal edit cannot reveal how a
+  model performs a task it does not perform. Overall and worst-cell thresholds
+  prevent one easy condition from hiding a failed shadowing condition.
+- **H2 — binding information is present at the chosen site.** A frozen decoder
+  must recover the binding above both an absolute threshold and the measured
+  local-text baseline. This does not prove use; it prevents searching for a
+  causal binding coordinate where the prerequisite representation was not found.
+- **H3 — the site is causally reachable.** Whole-state interchange must move the
+  answer in both value arms. Otherwise failure of a smaller edit has no clear
+  meaning. The structural-zero checks must also remain zero.
+- **H4 — the learned intervention works where it was fitted.** On `ab`, binding
+  DAS must reach at least half the whole-state reference and clear its specified
+  controls. This checks that fitting produced a real, usable intervention before
+  asking whether it generalizes.
+- **H5 — the interpretation survives the falsification.** The frozen binding
+  subspace must work on reversed `ba`. At the same time, the answer-only control
+  must be demonstrably live on `ab` and attenuate on `ba`. H5 is the step that
+  supports “binding transport” rather than merely “an intervention changed the
+  answer.”
+
+The numerical thresholds are project decision rules fixed before the final
+test result, not values supplied by the published DAS paper. A PASS means the
+predeclared minimum was met. It does not mean the measurement is perfect, and
+it does not broaden the conclusion beyond this task, layer, site, and model.
+
+### What the final pattern does and does not establish
+
+The completed pattern is:
+
+1. unedited models solve the task;
+2. a whole-state donor patch shows the site can affect the answer;
+3. rank-1 binding DAS installs the donor-selected answer in both token
+   orientations;
+4. the equally dosed answer-only actuator is strong on its fitted orientation
+   and weaker after the required token movement reverses;
+5. random and zero controls cannot explain the effect.
+
+This supports the narrow statement that downstream computation at the tested
+site uses a compact component whose causal effect follows which definition is
+active. It does **not** prove that the direction is unique, that the model has a
+human-like concept of scope, that every layer uses the same code, or that the
+result automatically transfers to arbitrary real programs.
+
 ---
 
 # 6. J-lens after DAS — identifying and verbalizing the used representation
+
+## 6.0 Which J-lens operations are actually applied?
+
+| operation | applied here? | exact determination |
+|---|---|---|
+| **READ** | **Yes; the main E19 operation.** | Transport `h_l` with `J_l`, apply the model's final norm, unembed over the full vocabulary, and rank. Runtime-value recovery and binding-language verbalization are both READ panels. |
+| **WRITE** | **No.** | No J-lens vector is added as `h <- h + alpha v_t` to steer generation. |
+| **PATCH** | **No J-lens PATCH.** | No two J-lens coordinates are extracted with a pseudoinverse and swapped. DAS exchanges a separately learned binding coordinate; that does not make it a J-lens PATCH run. |
+| **ABLATE** | **Only a project-specific single-direction variant.** | The code removes one target token's read direction, `u = J_l^T(g W_U[w])`, at one layer at a time. It does not use gradient pursuit to find and remove the top 10 active subframes across a layer band. |
+
+In short: **READ was applied; WRITE and J-lens PATCH were not; the causal test
+is an ABLATE-style read-direction erasure developed for this project.**
+
+### Published J-lens components versus this project's additions
+
+| component | origin |
+|---|---|
+| Full Jacobian transport, penultimate target layer, final normalization/unembedding, and full-vocabulary ranking | **Published J-lens idea and released implementation.** |
+| LN, activation-identity, and gated-product half backward rules | **Published RelP/R-lens idea.** |
+| Independent pretraining-like fitting corpus | **Published recipe**, instantiated here with a reproducible 100-prompt prefix. |
+| Code-binding task and four reads: `use`, `post_use`, `call`, `answer` | **This project.** |
+| Separate concrete-result READ and binding-language READ | **This project.** |
+| Binding lexicon, crossed value arms, and generic/random/positional controls | **This project.** |
+| One-direction erasure with distractor and dose-matched random controls | **This project**, using a published lens direction but not the paper's top-10 ABLATE recipe. |
 
 ## 6.1 The inferential question and the published lenses
 
