@@ -12,9 +12,11 @@ steps of the active argument. Each step answers a different question:
   rewrite;
 - **DAS interchange** asks the causal question: whether changing only a learned
   binding component changes the downstream answer;
-- the published **J-lens** asks whether needed program values occupy a
-  full-vocabulary verbalizable workspace before emission; **R-lens** repeats
-  the analysis as a supporting replication.
+- after DAS establishes causal use, the published **J-lens** asks what that
+  representation looks like in vocabulary coordinates—specifically, whether
+  it verbalizes the language of binding; **R-lens** repeats the analysis as a
+  supporting replication. Concrete-value recovery is a secondary contrast and
+  positive control.
 
 The controls are part of the method, not optional checks. Grouped splits prevent
 nearly identical rows from leaking across train and test; shuffled labels test
@@ -45,9 +47,9 @@ published lens readout rather than treating decodability as verbalizability.
 - [§2 From graph to token: alignment, ground truth, integrity](#2-from-graph-to-token-alignment-ground-truth-integrity)
 - [§3 Instrument 1 — linear probes and their floors](#3-instrument-1--linear-probes-and-their-floors)
 - [§4 Instrument 2 — frozen transfer and the obfuscation ladder](#4-instrument-2--frozen-transfer-and-the-obfuscation-ladder)
-- [Part III — From representation to causal use](#part-iii--from-representation-to-causal-use)
+- [Part III — From representation, to causal use, to verbalization](#part-iii--from-representation-to-causal-use-to-verbalization)
 - [§5 DAS — causal interchange of a binding component](#5-das--causal-interchange-of-a-binding-component)
-- [§6 Lenses — J-lens, R-lens replication, and the semantic-concept panel](#6-lenses)
+- [§6 J-lens after DAS — identifying and verbalizing the used representation](#6-j-lens-after-das--identifying-and-verbalizing-the-used-representation)
 - [§7 Statistics, gates and reproducibility](#7-statistics-gates-and-reproducibility)
 
 ---
@@ -422,12 +424,15 @@ it says.
 
 ---
 
-# Part III — From representation to causal use
+# Part III — From representation, to causal use, to verbalization
 
-Parts I and II use probes to establish that binding is represented and to measure
-the stability of that representation. Part III asks whether replacing one
-learned binding component makes the answer follow the installed binding. The
-published J-lens is then evaluated separately in §6, with R-lens replication.
+Parts I and II establish that binding is represented and measure its stability.
+Part III follows the claims in their evidential order. First, DAS asks whether
+downstream computation causally uses the representation. Only after that is
+established does the published J-lens ask what the used representation is like:
+is binding expressed in output-vocabulary language? R-lens supplies a supporting
+replication. The lens is not evidence for causal use and does not find or train
+the DAS direction.
 
 The former security benchmark, earlier general output-vocabulary experiments,
 standalone cotangent-lens studies, including E16 and E18, are preserved in
@@ -723,9 +728,16 @@ model can do the task *before* building an instrument on top of it.
 
 ---
 
-# 6. Lenses
+# 6. J-lens after DAS — identifying and verbalizing the used representation
 
-## 6.1 The published J-lens, with R-lens supporting replication
+## 6.1 The inferential question and the published lenses
+
+DAS has now established that a compact binding component is causally used at
+the tested site. The next question is not whether binding is present or used,
+but **what that representation is and whether it is verbalized**. The primary
+test therefore targets binding language with the published J-lens; value-token
+recovery is retained as a secondary comparison and the answer position as a
+positive control. R-lens repeats the same measurements as supporting evidence.
 
 E19's primary instrument is the J-lens. It is a separate instrument, not a relabelling of §6.8. It vendors Anthropic's
 released Jacobian-lens implementation at commit `581d398`, fits the full
@@ -754,7 +766,7 @@ binding, and a nontrivial J/R difference. StarCoder2's LayerNorm rule is a
 documented analogue, so a paper-minimal sensitivity fit disables it and retains
 only the exact GELU identity-rule. See [WORKSPACE_LENS.md](WORKSPACE_LENS.md).
 
-## 6.2 The semantic-concept vocabulary panel
+## 6.2 Binding-language verbalization: exact vocabulary and procedure
 
 A **separate** question from runtime-value recovery, run by stage 206 and kept in
 its own tables: at the same four read positions, does the lens surface the
@@ -762,6 +774,22 @@ its own tables: at the same four read positions, does the lens surface the
 `shadow`, `shadowed`, `binding`, `bound`, `active`, `inactive`, `definition`,
 `variable`, `value` — over the full vocabulary? A null in one panel says nothing
 about the other, so they are never pooled.
+
+The exact declared spellings are: `local`/`Local`/`LOCAL`;
+`global`/`Global`/`GLOBAL`; `inner`/`Inner`; `outer`/`Outer`; `scope`/`Scope`;
+`scoped`/`Scoped`; `shadow`/`Shadow`; `shadowed`/`Shadowed`;
+`binding`/`Binding`; `bound`/`Bound`; `active`/`Active`;
+`inactive`/`Inactive`; `definition`/`Definition`/`def`;
+`variable`/`Variable`/`var`; and `value`/`Value`/`val`. Each spelling is tried
+both bare and space-prefixed. The matched generic-code controls are
+`return`/`Return`, `import`/`Import`, `class`/`Class`, `print`/`Print`,
+`range`/`Range`, `index`/`Index`/`idx`, `result`/`Result`,
+`buffer`/`Buffer`/`buf`, `string`/`String`/`str`,
+`number`/`Number`/`num`, `file`/`File`, `path`/`Path`,
+`error`/`Error`/`err`, `count`/`Count`, and `total`/`Total`. The confound
+diagnostics are `earlier`/`Earlier`/`first`/`First`,
+`later`/`Later`/`last`/`Last`, `kept`/`Kept`/`keep`, and
+`replaced`/`Replaced`/`replace`.
 
 Everything is predeclared in `src/workspace_lens/concepts.py`: the concept sets
 and their spellings, the four read positions, the controls, and the four

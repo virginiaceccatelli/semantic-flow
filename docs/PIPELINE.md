@@ -6,10 +6,11 @@ The pipeline turns a controlled program into a sequence of interpretable
 experiments. It first generates programs whose binding and def–use labels are
 known exactly, then runs a frozen language model and stores hidden states at
 specific token positions. CPU analysis applies probes, controls, and statistical
-summaries to those states. The later GPU stages test two distinct consequences:
-DAS asks whether the model causally uses a binding component. The published
-J-lens then tests whether the needed values occupy a verbalizable workspace;
-R-lens is a supporting replication.
+summaries to those states. The later GPU stages follow one evidential sequence:
+DAS first asks whether the model causally uses a binding component. Once that is
+established, the published J-lens asks what the used representation is and
+whether it is verbalized in the language of binding. Concrete-value recovery is
+a secondary contrast; R-lens is a supporting replication.
 
 The active reproduction paths are **Part C → Part F** for causal use and
 **Part H** for the published J-lens result and R-lens replication. DAS uses its
@@ -916,7 +917,7 @@ column is an informative negative when the probe succeeds.
 
 ---
 
-# Part H — E19: J-lens, with R-lens supporting replication (200–206)
+# Part H — E19 after DAS: binding-language verbalization with J-lens (200–206)
 
 The methods of the 2026 global-workspace paper and the R-lens post, run through
 the released reference implementation vendored at `third_party/jacobian-lens`.

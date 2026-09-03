@@ -128,14 +128,32 @@ non-learned rank-1 alternative. The completed H0–H5 reports pass on both model
 No lens finds, initializes, or constrains the DAS direction. Earlier attempts to
 use lens read directions as causal answer actuators are archived.
 
-### 4. Lenses: J-lens, with R-lens supporting replication
+### 4. What is the causally used representation, and is it verbalized?
 
-E19 applies the released full-vocabulary J-lens to
+Having established with DAS that a binding component is present and causally
+used, E19 asks what that representation looks like in output-vocabulary
+coordinates: does the model verbalize the *language of binding* at the use
+site? It applies the released full-vocabulary J-lens to
 DeepSeek-Coder 1.3B/6.7B and StarCoder2-3B. All required implementation gates
-pass. Both lenses recover every value family at pass@10 = 1.000 when the value
-is about to be emitted, but the value is essentially absent at the use token,
-the following token, and the call site. This includes computed arithmetic
-targets that never appear in the prompt.
+pass, with R-lens used as a supporting replication.
+
+The predeclared binding words are `local`, `global`, `inner`, `outer`, `scope`,
+`scoped`, `shadow`, `shadowed`, `binding`, `bound`, `active`, `inactive`,
+`definition`, `variable`, and `value`. Each concept includes every bare,
+space-prefixed, and declared capitalization spelling that is a single token for
+the model; split spellings are recorded as unavailable, never truncated. The
+lens reads the unchanged use token, the following token, the call site, and the
+answer position. Binding is crossed with value assignment (`ab`/`ba`), so a
+binding word must move the same way when the concrete answer reverses. Matched
+generic-code words, `earlier`/`later` and `kept`/`replaced` confound diagnostics,
+and size/frequency-band-matched random concepts are evaluated in the same way.
+Ranks, pass@k, crossed-arm score differences, and program-cluster bootstrap
+intervals are reported for every lens, layer, read position, and concept.
+
+As a secondary contrast, both lenses recover every value family at pass@10 =
+1.000 when the value is about to be emitted, but the value is essentially absent
+at the use token, following token, and call site, including for computed targets
+that never occur in the prompt.
 
 J-lens direction erasures use separate distractor controls, stable
 random controls, exact edit-magnitude matching, and paired cluster-bootstrap

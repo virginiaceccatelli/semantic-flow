@@ -249,9 +249,25 @@ If (R) realizes binding, the intervened model should emit the value selected by
 the donor binding, including when the mapping from binding to answer token is
 reversed in the held-out arm.
 
-**J-lens workspace readout.** For each layer, the published J-lens fits a full corpus-averaged Jacobian. We test full-vocabulary target rank at use, post-use, call, and answer positions, followed by controlled causal erasure. The R-lens repeats the analysis under RelP backward rules as a supporting replication.
+**J-lens verbalization after causal use.** DAS first establishes that the binding
+representation is causally used. We then use the published J-lens to ask what
+that representation is and whether it is expressed in output-vocabulary
+language. The primary target is binding language; concrete-value rank and
+controlled value-direction erasure are secondary comparisons. R-lens repeats
+the analysis under RelP backward rules as a supporting replication.
 
-**Semantic-concept panel.** This panel asks whether J-lens surfaces the *language of binding* (`local`, `global`, `scope`, `shadowed`, `bound`, and related predeclared words) rather than the concrete bound value. Programs cross binding with value assignment; matched code, positional/action, frequency and random concept sets control lexical alternatives. Both completed DeepSeek panels pass: J-lens selects `scope` at L9 on 1.3B and `global` at L20 on 6.7B, with nearly identical contrasts across crossed value assignments. R-lens replicates the family-level signal. StarCoder2 remains unmeasured for this panel.
+**Binding-language panel.** The complete predeclared vocabulary is `local`,
+`global`, `inner`, `outer`, `scope`, `scoped`, `shadow`, `shadowed`, `binding`,
+`bound`, `active`, `inactive`, `definition`, `variable`, and `value`. For each
+concept we score every declared capitalization in bare and space-prefixed form
+that tokenizes as one token; split spellings are unavailable, never truncated.
+Programs cross binding with value assignment and are read at use, post-use,
+call, and answer positions. Matched generic-code concepts, frequency/size-matched
+random concepts, and `earlier`/`later`, `kept`/`replaced` confound diagnostics
+control lexical alternatives. Both completed DeepSeek panels pass: J-lens
+selects `scope` at L9 on 1.3B and `global` at L20 on 6.7B, with nearly identical
+contrasts across crossed value assignments. R-lens replicates the family-level
+signal. StarCoder2 remains unmeasured for this panel.
 
 **DAS answer-only control.** The competing explanation “DAS is merely an output-token push” is tested by training a separate rank-1 answer actuator at the same layer, with the same optimiser, steps, split and per-row edit norm as binding DAS, but without donor binding states. Its `a→b` orientation is frozen before the crossed `b→a` arm is read. It succeeds on the fitted arm and attenuates on the crossed arm, whereas binding DAS remains perfect. Lens directions are optional descriptive diagnostics and do not gate this causal claim.
 
@@ -274,7 +290,10 @@ The binding factorial crosses two variables:
 | `ab` | `a` | `b` | answer `a → b` |
 | `ba` | `b` | `a` | answer `b → a` |
 
-DAS is fitted on `ab` and evaluated on `ba`. J-lens reports every value family at four predeclared read positions, with R-lens as a supporting replication. Calibration bases are used for fitting and selection; frozen
+DAS is fitted on `ab` and evaluated on `ba`. After this causal test, J-lens
+reports every binding-language concept and, secondarily, every value family at
+four predeclared read positions, with R-lens as a supporting replication.
+Calibration bases are used for fitting and selection; frozen
 test bases are read once for claims.
 
 The experiments do not all license claims for every model. This is a deliberate
@@ -334,9 +353,12 @@ dose- and rank-matched random subspaces, a no-op, a whole-state donor patch, and
 a closed-form donor-minus-host mean direction. The primary outcome is the
 full-vocabulary emitted token, not only a two-token logit margin.
 
-J-lens and the supporting R-lens are fitted as a matched pair on an independent
+After DAS establishes causal use, J-lens and the supporting R-lens are fitted as a matched pair on an independent
 100-prompt corpus using the released full-Jacobian estimator. They are read over the full
-vocabulary at use, post-use, call, and answer positions. Causal controls include
+vocabulary at use, post-use, call, and answer positions. Binding concepts are
+compared across binding-flipped and value-crossed arms and against generic-code,
+positional/action, and matched-random concepts. Causal controls for the secondary
+value-direction analysis include
 the logit direction, separate J/R distractor directions, stable random
 directions, and an exactly edit-magnitude-matched random displacement.
 
@@ -446,11 +468,27 @@ This is the strongest evidence that the model does not merely
 contain binding information; downstream computation uses a compact component
 with the causal role of the binding variable.
 
-### 6.4 Lenses: J-lens, with R-lens supporting replication
+### 6.4 After causal use: is the binding representation verbalized?
 
-The released Anthropic J-lens was fitted on an independent
+Having established that the representation is present and causally used, we ask
+what it is and whether it is verbalized. The released Anthropic J-lens was fitted on an independent
 100-prompt corpus for all three models. Required implementation and applicability
-gates pass. Across the use token, following token, and call site, the required
+gates pass. We predeclared all binding words: `local`, `global`, `inner`,
+`outer`, `scope`, `scoped`, `shadow`, `shadowed`, `binding`, `bound`, `active`,
+`inactive`, `definition`, `variable`, and `value`. Every available single-token
+bare, space-prefixed, and capitalization variant is scored at use, post-use,
+call, and answer positions. Split variants are marked unavailable. Binding is
+crossed with value assignment; matched generic-code and random concepts plus
+`earlier`/`later` and `kept`/`replaced` diagnose lexical and positional/action
+alternatives.
+
+The panel is positive on DeepSeek 1.3B and 6.7B. J-lens's clearest controlled
+contrasts are `scope` at L9 (+7.645/+7.637 across the crossed value arms) and
+`global` at L20 (-9.199/-9.040). Thus binding-related vocabulary aligns with the
+use-site state independently of which concrete value is active. R-lens
+replicates this family-level result; StarCoder2 has not completed this panel.
+
+As a secondary contrast, across the use token, following token, and call site, the required
 program value is essentially absent from the top ten; at the answer position,
 all lenses reach pass@10 = 1.000. The result therefore separates a valid readout
 from a pre-emission workspace null.
@@ -463,13 +501,6 @@ DeepSeek 1.3B's logit direction is stronger than J. A paper-minimal StarCoder2
 fit omitting the unpublished LayerNorm analogue gives the same conclusion. The
 R-lens closely reproduces the J-lens pattern and is therefore supporting rather
 than a second headline study.
-
-The semantic-concept panel is separately positive on DeepSeek 1.3B and 6.7B.
-J-lens's clearest controlled contrasts are `scope` at L9 (+7.645/+7.637 across
-the crossed value arms) and `global` at L20 (-9.199/-9.040). Thus abstract
-binding-related vocabulary can align with the use-site state even when the
-concrete value token does not. R-lens replicates this family-level result;
-StarCoder2 has not completed this panel.
 
 ### 6.5 Findings in one view
 

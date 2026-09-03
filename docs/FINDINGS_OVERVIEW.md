@@ -17,9 +17,9 @@ DAS intervenes on a rank-1 binding component
         ↓
 the answer follows the installed binding
         ↓
-the published J-lens tests whether needed values occupy a verbalizable workspace
+the published J-lens asks whether the causally used state verbalizes binding language
         ↓
-the concrete value does not surface before emission; binding vocabulary does in two DeepSeek panels
+binding vocabulary surfaces in two DeepSeek panels; the concrete value does not surface before emission
 ```
 
 The earlier cotangent-lens and conserving-cotangent-lens tracks, including E16
@@ -91,12 +91,25 @@ binding but requires a larger edit and remains less reliable.
 This is the causal result: at the tested site and layer, downstream computation
 uses a compact component whose effect follows which definition is in scope.
 
-## 4. Lenses: J-lens, with R-lens supporting replication
+## 4. After causal use: what is represented, and is it verbalized?
 
-E19 primarily uses Anthropic's released full-Jacobian J-lens, fitted on an
+The probe establishes presence and DAS establishes causal use. Only then does
+E19 ask what the causally used representation is like in vocabulary space:
+does the use-site state verbalize the language of binding? E19 primarily uses
+Anthropic's released full-Jacobian J-lens, fitted on an
 independent 100-prompt corpus for DeepSeek-Coder 1.3B/6.7B
 and StarCoder2-3B. Required applicability, matched-pair, identity-anchor,
 forward-invariance, and rule-binding gates pass.
+
+The complete predeclared binding lexicon is `local`, `global`, `inner`, `outer`,
+`scope`, `scoped`, `shadow`, `shadowed`, `binding`, `bound`, `active`,
+`inactive`, `definition`, `variable`, and `value`. The experiment scores every
+available single-token bare, space-prefixed, and capitalization variant at the
+use, post-use, call, and answer positions; split words are marked unavailable.
+It crosses binding with reversed value assignments and requires the lexical
+movement to agree across both arms. Matched generic-code concepts,
+`earlier`/`later` and `kept`/`replaced` confound diagnostics, and deterministic
+size/frequency-band-matched random concepts provide the comparison sets.
 
 Each value program is read at the use token, the following token, the call site,
 and the answer position. All three lenses reach pass@10 = 1.000 at the answer
@@ -112,8 +125,8 @@ The R-lens supporting study has modest local improvements over J but no
 consistent advantage over the logit lens. A paper-minimal StarCoder2 fit
 omitting the unpublished LayerNorm analogue leaves the conclusion unchanged.
 
-A separate semantic-concept panel is positive on both completed DeepSeek
-models. J-lens distinguishes the crossed binding arms with `scope` at layer 9
+The binding-language panel is positive on both completed DeepSeek models.
+J-lens distinguishes the crossed binding arms with `scope` at layer 9
 on 1.3B and `global` at layer 20 on 6.7B, while remaining stable across the two
 value assignments. R-lens closely replicates this. Because the word differs by
 model and logit-lens directions also carry some signal, the supported claim is

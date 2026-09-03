@@ -327,10 +327,12 @@ dropped rather than scored on their first piece — scoring a fragment would rep
 the tokenizer's segmentation as a finding about the model — and the count of what
 was dropped is printed by stage 200 and stored on the suite.
 
-### 6.2 The semantic-concept vocabulary panel (stage 206)
+### 6.2 Binding-language verbalization after causal use (stage 206)
 
-A **separate** panel, kept in its own tables under `{lens_dir}/concepts/`,
-asking a different question of the same instrument: at the same four read
+A **separate** panel, kept in its own tables under `{lens_dir}/concepts/`, is
+interpreted only after the independent DAS result has established causal use.
+It asks what that causally used representation is like in vocabulary space: at
+the same four read
 positions, does the lens surface the *language of binding* rather than the bound
 value? A null in one panel says nothing about the other, so they are never
 pooled and neither answers the other.

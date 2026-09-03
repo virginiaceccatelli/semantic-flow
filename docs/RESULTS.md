@@ -11,14 +11,15 @@ show that variable binding and definition-to-use relations become linearly
 recoverable in middle layers. Second, frozen probes show that this representation
 survives many surface changes but weakens under scope interference and
 control-flow flattening. Third, a DAS intervention shows that a rank-1 binding
-component is causally used at the variable-use site. Fourth, the published
-J-lens tests whether the needed values occupy a verbalizable
-workspace; the R-lens is retained as a supporting replication of that test.
+component is causally used at the variable-use site. Now that presence and
+causal use are established, the published J-lens asks what that representation
+is like and whether it is verbalized in the language of binding; the R-lens is
+retained as a supporting replication. Concrete-value recovery is secondary.
 
 The earlier cotangent-lens and conserving-cotangent-lens studies, including E16
 and E18, are preserved in [ARCHIVE.md](ARCHIVE.md). They are method development,
-not results from the published J-lens or R-lens. Part IV reports only E19 using
-the actual J-lens and R-lens.
+not results from the published J-lens or R-lens. The lens portion of Part III
+reports only E19 using the actual J-lens and R-lens.
 
 Every active result below completed at canonical scale and is paired with the
 control that could have falsified it. Read “represented” as *recoverable from a
@@ -31,9 +32,8 @@ where an intervention changes the downstream answer.
 - [Status at a glance](#status-at-a-glance)
 - [Part I — The relation is represented](#part-i--the-relation-is-represented)
 - [Part II — Robustness and failure boundaries](#part-ii--robustness-and-failure-boundaries)
-- [Part III — Causal use](#part-iii--causal-use)
-- [Part IV — Lenses](#part-iv--lenses)
-  - [J-lens, with R-lens replication](#e19--j-lens-full-vocabulary-workspace-readout-with-r-lens-replication)
+- [Part III — Causal use, then binding-language verbalization](#part-iii--causal-use-then-binding-language-verbalization)
+  - [After DAS: is the binding representation verbalized?](#e19--after-das-is-the-binding-representation-verbalized)
 - [Synthesis](#synthesis-the-main-finding)
 - [Boundaries](#boundaries-what-this-project-does-not-claim)
 - [Open items](#open-items)
@@ -64,11 +64,11 @@ value selected by the installed binding on 100% of held-out cases in both arms,
 in DeepSeek-Coder 6.7B and StarCoder2 3B. A fixed answer direction attenuates or
 reverses, and dose-matched random edits are much weaker.
 
-**4. J-lens, with an R-lens replication.** The J-lens recovers the target value
-perfectly at the answer position but essentially never at the use, post-use, or
-call positions. Its mid-network causal effects provide no consistent advantage
-over the logit lens. The R-lens closely reproduces this pattern, so it is treated
-as supporting evidence rather than a second headline experiment.
+**4. Binding-language verbalization.** With causal use already established, the
+J-lens asks whether the use-site state is expressed as words for binding. It
+surfaces a controlled binding-vocabulary-family signal in both completed
+DeepSeek panels (`scope` on 1.3B and `global` on 6.7B). It does not expose the
+concrete value before emission. R-lens closely reproduces this pattern.
 
 ---
 
@@ -79,7 +79,7 @@ as supporting evidence rather than a second headline experiment.
 | **representation** | controlled linear probe | binding reaches ~0.984 over a 0.500 floor | DeepSeek 1.3B/6.7B; partial StarCoder2 replication |
 | **robustness** | frozen-probe transfer | resilient to distance and renaming; fragile to scope interference and flattening | three tested models where reported |
 | **causal use (R10/E13)** | rank-1 DAS interchange | 100% installed answer in both crossed arms | DeepSeek 6.7B and StarCoder2 3B |
-| **lenses (E19)** | published full-Jacobian J-lens + RelP R-lens | value absent before emission; no consistent transport advantage over logit lens | gated negative result on three code models |
+| **binding-language verbalization (E19)** | published full-Jacobian J-lens + RelP R-lens | controlled binding-vocabulary signal on two DeepSeek models; concrete value absent before emission | concept result on two models; value null on three |
 
 Missing result numbers refer to studies now documented in
 [ARCHIVE.md](ARCHIVE.md), not to missing active experiments.
@@ -390,14 +390,16 @@ map of when a tool built on these representations should not be trusted.
 
 ---
 
-# Part III — Causal use
+# Part III — Causal use, then binding-language verbalization
 
 Part I established that binding and def–use relations are recoverable from hidden
 states. Part II showed where those readouts remain stable and where they fail.
 Part III asks what happens after a binding representation has formed: does the
 model use it to choose an answer? DAS changes one learned component at the
 unchanged variable-use token and tests whether the emitted value follows the
-donor program's binding.
+donor program's binding. Once that causal-use question is answered, E19 asks
+what the used representation is like and whether J-lens surfaces it as binding
+language.
 
 Earlier cotangent-lens attribution and lexical experiments are reproducible but
 are not published J-lens/R-lens results. They are preserved in
@@ -565,16 +567,12 @@ per model. The rank-1 edit also outperforms the whole-state patch, so the latter
 is not a true numerical ceiling; the plausible explanation that a full patch
 adds both helpful and opposing components remains to be tested.
 
-# Part IV — Lenses
+## E19 — After DAS: is the binding representation verbalized?
 
-This section contains only findings from the published, full-vocabulary J-lens
-and R-lens. Earlier partial cotangent constructions are archived.
-
-## E19 — J-lens: full-vocabulary workspace readout, with R-lens replication
-
-The J-lens is the primary lens in E19. It asks whether a hidden state can be
-translated into the model's vocabulary after accounting for the transformation
-performed by the remaining layers. Concretely, it estimates the average full
+The probes show that the representation is present, and DAS shows that it is
+causally used. J-lens now asks what that representation is like in vocabulary
+coordinates—specifically, whether it is verbalized as the language of binding.
+Concretely, it estimates the average full
 Jacobian from an intermediate layer to the late residual stream, then transports
 each vocabulary direction back through that Jacobian. The result is a score and
 rank for every token in the model's vocabulary—not merely a hand-chosen list.
@@ -590,7 +588,36 @@ All active results use the released 2026 implementation, an independent
 older cotangent and conserving-cotangent constructions are different methods
 and remain archived.
 
-### Question 1: is the concrete runtime value verbalized early?
+### Question 1: does J-lens verbalize the binding representation?
+
+The complete predeclared binding lexicon is `local`, `global`, `inner`, `outer`,
+`scope`, `scoped`, `shadow`, `shadowed`, `binding`, `bound`, `active`,
+`inactive`, `definition`, `variable`, and `value`. Each concept consists of all
+declared capitalization variants in both bare and space-prefixed form that the
+tokenizer represents as exactly one token. Split spellings are logged as
+unavailable and never truncated. The lens reads each concept over the full
+vocabulary at the unchanged use token, post-use token, call site, and answer
+position, for every selected layer.
+
+The programs cross binding with value assignment: the same binding flip occurs
+once with `(outer, inner)=(a,b)` and once with `(b,a)`. A binding-language signal
+must move consistently when the answer literal reverses and remain stable as
+literals change across bases. It must beat matched generic-code words,
+deterministic size/frequency-band-matched random concepts, and the explicit
+recency/survival confounds `earlier`/`later` and `kept`/`replaced`. For every
+`(lens, layer, read, concept)`, the report gives full-vocabulary rank,
+pass@1/5/10/50/100, threshold-entry layer, paired inner-minus-outer score
+difference, crossed-arm agreement, literal invariance, and a cluster bootstrap
+over base programs.
+
+The two completed DeepSeek panels support a binding-vocabulary-family signal:
+`scope` is clearest on DeepSeek-Coder 1.3B at L9 (+7.645/+7.637 across value
+arms), and `global` on 6.7B at L20 (-9.199/-9.040). R-lens closely reproduces
+the candidates; the logit lens also carries related effects. The result is not
+a unique J-lens code or one universal internal word, and StarCoder2's concept
+panel remains incomplete.
+
+### Question 2: is the concrete runtime value verbalized early?
 
 All required gates pass on DeepSeek-Coder 1.3B/6.7B and StarCoder2-3B. At the
 answer position, J-lens reaches pass@10 = 1.000 for every value family. This is
@@ -608,7 +635,7 @@ Rather, the operative mid-network state is not yet organized as the vocabulary
 token naming the final value. **Representation** and **verbalizability** are
 therefore different properties.
 
-### Question 2: is the J-lens value direction causally used mid-network?
+### Question 3: is the J-lens value direction causally used mid-network?
 
 The causal test erases the J-lens direction for the correct value and measures
 the change in the model's own target-versus-distractor margin. Erasing a matched
@@ -640,7 +667,7 @@ change any model-level conclusion and does not consistently outperform the
 logit lens. It is therefore supporting evidence for the robustness of the
 J-lens finding, not the headline result.
 
-### Question 3: does J-lens surface abstract binding language?
+### Supporting interpretation of the binding-language result
 
 Concrete values and semantic concepts are different targets. A model might not
 encode the token `7` at `return x`, yet its state could still align with words
@@ -674,16 +701,16 @@ model internally uses one universal word such as `scope`.
 
 ### Lens conclusion
 
-The complete lens result is mixed and informative:
+The complete lens result is mixed and informative, in the intended inferential
+order:
 
-1. J-lens works technically and reads the answer perfectly when it is ready for
-   emission.
-2. It does not reveal a general mid-network vocabulary representation of the
-   concrete runtime value.
-3. Its value directions have little or no special causal purchase mid-network
+1. The earlier DAS result independently establishes causal use.
+2. J-lens reveals binding-related vocabulary signals in the two completed
+   DeepSeek panels, addressing what the used representation may verbalize.
+3. As a secondary contrast, J-lens works technically and reads the concrete
+   value perfectly at emission but not generally mid-network.
+4. Its value directions have little or no special causal purchase mid-network
    beyond simpler directions.
-4. It does reveal binding-related vocabulary signals in the two completed
-   DeepSeek semantic panels.
 5. R-lens closely supports these conclusions without supplying a distinct main
    finding.
 
@@ -715,15 +742,9 @@ patch, and a closed-form difference-of-means baseline rule out generic
 disruption, implementation error, an unresponsive site, and the cheapest
 non-learned alternative.
 
-**Fourth, the published J-lens does not expose the concrete value as an early
-workspace token.** It recovers values perfectly at emission, establishing a
-working positive control, but essentially never surfaces them at the three
-preceding positions. Mid-network direction erasures are null or small and do not
-provide a consistent advantage over the logit lens. The R-lens closely
-replicates this conclusion.
-
-**Fifth, the semantic-concept panel gives a qualified positive.** This is a
-different question from recovering the concrete bound value. It asks whether
+**Fourth, the binding-language panel gives a qualified positive.** Now that DAS
+has established causal use, this experiment asks what the used representation
+is and whether
 the J-lens surfaces the *language of binding*—words such as `scope`, `local`, or
 `global`—at the use site. Both completed DeepSeek panels pass their predeclared
 controls: `scope` is the strongest J-lens contrast for 1.3B at layer 9
@@ -736,6 +757,12 @@ Therefore the positive is a family-level binding-vocabulary signal, not a claim
 that J-lens uniquely discovers one canonical word. StarCoder2 has no completed
 semantic-concept panel, so cross-architecture replication is still absent for
 this particular finding.
+
+**Fifth, the secondary concrete-value test is negative before emission.**
+J-lens recovers values perfectly at emission, establishing a working positive
+control, but essentially never surfaces them at the three preceding positions.
+Mid-network direction erasures are null or small and do not provide a consistent
+advantage over the logit lens. The R-lens closely replicates this conclusion.
 
 The strongest conclusion is therefore deliberately narrow:
 

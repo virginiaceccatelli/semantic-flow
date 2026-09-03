@@ -1266,23 +1266,34 @@ experiments:
       - results/binding/starcoder2-3b/e13_report.md
 
   E19:
-    name: published J-lens on code models, with R-lens supporting replication
+    name: binding-language verbalization after DAS, using published J-lens with R-lens replication
     status: supporting
     stage: "200-206"
     tables: [workspace_lens_gate_, workspace_lens_summary_, workspace_lens_rows_,
              workspace_lens_ablation_]
     claim: >
       All required gates pass on DeepSeek-Coder 1.3B/6.7B and StarCoder2-3B.
-      The J-lens reads every tested value family at pass@10 1.000 at the answer
-      position, but essentially not at use, post-use, or call. Mid-network J
-      erasure is null on StarCoder2, small and no better than logit on 6.7B,
-      and weaker than logit on 1.3B; strong effects are late/output-adjacent.
-      A separate semantic-concept panel passes on the two completed DeepSeek
-      models (`scope` at L9 on 1.3B; `global` at L20 on 6.7B), supporting an
-      abstract binding-vocabulary signal without an early concrete-value token.
+      After E13 establishes causal use independently, E19 asks what the binding
+      representation is and whether it is verbalized. The predeclared binding
+      words are local, global, inner, outer, scope, scoped, shadow, shadowed,
+      binding, bound, active, inactive, definition, variable, and value. The
+      panel passes on the two completed DeepSeek models (`scope` at L9 on 1.3B;
+      `global` at L20 on 6.7B), supporting a binding-vocabulary-family signal.
+      As a secondary contrast, J-lens reads every tested value family at pass@10
+      1.000 at the answer position, but essentially not at use, post-use, or
+      call. Mid-network value-direction erasure is null on StarCoder2, small and
+      no better than logit on 6.7B, and weaker than logit on 1.3B.
       StarCoder2 has no completed concept panel. R-lens closely replicates the
       J-lens findings and is supporting rather than a second main study.
     method: >
+      Binding and value assignment are crossed. Every declared bare,
+      space-prefixed, and capitalization variant that tokenizes as one token is
+      scored at use, post-use, call, and answer; split variants are unavailable,
+      never truncated. Generic-code, positional/action, and deterministic
+      size/frequency-band-matched random concepts are controls. Full-vocabulary
+      ranks, pass@1/5/10/50/100, crossed-arm score differences, literal
+      invariance, and program-cluster bootstrap intervals are reported per
+      lens, layer, read, and concept.
       The estimator is the reference implementation released with "Verbalizable
       Representations Form a Global Workspace in Language Models" (2026),
       vendored unmodified at third_party/jacobian-lens (commit 581d398) and
