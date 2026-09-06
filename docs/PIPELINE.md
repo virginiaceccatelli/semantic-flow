@@ -1052,6 +1052,39 @@ path repeatedly copied roughly 2 GB of J/R matrices over PCIe per item and could
 take several days. An interrupted pre-checkpoint run cannot recover its
 in-memory partial rows; update the code and restart once with this version.
 
+### Add StarCoder2 verbalisation results on the cluster (tcsh)
+
+Use the current E19 concept panel, stage 206. The archived E17 R-lens
+restriction does not apply to this fitted J/R workflow. Existing StarCoder2
+results include the concept-token inventory, but not a completed concept panel.
+The launcher validates the existing lenses (202), resumes the full 100-base
+panel (206), and incorporates it into the report (205); it never refits lenses.
+Sync the updated checkout to the cluster first, then run on a GPU host:
+
+```tcsh
+cd /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/semantic-flow
+screen -L -Logfile starcoder-verbalisation.log -dmS starcoder-verbalisation tcsh jobs/starcoder_verbalisation.csh
+screen -r starcoder-verbalisation
+```
+
+Detach with Ctrl-A then D. Repeat the launch command to resume after an
+interruption, once the previous process has stopped. Use one GPU job at a time.
+Read `results/workspace_lens/starcoder2-3b/concepts/workspace_lens_concepts.md`
+and `results/workspace_lens/starcoder2-3b/workspace_lens_report.md` afterwards.
+The fitted `j-lens/lens.pt` and `r-lens/lens.pt` must exist on the cluster;
+they are not supplied by the committed CSVs.
+
+Optional: after the primary run finishes, run the same panel against an
+already fitted and evaluated sensitivity pair:
+
+```tcsh
+screen -L -Logfile starcoder-verbalisation-paperminimal.log -dmS starcoder-verbalisation-paperminimal env LENS_DIR=results/workspace_lens/starcoder2-3b-paperminimal tcsh jobs/starcoder_verbalisation.csh
+```
+
+Alternate directories keep their tables and figures separate from primary
+exports. `DTYPE`, `N_BASES`, `UNEMBED_BATCH`, `CORPUS`, and `SUITE` can be
+supplied with `env NAME=value`; defaults match the existing DeepSeek panel.
+
 Stage 203 reads each value program at use, post-use, call, and answer positions.
 Stage 204 writes both arm summaries and paired cluster-bootstrap contrasts. Its
 controls include separate J/R distractor directions, a stable random projection,
