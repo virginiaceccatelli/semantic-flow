@@ -1,0 +1,1214 @@
+{
+  "stage": "206_lens_concepts",
+  "timestamp": "20260906_072912",
+  "git_sha": "4cbdcd8",
+  "python": "3.10.19",
+  "argv": [
+    "scripts/206_lens_concepts.py",
+    "--model",
+    "starcoder2-3b",
+    "--lens-dir",
+    "results/workspace_lens/starcoder2-3b",
+    "--output",
+    "results/workspace_lens/starcoder2-3b/concepts",
+    "--dtype",
+    "bfloat16",
+    "--n-bases",
+    "100",
+    "--unembed-batch-size",
+    "32",
+    "--checkpoint-every",
+    "5",
+    "--resume",
+    "--require-rlens"
+  ],
+  "args": {
+    "model": "starcoder2-3b",
+    "lens_dir": "results/workspace_lens/starcoder2-3b",
+    "layers": "None",
+    "layer_stride": "1",
+    "n_bases": "100",
+    "n_random_sets": "3",
+    "n_boot": "2000",
+    "seed": "42",
+    "dtype": "bfloat16",
+    "device": "cuda",
+    "limit": "None",
+    "unembed_batch_size": "32",
+    "checkpoint_every": "5",
+    "resume": "True"
+  },
+  "wall_time_s": 2548.1,
+  "extra": {
+    "n_items": 896,
+    "layers_read": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28
+    ],
+    "lenses": [
+      "j-lens",
+      "r-lens",
+      "logit-lens"
+    ],
+    "panel": {
+      "n_bases": 56,
+      "n_items": 896,
+      "answer_reads": "built",
+      "reads": [
+        "answer",
+        "call",
+        "post_use",
+        "use"
+      ],
+      "seed": 42
+    },
+    "concepts": [
+      {
+        "concept": "local",
+        "family": "binding_concept",
+        "requested": [
+          "local",
+          "Local",
+          "LOCAL"
+        ],
+        "token_ids": [
+          2212,
+          1717,
+          7099,
+          3340,
+          25711,
+          11150
+        ],
+        "spellings": [
+          " local",
+          "local",
+          " Local",
+          "Local",
+          " LOCAL",
+          "LOCAL"
+        ],
+        "rejected": [],
+        "n_token_ids": 6,
+        "available": true
+      },
+      {
+        "concept": "global",
+        "family": "binding_concept",
+        "requested": [
+          "global",
+          "Global",
+          "GLOBAL"
+        ],
+        "token_ids": [
+          3671,
+          3277,
+          6566,
+          4470,
+          35187,
+          14277
+        ],
+        "spellings": [
+          " global",
+          "global",
+          " Global",
+          "Global",
+          " GLOBAL",
+          "GLOBAL"
+        ],
+        "rejected": [],
+        "n_token_ids": 6,
+        "available": true
+      },
+      {
+        "concept": "inner",
+        "family": "binding_concept",
+        "requested": [
+          "inner",
+          "Inner"
+        ],
+        "token_ids": [
+          8287,
+          3384,
+          29323,
+          10894
+        ],
+        "spellings": [
+          " inner",
+          "inner",
+          " Inner",
+          "Inner"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "outer",
+        "family": "binding_concept",
+        "requested": [
+          "outer",
+          "Outer"
+        ],
+        "token_ids": [
+          16167,
+          11949,
+          15166
+        ],
+        "spellings": [
+          " outer",
+          "outer",
+          "Outer"
+        ],
+        "rejected": [
+          " Outer"
+        ],
+        "n_token_ids": 3,
+        "available": true
+      },
+      {
+        "concept": "scope",
+        "family": "binding_concept",
+        "requested": [
+          "scope",
+          "Scope"
+        ],
+        "token_ids": [
+          4589,
+          3488,
+          22135,
+          5518
+        ],
+        "spellings": [
+          " scope",
+          "scope",
+          " Scope",
+          "Scope"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "scoped",
+        "family": "binding_concept",
+        "requested": [
+          "scoped",
+          "Scoped"
+        ],
+        "token_ids": [
+          24216,
+          29071,
+          43638,
+          21791
+        ],
+        "spellings": [
+          " scoped",
+          "scoped",
+          " Scoped",
+          "Scoped"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "shadow",
+        "family": "binding_concept",
+        "requested": [
+          "shadow",
+          "Shadow"
+        ],
+        "token_ids": [
+          11092,
+          7219,
+          30675,
+          10059
+        ],
+        "spellings": [
+          " shadow",
+          "shadow",
+          " Shadow",
+          "Shadow"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "shadowed",
+        "family": "binding_concept",
+        "requested": [
+          "shadowed",
+          "Shadowed"
+        ],
+        "token_ids": [],
+        "spellings": [],
+        "rejected": [
+          " shadowed",
+          "shadowed",
+          " Shadowed",
+          "Shadowed"
+        ],
+        "n_token_ids": 0,
+        "available": false
+      },
+      {
+        "concept": "binding",
+        "family": "binding_concept",
+        "requested": [
+          "binding",
+          "Binding"
+        ],
+        "token_ids": [
+          9461,
+          9987,
+          17393,
+          5910
+        ],
+        "spellings": [
+          " binding",
+          "binding",
+          " Binding",
+          "Binding"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "bound",
+        "family": "binding_concept",
+        "requested": [
+          "bound",
+          "Bound"
+        ],
+        "token_ids": [
+          5105,
+          4484,
+          16243,
+          4728
+        ],
+        "spellings": [
+          " bound",
+          "bound",
+          " Bound",
+          "Bound"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "active",
+        "family": "binding_concept",
+        "requested": [
+          "active",
+          "Active"
+        ],
+        "token_ids": [
+          4537,
+          2498,
+          8761,
+          4091
+        ],
+        "spellings": [
+          " active",
+          "active",
+          " Active",
+          "Active"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "inactive",
+        "family": "binding_concept",
+        "requested": [
+          "inactive",
+          "Inactive"
+        ],
+        "token_ids": [
+          28432,
+          24469,
+          27281
+        ],
+        "spellings": [
+          " inactive",
+          "inactive",
+          "Inactive"
+        ],
+        "rejected": [
+          " Inactive"
+        ],
+        "n_token_ids": 3,
+        "available": true
+      },
+      {
+        "concept": "definition",
+        "family": "binding_concept",
+        "requested": [
+          "definition",
+          "Definition",
+          "def"
+        ],
+        "token_ids": [
+          5658,
+          7401,
+          16440,
+          3385,
+          684,
+          610
+        ],
+        "spellings": [
+          " definition",
+          "definition",
+          " Definition",
+          "Definition",
+          " def",
+          "def"
+        ],
+        "rejected": [],
+        "n_token_ids": 6,
+        "available": true
+      },
+      {
+        "concept": "variable",
+        "family": "binding_concept",
+        "requested": [
+          "variable",
+          "Variable",
+          "var"
+        ],
+        "token_ids": [
+          2702,
+          4521,
+          9904,
+          3836,
+          792,
+          887
+        ],
+        "spellings": [
+          " variable",
+          "variable",
+          " Variable",
+          "Variable",
+          " var",
+          "var"
+        ],
+        "rejected": [],
+        "n_token_ids": 6,
+        "available": true
+      },
+      {
+        "concept": "value",
+        "family": "binding_concept",
+        "requested": [
+          "value",
+          "Value",
+          "val"
+        ],
+        "token_ids": [
+          804,
+          872,
+          3867,
+          899,
+          928,
+          718
+        ],
+        "spellings": [
+          " value",
+          "value",
+          " Value",
+          "Value",
+          " val",
+          "val"
+        ],
+        "rejected": [],
+        "n_token_ids": 6,
+        "available": true
+      },
+      {
+        "concept": "return",
+        "family": "generic_code",
+        "requested": [
+          "return",
+          "Return"
+        ],
+        "token_ids": [
+          461,
+          620,
+          2762,
+          2907
+        ],
+        "spellings": [
+          " return",
+          "return",
+          " Return",
+          "Return"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "import",
+        "family": "generic_code",
+        "requested": [
+          "import",
+          "Import"
+        ],
+        "token_ids": [
+          1220,
+          485,
+          9274,
+          4214
+        ],
+        "spellings": [
+          " import",
+          "import",
+          " Import",
+          "Import"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "class",
+        "family": "generic_code",
+        "requested": [
+          "class",
+          "Class"
+        ],
+        "token_ids": [
+          462,
+          842,
+          1727,
+          1359
+        ],
+        "spellings": [
+          " class",
+          "class",
+          " Class",
+          "Class"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "print",
+        "family": "generic_code",
+        "requested": [
+          "print",
+          "Print"
+        ],
+        "token_ids": [
+          1489,
+          1243,
+          9232,
+          4026
+        ],
+        "spellings": [
+          " print",
+          "print",
+          " Print",
+          "Print"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "range",
+        "family": "generic_code",
+        "requested": [
+          "range",
+          "Range"
+        ],
+        "token_ids": [
+          2189,
+          3623,
+          13112,
+          3216
+        ],
+        "spellings": [
+          " range",
+          "range",
+          " Range",
+          "Range"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "index",
+        "family": "generic_code",
+        "requested": [
+          "index",
+          "Index",
+          "idx"
+        ],
+        "token_ids": [
+          1671,
+          1076,
+          6434,
+          1301,
+          5444,
+          2910
+        ],
+        "spellings": [
+          " index",
+          "index",
+          " Index",
+          "Index",
+          " idx",
+          "idx"
+        ],
+        "rejected": [],
+        "n_token_ids": 6,
+        "available": true
+      },
+      {
+        "concept": "result",
+        "family": "generic_code",
+        "requested": [
+          "result",
+          "Result"
+        ],
+        "token_ids": [
+          1074,
+          1285,
+          4717,
+          1413
+        ],
+        "spellings": [
+          " result",
+          "result",
+          " Result",
+          "Result"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "buffer",
+        "family": "generic_code",
+        "requested": [
+          "buffer",
+          "Buffer",
+          "buf"
+        ],
+        "token_ids": [
+          3129,
+          2683,
+          7730,
+          2030,
+          4856,
+          1972
+        ],
+        "spellings": [
+          " buffer",
+          "buffer",
+          " Buffer",
+          "Buffer",
+          " buf",
+          "buf"
+        ],
+        "rejected": [],
+        "n_token_ids": 6,
+        "available": true
+      },
+      {
+        "concept": "string",
+        "family": "generic_code",
+        "requested": [
+          "string",
+          "String",
+          "str"
+        ],
+        "token_ids": [
+          821,
+          819,
+          910,
+          671,
+          615,
+          484
+        ],
+        "spellings": [
+          " string",
+          "string",
+          " String",
+          "String",
+          " str",
+          "str"
+        ],
+        "rejected": [],
+        "n_token_ids": 6,
+        "available": true
+      },
+      {
+        "concept": "number",
+        "family": "generic_code",
+        "requested": [
+          "number",
+          "Number",
+          "num"
+        ],
+        "token_ids": [
+          1470,
+          2188,
+          5132,
+          1936,
+          1952,
+          1538
+        ],
+        "spellings": [
+          " number",
+          "number",
+          " Number",
+          "Number",
+          " num",
+          "num"
+        ],
+        "rejected": [],
+        "n_token_ids": 6,
+        "available": true
+      },
+      {
+        "concept": "file",
+        "family": "generic_code",
+        "requested": [
+          "file",
+          "File"
+        ],
+        "token_ids": [
+          822,
+          781,
+          2050,
+          991
+        ],
+        "spellings": [
+          " file",
+          "file",
+          " File",
+          "File"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "path",
+        "family": "generic_code",
+        "requested": [
+          "path",
+          "Path"
+        ],
+        "token_ids": [
+          1536,
+          1005,
+          5404,
+          1233
+        ],
+        "spellings": [
+          " path",
+          "path",
+          " Path",
+          "Path"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "error",
+        "family": "generic_code",
+        "requested": [
+          "error",
+          "Error",
+          "err"
+        ],
+        "token_ids": [
+          1067,
+          750,
+          3099,
+          943,
+          1155,
+          549
+        ],
+        "spellings": [
+          " error",
+          "error",
+          " Error",
+          "Error",
+          " err",
+          "err"
+        ],
+        "rejected": [],
+        "n_token_ids": 6,
+        "available": true
+      },
+      {
+        "concept": "count",
+        "family": "generic_code",
+        "requested": [
+          "count",
+          "Count"
+        ],
+        "token_ids": [
+          2409,
+          1016,
+          9658,
+          1552
+        ],
+        "spellings": [
+          " count",
+          "count",
+          " Count",
+          "Count"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "total",
+        "family": "generic_code",
+        "requested": [
+          "total",
+          "Total"
+        ],
+        "token_ids": [
+          3410,
+          3025,
+          9338,
+          4767
+        ],
+        "spellings": [
+          " total",
+          "total",
+          " Total",
+          "Total"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      },
+      {
+        "concept": "earlier",
+        "family": "positional",
+        "requested": [
+          "earlier",
+          "Earlier",
+          "first",
+          "First"
+        ],
+        "token_ids": [
+          17138,
+          1950,
+          2251,
+          8854,
+          3485
+        ],
+        "spellings": [
+          " earlier",
+          " first",
+          "first",
+          " First",
+          "First"
+        ],
+        "rejected": [
+          "earlier",
+          " Earlier",
+          "Earlier"
+        ],
+        "n_token_ids": 5,
+        "available": true
+      },
+      {
+        "concept": "later",
+        "family": "positional",
+        "requested": [
+          "later",
+          "Later",
+          "last",
+          "Last"
+        ],
+        "token_ids": [
+          6146,
+          29375,
+          31312,
+          2419,
+          2153,
+          11321,
+          3283
+        ],
+        "spellings": [
+          " later",
+          "later",
+          "Later",
+          " last",
+          "last",
+          " Last",
+          "Last"
+        ],
+        "rejected": [
+          " Later"
+        ],
+        "n_token_ids": 7,
+        "available": true
+      },
+      {
+        "concept": "kept",
+        "family": "positional",
+        "requested": [
+          "kept",
+          "Kept",
+          "keep"
+        ],
+        "token_ids": [
+          21318,
+          5016,
+          10530
+        ],
+        "spellings": [
+          " kept",
+          " keep",
+          "keep"
+        ],
+        "rejected": [
+          "kept",
+          " Kept",
+          "Kept"
+        ],
+        "n_token_ids": 3,
+        "available": true
+      },
+      {
+        "concept": "replaced",
+        "family": "positional",
+        "requested": [
+          "replaced",
+          "Replaced",
+          "replace"
+        ],
+        "token_ids": [
+          14180,
+          7112,
+          3249
+        ],
+        "spellings": [
+          " replaced",
+          " replace",
+          "replace"
+        ],
+        "rejected": [
+          "replaced",
+          " Replaced",
+          "Replaced"
+        ],
+        "n_token_ids": 3,
+        "available": true
+      },
+      {
+        "concept": "random_0",
+        "family": "random_concepts",
+        "requested": [
+          "matched to 'local' (6 ids, id range 0-30626)"
+        ],
+        "token_ids": [
+          819,
+          1041,
+          2848,
+          3358,
+          3648,
+          4572
+        ],
+        "spellings": [
+          "string",
+          " /**",
+          "\u0435\ufffd",
+          " pe",
+          "Items",
+          " tool"
+        ],
+        "rejected": [],
+        "n_token_ids": 6,
+        "available": true
+      },
+      {
+        "concept": "random_1",
+        "family": "random_concepts",
+        "requested": [
+          "matched to 'global' (6 ids, id range 0-40102)"
+        ],
+        "token_ids": [
+          425,
+          1739,
+          1952,
+          6140,
+          10463,
+          13031
+        ],
+        "spellings": [
+          "lic",
+          "off",
+          " num",
+          "days",
+          "exclude",
+          "digo"
+        ],
+        "rejected": [],
+        "n_token_ids": 6,
+        "available": true
+      },
+      {
+        "concept": "random_2",
+        "family": "random_concepts",
+        "requested": [
+          "matched to 'inner' (4 ids, id range 0-34238)"
+        ],
+        "token_ids": [
+          6078,
+          6338,
+          6698,
+          10189
+        ],
+        "spellings": [
+          "aci\u00f3n",
+          "RUN",
+          "DELETE",
+          "INF"
+        ],
+        "rejected": [],
+        "n_token_ids": 4,
+        "available": true
+      }
+    ],
+    "concepts_unavailable": [
+      "shadowed"
+    ],
+    "resident_jacobian_bytes": {
+      "j-lens": 1094713344,
+      "r-lens": 1094713344
+    },
+    "verdict": {
+      "supported": true,
+      "n_candidates": 369,
+      "candidates": [
+        {
+          "lens": "j-lens",
+          "layer": 0,
+          "read": "use",
+          "concept": "value",
+          "binding_delta_ab": 0.296875,
+          "binding_delta_ba": 0.296875,
+          "best_control": 0.2622653416224888
+        },
+        {
+          "lens": "j-lens",
+          "layer": 2,
+          "read": "call",
+          "concept": "scoped",
+          "binding_delta_ab": -0.061244419642857144,
+          "binding_delta_ba": -0.05915178571428571,
+          "best_control": 0.05705915178571429
+        },
+        {
+          "lens": "j-lens",
+          "layer": 3,
+          "read": "call",
+          "concept": "scoped",
+          "binding_delta_ab": -0.10463169642857142,
+          "binding_delta_ba": -0.10498046875,
+          "best_control": 0.08981541224888392
+        },
+        {
+          "lens": "j-lens",
+          "layer": 4,
+          "read": "call",
+          "concept": "scope",
+          "binding_delta_ab": -0.18666294642857142,
+          "binding_delta_ba": -0.18331473214285715,
+          "best_control": 0.12388392857142858
+        },
+        {
+          "lens": "j-lens",
+          "layer": 4,
+          "read": "call",
+          "concept": "scoped",
+          "binding_delta_ab": -0.18217802047729492,
+          "binding_delta_ba": -0.17597307477678573,
+          "best_control": 0.12388392857142858
+        },
+        {
+          "lens": "j-lens",
+          "layer": 4,
+          "read": "call",
+          "concept": "value",
+          "binding_delta_ab": -0.14006696428571427,
+          "binding_delta_ba": -0.14341517857142858,
+          "best_control": 0.12388392857142858
+        },
+        {
+          "lens": "j-lens",
+          "layer": 4,
+          "read": "post_use",
+          "concept": "inactive",
+          "binding_delta_ab": -0.19740513392857142,
+          "binding_delta_ba": -0.19873046875,
+          "best_control": 0.18852887834821427
+        },
+        {
+          "lens": "j-lens",
+          "layer": 5,
+          "read": "call",
+          "concept": "scope",
+          "binding_delta_ab": -0.24574497767857142,
+          "binding_delta_ba": -0.24260602678571427,
+          "best_control": 0.22446986607142858
+        },
+        {
+          "lens": "j-lens",
+          "layer": 6,
+          "read": "call",
+          "concept": "scope",
+          "binding_delta_ab": -0.35307203020368305,
+          "binding_delta_ba": -0.3544417790004185,
+          "best_control": 0.29248503276279997
+        },
+        {
+          "lens": "j-lens",
+          "layer": 9,
+          "read": "answer",
+          "concept": "scoped",
+          "binding_delta_ab": -0.8223353794642857,
+          "binding_delta_ba": -0.8187081473214286,
+          "best_control": 0.7904924665178571
+        },
+        {
+          "lens": "j-lens",
+          "layer": 9,
+          "read": "use",
+          "concept": "binding",
+          "binding_delta_ab": -2.7169363839285716,
+          "binding_delta_ba": -2.7049386160714284,
+          "best_control": 2.4326869419642856
+        },
+        {
+          "lens": "j-lens",
+          "layer": 10,
+          "read": "post_use",
+          "concept": "inner",
+          "binding_delta_ab": 0.5262178693498883,
+          "binding_delta_ba": 0.5322832380022321,
+          "best_control": 0.3904942103794643
+        },
+        {
+          "lens": "j-lens",
+          "layer": 10,
+          "read": "use",
+          "concept": "binding",
+          "binding_delta_ab": -2.7728794642857144,
+          "binding_delta_ba": -2.7576729910714284,
+          "best_control": 2.1773158482142856
+        },
+        {
+          "lens": "j-lens",
+          "layer": 10,
+          "read": "use",
+          "concept": "bound",
+          "binding_delta_ab": -3.0890301295689175,
+          "binding_delta_ba": -3.108729226248605,
+          "best_control": 2.1773158482142856
+        },
+        {
+          "lens": "j-lens",
+          "layer": 10,
+          "read": "use",
+          "concept": "inner",
+          "binding_delta_ab": 2.2935267857142856,
+          "binding_delta_ba": 2.3247767857142856,
+          "best_control": 2.1773158482142856
+        },
+        {
+          "lens": "j-lens",
+          "layer": 12,
+          "read": "post_use",
+          "concept": "global",
+          "binding_delta_ab": 0.7388392857142857,
+          "binding_delta_ba": 0.7416294642857143,
+          "best_control": 0.5686383928571429
+        },
+        {
+          "lens": "j-lens",
+          "layer": 12,
+          "read": "post_use",
+          "concept": "inner",
+          "binding_delta_ab": 0.7334891727992466,
+          "binding_delta_ba": 0.7313311440604073,
+          "best_control": 0.5686383928571429
+        },
+        {
+          "lens": "j-lens",
+          "layer": 12,
+          "read": "post_use",
+          "concept": "shadow",
+          "binding_delta_ab": 0.6738410677228656,
+          "binding_delta_ba": 0.6859380177089146,
+          "best_control": 0.5686383928571429
+        },
+        {
+          "lens": "j-lens",
+          "layer": 13,
+          "read": "answer",
+          "concept": "global",
+          "binding_delta_ab": 1.0491768973214286,
+          "binding_delta_ba": 1.068359375,
+          "best_control": 0.8563556671142578
+        },
+        {
+          "lens": "j-lens",
+          "layer": 13,
+          "read": "call",
+          "concept": "global",
+          "binding_delta_ab": 0.8792351313999721,
+          "binding_delta_ba": 0.8946835654122489,
+          "best_control": 0.6860231672014508
+        }
+      ],
+      "reason": "predeclared binding concepts separate the arms in both value arms, agree in sign, are invariant to the literal, and beat every matched control"
+    }
+  }
+}

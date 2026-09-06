@@ -32,7 +32,7 @@ fit under the published RelP backward rules.
 | W5b_identity_rule_bound | yes | PASS | identity-rule on 30 activations ({'gelu_tanh': 30}); 0 unrecognised |
 | W5c_half_rule_status | yes | PASS | half-rule n/a: 0 gated MLPs of 0; 30 ungated MLPs have no gate to split |
 | W5d_attention_untouched | no | PASS | 30 attention blocks and all linear layers left unmodified, as published |
-| W5e_forward_deviation_bounded | yes | PASS | largest per-module forward deviation any rewrite introduced: 2.86e-06 |
+| W5e_forward_deviation_bounded | yes | PASS | largest per-module forward deviation any rewrite introduced: 1.91e-06 |
 | W5f_rlens_differs_from_jlens | yes | PASS | relative Frobenius difference across 29 layers: min 1.465e-01, max 1.017e+05 |
 | W6_build_repeatable | no | n/a | SKIPPED — no half-corpus lenses; re-run stage 201 with --halves |
 | W7_ascii_face[j-lens] | no | n/a | best rank for 'nose' is 34 at layer 27 (final-layer rank 106) |
@@ -185,6 +185,34 @@ Change in the **model's own** logit difference between the target and distractor
 | 20 | rlens_vs_random_matched | 200 | -0.019 | [-0.044, +0.002] |  |
 | 20 | jlens_vs_logit | 200 | +0.018 | [+0.000, +0.034] |  |
 | 20 | rlens_vs_jlens | 200 | -0.009 | [-0.029, +0.012] |  |
+
+
+## Semantic-concept vocabulary panel
+
+A **separate** question from runtime-value recovery: does the lens surface the *language of binding* at the four predeclared read positions? Predeclared concept sets, matched generic-code and random controls, and positional wording carried as a confound diagnostic rather than as semantics. Full panel: `results/workspace_lens/starcoder2-3b/concepts/workspace_lens_concepts.md`.
+
+| read | family | j-lens | r-lens | logit lens |
+|---|---|---|---|---|
+| use | binding_concept | 0.737 | 1.000 | 0.379 |
+| use | generic_code | 0.058 | 0.054 | 0.054 |
+| use | positional | 0.312 | 0.000 | 0.000 |
+| use | random_concepts | 0.000 | 0.000 | 0.000 |
+| post_use | binding_concept | 0.045 | 1.000 | 0.045 |
+| post_use | generic_code | 0.402 | 0.103 | 0.054 |
+| post_use | positional | 0.000 | 0.000 | 0.004 |
+| post_use | random_concepts | 0.000 | 0.000 | 0.000 |
+| call | binding_concept | 1.000 | 1.000 | 0.036 |
+| call | generic_code | 0.875 | 0.161 | 0.000 |
+| call | positional | 0.000 | 0.000 | 0.000 |
+| call | random_concepts | 0.000 | 0.000 | 0.000 |
+| answer | binding_concept | 0.223 | 1.000 | 0.085 |
+| answer | generic_code | 0.210 | 0.205 | 0.205 |
+| answer | positional | 0.000 | 0.054 | 0.000 |
+| answer | random_concepts | 0.000 | 0.022 | 0.000 |
+
+(best pass@10 over layers; `positional` is a confound diagnostic, never a binding positive)
+
+**SUPPORTED** — predeclared binding concepts separate the arms in both value arms, agree in sign, are invariant to the literal, and beat every matched control
 
 ## Figures
 
