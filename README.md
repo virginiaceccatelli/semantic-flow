@@ -161,10 +161,11 @@ intervals. Strong effects occur beside the output head. Mid-network,
 StarCoder2 is null; DeepSeek 6.7B has only a small L20 effect that does not beat
 the logit direction; and on DeepSeek 1.3B the logit direction is stronger than
 J-lens. The R-lens study closely replicates this pattern. It makes some local
-improvements but does not recover a broad early-layer advantage. In the two
-completed DeepSeek semantic panels, J-lens also surfaces controlled
-binding-related vocabulary (`scope` or `global`) without surfacing the concrete
-runtime value; R-lens supports that positive result as well.
+improvements but does not recover a broad early-layer advantage. Across all
+three completed semantic panels, J-lens surfaces controlled
+binding-related vocabulary (`scope`, `global`, or `bound`) without surfacing
+the concrete runtime value at the use token. StarCoder2 extends the family-level
+result across architectures; R-lens and logit lens also carry binding signals.
 
 
 ## What the active evidence supports

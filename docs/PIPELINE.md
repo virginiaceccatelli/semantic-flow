@@ -1052,14 +1052,16 @@ path repeatedly copied roughly 2 GB of J/R matrices over PCIe per item and could
 take several days. An interrupted pre-checkpoint run cannot recover its
 in-memory partial rows; update the code and restart once with this version.
 
-### Add StarCoder2 verbalisation results on the cluster (tcsh)
+### StarCoder2 verbalisation: completed run and regeneration (tcsh)
 
 Use the current E19 concept panel, stage 206. The archived E17 R-lens
-restriction does not apply to this fitted J/R workflow. Existing StarCoder2
-results include the concept-token inventory, but not a completed concept panel.
-The launcher validates the existing lenses (202), resumes the full 100-base
-panel (206), and incorporates it into the report (205); it never refits lenses.
-Sync the updated checkout to the cluster first, then run on a GPU host:
+restriction does not apply to this fitted J/R workflow. StarCoder2’s primary panel completed on 6 September 2026 (896/896 items,
+56 distinct bases); its stage-205 report already includes the results.
+The launcher validates the existing lenses (202), resumes stage 206 with a
+100-base cap (56 distinct bases here), and incorporates it into the report
+(205); it never refits lenses.
+No GPU rerun is needed for the completed primary result. The commands below
+are for reproducing or resuming it on a GPU host:
 
 ```tcsh
 cd /scratch_NOT_BACKED_UP/NOT_BACKED_UP/vceccate/semantic-flow
@@ -1226,3 +1228,24 @@ scripts invoke `$PYTHON` directly rather than a bare `python`;
 
 If the cluster has no internet, run `make data-real` locally and rsync `data/`
 (and the HF cache) up. Pre-download model weights once on a network-enabled node.
+
+### Refresh the paper verbalisation figure after StarCoder2
+
+The stage-205 StarCoder2 report already includes the completed concept panel.
+The paper figure generator now includes StarCoder2 in `figs/fig4_jlens.pdf`
+and `.png`. Panel (b) includes the union of available concepts across models;
+unavailable tokenizations are marked `n/a`. Its peak-contrast/control ratios
+are a size diagnostic, not the full crossed-arm statistical verdict.
+Regenerate only that figure on CPU, from committed summary and
+contrast CSVs (no model or raw concept rows needed):
+
+```tcsh
+source jobs/common.csh
+$PYTHON scripts/92_paper_figures.py --figure 4
+```
+
+Stages 201–206 do not need rerunning for this update. The raw
+`workspace_lens_concept_rows.csv` is not in the local checkout; preserve it on
+the cluster for future item-level audits or re-aggregation. The optional
+StarCoder2 paper-minimal **concept** panel has not been supplied; the existing
+paper-minimal value readout does not establish concept-panel sensitivity.

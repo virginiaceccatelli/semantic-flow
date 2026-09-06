@@ -216,8 +216,8 @@ def _use_contrasts(model):
 
 
 def fig4():
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.0, 3.1), layout="constrained",
-                                   gridspec_kw={"width_ratios": [1, 1.05]})
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.0, 4.0), layout="constrained",
+                                   gridspec_kw={"width_ratios": [1, 1.15]})
 
     # (a) Does the binding lexicon reach the top of the vocabulary at all?
     fam_style = [("binding_concept", "binding lexicon", HYP, "-", 2.0),
@@ -241,25 +241,38 @@ def fig4():
                handlelength=2.2, borderaxespad=0.3, labelspacing=0.4)
 
     # (b) Per word, does it move MORE than the strongest control at its own
-    # layer? A ratio above 1 is the panel's own criterion for a real effect.
+    # layer? This is only the control-size diagnostic, not the full verdict:
+    # crossed-arm and interval conditions are evaluated separately in stage 206.
     _, b13 = _use_contrasts("deepseek-coder-1.3b")
     _, b67 = _use_contrasts("deepseek-coder-6.7b")
+    _, bsc = _use_contrasts("starcoder2-3b")
+    rsc = bsc.set_index("concept").ratio
     r13 = b13.set_index("concept").ratio
     r67 = b67.set_index("concept").ratio
+    # Tokenizer availability differs; retain the union so StarCoder-only
+    # single-token concepts are not silently dropped.
     words = list(r67.sort_values().index)
+    words += sorted((set(r13.index) | set(rsc.index)) - set(words))
     ys = np.arange(len(words))
-    ax2.barh(ys + 0.19, [r67.get(w, 0) for w in words], 0.36,
+    ax2.barh(ys, [r67.get(w, np.nan) for w in words], 0.25,
              color=CB["p2"], label="DeepSeek-Coder 6.7B")
-    ax2.barh(ys - 0.19, [r13.get(w, 0) for w in words], 0.36,
+    ax2.barh(ys - 0.27, [r13.get(w, np.nan) for w in words], 0.25,
              color=CB["p1"], label="DeepSeek-Coder 1.3B")
+    ax2.barh(ys + 0.27, [rsc.get(w, np.nan) for w in words], 0.25,
+             color=CB["p3"], label="StarCoder2-3B")
+    # Missing spellings are unavailable, not measured zeroes.
+    for ratios, offset in ((r13, -0.27), (r67, 0.0), (rsc, 0.27)):
+        for i, word in enumerate(words):
+            if word not in ratios.index:
+                ax2.text(0.05, i + offset, "n/a", fontsize=5.5, va="center")
     ax2.axvline(1.0, color=CB["ink"], lw=1.1)
     ax2.set_yticks(ys)
     ax2.set_yticklabels([f"\\texttt{{{w}}}".replace("\\texttt{", "").replace("}", "")
                          for w in words], fontfamily="monospace", fontsize=6.8)
     ax2.set_ylim(-0.6, len(words) - 0.35)
-    ax2.set_xlim(0, 4.0)
+    ax2.set_xlim(0, max(4.0, 1.1 * max(r13.max(), r67.max(), rsc.max())))
     ax2.set_xlabel("contrast $\\div$ strongest control at the same layer")
-    ax2.set_title("(b) Which words beat their controls", loc="left")
+    ax2.set_title("(b) Contrast size relative to controls", loc="left")
     ax2.legend(frameon=False, fontsize=6.0, loc="lower right",
                handlelength=1.2, borderaxespad=0.4)
     ax2.grid(axis="y", alpha=0)
@@ -268,9 +281,22 @@ def fig4():
 
 if __name__ == "__main__":
     print("writing figures to figs/")
-    for f in (fig1, fig2, fig3, fig4):
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--figure", type=int, choices=(1, 2, 3, 4),
+                        help="Regenerate only this figure (default: all)")
+    args = parser.parse_args()
+    selected = (fig1, fig2, fig3, fig4)
+    if args.figure:
+        selected = (selected[args.figure - 1],)
+    failed = False
+    for f in selected:
         try:
             f()
         except Exception as exc:                                   # noqa: BLE001
+            failed = True
             print(f"  FAILED {f.__name__}: {type(exc).__name__}: {exc}",
                   file=sys.stderr)
+
+    if failed:
+        sys.exit(1)

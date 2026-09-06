@@ -66,8 +66,8 @@ reverses, and dose-matched random edits are much weaker.
 
 **4. Binding-language verbalization.** With causal use already established, the
 J-lens asks whether the use-site state is expressed as words for binding. It
-surfaces a controlled binding-vocabulary-family signal in both completed
-DeepSeek panels (`scope` on 1.3B and `global` on 6.7B). It does not expose the
+surfaces a controlled binding-vocabulary-family signal in all three panels
+(`scope` on 1.3B, `global` on 6.7B, and `bound` on StarCoder2). It does not expose the
 concrete value before emission. R-lens closely reproduces this pattern.
 
 ---
@@ -79,7 +79,7 @@ concrete value before emission. R-lens closely reproduces this pattern.
 | **representation** | controlled linear probe | binding reaches ~0.984 over a 0.500 floor | DeepSeek 1.3B/6.7B; partial StarCoder2 replication |
 | **robustness** | frozen-probe transfer | resilient to distance and renaming; fragile to scope interference and flattening | three tested models where reported |
 | **causal use (R10/E13)** | rank-1 DAS interchange | 100% installed answer in both crossed arms | DeepSeek 6.7B and StarCoder2 3B |
-| **binding-language verbalization (E19)** | published full-Jacobian J-lens + RelP R-lens | controlled binding-vocabulary signal on two DeepSeek models; concrete value absent before emission | concept result on two models; value null on three |
+| **binding-language verbalization (E19)** | published full-Jacobian J-lens + RelP R-lens | controlled binding-vocabulary signal on all three models; concrete value absent before emission | concept result and pre-emission value null on three models |
 
 Missing result numbers refer to studies now documented in
 [ARCHIVE.md](ARCHIVE.md), not to missing active experiments.
@@ -640,12 +640,29 @@ pass@1/5/10/50/100, threshold-entry layer, paired inner-minus-outer score
 difference, crossed-arm agreement, literal invariance, and a cluster bootstrap
 over base programs.
 
-The two completed DeepSeek panels support a binding-vocabulary-family signal:
+All three completed panels support a binding-vocabulary-family signal:
 `scope` is clearest on DeepSeek-Coder 1.3B at L9 (+7.645/+7.637 across value
 arms), and `global` on 6.7B at L20 (-9.199/-9.040). R-lens closely reproduces
 the candidates; the logit lens also carries related effects. The result is not
-a unique J-lens code or one universal internal word, and StarCoder2's concept
-panel remains incomplete.
+a unique J-lens code or one universal internal word. StarCoder2 adds a
+controlled mid-network `bound` contrast at L14 (−3.723/−3.740); its largest
+qualifying use-site contrast is `scoped` at L28 (+6.727/+6.657), where J, R,
+and logit readouts coincide at the identity anchor.
+
+StarCoder2 completion audit (6 September 2026): the checkpoint covers all
+896/896 planned items: 56 distinct bases × two binding arms × two value arms ×
+four read positions. All 29 fitted layers (0–28), three lenses, and 36 available
+concepts are represented in 12,528 summary and contrast rows. `shadowed` is
+unavailable under this tokenizer. All required stage-202 checks pass. The
+requested 100-base cap resolves to 56 distinct constructions, not a partial run.
+At use, best binding-family pass@10 is 0.737 (J), 1.000 (R), and 0.379 (logit).
+The predeclared criterion yields 16 qualifying J-lens use-site rows. For `bound`
+at L14, the two 95% intervals are [−3.931, −3.518] and [−3.939, −3.538]; the
+value-difference interval is [−0.070, +0.115], and the largest absolute matched
+control contrast in the `ab` arm is 2.327. The control comparison uses point
+estimates in that arm; a zero-containing value interval is consistent with
+invariance, not an equivalence test. Intervals are pointwise across the scanned
+concepts/layers, so this remains a family-level observational result.
 
 #### Exactly which words were tested
 
@@ -686,14 +703,16 @@ results are:
 |---|---|---|---|
 | DeepSeek-Coder 1.3B | no concept has a concept-level earliest-top-10 entry; some individual rows nevertheless contribute to use-position pass@10 = 0.415 | `scope` | layer 9, chiefly the `use` read; binding deltas +7.645 and +7.637 in the two value arms |
 | DeepSeek-Coder 6.7B | `value` and `variable` first enter at layer 11; `local` at layer 13; `global` at layer 14 — all at `use` | `global` | layer 20 at `use`; binding deltas −9.199 and −9.040 |
-| StarCoder2-3B | not determined | concept panel not run | — |
+| StarCoder2-3B | `variable` at L10 and `value` at L18 at `use`; `value` at L16 at `call` | `scoped` (largest); `bound` (mid-network example) | `use`: L28 +6.727/+6.657 (identity anchor); L14 −3.723/−3.740 |
 
 Thus, the strongest 1.3B claim is **not** “`scope` was a top-10 prediction.” It
 is that the predeclared `scope` score changed with the binding in both crossed
 arms. For 6.7B there is also direct top-10 vocabulary evidence at the use token,
 but the strongest controlled contrast occurs later and uses `global`. No J-lens
 binding-concept top-10 entries were recorded at `post_use`, `call`, or `answer`
-for these two completed panels under the concept-level threshold-entry summary.
+for the two DeepSeek panels under the concept-level threshold-entry summary.
+StarCoder2 adds top-10 entries for `variable` and `value`; these word concepts
+are separate from the actual runtime answer literal.
 
 The sign of a binding delta is arbitrary with respect to the names “inner” and
 “outer”; consistency across the two value arms matters, not whether the number
@@ -768,26 +787,28 @@ using predeclared concept sets, both crossed value assignments, matched generic
 code words, positional/action confounds, and frequency/size-matched random word
 sets.
 
-The two completed DeepSeek panels support such an abstract vocabulary signal:
+All three completed panels support such a vocabulary signal:
 
 | model | J-lens use-position binding pass@10 | clearest crossed J-lens concept |
 |---|---:|---|
 | DeepSeek-Coder 1.3B | 0.415 | `scope`, L9: +7.645 / +7.637 across the two value arms |
 | DeepSeek-Coder 6.7B | 0.938 | `global`, L20: −9.199 / −9.040 across the two value arms |
+| StarCoder2-3B | 0.737 | `bound`, L14: −3.723 / −3.740; mid-network example |
 
 In each case the concept changes with the binding in both value assignments,
 while the difference between value assignments contains zero. In plain terms:
 the word-level signal follows which definition is active, not whether the
-literal happens to be `a` or `b`. R-lens reproduces the same candidates closely
-and is sometimes numerically stronger. The logit lens also shows related
+literal happens to be `a` or `b`. On DeepSeek, R-lens reproduces the same
+candidates closely and is sometimes numerically stronger. StarCoder2 R-lens also passes, with
+`inactive` at L11 (+7.366/+7.463) as an example. The logit lens also shows related
 effects, so this is evidence for vocabulary alignment, not evidence that
 Jacobian transport uniquely discovers it.
 
 This positive semantic-concept result does not contradict the negative value
 result. Together they say that the model can expose an abstract signal related
-to binding before it exposes the concrete answer token. StarCoder2 does not yet
-have this semantic-concept panel, so the concept result is scoped to the two
-DeepSeek models. Because the strongest named word differs across model sizes,
+to binding before it exposes the concrete answer token. StarCoder2 now extends
+this family-level result across architectures. Because the strongest named
+word differs across models,
 the replicated claim is at the **binding-concept family** level, not that every
 model internally uses one universal word such as `scope`.
 
@@ -797,8 +818,8 @@ The complete lens result is mixed and informative, in the intended inferential
 order:
 
 1. The earlier DAS result independently establishes causal use.
-2. J-lens reveals binding-related vocabulary signals in the two completed
-   DeepSeek panels, addressing what the used representation may verbalize.
+2. J-lens reveals binding-related vocabulary signals in all three completed
+   model panels, addressing what the used representation may verbalize.
 3. As a secondary contrast, J-lens works technically and reads the concrete
    value perfectly at emission but not generally mid-network.
 4. Its value directions have little or no special causal purchase mid-network
@@ -846,9 +867,9 @@ assignments is important: the signal follows binding structure, not which
 concrete value happens to be returned. The R-lens reproduces the result, often
 with a somewhat larger contrast, and the logit lens also carries part of it.
 Therefore the positive is a family-level binding-vocabulary signal, not a claim
-that J-lens uniquely discovers one canonical word. StarCoder2 has no completed
-semantic-concept panel, so cross-architecture replication is still absent for
-this particular finding.
+that J-lens uniquely discovers one canonical word. StarCoder2 now supplies
+cross-architecture family-level replication, including `bound` at L14
+(−3.723/−3.740). This is not replication of one identical word and layer.
 
 **Fifth, the secondary concrete-value test is negative before emission.**
 J-lens recovers values perfectly at emission, establishing a working positive
@@ -863,7 +884,7 @@ The strongest conclusion is therefore deliberately narrow:
 > interference, and is causally read from a rank-1 component at the use site,
 > while the published J-lens does not surface the needed concrete value as a
 > mid-network verbalizable token. It does surface controlled binding-related
-> vocabulary in two DeepSeek models; the R-lens supports both conclusions.
+> vocabulary in all three models; the R-lens supports both conclusions.
 
 These clauses are complementary, not contradictory. The concrete-value J-lens
 null is a null for that published linear readout, not evidence that binding is absent;

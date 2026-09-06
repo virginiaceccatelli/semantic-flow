@@ -267,7 +267,8 @@ random concepts, and `earlier`/`later`, `kept`/`replaced` confound diagnostics
 control lexical alternatives. Both completed DeepSeek panels pass: J-lens
 selects `scope` at L9 on 1.3B and `global` at L20 on 6.7B, with nearly identical
 contrasts across crossed value assignments. R-lens replicates the family-level
-signal. StarCoder2 remains unmeasured for this panel.
+signal. StarCoder2 now passes too: a mid-network J-lens example is `bound`
+at L14 (−3.723/−3.740), extending the family-level result across architectures.
 
 **DAS answer-only control.** The competing explanation “DAS is merely an output-token push” is tested by training a separate rank-1 answer actuator at the same layer, with the same optimiser, steps, split and per-row edit norm as binding DAS, but without donor binding states. Its `a→b` orientation is frozen before the crossed `b→a` arm is read. It succeeds on the fitted arm and attenuates on the crossed arm, whereas binding DAS remains perfect. Lens directions are optional descriptive diagnostics and do not gate this causal claim.
 
@@ -305,7 +306,7 @@ consequence of capability and architecture gates rather than missing rows:
 | Perturbation transfer | reported | reported | reported | same frozen-probe protocol |
 | DAS binding interchange | capability result only | **causal claim** | **causal claim** | answer behavior and intervention gates must pass |
 | J-lens / R-lens | **gated result** | **gated result** | **gated result** | full-vocabulary readout on all three models; paper-minimal StarCoder2 sensitivity arm |
-| semantic-concept panel | **supported** | **supported** | not run | binding-vocabulary family signal; separate from concrete-value recovery |
+| semantic-concept panel | **supported** | **supported** | **supported** | binding-vocabulary family signal; separate from concrete-value recovery |
 | DAS answer-only control | not claim-bearing | **passed** | **passed** | matched trained actuator works on fitted arm and attenuates when answer direction reverses |
 
 ### 5.2 Probes and surface controls
@@ -486,7 +487,10 @@ The panel is positive on DeepSeek 1.3B and 6.7B. J-lens's clearest controlled
 contrasts are `scope` at L9 (+7.645/+7.637 across the crossed value arms) and
 `global` at L20 (-9.199/-9.040). Thus binding-related vocabulary aligns with the
 use-site state independently of which concrete value is active. R-lens
-replicates this family-level result; StarCoder2 has not completed this panel.
+replicates this family-level result. StarCoder2 now supplies a third positive
+panel: `bound` at L14 changes by −3.723/−3.740, and the strongest qualifying
+use contrast is `scoped` at the L28 identity anchor (+6.727/+6.657).
+Its logit lens also passes, so the finding is not unique to Jacobian transport.
 
 As a secondary contrast, across the use token, following token, and call site, the required
 program value is essentially absent from the top ten; at the answer position,
@@ -509,7 +513,7 @@ than a second headline study.
 | Representation | Pass | binding is linearly recoverable above exact surface/input floors | that the model uses it |
 | Perturbation | Mixed | transfer is robust to many surface changes; fragile to scope and flattened flow | absence of every alternative encoding |
 | Causal use | Pass | rank-1 interchange controls the answer according to binding | causal use at every layer, site, or program family |
-| Published J-lens workspace | Mixed | concrete value appears only at emission; controlled binding vocabulary appears in two DeepSeek panels; R-lens replicates | a general concrete-value workspace or a unique J-only code |
+| Published J-lens workspace | Mixed | concrete value appears only at emission; controlled binding vocabulary appears in all three panels; R-lens replicates | a general concrete-value workspace or a unique J-only code |
 
 ## 7. Discussion
 

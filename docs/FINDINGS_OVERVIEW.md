@@ -19,7 +19,7 @@ the answer follows the installed binding
         ↓
 the published J-lens asks whether the causally used state verbalizes binding language
         ↓
-binding vocabulary surfaces in two DeepSeek panels; the concrete value does not surface before emission
+binding vocabulary surfaces in all three model panels; the concrete value does not surface before emission
 ```
 
 The earlier cotangent-lens and conserving-cotangent-lens tracks, including E16
@@ -125,13 +125,14 @@ The R-lens supporting study has modest local improvements over J but no
 consistent advantage over the logit lens. A paper-minimal StarCoder2 fit
 omitting the unpublished LayerNorm analogue leaves the conclusion unchanged.
 
-The binding-language panel is positive on both completed DeepSeek models.
+The binding-language panel is positive on all three models.
 J-lens distinguishes the crossed binding arms with `scope` at layer 9
 on 1.3B and `global` at layer 20 on 6.7B, while remaining stable across the two
 value assignments. R-lens closely replicates this. Because the word differs by
 model and logit-lens directions also carry some signal, the supported claim is
 a binding-vocabulary-family signal, not a unique J-lens word code. StarCoder2
-has no completed concept panel.
+adds `bound` at L14 (−3.723/−3.740 across value arms) and use-position best
+pass@10 = 0.737; R-lens and logit lens also pass the contrast criterion.
 
 These models represent and causally use binding according to the probe and DAS
 evidence, but the published J-space readout does not expose the needed value as a
@@ -146,7 +147,7 @@ The strongest supported statement is:
 > is causally read from a rank-1 component at the use site, while the published
 > J-lens does not surface the needed concrete values during use and its
 > transport does not consistently improve on the logit lens, although it does
-> surface controlled binding-related vocabulary in two DeepSeek models. R-lens
+> surface controlled binding-related vocabulary in all three models. R-lens
 > independently supports this pattern.
 
 The concrete-value J-lens null is specific to that published linear,
