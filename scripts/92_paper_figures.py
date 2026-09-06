@@ -249,22 +249,17 @@ def fig4():
     rsc = bsc.set_index("concept").ratio
     r13 = b13.set_index("concept").ratio
     r67 = b67.set_index("concept").ratio
-    # Tokenizer availability differs; retain the union so StarCoder-only
-    # single-token concepts are not silently dropped.
-    words = list(r67.sort_values().index)
-    words += sorted((set(r13.index) | set(rsc.index)) - set(words))
+    # Only include words available in all three tokenizers; words that are
+    # n/a (multi-token in at least one model) are excluded from the figure.
+    common = set(r13.index) & set(r67.index) & set(rsc.index)
+    words = [w for w in r67.sort_values().index if w in common]
     ys = np.arange(len(words))
-    ax2.barh(ys, [r67.get(w, np.nan) for w in words], 0.25,
+    ax2.barh(ys, [r67[w] for w in words], 0.25,
              color=CB["p2"], label="DeepSeek-Coder 6.7B")
-    ax2.barh(ys - 0.27, [r13.get(w, np.nan) for w in words], 0.25,
+    ax2.barh(ys - 0.27, [r13[w] for w in words], 0.25,
              color=CB["p1"], label="DeepSeek-Coder 1.3B")
-    ax2.barh(ys + 0.27, [rsc.get(w, np.nan) for w in words], 0.25,
+    ax2.barh(ys + 0.27, [rsc[w] for w in words], 0.25,
              color=CB["p3"], label="StarCoder2-3B")
-    # Missing spellings are unavailable, not measured zeroes.
-    for ratios, offset in ((r13, -0.27), (r67, 0.0), (rsc, 0.27)):
-        for i, word in enumerate(words):
-            if word not in ratios.index:
-                ax2.text(0.05, i + offset, "n/a", fontsize=5.5, va="center")
     ax2.axvline(1.0, color=CB["ink"], lw=1.1)
     ax2.set_yticks(ys)
     ax2.set_yticklabels([f"\\texttt{{{w}}}".replace("\\texttt{", "").replace("}", "")
