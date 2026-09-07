@@ -1,8 +1,4 @@
-# cotangent lens validation — deepseek-coder-6.7b
-
-## What this experiment asks
-
-This table validates the cotangent lens approximation by comparing its prediction with the model’s actual downstream change. Treat it as an instrument check: strong agreement makes later cotangent lens measurements readable, but is not itself evidence for a semantic representation.
+# J-lens validation — deepseek-coder-6.7b
 
 | check                |   layer | lens   |    top1 |     mrr |   n |   agree_model |   agree_truth |
 |:---------------------|--------:|:-------|--------:|--------:|----:|--------------:|--------------:|

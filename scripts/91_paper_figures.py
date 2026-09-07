@@ -88,7 +88,10 @@ def context_degradation(model: str) -> None:
     The claim is the spread between inert filler and scope shadowing at matched
     length, so those two are coloured and the intermediate conditions are grey.
     """
+    from src.analysis.tables import context_all_pairs
+
     df = pd.read_csv(TABLES / f"context_degradation_deepseek-coder-{model}.csv")
+    df = context_all_pairs(df)
     df = df[df["task"] == "binding"]
     m = (df.groupby(["filler_type", "filler_target"])["accuracy"]
            .mean().reset_index())

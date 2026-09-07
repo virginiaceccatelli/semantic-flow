@@ -153,14 +153,16 @@ def _static_probe_assets(csv: Path):
 
 
 def _context_assets(csv: Path):
-    from src.analysis.tables import context_summary, df_to_markdown
+    from src.analysis.tables import context_all_pairs, context_summary, df_to_markdown
 
     tag = csv.stem.replace("context_degradation_", "")
     df = pd.read_csv(csv)
     df_to_markdown(context_summary(df), MD / f"{csv.stem}_summary.md",
                    title=f"Context degradation — {tag}")
 
-    for task, task_df in df.groupby("task"):
+    # Figures below average over layers; restrict to the all-pairs rows so the
+    # per-stratum rows do not silently enter the mean.
+    for task, task_df in context_all_pairs(df).groupby("task"):
         # accuracy vs filler size, one line per filler type (mean over layers)
         m = (task_df.groupby(["filler_type", "filler_target"])["accuracy"]
                     .mean().reset_index())

@@ -117,7 +117,9 @@ def fig1():
 def fig2():
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6.9, 2.5))
 
-    d = pd.read_csv(TAB / "context_degradation_deepseek-coder-6.7b.csv")
+    from src.analysis.tables import context_all_pairs
+
+    d = context_all_pairs(pd.read_csv(TAB / "context_degradation_deepseek-coder-6.7b.csv"))
     d = d[d.task == "binding"]
     order = ["comment_prose", "dead_code", "lexical_decoy", "competing_update",
              "scope_shadow"]

@@ -92,9 +92,22 @@ def surface_baseline_table(df: pd.DataFrame) -> pd.DataFrame:
     return agg.merge(strat, on="task", how="left")
 
 
+def context_all_pairs(df: pd.DataFrame) -> pd.DataFrame:
+    """The all-pairs rows of a stage-30 table, for consumers that predate the
+    stratum column.
+
+    Stage 30 emits one row per stratum plus an "all_pairs" row reproducing the
+    original aggregate. Averaging without this filter silently mixes the strata
+    together. Tables written before the column existed are passed through."""
+    if "stratum" not in df.columns:
+        return df
+    return df[df["stratum"] == "all_pairs"]
+
+
 def context_summary(df: pd.DataFrame) -> pd.DataFrame:
     """Accuracy by (task, filler_type, filler_target), averaged over layers."""
-    return (df.groupby(["task", "filler_type", "filler_target"])
+    return (context_all_pairs(df)
+              .groupby(["task", "filler_type", "filler_target"])
               .agg(accuracy=("accuracy", "mean"), n=("n", "sum"))
               .reset_index())
 
