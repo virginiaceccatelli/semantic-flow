@@ -250,6 +250,29 @@ python scripts/30_context_degradation.py \
 Frozen binding/def–use probes evaluated — never retrained — on the filler
 variants, with ground truth recomputed per variant.
 
+Output rows carry a `stratum` column. `all_pairs` is the average over every
+identifier pair built from the variant — the historical number, unchanged.
+`tracked_edge` is the single def–use edge the variant was built around, one
+pair per variant at every filler size; it is the like-for-like comparison,
+because the `all_pairs` population both grows and changes composition as the
+filler grows. Under `competing_update` the filler genuinely rebinds the
+variable, so `tracked_edge` carries label 0 (the stale definition) and a
+companion `tracked_active` row carries label 1 (the definition that now
+reaches the use) — together they separate "the probe still points at the stale
+definition" from "the probe follows the update".
+
+### Stage 30a — backfill tracked-edge positions (CPU)
+
+Only needed for a context store extracted before those metadata fields
+existed. The generator is deterministic, so the positions are recovered and
+written into the store's `index.json`; no activation is re-extracted. Sources
+are compared byte-for-byte before anything is written.
+
+```bash
+python scripts/30a_backfill_tracked_metadata.py \
+    --activations results/activations/deepseek-coder-1.3b/context
+```
+
 ## Stage 31 — obfuscation robustness, R4 (CPU)
 
 ```bash

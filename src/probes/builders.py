@@ -27,7 +27,7 @@ from typing import Optional, Sequence
 import numpy as np
 
 from src.data.alignment import TokenAligner
-from src.graphs.dfg_extractor import DefUseExtractor, VarEvent
+from src.graphs.dfg_extractor import DefUseExtractor, VarEvent, _ScopeTracker
 
 # ── Record types ──────────────────────────────────────────────────────────────
 
@@ -49,9 +49,14 @@ class PairRecord:
     label: int
     stratum: str            # "positive" | "same_name_diff_binding" | "diff_name"
                             # | "distance_matched" | "context_matched"
+                            # | "tracked_edge" | "tracked_active"  (E5 only)
     distance: int = 0
     name_i: str = ""
     name_j: str = ""
+    extra: bool = False     # True for records ADDED alongside the natural
+                            # all-pairs population rather than drawn from it
+                            # (E5 tracked strata). Aggregates that must stay
+                            # comparable with earlier runs skip these.
 
 
 # ── Feature assembly ──────────────────────────────────────────────────────────
@@ -217,6 +222,101 @@ def _matched_event_pair(ev, metadata: Optional[dict]) -> Optional[tuple[int, int
     return di, ui
 
 
+def _tracked_event_pair(ev, metadata: Optional[dict]) -> Optional[tuple[int, int]]:
+    """Locate the tracked def-use edge of a context-degradation variant
+    (generator.generate_context_batch) from its metadata.
+
+    The metadata records the edge's position *in this variant* — the use line
+    already carries the filler line-shift — so the lookup is an exact match on
+    (name, kind, line, col) and never depends on how many other occurrences of
+    the variable the filler introduced."""
+    md = metadata or {}
+    var = md.get("tracked_var")
+    if var is None or "tracked_def_line" not in md or "tracked_use_line" not in md:
+        return None
+    d_key = (var, "def", md["tracked_def_line"], md.get("tracked_def_col"))
+    u_key = (var, "use", md["tracked_use_line"], md.get("tracked_use_col"))
+    di = next((k for k, e in enumerate(ev)
+               if (e.name, e.kind, e.line, e.col) == d_key), None)
+    ui = next((k for k, e in enumerate(ev)
+               if (e.name, e.kind, e.line, e.col) == u_key), None)
+    if di is None or ui is None:
+        return None
+    return di, ui
+
+
+def _stale_def_event(source: str, name: str, line: int, col) -> Optional[VarEvent]:
+    """Recover a definition that reaches no use.
+
+    resolve_events builds its event list out of def-use edges, so a definition
+    killed before any use of it — which is exactly what a competing_update
+    filler does to the tracked variable — is not an event node at all. The
+    scope tracker still sees it, so go back to that for its span."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    tracker = _ScopeTracker()
+    tracker.visit(tree)
+    return next((e for e in tracker.events
+                 if e.kind == "def" and e.name == name
+                 and e.line == line and e.col == col), None)
+
+
+def _tracked_extra_records(
+    source: str,
+    aligner: TokenAligner,
+    resolved: ResolvedEvents,
+    metadata: Optional[dict],
+    tracked: Optional[tuple[int, int]],
+    group: str,
+) -> list[PairRecord]:
+    """E5 tracked-edge records that the all-pairs population cannot supply.
+
+    Under competing_update the inserted assignments kill the tracked
+    definition, so (tracked_def, tracked_use) is not among the pairs at all
+    and has to be rebuilt from the killed definition's own token anchor
+    (label 0 — binding_ids resolves the use elsewhere). The same condition is
+    also the one that needs "tracked_active": the tracked use paired with the
+    definition that now actually reaches it (label 1). Together they separate
+    "probe still points at the stale definition" from "probe follows the
+    updated one".
+
+    Every record here is flagged extra=True: these are additions to the
+    population, not relabellings of it."""
+    md = metadata or {}
+    if "tracked_var" not in md or "tracked_use_line" not in md:
+        return []
+    ev, anchors, bid = resolved.events, resolved.anchors, resolved.binding_ids
+    var = md["tracked_var"]
+    u_key = (var, "use", md["tracked_use_line"], md.get("tracked_use_col"))
+    ui = next((k for k, e in enumerate(ev)
+               if (e.name, e.kind, e.line, e.col) == u_key), None)
+    if ui is None:
+        return []
+
+    def _mk(a_def: int, a_use: int, label: int, stratum: str) -> PairRecord:
+        i, j = (a_def, a_use) if a_def <= a_use else (a_use, a_def)
+        return PairRecord(
+            example_id=group, pos_i=i, pos_j=j, label=label, stratum=stratum,
+            distance=abs(a_use - a_def), name_i=var, name_j=var, extra=True,
+        )
+
+    out: list[PairRecord] = []
+    if tracked is None and "tracked_def_line" in md:
+        stale = _stale_def_event(source, var, md["tracked_def_line"],
+                                 md.get("tracked_def_col"))
+        aligned = aligner.align_var_event(stale) if stale is not None else None
+        if aligned is not None and aligned.anchor != anchors[ui]:
+            out.append(_mk(aligned.anchor, anchors[ui], 0, "tracked_edge"))
+
+    active = bid[ui]
+    tracked_di = tracked[0] if tracked is not None else None
+    if active != -1 and active != tracked_di and anchors[active] != anchors[ui]:
+        out.append(_mk(anchors[active], anchors[ui], 1, "tracked_active"))
+    return out
+
+
 def _pair_group(example_id: str, metadata: Optional[dict]) -> str:
     """CV group id: both programs of a context-matched pair share a group so
     grouped CV never splits a pair across train/test."""
@@ -243,6 +343,21 @@ def build_binding_records(
                                windows and distance identical across the two
                                programs, label flipped by one rebinding token
                                (positives and negatives both carry this stratum)
+      tracked_edge           — the one def-use edge a context-degradation
+                               variant was built around (E5). It overrides
+                               "positive" / "same_name_diff_binding" on the
+                               record that pair would otherwise have carried;
+                               the label stays whatever binding_ids recomputes
+                               from the variant's own source.
+      tracked_active         — competing_update only: the tracked use paired
+                               with the definition that actually reaches it
+                               after the inserted rebindings (label 1).
+
+    tracked_active records, and tracked_edge records under competing_update
+    (where the killed definition is not an event node and the pair has to be
+    rebuilt), are flagged extra=True: they are ADDED to the population rather
+    than relabelled within it, so any aggregate meant to match a pre-stratum
+    run must skip records with extra=True.
     """
     resolved = resolve_events(source, aligner)
     if resolved is None or len(resolved.events) < 2:
@@ -253,6 +368,7 @@ def build_binding_records(
     bid = resolved.binding_ids
     n = len(ev)
     matched = _matched_event_pair(ev, metadata)
+    tracked = _tracked_event_pair(ev, metadata)
     group = _pair_group(example_id, metadata)
 
     def _rec(i: int, j: int, label: int, stratum: str) -> PairRecord:
@@ -271,9 +387,13 @@ def build_binding_records(
                 continue
             if bid[i] == bid[j]:
                 stratum = "context_matched" if (i, j) == matched else "positive"
+                if (i, j) == tracked:
+                    stratum = "tracked_edge"
                 positives.append(_rec(i, j, 1, stratum))
             elif ev[i].name == ev[j].name:
                 stratum = "context_matched" if (i, j) == matched else "same_name_diff_binding"
+                if (i, j) == tracked:
+                    stratum = "tracked_edge"
                 hard_negs.append(_rec(i, j, 0, stratum))
             else:
                 diff_negs.append(_rec(i, j, 0, "diff_name"))
@@ -305,6 +425,11 @@ def build_binding_records(
         if bid[i] != -1 and bid[j] != -1 and bid[i] != bid[j]:
             dm.append(_rec(i, j, 0, "distance_matched"))
     records += dm
+
+    # Appended last so they perturb neither the easy-negative cap nor the
+    # rng stream the distance-matched sampling above consumes.
+    records += _tracked_extra_records(source, aligner, resolved, metadata,
+                                      tracked, group)
     return records
 
 

@@ -674,7 +674,10 @@ class SyntheticCodeGenerator:
         first def-use edge's definition and use.
 
         Each variant's metadata records: base_example_id, filler_type,
-        filler_tokens (actual, measured), filler_target, tracked_var.
+        filler_tokens (actual, measured), filler_target, tracked_var, and the
+        tracked edge's position in the variant (tracked_def_line/col,
+        tracked_use_line/col) so downstream analysis can score the one pair
+        whose ground truth the condition was designed to hold fixed.
         """
         from src.graphs.dfg_extractor import DefUseExtractor
 
@@ -709,9 +712,12 @@ class SyntheticCodeGenerator:
                     if size == 0:
                         variant_source = base.source
                         actual = 0
+                        n_filler_lines = 0
                     else:
                         filler_text, actual = self.make_filler(ftype, var, tokenizer, size)
-                        new_lines = lines[:insert_at] + filler_text.splitlines() + lines[insert_at:]
+                        filler_lines = filler_text.splitlines()
+                        n_filler_lines = len(filler_lines)
+                        new_lines = lines[:insert_at] + filler_lines + lines[insert_at:]
                         variant_source = "\n".join(new_lines)
                     variants.append(ProbeExample(
                         example_id=f"{base.example_id}_{ftype}_{size}",
@@ -723,6 +729,14 @@ class SyntheticCodeGenerator:
                             "filler_target": size,
                             "filler_tokens": actual,
                             "tracked_var": var,
+                            # Position of the tracked def-use edge *in this
+                            # variant*. The definition sits above insert_at
+                            # (= use.line - 1) so its line is unshifted; the
+                            # use is pushed down by the inserted lines.
+                            "tracked_def_line": edge.definition.line,
+                            "tracked_def_col": edge.definition.col,
+                            "tracked_use_line": edge.use.line + n_filler_lines,
+                            "tracked_use_col": edge.use.col,
                         },
                     ))
         return variants

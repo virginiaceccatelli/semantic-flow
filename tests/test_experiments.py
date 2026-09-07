@@ -68,6 +68,39 @@ class TestContextBatch:
         for v in gen.generate_context_batch(TOK, n_base=2, filler_sizes=[0, 100], seed=0):
             ast.parse(v.source)
 
+    def test_tracked_edge_positions_survive_the_line_shift(self):
+        """The tracked def/use must resolve in each variant's OWN source: the
+        definition unshifted, the use pushed down by exactly the filler."""
+        from src.graphs.dfg_extractor import DefUseExtractor
+
+        gen = SyntheticCodeGenerator(seed=42)
+        variants = gen.generate_context_batch(TOK, n_base=3,
+                                              filler_sizes=[0, 100, 500], seed=0)
+        assert variants
+        base_use_line, base_def_line = {}, {}
+        base_lines = {}
+        for v in variants:
+            md = v.metadata
+            if md["filler_target"] == 0:
+                base_use_line[md["base_example_id"]] = md["tracked_use_line"]
+                base_def_line[md["base_example_id"]] = md["tracked_def_line"]
+                base_lines[md["base_example_id"]] = len(v.source.splitlines())
+
+        for v in variants:
+            md = v.metadata
+            b = md["base_example_id"]
+            shift = len(v.source.splitlines()) - base_lines[b]
+            assert md["tracked_def_line"] == base_def_line[b]
+            assert md["tracked_use_line"] == base_use_line[b] + shift
+
+            spans = set()
+            for e in DefUseExtractor().extract(v.source).edges:
+                for ev in (e.definition, e.use):
+                    spans.add((ev.name, ev.kind, ev.line, ev.col))
+            use = (md["tracked_var"], "use",
+                   md["tracked_use_line"], md["tracked_use_col"])
+            assert use in spans, f"tracked use not found in {v.example_id}"
+
 
 class TestTaintLineLabels:
     def test_labels_flip_after_sanitizer(self):

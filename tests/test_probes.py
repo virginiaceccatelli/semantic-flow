@@ -147,6 +147,74 @@ class TestBuilders:
         assert labels_by_stratum["positive"] == 1
         assert labels_by_stratum["same_name_diff_binding"] == 0
 
+    def _ctx_meta(self, var, dl, dc, ul, uc):
+        return {"type": "context_variant", "tracked_var": var,
+                "tracked_def_line": dl, "tracked_def_col": dc,
+                "tracked_use_line": ul, "tracked_use_col": uc}
+
+    def test_tracked_edge_relabels_exactly_one_pair(self):
+        """A filler that preserves the edge: the tracked pair is one of the
+        ordinary positives, relabelled — not added."""
+        src = ("def func():\n"
+               "    a = 67\n"
+               "    b = 14\n"
+               "    c = 39\n"
+               "    # filler\n"
+               "    b = b + a\n"
+               "    return c\n")
+        md = self._ctx_meta("b", 3, 4, 6, 8)
+        recs = build_binding_records(src, self._aligner(src), "ex0", self.rng,
+                                     metadata=md)
+        tracked = [r for r in recs if r.stratum == "tracked_edge"]
+        assert len(tracked) == 1
+        assert tracked[0].label == 1                 # the edge is preserved
+        assert not tracked[0].extra                  # relabelled, not added
+        assert not any(r.stratum == "tracked_active" for r in recs)
+
+    def test_tracked_edge_survives_a_killed_definition(self):
+        """competing_update kills the tracked definition, so it reaches no use
+        and is in no def-use edge. The pair must still be scored (label 0),
+        alongside the definition that now actually reaches the use."""
+        src = ("def func():\n"
+               "    a = 67\n"
+               "    b = 14\n"
+               "    c = 39\n"
+               "    b = 0\n"
+               "    b = b + a\n"
+               "    return c\n")
+        md = self._ctx_meta("b", 3, 4, 6, 8)
+        recs = build_binding_records(src, self._aligner(src), "ex0", self.rng,
+                                     metadata=md)
+        tracked = [r for r in recs if r.stratum == "tracked_edge"]
+        active = [r for r in recs if r.stratum == "tracked_active"]
+        assert len(tracked) == 1 and tracked[0].label == 0
+        assert len(active) == 1 and active[0].label == 1
+        assert all(r.extra for r in tracked + active)
+        # they are different definitions of the same use
+        assert tracked[0].pos_i != active[0].pos_i
+        assert tracked[0].pos_j == active[0].pos_j
+
+    def test_tracked_strata_leave_the_all_pairs_population_alone(self):
+        """Records not flagged extra must be identical with and without the
+        tracked metadata — that is what keeps all_pairs bit-identical."""
+        src = ("def func():\n"
+               "    a = 67\n"
+               "    b = 14\n"
+               "    b = 0\n"
+               "    b = b + a\n"
+               "    return b\n")
+        md = self._ctx_meta("b", 3, 4, 5, 8)
+        import random as _r
+        with_md = build_binding_records(src, self._aligner(src), "ex0",
+                                        _r.Random(0), metadata=md)
+        without = build_binding_records(src, self._aligner(src), "ex0",
+                                        _r.Random(0), metadata=None)
+        kept = [r for r in with_md if not r.extra]
+        assert len(kept) == len(without)
+        assert all((a.pos_i, a.pos_j, a.label) == (b.pos_i, b.pos_j, b.label)
+                   for a, b in zip(kept, without))
+        assert not any(r.stratum.startswith("tracked") for r in without)
+
     def test_defuse_positive_pairs_are_def_then_use(self):
         src = "def func():\n    a = 1\n    b = a + 2\n    return b\n"
         recs = build_defuse_records(src, self._aligner(src), "ex0", self.rng)
