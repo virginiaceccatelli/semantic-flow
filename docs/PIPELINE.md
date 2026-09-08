@@ -1272,3 +1272,12 @@ Stages 201–206 do not need rerunning for this update. The raw
 the cluster for future item-level audits or re-aggregation. The optional
 StarCoder2 paper-minimal **concept** panel has not been supplied; the existing
 paper-minimal value readout does not establish concept-panel sensitivity.
+
+## Security monitor extension
+
+The separate [security-monitor pipeline](SECURITY_MONITOR.md) uses
+`scripts/210_security_monitor.py` for generated instrument development, real-code
+import, probe/J-lens extraction, error calibration and frozen evaluation.
+`jobs/security_monitor.csh` runs the development stages with the existing cluster
+environment and validated published J-lens. It does not launch a new lens fit or
+DAS repair, and synthetic reports are explicitly not final project results.

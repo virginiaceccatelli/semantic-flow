@@ -185,6 +185,18 @@ unique or recover a complete attention mechanism. A J-lens value null means
 the published token-indexed linear readout does not surface the value; it does
 not contradict the probe and DAS evidence that binding is represented and used.
 
+## Security monitoring extension
+
+The new [security monitor](docs/SECURITY_MONITOR.md) develops probe + published
+J-lens error predictors on controlled Python functions and applies them unchanged
+to reviewed real-code examples. Generated results are instrument development;
+the defining evaluation is held-out real code. The shared importer, extraction,
+calibration, frozen evaluation and inspection outputs are implemented. New DAS
+repair experiments and curated real-code results remain pending.
+
+Start on the cluster with `csh jobs/security_monitor.csh`; it reuses the existing
+validated J-lens. See the guide for the exact logged job and real-code commands.
+
 ## Repository map
 
 ```text
