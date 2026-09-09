@@ -38,6 +38,7 @@ def prepare(a):
     assert len(shuffled) >= 3, 'Need at least three development problems'
     val = set(shuffled[:max(1, int(len(shuffled) * .2))])
     rows = []; seen = {}; conflicts = set()
+    invalid_code = {s: {'0': 0, '1': 0} for s in ['train', 'val', 'test']}
     for source, problems in sources.items():
         for problem in problems:
             tid = str(problem['task_id'])
@@ -45,9 +46,13 @@ def prepare(a):
             assert isinstance(problem.get('description'), str) and problem['description'].strip()
             for label, key in [(1, 'correct_submissions'), (0, 'incorrect_submissions')]:
                 candidates = [s for s in problem[key] if s['language'] == a.language]
+                valid = [s for s in candidates
+                         if isinstance(s.get('code'), str) and s['code'].strip()]
+                invalid_code[split][str(label)] += len(candidates) - len(valid)
+                candidates = valid
                 rng.shuffle(candidates)
                 for sub in candidates[:a.per_class]:
-                    code = sub['code']; assert isinstance(code, str) and code.strip()
+                    code = sub['code']
                     h = digest(' '.join(code.split()))
                     if h in seen:
                         conflicts.add(h)
@@ -62,8 +67,10 @@ def prepare(a):
     target = a.out / 'rows.jsonl'
     target.write_text(''.join(json.dumps(r) + '\n' for r in rows))
     write(a.out / 'prepare.json', dict(seed=a.seed, language=a.language,
+          invalid_code_skipped=invalid_code,
           duplicate_hashes_removed=len(conflicts), rows_hash=digest(target.read_text()),
           counts={s: sum(r['split'] == s for r in rows) for s in ['train','val','test']}))
+    print('Invalid code skipped (split / label): ' + json.dumps(invalid_code), flush=True)
 
 
 def model(a):

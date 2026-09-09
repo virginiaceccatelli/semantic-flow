@@ -33,3 +33,25 @@ def test_probe_selects_signal_layer(tmp_path):
     assert result['selected_layer']==1
     assert result['test']['auroc']==1
     assert np.load(tmp_path/'probe.npz')['w'][0]>0
+
+
+def test_invalid_code_filtered_before_sampling(tmp_path):
+    def problem(i):
+        submissions = lambda label: [
+            {'language': 'py3', 'code': value}
+            for value in [None, '', ' \n ', 17, f'print({i}, {label})']
+        ] + [{'language': 'py3'}]
+        return dict(task_id=str(i), description='task',
+                    correct_submissions=submissions(1), incorrect_submissions=submissions(0))
+    for name, ids in [('train', range(20)), ('test', range(20,25))]:
+        (tmp_path/name).write_text('\n'.join(json.dumps(problem(i)) for i in ids))
+    a = SimpleNamespace(train=tmp_path/'train', test=tmp_path/'test', out=tmp_path,
+                        seed=7, language='py3', per_class=1)
+    m.prepare(a)
+    rows = m.read(tmp_path/'rows.jsonl')
+    assert len(rows) == 50  # valid candidates still fill the cap
+    report = json.loads((tmp_path/'prepare.json').read_text())
+    assert sum(sum(v.values()) for v in report['invalid_code_skipped'].values()) == 250
+    first = (tmp_path/'rows.jsonl').read_text()
+    m.prepare(a)
+    assert first == (tmp_path/'rows.jsonl').read_text()
