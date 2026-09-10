@@ -76,33 +76,78 @@ def prepare(a):
 def model(a):
     import torch
     from src.workspace_lens.adapter import load_lens_model
-    return load_lens_model(a.model, device=a.device,
-                           dtype=torch.float32 if a.device == 'cpu' else torch.bfloat16)
+    # 'cuda' in the shared loader means automatic offloading. An explicit index
+    # requests the entire model on one GPU without changing other experiments.
+    device = 'cuda:0' if a.device == 'cuda' else a.device
+    result = load_lens_model(a.model, device=device,
+                            dtype=torch.float32 if device == 'cpu' else torch.bfloat16)
+    lm, hf, tok, info = result
+    devices = sorted({str(p.device) for p in hf.parameters()})
+    print(f'Model parameter devices: {devices}', flush=True)
+    if device.startswith('cuda') and devices != [str(torch.device(device))]:
+        raise RuntimeError(f'Expected all model parameters on {device}; got {devices}')
+    info['parameter_devices'] = devices
+    return result
 
 
 def extract(a):
     import numpy as np
     import torch
+    import time
     from jlens.hooks import ActivationRecorder
-    lm, _, _, info = model(a)
-    rows = read(a.out / 'rows.jsonl'); kept = []; states = []; dropped = []
-    layers = list(range(lm.n_layers))
-    for row in rows:
-        # Encode one beyond budget to detect truncation; never probe incomplete code.
-        ids = lm.encode(prompt(row), max_length=a.max_tokens + 1)
-        if ids.shape[1] > a.max_tokens:
-            dropped.append(row['id']); continue
-        with torch.no_grad(), ActivationRecorder(lm.layers, at=layers) as rec:
-            lm.forward(ids)
-            states.append(np.stack([rec.activations[l][0,-1].float().cpu().numpy() for l in layers]))
-        kept.append(row)
-        if len(kept) % 50 == 0: print(f'Extracted {len(kept)}', flush=True)
+    rows = read(a.out / 'rows.jsonl')
+    signature = dict(rows_hash=digest((a.out/'rows.jsonl').read_text()),
+                     model=a.model, device=a.device, max_tokens=a.max_tokens, version=2)
+    cache = a.out / 'extract_checkpoints'; cache.mkdir(exist_ok=True)
+    manifest = cache/'config.json'
+    if manifest.exists():
+        if json.loads(manifest.read_text()) != signature:
+            raise ValueError('Checkpoint configuration changed; use a new --out directory')
+    else:
+        write(manifest, signature)
+    kept = []; states = []; dropped = []; cursor = 0
+    for path in sorted(cache.glob('batch_*.npz')):
+        with np.load(path) as chunk:
+            if int(chunk['start']) != cursor:
+                raise ValueError(f'Noncontiguous checkpoint: {path}')
+            cursor = int(chunk['end'])
+            kept.extend(rows[int(i)] for i in chunk['indices'])
+            states.extend(chunk['x'])
+            dropped.extend(rows[int(i)]['id'] for i in chunk['dropped'])
+    print(f'Resuming at {cursor}/{len(rows)} examined; {len(kept)} retained; '
+          f'{len(dropped)} dropped', flush=True)
+    lm, hf, _, info = model(a)
+    hf.config.use_cache = False
+    layers = list(range(lm.n_layers)); started = time.monotonic(); initial = cursor
+    while cursor < len(rows):
+        end = min(cursor + 50, len(rows)); vectors = []; indices = []; skips = []
+        for i in range(cursor, end):
+            row = rows[i]
+            ids = lm.encode(prompt(row), max_length=a.max_tokens + 1)
+            if ids.shape[1] > a.max_tokens:
+                skips.append(i); continue
+            with torch.no_grad(), ActivationRecorder(lm.layers, at=layers) as rec:
+                lm.forward(ids)
+                vectors.append(np.stack([rec.activations[l][0,-1].float().cpu().numpy() for l in layers]))
+            indices.append(i)
+        array = np.stack(vectors) if vectors else np.empty((0, lm.n_layers, lm.d_model), dtype=np.float32)
+        path = cache/f'batch_{cursor:09d}.npz'
+        temporary = path.with_suffix('.tmp')
+        with temporary.open('wb') as handle:
+            np.savez(handle, start=cursor, end=end, indices=np.array(indices,dtype=int),
+                     dropped=np.array(skips,dtype=int), x=array)
+        temporary.replace(path)
+        states.extend(array); kept.extend(rows[i] for i in indices)
+        dropped.extend(rows[i]['id'] for i in skips); cursor = end
+        elapsed = time.monotonic()-started
+        print(f'Examined {cursor}/{len(rows)}; extracted {len(kept)}; dropped {len(dropped)}; '
+              f'{(cursor-initial)/max(elapsed, .001):.2f} programs/s; checkpoint saved', flush=True)
     assert kept, 'All prompts exceed token budget'
-    for s in ['train','val','test']:
-        assert {r['label'] for r in kept if r['split']==s} == {0,1}, f'{s} lacks both labels after length filtering'
+    for split in ['train','val','test']:
+        assert {r['label'] for r in kept if r['split']==split} == {0,1}, f'{split} lacks both labels after length filtering'
     np.savez_compressed(a.out / 'activations.npz', x=np.stack(states))
     write(a.out / 'extracted.json', dict(rows=kept, dropped=dropped, model=info,
-          max_tokens=a.max_tokens, rows_hash=digest((a.out/'rows.jsonl').read_text()),
+          max_tokens=a.max_tokens, rows_hash=signature['rows_hash'],
           site='zero-based block output, last token of fixed Assessment suffix'))
 
 

@@ -17,7 +17,7 @@ Download only the two records files in an environment already authenticated for 
 hf download exec-sem/codecontests-plus-execsem records/train.jsonl records/val.jsonl --repo-type dataset --local-dir data/execsem
 ```
 
-Run each command separately. Every command prints completion only after writing its artifacts; an exception identifies the failing stage. Use a new `--out` directory for each language, model, seed, or token-budget experiment. Defaults below use Python, two submissions per class per problem, and DeepSeek-Coder-1.3B. This is a pilot of up to roughly 16,000 submissions, not a tiny smoke run. Extraction currently holds activations in host RAM (roughly 3 GB at that size); the compressed archive and metadata must remain together.
+Run each command separately. Every command prints completion only after writing its artifacts; an exception identifies the failing stage. Use a new `--out` directory for each language, model, seed, or token-budget experiment. Defaults below use Python, two submissions per class per problem, and DeepSeek-Coder-1.3B. This is a pilot of up to roughly 16,000 submissions, not a tiny smoke run. Extraction checkpoints every 50 examined programs in `extract_checkpoints/` and resumes automatically with the same command. It prints actual model parameter devices and requires single-GPU placement for `--device cuda` (no automatic CPU offloading). Progress distinguishes examined, retained and dropped programs. Extraction currently holds activations in host RAM (roughly 3 GB at that size); the compressed archive and metadata must remain together.
 
 ```bash
 python scripts/220_execsem.py prepare --train data/execsem/records/train.jsonl --test data/execsem/records/val.jsonl

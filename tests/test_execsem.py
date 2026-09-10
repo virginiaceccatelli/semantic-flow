@@ -55,3 +55,38 @@ def test_invalid_code_filtered_before_sampling(tmp_path):
     first = (tmp_path/'rows.jsonl').read_text()
     m.prepare(a)
     assert first == (tmp_path/'rows.jsonl').read_text()
+
+
+def test_extraction_resumes_without_repeating_forwards(tmp_path, monkeypatch):
+    import torch
+    class Tiny:
+        n_layers = 2
+        d_model = 3
+        def __init__(self):
+            self.layers = [torch.nn.Identity(), torch.nn.Identity()]
+            self.calls = 0
+        def encode(self, text, max_length):
+            return torch.ones((1, 2), dtype=torch.long)
+        def forward(self, ids):
+            self.calls += 1
+            x = torch.ones((1, 2, 3)) * self.calls
+            for layer in self.layers:
+                x = layer(x)
+    lm = Tiny()
+    hf = SimpleNamespace(config=SimpleNamespace(use_cache=True))
+    monkeypatch.setattr(m, 'model', lambda a: (lm, hf, None, {'model':'tiny'}))
+    rows = [dict(id=str(i),task_id=str(i),split=s,label=y,description='task',
+                 language='py3',code='print(1)')
+            for i,(s,y) in enumerate((s,y) for s in ['train','val','test'] for y in [0,1])]
+    (tmp_path/'rows.jsonl').write_text('\n'.join(json.dumps(r) for r in rows))
+    a = SimpleNamespace(out=tmp_path,model='tiny',device='cpu',max_tokens=32)
+    m.extract(a)
+    expected = np.load(tmp_path/'activations.npz')['x'].copy()
+    assert lm.calls == 6
+    m.extract(a)
+    assert lm.calls == 6
+    np.testing.assert_array_equal(expected, np.load(tmp_path/'activations.npz')['x'])
+    a.max_tokens = 64
+    import pytest
+    with pytest.raises(ValueError, match='configuration changed'):
+        m.extract(a)
