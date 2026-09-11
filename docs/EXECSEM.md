@@ -99,3 +99,70 @@ Artifacts: `contrast_val.md` (group log-rank results),
 (all results, exclusions, unsupported words, source hash and bootstrap settings).
 Use `--out` for another run directory. Only run `--split test` after freezing
 validation hypotheses. Stage 221 does not implement random probe-direction controls.
+
+## Pairwise ranking and differential vocabulary (stage 222)
+
+Copy `scripts/222_execsem_ranking.py` alongside the current `220_execsem.py`.
+The existing activations are reused. Start on CPU:
+
+```bash
+.venv/bin/python scripts/222_execsem_ranking.py fit
+```
+
+Fits antisymmetric AC-WA logistic ranking objectives, without an intercept, with
+pair weights summing equally per problem. Feature scaling uses training pair
+second moments only. Layer and C are selected by validation problem-averaged
+ranking accuracy (ties score 0.5). `ranking_probe.json` includes the sweep,
+original probe validation ranking performance and a length/lines/word-count
+ranking baseline. The new ranking metric is not comparable to pooled AUROC.
+`ranking_probe.npz` stores the classifier covector, mean training problem AC-WA
+activation difference and training within-problem covariance-times-weight pattern.
+No full lexical baseline is included yet. The length baseline cannot rule out
+style or algorithm confounds.
+
+Next, on GPU:
+
+```bash
+.venv/bin/python scripts/222_execsem_ranking.py vocabulary --split val --lens results/workspace_lens/deepseek-coder-1.3b/j-lens
+cat results/execsem/pilot/ranking_vocab_val.md
+```
+
+Uses the ranking-selected layer (fails explicitly if the lens lacks it). For each
+submission it unembeds the actual normalized transported state, removes its
+vocabulary-wide mean logit, averages submissions within class, then subtracts WA
+from AC. It saves full-vocabulary differences per problem for J-lens, logit-lens,
+and their paired difference in `ranking_vocab_val.npz`. It discovers 20 positive
+and 20 negative tokens per readout on validation and freezes IDs in
+`ranking_vocab_discovery.json`. Bootstrap intervals and within-problem sign-flip
+null comparisons are pointwise. Validation discovery intervals/p-values are
+selection-biased and must not be treated as confirmatory significance. The null
+assumes exchangeability of the two class means within a problem. No multiple
+comparison correction is applied. This stage currently saves at completion,
+not resumably; it performs only unembedding on saved states, not transformer
+forwards. Avoid overwriting validation discovery after test inspection.
+
+The JSON also contains qualitative readouts of mean-difference and covariance
+patterns, distinct from actual-state contrasts. Normalizing a pattern and
+unembedding it is a heuristic, not a measured perturbation response.
+
+Algorithm panel: records per-problem/class J/logit ranks for supported spellings
+of sorting, search, graph, recursion, counting and other terms, with a flag for
+literal occurrence in any corresponding prompt. A shared algorithm can describe
+both AC and WA, so these absolute ranks remain separate from correctness
+contrasts. `merge` is not evidence for `merge sort`: unsupported multi-token names
+have empty token-ID lists and are not scored. There are no algorithm labels in
+the supplied schema. Evaluating recognition requires independent annotation of
+the algorithm implemented by each submission, and code-only/statement controls
+to distinguish computation from prompt echo. Flags alone do not resolve that.
+
+After freezing validation choices, optional exploratory test commands:
+
+```bash
+.venv/bin/python scripts/222_execsem_ranking.py evaluate_test
+.venv/bin/python scripts/222_execsem_ranking.py vocabulary --split test --lens results/workspace_lens/deepseek-coder-1.3b/j-lens
+```
+
+Test vocabulary uses the frozen validation token IDs. Since this test set has
+already been inspected in earlier experiments, new results are exploratory;
+strong confirmation needs fresh held-out problems. These stages establish
+associations and ranking performance, not causal semantic alignment.
