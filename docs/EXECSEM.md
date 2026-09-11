@@ -166,3 +166,54 @@ Test vocabulary uses the frozen validation token IDs. Since this test set has
 already been inspected in earlier experiments, new results are exploratory;
 strong confirmation needs fresh held-out problems. These stages establish
 associations and ranking performance, not causal semantic alignment.
+
+## Broad questioning/explanation/uncertainty panel (stage 223)
+
+The 664 entries in `configs/execsem_discourse_words.json` cover discovery seeds,
+questioning, explanation, debugging, uncertainty, certainty, neutral prose,
+generic code, unrelated words, question punctuation, neutral punctuation and
+multi-token phrases. This is broad hypothesis coverage, not exhaustive synonym
+coverage or a validated psychological lexicon. Groups may overlap; words such as
+`may` and `problem` are ambiguous. Controls are not frequency-matched.
+
+Copy `223_execsem_discourse.py` and the JSON config, keeping scripts 220–222
+alongside it. No transformer extraction or probe retraining is needed:
+
+```bash
+.venv/bin/python scripts/223_execsem_discourse.py readout --split val --lens results/workspace_lens/deepseek-coder-1.3b/j-lens
+.venv/bin/python scripts/223_execsem_discourse.py report --split val
+cat results/execsem/pilot/discourse_val_L13/report.md
+```
+
+Readout needs the GPU and reuses saved activations at fixed primary layer 13.
+It stores one atomic checkpoint per matched problem and automatically resumes.
+A changed vocabulary, model metadata, lens checksum or extraction hash is refused
+in an existing checkpoint directory. Report uses CPU and can take several minutes
+for the broad panel's wordwise bootstrap intervals. `--bootstrap 100` is a smoke
+check only; use the default 2000 for the report. `--layer` changes the layer and
+output directory; do not choose layers using test outcomes.
+
+Each spelling is tried bare/space-prefixed, original/capitalized/uppercase. The
+best single-token variant per word supplies its score and full-vocabulary rank.
+Variants do not receive extra group weight. All encodings and unsupported entries
+are saved in coverage.json. Multi-token phrases with no single-token spelling
+are NOT assigned their first token's score. Phrases need a future sequence-based
+experiment. `???` counts only if that entire string has a supported token.
+
+Within each problem, scores are averaged within AC and WA before subtraction,
+then problems are equally weighted. Outputs include centered-logit differences,
+log-rank effects, rank improvements, top-20 rates, absolute AC/WA ranks, and literal
+substring occurrence fractions in original prompts. Literal flags do not remove
+prompt echo. The report contrasts each target group directly with each control,
+removing identical overlapping terms in that comparison. J-minus-logit is paired
+within problem. Negative specificity contrasts mean more WA preference than the
+control. Group effects and controls should be considered together.
+
+`report.md` contains group and specificity log-rank results; `words.csv` contains
+all words and metrics including absolute prominence; `specificity.csv` contains
+direct contrasts. `report.json` includes seed, bootstrap count, source manifest
+and coverage. Intervals are pointwise percentile problem bootstraps without
+multiplicity correction. They are exploratory: vocabulary hypotheses arose from
+prior inspection, and even the existing test split has already been examined.
+No confidence behavior, prompt-ablation experiment or causal intervention is
+implemented here. Broad lexical enrichment alone cannot establish uncertainty.
