@@ -62,3 +62,40 @@ The fixed vocabulary is in `configs/execsem_words.json`: correctness words, erro
 Review the top lists for correctness meaning, algorithm language, generic code, prompt echo and uninterpretable fragments. Check whether candidate ranks differ between AC and WA within individual problems, whether effects also appear in the ordinary logit lens, and whether validation discoveries recur on held-out problems. The report supports manual review; it does not automatically certify words as representative. No empirical word assessment is available until a real run finishes.
 
 Accepted/incorrect labels are proxies for behavior on upstream tests, not complete program semantics. Incorrect examples mix bug types; lexical shortcuts and pretraining contamination remain possible. A successful probe establishes decodability, and readable tokens suggest a vocabulary interpretation. Causal alignment requires the later DAS experiment with a clearly defined behavioral target and suitable same-problem counterfactual pairs.
+
+## Within-problem AC versus WA (stage 221, CPU only)
+
+After validation inspection, run this independent script; it needs only the saved
+`lens_val.json`, not model weights or another extraction:
+
+```bash
+.venv/bin/python scripts/221_execsem_contrast.py --split val
+cat results/execsem/pilot/contrast_val.md
+```
+
+Each problem must contain both accepted and incorrect submissions. Their scores
+are averaged within class, then subtracted (AC minus WA); problem contrasts are
+weighted equally. J-lens and logit-lens must contain identical submission IDs,
+task IDs and labels. Missing-class problems are excluded and reported.
+
+For every predefined supported word and each group's equally weighted word mean,
+outputs include negative log rank, reciprocal rank and top-20 membership effects.
+Positive effects mean higher ranks in AC. Thus positive correctness words are
+expected to have positive effects, while negative correctness words are expected
+to have negative effects. Missing single-token spellings are excluded, not given
+an artificial worst rank. A malformed/missing rank for a supported word fails.
+
+The J-minus-logit contrast subtracts the two within-problem effects before
+bootstrapping, preserving their pairing. Confidence intervals resample whole
+problems (2,000 replicates; `--bootstrap` and `--seed` configurable). They are
+pointwise exploratory intervals, not multiple-testing-adjusted discoveries.
+One-problem estimates have no interval. Validation layer 13 remains primary;
+neighboring layers are sensitivity analyses.
+
+Artifacts: `contrast_val.md` (group log-rank results),
+`contrast_val_summary.csv` (all words/groups/metrics),
+`contrast_val_pairs.csv` (individual problem effects),
+`contrast_val_counts.csv` (retained class counts), and `contrast_val.json`
+(all results, exclusions, unsupported words, source hash and bootstrap settings).
+Use `--out` for another run directory. Only run `--split test` after freezing
+validation hypotheses. Stage 221 does not implement random probe-direction controls.
