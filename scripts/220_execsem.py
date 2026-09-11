@@ -186,6 +186,24 @@ def probe(a):
           extraction_hash=digest((a.out/'extracted.json').read_text())))
 
 
+def check_tokenizer_metadata(saved, current):
+    """Accept only the documented Transformers v5 fast-backend rename.
+
+    Legacy artifacts have no tokenizer hash: this checks metadata compatibility,
+    not byte-for-byte equivalence of historical tokenization.
+    """
+    aliases = {'PreTrainedTokenizerFast', 'TokenizersBackend'}
+    old, new = saved.get('tokenizer_class'), current.get('tokenizer_class')
+    if not old or not new or (old != new and {old, new} != aliases):
+        raise ValueError(f'Wrong tokenizer: saved={old!r}, current={new!r}')
+    for key in ['hf_id', 'bos_declared', 'bos_prepended', 'vocab_size']:
+        if key in saved and saved[key] != current.get(key):
+            raise ValueError(f'Tokenizer/model metadata mismatch for {key}: '
+                             f'{saved[key]!r} != {current.get(key)!r}')
+    if old != new:
+        print(f'Accepted Transformers tokenizer alias: {old} -> {new}', flush=True)
+
+
 def inspect(a):
     import numpy as np
     import torch
@@ -198,7 +216,8 @@ def inspect(a):
     lm,hf,tok,info=model(a); lens,prov=load_lens(a.lens)
     assert prov.get('kind')=='j-lens', 'Need a J-lens with provenance'
     assert prov['model']['hf_id']==info['hf_id'], 'Wrong lens model'
-    assert prov['model']['tokenizer_class']==info['tokenizer_class'], 'Wrong tokenizer'
+    check_tokenizer_metadata(prov['model'], info)
+    check_tokenizer_metadata(meta['model'], info)
     assert lens.d_model==lm.d_model
     layer=selected['selected_layer']
     assert layer in lens.source_layers, 'Best probe layer unavailable: fit a lens targeting the final block (see guide)'

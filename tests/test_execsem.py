@@ -90,3 +90,15 @@ def test_extraction_resumes_without_repeating_forwards(tmp_path, monkeypatch):
     import pytest
     with pytest.raises(ValueError, match='configuration changed'):
         m.extract(a)
+
+
+def test_tokenizer_alias_is_narrow_and_preserves_bos_checks():
+    import pytest
+    old = dict(tokenizer_class='PreTrainedTokenizerFast', hf_id='model', bos_prepended=True)
+    new = dict(old, tokenizer_class='TokenizersBackend')
+    m.check_tokenizer_metadata(old, new)
+    m.check_tokenizer_metadata(new, old)
+    with pytest.raises(ValueError, match='Wrong tokenizer'):
+        m.check_tokenizer_metadata(old, dict(new, tokenizer_class='LlamaTokenizer'))
+    with pytest.raises(ValueError, match='bos_prepended'):
+        m.check_tokenizer_metadata(old, dict(new, bos_prepended=False))
