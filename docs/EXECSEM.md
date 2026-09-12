@@ -217,3 +217,10 @@ multiplicity correction. They are exploratory: vocabulary hypotheses arose from
 prior inspection, and even the existing test split has already been examined.
 No confidence behavior, prompt-ablation experiment or causal intervention is
 implemented here. Broad lexical enrichment alone cannot establish uncertainty.
+
+## Concrete execution sign/parity (stage 224)
+
+See [EXECSEM_BEHAVIOR.md](EXECSEM_BEHAVIOR.md) for the separate container execution,
+actual/expected label preparation, matched-context extraction, probe fitting and
+fixed semantic vocabulary experiment. It uses a new output directory and does
+not overwrite the correctness/discourse pilot.
