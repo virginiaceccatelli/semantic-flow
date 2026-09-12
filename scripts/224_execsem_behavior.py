@@ -91,10 +91,16 @@ def execute(a):
     if a.runtime == 'singularity':
         signature['image_sha256'] = b.digest_file(Path(image))
         signature['sandbox_hash'] = b.digest_file(Path(__file__).resolve().parents[1]/'src/execsem/sandbox.py')
-    b.freeze(a.out/'execute_config.json', signature)
+    config = a.out/'execute_config.json'
+    has_executions = any((a.out/'executions').glob('*.json'))
+    if has_executions:
+        b.freeze(config, signature)
+    # With no saved executions, a failed preflight may be retried with a new runner.
+    # Commit the new configuration only after preflight succeeds.
     # Infrastructure errors must fail before producing any dataset labels.
     sanity = run_case(a.runtime, image, 'print(int(input()) + 1)', '4\n', a.timeout)
     if sanity['status'] != 'ok' or b.integer_output(sanity['stdout']) != 5: raise RuntimeError(f'Container preflight failed: {sanity}')
+    if not has_executions: b.write(config, signature)
     cache = a.out/'executions'; cache.mkdir(exist_ok=True); new = 0
     for i, row in enumerate(cases):
         path = cache/(row['id']+'.json')

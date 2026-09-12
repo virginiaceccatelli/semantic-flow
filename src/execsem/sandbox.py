@@ -58,7 +58,7 @@ def container_command(runtime, image, directory, name, seconds):
         return [runtime, 'exec', '--no-oci', '--containall', '--cleanenv', '--no-eval',
                 '--no-home', '--no-mount', 'home,cwd,hostfs,bind-paths,sys',
                 '--net', '--network=none', '--drop-caps=ALL',
-                '--memory=512m', '--memory-swap=512m', '--pids-limit=32', '--cpus=1',
+                '--memory=512m', '--memory-swap=512m', '--pids-limit=32',
                 '--bind', f'{directory}:/case:ro', '--pwd', '/tmp',
                 image, 'python', '-I', '-B', '-c', RUNNER, str(seconds)]
     return [runtime, 'run', '--rm', '--pull=never', '--name', name, '--network=none',

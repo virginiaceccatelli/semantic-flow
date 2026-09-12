@@ -202,8 +202,10 @@ def test_singularity_command_isolated_and_readonly(tmp_path):
     cmd = sandbox.container_command('singularity', '/images/python.sif', str(tmp_path), 'unused', 3)
     for flag in ['--no-oci', '--containall', '--cleanenv', '--no-eval', '--no-home',
                  '--net', '--network=none', '--drop-caps=ALL', '--memory=512m',
-                 '--memory-swap=512m', '--pids-limit=32', '--cpus=1']:
+                 '--memory-swap=512m', '--pids-limit=32']:
         assert flag in cmd
+    assert '--cpus=1' not in cmd
+    assert 'RLIMIT_CPU' in sandbox.RUNNER
     assert cmd[cmd.index('--no-mount')+1] == 'home,cwd,hostfs,bind-paths,sys'
     assert cmd[cmd.index('--bind')+1] == f'{tmp_path}:/case:ro'
     assert '--writable' not in cmd and '--writable-tmpfs' not in cmd
@@ -217,3 +219,22 @@ def test_singularity_image_requires_local_sif(tmp_path, monkeypatch):
     path = tmp_path/'python.sif'
     path.write_bytes(b'fixture')
     assert sandbox.resolve_image('singularity', str(path)) == str(path.resolve())
+
+
+def test_failed_preflight_config_can_change_only_without_results(tmp_path, monkeypatch):
+    b.write_rows(tmp_path/'cases.jsonl', [make_case(0)])
+    b.write(tmp_path/'execute_config.json', {'old_failed_preflight': True})
+    monkeypatch.setattr(sandbox, 'resolve_image', lambda *args: 'sha256:fixture')
+    def fail(*args):
+        raise RuntimeError('preflight failed')
+    monkeypatch.setattr(sandbox, 'run_case', fail)
+    args = SimpleNamespace(out=tmp_path, runtime='docker', image='fixture', timeout=3, repeats=2, limit=1)
+    with pytest.raises(RuntimeError, match='preflight failed'):
+        m.execute(args)
+    assert json.loads((tmp_path/'execute_config.json').read_text()) == {'old_failed_preflight': True}
+    monkeypatch.setattr(sandbox, 'run_case', lambda *args: dict(status='ok', stdout='5\n'))
+    m.execute(args)
+    assert json.loads((tmp_path/'execute_config.json').read_text())['image_id'] == 'sha256:fixture'
+    args.timeout = 4
+    with pytest.raises(Exception):
+        m.execute(args)

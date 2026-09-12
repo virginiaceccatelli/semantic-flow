@@ -283,7 +283,8 @@ cat results/execsem/behavior/labels_report.json
 The `docker://` URI names an image registry source; it does not require Docker.
 The runner requests native Singularity containment, an isolated network with no
 external interface, no home/CWD/hostfs/admin bind mounts, a read-only case mount,
-and memory/PID/CPU cgroup limits. Runtime environment overrides are discarded.
+and memory/PID cgroup limits. CPU time is bounded per program with RLIMIT_CPU
+and a wall-clock timeout; no CPU-rate cgroup controller is required. Runtime environment overrides are discarded.
 The root image remains read-only. Singularity's private temporary storage differs
 from Docker's size-limited /tmp; the wrapper limits individual output file sizes.
 This is isolation for dataset execution, not a claim of a hardened adversarial sandbox.
