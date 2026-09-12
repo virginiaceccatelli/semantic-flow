@@ -1,6 +1,8 @@
 """Container-only execution. Never falls back to running submissions on the host."""
 from __future__ import annotations
 import json
+import os
+import signal
 from pathlib import Path
 import shutil
 import subprocess
@@ -36,8 +38,13 @@ print(json.dumps(dict(status=status,returncode=rc,stdout=out[:4096].decode('utf-
 
 
 def resolve_image(runtime, image):
-    if runtime not in ['docker', 'podman'] or not shutil.which(runtime):
-        raise RuntimeError(f'{runtime} unavailable. Use an approved Docker/Podman execution host; no host-execution fallback.')
+    if runtime not in ['docker', 'podman', 'singularity'] or not shutil.which(runtime):
+        raise RuntimeError(f'{runtime} unavailable. Use an approved Docker/Podman/Singularity execution host; no host-execution fallback.')
+    if runtime == 'singularity':
+        path = Path(image).expanduser().resolve()
+        if not path.is_file() or path.suffix != '.sif':
+            raise RuntimeError('Singularity requires a local .sif image. Pull python:3.11-slim first and pass --image /path/python311.sif')
+        return str(path)
     result = subprocess.run([runtime, 'image', 'inspect', '--format', '{{.Id}}', image], capture_output=True, text=True, timeout=30)
     if result.returncode:
         raise RuntimeError(f'Cannot inspect container image. Pull it first: {runtime} pull {image}\n{result.stderr[:1000]}')
@@ -47,6 +54,13 @@ def resolve_image(runtime, image):
 
 
 def container_command(runtime, image, directory, name, seconds):
+    if runtime == 'singularity':
+        return [runtime, 'exec', '--no-oci', '--containall', '--cleanenv', '--no-eval',
+                '--no-home', '--no-mount', 'home,cwd,hostfs,bind-paths,sys',
+                '--net', '--network=none', '--drop-caps=ALL',
+                '--memory=512m', '--memory-swap=512m', '--pids-limit=32', '--cpus=1',
+                '--bind', f'{directory}:/case:ro', '--pwd', '/tmp',
+                image, 'python', '-I', '-B', '-c', RUNNER, str(seconds)]
     return [runtime, 'run', '--rm', '--pull=never', '--name', name, '--network=none',
             '--read-only', '--cap-drop=ALL', '--security-opt=no-new-privileges',
             '--user=65534:65534', '--pids-limit=32', '--memory=512m', '--memory-swap=512m',
@@ -66,7 +80,13 @@ def run_case(runtime, image, code, input_text, seconds=3):
         command = container_command(runtime, image, str(case.resolve()), name, seconds)
         # File-backed logs bound host RAM even if an untrusted child writes to wrapper stdout.
         with (root/'stdout').open('wb') as out, (root/'stderr').open('wb') as err:
-            proc = subprocess.Popen(command, stdout=out, stderr=err)
+            # Discard runtime environment overrides (extra binds, overlays, GPU, etc.).
+            # Preserve HOME for runtime setup only; it is not mounted into the payload.
+            kwargs = {}
+            if runtime == 'singularity':
+                kwargs = dict(cwd=str(root), start_new_session=True,
+                              env={k: os.environ[k] for k in ('PATH', 'HOME', 'USER', 'LOGNAME', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS') if k in os.environ})
+            proc = subprocess.Popen(command, stdout=out, stderr=err, **kwargs)
             started = time.monotonic()
             try:
                 while proc.poll() is None:
@@ -77,11 +97,18 @@ def run_case(runtime, image, code, input_text, seconds=3):
                     time.sleep(.1)
             finally:
                 if proc.poll() is None:
-                    proc.terminate()
+                    if runtime == 'singularity':
+                        os.killpg(proc.pid, signal.SIGTERM)
+                    else:
+                        proc.terminate()
                     try: proc.wait(timeout=3)
-                    except subprocess.TimeoutExpired: proc.kill(); proc.wait()
+                    except subprocess.TimeoutExpired:
+                        if runtime == 'singularity': os.killpg(proc.pid, signal.SIGKILL)
+                        else: proc.kill()
+                        proc.wait()
                 # Also cleans up descendants on exceptions and interrupts.
-                subprocess.run([runtime, 'rm', '-f', name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+                if runtime != 'singularity':
+                    subprocess.run([runtime, 'rm', '-f', name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
         with (root/'stdout').open('rb') as f: stdout = f.read(1048576).decode(errors='replace')
         with (root/'stderr').open('rb') as f: stderr = f.read(4096).decode(errors='replace')
         if proc.returncode:

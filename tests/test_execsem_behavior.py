@@ -196,3 +196,24 @@ def test_statement_example_removal(heading):
 def test_normal_prose_is_not_cut_by_example_word():
     text='For example, an integer can be negative.\nOutput the sum.'
     assert b.statement_without_examples(text)==text
+
+
+def test_singularity_command_isolated_and_readonly(tmp_path):
+    cmd = sandbox.container_command('singularity', '/images/python.sif', str(tmp_path), 'unused', 3)
+    for flag in ['--no-oci', '--containall', '--cleanenv', '--no-eval', '--no-home',
+                 '--net', '--network=none', '--drop-caps=ALL', '--memory=512m',
+                 '--memory-swap=512m', '--pids-limit=32', '--cpus=1']:
+        assert flag in cmd
+    assert cmd[cmd.index('--no-mount')+1] == 'home,cwd,hostfs,bind-paths,sys'
+    assert cmd[cmd.index('--bind')+1] == f'{tmp_path}:/case:ro'
+    assert '--writable' not in cmd and '--writable-tmpfs' not in cmd
+    assert cmd[cmd.index('--pwd')+1] == '/tmp'
+
+
+def test_singularity_image_requires_local_sif(tmp_path, monkeypatch):
+    monkeypatch.setattr(sandbox.shutil, 'which', lambda _: '/usr/bin/singularity')
+    with pytest.raises(RuntimeError, match='local .sif'):
+        sandbox.resolve_image('singularity', 'docker://python:3.11-slim')
+    path = tmp_path/'python.sif'
+    path.write_bytes(b'fixture')
+    assert sandbox.resolve_image('singularity', str(path)) == str(path.resolve())

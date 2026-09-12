@@ -48,7 +48,7 @@ limit: increasing the cap does not create additional inputs.
 
 ## 2. Execute submissions in isolation (CPU)
 
-A working, approved Docker or Podman runtime is required **on the execution host**.
+A working, approved Docker, Podman, or Singularity runtime is required **on the execution host**.
 Check availability:
 
 ```bash
@@ -57,11 +57,10 @@ podman --version
 ```
 
 Do not install or reconfigure the cluster's container daemon. Use the runtime
-permitted by the cluster. If neither is available, execution can run on another
+permitted by the cluster. If none is available, execution can run on another
 approved container host and its results directory can be copied back. This stage
-never falls back to executing dataset code directly on the host. Apptainer and
-Singularity are not implemented: their default host binds/network access are not
-a drop-in replacement for these isolation settings.
+never falls back to executing dataset code directly on the host. For SingularityCE, use the dedicated commands below; default host binds/network
+access are not sufficient. Apptainer is not implemented.
 
 For Docker:
 
@@ -264,3 +263,35 @@ your host before labeling dataset programs.
 See [EXECSEM_CAUSAL.md](EXECSEM_CAUSAL.md) for the complete sequential runbook,
 including all stage-224 prerequisites, an explicit joint sign/parity behavioral
 baseline, donor controls, patching, DAS and answer-code remapping.
+
+### SingularityCE on the cluster (no Docker installation)
+
+Stage 224 also supports `--runtime singularity` with a local SIF image.
+From the repository directory, use the following commands (compatible with tcsh).
+Keep the SIF at the same path across resumptions; its SHA-256 and runner source
+are recorded in the execution configuration.
+
+```bash
+mkdir -p containers
+singularity pull --disable-cache containers/python311.sif docker://python:3.11-slim
+.venv/bin/python scripts/224_execsem_behavior.py execute --runtime singularity --image containers/python311.sif --limit 20
+.venv/bin/python scripts/224_execsem_behavior.py execute --runtime singularity --image containers/python311.sif
+.venv/bin/python scripts/224_execsem_behavior.py labels
+cat results/execsem/behavior/labels_report.json
+```
+
+The `docker://` URI names an image registry source; it does not require Docker.
+The runner requests native Singularity containment, an isolated network with no
+external interface, no home/CWD/hostfs/admin bind mounts, a read-only case mount,
+and memory/PID/CPU cgroup limits. Runtime environment overrides are discarded.
+The root image remains read-only. Singularity's private temporary storage differs
+from Docker's size-limited /tmp; the wrapper limits individual output file sizes.
+This is isolation for dataset execution, not a claim of a hardened adversarial sandbox.
+
+The known-answer preflight runs before dataset submissions. Cluster policy may
+deny network namespaces or cgroup delegation even with SingularityCE 4.5 installed.
+Such failures stop execution rather than silently removing isolation. Send the
+complete error if the smoke test fails. Singularity integration must be verified
+on the cluster; local tests cover command construction and image selection only.
+After labels succeed, continue with extract/fit/evaluate/lens and the causal
+runbook; those stages do not require a container. Do not rerun prepare.

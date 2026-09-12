@@ -7,7 +7,7 @@ behavioral-query experiment, not a reuse of stage 224's generic query states.
 
 Required code: current script 220 and repository dependencies; scripts 224 and
 225; `src/execsem/{__init__,behavior,sandbox,causal}.py`. The downloadable bundle
-contains the new stages/helpers. Docker or Podman is needed only for execution
+contains the new stages/helpers. Docker, Podman, or Singularity is needed only for execution
 labels. The model/J-lens stages need a GPU. Pair construction and probe fitting
 are CPU stages. Respect the cluster's resource-allocation rules.
 
@@ -34,6 +34,8 @@ docker pull python:3.11-slim
 .venv/bin/python scripts/224_execsem_behavior.py labels
 cat results/execsem/behavior/labels_report.json
 ```
+
+For SingularityCE, see the Singularity section in EXECSEM_BEHAVIOR.md.
 
 For Podman use `podman pull` and add `--runtime podman` to both execute commands.
 There is no unsafe plain-host fallback. A known-answer preflight must succeed.

@@ -88,6 +88,9 @@ def execute(a):
     cases = b.read_rows(a.out/'cases.jsonl')
     signature = dict(cases_hash=b.digest_file(a.out/'cases.jsonl'), runtime=a.runtime, image_id=image,
                      seconds=a.timeout, repeats=a.repeats, runner_hash=b.digest(RUNNER), version=1)
+    if a.runtime == 'singularity':
+        signature['image_sha256'] = b.digest_file(Path(image))
+        signature['sandbox_hash'] = b.digest_file(Path(__file__).resolve().parents[1]/'src/execsem/sandbox.py')
     b.freeze(a.out/'execute_config.json', signature)
     # Infrastructure errors must fail before producing any dataset labels.
     sanity = run_case(a.runtime, image, 'print(int(input()) + 1)', '4\n', a.timeout)
@@ -325,7 +328,7 @@ def main():
     p.add_argument('--test',type=Path,default=Path('data/execsem/records/val.jsonl'))
     p.add_argument('--max-problems-per-split',type=int,default=100,help='0 means all eligible problems')
     p.add_argument('--cases-per-program',type=int,default=4);p.add_argument('--max-input-bytes',type=int,default=65536)
-    p.add_argument('--runtime',choices=['docker','podman'],default='docker');p.add_argument('--image',default='python:3.11-slim')
+    p.add_argument('--runtime',choices=['docker','podman','singularity'],default='docker');p.add_argument('--image',default='python:3.11-slim')
     p.add_argument('--timeout',type=float,default=3);p.add_argument('--repeats',type=int,default=2);p.add_argument('--limit',type=int,default=0)
     p.add_argument('--model',default='deepseek-coder-1.3b');p.add_argument('--device',default='cuda');p.add_argument('--max-tokens',type=int,default=2048)
     p.add_argument('--conditions',default=','.join(b.CONDITIONS));p.add_argument('--split',choices=['val','test'],default='val')
