@@ -258,3 +258,9 @@ and toy-model fixed-vocabulary readouts. Real Docker/Podman execution and the ac
 GPU experiment have not been run in the local development environment because
 it has no Docker/Podman runtime. Execution includes a known-answer preflight on
 your host before labeling dataset programs.
+
+## Causal follow-up (stage 225)
+
+See [EXECSEM_CAUSAL.md](EXECSEM_CAUSAL.md) for the complete sequential runbook,
+including all stage-224 prerequisites, an explicit joint sign/parity behavioral
+baseline, donor controls, patching, DAS and answer-code remapping.
