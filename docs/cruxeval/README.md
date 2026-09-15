@@ -1,9 +1,11 @@
-# CruxEval preflight (stage 230)
+# CruxEval: preflight and probes
 
-**Status: built and run through the requested review boundary only.** No model
-weights were loaded. Activation extraction, probe Designs A/B, obfuscation,
-J/R-lens fitting/readout/erasure, and DAS have not been implemented or run for
-CruxEval in this change. Existing stages, numbers, and outputs are unchanged.
+**Status:** stage 230 preflight was run locally and on the cluster. Stages
+231–234 now implement A (within-CruxEval probes), B (synthetic frozen transfer),
+and shared activation extraction, with small CPU integration tests only.
+No real-model extraction or large probe training has been run locally.
+See [PROBES.md](PROBES.md) for the complete cluster launcher and commands.
+CruxEval obfuscation, J/R-lens, and DAS remain unimplemented.
 
 ## What ran
 
@@ -131,18 +133,20 @@ original surface reader materializes dense one-hot features, so larger samples
 can need substantially more RAM. The stage refuses to overwrite an existing
 run directory. Figures regenerate via `plot_floor(pd.read_csv(csv_path), path)`.
 
-## Work after review (sections 3–6: not run)
+## Implementation after review
 
-- Add new CruxEval stages only. Reuse forward hooks and `ActivationStore` for
+- Implemented stages 231–234 reuse forward hooks and `ActivationStore` for
   raw, unnormalized residuals at embedding output (`-1`) plus every block:
   33 read points for a 32-block model. Assert the layer grid and token/record
   identity with the approved preflight artifacts.
-- Design A: audit synthetic training provenance and the pinned 0.500 floor;
+- The original request called synthetic transfer Design A; the latest request
+  calls it **B**. Its implementation audits synthetic training provenance and the pinned 0.500 floor;
   reuse `load_frozen_probes` and `assemble_pair_features`. The 0.500 floor is
   a property of the synthetic training construction; it does not pin the
-  real-code evaluation floor. Design B: reuse the exact saved source-group
-  population/folds. Both need controls, embedding comparison, and per-split
-  tidy outputs. Recompute the floor if prompts, tokenizer, or population change.
+  real-code evaluation floor. **A** now means within-CruxEval training/testing;
+  it reuses the saved source-group folds. Both implementations include controls,
+  embedding comparison, per-split tidy outputs, and program-bootstrap intervals.
+  Stage 231 remeasures the floor for the exact selected population.
   Frozen transfer alone does not supply RESULTS' open item 3, which explicitly
   calls for context-matched mutations of real code.
 - Optional ladder: reuse atomic `ObfuscationLadder` steps, execute on the
