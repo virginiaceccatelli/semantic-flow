@@ -1,0 +1,47 @@
+[
+  {
+    "code": "def f(nums):\n    output = []\n    for n in nums:\n        output.append((nums.count(n), n))\n    output.sort(reverse=True)\n    return output",
+    "input": "[1, 1, 3, 1, 3, 1]",
+    "output": "[(4, 1), (4, 1), (4, 1), (4, 1), (2, 3), (2, 3)]",
+    "id": "sample_0",
+    "dataset_index": 0,
+    "source_group": "9d2c2c268164fb2125085a165352e51a0115c1e77e3b4cb708117215e2d2c6a6",
+    "prompt": "def f(nums):\n    output = []\n    for n in nums:\n        output.append((nums.count(n), n))\n    output.sort(reverse=True)\n    return output\n\nf([1, 1, 3, 1, 3, 1])"
+  },
+  {
+    "code": "def f(a, b, c):\n    result = {}\n    for d in a, b, c:\n        result.update(dict.fromkeys(d))\n    return result",
+    "input": "(1, ), (1, ), (1, 2)",
+    "output": "{1: None, 2: None}",
+    "id": "sample_1",
+    "dataset_index": 1,
+    "source_group": "a70444b0e99d3e3dd17797084c3f10a2dd22e01fc7d5d2266fa4ff4d5b9ad5e2",
+    "prompt": "def f(a, b, c):\n    result = {}\n    for d in a, b, c:\n        result.update(dict.fromkeys(d))\n    return result\n\nf((1, ), (1, ), (1, 2))"
+  },
+  {
+    "code": "def f(text):\n    new_text = list(text)\n    for i in '+':\n        if i in new_text:\n            new_text.remove(i)\n    return ''.join(new_text)",
+    "input": "'hbtofdeiequ'",
+    "output": "'hbtofdeiequ'",
+    "id": "sample_2",
+    "dataset_index": 2,
+    "source_group": "06cdb9cc2826a4243bccf606f731896486f6b417c7fb5eafba91adde50d3c5cc",
+    "prompt": "def f(text):\n    new_text = list(text)\n    for i in '+':\n        if i in new_text:\n            new_text.remove(i)\n    return ''.join(new_text)\n\nf('hbtofdeiequ')"
+  },
+  {
+    "code": "def f(text, value):\n    text_list = list(text)\n    text_list.append(value)\n    return ''.join(text_list)",
+    "input": "'bcksrut', 'q'",
+    "output": "'bcksrutq'",
+    "id": "sample_3",
+    "dataset_index": 3,
+    "source_group": "9a349f92f2304667529881bd5143836ce761f18a04eef775668b5ed3c9f76642",
+    "prompt": "def f(text, value):\n    text_list = list(text)\n    text_list.append(value)\n    return ''.join(text_list)\n\nf('bcksrut', 'q')"
+  },
+  {
+    "code": "def f(array):\n    s = ' '\n    s += ''.join(array)\n    return s",
+    "input": "[' ', '  ', '    ', '   ']",
+    "output": "'           '",
+    "id": "sample_4",
+    "dataset_index": 4,
+    "source_group": "b5137e7e96aaaef5b9b1b56b2c40c5ac92c9193fadb15e0f87b14f1bdc8071f3",
+    "prompt": "def f(array):\n    s = ' '\n    s += ''.join(array)\n    return s\n\nf([' ', '  ', '    ', '   '])"
+  }
+]
