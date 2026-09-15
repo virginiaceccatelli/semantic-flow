@@ -36,16 +36,29 @@ if [[ ! -e "$venv_dir" ]]; then
     "$uv_bin" venv --managed-python --python 3.11 --seed "$venv_dir"
 fi
 
-# An existing environment is reused only if it is already this independent env.
-"$venv_dir/bin/python" - "$UV_PYTHON_INSTALL_DIR" <<'PY'
+# Reuse an existing Python 3.11 venv when its base is already independent of
+# micromamba/conda. uv may have installed that base under ~/.local/share/uv
+# before UV_PYTHON_INSTALL_DIR was configured; that is still a valid standalone
+# interpreter and survives removal of micromamba-root.
+"$venv_dir/bin/python" - "$UV_PYTHON_INSTALL_DIR" "$scratch_dir/micromamba-root" <<'PY'
 import pathlib
 import sys
 managed_root = pathlib.Path(sys.argv[1]).resolve()
+micromamba_root = pathlib.Path(sys.argv[2]).resolve()
 base = pathlib.Path(sys.base_prefix).resolve()
 assert sys.version_info[:2] == (3, 11), f"Expected Python 3.11, found {sys.version}"
-assert base.is_relative_to(managed_root), f"Existing .venv has a different base: {base}"
 assert sys.prefix != sys.base_prefix, "Expected an isolated virtual environment"
-print(f"Interpreter: {sys.executable}\nIndependent base: {base}")
+assert not base.is_relative_to(micromamba_root), (
+    f"Existing .venv still depends on micromamba: {base}. "
+    "Rename .venv and rerun setup to build an independent replacement."
+)
+conda_marker = base / "conda-meta"
+assert not conda_marker.exists(), (
+    f"Existing .venv uses a conda base: {base}. "
+    "Rename .venv and rerun setup to build an independent replacement."
+)
+location = "configured scratch uv root" if base.is_relative_to(managed_root) else "existing uv-managed root"
+print(f"Interpreter: {sys.executable}\nIndependent base: {base}\nSource: {location}")
 PY
 
 "$uv_bin" pip install --python "$venv_dir/bin/python" \

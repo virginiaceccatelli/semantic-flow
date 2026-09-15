@@ -6,6 +6,11 @@ Python 3.11 into the repository's sibling `semflow-python/` directory, then
 creates `semantic-flow/.venv`. The base interpreter must remain in place.
 Neither depends on `micromamba-root` or the `vfield-mi` environment.
 
+If `.venv` already uses a standalone uv-managed Python 3.11 (for example under
+`~/.local/share/uv/python`), setup reuses it. The safety check rejects bases
+inside `micromamba-root` and bases containing `conda-meta`. Keep whichever uv
+Python base the setup report names; deleting that base would break `.venv`.
+
 Run from the cluster repository (bash works even from a csh login):
 
 ```csh
