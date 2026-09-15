@@ -37,6 +37,8 @@ def main(stage):
         parser.add_argument("--max-length", type=int, default=2048)
         from src.cruxeval.extract import extract as run
     elif stage == 233:
+        parser.add_argument("--solver", choices=["saga", "lbfgs"], default="saga",
+                            help="Linear-probe optimizer; saga is the scalable experiment default")
         from src.cruxeval.synthetic import train_synthetic as run
     else:
         parser.add_argument("--prepared", type=Path, required=True)

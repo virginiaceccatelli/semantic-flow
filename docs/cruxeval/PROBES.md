@@ -61,6 +61,11 @@ ambiguous uses and explicitly audits legacy/reference disagreements rather
 than changing their labels. The same real activation store serves both
 populations—there is no second GPU extraction of the real programs.
 
+Stage 233 defaults to SemFlow's scalable `saga` optimizer. Its explicit
+`--solver lbfgs` option is intended for small diagnostic stores; the selected
+solver is part of the certified configuration and changing it requires a new
+output directory.
+
 **A and B's default headline populations differ.** For a direct comparison,
 also run A on `prepared_transfer_compatible` using the individual command below.
 Neither result can be called better simply by comparing different populations.

@@ -56,12 +56,14 @@ def matched_records(store, tasks, seed):
 
 
 def train_synthetic(store_path, output, tasks=("defuse_edge",), seed=42, max_iter=20000,
-                    resume=False, scratch=None):
+                    resume=False, scratch=None, solver="saga"):
     store = load_store(store_path)
     assert store.meta["kind"] == "synthetic_matched"
     assert tasks and set(tasks) <= set(TASK_BUILDERS)
+    assert solver in {"saga", "lbfgs"}
     output = Path(output)
-    args = dict(store_sha256=sha256(Path(store_path) / "gates.json"), tasks=list(tasks), seed=seed, max_iter=max_iter)
+    args = dict(store_sha256=sha256(Path(store_path) / "gates.json"), tasks=list(tasks),
+                seed=seed, max_iter=max_iter, solver=solver)
     with stage_run(output, "233_cruxeval_synthetic", args, resume=resume) as gate:
         records, sources = matched_records(store, tasks, seed)
         records.to_csv(output / "records.csv", index=False)
@@ -69,9 +71,10 @@ def train_synthetic(store_path, output, tasks=("defuse_edge",), seed=42, max_ite
                         pinned_floor=0.5, pinned_floor_verified=True,
                         source_code_hashes=sorted({s["code_sha256"] for s in sources.values()}),
                         training_groups=sorted(records.example_id.unique()),
-                        record_sha256=sha256(output / "records.csv"), config=asdict(ProbeConfig(random_seed=seed, max_iter=max_iter)))
+                        record_sha256=sha256(output / "records.csv"),
+                        config=asdict(ProbeConfig(random_seed=seed, max_iter=max_iter, solver=solver)))
         write_json(output / "meta.json", metadata)
-        cfg = ProbeConfig(random_seed=seed, max_iter=max_iter)
+        cfg = ProbeConfig(random_seed=seed, max_iter=max_iter, solver=solver)
         training_rows = []
         registered = ["meta.json", "records.csv"]
         for task in tasks:

@@ -127,7 +127,12 @@ def test_end_to_end_both_designs_and_resume(tiny_loader, tmp_path, monkeypatch):
     assert sha256(within / "predictions/layer_01.csv.gz") == old_digest
     # B: real generator + real graph/floor certificate + frozen real/control fits.
     synthetic_store = extract("tiny", tmp_path / "synthetic", synthetic_pairs=8, device="cpu", dtype="float32")
-    bundle = train_synthetic(synthetic_store, tmp_path / "frozen", max_iter=10000)
+    # This paired toy matrix is only 16x16 and highly collinear. SAGA can fail
+    # to converge on it on Linux even at 20k iterations. L-BFGS solves the same
+    # regularized linear objective deterministically for this integration test;
+    # the cluster launcher retains the scalable SAGA experiment default.
+    bundle = train_synthetic(synthetic_store, tmp_path / "frozen", max_iter=20000,
+                             solver="lbfgs")
     source = read_json(bundle / "meta.json")
     assert source["pinned_floor"] == .5 and source["pinned_floor_verified"]
     compatible = prepare(preflight, tmp_path / "compatible", population="transfer_compatible", max_iter=10000)
