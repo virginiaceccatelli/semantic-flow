@@ -194,7 +194,8 @@ def _orientation(pair, reverse=False):
 
 def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
                   dtype="float16", device="cuda", steps=200, batch_size=8,
-                  lr=.01, seed=42, min_behavior=.60, bootstrap=1000):
+                  lr=.01, seed=42, min_behavior=.60, bootstrap=1000,
+                  resume=False):
     """Stage 240: learn on calibration functions; evaluate both directions on test."""
     from src.models.das import (AlignmentExample, AnswerActuatorExample,
         interchange_report, learn_alignment, learn_answer_actuator,
@@ -208,7 +209,7 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
     args=dict(prepared_sha256=sha256(Path(prepared)/"gates.json"),layer=layer,rank=rank,
               model=model,dtype=dtype,device=device,steps=steps,batch_size=batch_size,
               lr=lr,seed=seed,min_behavior=min_behavior,bootstrap=bootstrap)
-    with stage_run(output,"240_cruxeval_value_das",args) as gate:
+    with stage_run(output,"240_cruxeval_value_das",args,resume=resume) as gate:
         loader=ModelLoader(cfg); mdl=loader.model; d=cfg.d_model
         def state(ids,pos):
             cache=extract_hidden_states(mdl,torch.tensor([ids],device=next(mdl.parameters()).device),[layer])
@@ -230,7 +231,13 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
                     donor_state=cache[(pair["pair_id"],arm,"donor")],target_token_id=target,
                     base_token_id=base,group=pair["source_group"]))
         fit=learn_alignment(mdl,calibration,layer,"use",rank,d,steps,batch_size,lr,seed)
-        assert fit.converged and fit.subspace.orthogonality_error()<1e-5
+        fit_diagnostics = {"converged": fit.converged,
+                           "orthogonality_error": fit.subspace.orthogonality_error(),
+                           "history": fit.history,
+                           "metadata": fit.subspace.metadata}
+        write_json(output/"fit_diagnostics.json", fit_diagnostics)
+        assert fit.converged, f"DAS fit failed fixed-objective check: {fit_diagnostics}"
+        assert fit.subspace.orthogonality_error()<1e-5
         fit.subspace.save(output/"subspace.pkl")
         # A subspace is sign-invariant.  Use one canonical direction here;
         # averaging both orientations would add every delta and its negation,
@@ -252,7 +259,10 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
                     torch.tensor([host]), pair["position"], target, base,
                     rep["edit_norm"], pair["source_group"]))
         actuator=learn_answer_actuator(mdl,actuator_examples,layer,d,steps,batch_size,lr,seed)
-        assert actuator.converged
+        write_json(output/"actuator_diagnostics.json", {
+            "converged": actuator.converged, "history": actuator.history,
+            "n_examples": actuator.n_examples})
+        assert actuator.converged, "Answer actuator failed fixed-objective check"
         with open(output/"answer_actuator.pkl","wb") as f: pickle.dump(actuator,f)
         rows=[]
         for pair in pairs:
@@ -300,7 +310,8 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
                        frame[frame.variant == "das_value"].shape[0]),
                    "calibration_groups":sorted({e.group for e in calibration}),
                    "test_groups":sorted({p["source_group"] for p in pairs if p["split"]=="test"})})
-        register_files(gate,output,["subspace.pkl","answer_actuator.pkl","interchange_rows.csv",
+        register_files(gate,output,["subspace.pkl","answer_actuator.pkl","fit_diagnostics.json",
+                                   "actuator_diagnostics.json","interchange_rows.csv",
                                    "interchange_summary.csv","meta.json"])
     return output
 

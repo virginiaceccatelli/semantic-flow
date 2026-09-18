@@ -454,8 +454,36 @@ def learn_alignment(
     optimizer = torch.optim.Adam([raw], lr=lr)
 
     rng = np.random.default_rng(seed)
-    history: list[dict] = []
     order = np.arange(len(examples))
+
+    def calibration_loss(Q: torch.Tensor) -> float:
+        """Loss on the same complete calibration set at every checkpoint."""
+        values = []
+        with torch.no_grad():
+            for example in examples:
+                donor = torch.from_numpy(np.asarray(
+                    example.donor_state, dtype=np.float32)).to(device)
+
+                def edit(vec: torch.Tensor, donor=donor, Q=Q) -> torch.Tensor:
+                    h = vec.detach().float()
+                    return h + Q @ (Q.T @ (donor - h))
+
+                logits = transform_positions_with_grad(
+                    model, example.input_ids.to(device),
+                    {int(layer): {int(example.position): edit}})
+                values.append(-torch.log_softmax(
+                    logits[0, -1].float(), dim=-1)[int(example.target_token_id)])
+        return float(torch.stack(values).mean().cpu())
+
+    with torch.no_grad():
+        initial_Q, _ = torch.linalg.qr(raw)
+        initial_Q = initial_Q.detach()
+    initial_loss = calibration_loss(initial_Q)
+    history: list[dict] = [{"step": -1,
+                            "loss": initial_loss if np.isfinite(initial_loss) else None,
+                            "batch_loss": None}]
+    best_loss, best_Q = initial_loss, initial_Q.float().cpu().clone()
+    finite_optimization = bool(np.isfinite(initial_loss))
 
     for step in range(steps):
         rng.shuffle(order)
@@ -482,23 +510,45 @@ def learn_alignment(
             losses.append(-log_probs[int(example.target_token_id)])
 
         loss = torch.stack(losses).mean()
+        if not bool(torch.isfinite(loss)):
+            finite_optimization = False
+            history.append({"step": step, "loss": None,
+                            "batch_loss": None, "nonfinite": True})
+            break
         loss.backward()
         optimizer.step()
 
         if step % log_every == 0 or step == steps - 1:
-            history.append({"step": step, "loss": float(loss.detach().cpu())})
-            logger.info("    DAS layer %s rank %d step %d: loss %.4f",
-                        layer, rank, step, float(loss.detach().cpu()))
+            with torch.no_grad():
+                Q_eval, _ = torch.linalg.qr(raw)
+                Q_eval = Q_eval.detach()
+            fixed = calibration_loss(Q_eval)
+            batch_value = float(loss.detach().cpu())
+            finite_optimization &= bool(np.isfinite(fixed))
+            history.append({"step": step,
+                            "loss": fixed if np.isfinite(fixed) else None,
+                            "batch_loss": batch_value})
+            if np.isfinite(fixed) and fixed < best_loss:
+                best_loss = fixed
+                best_Q = Q_eval.float().cpu().clone()
+            logger.info("    DAS layer %s rank %d step %d: calibration %.4f "
+                        "(batch %.4f)", layer, rank, step, fixed, batch_value)
 
-    with torch.no_grad():
-        Q, _ = torch.linalg.qr(raw)
-        basis = Q.detach().float().cpu().numpy().astype(np.float64)
+    basis = best_Q.numpy().astype(np.float64)
 
-    converged = bool(len(history) >= 2 and history[-1]["loss"] <= history[0]["loss"])
+    # The old check compared two unrelated random mini-batches. Restoring the
+    # best checkpoint and evaluating it on one fixed objective makes a flat
+    # scientific null valid while still rejecting NaNs and optimizer failure.
+    tolerance = 1e-4 * max(1.0, abs(initial_loss))
+    converged = bool(finite_optimization and np.isfinite(best_loss) and
+                     best_loss <= initial_loss + tolerance)
     subspace = AlignedSubspace(
         basis=basis, layer=int(layer), position=position, kind="das", rank=int(rank),
         metadata={"steps": steps, "batch_size": batch_size, "lr": lr, "seed": seed,
-                  "n_examples": len(examples), "final_loss": history[-1]["loss"] if history else None},
+                  "n_examples": len(examples),
+                  "initial_loss": initial_loss if np.isfinite(initial_loss) else None,
+                  "best_loss": best_loss if np.isfinite(best_loss) else None,
+                  "last_loss": history[-1]["loss"] if history else None},
     )
     return AlignmentFit(subspace=subspace, history=history,
                         n_examples=len(examples), converged=converged)
@@ -556,7 +606,35 @@ def learn_answer_actuator(
     optimizer = torch.optim.Adam([raw], lr=lr)
     rng = np.random.default_rng(seed)
     order = np.arange(len(examples))
-    history: list[dict] = []
+
+    def calibration_loss(table: torch.Tensor) -> float:
+        values = []
+        with torch.no_grad():
+            for example in examples:
+                target = table[token_index[int(example.target_token_id)]]
+                base = table[token_index[int(example.base_token_id)]]
+                direction = (target - base)
+                direction = direction / direction.norm().clamp_min(1e-12)
+                alpha = float(example.edit_norm)
+
+                def edit(vec: torch.Tensor, direction=direction,
+                         alpha=alpha) -> torch.Tensor:
+                    return vec.detach().float() + alpha * direction
+
+                logits = transform_positions_with_grad(
+                    model, example.input_ids.to(device),
+                    {int(layer): {int(example.position): edit}})
+                values.append(-torch.log_softmax(
+                    logits[0, -1].float(), dim=-1)[int(example.target_token_id)])
+        return float(torch.stack(values).mean().cpu())
+
+    initial_table = raw.detach().clone()
+    initial_loss = calibration_loss(initial_table)
+    history: list[dict] = [{"step": -1,
+                            "loss": initial_loss if np.isfinite(initial_loss) else None,
+                            "batch_loss": None}]
+    best_loss, best_table = initial_loss, initial_table.cpu().clone()
+    finite_optimization = bool(np.isfinite(initial_loss))
 
     for step in range(steps):
         rng.shuffle(order)
@@ -581,16 +659,30 @@ def learn_answer_actuator(
             losses.append(-log_probs[int(example.target_token_id)])
 
         loss = torch.stack(losses).mean()
+        if not bool(torch.isfinite(loss)):
+            finite_optimization = False
+            history.append({"step": step, "loss": None,
+                            "batch_loss": None, "nonfinite": True})
+            break
         loss.backward()
         optimizer.step()
         if step % log_every == 0 or step == steps - 1:
-            value = float(loss.detach().cpu())
-            history.append({"step": step, "loss": value})
-            logger.info("    answer actuator layer %s step %d: loss %.4f",
-                        layer, step, value)
+            fixed = calibration_loss(raw.detach())
+            batch_value = float(loss.detach().cpu())
+            finite_optimization &= bool(np.isfinite(fixed))
+            history.append({"step": step,
+                            "loss": fixed if np.isfinite(fixed) else None,
+                            "batch_loss": batch_value})
+            if np.isfinite(fixed) and fixed < best_loss:
+                best_loss = fixed
+                best_table = raw.detach().cpu().clone()
+            logger.info("    answer actuator layer %s step %d: calibration %.4f "
+                        "(batch %.4f)", layer, step, fixed, batch_value)
 
-    vectors = {token_id: raw[index].detach().float().cpu().numpy().astype(np.float64)
+    vectors = {token_id: best_table[index].float().numpy().astype(np.float64)
                for token_id, index in token_index.items()}
-    converged = bool(len(history) >= 2 and history[-1]["loss"] <= history[0]["loss"])
+    tolerance = 1e-4 * max(1.0, abs(initial_loss))
+    converged = bool(finite_optimization and np.isfinite(best_loss) and
+                     best_loss <= initial_loss + tolerance)
     return AnswerActuatorFit(vectors=vectors, history=history,
                              n_examples=len(examples), converged=converged)
