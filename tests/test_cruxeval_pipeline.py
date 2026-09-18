@@ -13,7 +13,8 @@ from torch import nn
 from src.cruxeval.artifacts import checked_gate, read_json, sha256, write_json, write_jsonl
 from src.cruxeval.data import build_records, digest
 from src.cruxeval.extract import capture_raw, extract
-from src.cruxeval.lens import load_lens_prepared, prepare_lens
+from src.cruxeval.lens import (_adapt_to_lens_tokenizer, load_lens_prepared,
+                               prepare_lens)
 from src.cruxeval.metrics import surface_features
 from src.cruxeval.preflight import checked_folds
 from src.cruxeval.prepare import prepare
@@ -180,6 +181,20 @@ def test_mechanistic_targets_and_execution_grounded_value_pairs(tiny_loader, tmp
         assert [s["target_id"] for s in program["answer_steps"]] == program["output_ids"]
         assert all(s["target_id"] != s["distractor_id"]
                    for s in program["answer_steps"])
+
+    class BosTokenizer(TinyTokenizer):
+        bos_token_id = 1
+        def __call__(self, text, add_special_tokens=True, **kwargs):
+            ids = super().__call__(text, add_special_tokens=add_special_tokens, **kwargs)["input_ids"]
+            return {"input_ids": ([self.bos_token_id] if add_special_tokens else []) + ids}
+
+    old_base = list(programs[0]["base_input_ids"])
+    old_positions = [site["position"] for site in programs[0]["sites"]]
+    assert _adapt_to_lens_tokenizer(programs, BosTokenizer(),
+                                    {"bos_prepended": True}) == 1
+    assert programs[0]["base_input_ids"] == [1] + old_base
+    assert [site["position"] for site in programs[0]["sites"]] == [
+        position + 1 for position in old_positions]
 
     das_dir = prepare_value_pairs(ready, tmp_path / "das", model="tiny",
                                   min_pairs=3, max_pairs=9, tokenizer=tiny_loader)

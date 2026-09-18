@@ -139,6 +139,51 @@ def load_lens_prepared(path):
     return read_json(Path(path) / "meta.json"), read_jsonl(Path(path) / "lens_programs.jsonl")
 
 
+def _adapt_to_lens_tokenizer(programs, tokenizer, model_info):
+    """Reconcile stage-235 IDs with the tokenizer used to fit E19.
+
+    The ordinary SemFlow tokenizer does not restore DeepSeek's declared BOS,
+    whereas the released jlens adapter does.  A single leading BOS is licensed
+    because it is recorded in stage-201 provenance.  It shifts every causal
+    anchor by one but leaves output-token segmentation unchanged.  No other
+    tokenizer difference is accepted.
+    """
+    bos = getattr(tokenizer, "bos_token_id", None)
+    shifts = set()
+    for program in programs:
+        stored = [int(x) for x in program["base_input_ids"]]
+        actual = _ids(tokenizer, program["base_prompt"])
+        if actual == stored:
+            shift = 0
+        elif (model_info.get("bos_prepended") and bos is not None and
+              actual == [int(bos)] + stored):
+            shift = 1
+        else:
+            raise AssertionError(
+                f"Lens-model tokenizer drift beyond the certified BOS on "
+                f"{program['dataset_id']}")
+        shifts.add(shift)
+
+        expected_prefix = ([int(bos)] if shift else []) + [
+            int(x) for x in program["answer_prefix_ids"]]
+        expected_full = expected_prefix + [int(x) for x in program["output_ids"]]
+        assert _ids(tokenizer, program["answer_prompt"]) == expected_prefix, (
+            f"Answer-prefix tokenizer drift on {program['dataset_id']}")
+        assert _ids(tokenizer, program["answer_prompt"] + program["output"]) == expected_full, (
+            f"Output-token tokenizer drift on {program['dataset_id']}")
+
+        if shift:
+            program["base_input_ids"] = actual
+            program["answer_prefix_ids"] = expected_prefix
+            for site in program["sites"]:
+                site["position"] = int(site["position"]) + 1
+            for step in program["answer_steps"]:
+                step["input_ids"] = [int(bos)] + [int(x) for x in step["input_ids"]]
+                step["position"] = int(step["position"]) + 1
+    assert len(shifts) == 1, "Mixed BOS conventions inside one prepared population"
+    return shifts.pop()
+
+
 def _required_validation(lens_model, hf_model, j, r, pj, pr, corpus, prompts, lens_dir):
     from src.workspace_lens import validate as V
     from src.workspace_lens.fitting import load_lens
@@ -264,9 +309,7 @@ def read_lenses(prepared, lens_dir, corpus, output, model="deepseek-coder-6.7b",
                        "float32": torch.float32}[dtype]
         lens_model, hf_model, tokenizer, info = load_lens_model(model, dtype=torch_dtype, device=device)
         assert info["hf_id"] == meta["model_hf_id"]
-        for program in programs:
-            assert _ids(tokenizer, program["base_prompt"]) == program["base_input_ids"], (
-                f"Lens-model tokenizer drift on {program['dataset_id']}")
+        bos_shift = _adapt_to_lens_tokenizer(programs, tokenizer, info)
         checks = _required_validation(lens_model, hf_model, j, r, pj, pr,
                                       Corpus.load(corpus), [p["base_prompt"] for p in programs], lens_dir)
         write_json(output / "validation.json", checks)
@@ -310,7 +353,8 @@ def read_lenses(prepared, lens_dir, corpus, output, model="deepseek-coder-6.7b",
         _summarize(frame).to_csv(output / "lens_summary.csv", index=False)
         write_json(output / "meta.json", {"model": model, "model_info": info,
                    "layers": layer_list, "j_provenance": pj, "r_provenance": pr,
-                   "n_programs": len(programs), "reads": list(READS)})
+                   "n_programs": len(programs), "reads": list(READS),
+                   "input_bos_shift": bos_shift})
         register_files(gate, output, ["validation.json", "lens_rows.csv.gz",
                                       "lens_summary.csv", "meta.json"])
     return output
@@ -367,6 +411,7 @@ def ablate_lenses(prepared, readout, lens_dir, output, layers,
         torch_dtype = {"bfloat16": torch.bfloat16, "float16": torch.float16,
                        "float32": torch.float32}[dtype]
         lens_model, hf_model, tokenizer, info = load_lens_model(model, dtype=torch_dtype, device=device)
+        bos_shift = _adapt_to_lens_tokenizer(programs, tokenizer, info)
         place_lens_jacobians({"j-lens": j, "r-lens": r}, layers,
                              next(hf_model.parameters()).device)
         W = hf_model.get_output_embeddings().weight.detach()
@@ -431,6 +476,7 @@ def ablate_lenses(prepared, readout, lens_dir, output, layers,
         _ablation_summary(frame, seed).to_csv(output / "ablation_contrasts.csv", index=False)
         write_json(output / "meta.json", {"model": model, "layers": layers,
                    "n_programs": len(programs), "j_provenance": pj, "r_provenance": pr,
+                   "input_bos_shift": bos_shift,
                    "site_policy": "latest use and its post-use token, call, first answer token",
                    "sample_policy": "seeded program sample" if limit is not None else "all programs"})
         register_files(gate, output, ["ablation_rows.csv", "ablation_contrasts.csv", "meta.json"])
