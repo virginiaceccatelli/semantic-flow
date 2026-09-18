@@ -3,8 +3,9 @@
 Implemented and CPU-tested; no real-model extraction or large probe fitting has
 been run locally. **A means within-CruxEval training/testing; B means frozen
 synthetic-to-CruxEval transfer**, following the latest request. (The original
-request used the letters in the opposite order.) J/R-lens, obfuscation, and DAS
-remain separate, unimplemented CruxEval stages.
+request used the letters in the opposite order.) J/R-lens and value-DAS are now
+separate stages 235–241 documented in [MECHANISTIC.md](MECHANISTIC.md). The
+CruxEval obfuscation extension remains unimplemented.
 
 ## Stages
 

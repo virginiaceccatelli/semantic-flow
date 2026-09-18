@@ -1,11 +1,13 @@
 # CruxEval: preflight and probes
 
-**Status:** stage 230 preflight was run locally and on the cluster. Stages
-231–234 now implement A (within-CruxEval probes), B (synthetic frozen transfer),
-and shared activation extraction, with small CPU integration tests only.
-No real-model extraction or large probe training has been run locally.
-See [PROBES.md](PROBES.md) for the complete cluster launcher and commands.
-CruxEval obfuscation, J/R-lens, and DAS remain unimplemented.
+**Status:** stage 230 preflight and stages 231–234 A/B probes have run on the
+cluster. Stages 235–238 implement the published full-Jacobian J-lens, matched
+R-lens, full-vocabulary CruxEval output readout, and live-model causal erasure.
+Stages 239–241 implement execution-grounded CruxEval value counterfactuals,
+held-out low-rank DAS interchange with controls, and its report. No large
+J/R-lens or DAS run has been performed locally. See [PROBES.md](PROBES.md) and
+[MECHANISTIC.md](MECHANISTIC.md) for exact cluster commands. The optional
+CruxEval obfuscation ladder remains unimplemented.
 
 ## What ran
 
@@ -152,16 +154,17 @@ run directory. Figures regenerate via `plot_floor(pd.read_csv(csv_path), path)`.
 - Optional ladder: reuse atomic `ObfuscationLadder` steps, execute on the
   supplied input, drop every level of a failing base together, and re-extract
   each variant's graph. No ladder variants were generated here.
-- E19 is `src/workspace_lens` and stages 200–206, not the older E11
-  `jspace_lens` module. Reuse released full-Jacobian fitting and matched J/R
-  provenance, independent-corpus, head/identity, forward-invariance and
-  rule-binding gates. Add full-vocabulary concrete-output token ranks/pass@k
-  at use/post-use/call/answer sites, with a declared multi-token scoring policy,
-  and all E19 erasure controls. Those gates are not claimed to have run here.
-- DAS remains deferred. The request references a section 6 construction but
-  supplies no section 6. Before wiring `AlignmentExample`, `learn_alignment`,
-  interchange, and `learn_answer_actuator`, specify execution-verified
-  host/donor counterfactuals and crossed value arms that separate binding from
-  answer identity, with all cells, disjoint calibration/test sources, exact
-  no-ops, and dose-matched controls. Plain unrelated CruxEval pairs do not
-  establish that construction.
+- Stages 235–238 reuse E19's stage-201 artifacts; they do not fit a second lens
+  on CruxEval. They rerun the independent-corpus, matched-provenance,
+  identity/head, forward-invariance, rule-binding, and nontrivial-J/R gates
+  before full-vocabulary output-token ranks/pass@k at use, post-use, call, and
+  teacher-forced answer positions. Causal erasure is reported separately with
+  logit, off-target, stable-random, and exact edit-magnitude controls.
+- Stages 239–241 derive paired programs rather than pairing unrelated CruxEval
+  rows. A one-token literal mutation in a unique reaching definition must alter
+  the instrumented runtime value and executed output while preserving the use
+  anchor and token length. DAS and the answer-actuator control are fitted only
+  on calibration source functions and frozen for two-direction evaluation on
+  disjoint test functions. Completion is a mechanical pass, not a positive
+  scientific verdict; the report compares against mean-difference, rank-random,
+  magnitude-matched random, no-op, whole-state, and answer-only arms.

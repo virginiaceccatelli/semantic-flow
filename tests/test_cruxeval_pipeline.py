@@ -13,10 +13,12 @@ from torch import nn
 from src.cruxeval.artifacts import checked_gate, read_json, sha256, write_json, write_jsonl
 from src.cruxeval.data import build_records, digest
 from src.cruxeval.extract import capture_raw, extract
+from src.cruxeval.lens import load_lens_prepared, prepare_lens
 from src.cruxeval.metrics import surface_features
 from src.cruxeval.preflight import checked_folds
 from src.cruxeval.prepare import prepare
 from src.cruxeval.probes import evaluate
+from src.cruxeval.das_value import prepare_value_pairs
 from src.cruxeval.synthetic import train_synthetic
 from src.data.alignment import TokenAligner, compute_offsets
 from src.data.cruxeval_graph import extract_graph
@@ -160,6 +162,39 @@ def test_33_raw_read_points_and_context_free_embedding():
     np.testing.assert_array_equal(raw[0], model.embedding(ids).detach().numpy()[0])
     normalized = model(ids).logits.detach().numpy()[0]
     assert not np.allclose(raw[-1], normalized)
+
+
+def test_mechanistic_targets_and_execution_grounded_value_pairs(tiny_loader, tmp_path):
+    """Stages 235/239 preserve exact tokens, anchors, execution, and group splits."""
+    preflight = make_preflight(tmp_path / "preflight", tiny_loader)
+    ready = prepare(preflight, tmp_path / "ready", max_iter=10000)
+
+    lens_dir = prepare_lens(ready, tmp_path / "lens", model="tiny",
+                            tokenizer=tiny_loader)
+    meta, programs = load_lens_prepared(lens_dir)
+    assert meta["n_programs"] == 9
+    assert all(p["answer_steps"] for p in programs)
+    assert all({"use", "post_use", "call"} <= {s["read"] for s in p["sites"]}
+               for p in programs)
+    for program in programs:
+        assert [s["target_id"] for s in program["answer_steps"]] == program["output_ids"]
+        assert all(s["target_id"] != s["distractor_id"]
+                   for s in program["answer_steps"])
+
+    das_dir = prepare_value_pairs(ready, tmp_path / "das", model="tiny",
+                                  min_pairs=3, max_pairs=9, tokenizer=tiny_loader)
+    pairs = [json.loads(line) for line in (das_dir / "pairs.jsonl").read_text().splitlines()]
+    assert len(pairs) >= 3
+    assert {p["split"] for p in pairs} == {"calibration", "test"}
+    train = {p["source_group"] for p in pairs if p["split"] == "calibration"}
+    test = {p["source_group"] for p in pairs if p["split"] == "test"}
+    assert train.isdisjoint(test)
+    for pair in pairs:
+        assert pair["base_value"] != pair["variant_value"]
+        assert pair["base_output"] != pair["variant_output"]
+        assert pair["position"] >= 0
+        assert len(pair["input_a"]) == len(pair["input_b"])
+        assert sum(a != b for a, b in zip(pair["input_a"], pair["input_b"])) == 1
 
 
 def test_preflight_tampering_and_split_leakage_fail(tiny_loader, tmp_path):

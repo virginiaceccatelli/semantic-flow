@@ -27,7 +27,8 @@ from src.cruxeval.artifacts import (checked_gate, read_json, read_jsonl,
                                     write_json, write_jsonl)
 from src.cruxeval.lens import _continuation, _ids
 from src.cruxeval.prepare import load_prepared
-from src.data.alignment import TokenAligner, compute_offsets, line_col_to_char
+from src.data.alignment import (TokenAligner, compute_offsets, decode_exact,
+                                line_col_to_char)
 from src.data.cruxeval_graph import extract_graph
 from src.models.loader import ModelConfig, ModelLoader, load_tokenizer
 
@@ -104,8 +105,13 @@ def _first_divergence(tokenizer, code_a, code_b, arguments, out_a, out_b):
     common = 0
     while common < min(len(ids_a), len(ids_b)) and ids_a[common] == ids_b[common]: common += 1
     if common == len(ids_a) or common == len(ids_b): return None
+    input_a, input_b = prefix_a + ids_a[:common], prefix_b + ids_b[:common]
+    source_a, source_b = decode_exact(tokenizer, input_a), decode_exact(tokenizer, input_b)
+    assert _ids(tokenizer, source_a) == input_a
+    assert _ids(tokenizer, source_b) == input_b
     return {"prompt_a": prompt_a, "prompt_b": prompt_b,
-            "input_a": prefix_a + ids_a[:common], "input_b": prefix_b + ids_b[:common],
+            "source_a": source_a, "source_b": source_b,
+            "input_a": input_a, "input_b": input_b,
             "base_a": ids_a[common], "base_b": ids_b[common], "common_output_tokens": common}
 
 
@@ -139,17 +145,19 @@ def prepare_value_pairs(prepared, output, model="deepseek-coder-6.7b", seed=42,
                     divergence = _first_divergence(tokenizer, row["code"], variant, row["input"],
                                                    base["actual"], changed["actual"])
                     if divergence is None: continue
-                    source_a = divergence["prompt_a"] + tokenizer.decode(
-                        divergence["input_a"][len(_ids(tokenizer, divergence["prompt_a"])):])
-                    source_b = divergence["prompt_b"] + tokenizer.decode(
-                        divergence["input_b"][len(_ids(tokenizer, divergence["prompt_b"])):])
+                    source_a, source_b = divergence["source_a"], divergence["source_b"]
                     # Recompute each graph and anchor against its own AST/tokenization.
                     graph_a = extract_graph(row["code"], TokenAligner(source_a, compute_offsets(source_a, tokenizer, divergence["input_a"])))
                     graph_b = extract_graph(variant, TokenAligner(source_b, compute_offsets(source_b, tokenizer, divergence["input_b"])))
                     def anchor(graph):
-                        found=[e["anchor"] for e in graph["events"] if e["kind"]=="use" and
-                               (e["name"],e["line"],e["col"])==(use["name"],use["line"],use["col"])]
-                        assert len(found)==1; return found[0]
+                        matched = [s for s in graph["use_sites"]
+                                   if (graph["events"][s["use_event"]]["name"],
+                                       graph["events"][s["use_event"]]["line"],
+                                       graph["events"][s["use_event"]]["col"])
+                                   == (use["name"], use["line"], use["col"])]
+                        assert len(matched) == 1
+                        assert len(matched[0]["reaching_definitions"]) == 1
+                        return graph["events"][matched[0]["use_event"]]["anchor"]
                     pos_a, pos_b = anchor(graph_a), anchor(graph_b)
                     if pos_a != pos_b or len(divergence["input_a"]) != len(divergence["input_b"]): continue
                     differing = sum(a != b for a,b in zip(divergence["input_a"], divergence["input_b"]))
@@ -186,7 +194,7 @@ def _orientation(pair, reverse=False):
 
 def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
                   dtype="float16", device="cuda", steps=200, batch_size=8,
-                  lr=.01, seed=42, min_behavior=.60):
+                  lr=.01, seed=42, min_behavior=.60, bootstrap=1000):
     """Stage 240: learn on calibration functions; evaluate both directions on test."""
     from src.models.das import (AlignmentExample, AnswerActuatorExample,
         interchange_report, learn_alignment, learn_answer_actuator,
@@ -198,7 +206,8 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
     pairs=read_jsonl(Path(prepared)/"pairs.jsonl"); output=Path(output)
     cfg=ModelConfig.from_registry(model, dtype={"float16":torch.float16,"bfloat16":torch.bfloat16,"float32":torch.float32}[dtype], device=device)
     args=dict(prepared_sha256=sha256(Path(prepared)/"gates.json"),layer=layer,rank=rank,
-              model=model,dtype=dtype,device=device,steps=steps,batch_size=batch_size,lr=lr,seed=seed,min_behavior=min_behavior)
+              model=model,dtype=dtype,device=device,steps=steps,batch_size=batch_size,
+              lr=lr,seed=seed,min_behavior=min_behavior,bootstrap=bootstrap)
     with stage_run(output,"240_cruxeval_value_das",args) as gate:
         loader=ModelLoader(cfg); mdl=loader.model; d=cfg.d_model
         def state(ids,pos):
@@ -206,10 +215,12 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
             return cache.get(layer)[pos].float().numpy()
         cache={}
         for pair in pairs:
-            for reverse in (False,True):
-                host,donor,base,target,arm=_orientation(pair,reverse)
-                cache[(pair["pair_id"],arm,"host")]=state(host,pair["position"])
-                cache[(pair["pair_id"],arm,"donor")]=state(donor,pair["position"])
+            state_a = state(pair["input_a"], pair["position"])
+            state_b = state(pair["input_b"], pair["position"])
+            cache[(pair["pair_id"],"base_to_variant","host")]=state_a
+            cache[(pair["pair_id"],"base_to_variant","donor")]=state_b
+            cache[(pair["pair_id"],"variant_to_base","host")]=state_b
+            cache[(pair["pair_id"],"variant_to_base","donor")]=state_a
         calibration=[]
         for pair in pairs:
             if pair["split"]!="calibration": continue
@@ -221,16 +232,25 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
         fit=learn_alignment(mdl,calibration,layer,"use",rank,d,steps,batch_size,lr,seed)
         assert fit.converged and fit.subspace.orthogonality_error()<1e-5
         fit.subspace.save(output/"subspace.pkl")
-        deltas=[cache[(p["pair_id"],a,"donor")]-cache[(p["pair_id"],a,"host")]
-                for p in pairs if p["split"]=="calibration" for a in ("base_to_variant","variant_to_base")]
+        # A subspace is sign-invariant.  Use one canonical direction here;
+        # averaging both orientations would add every delta and its negation,
+        # turning the mean-difference baseline into the zero vector.
+        deltas=[cache[(p["pair_id"],"base_to_variant","donor")]
+                -cache[(p["pair_id"],"base_to_variant","host")]
+                for p in pairs if p["split"]=="calibration"]
         mean_basis=mean_difference_subspace(deltas); random_basis=random_subspace(d,rank,seed)
         actuator_examples=[]
-        for ex in calibration:
-            host=ex.input_ids[0].tolist(); key=next((p for p in pairs if p["source_group"]==ex.group),None)
-            arm="base_to_variant" if host==key["input_a"] else "variant_to_base"
-            rep=interchange_report(cache[(key["pair_id"],arm,"host")],ex.donor_state,fit.subspace.basis)
-            actuator_examples.append(AnswerActuatorExample(ex.input_ids,ex.position,ex.target_token_id,
-                                                           ex.base_token_id,rep["edit_norm"],ex.group))
+        for pair in pairs:
+            if pair["split"] != "calibration":
+                continue
+            for reverse in (False, True):
+                host, donor, base, target, arm = _orientation(pair, reverse)
+                donor_state = cache[(pair["pair_id"], arm, "donor")]
+                rep = interchange_report(cache[(pair["pair_id"], arm, "host")],
+                                         donor_state, fit.subspace.basis)
+                actuator_examples.append(AnswerActuatorExample(
+                    torch.tensor([host]), pair["position"], target, base,
+                    rep["edit_norm"], pair["source_group"]))
         actuator=learn_answer_actuator(mdl,actuator_examples,layer,d,steps,batch_size,lr,seed)
         assert actuator.converged
         with open(output/"answer_actuator.pkl","wb") as f: pickle.dump(actuator,f)
@@ -264,19 +284,57 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
         frame=pd.DataFrame(rows); behavior=float(frame.drop_duplicates(["pair_id","arm"]).clean_correct.mean())
         assert behavior>=min_behavior,f"Clean forced-choice behavior {behavior:.3f} below {min_behavior}"
         assert (frame[frame.variant=="noop"].edit_norm==0).all()
+        das_dose = frame[frame.variant == "das_value"].set_index(["pair_id", "arm"])["edit_fraction"]
+        random_dose = frame[frame.variant == "random_norm"].set_index(["pair_id", "arm"])["edit_fraction"]
+        common = das_dose.index.intersection(random_dose.index)
+        assert (random_dose.loc[common].to_numpy() + 1e-8 >=
+                das_dose.loc[common].to_numpy()).all(), "Magnitude control undershot DAS"
         frame.to_csv(output/"interchange_rows.csv",index=False)
-        summary=(frame.groupby(["variant","arm"]).agg(n=("says_target","size"),
-                 install_rate=("says_target","mean"),mean_delta=("delta_logit_diff","mean"),
-                 mean_edit_fraction=("edit_fraction","mean")).reset_index())
+        summary=_das_summary(frame, seed=seed, n_boot=bootstrap)
         summary.to_csv(output/"interchange_summary.csv",index=False)
         write_json(output/"meta.json",{"model":model,"layer":layer,"rank":rank,
                    "clean_behavior":behavior,"fit_converged":fit.converged,
                    "actuator_converged":actuator.converged,"fit_history":fit.history,
+                   "answer_actuator_test_coverage":float(
+                       (frame.variant == "answer_actuator").sum() /
+                       frame[frame.variant == "das_value"].shape[0]),
                    "calibration_groups":sorted({e.group for e in calibration}),
                    "test_groups":sorted({p["source_group"] for p in pairs if p["split"]=="test"})})
         register_files(gate,output,["subspace.pkl","answer_actuator.pkl","interchange_rows.csv",
                                    "interchange_summary.csv","meta.json"])
     return output
+
+
+def _cluster_ci(part, column, seed, n_boot):
+    groups = list(part.source_group.unique())
+    assert groups
+    rng = np.random.default_rng(seed)
+    means = []
+    for _ in range(n_boot):
+        chosen = rng.choice(groups, size=len(groups), replace=True)
+        values = np.concatenate([part.loc[part.source_group == group, column].to_numpy()
+                                 for group in chosen])
+        means.append(float(values.mean()))
+    return tuple(float(x) for x in np.quantile(means, [.025, .975]))
+
+
+def _das_summary(frame, seed=42, n_boot=1000):
+    """Tidy per-arm estimates with source-program bootstrap intervals."""
+    rows = []
+    for n, ((variant, arm), part) in enumerate(frame.groupby(["variant", "arm"], sort=True)):
+        row = {"variant": variant, "arm": arm, "n": len(part),
+               "n_programs": part.source_group.nunique(),
+               "install_rate": float(part.says_target.mean()),
+               "forced_target_rate": float(part.forced_target.mean()),
+               "mean_delta_logit_diff": float(part.delta_logit_diff.mean()),
+               "mean_edit_fraction": float(part.edit_fraction.mean())}
+        for column, prefix in (("says_target", "install_rate"),
+                               ("forced_target", "forced_target_rate"),
+                               ("delta_logit_diff", "mean_delta_logit_diff")):
+            lo, hi = _cluster_ci(part, column, seed + n * 17, n_boot)
+            row[prefix + "_ci_low"], row[prefix + "_ci_high"] = lo, hi
+        rows.append(row)
+    return pd.DataFrame(rows)
 
 
 def _das_row(pair,arm,variant,base,target,clean_ld,clean_correct,logits,rep):
@@ -287,3 +345,61 @@ def _das_row(pair,arm,variant,base,target,clean_ld,clean_correct,logits,rep):
             "delta_logit_diff":patched-clean_ld,"clean_correct":clean_correct,
             "says_target":int(int(logits.argmax())==target),"forced_target":int(logits[target]>logits[base]),
             **rep}
+
+
+def report_value_das(runs, output):
+    """Stage 241: combine independently fitted layer runs into one tidy report."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    run_paths = [Path(path) for path in runs]
+    gates = [checked_gate(path, "240_cruxeval_value_das") for path in run_paths]
+    prep = {gate["args"]["prepared_sha256"] for gate in gates}
+    assert len(prep) == 1, "DAS layer runs use different counterfactual populations"
+    layers = [int(gate["args"]["layer"]) for gate in gates]
+    assert len(layers) == len(set(layers)), "Duplicate DAS layer run"
+    output = Path(output)
+    args = {"runs": [{"path": str(path), "gate_sha256": sha256(path / "gates.json")}
+                     for path in run_paths]}
+    with stage_run(output, "241_cruxeval_value_das_report", args) as gate:
+        summaries, rows = [], []
+        for path, layer in zip(run_paths, layers):
+            summary = pd.read_csv(path / "interchange_summary.csv")
+            summary.insert(0, "layer", layer); summaries.append(summary)
+            raw = pd.read_csv(path / "interchange_rows.csv")
+            raw.insert(0, "layer", layer); rows.append(raw)
+        summary = pd.concat(summaries, ignore_index=True).sort_values(
+            ["layer", "variant", "arm"])
+        raw = pd.concat(rows, ignore_index=True).sort_values(
+            ["layer", "pair_id", "arm", "variant"])
+        summary.to_csv(output / "interchange_summary.csv", index=False)
+        raw.to_csv(output / "interchange_rows.csv.gz", index=False,
+                   compression={"method": "gzip", "mtime": 0})
+
+        both = summary.groupby(["layer", "variant"], as_index=False).agg(
+            forced_target_rate=("forced_target_rate", "mean"),
+            install_rate=("install_rate", "mean"),
+            mean_delta_logit_diff=("mean_delta_logit_diff", "mean"))
+        fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+        keep = {"das_value", "mean_difference", "random_rank", "random_norm",
+                "whole_state", "answer_actuator"}
+        for variant, part in both[both.variant.isin(keep)].groupby("variant"):
+            axes[0].plot(part.layer, part.forced_target_rate, marker="o", label=variant)
+            axes[1].plot(part.layer, part.mean_delta_logit_diff, marker="o", label=variant)
+        axes[0].set(xlabel="layer", ylabel="counterfactual forced-choice rate", ylim=(0, 1))
+        axes[1].axhline(0, color="black", linewidth=.8)
+        axes[1].set(xlabel="layer", ylabel="change in target-minus-base logit")
+        axes[0].legend(fontsize=7); axes[1].legend(fontsize=7)
+        fig.tight_layout(); fig.savefig(output / "cruxeval_value_das.png", dpi=180); plt.close(fig)
+
+        best = both[both.variant == "das_value"].sort_values(
+            "forced_target_rate", ascending=False).head(1)
+        text = ["# CruxEval value interchange", "",
+                "DAS was fitted on calibration source functions and frozen before evaluation on disjoint source functions.", "",
+                best.to_markdown(index=False) if len(best) else "No DAS rows.", "",
+                "Interpret the learned intervention against the magnitude-matched random, mean-difference, answer-actuator, no-op, and whole-state arms. A positive result requires held-out movement toward the donor output beyond the matched controls; stage completion alone is not a positive result."]
+        (output / "report.md").write_text("\n".join(text) + "\n")
+        register_files(gate, output, ["interchange_summary.csv", "interchange_rows.csv.gz",
+                                      "cruxeval_value_das.png", "report.md"])
+    return output

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import random
 from pathlib import Path
 from typing import Iterable, Sequence
 
@@ -29,7 +30,10 @@ READS = ("use", "post_use", "call", "answer")
 
 
 def _ids(tokenizer, text: str) -> list[int]:
-    encoded = tokenizer(text, add_special_tokens=True)
+    try:
+        encoded = tokenizer(text, add_special_tokens=True)
+    except TypeError:  # lightweight test tokenizers expose only ``tokenizer(text)``
+        encoded = tokenizer(text)
     values = encoded["input_ids"] if isinstance(encoded, dict) else encoded.input_ids
     if hasattr(values, "tolist"):
         values = values.tolist()
@@ -193,12 +197,14 @@ def read_ids(lens_model, ids, layers, positions, lenses, unembed_batch_size=32):
     return output
 
 
-def _rank_rows(program, readouts, site_rows, targets):
+def _rank_rows(program, readouts, site_rows, targets, tokenizer):
     from src.workspace_lens.readout import rank_of
     rows = []
     for lens_name, result in readouts.items():
         for layer, logits in result.logits.items():
             for pidx, site in enumerate(site_rows):
+                top_id = int(logits[pidx].argmax())
+                top_text = tokenizer.decode([top_id])
                 for tidx, (target, distractor) in enumerate(targets):
                     vec = logits[pidx]
                     rows.append({"dataset_id": program["dataset_id"],
@@ -207,6 +213,7 @@ def _rank_rows(program, readouts, site_rows, targets):
                                  "target_index": tidx, "target_id": target,
                                  "distractor_id": distractor, "lens": lens_name,
                                  "layer": int(layer), "position": site["position"],
+                                 "top1_id": top_id, "top1_text": top_text,
                                  "rank": rank_of(vec, [target]),
                                  "distractor_rank": rank_of(vec, [distractor]),
                                  "margin": float(vec[target] - vec[distractor])})
@@ -257,6 +264,9 @@ def read_lenses(prepared, lens_dir, corpus, output, model="deepseek-coder-6.7b",
                        "float32": torch.float32}[dtype]
         lens_model, hf_model, tokenizer, info = load_lens_model(model, dtype=torch_dtype, device=device)
         assert info["hf_id"] == meta["model_hf_id"]
+        for program in programs:
+            assert _ids(tokenizer, program["base_prompt"]) == program["base_input_ids"], (
+                f"Lens-model tokenizer drift on {program['dataset_id']}")
         checks = _required_validation(lens_model, hf_model, j, r, pj, pr,
                                       Corpus.load(corpus), [p["base_prompt"] for p in programs], lens_dir)
         write_json(output / "validation.json", checks)
@@ -274,25 +284,29 @@ def read_lenses(prepared, lens_dir, corpus, output, model="deepseek-coder-6.7b",
             readouts = read_ids(lens_model, program["base_input_ids"], layer_list,
                                 [s["position"] for s in sites], {"j-lens": j, "r-lens": r},
                                 unembed_batch_size)
-            local = _rank_rows(program, readouts, sites, targets)
+            local = _rank_rows(program, readouts, sites, targets, tokenizer)
             for step in program["answer_steps"]:
                 site = {"site_id": "answer", "read": "answer", "position": step["position"]}
                 answer = read_ids(lens_model, step["input_ids"], layer_list, [step["position"]],
                                   {"j-lens": j, "r-lens": r}, unembed_batch_size)
                 part = _rank_rows(program, answer, [site],
-                                  [(step["target_id"], step["distractor_id"])])
+                                  [(step["target_id"], step["distractor_id"])],
+                                  tokenizer)
                 for row in part:
                     row["target_index"] = step["target_index"]
                 local.extend(part)
             chunks.append(pd.DataFrame(local))
             if (n + 1) % checkpoint_every == 0:
-                pd.concat(chunks, ignore_index=True).to_csv(rows_path, index=False, compression="gzip")
+                pd.concat(chunks, ignore_index=True).to_csv(
+                    rows_path, index=False,
+                    compression={"method": "gzip", "mtime": 0})
                 log.info("J/R readout %d/%d programs", n + 1, len(programs))
         frame = pd.concat(chunks, ignore_index=True)
         assert set(frame.dataset_id) == {p["dataset_id"] for p in programs}
         assert set(frame.lens) == {"j-lens", "r-lens", "logit-lens"}
         assert set(frame.read) == set(READS)
-        frame.to_csv(rows_path, index=False, compression="gzip")
+        frame.to_csv(rows_path, index=False,
+                     compression={"method": "gzip", "mtime": 0})
         _summarize(frame).to_csv(output / "lens_summary.csv", index=False)
         write_json(output / "meta.json", {"model": model, "model_info": info,
                    "layers": layer_list, "j_provenance": pj, "r_provenance": pr,
@@ -334,10 +348,12 @@ def ablate_lenses(prepared, readout, lens_dir, output, layers,
     from src.workspace_lens.adapter import load_lens_model
     from src.workspace_lens.answer_direction import final_norm_gain
     from src.workspace_lens.fitting import load_lens
+    from src.workspace_lens.readout import place_lens_jacobians
 
     checked_gate(readout, "236_cruxeval_lens_read")
     meta, programs = load_lens_prepared(prepared)
-    programs = programs[:limit] if limit else programs
+    if limit is not None and limit < len(programs):
+        programs = random.Random(seed).sample(programs, limit)
     layers = [int(x) for x in layers]
     j, pj = load_lens(Path(lens_dir) / "j-lens"); r, pr = load_lens(Path(lens_dir) / "r-lens")
     assert set(layers) <= set(j.jacobians) & set(r.jacobians)
@@ -351,14 +367,37 @@ def ablate_lenses(prepared, readout, lens_dir, output, layers,
         torch_dtype = {"bfloat16": torch.bfloat16, "float16": torch.float16,
                        "float32": torch.float32}[dtype]
         lens_model, hf_model, tokenizer, info = load_lens_model(model, dtype=torch_dtype, device=device)
+        place_lens_jacobians({"j-lens": j, "r-lens": r}, layers,
+                             next(hf_model.parameters()).device)
         W = hf_model.get_output_embeddings().weight.detach()
         gain = final_norm_gain(lens_model, W.shape[1], device=W.device)
         rows = []
         for pidx, program in enumerate(programs):
-            for step in program["answer_steps"]:
-                target, distractor = int(step["target_id"]), int(step["distractor_id"])
-                clean = _run_ablation_ids(lens_model, hf_model, step["input_ids"],
-                                          layers[0], step["position"], None, target, distractor)
+            # The causal panel uses the first output token at every site.  The
+            # observational readout still evaluates every teacher-forced token;
+            # limiting interventions keeps the complete control grid finite.
+            uses = [site for site in program["sites"] if site["read"] == "use"]
+            assert uses, f"No use site for causal panel: {program['dataset_id']}"
+            selected_use = max(uses, key=lambda site: site["position"])
+            selected_ids = {selected_use["site_id"], "call"}
+            # `use` and `post_use` share site_id; retain the matching pair plus call.
+            selected_base_sites = [site for site in program["sites"]
+                                   if site["site_id"] in selected_ids]
+            interventions = [
+                {**site, "input_ids": program["base_input_ids"], "target_index": 0,
+                 "target_id": int(program["output_ids"][0]),
+                 "distractor_id": int(program["output_distractors"][0])}
+                for site in selected_base_sites
+            ] + [
+                {**step, "site_id": "answer", "read": "answer"}
+                for step in program["answer_steps"][:1]
+            ]
+            for site in interventions:
+                target = int(site["target_id"])
+                distractor = int(site["distractor_id"])
+                clean = _run_ablation_ids(lens_model, hf_model, site["input_ids"],
+                                          layers[0], site["position"], None,
+                                          target, distractor)
                 for layer in layers:
                     directions = {"jlens": read_direction(j, layer, [target], gain, W),
                                   "rlens": read_direction(r, layer, [target], gain, W),
@@ -366,20 +405,24 @@ def ablate_lenses(prepared, readout, lens_dir, output, layers,
                                   "offtarget_j": read_direction(j, layer, [distractor], gain, W),
                                   "offtarget_r": read_direction(r, layer, [distractor], gain, W)}
                     directions["random"] = norm_matched_random(
-                        directions["jlens"], stable_seed(program["dataset_id"], step["target_index"], layer))
+                        directions["jlens"], stable_seed(program["dataset_id"],
+                                                         site["site_id"],
+                                                         site["target_index"], layer))
                     j_result = None
                     for arm, direction in directions.items():
-                        res = _run_ablation_ids(lens_model, hf_model, step["input_ids"], layer,
-                                                step["position"], make_erase(direction), target, distractor)
+                        res = _run_ablation_ids(lens_model, hf_model, site["input_ids"], layer,
+                                                site["position"], make_erase(direction),
+                                                target, distractor)
                         if arm == "jlens": j_result = res
-                        rows.append(_ablation_row(program, step, layer, arm, clean, res))
+                        rows.append(_ablation_row(program, site, layer, arm, clean, res))
                     assert j_result is not None and j_result["edit_norm"] > 0
                     matched = scaled_random_edit(j_result["edit_norm"], W.shape[1],
-                        stable_seed(program["dataset_id"], step["target_index"], layer, "matched"),
+                        stable_seed(program["dataset_id"], site["site_id"],
+                                    site["target_index"], layer, "matched"),
                         W.device, W.dtype)
-                    res = _run_ablation_ids(lens_model, hf_model, step["input_ids"], layer,
-                                            step["position"], matched, target, distractor)
-                    rows.append(_ablation_row(program, step, layer, "random_matched", clean, res))
+                    res = _run_ablation_ids(lens_model, hf_model, site["input_ids"], layer,
+                                            site["position"], matched, target, distractor)
+                    rows.append(_ablation_row(program, site, layer, "random_matched", clean, res))
             log.info("J/R erasure %d/%d programs", pidx + 1, len(programs))
         frame = pd.DataFrame(rows)
         assert set(frame.direction) == {"jlens", "rlens", "logit", "offtarget_j",
@@ -387,13 +430,16 @@ def ablate_lenses(prepared, readout, lens_dir, output, layers,
         frame.to_csv(output / "ablation_rows.csv", index=False)
         _ablation_summary(frame, seed).to_csv(output / "ablation_contrasts.csv", index=False)
         write_json(output / "meta.json", {"model": model, "layers": layers,
-                   "n_programs": len(programs), "j_provenance": pj, "r_provenance": pr})
+                   "n_programs": len(programs), "j_provenance": pj, "r_provenance": pr,
+                   "site_policy": "latest use and its post-use token, call, first answer token",
+                   "sample_policy": "seeded program sample" if limit is not None else "all programs"})
         register_files(gate, output, ["ablation_rows.csv", "ablation_contrasts.csv", "meta.json"])
     return output
 
 
 def _ablation_row(program, step, layer, arm, clean, result):
     return {"dataset_id": program["dataset_id"], "source_group": program["source_group"],
+            "site_id": step["site_id"], "read": step["read"],
             "target_index": step["target_index"], "layer": layer, "direction": arm,
             "clean_logit_diff": clean["logit_diff"], "ablated_logit_diff": result["logit_diff"],
             "delta_logit_diff": result["logit_diff"] - clean["logit_diff"],
@@ -409,8 +455,8 @@ def _ablation_summary(frame, seed, n_boot=1000):
                    ("jlens_vs_logit", "jlens", "logit"),
                    ("rlens_vs_jlens", "rlens", "jlens"))
     rng = np.random.default_rng(seed); rows = []
-    for layer, at in frame.groupby("layer"):
-        wide = at.pivot_table(index=["dataset_id", "source_group", "target_index"],
+    for (layer, read), at in frame.groupby(["layer", "read"]):
+        wide = at.pivot_table(index=["dataset_id", "source_group", "site_id", "target_index"],
                               columns="direction", values="delta_logit_diff").reset_index()
         groups = wide.source_group.unique()
         draws = rng.integers(len(groups), size=(n_boot, len(groups)))
@@ -422,7 +468,8 @@ def _ablation_summary(frame, seed, n_boot=1000):
                 means.append(float(np.mean(np.concatenate(
                     [valid.loc[valid.source_group == g, "diff"].to_numpy() for g in chosen]))))
             lo, hi = np.quantile(means, [.025, .975])
-            rows.append({"layer": layer, "contrast": name, "mean": float(valid["diff"].mean()),
+            rows.append({"layer": layer, "read": read, "contrast": name,
+                         "mean": float(valid["diff"].mean()),
                          "ci_low": float(lo), "ci_high": float(hi), "n": len(valid),
                          "n_programs": valid.source_group.nunique()})
     return pd.DataFrame(rows)
@@ -450,8 +497,8 @@ def lens_report(prepared, readout, ablation, output):
             if read in {"use", "answer"}:
                 axes[0].plot(part.layer, part["pass@10"], label=f"{lens}:{read}")
         axes[0].set(xlabel="layer", ylabel="token pass@10", ylim=(0, 1)); axes[0].legend(fontsize=7)
-        for contrast, part in contrasts.groupby("contrast"):
-            if contrast in {"jlens_vs_random_matched", "rlens_vs_random_matched"}:
+        for (contrast, read), part in contrasts.groupby(["contrast", "read"]):
+            if contrast in {"jlens_vs_random_matched", "rlens_vs_random_matched"} and read == "answer":
                 axes[1].plot(part.layer, part["mean"], marker="o", label=contrast)
         axes[1].axhline(0, color="black", linewidth=.8); axes[1].set(xlabel="layer", ylabel="paired erase-effect difference")
         axes[1].legend(fontsize=7); fig.tight_layout(); fig.savefig(output/"cruxeval_lens.png", dpi=180); plt.close(fig)
