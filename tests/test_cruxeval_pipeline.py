@@ -197,7 +197,8 @@ def test_mechanistic_targets_and_execution_grounded_value_pairs(tiny_loader, tmp
         position + 1 for position in old_positions]
 
     das_dir = prepare_value_pairs(ready, tmp_path / "das", model="tiny",
-                                  min_pairs=3, max_pairs=9, tokenizer=tiny_loader)
+                                  min_pairs=3, max_pairs=9, max_variants_per_source=1,
+                                  tokenizer=tiny_loader)
     pairs = [json.loads(line) for line in (das_dir / "pairs.jsonl").read_text().splitlines()]
     assert len(pairs) >= 3
     assert {p["split"] for p in pairs} == {"calibration", "test"}

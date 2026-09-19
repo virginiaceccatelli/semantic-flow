@@ -10,6 +10,8 @@ p.add_argument("--dtype",default="float16"); p.add_argument("--device",default="
 p.add_argument("--batch-size",type=int,default=8); p.add_argument("--lr",type=float,default=.01); p.add_argument("--seed",type=int,default=42)
 p.add_argument("--min-behavior",type=float,default=.60)
 p.add_argument("--bootstrap",type=int,default=1000)
+p.add_argument("--behavior-policy",choices=["aggregate","paired_clean"],default="aggregate")
+p.add_argument("--min-qualified-groups",type=int,default=8)
 p.add_argument("--resume",action="store_true")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 print(run_value_das(**vars(p.parse_args())))

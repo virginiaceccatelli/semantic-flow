@@ -116,26 +116,38 @@ def _first_divergence(tokenizer, code_a, code_b, arguments, out_a, out_b):
 
 
 def prepare_value_pairs(prepared, output, model="deepseek-coder-6.7b", seed=42,
-                        min_pairs=20, max_pairs=200, tokenizer=None):
+                        min_pairs=20, max_pairs=200, max_variants_per_source=5,
+                        tokenizer=None):
     """Stage 239: create and certify real-code value counterfactuals."""
+    assert 1 <= max_variants_per_source <= 9
+    assert min_pairs <= max_pairs
     meta, programs, _, _, _ = load_prepared(prepared)
     tokenizer = tokenizer or load_tokenizer(meta["model_hf_id"])
     rng = random.Random(seed); candidates = list(programs); rng.shuffle(candidates)
     output = Path(output)
     args = dict(prepared_sha256=sha256(Path(prepared)/"gates.json"), model=model,
-                seed=seed, min_pairs=min_pairs, max_pairs=max_pairs)
+                seed=seed, min_pairs=min_pairs, max_pairs=max_pairs,
+                max_variants_per_source=max_variants_per_source)
     with stage_run(output, "239_cruxeval_das_prepare", args) as gate:
         pairs, audit = [], []
         for row in candidates:
             if len(pairs) >= max_pairs: break
             events = row["graph"]["events"]
-            made = False
+            accepted_for_source = 0
             for site in reversed(row["graph"]["use_sites"]):
                 if len(site["reaching_definitions"]) != 1: continue
                 use, definition = events[site["use_event"]], events[site["reaching_definitions"][0]]
+                try:
+                    base = _trace(row["code"], row["input"], row["output"],
+                                  use["line"], use["col"])
+                except Exception as exc:
+                    audit.append({"dataset_id":row["id"],"status":"execution_rejected",
+                                  "detail":str(exc)[:200]})
+                    continue
                 for variant, mutation in _literal_mutations(row["code"], definition):
+                    if len(pairs) >= max_pairs or accepted_for_source >= max_variants_per_source:
+                        break
                     try:
-                        base = _trace(row["code"], row["input"], row["output"], use["line"], use["col"])
                         changed = _trace(variant, row["input"], row["output"], use["line"], use["col"])
                     except Exception as exc:
                         audit.append({"dataset_id":row["id"],"status":"execution_rejected","detail":str(exc)[:200]})
@@ -163,16 +175,19 @@ def prepare_value_pairs(prepared, output, model="deepseek-coder-6.7b", seed=42,
                     differing = sum(a != b for a,b in zip(divergence["input_a"], divergence["input_b"]))
                     if differing != 1: continue
                     split = "calibration" if int(row["source_group"][:8],16) % 5 < 3 else "test"
-                    pairs.append({"pair_id":row["id"],"source_group":row["source_group"],"split":split,
+                    pair_id = f"{row['id']}__v{accepted_for_source:02d}"
+                    pairs.append({"pair_id":pair_id,"dataset_id":row["id"],
+                                  "source_group":row["source_group"],"split":split,
                                   "use_name":use["name"],"use_line":use["line"],"use_col":use["col"],
                                   "position":pos_a,"base_code":row["code"],"variant_code":variant,
                                   "arguments":row["input"],"base_output":base["actual"],
                                   "variant_output":changed["actual"],"base_value":base["traces"][0],
                                   "variant_value":changed["traces"][0],"mutation":mutation,
                                   **divergence})
-                    audit.append({"dataset_id":row["id"],"status":"accepted","detail":mutation})
-                    made=True; break
-                if made: break
+                    audit.append({"dataset_id":row["id"],"pair_id":pair_id,
+                                  "status":"accepted","detail":mutation})
+                    accepted_for_source += 1
+                if accepted_for_source: break
         assert len(pairs) >= min_pairs, f"Only {len(pairs)} execution-grounded pairs; need {min_pairs}"
         assert {p["split"] for p in pairs} == {"calibration","test"}
         assert {p["source_group"] for p in pairs if p["split"]=="calibration"}.isdisjoint(
@@ -181,6 +196,8 @@ def prepare_value_pairs(prepared, output, model="deepseek-coder-6.7b", seed=42,
         write_json(output/"meta.json", {"model":model,"model_hf_id":meta["model_hf_id"],
                    "n_pairs":len(pairs),"n_calibration":sum(p["split"]=="calibration" for p in pairs),
                    "n_test":sum(p["split"]=="test" for p in pairs),
+                   "n_source_groups":len({p["source_group"] for p in pairs}),
+                   "max_variants_per_source":max_variants_per_source,
                    "construction":"one-token literal mutation in unique reaching definition; traced use and output both change"})
         register_files(gate, output, ["pairs.jsonl","audit.jsonl","meta.json"])
     return output
@@ -223,6 +240,7 @@ def _adapt_pairs_to_checkpoint_bos(pairs, tokenizer, hf_id):
 def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
                   dtype="float16", device="cuda", steps=200, batch_size=8,
                   lr=.01, seed=42, min_behavior=.60, bootstrap=1000,
+                  behavior_policy="aggregate", min_qualified_groups=8,
                   resume=False):
     """Stage 240: learn on calibration functions; evaluate both directions on test."""
     from src.models.das import (AlignmentExample, AnswerActuatorExample,
@@ -236,7 +254,8 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
     cfg=ModelConfig.from_registry(model, dtype={"float16":torch.float16,"bfloat16":torch.bfloat16,"float32":torch.float32}[dtype], device=device)
     args=dict(prepared_sha256=sha256(Path(prepared)/"gates.json"),layer=layer,rank=rank,
               model=model,dtype=dtype,device=device,steps=steps,batch_size=batch_size,
-              lr=lr,seed=seed,min_behavior=min_behavior,bootstrap=bootstrap)
+              lr=lr,seed=seed,min_behavior=min_behavior,bootstrap=bootstrap,
+              behavior_policy=behavior_policy,min_qualified_groups=min_qualified_groups)
     with stage_run(output,"240_cruxeval_value_das",args,resume=resume) as gate:
         loader=ModelLoader(cfg); mdl=loader.model; d=cfg.d_model
         bos_shift = _adapt_pairs_to_checkpoint_bos(pairs, loader.tokenizer, cfg.hf_id)
@@ -277,13 +296,45 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
             mean_clean_logit_diff=("clean_logit_diff","mean")).reset_index())
         behavior_summary.to_csv(output/"behavior_summary.csv",index=False)
         test_behavior=float(behavior_frame[behavior_frame.split=="test"].clean_correct.mean())
+        paired = behavior_frame.pivot_table(
+            index=["pair_id","source_group","split"], columns="arm",
+            values="clean_correct", aggfunc="first").reset_index()
+        paired["qualified"] = ((paired["base_to_variant"] == 1) &
+                               (paired["variant_to_base"] == 1))
+        paired.to_csv(output/"behavior_pair_eligibility.csv", index=False)
+        qualified_ids = set(paired.loc[paired.qualified, "pair_id"])
+        qualified = [pair for pair in pairs if pair["pair_id"] in qualified_ids]
+        qualified_counts = {
+            split: {"n_pairs":sum(p["split"]==split for p in qualified),
+                    "n_groups":len({p["source_group"] for p in qualified
+                                    if p["split"]==split})}
+            for split in ("calibration", "test")}
+        if behavior_policy == "aggregate":
+            behavior_passed = test_behavior >= min_behavior
+            criterion = f"aggregate test forced choice >= {min_behavior}"
+        elif behavior_policy == "paired_clean":
+            behavior_passed = all(qualified_counts[s]["n_groups"] >= min_qualified_groups
+                                  for s in ("calibration", "test"))
+            criterion = ("both directions clean-correct with at least "
+                         f"{min_qualified_groups} source groups per split")
+        else:
+            raise ValueError(f"Unknown behavior policy: {behavior_policy}")
         write_json(output/"behavior_gate.json", {"input_bos_shift":bos_shift,
             "test_forced_choice_accuracy":test_behavior,
-            "threshold":min_behavior,"passed":bool(test_behavior>=min_behavior),
+            "policy":behavior_policy,"criterion":criterion,
+            "threshold":min_behavior,"min_qualified_groups":min_qualified_groups,
+            "qualified":qualified_counts,"passed":bool(behavior_passed),
             "by_split_and_arm":json.loads(behavior_summary.to_json(orient="records"))})
-        assert test_behavior>=min_behavior,(
-            f"Clean forced-choice behavior {test_behavior:.3f} below {min_behavior}; "
+        assert behavior_passed,(
+            f"Clean behavior failed {criterion}; "
             f"see {output/'behavior_summary.csv'}")
+        if behavior_policy == "paired_clean":
+            pairs = qualified
+        retained_test_ids = {p["pair_id"] for p in pairs if p["split"] == "test"}
+        evaluated_test_behavior = float(
+            behavior_frame[(behavior_frame.split == "test") &
+                           (behavior_frame.pair_id.isin(retained_test_ids))]
+            .clean_correct.mean())
         calibration=[]
         for pair in pairs:
             if pair["split"]!="calibration": continue
@@ -353,7 +404,7 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
                     logits=transform_positions(mdl,ids,{layer:{pos:make_interchange_fn(direction[:,None],synthetic)}})[0,-1].float()
                     rows.append(_das_row(pair,arm,"answer_actuator",base,target,clean_ld,clean_correct,logits,
                                          interchange_report(h,synthetic,direction[:,None])))
-        frame=pd.DataFrame(rows); behavior=test_behavior
+        frame=pd.DataFrame(rows); behavior=evaluated_test_behavior
         assert (frame[frame.variant=="noop"].edit_norm==0).all()
         das_dose = frame[frame.variant == "das_value"].set_index(["pair_id", "arm"])["edit_fraction"]
         random_dose = frame[frame.variant == "random_norm"].set_index(["pair_id", "arm"])["edit_fraction"]
@@ -364,8 +415,12 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
         summary=_das_summary(frame, seed=seed, n_boot=bootstrap)
         summary.to_csv(output/"interchange_summary.csv",index=False)
         write_json(output/"meta.json",{"model":model,"layer":layer,"rank":rank,
-                   "clean_behavior":behavior,"fit_converged":fit.converged,
+                   "clean_behavior":behavior,
+                   "raw_test_clean_behavior":test_behavior,
+                   "fit_converged":fit.converged,
                    "input_bos_shift":bos_shift,
+                   "behavior_policy":behavior_policy,
+                   "qualified_counts":qualified_counts,
                    "actuator_converged":actuator.converged,"fit_history":fit.history,
                    "answer_actuator_test_coverage":float(
                        (frame.variant == "answer_actuator").sum() /
@@ -374,7 +429,8 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
                    "test_groups":sorted({p["source_group"] for p in pairs if p["split"]=="test"})})
         register_files(gate,output,["subspace.pkl","answer_actuator.pkl","fit_diagnostics.json",
                                    "actuator_diagnostics.json","behavior_diagnostics.csv",
-                                   "behavior_summary.csv","behavior_gate.json","interchange_rows.csv",
+                                   "behavior_summary.csv","behavior_pair_eligibility.csv",
+                                   "behavior_gate.json","interchange_rows.csv",
                                    "interchange_summary.csv","meta.json"])
     return output
 
