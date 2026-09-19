@@ -192,6 +192,34 @@ def _orientation(pair, reverse=False):
     return pair["input_b"], pair["input_a"], pair["base_b"], pair["base_a"], "variant_to_base"
 
 
+def _adapt_pairs_to_checkpoint_bos(pairs, tokenizer, hf_id):
+    """Use the BOS convention declared by the model checkpoint.
+
+    Stage 239 inherits SemFlow's exact code tokenizer, whose fast-tokenizer
+    wrapper omits DeepSeek's declared BOS.  Causal model runs must restore it,
+    just as the released J/R adapter does, and shift the certified anchor once.
+    """
+    from src.workspace_lens.adapter import declared_add_bos
+
+    if not declared_add_bos(hf_id):
+        return 0
+    bos = getattr(tokenizer, "bos_token_id", None)
+    assert bos is not None, "Checkpoint declares BOS but tokenizer has no BOS id"
+    conventions = set()
+    for pair in pairs:
+        starts = (int(pair["input_a"][0]) == int(bos),
+                  int(pair["input_b"][0]) == int(bos))
+        assert starts[0] == starts[1], "Host/donor BOS conventions differ"
+        shift = 0 if starts[0] else 1
+        conventions.add(shift)
+        if shift:
+            pair["input_a"] = [int(bos)] + [int(x) for x in pair["input_a"]]
+            pair["input_b"] = [int(bos)] + [int(x) for x in pair["input_b"]]
+            pair["position"] = int(pair["position"]) + 1
+    assert len(conventions) == 1, "Mixed BOS conventions in DAS pairs"
+    return conventions.pop()
+
+
 def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
                   dtype="float16", device="cuda", steps=200, batch_size=8,
                   lr=.01, seed=42, min_behavior=.60, bootstrap=1000,
@@ -201,7 +229,7 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
         interchange_report, learn_alignment, learn_answer_actuator,
         make_interchange_fn, mean_difference_subspace, norm_matched_random,
         random_subspace)
-    from src.models.hooks import extract_hidden_states, transform_positions
+    from src.models.hooks import transform_positions
 
     checked_gate(prepared, "239_cruxeval_das_prepare")
     pairs=read_jsonl(Path(prepared)/"pairs.jsonl"); output=Path(output)
@@ -211,17 +239,51 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
               lr=lr,seed=seed,min_behavior=min_behavior,bootstrap=bootstrap)
     with stage_run(output,"240_cruxeval_value_das",args,resume=resume) as gate:
         loader=ModelLoader(cfg); mdl=loader.model; d=cfg.d_model
-        def state(ids,pos):
-            cache=extract_hidden_states(mdl,torch.tensor([ids],device=next(mdl.parameters()).device),[layer])
-            return cache.get(layer)[pos].float().numpy()
+        bos_shift = _adapt_pairs_to_checkpoint_bos(pairs, loader.tokenizer, cfg.hf_id)
+        model_device = next(mdl.parameters()).device
+        def state_and_logits(ids,pos):
+            from src.models.hooks import extract_hidden_states_and_logits
+            captured, logits = extract_hidden_states_and_logits(
+                mdl, torch.tensor([ids], device=model_device), [layer])
+            return captured.get(layer)[pos].float().numpy(), logits[0, -1].float().cpu()
         cache={}
+        clean_logits={}
         for pair in pairs:
-            state_a = state(pair["input_a"], pair["position"])
-            state_b = state(pair["input_b"], pair["position"])
+            state_a, logits_a = state_and_logits(pair["input_a"], pair["position"])
+            state_b, logits_b = state_and_logits(pair["input_b"], pair["position"])
             cache[(pair["pair_id"],"base_to_variant","host")]=state_a
             cache[(pair["pair_id"],"base_to_variant","donor")]=state_b
             cache[(pair["pair_id"],"variant_to_base","host")]=state_b
             cache[(pair["pair_id"],"variant_to_base","donor")]=state_a
+            clean_logits[(pair["pair_id"], "base_to_variant")] = logits_a
+            clean_logits[(pair["pair_id"], "variant_to_base")] = logits_b
+
+        behavior_rows=[]
+        for pair in pairs:
+            for reverse in (False, True):
+                _, _, base, target, arm = _orientation(pair, reverse)
+                logits = clean_logits[(pair["pair_id"], arm)]
+                behavior_rows.append({"pair_id": pair["pair_id"],
+                    "source_group": pair["source_group"], "split": pair["split"],
+                    "arm": arm, "base_token_id": base, "target_token_id": target,
+                    "clean_logit_diff": float(logits[target] - logits[base]),
+                    "clean_correct": int(logits[base] > logits[target]),
+                    "clean_argmax_correct": int(int(logits.argmax()) == base)})
+        behavior_frame=pd.DataFrame(behavior_rows)
+        behavior_frame.to_csv(output/"behavior_diagnostics.csv",index=False)
+        behavior_summary=(behavior_frame.groupby(["split","arm"]).agg(
+            n=("clean_correct","size"), forced_choice_accuracy=("clean_correct","mean"),
+            argmax_accuracy=("clean_argmax_correct","mean"),
+            mean_clean_logit_diff=("clean_logit_diff","mean")).reset_index())
+        behavior_summary.to_csv(output/"behavior_summary.csv",index=False)
+        test_behavior=float(behavior_frame[behavior_frame.split=="test"].clean_correct.mean())
+        write_json(output/"behavior_gate.json", {"input_bos_shift":bos_shift,
+            "test_forced_choice_accuracy":test_behavior,
+            "threshold":min_behavior,"passed":bool(test_behavior>=min_behavior),
+            "by_split_and_arm":json.loads(behavior_summary.to_json(orient="records"))})
+        assert test_behavior>=min_behavior,(
+            f"Clean forced-choice behavior {test_behavior:.3f} below {min_behavior}; "
+            f"see {output/'behavior_summary.csv'}")
         calibration=[]
         for pair in pairs:
             if pair["split"]!="calibration": continue
@@ -271,7 +333,7 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
                 host,donor,base,target,arm=_orientation(pair,reverse); pos=pair["position"]
                 h=cache[(pair["pair_id"],arm,"host")]; other=cache[(pair["pair_id"],arm,"donor")]
                 ids=torch.tensor([host],device=next(mdl.parameters()).device)
-                clean=mdl(input_ids=ids,use_cache=False).logits[0,-1].float()
+                clean=clean_logits[(pair["pair_id"],arm)].to(ids.device)
                 clean_ld=float(clean[target]-clean[base]); clean_correct=int(clean[base]>clean[target])
                 das_rep=interchange_report(h,other,fit.subspace.basis)
                 matched_basis,_=norm_matched_random(h,other,das_rep["edit_fraction"],d,rank,
@@ -291,8 +353,7 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
                     logits=transform_positions(mdl,ids,{layer:{pos:make_interchange_fn(direction[:,None],synthetic)}})[0,-1].float()
                     rows.append(_das_row(pair,arm,"answer_actuator",base,target,clean_ld,clean_correct,logits,
                                          interchange_report(h,synthetic,direction[:,None])))
-        frame=pd.DataFrame(rows); behavior=float(frame.drop_duplicates(["pair_id","arm"]).clean_correct.mean())
-        assert behavior>=min_behavior,f"Clean forced-choice behavior {behavior:.3f} below {min_behavior}"
+        frame=pd.DataFrame(rows); behavior=test_behavior
         assert (frame[frame.variant=="noop"].edit_norm==0).all()
         das_dose = frame[frame.variant == "das_value"].set_index(["pair_id", "arm"])["edit_fraction"]
         random_dose = frame[frame.variant == "random_norm"].set_index(["pair_id", "arm"])["edit_fraction"]
@@ -304,6 +365,7 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
         summary.to_csv(output/"interchange_summary.csv",index=False)
         write_json(output/"meta.json",{"model":model,"layer":layer,"rank":rank,
                    "clean_behavior":behavior,"fit_converged":fit.converged,
+                   "input_bos_shift":bos_shift,
                    "actuator_converged":actuator.converged,"fit_history":fit.history,
                    "answer_actuator_test_coverage":float(
                        (frame.variant == "answer_actuator").sum() /
@@ -311,7 +373,8 @@ def run_value_das(prepared, output, layer, rank=1, model="deepseek-coder-6.7b",
                    "calibration_groups":sorted({e.group for e in calibration}),
                    "test_groups":sorted({p["source_group"] for p in pairs if p["split"]=="test"})})
         register_files(gate,output,["subspace.pkl","answer_actuator.pkl","fit_diagnostics.json",
-                                   "actuator_diagnostics.json","interchange_rows.csv",
+                                   "actuator_diagnostics.json","behavior_diagnostics.csv",
+                                   "behavior_summary.csv","behavior_gate.json","interchange_rows.csv",
                                    "interchange_summary.csv","meta.json"])
     return output
 
