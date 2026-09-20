@@ -4,7 +4,10 @@ Stages 235–238 run first. They reuse the published E19 J/R pair fitted on the
 independent Pile corpus by stage 201. Stages 239–241 then construct and test
 real-code value interchange. Stages 242–243 are an exploratory inspection pass
 over the same stage-236 readout: which early/middle layers surface the output
-tokens, and what the lenses literally put at the top of the vocabulary there. None of these stages consumes the probe activation
+tokens, and what the lenses literally put at the top of the vocabulary there.
+Stages 244–246 restrict the J-lens to coherent words, select a held-out
+(read, layer) by how program-specific those words are, and replicate the
+readout on execution-verified obfuscated variants. None of these stages consumes the probe activation
 stores; they reuse `prepared_all` for source, graph, tokenizer, and provenance.
 
 ## 0. Tests and paths
@@ -19,7 +22,7 @@ LENS=results/workspace_lens/deepseek-coder-6.7b
 CORPUS=data/lens_corpus/pile10k-n100.jsonl
 
 $PY -m pytest tests/test_cruxeval.py tests/test_cruxeval_pipeline.py \
-  tests/test_cruxeval_lens_top20.py -q
+  tests/test_cruxeval_lens_top20.py tests/test_cruxeval_lens_semantic.py -q
 test -f "$PROBES/prepared_all/gates.json"
 ```
 
@@ -312,6 +315,138 @@ erasure rows or the stage-240 interchange. The obfuscated replication is not
 implemented yet: stage 243's outputs are shaped so the identical readout can
 later be applied to execution-verified obfuscated variants.
 
+## 7. J-lens semantic words, and the obfuscation replication (stages 244–246)
+
+Stage 243 read the unfiltered vocabulary and found a program-independent format
+prior: brackets, digits and whitespace, plus an R-lens that returned the same
+function words for every program at every depth. Stages 244–246 ask the
+narrower question — **when the lens is restricted to coherent words, does it
+surface words about _this_ program?** — and then ask what obfuscation does to
+the answer.
+
+These stages use the **J-lens only**. The R-lens is loaded so the matched-pair
+provenance gate still runs, and is never transported. The ordinary logit lens
+rides along because it comes from the same forward pass at no cost; without it,
+"J surfaces semantic words" is unfalsifiable.
+
+### The filter cannot be the finding
+
+Masking the vocabulary to words guarantees words come out. A list of
+plausible-looking code vocabulary is therefore not evidence on its own. The
+selection statistic is **specificity**:
+
+```
+specificity = overlap(top words, THIS program's word set)
+            - mean overlap(top words, the OTHER programs' word sets)
+```
+
+A lens returning one fixed word list for every program scores 0 by
+construction, however meaningful that list looks. That is a built-in
+permutation control, and it is what the R-lens would have failed on the
+unfiltered pass. Abundance-style scores — a predeclared execution lexicon, a
+matched non-execution control lexicon, and the repeat rate of each word across
+programs — are written to the same table, so a different objective can be
+chosen later without another GPU run.
+
+Each program's word set is parsed from its own AST and recorded output, never
+from the lens, and split three ways because obfuscation acts on them
+differently:
+
+| kind | contents | what the ladder does to it |
+|---|---|---|
+| `lexical` | the program's own identifier names | destroyed by level 1 (rename), by construction |
+| `operational` | executed methods, builtins, control constructs | untouched by rename; rewritten by level 4 (flatten) |
+| `type` | words naming the output's type | unchanged at every level |
+
+So `specificity_lexical` collapsing at level 1 is expected and means nothing on
+its own. The informative outcome is whether `specificity_operational` and
+`specificity_type` survive rename and fail at flattening — which is the
+signature a readout tracking execution would have, and matches the E9/R4
+finding that renaming is survivable mid-layer while flattening is not.
+
+### Selection is held out
+
+Stage 244 splits programs into calibration and test by `source_group`, the same
+group-disjoint rule stages 234 and 240 use. The `(read, layer)` cell is chosen
+on calibration by `specificity_semantic` (= operational + type, ties to the
+shallower layer) and reported on the disjoint test groups. `answer` is computed
+at every layer as a positive control and can never be selected: a teacher-forced
+answer position has been told the answer.
+
+Stage 246 then **freezes** that cell. Nothing is re-selected per obfuscation
+condition, so the contrast cannot be quietly re-tuned, and every condition is
+scored against the **clean** program's word sets — the question is whether the
+obfuscated state still surfaces the original semantics.
+
+### Cluster commands
+
+```bash
+$PY scripts/244_cruxeval_jlens_semantic_sweep.py \
+  --prepared "$MECH/lens_targets_rebuilt" \
+  --lens-dir "$LENS" --corpus "$CORPUS" \
+  --output "$MECH/jlens_semantic_L4-25" --model deepseek-coder-6.7b \
+  --dtype bfloat16 --device cuda --first-layer 4 --last-layer 25 \
+  --top-k 20 --seed 42 --checkpoint-every 10 --resume
+
+cat "$MECH/jlens_semantic_L4-25/selected_site.json"
+
+$PY scripts/245_cruxeval_obfuscate.py \
+  --prepared "$MECH/lens_targets_rebuilt" \
+  --output "$MECH/obfuscated_L0-4" --levels 0,1,2,3,4 \
+  --model deepseek-coder-6.7b --seed 42 --min-programs 20
+
+cat "$MECH/obfuscated_L0-4/meta.json"     # check acceptance per level first
+
+$PY scripts/246_cruxeval_obfuscation_semantic.py \
+  --prepared "$MECH/lens_targets_rebuilt" \
+  --obfuscated "$MECH/obfuscated_L0-4" \
+  --sweep "$MECH/jlens_semantic_L4-25" \
+  --lens-dir "$LENS" --corpus "$CORPUS" \
+  --output "$MECH/obfuscation_semantic" --model deepseek-coder-6.7b \
+  --dtype bfloat16 --device cuda --top-k 20 --resume
+```
+
+Stage 244 and 246 need the GPU; 245 is CPU-only and runs the obfuscated code,
+so it is the one to inspect before allocating anything. Stage 244 sweeps 22
+layers × 4 reads but pays for only one forward pass per encoding, so its cost
+is close to stage 243's. Stage 246 reads a single layer at a single position
+and is the cheapest of the three.
+
+Check `obfuscated_L0-4/meta.json` before running 246. Levels 3 (`encode`) and 4
+(`flatten`) rewrite integer expressions and control flow, and a CruxEval
+function operating on strings or dicts will often be rejected by execution
+verification. `variants_by_level` and `audit.csv` record how many survived and
+why the rest did not; a level with few survivors constrains what can be
+concluded from it, and that is a result about coverage, not about the lens.
+
+### Reading the outputs
+
+```bash
+$PY - <<'PY'
+import pandas as pd, json
+d = "results/cruxeval/deepseek-coder-6.7b/mechanistic_n500/jlens_semantic_L4-25"
+print(json.dumps(json.load(open(f"{d}/selected_site.json")), indent=2))
+s = pd.read_csv(f"{d}/semantic_scores.csv")
+s = s[(s.lens == "j-lens") & (s.read != "answer") & (s.split == "test")]
+print(s.sort_values("specificity_semantic", ascending=False)[
+    ["read","layer","specificity_operational","specificity_type",
+     "specificity_lexical","execution_lexicon_rate","control_lexicon_rate",
+     "list_repeat_rate"]].head(15).to_string(index=False))
+PY
+```
+
+`examples.md` shows ~20 programs at the selected site with each program's own
+operational and type words listed, and the surfaced words that hit them in
+bold. The same bold rate in the logit-lens row is the chance rate for this
+vocabulary — compare against it before reading anything into a J-lens list.
+
+Interpretation limits that apply to every number here: the word mask makes
+words appear whether or not anything was computed, so only the specificity
+columns and the logit-lens control carry information; the readout is
+observational, so a program-specific word is not evidence the model *uses* it
+there; and a clean-arm specificity at or below 0 means there was nothing for
+obfuscation to remove, and no obfuscation conclusion follows.
+
 ## Outputs
 
 - `lens_readout/lens_rows.csv.gz`: one row per program, site, output token,
@@ -339,6 +474,17 @@ later be applied to execution-verified obfuscated variants.
   layer, with `top20_tokens`, `top20_token_ids` and `top20_logits`.
 - `lens_top20_clean/top20_lexical_lists.csv.gz`: convenience view only.
 - `lens_top20_clean/examples.md`: a deterministic ~20-program sample.
+- `jlens_semantic_L4-25/semantic_scores.csv`: specificity, lexicon rates and
+  repeat rate per lens, read, layer and split.
+- `jlens_semantic_L4-25/selected_site.json`: the held-out (read, layer) and its
+  test-split numbers, J-lens and logit-lens control.
+- `jlens_semantic_L4-25/semantic_word_lists.csv.gz`: the word list per program,
+  read, layer and lens.
+- `obfuscated_L0-4/lens_programs.jsonl`: execution-verified variants with every
+  anchor rebuilt from the variant's own source; `audit.csv` says why each
+  rejected variant was rejected.
+- `obfuscation_semantic/obfuscation_scores.csv`: the frozen site's specificity
+  per obfuscation level; `report.md` renders the same table.
 
 Every stage writes `gates.json`. A scientific null can pass; malformed
 provenance, alignment, execution, split leakage, failed optimizer convergence,

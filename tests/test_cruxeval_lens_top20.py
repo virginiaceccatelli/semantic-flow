@@ -328,6 +328,27 @@ def test_top_k_readout_is_complete_ordered_and_escaped(stage243):
     assert "tokenizer tokens" in (out / "examples.md").read_text()
 
 
+def test_examples_report_gives_each_lens_its_own_target_ranks(stage243):
+    """Ranks are per lens; one rank line per block would report only one of them."""
+    out = _run(stage243, stage243["tmp_path"] / "top20", top_k=5, example_programs=4)
+    text = (out / "examples.md").read_text()
+    long = pd.read_csv(out / "top20_long.csv.gz", keep_default_na=False)
+
+    for lens in LENSES:
+        assert f"**{lens}** (output-token ranks" in text, lens
+    # The old rendering emitted one block-level line; nothing may reintroduce it.
+    assert "Roles: `" in text and "`. Output-token ranks:" not in text
+
+    # Every rank printed for a lens is that lens's own rank, not a neighbour's.
+    import re
+    printed = re.findall(r"\*\*([\w-]+)\*\* \(output-token ranks `([^`]*)`\)", text)
+    assert printed, "no lens lines were rendered"
+    by_lens = {lens: set(long[long.lens == lens].target_ranks.astype(str))
+               for lens in LENSES}
+    for lens, ranks in printed:
+        assert ranks in by_lens[lens], f"{lens} line shows ranks it does not own: {ranks}"
+
+
 def test_lexical_view_is_additional_and_never_replaces_the_primary_list(stage243):
     out = _run(stage243, stage243["tmp_path"] / "top20", top_k=5, example_programs=1)
     long = pd.read_csv(out / "top20_long.csv.gz", keep_default_na=False)

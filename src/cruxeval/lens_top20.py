@@ -517,12 +517,15 @@ def _examples_markdown(lists: pd.DataFrame, n_programs: int, top_k: int,
             out += [f"### {read} @ position {first.position} "
                     f"({first.source_token_repr}, {first.source_span}) — "
                     f"layer {layer}, {depth}{requested}", "",
-                    f"Roles: `{first.layer_roles}`. Output-token ranks: "
-                    f"`{first.target_ranks}`.", ""]
+                    f"Roles: `{first.layer_roles}`.", ""]
+            # Target ranks are per lens, so they belong on the lens's own line.
+            # Printed once per block they read as a property of the position and
+            # silently report whichever lens sorted first.
             for lens in LENSES:
                 row = block[block.lens == lens]
                 if not row.empty:
-                    out += [f"- **{lens}**: {row.iloc[0][column]}"]
+                    out += [f"- **{lens}** (output-token ranks "
+                            f"`{row.iloc[0].target_ranks}`): {row.iloc[0][column]}"]
             out += [""]
     out += ["---", "",
             f"Consensus pre-answer layer: {selection['discovered']['consensus_pre_answer']}. "
