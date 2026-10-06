@@ -4,10 +4,16 @@
 cluster. Stages 235–238 implement the published full-Jacobian J-lens, matched
 R-lens, full-vocabulary CruxEval output readout, and live-model causal erasure.
 Stages 239–241 implement execution-grounded CruxEval value counterfactuals,
-held-out low-rank DAS interchange with controls, and its report. No large
-J/R-lens or DAS run has been performed locally. See [PROBES.md](PROBES.md) and
-[MECHANISTIC.md](MECHANISTIC.md) for exact cluster commands. The optional
-CruxEval obfuscation ladder remains unimplemented.
+held-out low-rank DAS interchange with controls, and its report. Stages 242–243
+are an exploratory top-token inspection pass; stages 244–246 restrict the
+J-lens to coherent words, select a held-out read position and layer, and
+replicate the readout on execution-verified obfuscated variants — the CruxEval
+obfuscation ladder is now implemented and has run.
+
+Stages 236 and 242–246 have run on the cluster over 500 programs; their results
+are in **[LENS_RESULTS.md](LENS_RESULTS.md)**. No large DAS run has been
+performed locally. See [PROBES.md](PROBES.md) and
+[MECHANISTIC.md](MECHANISTIC.md) for exact cluster commands.
 
 ## What ran
 
@@ -151,9 +157,12 @@ run directory. Figures regenerate via `plot_floor(pd.read_csv(csv_path), path)`.
   Stage 231 remeasures the floor for the exact selected population.
   Frozen transfer alone does not supply RESULTS' open item 3, which explicitly
   calls for context-matched mutations of real code.
-- Optional ladder: reuse atomic `ObfuscationLadder` steps, execute on the
-  supplied input, drop every level of a failing base together, and re-extract
-  each variant's graph. No ladder variants were generated here.
+- Optional ladder: implemented as stage 245. It reuses the atomic
+  `ObfuscationLadder` steps, re-executes `f` on the supplied input in an
+  isolated subprocess requiring exact value and type, and rebuilds every
+  anchor from each variant's own source. Levels are reported independently
+  rather than dropped together, with per-level acceptance in `meta.json` and
+  per-rejection reasons in `audit.csv`.
 - Stages 235–238 reuse E19's stage-201 artifacts; they do not fit a second lens
   on CruxEval. They rerun the independent-corpus, matched-provenance,
   identity/head, forward-invariance, rule-binding, and nontrivial-J/R gates

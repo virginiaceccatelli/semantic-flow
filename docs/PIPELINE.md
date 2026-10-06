@@ -1281,3 +1281,15 @@ import, probe/J-lens extraction, error calibration and frozen evaluation.
 `jobs/security_monitor.csh` runs the development stages with the existing cluster
 environment and validated published J-lens. It does not launch a new lens fit or
 DAS repair, and synthetic reports are explicitly not final project results.
+
+## BranchExec: online branch execution on real code (stages 250–255)
+
+Design, controls, outcome reading and resources: [BRANCHEXEC.md](BRANCHEXEC.md).
+
+```tcsh
+setenv SMOKE 1; jobs/branchexec.csh      # small end-to-end run first
+unsetenv SMOKE; jobs/branchexec.csh      # full run, deepseek-coder-6.7b
+```
+
+Outputs go to `results/branchexec/<model>/<tag>/{build,extract,readout,behaviour,steer,report}`;
+the result is `report/report.md`.

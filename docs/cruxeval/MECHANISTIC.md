@@ -10,6 +10,9 @@ Stages 244–246 restrict the J-lens to coherent words, select a held-out
 readout on execution-verified obfuscated variants. None of these stages consumes the probe activation
 stores; they reuse `prepared_all` for source, graph, tokenizer, and provenance.
 
+Measured results for stages 236 and 242–246 are in
+[LENS_RESULTS.md](LENS_RESULTS.md); this file is the runbook.
+
 ## 0. Tests and paths
 
 Run from a bash shell in the repository:
