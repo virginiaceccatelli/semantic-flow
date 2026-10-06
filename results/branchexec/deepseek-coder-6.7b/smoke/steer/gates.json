@@ -1,0 +1,40 @@
+{
+  "stage": "254_branch_steer",
+  "status": "passed",
+  "args": {
+    "readout_sha256": "6de26975de62fee0f544b1b58f101008d092acb7725e34e541481895fb3c1e52",
+    "behaviour_sha256": "3a192e7ef452f0db7aacdbb50c229f24371deb7fddae0eecf8334e6ef1c819a1",
+    "model": "deepseek-coder-6.7b",
+    "device": "cuda",
+    "dtype": "float16",
+    "band": 2,
+    "steer_layers": null,
+    "doses": [
+      0.05,
+      0.2
+    ],
+    "conditions": [
+      "semantic",
+      "reverse",
+      "random",
+      "shuffled",
+      "wrong_site",
+      "answer_site",
+      "actuator_cond",
+      "actuator_answer"
+    ],
+    "max_syn": 30,
+    "max_real": 30,
+    "gated_only": false,
+    "chunk": 40,
+    "examples": 3,
+    "seed": 42,
+    "injected": false
+  },
+  "files": {
+    "steer_long.csv": "af0406130e83d156fe312e00c6c6d9ccfe9b3c7f7ebdc9bab1f6a610fac9d2ae",
+    "selection.json": "15c4ace4e4cecb254b7896dbf7436813e470d3afcd01d923b610f7711094ea5c",
+    "examples.md": "8bfcfcdeec22bfccd0ad79f936b1b069ddbf0f3f672dcdff889167ee773801c7"
+  },
+  "wall_time_s": 11.9
+}

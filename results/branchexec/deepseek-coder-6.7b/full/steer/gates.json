@@ -1,0 +1,43 @@
+{
+  "stage": "254_branch_steer",
+  "status": "passed",
+  "args": {
+    "readout_sha256": "0f60bd468131a9116f108be1d1fd3e38b40d7e27091ccb2f65027c91c6b810f8",
+    "behaviour_sha256": "06fe6e32b98868fe54d514318c5dd702184ac340c28cf1077768cdddcd68806e",
+    "model": "deepseek-coder-6.7b",
+    "device": "cuda",
+    "dtype": "float16",
+    "band": 2,
+    "steer_layers": null,
+    "doses": [
+      0.02,
+      0.05,
+      0.1,
+      0.2,
+      0.4
+    ],
+    "conditions": [
+      "semantic",
+      "reverse",
+      "random",
+      "shuffled",
+      "wrong_site",
+      "answer_site",
+      "actuator_cond",
+      "actuator_answer"
+    ],
+    "max_syn": 200,
+    "max_real": null,
+    "gated_only": false,
+    "chunk": 40,
+    "examples": 20,
+    "seed": 42,
+    "injected": false
+  },
+  "files": {
+    "steer_long.csv": "087e532f59d9e58b578f02478f7dec294b9e4d0447919866ef9b438ccd424457",
+    "selection.json": "5066c90d5e03e8288bfc76c870c249a6144867976455f1afbd126249cb4d772c",
+    "examples.md": "668194baea0d7a1a0dc2de84c071d69df5afed81d0b6c2ba896c16ae34a92735"
+  },
+  "wall_time_s": 738.73
+}
