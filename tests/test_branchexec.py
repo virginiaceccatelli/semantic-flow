@@ -213,7 +213,8 @@ def pipeline(tmp_path_factory):
         rows.append({"source": "realtest", "program_id": f"real_{i}", "code": code,
                      "entry": code.split("(")[0][4:], "inputs": [args], "recorded_outputs": [None]})
     model = tiny_llama()
-    paths = {k: root / k for k in ("build", "extract", "readout", "behaviour", "steer", "report")}
+    paths = {k: root / k for k in ("build", "extract", "readout", "behaviour", "steer", "report",
+                                   "link", "repair", "compare")}
     build(paths["build"], tokenizer=tok, rows=rows, workers=8)
     extract(paths["build"], paths["extract"], model_obj=model, tokenizer=tok, device="cpu", batch_size=4)
     readout(paths["build"], paths["extract"], paths["readout"], n_boot=50, max_iter=200)
@@ -221,6 +222,8 @@ def pipeline(tmp_path_factory):
     # The random tiny model is never capable; force the gate open so every code path runs.
     beh = pd.read_csv(paths["behaviour"] / "behaviour.csv")
     beh["capable"] = True
+    # The random model never answers a branch output; assign answers so every link category occurs.
+    beh["unsteered"] = [("o", "o_flip", "other")[i % 3] for i in range(len(beh))]
     beh.to_csv(paths["behaviour"] / "behaviour.csv", index=False)
     from src.cruxeval.artifacts import read_json, register_files, write_json
     gate = read_json(paths["behaviour"] / "gates.json")
@@ -230,6 +233,13 @@ def pipeline(tmp_path_factory):
           device="cpu", doses=(0.1, 0.4), max_syn=6, max_real=4, chunk=3, examples=1, batch_size=8)
     report(paths["build"], paths["extract"], paths["readout"], paths["behaviour"], paths["steer"],
            paths["report"], n_boot=50)
+    from src.branchexec.compare import compare
+    from src.branchexec.link import link
+    from src.branchexec.repair import repair
+    link(paths["build"], paths["extract"], paths["readout"], paths["behaviour"], paths["link"], n_boot=20)
+    repair(paths["build"], paths["readout"], paths["behaviour"], paths["repair"], model_obj=model, tokenizer=tok,
+           device="cpu", doses=(0.1, 0.4), max_members=3, chunk=2, examples=1, n_boot=20, batch_size=8)
+    compare([root], paths["compare"])
     yield paths | {"tokenizer": tok}
     patcher.undo()
 
@@ -281,7 +291,7 @@ def test_steering_rows_and_report(pipeline):
     base = long[long.condition == "baseline"]
     assert base.groupby("row").size().eq(1).all()
     report = (pipeline["report"] / "report.md").read_text()
-    for heading in ("## 1.", "## 2.", "## 3.", "## Reading the pattern"):
+    for heading in ("## 1.", "## 2.", "## 3.", "## Summary of the numbers"):
         assert heading in report
     assert (pipeline["report"] / "branchexec.png").exists()
 
@@ -334,3 +344,42 @@ def test_evalplus_inputs_are_parsed_from_the_inputs_literal(monkeypatch):
     monkeypatch.setattr(sources, "_load", lambda names, *a, **k: {"test": rows})
     out = sources.mbppplus()
     assert out[0]["entry"] == "big" and out[0]["inputs"] == ["[1, 5], 3", "[0], 9"]
+
+
+def test_link_categories_and_within_branch(pipeline):
+    from src.branchexec.link import model_branch, pair_category
+    assert pair_category("o", "o") == "tracks" and pair_category("o_flip", "o_flip") == "inverted"
+    assert pair_category("o", "o_flip") == "same_branch" and pair_category("other", "o") == "undecided"
+    assert model_branch("o", True) is True and model_branch("o_flip", True) is False and model_branch("other", True) is None
+    table = pd.read_csv(pipeline["link"] / "link_pairs.csv")
+    assert {"all"} <= set(table.category)
+    assert ((table.pair_acc >= 0) & (table.pair_acc <= 1)).all()
+    assert (pipeline["link"] / "report.md").exists()
+
+
+def test_repair_steers_wrong_members_toward_the_true_branch(pipeline):
+    from src.branchexec.repair import repair_edit
+    from src.cruxeval.artifacts import read_jsonl
+    long = pd.read_csv(pipeline["repair"] / "repair_long.csv")
+    beh = pd.read_csv(pipeline["behaviour"] / "behaviour.csv").set_index("row")
+    assert (beh.loc[long.row.unique(), "unsteered"] == "o_flip").all()
+    assert {"baseline", "if_true", "if_away", "answer_true", "random_if"} <= set(long.condition)
+    member = next(m for m in read_jsonl(pipeline["build"] / "members.jsonl") if m["split"] == "real")
+    npz = np.load(pipeline["readout"] / "directions.npz")
+    li_of = {int(l): i for i, l in enumerate(npz["layers"])}
+    dirs = {k: npz[k] for k in npz.files if k.startswith(("v__", "vshuf__"))}
+    true = repair_edit(member, "if_true", 0.1, [1], li_of, dirs, 0, [], [], None)
+    away = repair_edit(member, "if_away", 0.1, [1], li_of, dirs, 0, [], [], None)
+    sign = 1.0 if member["taken"] else -1.0
+    assert np.allclose(true.directions[1], sign * dirs["v__first__colon"][li_of[1]])
+    assert np.allclose(away.directions[1], -true.directions[1])
+    assert list(true.positions) == member["pos_first"]["cond_span"]
+
+
+def test_compare_summarises_the_run(pipeline):
+    table = pd.read_csv(pipeline["compare"] / "compare.csv")
+    assert len(table) == 1
+    for column in ("readout_if", "follows_true_branch", "body_branch_share", "same_branch_pairs",
+                   "readout_tracks", "repair_if_true"):
+        assert column in table.columns
+    assert 0 <= table.follows_true_branch.iloc[0] <= 1

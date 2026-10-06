@@ -1,6 +1,8 @@
 # BranchExec: is the branch decided at the `if`, and does that decision drive the answer?
 
-Stages 250–255 · `src/branchexec/` · `jobs/branchexec.csh` · tests: `tests/test_branchexec.py`
+Stages 250–258 · `src/branchexec/` · `jobs/branchexec.csh`, `jobs/branchexec_paper.csh` · tests: `tests/test_branchexec.py`
+
+**Results so far:** [BRANCHEXEC_RESULTS.md](BRANCHEXEC_RESULTS.md) (DeepSeek-Coder 6.7B).
 
 ## The question
 
@@ -165,9 +167,45 @@ Then run stages 251–255 with the same paths (each stage's flags are in `jobs/b
 | 252 readout | CPU | 250, 251 | `directions.npz`, `readout_layers.csv`, `ceiling.csv`, `selection.json`, `report.md` |
 | 253 behaviour | GPU | 250 | `behaviour.csv`, `behaviour_summary.csv` |
 | 254 steer | GPU, resumable (`--resume`) | 250, 252, 253 | `steer_long.csv`, `selection.json`, `examples.md`, `parts/` |
-| 255 report | CPU | all | `report.md`, `dose_curves.csv`, `branchexec.png` |
+| 255 report | CPU | all | `report.md`, `dose_curves.csv`, `branchexec.png` (the job writes v2 to `report_v2/`) |
+| 256 link | CPU | 250–253 | `link_pairs.csv`, `link_within_branch.csv`, `link.json`, `report.md` |
+| 257 repair | GPU, resumable | 250, 252, 253 | `repair_long.csv`, `repair_summary.csv`, `repair.json`, `report.md`, `examples.md` |
+| 258 compare | CPU | several runs | `compare.csv`, `compare.md`, `compare.png` |
 
 Every stage writes `gates.json` with artifact digests, refuses a non-empty output directory, and refuses inputs whose upstream gate did not pass or whose files changed.
+
+### Paper run: link, repair, three models
+
+```tcsh
+screen -S bx_paper
+jobs/branchexec_paper.csh
+```
+
+This runs DeepSeek 6.7B, DeepSeek 1.3B and StarCoder2-3B (bfloat16), one after another.
+`jobs/branchexec.csh` skips every stage whose `gates.json` says `passed`, so the existing
+6.7B run only gains stage 256 (link), stage 257 (repair) and the v2 report. The other
+models run the full pipeline. The job ends with stage 258 into
+`results/branchexec/compare_<timestamp>/`. A subset can be run with
+`setenv MODELS "deepseek-coder-1.3b"`.
+
+What to bring back (all small):
+- per model: `results/branchexec/<model>/full/{readout,behaviour,link,repair,report_v2}/`
+  and `steer/{steer_long.csv,selection.json,examples.md}`;
+- `results/branchexec/compare_*/`.
+
+Leave out `extract/acts_*.npy` (gigabytes) and `steer/parts/`, `repair/parts/`.
+
+**Stage 256** compares the frozen readout with the model's own branch choice without
+the branch-bias confound:
+- pair accuracy within pair categories (`tracks`: right branch for both inputs;
+  `same_branch`: one branch for both; `inverted`: wrong branch for both);
+- an AUROC computed separately within taken and within not-taken members.
+
+**Stage 257** takes every real member whose unsteered answer is the wrong branch's
+output and pushes toward the **true** branch, at the `if` and at the answer. Controls:
+away-pushes, random directions, the shuffled direction, and an answer-token actuator
+that knows the right token. Repair means the greedy answer becomes exactly correct.
+Doses are 0.05–0.8, nothing is selected, and stage 258 quotes α = 0.4, fixed in advance.
 
 ### Resources (deepseek-coder-6.7b, fp16)
 

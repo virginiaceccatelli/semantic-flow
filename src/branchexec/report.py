@@ -13,12 +13,10 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
-from src.branchexec.extract import open_acts
 from src.branchexec.readout import group_bootstrap
-from src.cruxeval.artifacts import checked_gate, read_json, read_jsonl, register_files, stage_run
+from src.cruxeval.artifacts import checked_gate, read_json, register_files, stage_run
 
 log = logging.getLogger(__name__)
 STAGE = "255_branch_report"
@@ -34,8 +32,9 @@ def _steer_table(long, dose, subset, n_boot, seed):
         flip = group_bootstrap(d.exact_flip.astype(float), groups, n_boot, seed)
         keep = group_bootstrap(d.exact_o.astype(float), groups, n_boot, seed)
         sh = group_bootstrap(shift.to_numpy(), groups, n_boot, seed)
-        out.append(dict(condition=condition, n=len(d), flip_rate=flip[0], flip_lo=flip[1], flip_hi=flip[2],
-                        keep_rate=keep[0], other_rate=1 - flip[0] - keep[0],
+        base_flip = float(base.exact_flip.reindex(d.index).astype(float).mean())
+        out.append(dict(condition=condition, n=len(d), base_flip=base_flip, flip_rate=flip[0], flip_lo=flip[1],
+                        flip_hi=flip[2], keep_rate=keep[0], other_rate=1 - flip[0] - keep[0],
                         logodds_shift=sh[0], shift_lo=sh[1], shift_hi=sh[2]))
     order = ["semantic", "reverse", "random", "shuffled", "wrong_site", "answer_site",
              "actuator_cond", "actuator_answer"]
@@ -47,41 +46,13 @@ def _steer_table(long, dose, subset, n_boot, seed):
 
 
 def _fmt_steer(table):
-    lines = ["| condition | n | flip to o_flip | 95% CI | keeps o | other | Δ log-odds(o_flip vs o) | 95% CI |",
-             "|---|---:|---:|---|---:|---:|---:|---|"]
+    lines = ["| condition | n | flip to o_flip | unsteered flip | 95% CI | keeps o | other | Δ log-odds(o_flip vs o) | 95% CI |",
+             "|---|---:|---:|---:|---|---:|---:|---:|---|"]
     for _, r in table.iterrows():
-        lines.append(f"| {r.condition} | {r.n} | {r.flip_rate:.3f} | [{r.flip_lo:.3f}, {r.flip_hi:.3f}] | "
+        lines.append(f"| {r.condition} | {r.n} | {r.flip_rate:.3f} | {r.base_flip:.3f} | [{r.flip_lo:.3f}, {r.flip_hi:.3f}] | "
                      f"{r.keep_rate:.3f} | {r.other_rate:.3f} | {r.logodds_shift:+.2f} | "
                      f"[{r.shift_lo:+.2f}, {r.shift_hi:+.2f}] |")
     return lines
-
-
-def _errors(build, extract, readout, behaviour):
-    """Does the readout at the `if` agree with the branch the model's own answer implies?"""
-    members = read_jsonl(build / "members.jsonl")
-    beh = pd.read_csv(behaviour / "behaviour.csv")
-    beh = beh[beh.split == "real"]
-    if not len(beh):
-        return None
-    sel = read_json(readout / "selection.json")
-    npz = np.load(readout / "directions.npz")
-    layers = [int(l) for l in npz["layers"]]
-    li = layers.index(sel["layer_star"])
-    v, thr = npz["v__first__colon"][li], float(npz["thr__first__colon"][li])
-    _, acts = open_acts(extract)
-    H = np.asarray(acts[("first", "colon")][:, li, :], dtype=np.float32)
-    rows = beh.row.to_numpy()
-    sign = np.where(beh.taken.to_numpy(), 1.0, -1.0)
-    beh = beh.assign(agree=sign * (H[rows] @ v - thr))
-    out = beh.groupby("unsteered").agree.agg(["size", "mean", lambda s: float((s < 0).mean())])
-    out.columns = ["n", "mean_agreement", "share_reading_other_branch"]
-    auroc = None
-    pair = beh[beh.unsteered.isin(["o", "o_flip"])]
-    if pair.unsteered.nunique() == 2:
-        from sklearn.metrics import roc_auc_score
-        auroc = float(roc_auc_score((pair.unsteered == "o").astype(int), pair.agree))
-    _ = members
-    return out.reset_index(), auroc
 
 
 def _figures(output, readout_table, sel, long, dose):
@@ -189,19 +160,11 @@ def report(build, extract, readout, behaviour, steer, output, n_boot=2000, seed=
             n=("row", "size"), flip_rate=("exact_flip", "mean"), keep_rate=("exact_o", "mean")).reset_index()
         curves.to_csv(output / "dose_curves.csv", index=False)
 
-        errs = _errors(paths["build"], paths["extract"], paths["readout"], paths["behaviour"])
-        if errs is not None:
-            table, auroc = errs
-            L += ["", "## 4. The model's own errors", "",
-                  "Agreement = projection at l*/colon, oriented so that positive means the readout points to "
-                  "the branch that truly runs.", "", "| unsteered answer | n | mean agreement | share reading the other branch |",
-                  "|---|---:|---:|---:|"]
-            for _, r in table.iterrows():
-                L.append(f"| {r.unsteered} | {r.n} | {r.mean_agreement:+.3f} | {r.share_reading_other_branch:.3f} |")
-            if auroc is not None:
-                L.append(f"\nAUROC (correct vs answered o_flip) of the agreement score: {auroc:.3f}.")
-
-        L += ["", "## Reading the pattern", "", _verdict(at, long, dose)]
+        L += ["", "## 4. The model's own errors", "",
+              "Moved to stage 256 (`link/report.md`), which compares the readout with the model's answer "
+              "within the same true branch and within pairs. The pooled comparison is confounded by the "
+              "model's branch bias and is no longer reported here.",
+              "", "## Summary of the numbers", "", _verdict(at, long, dose)]
         (output / "report.md").write_text("\n".join(L) + "\n")
         _figures(output, rtable, sel, long, dose)
         register_files(gate, output, ["report.md", "dose_curves.csv", "branchexec.png"])
@@ -209,31 +172,21 @@ def report(build, extract, readout, behaviour, steer, output, n_boot=2000, seed=
 
 
 def _verdict(at, long, dose):
-    """A descriptive reading, not a gate; every number it uses is printed above."""
-    def flip(condition, where):
-        d = long[(long.split == "real") & long.capable & (long.condition == condition) & (long.dose == dose)]
-        return d.exact_flip.mean() if len(d) else float("nan")
+    """The headline numbers in one place. No pattern label: the tables carry the evidence."""
     colon = at[(at.order == "first") & (at.position == "colon")]
     answer = at[(at.order == "first") & (at.position == "answer")]
     read_if = float(colon.pair_acc.iloc[0]) if len(colon) else float("nan")
     read_ans = float(answer.pair_acc.iloc[0]) if len(answer) else float("nan")
-    s, r, a, act = flip("semantic", "if"), flip("random", "if"), flip("answer_site", "ans"), flip("actuator_cond", "if")
-    parts = [f"Readout at the `if` {read_if:.3f}, at the answer {read_ans:.3f}; flip rate semantic {s:.3f}, "
-             f"random {r:.3f}, answer-site {a:.3f}, actuator at the `if` {act:.3f}."]
-    online = read_if > 0.6
-    used_at_if = s > r + 0.05 and s > act
-    if online and used_at_if:
-        parts.append("Pattern: **online execution** — the branch outcome is readable at the `if` and pushing "
-                     "it there moves real outputs to their own counterfactuals beyond random and answer-token pushes.")
-    elif online and a > r + 0.05:
-        parts.append("Pattern: **decided online, used at the answer** — readable at the `if`, but only steering "
-                     "at the answer position moves the output.")
-    elif not online and read_ans > 0.6:
-        parts.append("Pattern: **lazy execution** — the outcome is not readable at the `if` but is at the answer.")
-    elif online:
-        parts.append("Pattern: **represented, not shown to be used** at the tested sites and doses.")
-    else:
-        parts.append("Pattern: no transferable branch readout at the tested sites; compare the real in-domain "
-                     "ceiling to tell a synthetic-to-real gap from absence.")
-    parts.append("Thresholds here (0.6 readout, +0.05 flip margin) only label the pattern; the tables carry the evidence.")
-    return " ".join(parts)
+    real = long[long.split == "real"].copy()
+    real["lo"] = real.logp_flip - real.logp_o
+    base = real[real.condition == "baseline"].set_index("row").lo
+    at_dose = real[(real.dose == dose) & (real.condition != "baseline")].copy()
+    at_dose["shift"] = at_dose.lo.to_numpy() - base.reindex(at_dose.row).to_numpy()
+    shift = at_dose.groupby("condition")["shift"].mean()
+    def get(c):
+        return shift.get(c, float("nan"))
+    return (f"Readout of the branch outcome (real pairs, chance 0.5): {read_if:.3f} at the `if`, {read_ans:.3f} at "
+            f"the answer. Mean log-odds shift toward the other branch's output at α = {dose}, all real members: "
+            f"semantic at the `if` {get('semantic'):+.3f}, reverse {get('reverse'):+.3f}, random {get('random'):+.3f}, "
+            f"answer-token push at the `if` {get('actuator_cond'):+.3f}, semantic at the answer {get('answer_site'):+.3f}. "
+            "Use of the outcome by the model's answers and repair of wrong answers are reported by stages 256–258.")
