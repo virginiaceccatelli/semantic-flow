@@ -214,7 +214,7 @@ def pipeline(tmp_path_factory):
                      "entry": code.split("(")[0][4:], "inputs": [args], "recorded_outputs": [None]})
     model = tiny_llama()
     paths = {k: root / k for k in ("build", "extract", "readout", "behaviour", "steer", "report",
-                                   "link", "repair", "compare")}
+                                   "link", "repair", "natural", "locate", "compare")}
     build(paths["build"], tokenizer=tok, rows=rows, workers=8)
     extract(paths["build"], paths["extract"], model_obj=model, tokenizer=tok, device="cpu", batch_size=4)
     readout(paths["build"], paths["extract"], paths["readout"], n_boot=50, max_iter=200)
@@ -239,6 +239,11 @@ def pipeline(tmp_path_factory):
     link(paths["build"], paths["extract"], paths["readout"], paths["behaviour"], paths["link"], n_boot=20)
     repair(paths["build"], paths["readout"], paths["behaviour"], paths["repair"], model_obj=model, tokenizer=tok,
            device="cpu", doses=(0.1, 0.4), max_members=3, chunk=2, examples=1, n_boot=20, batch_size=8)
+    from src.branchexec.locate import locate
+    from src.branchexec.natural import natural
+    natural(paths["build"], paths["behaviour"], paths["natural"], model_obj=model, tokenizer=tok, device="cpu")
+    locate(paths["build"], paths["readout"], paths["behaviour"], paths["locate"], model_obj=model, tokenizer=tok,
+           device="cpu", doses=(0.5,), max_members=2, chunk=1, n_boot=20, batch_size=16)
     compare([root], paths["compare"])
     yield paths | {"tokenizer": tok}
     patcher.undo()
@@ -383,3 +388,41 @@ def test_compare_summarises_the_run(pipeline):
                    "readout_tracks", "repair_if_true"):
         assert column in table.columns
     assert 0 <= table.follows_true_branch.iloc[0] <= 1
+
+
+def test_branch_use_metrics():
+    from src.branchexec.link import branch_use
+    answers = {0: "o", 1: "o_flip", 2: "o", 3: "o", 4: "other"}
+    taken = {0: True, 1: False, 2: True, 3: False, 4: True}
+    use = branch_use(answers, taken, [(0, 1), (2, 3), (4, 3)])
+    assert use["decided"] == 4 and use["follows_true_branch"] == 0.75
+    assert use["body_branch_share"] == 0.75          # rows 0, 1, 2 answer the taken (body) branch
+    assert use["same_branch_pairs"] == 0.5 and use["tracking_pairs"] == 0.5 and use["decided_pairs"] == 2
+
+
+def test_natural_order_scores_both_outputs(pipeline):
+    from src.cruxeval.artifacts import read_json
+    table = pd.read_csv(pipeline["natural"] / "natural.csv")
+    summary = read_json(pipeline["natural"] / "natural.json")
+    assert len(table) + summary["members_dropped_unstable"] == sum(
+        1 for _ in open(pipeline["build"] / "members.jsonl") if '"split": "real"' in _)
+    assert set(table.answer_last) <= {"o", "o_flip", "other"}
+    assert not (table.exact_o & table.exact_flip).any()
+
+
+def test_locate_single_block_edits(pipeline):
+    from src.branchexec.locate import locate_edit
+    from src.cruxeval.artifacts import read_jsonl
+    summary = pd.read_csv(pipeline["locate"] / "locate_summary.csv")
+    assert set(summary.site) == {"if", "body_first", "answer"}
+    assert {"repair_toward", "repair_away", "repair_random", "margin"} <= set(summary.columns)
+    member = next(m for m in read_jsonl(pipeline["build"] / "members.jsonl") if m["split"] == "real")
+    npz = np.load(pipeline["readout"] / "directions.npz")
+    li_of = {int(l): i for i, l in enumerate(npz["layers"])}
+    dirs = {k: npz[k] for k in npz.files if k.startswith("v__")}
+    toward = locate_edit(member, "body_first", 2, "toward", 0.5, li_of, dirs, 0)
+    away = locate_edit(member, "body_first", 2, "away", 0.5, li_of, dirs, 0)
+    assert list(toward.directions) == [2] and np.allclose(toward.directions[2], -away.directions[2])
+    assert list(toward.positions) == [member["pos_first"]["body_first"]]
+    table = pd.read_csv(pipeline["compare"] / "compare.csv")
+    assert {"nat_follows_true_branch", "locate_best_site"} <= set(table.columns)

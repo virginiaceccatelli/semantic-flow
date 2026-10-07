@@ -1,6 +1,6 @@
 # BranchExec: is the branch decided at the `if`, and does that decision drive the answer?
 
-Stages 250–258 · `src/branchexec/` · `jobs/branchexec.csh`, `jobs/branchexec_paper.csh` · tests: `tests/test_branchexec.py`
+Stages 250–260 · `src/branchexec/` · `jobs/branchexec.csh`, `jobs/branchexec_paper.csh` · tests: `tests/test_branchexec.py`
 
 **Results so far:** [BRANCHEXEC_RESULTS.md](BRANCHEXEC_RESULTS.md) (DeepSeek-Coder 6.7B).
 
@@ -171,6 +171,8 @@ Then run stages 251–255 with the same paths (each stage's flags are in `jobs/b
 | 256 link | CPU | 250–253 | `link_pairs.csv`, `link_within_branch.csv`, `link.json`, `report.md` |
 | 257 repair | GPU, resumable | 250, 252, 253 | `repair_long.csv`, `repair_summary.csv`, `repair.json`, `report.md`, `examples.md` |
 | 258 compare | CPU | several runs | `compare.csv`, `compare.md`, `compare.png` |
+| 259 natural | GPU (short) | 250, 253 | `natural.csv`, `natural.json`, `report.md` |
+| 260 locate | GPU, resumable | 250, 252, 253 | `locate_long.csv`, `locate_summary.csv`, `locate.json`, `report.md`, `locate.png` |
 
 Every stage writes `gates.json` with artifact digests, refuses a non-empty output directory, and refuses inputs whose upstream gate did not pass or whose files changed.
 
@@ -206,6 +208,26 @@ output and pushes toward the **true** branch, at the `if` and at the answer. Con
 away-pushes, random directions, the shuffled direction, and an answer-token actuator
 that knows the right token. Repair means the greedy answer becomes exactly correct.
 Doses are 0.05–0.8, nothing is selected, and stage 258 quotes α = 0.4, fixed in advance.
+
+### Follow-up stages (259–260) and a fourth model
+
+**Stage 259 (natural order)** scores the other branch's output in the CruxEval prompt order
+(`assert f(<input>) ==`), then reports branch-following, body share, same-branch pairs
+and tracking pairs in that order, next to the input-first numbers for the same members.
+
+**Stage 260 (locate)** repeats repair one block at a time, at every second block (plus
+the last), at three sites: the condition, the first body token and the answer. Each
+uses the synthetic direction learned at that block and position, with pushes toward
+the true branch, away from it, and random, at α ∈ {0.5, 1.0}. The summary is the margin
+`repair(toward) − repair(away)` per site and block.
+
+**StarCoder2-7B** (bfloat16) is the second StarCoder2 size, giving a within-family size
+contrast in both families.
+
+`jobs/branchexec_paper.csh` now runs all four models; existing models only gain 259 and 260.
+Expected GPU time: 259 takes minutes per model. 260 takes about an hour for each 7B
+model (≈ 350 members × 307 edits × 2 continuations) and less for the small ones. The
+StarCoder2-7B full pipeline takes about 2–3 h, and its stage 251 needs about 9 GB of disk.
 
 ### Resources (deepseek-coder-6.7b, fp16)
 

@@ -93,6 +93,25 @@ def summarise_run(run: Path) -> dict:
                     ("if_true", "if_away", "random_if", "answer_true", "answer_away", "random_answer",
                      "actuator_answer")})
         row["repair_n"] = read_json(run / "repair" / "repair.json")["n_members"]
+    if (run / "natural" / "gates.json").exists():
+        checked_gate(run / "natural", "259_branch_natural")
+        nat = read_json(run / "natural" / "natural.json")
+        use = nat["natural_order"]
+        row.update(nat_accuracy=nat["accuracy_last"], nat_follows_true_branch=use["follows_true_branch"],
+                   nat_body_branch_share=use["body_branch_share"], nat_same_branch_pairs=use["same_branch_pairs"],
+                   nat_same_branch_if_bias_only=use["same_branch_if_bias_only"],
+                   nat_tracking_pairs=use["tracking_pairs"], nat_decided=use["decided"],
+                   same_choice_across_orders=nat["same_branch_choice_across_orders"])
+    if (run / "locate" / "gates.json").exists():
+        checked_gate(run / "locate", "260_branch_locate")
+        best = read_json(run / "locate" / "locate.json")["best"] or {}
+        summary = pd.read_csv(run / "locate" / "locate_summary.csv")
+        for site in ("if", "body_first", "answer"):
+            d = summary[summary.site == site]
+            row[f"locate_max_margin_{site}"] = float(d.margin.max()) if len(d) else np.nan
+            row[f"locate_depth_{site}"] = float(d.sort_values("margin", ascending=False).depth.iloc[0]) if len(d) else np.nan
+        row.update(locate_best_site=best.get("site"), locate_best_depth=best.get("depth", np.nan),
+                   locate_best_margin=best.get("margin", np.nan))
     return row
 
 
@@ -109,7 +128,7 @@ def compare(runs, output):
 
 
 def _f(x, fmt="{:.3f}"):
-    return "—" if x != x else fmt.format(x)
+    return "—" if x is None or x != x else fmt.format(x)
 
 
 def _report(t):
@@ -145,6 +164,24 @@ def _report(t):
                      f"{_f(r.get('repair_random_if', np.nan))} | {_f(r.get('repair_answer_true', np.nan))} / "
                      f"{_f(r.get('repair_answer_away', np.nan))} / {_f(r.get('repair_random_answer', np.nan))} | "
                      f"{_f(r.get('repair_actuator_answer', np.nan))} |")
+    if "nat_follows_true_branch" in t:
+        L += ["", "Branch-following in the CruxEval order (input after the code; stage 259):", "",
+              "| model | accuracy | decided | follows true branch | `if`-body share | same branch for both inputs "
+              "(bias-only expectation) | tracking pairs | same branch chosen in both orders |",
+              "|---|---:|---:|---:|---:|---|---:|---:|"]
+        for _, r in t.iterrows():
+            L.append(f"| {r.model} | {_f(r.get('nat_accuracy', np.nan))} | {_f(r.get('nat_decided', np.nan), '{:.0f}')} | "
+                     f"{_f(r.get('nat_follows_true_branch', np.nan))} | {_f(r.get('nat_body_branch_share', np.nan))} | "
+                     f"{_f(r.get('nat_same_branch_pairs', np.nan))} ({_f(r.get('nat_same_branch_if_bias_only', np.nan))}) | "
+                     f"{_f(r.get('nat_tracking_pairs', np.nan))} | {_f(r.get('same_choice_across_orders', np.nan))} |")
+    if "locate_best_site" in t:
+        L += ["", "Single-block repair (stage 260): best margin (toward − away) per site, with the relative depth of "
+              "that block:", "", "| model | `if` | first body token | answer | overall best |", "|---|---|---|---|---|"]
+        for _, r in t.iterrows():
+            cells = [f"{_f(r.get(f'locate_max_margin_{s}', np.nan), '{:+.3f}')} @ "
+                     f"{_f(r.get(f'locate_depth_{s}', np.nan), '{:.2f}')}" for s in ("if", "body_first", "answer")]
+            L.append(f"| {r.model} | " + " | ".join(cells) + f" | {r.get('locate_best_site', '—')} @ "
+                     f"{_f(r.get('locate_best_depth', np.nan), '{:.2f}')} |")
     return "\n".join(L) + "\n"
 
 

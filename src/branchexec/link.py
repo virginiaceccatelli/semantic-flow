@@ -60,6 +60,37 @@ def pair_category(t_answer: str, n_answer: str) -> str:
     return "same_branch"
 
 
+def branch_use(answers: dict, taken: dict, pairs) -> dict:
+    """Utilisation metrics from per-member answers ('o' / 'o_flip' / 'other').
+
+    `answers` and `taken` map member row -> value; `pairs` is an iterable of
+    (taken_row, not_taken_row). Shared by stages 258 and 259 so both orders are
+    summarised identically.
+    """
+    decided = [(r, a) for r, a in answers.items() if a in ("o", "o_flip")]
+    follows = float(np.mean([a == "o" for _, a in decided])) if decided else float("nan")
+    body = float(np.mean([model_branch(a, taken[r]) for r, a in decided])) if decided else float("nan")
+    cats = [pair_category(answers.get(t, "other"), answers.get(n, "other")) for t, n in pairs]
+    both = [c for c in cats if c != "undecided"]
+    same = float(np.mean([c == "same_branch" for c in both])) if both else float("nan")
+    return {"members": len(answers), "decided": len(decided), "follows_true_branch": follows,
+            "body_branch_share": body, "same_branch_pairs": same,
+            "same_branch_if_bias_only": body ** 2 + (1 - body) ** 2 if body == body else float("nan"),
+            "tracking_pairs": float(np.mean([c == "tracks" for c in both])) if both else float("nan"),
+            "decided_pairs": len(both)}
+
+
+def json_safe(value):
+    """NaN/inf -> None, recursively, so `write_json(allow_nan=False)` accepts empty-category metrics."""
+    if isinstance(value, dict):
+        return {k: json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_safe(v) for v in value]
+    if isinstance(value, float) and (value != value or value in (float("inf"), float("-inf"))):
+        return None
+    return value
+
+
 def _auroc_ci(y, s, groups, n_boot, seed):
     if len(np.unique(y)) < 2:
         return float("nan"), float("nan"), float("nan")
@@ -135,7 +166,7 @@ def link(build, extract, readout, behaviour, output, n_boot=1000, seed=42):
         summary = {"layer_star": sel["layer_star"],
                    "pair_categories": pairs.category.value_counts().to_dict(),
                    "within_branch_auroc_mean": float((strata.auroc * weights).sum()) if len(strata) else None}
-        write_json(output / "link.json", summary)
+        write_json(output / "link.json", json_safe(summary))
         (output / "report.md").write_text(_report(table, strata, summary))
         register_files(gate, output, ["link_pairs.csv", "link_within_branch.csv", "link.json", "report.md"])
     return output

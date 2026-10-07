@@ -1,5 +1,5 @@
 #!/bin/csh
-# BranchExec (stages 250-257) for one model — on REAL code: is the branch an `if`
+# BranchExec (stages 250-260) for one model — on REAL code: is the branch an `if`
 # will take computed at the `if` once the input is known, does the model's answer
 # use it, and can steering repair wrong-branch answers? Synthetic programs only
 # supply the direction, the layer and the dose. See docs/BRANCHEXEC.md.
@@ -24,10 +24,12 @@ if ($?SMOKE) then
     set BUILD_ARGS = (--synthetic-programs 150 --limit 60)
     set STEER_ARGS = (--max-syn 30 --max-real 30 --examples 3 --doses 0.05,0.2)
     set REPAIR_ARGS = (--max-members 30 --examples 3 --doses 0.1,0.4)
+    set LOCATE_ARGS = (--max-members 10 --layer-stride 4 --doses 1.0)
 else
     set BUILD_ARGS = ()
     set STEER_ARGS = ()
     set REPAIR_ARGS = ()
+    set LOCATE_ARGS = ()
 endif
 
 set OUT = "results/branchexec/${MODEL}/${TAG}"
@@ -77,6 +79,21 @@ if ("$S" != "1") then
         $REPAIR_ARGS || exit 1
 endif
 
+set S = `grep -sc '"status": "passed"' "$OUT/natural/gates.json"`
+if ("$S" != "1") then
+    echo "=== stage 259: branch-following in the CruxEval order — GPU ==="
+    $RUN scripts/259_branch_natural.py --build "$OUT/build" --behaviour "$OUT/behaviour" \
+        --output "$OUT/natural" --model "$MODEL" --dtype "$DTYPE" || exit 1
+endif
+
+set S = `grep -sc '"status": "passed"' "$OUT/locate/gates.json"`
+if ("$S" != "1") then
+    echo "=== stage 260: single-block repair across depth (if / body / answer) — GPU ==="
+    $RUN scripts/260_branch_locate.py --build "$OUT/build" --readout "$OUT/readout" \
+        --behaviour "$OUT/behaviour" --output "$OUT/locate" --model "$MODEL" --dtype "$DTYPE" \
+        $LOCATE_ARGS || exit 1
+endif
+
 set S = `grep -sc '"status": "passed"' "$OUT/steer/gates.json"`
 if ("$S" != "1") then
     echo "=== stage 254: flip steering toward the other branch — GPU ==="
@@ -92,4 +109,4 @@ if ("$S" != "1") then
         --readout "$OUT/readout" --behaviour "$OUT/behaviour" --steer "$OUT/steer" \
         --output "$OUT/report_v2" || exit 1
 endif
-echo "Done: $OUT  (link/report.md, repair/report.md, report_v2/report.md)"
+echo "Done: $OUT  (link, repair, natural, locate, report_v2: each has report.md)"

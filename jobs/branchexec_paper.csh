@@ -1,14 +1,14 @@
 #!/bin/csh
-# BranchExec paper run: three models, sequentially, then the cross-model table.
+# BranchExec paper run: four models, sequentially, then the cross-model table.
 #
 #   jobs/branchexec_paper.csh
 #   setenv MODELS "deepseek-coder-1.3b starcoder2-3b"; jobs/branchexec_paper.csh   # subset
 #
-# deepseek-coder-6.7b/full already exists: its passed stages are skipped and only
-# stages 256 (link), 257 (repair) and the v2 report are added. The other models
-# run the whole pipeline. Models run one at a time, never co-resident.
+# Every passed stage is skipped, so on the existing three models this only adds
+# stage 259 (CruxEval-order behaviour) and stage 260 (single-block locate);
+# starcoder2-7b runs the whole pipeline. Models run one at a time.
 source jobs/common.csh
-if (! $?MODELS) setenv MODELS "deepseek-coder-6.7b deepseek-coder-1.3b starcoder2-3b"
+if (! $?MODELS) setenv MODELS "deepseek-coder-1.3b starcoder2-3b deepseek-coder-6.7b starcoder2-7b"
 
 foreach M ($MODELS)
     setenv MODEL $M
