@@ -1,0 +1,83 @@
+{
+  "stage": "257_branch_repair",
+  "timestamp": "20261006_203803",
+  "git_sha": "185c458",
+  "python": "3.11.16",
+  "argv": [
+    "scripts/257_branch_repair.py",
+    "--build",
+    "results/branchexec/deepseek-coder-6.7b/full/build",
+    "--readout",
+    "results/branchexec/deepseek-coder-6.7b/full/readout",
+    "--behaviour",
+    "results/branchexec/deepseek-coder-6.7b/full/behaviour",
+    "--output",
+    "results/branchexec/deepseek-coder-6.7b/full/repair",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--dtype",
+    "float16"
+  ],
+  "args": {
+    "readout_sha256": "0f60bd468131a9116f108be1d1fd3e38b40d7e27091ccb2f65027c91c6b810f8",
+    "behaviour_sha256": "06fe6e32b98868fe54d514318c5dd702184ac340c28cf1077768cdddcd68806e",
+    "model": "deepseek-coder-6.7b",
+    "device": "cuda",
+    "dtype": "float16",
+    "band": "2",
+    "steer_layers": "None",
+    "doses": "[0.05, 0.1, 0.2, 0.4, 0.8]",
+    "conditions": "['if_true', 'if_away', 'answer_true', 'answer_away', 'random_if', 'random_answer', 'shuffled_if', 'actuator_answer']",
+    "max_members": "None",
+    "chunk": "40",
+    "examples": "15",
+    "n_boot": "2000",
+    "seed": "42",
+    "injected": "False"
+  },
+  "wall_time_s": 215.9,
+  "extra": {
+    "stage": "257_branch_repair",
+    "status": "passed",
+    "args": {
+      "readout_sha256": "0f60bd468131a9116f108be1d1fd3e38b40d7e27091ccb2f65027c91c6b810f8",
+      "behaviour_sha256": "06fe6e32b98868fe54d514318c5dd702184ac340c28cf1077768cdddcd68806e",
+      "model": "deepseek-coder-6.7b",
+      "device": "cuda",
+      "dtype": "float16",
+      "band": 2,
+      "steer_layers": null,
+      "doses": [
+        0.05,
+        0.1,
+        0.2,
+        0.4,
+        0.8
+      ],
+      "conditions": [
+        "if_true",
+        "if_away",
+        "answer_true",
+        "answer_away",
+        "random_if",
+        "random_answer",
+        "shuffled_if",
+        "actuator_answer"
+      ],
+      "max_members": null,
+      "chunk": 40,
+      "examples": 15,
+      "n_boot": 2000,
+      "seed": 42,
+      "injected": false
+    },
+    "files": {
+      "repair_long.csv": "31c6d7d336e1e13263b4bfb42f01456b15db9408077f26881c17f5a8d67efb12",
+      "repair_summary.csv": "291cf3de34a4b6d5415dcf4fd673d11c375ef941dc3c9c97117942ea6f8f871c",
+      "repair.json": "50dfb10af26fff5c20e51d90ee1293b8603faab5cc175d805bf1a2b5113c74a9",
+      "report.md": "a7beead5e1e898907ceaef3630f2489943c3533dd72950486b5c65114fcb20a1",
+      "examples.md": "34c4d215d8f14e994dcc7a97ca4e1d56e30b8a00932cb105457a28ad951f8a26"
+    },
+    "wall_time_s": 215.91
+  }
+}

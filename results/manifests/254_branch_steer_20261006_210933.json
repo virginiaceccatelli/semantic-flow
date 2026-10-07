@@ -1,0 +1,83 @@
+{
+  "stage": "254_branch_steer",
+  "timestamp": "20261006_210933",
+  "git_sha": "185c458",
+  "python": "3.11.16",
+  "argv": [
+    "scripts/254_branch_steer.py",
+    "--build",
+    "results/branchexec/starcoder2-3b/full/build",
+    "--readout",
+    "results/branchexec/starcoder2-3b/full/readout",
+    "--behaviour",
+    "results/branchexec/starcoder2-3b/full/behaviour",
+    "--output",
+    "results/branchexec/starcoder2-3b/full/steer",
+    "--model",
+    "starcoder2-3b",
+    "--dtype",
+    "bfloat16"
+  ],
+  "args": {
+    "readout_sha256": "e89f629ccfab5b11df55a29e5c297fa9ac8a10803d0a10bbc09154c26c3d829b",
+    "behaviour_sha256": "4afdfa8d65b457083785e2e4570b8abdde098e38a577d805b958a61f8d4d2d21",
+    "model": "starcoder2-3b",
+    "device": "cuda",
+    "dtype": "bfloat16",
+    "band": "2",
+    "steer_layers": "None",
+    "doses": "[0.02, 0.05, 0.1, 0.2, 0.4]",
+    "conditions": "['semantic', 'reverse', 'random', 'shuffled', 'wrong_site', 'answer_site', 'actuator_cond', 'actuator_answer']",
+    "max_syn": "200",
+    "max_real": "None",
+    "gated_only": "False",
+    "chunk": "40",
+    "examples": "20",
+    "seed": "42",
+    "injected": "False"
+  },
+  "wall_time_s": 345.7,
+  "extra": {
+    "stage": "254_branch_steer",
+    "status": "passed",
+    "args": {
+      "readout_sha256": "e89f629ccfab5b11df55a29e5c297fa9ac8a10803d0a10bbc09154c26c3d829b",
+      "behaviour_sha256": "4afdfa8d65b457083785e2e4570b8abdde098e38a577d805b958a61f8d4d2d21",
+      "model": "starcoder2-3b",
+      "device": "cuda",
+      "dtype": "bfloat16",
+      "band": 2,
+      "steer_layers": null,
+      "doses": [
+        0.02,
+        0.05,
+        0.1,
+        0.2,
+        0.4
+      ],
+      "conditions": [
+        "semantic",
+        "reverse",
+        "random",
+        "shuffled",
+        "wrong_site",
+        "answer_site",
+        "actuator_cond",
+        "actuator_answer"
+      ],
+      "max_syn": 200,
+      "max_real": null,
+      "gated_only": false,
+      "chunk": 40,
+      "examples": 20,
+      "seed": 42,
+      "injected": false
+    },
+    "files": {
+      "steer_long.csv": "edc9c30cc6b5b6db91452f215b3c3d7c58ea8fc393632aab7d2c3ffd07c2e166",
+      "selection.json": "cd63800d9ed344623e4d14f3ac5a39190902ea02bc360664f5afe32cc8242f47",
+      "examples.md": "7833d38bdc0b96682f686664f5c58debc52ca8152679d9c901a9df51737c6627"
+    },
+    "wall_time_s": 345.66
+  }
+}

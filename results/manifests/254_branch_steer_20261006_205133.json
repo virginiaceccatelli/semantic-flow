@@ -1,0 +1,83 @@
+{
+  "stage": "254_branch_steer",
+  "timestamp": "20261006_205133",
+  "git_sha": "185c458",
+  "python": "3.11.16",
+  "argv": [
+    "scripts/254_branch_steer.py",
+    "--build",
+    "results/branchexec/deepseek-coder-1.3b/full/build",
+    "--readout",
+    "results/branchexec/deepseek-coder-1.3b/full/readout",
+    "--behaviour",
+    "results/branchexec/deepseek-coder-1.3b/full/behaviour",
+    "--output",
+    "results/branchexec/deepseek-coder-1.3b/full/steer",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--dtype",
+    "float16"
+  ],
+  "args": {
+    "readout_sha256": "289f9e3ed6382871477147e7ecd62cc983d74278fb693c373cdc8b4e49e878e1",
+    "behaviour_sha256": "821e5d28317b15068d3165397648f54a1e1b7d641d70e32d82fa43e718786675",
+    "model": "deepseek-coder-1.3b",
+    "device": "cuda",
+    "dtype": "float16",
+    "band": "2",
+    "steer_layers": "None",
+    "doses": "[0.02, 0.05, 0.1, 0.2, 0.4]",
+    "conditions": "['semantic', 'reverse', 'random', 'shuffled', 'wrong_site', 'answer_site', 'actuator_cond', 'actuator_answer']",
+    "max_syn": "200",
+    "max_real": "None",
+    "gated_only": "False",
+    "chunk": "40",
+    "examples": "20",
+    "seed": "42",
+    "injected": "False"
+  },
+  "wall_time_s": 251.5,
+  "extra": {
+    "stage": "254_branch_steer",
+    "status": "passed",
+    "args": {
+      "readout_sha256": "289f9e3ed6382871477147e7ecd62cc983d74278fb693c373cdc8b4e49e878e1",
+      "behaviour_sha256": "821e5d28317b15068d3165397648f54a1e1b7d641d70e32d82fa43e718786675",
+      "model": "deepseek-coder-1.3b",
+      "device": "cuda",
+      "dtype": "float16",
+      "band": 2,
+      "steer_layers": null,
+      "doses": [
+        0.02,
+        0.05,
+        0.1,
+        0.2,
+        0.4
+      ],
+      "conditions": [
+        "semantic",
+        "reverse",
+        "random",
+        "shuffled",
+        "wrong_site",
+        "answer_site",
+        "actuator_cond",
+        "actuator_answer"
+      ],
+      "max_syn": 200,
+      "max_real": null,
+      "gated_only": false,
+      "chunk": 40,
+      "examples": 20,
+      "seed": 42,
+      "injected": false
+    },
+    "files": {
+      "steer_long.csv": "1cbba354a90d56da563fbea7cb5a7d5f3c607452545a717afa1b43531f5d7e09",
+      "selection.json": "7f37193ecb89909a2526e6f0021b4cb221905a77d387058771b25a992f436a14",
+      "examples.md": "0a10fef474e2391c873ec00599ef34bff91ae6fe30021d3dd4b615df1438bff4"
+    },
+    "wall_time_s": 251.5
+  }
+}

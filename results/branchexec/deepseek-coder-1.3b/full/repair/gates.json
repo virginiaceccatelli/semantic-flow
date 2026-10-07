@@ -1,0 +1,44 @@
+{
+  "stage": "257_branch_repair",
+  "status": "passed",
+  "args": {
+    "readout_sha256": "289f9e3ed6382871477147e7ecd62cc983d74278fb693c373cdc8b4e49e878e1",
+    "behaviour_sha256": "821e5d28317b15068d3165397648f54a1e1b7d641d70e32d82fa43e718786675",
+    "model": "deepseek-coder-1.3b",
+    "device": "cuda",
+    "dtype": "float16",
+    "band": 2,
+    "steer_layers": null,
+    "doses": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.8
+    ],
+    "conditions": [
+      "if_true",
+      "if_away",
+      "answer_true",
+      "answer_away",
+      "random_if",
+      "random_answer",
+      "shuffled_if",
+      "actuator_answer"
+    ],
+    "max_members": null,
+    "chunk": 40,
+    "examples": 15,
+    "n_boot": 2000,
+    "seed": 42,
+    "injected": false
+  },
+  "files": {
+    "repair_long.csv": "46ff7d4069dc47b24227b0d5d60fda89ccd839f877a53db06041aa69bcffa2f5",
+    "repair_summary.csv": "53206b38731d77a3c2c349fe83bbf61edd2a743e66b65aca57c16c7aad78bb3e",
+    "repair.json": "23ed904d03901b6d1751b7bb33328303b3a9fc0697d9507167c79de4f6598f50",
+    "report.md": "8131273921c6594be2147a1e4bb6cf7a1cc7e3589ad007e65f2a919e8e6a8b50",
+    "examples.md": "e91b542056e397a9e8e5c05a26c4f4e3415a0c0ad7ffae7ba6a09d321afef7ca"
+  },
+  "wall_time_s": 75.76
+}
