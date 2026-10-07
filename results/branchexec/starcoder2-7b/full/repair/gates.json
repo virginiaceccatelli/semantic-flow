@@ -1,0 +1,44 @@
+{
+  "stage": "257_branch_repair",
+  "status": "passed",
+  "args": {
+    "readout_sha256": "6cf0fc8d6c04fe6288ec07b55f79bbdb3268c05b8c6837c1da6babde4aef39c9",
+    "behaviour_sha256": "b4b88610ed3332c8605f206a4b26b89952d99df2811c49df073b82ee8a71879d",
+    "model": "starcoder2-7b",
+    "device": "cuda",
+    "dtype": "bfloat16",
+    "band": 2,
+    "steer_layers": null,
+    "doses": [
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.8
+    ],
+    "conditions": [
+      "if_true",
+      "if_away",
+      "answer_true",
+      "answer_away",
+      "random_if",
+      "random_answer",
+      "shuffled_if",
+      "actuator_answer"
+    ],
+    "max_members": null,
+    "chunk": 40,
+    "examples": 15,
+    "n_boot": 2000,
+    "seed": 42,
+    "injected": false
+  },
+  "files": {
+    "repair_long.csv": "a431f31583e5164e9c9bf018928a0d7daa2e297de6b253236b9c9a243e0759a7",
+    "repair_summary.csv": "308f905c8b273141e7ccc553c7a8554aa9cc35bcb3af7140d93206a1d1003100",
+    "repair.json": "c903e6341c2c3146aa9b33d5439858599ebe22dc0ca949f5c6eb9bd1a8a7c0f5",
+    "report.md": "a7df89d7508c935bd6ea2d41d07144f619f98c97ababb78c2e2ce3be0cc3fe81",
+    "examples.md": "4e76b87607c8a152d51723622d5b006b092aff7816471ec4645c5ade68f3cf1d"
+  },
+  "wall_time_s": 193.08
+}

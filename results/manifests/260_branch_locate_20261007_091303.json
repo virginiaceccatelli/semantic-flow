@@ -1,0 +1,71 @@
+{
+  "stage": "260_branch_locate",
+  "timestamp": "20261007_091303",
+  "git_sha": "a41fb35",
+  "python": "3.11.16",
+  "argv": [
+    "scripts/260_branch_locate.py",
+    "--build",
+    "results/branchexec/starcoder2-7b/full/build",
+    "--readout",
+    "results/branchexec/starcoder2-7b/full/readout",
+    "--behaviour",
+    "results/branchexec/starcoder2-7b/full/behaviour",
+    "--output",
+    "results/branchexec/starcoder2-7b/full/locate",
+    "--model",
+    "starcoder2-7b",
+    "--dtype",
+    "bfloat16"
+  ],
+  "args": {
+    "readout_sha256": "6cf0fc8d6c04fe6288ec07b55f79bbdb3268c05b8c6837c1da6babde4aef39c9",
+    "behaviour_sha256": "b4b88610ed3332c8605f206a4b26b89952d99df2811c49df073b82ee8a71879d",
+    "model": "starcoder2-7b",
+    "device": "cuda",
+    "dtype": "bfloat16",
+    "layer_stride": "2",
+    "doses": "[0.5, 1.0]",
+    "sites": "['if', 'body_first', 'answer']",
+    "max_members": "None",
+    "chunk": "20",
+    "n_boot": "500",
+    "seed": "42",
+    "injected": "False"
+  },
+  "wall_time_s": 1218.2,
+  "extra": {
+    "stage": "260_branch_locate",
+    "status": "passed",
+    "args": {
+      "readout_sha256": "6cf0fc8d6c04fe6288ec07b55f79bbdb3268c05b8c6837c1da6babde4aef39c9",
+      "behaviour_sha256": "b4b88610ed3332c8605f206a4b26b89952d99df2811c49df073b82ee8a71879d",
+      "model": "starcoder2-7b",
+      "device": "cuda",
+      "dtype": "bfloat16",
+      "layer_stride": 2,
+      "doses": [
+        0.5,
+        1.0
+      ],
+      "sites": [
+        "if",
+        "body_first",
+        "answer"
+      ],
+      "max_members": null,
+      "chunk": 20,
+      "n_boot": 500,
+      "seed": 42,
+      "injected": false
+    },
+    "files": {
+      "locate_long.csv": "709f5f18bfdf35f13791e658a16d27d79ab81d33a2076117c19d9727df144f29",
+      "locate_summary.csv": "51a4ffad9748d90a13e334ea922ddc46c2f9555ec10f202e065efc9cb9ad2742",
+      "locate.json": "5ad3ca7e92cd814a554cfb08d5d2d1e6f9e0e2243c123dc9dd09f979cff7a158",
+      "report.md": "4375e7696c350a38905f24c9082550c45600a50d504845e4aa4c7faa840ef175",
+      "locate.png": "39574b8d337398256b8c34bdfd852dd7a473e18b454df6f5ee96c54a65d657b2"
+    },
+    "wall_time_s": 1218.16
+  }
+}

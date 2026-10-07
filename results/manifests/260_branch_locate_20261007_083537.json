@@ -1,0 +1,71 @@
+{
+  "stage": "260_branch_locate",
+  "timestamp": "20261007_083537",
+  "git_sha": "a41fb35",
+  "python": "3.11.16",
+  "argv": [
+    "scripts/260_branch_locate.py",
+    "--build",
+    "results/branchexec/deepseek-coder-6.7b/full/build",
+    "--readout",
+    "results/branchexec/deepseek-coder-6.7b/full/readout",
+    "--behaviour",
+    "results/branchexec/deepseek-coder-6.7b/full/behaviour",
+    "--output",
+    "results/branchexec/deepseek-coder-6.7b/full/locate",
+    "--model",
+    "deepseek-coder-6.7b",
+    "--dtype",
+    "float16"
+  ],
+  "args": {
+    "readout_sha256": "0f60bd468131a9116f108be1d1fd3e38b40d7e27091ccb2f65027c91c6b810f8",
+    "behaviour_sha256": "06fe6e32b98868fe54d514318c5dd702184ac340c28cf1077768cdddcd68806e",
+    "model": "deepseek-coder-6.7b",
+    "device": "cuda",
+    "dtype": "float16",
+    "layer_stride": "2",
+    "doses": "[0.5, 1.0]",
+    "sites": "['if', 'body_first', 'answer']",
+    "max_members": "None",
+    "chunk": "20",
+    "n_boot": "500",
+    "seed": "42",
+    "injected": "False"
+  },
+  "wall_time_s": 1461.4,
+  "extra": {
+    "stage": "260_branch_locate",
+    "status": "passed",
+    "args": {
+      "readout_sha256": "0f60bd468131a9116f108be1d1fd3e38b40d7e27091ccb2f65027c91c6b810f8",
+      "behaviour_sha256": "06fe6e32b98868fe54d514318c5dd702184ac340c28cf1077768cdddcd68806e",
+      "model": "deepseek-coder-6.7b",
+      "device": "cuda",
+      "dtype": "float16",
+      "layer_stride": 2,
+      "doses": [
+        0.5,
+        1.0
+      ],
+      "sites": [
+        "if",
+        "body_first",
+        "answer"
+      ],
+      "max_members": null,
+      "chunk": 20,
+      "n_boot": 500,
+      "seed": 42,
+      "injected": false
+    },
+    "files": {
+      "locate_long.csv": "c2ba1473b102533dff5dafe721964789485ef4490598fff7036a6ab32232d42e",
+      "locate_summary.csv": "f09aa89ac2d6e48d233cf584e51d9572f0cd7c1c763a557ce32b0388e5bf0420",
+      "locate.json": "c9f7b7004e9bcee0597e72b0bcdfff3df3e2fca6525bbce19aa2f75f6ff15a2b",
+      "report.md": "6c3c203a7ee62cf64c3ce2ebd73bc101e988e8f623211f94b1fa6ba4bd8fb22f",
+      "locate.png": "926217943f41aeec1d74f2e735a0787e810ca85d98b160a90174cde181a115b7"
+    },
+    "wall_time_s": 1461.38
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "stage": "260_branch_locate",
+  "timestamp": "20261007_081034",
+  "git_sha": "a41fb35",
+  "python": "3.11.16",
+  "argv": [
+    "scripts/260_branch_locate.py",
+    "--build",
+    "results/branchexec/starcoder2-3b/full/build",
+    "--readout",
+    "results/branchexec/starcoder2-3b/full/readout",
+    "--behaviour",
+    "results/branchexec/starcoder2-3b/full/behaviour",
+    "--output",
+    "results/branchexec/starcoder2-3b/full/locate",
+    "--model",
+    "starcoder2-3b",
+    "--dtype",
+    "bfloat16"
+  ],
+  "args": {
+    "readout_sha256": "e89f629ccfab5b11df55a29e5c297fa9ac8a10803d0a10bbc09154c26c3d829b",
+    "behaviour_sha256": "4afdfa8d65b457083785e2e4570b8abdde098e38a577d805b958a61f8d4d2d21",
+    "model": "starcoder2-3b",
+    "device": "cuda",
+    "dtype": "bfloat16",
+    "layer_stride": "2",
+    "doses": "[0.5, 1.0]",
+    "sites": "['if', 'body_first', 'answer']",
+    "max_members": "None",
+    "chunk": "20",
+    "n_boot": "500",
+    "seed": "42",
+    "injected": "False"
+  },
+  "wall_time_s": 551.6,
+  "extra": {
+    "stage": "260_branch_locate",
+    "status": "passed",
+    "args": {
+      "readout_sha256": "e89f629ccfab5b11df55a29e5c297fa9ac8a10803d0a10bbc09154c26c3d829b",
+      "behaviour_sha256": "4afdfa8d65b457083785e2e4570b8abdde098e38a577d805b958a61f8d4d2d21",
+      "model": "starcoder2-3b",
+      "device": "cuda",
+      "dtype": "bfloat16",
+      "layer_stride": 2,
+      "doses": [
+        0.5,
+        1.0
+      ],
+      "sites": [
+        "if",
+        "body_first",
+        "answer"
+      ],
+      "max_members": null,
+      "chunk": 20,
+      "n_boot": 500,
+      "seed": 42,
+      "injected": false
+    },
+    "files": {
+      "locate_long.csv": "4da5786ae6cab8cf8950fd159c2991f131f2334adc3e2c8bb5ce1113cabeddf6",
+      "locate_summary.csv": "cfbd629b4cbf7c50c1f9948d13b60483f3dbe16f98061cf9bc2b84fa946b279f",
+      "locate.json": "7cee69302ddf680f2d5a76ab3a15143ac28b9a40502a31a8ec57ebe5fc155860",
+      "report.md": "31c1467da6978c67a379c31601926adaeccf58b9da4dee6abc137a6a4e76b015",
+      "locate.png": "881ea7ed8d96afe5f16db0928a02d6ade679f882d3cab855a04d14e495587a5c"
+    },
+    "wall_time_s": 551.63
+  }
+}
