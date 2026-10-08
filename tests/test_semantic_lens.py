@@ -64,6 +64,16 @@ def test_prepare_hash_and_authorship_gates(tmp_path):
         d.prepare_records(train, test, audit)
 
 
+def test_prepare_missing_audit_fails_before_hashing_records(tmp_path, monkeypatch):
+    train, test, audit = fixture_sources(tmp_path)
+    audit.unlink()
+    def unexpected_hash(path):
+        pytest.fail('Missing prerequisites must be checked before expensive hashing')
+    monkeypatch.setattr(d, 'file_hash', unexpected_hash)
+    with pytest.raises(FileNotFoundError, match='separate provenance record'):
+        pipeline.prepare(SimpleNamespace(train=train, test=test, audit=audit, splits=None))
+
+
 def test_existing_splits_preserved_and_partial_map_rejected(tmp_path):
     train, test, audit = fixture_sources(tmp_path)
     splits = tmp_path/'splits.jsonl'

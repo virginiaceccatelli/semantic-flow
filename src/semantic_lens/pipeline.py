@@ -10,7 +10,21 @@ from . import data as d
 from .artifacts import start, finish, save_checkpoint, load_checkpoint
 
 
+def audit(args):
+    d.create_execsem_audit(args.train, args.test, args.dataset_card, args.audit)
+
+
 def prepare(args):
+    # Check every prerequisite before hashing potentially multi-gigabyte records.
+    for name in ('train', 'test', 'audit', 'splits'):
+        source = getattr(args, name, None)
+        if source is not None and not Path(source).is_file():
+            message = f'Missing --{name} file: {source}.'
+            if name == 'audit':
+                message += (' This is a separate provenance record, not a downloaded dataset file. '
+                            'For the reviewed ExecSem CodeContests+ slice, run the audit subcommand '
+                            'with --train, --test, --dataset-card and --audit; see docs/SEMANTIC_LENS.md.')
+            raise FileNotFoundError(message)
     config = {key: d.file_hash(getattr(args, key)) for key in ('train', 'test', 'audit')}
     config.update(seed=args.seed, splits=d.file_hash(args.splits) if args.splits else None)
     path, done = start(args.out, 'prepare', config)
@@ -24,7 +38,8 @@ def prepare(args):
         programs=len({r['program_id'] for r in rows}),
         problems=len({r['task_id'] for r in rows}),
         status='awaiting_execution' if rows else 'insufficient_coverage',
-        test_source='All unique original test_cases_preview inputs; no generated inputs'))
+        input_origin_case_counts=dict(Counter(r['provenance']['input_origin'] for r in rows)),
+        test_source='All unique dataset-supplied test_cases_preview inputs, unchanged; may be generated upstream.'))
     finish(path)
 
 

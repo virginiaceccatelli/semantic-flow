@@ -5,10 +5,66 @@ import ast
 import hashlib
 import json
 import random
+from datetime import datetime, timezone
 from collections import Counter, defaultdict
 from pathlib import Path
 
 CONDITIONS = ('full', 'code_only', 'input_only')
+INPUT_ORIGINS = ('human_authored', 'generated', 'mixed')
+
+
+def input_origin(entry):
+    """Accept legacy human-test audits without treating generated tests as human."""
+    origin = entry.get('input_origin')
+    if origin is None and entry.get('original_human_authored_tests') is True:
+        origin = 'human_authored'
+    if origin not in INPUT_ORIGINS:
+        raise ValueError('input_origin must be human_authored, generated, or mixed')
+    if entry.get('original_human_authored_tests') is True and origin != 'human_authored':
+        raise ValueError('Conflicting input provenance assertions')
+    return origin
+
+
+def create_execsem_audit(train_path, test_path, card_path, audit_path):
+    """Apply the documentation review for the user's CodeContests+ 1x slice.
+
+    This records documented source provenance, not independent verification of
+    every submission's author. Hashes bind it to the provided records and card.
+    No authorship claim is made for generated test inputs.
+    """
+    card = Path(card_path).read_text()
+    for marker in ('ByteDance-Seed/Code-Contests-Plus', 'ccplus_1x', 'test_cases_preview'):
+        if marker not in card:
+            raise ValueError(f'Dataset card does not match the reviewed ExecSem slice: missing {marker}')
+    paper = 'https://aclanthology.org/2025.findings-emnlp.299.pdf'
+    upstream = 'https://huggingface.co/datasets/ByteDance-Seed/Code-Contests-Plus'
+    result = dict(schema_version=2, reviewer='Codex: source-documentation review',
+        reviewed_at=datetime.now(timezone.utc).isoformat(),
+        review_scope='Documented provenance of the selected corpus; not individual authorship authentication.',
+        dataset_card_sha256=file_hash(card_path),
+        dataset_card_reference='https://huggingface.co/datasets/exec-sem/codecontests-plus-execsem',
+        sampling='FPS on hashed character n-grams; lexical-diversity-selected, not a random sample.',
+        references=[paper, upstream], sources={})
+    for name, path in [('train', train_path), ('test', test_path)]:
+        result['sources'][name] = dict(sha256=file_hash(path), source_reference=upstream,
+            human_written_programs=True, input_origin='generated',
+            program_origin_evidence=(
+                'CodeContests+ paper section 4 describes authentic contestant submission records '
+                'inherited from CodeContests. The supplied slice card describes selection of '
+                'upstream submissions, not synthesis or rewriting of code. ' + paper),
+            test_origin_evidence=(
+                'The slice card identifies ccplus_1x. The upstream card identifies 1x as '
+                'pre-generated tests from the Generator-Validator Agent System. Preview inputs '
+                'are treated as generated; they are not asserted to be human-authored. ' + upstream))
+    target = Path(audit_path)
+    if target.exists():
+        old = json.loads(target.read_text())
+        if {k: v for k, v in old.items() if k != 'reviewed_at'} != {k: v for k, v in result.items() if k != 'reviewed_at'}:
+            raise ValueError(f'A different audit already exists at {target}; use a new --audit path')
+        return old
+    target.parent.mkdir(parents=True, exist_ok=True)
+    write_json(target, result)
+    return result
 
 
 def digest(value):
@@ -132,8 +188,9 @@ def prepare_records(train_path, test_path, audit_path, split_path=None, seed=0):
         for key in ('program_origin_evidence', 'test_origin_evidence', 'source_reference'):
             if not isinstance(entry.get(key), str) or not entry[key].strip():
                 raise ValueError(f'Missing provenance evidence: {name}.{key}')
-        if entry.get('human_written_programs') is not True or entry.get('original_human_authored_tests') is not True:
-            raise ValueError('Explicit audited human program and original test provenance required')
+        if entry.get('human_written_programs') is not True:
+            raise ValueError('Explicit audited human program provenance required')
+        input_origin(entry)
     if not audit.get('reviewer') or not audit.get('reviewed_at'):
         raise ValueError('Provenance audit must identify reviewer and date')
     sources = {'development': read_rows(train_path), 'test': read_rows(test_path)}
@@ -192,6 +249,7 @@ def prepare_records(train_path, test_path, audit_path, split_path=None, seed=0):
                         split=split, code=code, input=inp, code_hash=digest(code),
                         input_hash=digest(inp), sites=branches,
                         provenance={'audit_sha256': audit_hash, 'source': source,
+                                    'input_origin': input_origin(audit['sources']['train' if source == 'development' else 'test']),
                                     'source_sha256': source_hashes['train' if source == 'development' else 'test']}))
     hashes = defaultdict(set)
     for r in rows:
@@ -246,5 +304,7 @@ def coverage(rows):
             changing_branches=len(changing),
             changing_problems=len({rs[0]['task_id'] for rs in changing}),
             natural_pairs=sum(sum(r['outcome'] for r in rs) * sum(1-r['outcome'] for r in rs) for rs in changing))
-    return dict(splits=result, sufficient_for_pipeline=all(v['changing_branches'] > 0 for v in result.values()),
+    origins = Counter(r.get('provenance', {}).get('input_origin', 'unspecified') for r in rows)
+    return dict(splits=result, input_origin_case_counts=dict(origins),
+                sufficient_for_pipeline=all(v['changing_branches'] > 0 for v in result.values()),
                 interpretation='Coverage gate only; sample size and uncertainty still limit conclusions.')
