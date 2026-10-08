@@ -24,6 +24,12 @@ def _char_col(source, line, byte_col):
     return len(source.splitlines()[line - 1].encode("utf-8")[:byte_col].decode("utf-8"))
 
 
+def _is_source_node(node):
+    # Beniget also represents runtime builtins as definitions. SyntaxError and
+    # its subclasses expose `lineno` descriptors but are not source AST nodes.
+    return isinstance(node, gast.AST) and hasattr(node, "lineno")
+
+
 def checked_anchor(source: str, event: VarEvent, aligner: TokenAligner) -> dict:
     """Require exact identifier span and complete last-token coverage."""
     lines = source.splitlines(keepends=True)
@@ -70,6 +76,7 @@ def extract_graph(source: str, aligner: TokenAligner) -> dict:
     identifiers = list(tokenize.generate_tokens(io.StringIO(source).readline))
 
     def event(node, name, kind):
+        assert _is_source_node(node), "Expected a source AST node"
         line = node.lineno
         col = _char_col(source, line, node.col_offset)
         # Function/import AST spans include much more than their bound identifier.
@@ -90,7 +97,7 @@ def extract_graph(source: str, aligner: TokenAligner) -> dict:
     for scope, local_defs in chains.locals.items():
         for definition in local_defs:
             node = definition.node
-            if hasattr(node, "lineno"):
+            if _is_source_node(node):
                 defs[node] = event(node, definition.name(), "def")
     graph = DataFlowGraph()
     unresolved = []
@@ -98,7 +105,7 @@ def extract_graph(source: str, aligner: TokenAligner) -> dict:
                          if isinstance(n, gast.Name) and isinstance(n.ctx, gast.Load)),
                         key=lambda n: (n.lineno, n.col_offset))
     for node in load_nodes:
-        reaching = [d for d in uses.chains.get(node, []) if hasattr(d.node, "lineno")]
+        reaching = [d for d in uses.chains.get(node, []) if _is_source_node(d.node)]
         if not reaching:
             unresolved.append({"name": node.id, "line": node.lineno, "col": node.col_offset,
                                "reason": "builtin_or_no_source_reaching_definition"})

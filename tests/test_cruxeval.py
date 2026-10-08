@@ -27,6 +27,23 @@ def test_branch_join_retains_both_definitions():
     assert g['n_shadowing_uses'] == 0  # Reassignment is not lexical shadowing.
 
 
+@pytest.mark.parametrize('name', ['SyntaxError', 'IndentationError', 'TabError'])
+def test_builtin_exception_location_attributes_are_not_source_nodes(name):
+    # These runtime classes expose a `lineno` descriptor, not AST coordinates.
+    g = graph(f'def f(x):\n    if x:\n        raise {name}("invalid")\n    return x\n')
+    assert reaches(g, 'x', 2) == {1}
+    assert reaches(g, 'x', 4) == {1}
+    assert not any(e['name'] == name for e in g['events'])
+    assert any(e['name'] == name for e in g['unresolved_loads'])
+    assert len(g['use_sites']) + len(g['unresolved_loads']) == g['n_loads']
+
+
+def test_source_binding_named_syntaxerror_is_retained():
+    g = graph('def f(SyntaxError):\n    return SyntaxError\n')
+    assert reaches(g, 'SyntaxError', 2) == {1}
+    assert not g['unresolved_loads']
+
+
 def test_loop_backedge_and_rhs_before_lhs():
     g = graph('def f(xs):\n    x = 0\n    for item in xs:\n        x = x + item\n    return x\n')
     assert reaches(g, 'x', 4) == {2, 4}

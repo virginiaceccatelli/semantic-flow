@@ -190,11 +190,12 @@ not contradict the probe and DAS evidence that binding is represented and used.
 
 ## Security monitoring extension
 
-For the separate synthetic-versus-human-code probe comparison, see
-[the CodeSearchNet runbook](docs/CSN_COMPARISON.md). Stage 280 adds audited
-repository splits, held-out synthetic pairs, matched training budgets, all four
-transfer arms, and validation-selected test results for def-use and lexical
-binding where coverage permits. It does not measure taint.
+For the synthetic-versus-human-code probe comparison, see
+[definition survival](docs/DEF_SURVIVAL.md) (stage 280): whether an overwritten
+assignment still reaches a later use, read from the residual stream on
+certified synthetic minimal pairs and on repository-held-out CodeSearchNet
+functions, with every train-domain/test-domain combination and lexical,
+indentation-heuristic, embedding and shuffled-label baselines.
 
 The new [security monitor](docs/SECURITY_MONITOR.md) develops probe + published
 J-lens error predictors on controlled Python functions and applies them unchanged
