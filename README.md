@@ -49,6 +49,9 @@ For a first reading:
 5. Use [docs/PIPELINE.md](docs/PIPELINE.md) to reproduce stages.
 6. Use [docs/ARCHIVE.md](docs/ARCHIVE.md) for displaced tracks, failed designs,
    and the methodological history.
+7. Use [docs/SEMANTIC_LENS.md](docs/SEMANTIC_LENS.md) for the independent,
+   real-program branch-outcome lens: provenance auditing, original-test tracing,
+   supervised readouts, lexical controls, and source-level reports (stage 270).
 
 ## The controlled binding construction
 

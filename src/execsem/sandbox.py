@@ -14,6 +14,7 @@ import uuid
 RUNNER = r'''
 import json, os, resource, signal, subprocess, sys
 seconds = float(sys.argv[1])
+collect_branch_trace = len(sys.argv) > 2 and sys.argv[2] == 'branch-trace'
 def limits():
     resource.setrlimit(resource.RLIMIT_CPU, (max(1, int(seconds)+1), max(1, int(seconds)+1)))
     resource.setrlimit(resource.RLIMIT_FSIZE, (65536, 65536))
@@ -33,7 +34,15 @@ with open('/case/input.txt','rb') as inp, open('/tmp/stdout','wb') as out, open(
 out = open('/tmp/stdout','rb').read(4097)
 err = open('/tmp/stderr','rb').read(1024)
 if len(out)>4096: status='output_limit'
-print(json.dumps(dict(status=status,returncode=rc,stdout=out[:4096].decode('utf-8',errors='replace'),stderr=err.decode('utf-8',errors='replace'))))
+result = dict(status=status,returncode=rc,stdout=out[:4096].decode('utf-8',errors='replace'),stderr=err.decode('utf-8',errors='replace'))
+if collect_branch_trace:
+    try:
+        with open('/tmp/semantic_lens_trace.json') as f:
+            raw = f.read(65537)
+        result['branch_trace'] = json.loads(raw) if len(raw) <= 65536 else None
+    except (OSError, ValueError):
+        result['branch_trace'] = None
+print(json.dumps(result))
 '''
 
 
@@ -71,13 +80,15 @@ def container_command(runtime, image, directory, name, seconds):
             image, '-I', '-B', '-c', RUNNER, str(seconds)]
 
 
-def run_case(runtime, image, code, input_text, seconds=3):
+def run_case(runtime, image, code, input_text, seconds=3, *, branch_trace=False):
     name = 'execsem-' + uuid.uuid4().hex
     with tempfile.TemporaryDirectory(prefix='execsem-case-') as tmp:
         root = Path(tmp); case = root/'case'; case.mkdir(mode=0o755)
         for filename, text in [('program.py', code), ('input.txt', input_text)]:
             path = case/filename; path.write_text(text); path.chmod(0o444)
         command = container_command(runtime, image, str(case.resolve()), name, seconds)
+        if branch_trace:
+            command.append('branch-trace')
         # File-backed logs bound host RAM even if an untrusted child writes to wrapper stdout.
         with (root/'stdout').open('wb') as out, (root/'stderr').open('wb') as err:
             # Discard runtime environment overrides (extra binds, overlays, GPU, etc.).
