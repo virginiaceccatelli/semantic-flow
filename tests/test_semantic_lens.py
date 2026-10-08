@@ -261,7 +261,7 @@ def test_cpu_pipeline_fit_evaluate_report(tmp_path):
     assert not any('test' in x for x in selected['train_ids'] + selected['val_ids'])
     html = (tmp_path/'report/report.html').read_text()
     assert 'unexpected &lt;script&gt;' in html and '<script>' not in html
-    assert html.count('Original test / input') == 2
+    assert html.count('Dataset test / input') == 2
     assert 'not measure causal reliance' in html
     # Completed stages verify and return without overwriting artifacts.
     before = d.file_hash(tmp_path/'report/report.html')
@@ -399,3 +399,82 @@ def test_report_includes_disagreements_and_escapes_source():
     assert 'Readout–execution disagreement' in html
     assert '&lt;script&gt;' in html and '<script>' not in html
     assert 'Unparsed answer' in html
+
+
+def test_generated_inputs_allowed_but_program_authorship_still_required(tmp_path):
+    train, test, audit = fixture_sources(tmp_path)
+    obj = json.loads(audit.read_text())
+    for entry in obj['sources'].values():
+        entry.pop('original_human_authored_tests')
+        entry['input_origin'] = 'generated'
+        entry['test_origin_evidence'] = 'Fixture generated inputs, not research evidence'
+    d.write_json(audit, obj)
+    rows, _, _ = d.prepare_records(train, test, audit)
+    assert len(rows) == 12
+    assert {r['provenance']['input_origin'] for r in rows} == {'generated'}
+    assert {r['input'] for r in rows} == {'0\n', '10\n'}
+    obj['sources']['train']['human_written_programs'] = False
+    d.write_json(audit, obj)
+    with pytest.raises(ValueError, match='human program provenance'):
+        d.prepare_records(train, test, audit)
+
+
+@pytest.mark.parametrize('origin', ['human_authored', 'generated', 'mixed'])
+def test_explicit_input_origins(origin):
+    assert d.input_origin({'input_origin': origin}) == origin
+
+
+def test_unknown_and_conflicting_input_origins_rejected():
+    with pytest.raises(ValueError, match='input_origin must'):
+        d.input_origin({'input_origin': 'unknown'})
+    with pytest.raises(ValueError, match='Conflicting'):
+        d.input_origin({'input_origin': 'generated', 'original_human_authored_tests': True})
+    assert d.input_origin({'original_human_authored_tests': True}) == 'human_authored'
+
+
+def test_audit_command_and_prepare_with_documented_generated_tests(tmp_path):
+    train, test, old_audit = fixture_sources(tmp_path)
+    card = tmp_path/'README.md'
+    card.write_text('Fixture only: ByteDance-Seed/Code-Contests-Plus ccplus_1x test_cases_preview')
+    audit = tmp_path/'generated_provenance.json'
+    script = str(Path('scripts/270_semantic_lens.py').resolve())
+    args = [sys.executable, script, 'audit', '--train', str(train), '--test', str(test),
+            '--dataset-card', str(card), '--audit', str(audit)]
+    result = subprocess.run(args, capture_output=True, text=True, timeout=20)
+    assert result.returncode == 0, result.stderr
+    saved = json.loads(audit.read_text())
+    assert saved['sources']['train']['sha256'] == d.file_hash(train)
+    assert saved['dataset_card_sha256'] == d.file_hash(card)
+    assert saved['sources']['test']['input_origin'] == 'generated'
+    assert 'original_human_authored_tests' not in saved['sources']['test']
+    assert 'not individual authorship' in saved['review_scope']
+    before = audit.read_bytes()
+    assert subprocess.run(args, capture_output=True, timeout=20).returncode == 0
+    assert before == audit.read_bytes()
+    out = tmp_path/'run'
+    result = subprocess.run([sys.executable, script, 'prepare', '--train', str(train),
+        '--test', str(test), '--audit', str(audit), '--out', str(out)],
+        capture_output=True, text=True, timeout=20)
+    assert result.returncode == 0, result.stderr
+    cov = json.loads((out/'prepare/coverage.json').read_text())
+    assert cov['input_origin_case_counts'] == {'generated': 12}
+    assert 'may be generated upstream' in cov['test_source']
+    train.write_text(train.read_text()+'\n')
+    with pytest.raises(ValueError, match='different audit'):
+        d.create_execsem_audit(train, test, card, audit)
+
+
+def test_audit_rejects_unrecognized_card(tmp_path):
+    train, test, _ = fixture_sources(tmp_path)
+    card = tmp_path/'README.md'; card.write_text('Some other dataset')
+    with pytest.raises(ValueError, match='does not match'):
+        d.create_execsem_audit(train, test, card, tmp_path/'new.json')
+    assert not (tmp_path/'new.json').exists()
+
+
+def test_report_discloses_generated_inputs():
+    r = case() | dict(prediction=0, score=-2., probability=.12, model_answer=0,
+                     answer_text='False', provenance={'input_origin': 'generated'})
+    html, md = render([r], dict(population={}, estimates={}), {'selected': {}}, {})
+    assert 'generated' in html and 'generated' in md
+    assert 'across the original tests' not in html

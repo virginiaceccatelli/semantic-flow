@@ -1,10 +1,11 @@
 """Static, escaped source views; descriptive explanations without causal claims."""
-from collections import defaultdict
+from collections import Counter, defaultdict
 from html import escape
 import json
 
 
 def render(rows, results, selection, coverage):
+    origins = dict(Counter(r.get('provenance', {}).get('input_origin', 'unspecified') for r in rows))
     groups = defaultdict(list)
     for row in rows:
         groups[(row['task_id'], row['program_id'], row['site_id'])].append(row)
@@ -12,6 +13,7 @@ def render(rows, results, selection, coverage):
           'This supervised readout measures branch-outcome representation under explicit questioning. '
           'It does not establish causal reliance or eliminate all lexical explanations.', '',
           f"Test coverage: {json.dumps(results['population'], sort_keys=True)}", '',
+          f"Input origins (cases): {json.dumps(origins, sort_keys=True)}. Generated inputs are allowed; programs remain unchanged.", '',
           '| Readout | Balanced accuracy | AUROC | Pair ranking | Both pair outcomes correct |',
           '|---|---:|---:|---:|---:|']
     def fmt(v):
@@ -37,6 +39,8 @@ def render(rows, results, selection, coverage):
         '<h1>Semantic property lens</h1>',
         '<p>Branch-outcome representation under explicit questioning. This report does not measure causal reliance '
         'or a probability of semantic reasoning. Disagreements may reflect readout errors.</p>',
+        '<p>Input origins (cases): ' + escape(json.dumps(origins, sort_keys=True)) +
+        '. Generated inputs are allowed; programs remain unchanged.</p>',
         '<h2>Aggregate results</h2>',
         '<table><tr><th>Readout</th><th>Balanced accuracy</th><th>AUROC</th>'
         '<th>Pair ranking</th><th>Both outcomes correct</th></tr>']
@@ -64,12 +68,12 @@ def render(rows, results, selection, coverage):
         changing = {x['outcome'] for x in cases} == {0, 1}
         if changing:
             if all(x['prediction'] == x['outcome'] for x in cases):
-                explanation = 'For this unchanged branch, the readout switches with the observed execution outcome across the original tests.'
+                explanation = 'For this unchanged branch, the readout switches with the observed execution outcome across the dataset-supplied tests.'
             else:
-                explanation = 'This unchanged branch has different execution outcomes across original tests; some readout predictions disagree with execution.'
+                explanation = 'This unchanged branch has different execution outcomes across dataset-supplied tests; some readout predictions disagree with execution.'
         else:
             explanation = 'These retained tests do not provide an opposite-outcome comparison for this branch.'
-        parts.append('<p>' + explanation + '</p><table><tr><th>Original test / input</th><th>Observed outcome</th>'
+        parts.append('<p>' + explanation + '</p><table><tr><th>Dataset test / input</th><th>Observed outcome</th>'
                      '<th>Readout</th><th>Score / probe probability</th><th>Model answer</th><th>Agreement</th></tr>')
         for x in cases:
             agree = x['outcome'] == x['prediction']
