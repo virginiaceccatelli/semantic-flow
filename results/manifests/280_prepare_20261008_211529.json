@@ -1,0 +1,51 @@
+{
+  "stage": "280_prepare",
+  "timestamp": "20261008_211529",
+  "git_sha": "f0346c5",
+  "python": "3.11.16",
+  "argv": [
+    "scripts/280_def_survival.py",
+    "prepare",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--output",
+    "results/csn_comparison/deepseek-coder-1.3b/seed42/prepared"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "real_programs": "3000",
+    "synthetic_pairs": "3000",
+    "seed": "42",
+    "max_tokens": "1024",
+    "provenance": "{'kind': 'codesearchnet', 'dataset': 'code-search-net/code_search_net', 'revision': '7e3332b8032ff895377dba3e57f0152fcb32ff7d', 'files': ['python/train/0000.parquet']}"
+  },
+  "wall_time_s": 208.9,
+  "extra": {
+    "stage": "280_prepare",
+    "status": "passed",
+    "args": {
+      "model": "deepseek-coder-1.3b",
+      "real_programs": 3000,
+      "synthetic_pairs": 3000,
+      "seed": 42,
+      "max_tokens": 1024,
+      "provenance": {
+        "kind": "codesearchnet",
+        "dataset": "code-search-net/code_search_net",
+        "revision": "7e3332b8032ff895377dba3e57f0152fcb32ff7d",
+        "files": [
+          "python/train/0000.parquet"
+        ]
+      }
+    },
+    "files": {
+      "programs.jsonl": "e6587e469a1a5624ea0d850cf3f4f56812fa42c7a8c46dab1fccb6e7717a374f",
+      "candidates.csv": "8966996f0c46927826678fdb9062473589892ba51b68470c45d6f34d5a3690af",
+      "coverage.csv": "9f1db4ec62a256b7200c19cb0a8821f34e20bf4e6100c48b65cb6c7790dd43c7",
+      "exclusions.csv": "05dfcdfb422c3d91228368660e286da5d93c56d45d1624fb39eb12de73da9959",
+      "meta.json": "4d4e339a5b336c06c5b32e258d34508c4029687acff0dc2171e528bb9a56eb7f",
+      "report.md": "0a910617bebd8d9f384100e213144347ab7332d7196fbe5bb5f61a9415a0d306"
+    },
+    "wall_time_s": 208.88
+  }
+}
