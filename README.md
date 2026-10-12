@@ -191,11 +191,14 @@ not contradict the probe and DAS evidence that binding is represented and used.
 ## Security monitoring extension
 
 For the synthetic-versus-human-code probe comparison, see
-[definition survival](docs/DEF_SURVIVAL.md) (stage 280): whether an overwritten
-assignment still reaches a later use, read from the residual stream on
-certified synthetic minimal pairs and on repository-held-out CodeSearchNet
-functions, with every train-domain/test-domain combination and lexical,
-indentation-heuristic, embedding and shuffled-label baselines.
+[binding in effect](docs/DEF_SURVIVAL.md) (stage 280): whether an earlier
+assignment can still be the value a use reads, across redefinitions, branches,
+loops and `with` blocks. Controlled pairs, both members built from the same
+tokens with the same redefinition counts and indentation, rule out word
+matching. They come from templates, from compositional hard programs and from
+real CodeSearchNet functions. They're evaluated alongside natural CruxEval and
+CodeSearchNet code, and accuracy is broken down by structural covariates to
+locate where it degrades.
 
 The new [security monitor](docs/SECURITY_MONITOR.md) develops probe + published
 J-lens error predictors on controlled Python functions and applies them unchanged
