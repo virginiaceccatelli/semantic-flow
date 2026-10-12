@@ -9,9 +9,10 @@ import pytest
 from src.cruxeval.artifacts import register_files, stage_run
 from src.data.alignment import compute_offsets
 from src.defsurvival import pipeline
-from src.defsurvival.controls import certify, surface, swap_twin
+from src.defsurvival.controls import certify
 from src.defsurvival.labels import survival_candidates
-from src.defsurvival.synthetic import FAMILIES, hard_programs, synthetic_pairs
+from src.defsurvival.steer import Residual, code_section
+from src.defsurvival.synthetic import FAMILIES, synthetic_pairs
 from tests.fake_tokenizer import FakeCharTokenizer, FakeCodeTokenizer
 
 
@@ -138,7 +139,7 @@ def test_synthetic_pairs_are_token_identical_and_certified():
             assert row["label"] == m["label"]
             tracked.append((ids, row))
         (ids_a, a), (ids_b, b) = tracked
-        certify(ids_a, a, ids_b, b)  # Same tokens, counts, indentation; opposite labels.
+        certify(ids_a, a, ids_b, b)  # Same tokens, counts, indentation, recency; opposite labels.
         assert sorted(ids_a) == sorted(ids_b)
         assert (a["category"], b["category"]) == (S, O)
         updates += a["self_update"]
@@ -155,35 +156,11 @@ def test_keyword_flip_pairs_are_rejected():
         certify(ids_a, a, ids_b, b)
 
 
-def test_swap_twin_moves_a_redefinition_between_constructs():
-    tokenizer = FakeCodeTokenizer()
-    source = function("x = 1\nwith c:\n    x = 2\nif d:\n    y = 3\nreturn x")
-    ids, [row] = labelled(source, tokenizer)
-    assert row["label"] == 0
-    text, twin_ids, twin = swap_twin(source, ids, row, lambda s, only: labelled(s, tokenizer, only), random.Random(0))
-    assert "with c:\n        y = 2" in text and "if d:\n        x = 3" in text
-    assert twin["label"] == 1 and sorted(twin_ids) == sorted(ids)
-
-
-def test_hard_programs_label_the_final_use():
-    tokenizer = FakeCharTokenizer()
-    labelled = 0
-    for _, source, target, u_line, knobs in hard_programs(40, seed=5):
-        assert len(source.splitlines()) == u_line and target in source.splitlines()[-1]
-        rows, _ = survival_candidates(source, compute_offsets(source, tokenizer))
-        rows = [r for r in rows if r["name"] == target and r["u_line"] == u_line]
-        assert all(r["n_killers"] <= knobs["n_redefinitions"] for r in rows)
-        labelled += bool(rows)
-    assert labelled >= 30
-
-
 def fake_codesearchnet(path, n=150):
     templates = [
         "def f{i}(c, ctx):\n    v{i} = {i}\n    v{i} = 2\n    if c:\n        v{i} = 3\n    return v{i}\n",
         "def f{i}(c, ctx):\n    v{i} = {i}\n    with ctx:\n        v{i} = 2\n    v{i} = 4\n    if c:\n        v{i} = 3\n    return v{i}\n",
         "def f{i}(c, ctx):\n    v{i} = {i}\n    try:\n        v{i} = 2\n    except E:\n        pass\n    return v{i}\n",
-        # Twin source: swapping v and w moves the redefinition from `with` to `if`.
-        "def f{i}(c, ctx):\n    v{i} = {i}\n    with ctx:\n        v{i} = 2\n    if c:\n        w{i} = 3\n    return v{i}\n",
     ]
     with open(path, "w") as stream:
         for i in range(n):
@@ -191,7 +168,7 @@ def fake_codesearchnet(path, n=150):
                                          whole_func_string=templates[i % len(templates)].format(i=i))) + "\n")
 
 
-def fake_cruxeval(path, n=12):
+def fake_cruxeval(path, n=60):
     with open(path, "w") as stream:
         for i in range(n):
             code = f"def f(text, flag):\n    text = text.strip()\n    if flag:\n        text = text + '{i}'\n    text = text.lower()\n    return text"
@@ -217,13 +194,12 @@ def fake_activations(prepared, output, layers=(-1, 0, 1), width=8):
 def test_cpu_pipeline_end_to_end(tmp_path):
     fake_codesearchnet(tmp_path / "csn.jsonl")
     fake_cruxeval(tmp_path / "crux.jsonl")
-    prepared = pipeline.prepare(tmp_path / "prepared", real_programs=100, real_twins_n=8, synthetic_pairs_n=60,
-                                hard_pairs_n=40, input_jsonl=tmp_path / "csn.jsonl",
-                                cruxeval_jsonl=tmp_path / "crux.jsonl", tokenizer=FakeCodeTokenizer())
+    prepared = pipeline.prepare(tmp_path / "prepared", real_programs=100, synthetic_pairs_n=60,
+                                input_jsonl=tmp_path / "csn.jsonl", cruxeval_jsonl=tmp_path / "crux.jsonl",
+                                tokenizer=FakeCodeTokenizer(), add_bos=False)
     cands = pd.read_csv(prepared / "candidates.csv")
     assert set(cands.domain) == set(pipeline.DOMAINS)
-    assert set(cands[cands.domain.isin(pipeline.TEST_ONLY)].split) == {"test"}
-    # Paired domains: the indentation heuristic is right on exactly one member of every pair.
+    # Synthetic pairs: the indentation heuristic is right on exactly one member of every pair.
     paired = cands[cands.domain.isin(pipeline.PAIRED)]
     assert (paired.groupby(paired.program_id.str.rsplit("_", n=1).str[0]).heuristic_correct.sum() == 1).all()
     # Repositories, pairs and programs never straddle splits.
@@ -233,12 +209,38 @@ def test_cpu_pipeline_end_to_end(tmp_path):
     fake_activations(prepared, tmp_path / "activations")
     result = pipeline.evaluate(prepared, tmp_path / "activations", tmp_path / "evaluation", n_boot=50)
     summary = pd.read_csv(result / "summary.csv")
-    assert len(summary) == 3 * 5 and (summary.layer >= 0).all()  # 3 training domains x 5 test domains
-    assert summary[summary.test_domain.isin(pipeline.PAIRED)].pair_accuracy.notna().all()
+    assert len(summary) == 3 * 3 and (summary.layer >= 0).all()  # every domain trains and tests
+    assert summary[summary.test_domain == "synthetic"].probe_pairs.notna().all()
     real = summary[(summary.train_domain == "real") & (summary.test_domain == "real")].iloc[0]
     assert real.probe > 0.95 and real.embedding < 0.8
     breakdown = pd.read_csv(result / "breakdown.csv")
     assert {"category", "n_killers", "self_update", "depth_u", "token_distance"} <= set(breakdown.covariate)
-    standard = pd.read_csv(result / "standardized.csv")
-    assert len(standard) == 15 and standard.real_mass_covered.between(0, 1).all()
+    grid = pd.read_csv(result / "direction_grid.csv")
+    assert len(grid) == 9 and grid.balanced_accuracy.between(0, 1).all()
+    assert set(np.load(result / "directions.npz").files) == {f"{d}_unit" for d in pipeline.DOMAINS}
     assert (result / "report.md").read_text().startswith("# Binding in effect")
+
+
+def test_code_section_ends_on_the_use_line():
+    source = "def f(c):\n    x = 1\n    if c:\n        x = 2\n    y = g(x)\n    return y\n"
+    tokenizer = FakeCodeTokenizer()
+    ids, offsets = pipeline.encode(tokenizer, source)
+    [row] = survival_candidates(source, offsets)[0]
+    program = dict(source=source, input_ids=ids, offsets=offsets)
+    assert tokenizer.decode(code_section(program, row)).endswith("    y = g(x)")
+
+
+def test_steering_hook_adds_only_at_the_last_position():
+    import torch
+
+    class Block(torch.nn.Module):
+        def forward(self, x):
+            return (x * 1.0,)
+
+    block, x = Block(), torch.zeros(1, 3, 4)
+    hook = Residual(block)
+    hook.vector = torch.ones(4)
+    out = block(x)[0]
+    hook.remove()
+    assert out[0, :2].abs().sum() == 0 and torch.equal(out[0, 2], torch.ones(4))
+    assert torch.equal(hook.state, torch.zeros(4))  # Recorded before steering.

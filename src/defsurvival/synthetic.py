@@ -12,16 +12,14 @@ another name `w`. Whether the earlier definition `d` of `v` survives to the use
     target_swap  for v in s: ...  /  with m as w: ...       for w in s: ...  /  with m as v: ...
 
 (`if` in guard_swap is also `while` or `for item in`; the order of the two blocks
-is random; else_swap optionally has an `elif` arm.) Keyword presence, token
-counts, the number and indentation of redefinitions, and the indentation
-heuristic are identical within a pair, so none of them can separate the members.
-In about 40% of pairs every assignment in the constructs reads `v` (`v + 3`),
-so the self-update flag is identical too.
+is random; else_swap optionally has an `elif` arm.) Both members then end with
+the same optional redefinition, `if e: v = ...`, which never decides the label but
+fixes where the last redefinition sits, so its distance to the use is identical too.
 
-`hard_programs`: single functions composed at random from assignments to `v`,
-distractor assignments and nested if/else/for/while/with blocks, with knobs for
-the number of redefinitions, nesting depth and distractors. Preparation turns
-them into controlled pairs with `controls.swap_twin`.
+Keyword presence, token counts, the number, indentation and recency of
+redefinitions, and the indentation heuristic are identical within a pair, so none
+of them can separate the members. In about 40% of pairs every redefinition reads
+`v` (`v + 3`), so the self-update flag is identical too.
 
 Labels are never trusted from construction: preparation re-derives them and
 certifies every pair with the reference labeler and the model tokenizer.
@@ -97,7 +95,7 @@ def synthetic_pairs(n_pairs: int, seed: int):
     for i in range(n_pairs):
         family = FAMILIES[i % len(FAMILIES)]
         v, w = rng.sample(TARGETS, 2)
-        contexts = rng.sample(CONTEXTS, 4)
+        contexts = rng.sample(CONTEXTS, 5)
         params = rng.sample(PARAMS, 2)
         fillers = rng.sample(FILLERS, 8)
         function = rng.choice(FUNCTIONS)
@@ -111,6 +109,7 @@ def synthetic_pairs(n_pairs: int, seed: int):
             rng.setstate(state)
             names = iter(fillers)
             signature = ", ".join(([v] if param_def else []) + params + contexts)
+            last = _update(rng, v) if self_update else _expression(rng, params[0])
             lines = [f"def {function}({signature}):"]
             lines += [f"    {next(names)} = {_expression(rng, params[0])}" for _ in range(rng.randint(0, 2))]
             if not param_def:
@@ -118,64 +117,9 @@ def synthetic_pairs(n_pairs: int, seed: int):
             d_line = len(lines) if not param_def else 1
             # >= 1 line on each side keeps the constructs outside the surface reader's windows.
             lines += [f"    {next(names)} = {_expression(rng, params[1])}" for _ in range(rng.randint(1, 2))]
-            lines += ["    " + x for x in _blocks(family, label, v, w, rng, names, contexts, params[0], self_update)]
+            lines += ["    " + x for x in _blocks(family, label, v, w, rng, names, contexts[:4], params[0], self_update)]
+            lines += [f"    if {contexts[4]}:", f"        {v} = {last}"]  # Fixed, optional: sets recency only.
             lines += [f"    {next(names)} = {_expression(rng, params[1])}", "    " + use]
             members.append(dict(source="\n".join(lines) + "\n", label=label, target=v,
                                 d_line=d_line, u_line=len(lines)))
         yield f"synthetic_{seed}_{i:05d}", family, members
-
-
-def hard_programs(n_programs: int, seed: int):
-    """Yield (program_id, source, target, u_line, knobs) for compositional programs.
-
-    Knobs per program: redefinitions of `v` (1-8), maximum nesting depth (1-4),
-    distractor statements (0-12, assigning three other names repeatedly) and the
-    probability that a redefinition updates `v` from itself.
-    """
-    rng = random.Random(seed)
-    for i in range(n_programs):
-        knobs = dict(n_redefinitions=rng.randint(1, 8), max_depth=rng.randint(1, 4),
-                     n_distractors=rng.randint(2, 12), p_self_update=rng.choice([0.0, 0.5]))
-        v, *others = rng.sample(TARGETS, 4)
-        params = rng.sample(PARAMS, 3)
-        conditions = rng.sample(CONTEXTS, 4)
-        atoms = ["v"] * knobs["n_redefinitions"] + ["w"] * knobs["n_distractors"]
-        rng.shuffle(atoms)
-        atoms.append("use")  # Every definition precedes the use in the text.
-
-        def line(atom):
-            if atom == "v":
-                update = rng.random() < knobs["p_self_update"]
-                return f"{v} = {_update(rng, v) if update else _expression(rng, rng.choice(params))}"
-            if atom == "w":
-                return f"{rng.choice(others)} = {_expression(rng, rng.choice(params))}"
-            return f"{rng.choice(others)} = {rng.choice(FUNCTIONS)}({params[0]}, {params[1]}, {v})"
-
-        def nest(items, depth):
-            out, j = [], 0
-            while j < len(items):
-                if depth < knobs["max_depth"] and rng.random() < 0.45:
-                    k = rng.randint(1, min(3, len(items) - j))
-                    inner, j = items[j:j + k], j + k
-                    kind = rng.choice(["if", "if_else", "for", "while", "with"])
-                    c = rng.choice(conditions)
-                    head = {"if": f"if {c}:", "if_else": f"if {c}:", "for": f"for item in {c}:",
-                            "while": f"while {c}:", "with": f"with {c}:"}[kind]
-                    if kind == "if_else":
-                        # Keep the use last: it may open the else-branch, never precede a placeholder.
-                        cut = rng.randint(0, len(inner) - 1 if inner[-1] == "use" else len(inner))
-                        body, orelse = inner[:cut] or ["w"], inner[cut:] or ["w"]
-                        out += [head] + ["    " + x for x in nest(body, depth + 1)]
-                        out += ["else:"] + ["    " + x for x in nest(orelse, depth + 1)]
-                    else:
-                        out += [head] + ["    " + x for x in nest(inner, depth + 1)]
-                else:
-                    out.append(line(items[j]))
-                    j += 1
-            return out
-
-        body = [f"{v} = {_expression(rng, params[2])}"] + nest(atoms, 0)
-        u_line = 1 + len(body)  # The use is the last line by construction.
-        source = f"def {rng.choice(FUNCTIONS)}({', '.join(params + conditions)}):\n" + \
-            "".join("    " + x + "\n" for x in body)
-        yield f"hard_{seed}_{i:05d}", source, v, u_line, knobs

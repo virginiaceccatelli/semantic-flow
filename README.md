@@ -193,12 +193,10 @@ not contradict the probe and DAS evidence that binding is represented and used.
 For the synthetic-versus-human-code probe comparison, see
 [binding in effect](docs/DEF_SURVIVAL.md) (stage 280): whether an earlier
 assignment can still be the value a use reads, across redefinitions, branches,
-loops and `with` blocks. Controlled pairs, both members built from the same
-tokens with the same redefinition counts and indentation, rule out word
-matching. They come from templates, from compositional hard programs and from
-real CodeSearchNet functions. They're evaluated alongside natural CruxEval and
-CodeSearchNet code, and accuracy is broken down by structural covariates to
-locate where it degrades.
+loops and `with` blocks. Probes are trained on token-controlled synthetic
+pairs, CruxEval and CodeSearchNet, and each is tested on all three. Each
+domain's direction is then compared with the others, used for steering, and
+read with the published J-lens at its probe's layer.
 
 The new [security monitor](docs/SECURITY_MONITOR.md) develops probe + published
 J-lens error predictors on controlled Python functions and applies them unchanged
