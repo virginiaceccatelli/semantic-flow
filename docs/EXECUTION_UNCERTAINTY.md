@@ -346,11 +346,18 @@ repository's adapters first, re-registers them under `semflow_src.*`, and then l
 
 ```bash
 bash jobs/uspace_reasoning.sh setup                         # clone + .venv-uspace (vLLM 0.23, torch 2.11)
+CUDA_VARIANT=cu129 bash jobs/uspace_reasoning.sh setup      # instead, on drivers older than CUDA 13
 MODEL=qwen4b bash jobs/uspace_reasoning.sh download         # weights + published J-lens
 MODEL=qwen4b SEEDS=42 bash jobs/uspace_reasoning.sh run     # GPU: steps 01–06 + controls
 MODELS=qwen4b SEEDS=42 bash jobs/uspace_reasoning.sh tables # upstream Tables 1–2
 bash jobs/uspace_reasoning.sh analyze                       # repository venv, CPU
 ```
+
+The pinned PyPI wheels (torch 2.11.0, vLLM 0.23.0) are CUDA 13 builds and fail on older
+drivers (`driver too old`, then `libcudart.so.13` missing once torch alone is swapped).
+`CUDA_VARIANT=cu129` installs the same versions built for CUDA 12.9 (PyTorch index and
+vLLM's GitHub release), which run on any CUDA 12 driver. This is an environment
+difference from upstream (same library versions, different CUDA build).
 
 Outputs: `results/uspace_reasoning/{items,labels,forward,uspace,scores,controls,tables,analysis}`;
 `traces/` and `*.npz` are git-ignored. Tests:

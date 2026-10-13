@@ -214,6 +214,7 @@ as error scores.
 
 ```bash
 bash jobs/uspace_reasoning.sh setup                     # once (stage 292): upstream checkout + .venv-uspace
+                                                        # (CUDA_VARIANT=cu129 on drivers older than CUDA 13)
 bash jobs/execsem_reasoning.sh prepare                  # CPU, network (already run; outputs in results/)
 MODEL=qwen bash jobs/uspace_reasoning.sh download       # weights + J-lens (stage 292 entries)
 MODEL=qwen4b SEEDS=41 bash jobs/execsem_reasoning.sh run   # smoke first

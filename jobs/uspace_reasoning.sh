@@ -3,6 +3,7 @@
 # Run inside an allocated cluster job; this script does not request GPUs.
 #
 #   bash jobs/uspace_reasoning.sh setup                      # once, CPU, needs network
+#   CUDA_VARIANT=cu129 bash jobs/uspace_reasoning.sh setup   # drivers older than CUDA 13 (see setup)
 #   bash jobs/uspace_reasoning.sh download                   # once per model, CPU, needs network
 #   MODEL=qwen4b SEEDS=42 bash jobs/uspace_reasoning.sh run  # GPU: steps 01-06 + controls
 #   MODELS=qwen4b SEEDS=42 bash jobs/uspace_reasoning.sh tables
@@ -47,6 +48,17 @@ case "${1:-}" in
     fi
     "$UPY" -m pip install -r "$CHECKOUT/requirements.txt"
     "$UPY" -m pip install scipy scikit-learn
+    # The PyPI wheels of torch 2.11.0 / vLLM 0.23.0 are CUDA 13 builds and need driver >= 580.
+    # On older drivers (CUDA 12.x), CUDA_VARIANT=cu129 swaps in the same versions built for
+    # CUDA 12.9, which run on any CUDA 12 driver through minor-version compatibility.
+    if [ -n "${CUDA_VARIANT:-}" ]; then
+      # torch with its CUDA 12 runtime libraries, then vLLM's matching build (deps already in place).
+      "$UPY" -m pip install --force-reinstall "torch==2.11.0+$CUDA_VARIANT" \
+        --index-url "https://download.pytorch.org/whl/$CUDA_VARIANT"
+      "$UPY" -m pip install --force-reinstall --no-deps \
+        "https://github.com/vllm-project/vllm/releases/download/v0.23.0/vllm-0.23.0%2B$CUDA_VARIANT-cp38-abi3-manylinux_2_28_x86_64.whl"
+      "$UPY" -c 'import torch, vllm; print("torch", torch.__version__, "CUDA", torch.version.cuda, "vllm", vllm.__version__)'
+    fi
     ;;
   download)
     # Weights at the pinned revision, plus the published J-lens for that model.
