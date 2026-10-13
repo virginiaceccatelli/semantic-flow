@@ -55,7 +55,7 @@ class Residual:
         hidden = output[0] if isinstance(output, tuple) else output
         self.state = hidden[0, -1].detach().float().clone()
         if self.vector is not None:
-            hidden[:, -1, :] += self.vector.to(hidden.dtype)
+            hidden[:, -1, :] += self.vector.to(device=hidden.device, dtype=hidden.dtype)
         return output
 
     def remove(self):
@@ -108,8 +108,8 @@ def steer(prepared, evaluation, output, lens_dir=None, n_prompts=40, coefficient
         fitted_on = provenance.get("model", {}).get("hf_id")
         assert fitted_on in (None, cfg.hf_id), f"Lens was fitted on {fitted_on}, not {cfg.hf_id}"
         lens_model = jlens.from_hf(model, tokenizer)  # For its final-norm + unembedding only.
-        place_lens_jacobians({"j-lens": lens}, sorted({d["layer"] for d in info.values()}), model_device)
         model_device = model.get_input_embeddings().weight.device
+        place_lens_jacobians({"j-lens": lens}, sorted({d["layer"] for d in info.values()}), model_device)
         blocks = HookManager(model)._get_decoder_layers()
         decode = lambda ids: tokenizer.decode([int(i) for i in ids], skip_special_tokens=True)  # noqa: E731
 
@@ -166,7 +166,7 @@ def steer(prepared, evaluation, output, lens_dir=None, n_prompts=40, coefficient
                                 logits, tokens = greedy(model, tensor, max_new_tokens)
                         finally:
                             hooks[d["layer"]].vector = None
-                        _, steered_top = read(states[d["layer"]] + vector, d["layer"])
+                        _, steered_top = read(states[d["layer"]] + vector.to(states[d["layer"]].device), d["layer"])
                         delta = (torch.log_softmax(logits, -1) - torch.log_softmax(base_logits, -1)).cpu()
                         key = (name, domain, c)
                         changes[key] = changes.get(key, 0) + delta
