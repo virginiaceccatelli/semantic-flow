@@ -67,7 +67,7 @@ print(json.dumps(result))
 '''
 
 
-def execute(code, call, timeout=5):
+def execute(code, call, timeout=5, parse=literal):
     with tempfile.TemporaryDirectory(prefix="execution-oracle-") as cwd:
         try:
             proc = subprocess.run([sys.executable, "-I", "-c", WORKER],
@@ -84,10 +84,10 @@ def execute(code, call, timeout=5):
         raise ValueError("execution_invalid_response") from exc
     if "error" in result:
         raise ValueError("execution_error: " + result["error"])
-    return literal(result["value"])
+    return parse(result["value"])
 
 
-def examples(dataset, row):
+def examples(dataset, row, parse=literal):
     """Yield existing calls, or exclusions, without inventing tests or programs."""
     if dataset == "cruxeval":
         yield {"case_id": str(row["id"]), "program_id": str(row["id"]),
@@ -107,7 +107,7 @@ def examples(dataset, row):
                     isinstance(cmp.ops[0], ast.Eq) and isinstance(cmp.left, ast.Call)):
                 raise ValueError("unsupported_assertion")
             expected = ast.get_source_segment(test, cmp.comparators[0])
-            literal(expected)
+            parse(expected)
             yield dict(identity, code=code, call=ast.get_source_segment(test, cmp.left),
                        expected=expected)
         except (ValueError, SyntaxError, TypeError) as exc:

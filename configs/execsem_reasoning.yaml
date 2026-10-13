@@ -1,0 +1,78 @@
+# Stage 293: the upstream U-Space pipeline (third_party/u-space-pipeline, pinned commit) on
+# CRUXEval-O (all 800 calls), 200 MBPP programs and 400 counterfactual pairs, with the
+# explain-then-result prompt (src/espace/protocol.py), plus E-Space. Read by upstream's
+# src/config.py, so relative paths resolve against the upstream checkout; data_dir points
+# back into this repository. Keys upstream does not know (prompt_style, espace) are ignored by it.
+data_dir: ../../results/execsem_reasoning
+
+items:
+  n: 100000          # larger than every pool: all prepared cases are used
+  seed: 42
+
+datasets:
+  cruxeval:
+    prepared: results/execsem_reasoning/prepared/cruxeval   # relative to this repository
+    prompt_style: explain_result_v1
+  mbpp:
+    prepared: results/execsem_reasoning/prepared/mbpp
+    prompt_style: explain_result_v1
+  cfpairs:
+    prepared: results/execsem_reasoning/prepared/cfpairs
+    prompt_style: explain_result_v1
+
+uspace_terms: data/uspace_terms.yaml
+
+generation:
+  seeds: [41, 42, 43]
+  prompt_headroom: 4096
+
+# Pre-registered E-Space and analysis settings (docs/EXECSEM_REASONING.md). Fixed before
+# any test-split result is computed; `293 freeze` records a hash of this block.
+espace:
+  terms: configs/espace_terms.yaml      # relative to this repository
+  readout: same block as U-Space (models.<m>.readout_block)
+  word_controls: 32                      # random-word E-Spaces, same construction and counts
+  gaussian_controls: 32                  # random orthonormal 4-d bases
+  control_seed: 0
+  freeze_on: qwen                        # model whose dev pairs freeze the anchor lists
+  freeze_position: prompt_end
+  freeze_min_abs_dz: 0.2                 # drop a word only if clearly anti-aligned on dev
+  freeze_min_words: 2                    # per side
+  primary_space: orth                    # orth (Lowdin E-Space) is primary; bipolar alongside
+  primary_position: prompt_end           # before any generated token
+  length_bins: 4                         # prespecified quantile bins of generation length
+  claim_window: 16                       # tokens either side of a claimed intermediate value
+  lexicon: [wait, hmm, actually, maybe, perhaps, possibly, probably, "not sure", unsure, "i think",
+            might, recheck, re-check, "double-check", "double check", confus, mistake, alternatively,
+            "hold on", seems, "let me verify", "let me check", oops]
+
+# Model entries copied verbatim from configs/uspace_reasoning.yaml (themselves verbatim
+# from upstream): qwen = primary (Qwen3.5-27B), magistral = replication, qwen4b = smoke.
+models:
+  qwen4b:
+    hf: Qwen/Qwen3.5-4B
+    revision: 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a
+    budget: 16384
+    sampling: {temperature: 1.0, top_p: 0.95, top_k: 20}
+    chat_kwargs: {}
+    think_end: "</think>"
+    readout_block: 20
+    lens: {repo: neuronpedia/jacobian-lens, file: qwen3.5-4b/jlens/Salesforce-wikitext/Qwen3.5-4B_jacobian_lens_n1000.pt, revision: 0731326edff4ae730ffc5356fe1a4728c748b3a6}
+  qwen:
+    hf: Qwen/Qwen3.5-27B
+    revision: fc05daec18b0a78c049392ed2e771dde82bdf654
+    budget: 65536
+    sampling: {temperature: 1.0, top_p: 0.95, top_k: 20}
+    chat_kwargs: {}
+    think_end: "</think>"
+    readout_block: 42
+    lens: {repo: neuronpedia/jacobian-lens, file: qwen3.5-27b/jlens/Salesforce-wikitext/Qwen3.5-27B_jacobian_lens.pt, revision: 0731326edff4ae730ffc5356fe1a4728c748b3a6}
+  magistral:
+    hf: mistralai/Magistral-Small-2507
+    revision: b3583a426ca23186681c4297926dfe9219be6161
+    budget: 32768
+    sampling: {temperature: 0.7, top_p: 0.95}
+    chat_kwargs: {}
+    think_end: "[/THINK]"
+    readout_block: 26
+    lens: {path: data/lens/magistral_block26.npy}

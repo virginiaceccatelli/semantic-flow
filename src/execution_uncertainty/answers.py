@@ -156,8 +156,9 @@ def _invalid(reason):
             "answer_form": None, "invalid_reason": reason, "parsed_answer": None}
 
 
-def grade(call, answer, expected):
-    """Grade the completed assertion line. ``answer`` is the generated text after ``==``."""
+def grade(call, answer, expected, parse=literal):
+    """Grade the completed assertion line. ``answer`` is the generated text after ``==``.
+    ``parse`` reads ``expected`` (stage 293 passes ``ast.literal_eval`` for dict/set/float)."""
     if not answer.strip():
         return _invalid("empty")
     try:
@@ -190,7 +191,7 @@ def grade(call, answer, expected):
         forms.insert(0, "literal")
     except (ValueError, TypeError, SyntaxError, RecursionError):
         forms.insert(0, "constant_expression")
-    target = literal(expected)
+    target = parse(expected)
     try:
         correct = bool(value == target)
     except Exception:  # noqa: BLE001 - exotic == on constants

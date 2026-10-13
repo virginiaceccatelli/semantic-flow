@@ -13,6 +13,10 @@ this module supplies code-execution versions of exactly those three:
   first ``==``) on the post-thinking text, graded by the stage-291 grader (Python
   ``assert`` semantics, constant expressions, never executing model text).
 
+Stage 293 reuses these hooks: a dataset entry may set ``prompt_style:
+explain_result_v1`` (``src/espace/protocol.py``), which every item then carries, and
+prompt building and grading dispatch on it. Items without a style are stage 292's.
+
 Upstream and this repository both name their package ``src``. ``bootstrap`` imports
 everything needed from this repository first, keeps it alive under ``semflow_src``
 aliases, and only then lets ``src`` resolve to the upstream checkout.
@@ -25,12 +29,16 @@ import subprocess
 import sys
 from pathlib import Path
 
+from src.espace import protocol
 from src.execution_uncertainty.answers import answer_end, grade as grade_answer
 
 ROOT = Path(__file__).resolve().parents[2]
 PINNED = (ROOT / "third_party/u-space/COMMIT").read_text().strip()
 UPSTREAM = ROOT / "third_party/u-space-pipeline"
-CODE_DATASETS = ("cruxeval", "mbpp")
+CODE_DATASETS = ("cruxeval", "mbpp", "cfpairs")
+# Case fields stage 293 passes through to upstream items (absent in stage-290 cases).
+EXTRA = ("program_id", "pair_id", "dimension", "label", "split", "template", "marker_line",
+         "marker_var", "surface_value", "differs_in", "runtime", "values")
 CRUXEVAL_COMMIT = "190faf16d175b5847b0af05d937872b1fb395942"
 
 # Verbatim from cruxeval prompts.py::make_cot_output_prompt at CRUXEVAL_COMMIT, with
@@ -65,11 +73,13 @@ assert {call} == ??
 
 
 def build_prompt(item):
+    if item.get("prompt_style") == protocol.STYLE:
+        return protocol.build_prompt(item)
     return COT_OUTPUT_PROMPT.format(code=item["code"].rstrip(), call=item["call"])
 
 
 def load_items(src, raw_dir=None):
-    """Upstream item dicts from a stage-290 prepared directory (``src['prepared']``)."""
+    """Upstream item dicts from a stage-290/293 prepared directory (``src['prepared']``)."""
     path = ROOT / src["prepared"] / "cases.jsonl"
     items = []
     for line in path.read_text().splitlines():
@@ -78,7 +88,9 @@ def load_items(src, raw_dir=None):
             items.append(dict(id=case["case_id"], ds=case["dataset"], code=case["code"],
                               call=case["call"], gold=case["expected"],
                               group=case["source_group"], has_loop=case["has_loop"],
-                              has_branch=case["has_branch"], stratum=None))
+                              has_branch=case["has_branch"], stratum=None,
+                              **({"prompt_style": src["prompt_style"]} if src.get("prompt_style") else {}),
+                              **{k: case[k] for k in EXTRA if k in case}))
     return items
 
 
@@ -104,6 +116,8 @@ def extract(text):
 
 def grade(item, answer_text):
     """(prediction, correct); correct is None when no answer can be extracted."""
+    if item.get("prompt_style") == protocol.STYLE:
+        return protocol.grade(item, answer_text)
     answer = extract(answer_text)
     if answer is None:
         return None, None

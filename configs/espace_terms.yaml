@@ -1,0 +1,19 @@
+# Stage 293 E-Space: CANDIDATE anchor lists (project brief, section 4).
+# Same schema as upstream data/uspace_terms.yaml: "anchors" name the property (positive pole),
+# "poles" its opposite (negative pole). Category keys equal the counterfactual pair dimensions.
+# Do not edit after a run: `293 freeze` derives the frozen lists from these candidates with
+# the pre-registered rules in docs/EXECSEM_REASONING.md and writes them to
+# results/execsem_reasoning/espace/frozen_terms.json; the analysis reads only that file
+# (and reports the unfiltered candidates as a sensitivity check).
+branch:
+  anchors: [taken, entered, followed, selected, activated]
+  poles: [skipped, bypassed, avoided, omitted, excluded]
+iteration:
+  anchors: [repeated, iterated, looped, recurring, cycled]
+  poles: [once, single, singular, unrepeated, isolated]
+mutation:
+  anchors: [modified, updated, changed, mutated, overwritten]
+  poles: [unchanged, preserved, retained, unmodified, constant]
+exception:
+  anchors: [raised, thrown, failed, aborted, errored]
+  poles: [completed, succeeded, returned, finished, resolved]
