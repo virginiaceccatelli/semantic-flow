@@ -26,7 +26,25 @@ case "${1:-}" in
       git clone https://github.com/s2labres/U-Space "$CHECKOUT"
     fi
     git -C "$CHECKOUT" checkout --quiet "$(cat third_party/u-space/COMMIT)"
-    [ -x "$UPY" ] || python3 -m venv .venv-uspace
+    # vLLM 0.23 (upstream's pin) supports Python 3.10-3.14 only. Prefer the repository
+    # venv's interpreter (3.11); BASE_PYTHON overrides.
+    ok='import sys; sys.exit(0 if (3, 10) <= sys.version_info[:2] <= (3, 14) else 1)'
+    if [ -x "$UPY" ] && ! "$UPY" -c "$ok"; then
+      echo "$UPY is Python $("$UPY" -V 2>&1); vLLM 0.23 needs 3.10-3.14." >&2
+      echo "Remove it (rm -rf .venv-uspace) and rerun setup." >&2
+      exit 1
+    fi
+    if [ ! -x "$UPY" ]; then
+      base=${BASE_PYTHON:-}
+      for candidate in .venv/bin/python python3.12 python3.11 python3.13 python3.10; do
+        [ -n "$base" ] && break
+        command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c "$ok" && base=$candidate
+      done
+      [ -n "$base" ] || { echo "No Python 3.10-3.14 found; set BASE_PYTHON" >&2; exit 1; }
+      "$base" -c "$ok" || { echo "BASE_PYTHON $base is not 3.10-3.14" >&2; exit 1; }
+      echo "Creating .venv-uspace with $base ($("$base" -V 2>&1))"
+      "$base" -m venv .venv-uspace
+    fi
     "$UPY" -m pip install -r "$CHECKOUT/requirements.txt"
     "$UPY" -m pip install scipy scikit-learn
     ;;
