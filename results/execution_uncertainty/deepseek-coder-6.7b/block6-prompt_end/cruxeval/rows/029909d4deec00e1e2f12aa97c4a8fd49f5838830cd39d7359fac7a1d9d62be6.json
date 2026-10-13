@@ -1,0 +1,343 @@
+{
+  "case_id": "sample_445",
+  "program_id": "sample_445",
+  "code": "def f(names):\n    parts = names.split(',')\n    for i, part in enumerate(parts):\n        parts[i] = part.replace(' and', '+').title().replace('+', ' and')\n    return ', '.join(parts)",
+  "call": "f(\"carrot, banana, and strawberry\")",
+  "expected": "'Carrot,  Banana,  and Strawberry'",
+  "dataset": "cruxeval",
+  "source_group": "a8e20795047bf4abafbf7e14f02d6f1ee0daa92ac13a2dc652cb464ee088a6d8",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\ndef f(names):\n    parts = names.split(',')\n    for i, part in enumerate(parts):\n        parts[i] = part.replace(' and', '+').title().replace('+', ' and')\n    return ', '.join(parts)\n\nassert f(\"carrot, banana, and strawberry\") ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 95,
+  "answer": "\"Carrot, Banana, and Strawberry\"",
+  "raw_generation": " \"Carrot, Banana, and Strawberry\"\n",
+  "generated_token_ids": [
+    440,
+    9032,
+    7859,
+    11,
+    17623,
+    2298,
+    11,
+    285,
+    896,
+    2024,
+    12137,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "answer_last_token_offset": 11,
+  "n_generated_tokens": 13,
+  "n_answer_tokens": 12,
+  "token_entropy": [
+    0.8590947985649109,
+    0.045405153185129166,
+    0.010572979226708412,
+    0.04208991676568985,
+    0.05303313583135605,
+    0.0013973399763926864,
+    0.5885148048400879,
+    0.27263179421424866,
+    0.06638845056295395,
+    0.0009805450681596994,
+    0.00704077398404479,
+    0.401655912399292,
+    0.7595500946044922
+  ],
+  "token_nll": [
+    0.20272821187973022,
+    0.0049462574534118176,
+    0.0011838816571980715,
+    0.004846848081797361,
+    0.007467452436685562,
+    0.00012587709352374077,
+    0.2209991067647934,
+    0.06792382150888443,
+    0.008448810316622257,
+    7.593343616463244e-05,
+    0.0006649667047895491,
+    0.13101130723953247,
+    0.3759138882160187
+  ],
+  "mean_answer_entropy": 0.1957338003849145,
+  "mean_answer_nll": 0.05420187288109446,
+  "correct": false,
+  "answer_status": "parsed",
+  "parsed_answer": "'Carrot, Banana, and Strawberry'",
+  "status": "ok",
+  "read_token_index": 94,
+  "a_cone": 2.2359424463798065,
+  "category_cosines": {
+    "ambiguity": 0.005609098821878433,
+    "incompleteness": 0.013658319599926472,
+    "conflicting_evidence": -0.013801703229546547,
+    "general_uncertainty": 0.01526838168501854
+  },
+  "category_normalized": {
+    "ambiguity": 0.22143864631652832,
+    "incompleteness": 0.5392095446586609,
+    "conflicting_evidence": -0.544870138168335,
+    "general_uncertainty": 0.6027723550796509
+  },
+  "uspace_projection_norm": 0.025330262258648872,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    308,
+    311
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 0.43764951247186246,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 10.25
+    },
+    {
+      "rank": 2,
+      "token_id": 572,
+      "text": " *",
+      "score": 9.8125
+    },
+    {
+      "rank": 3,
+      "token_id": 19476,
+      "text": " ([",
+      "score": 9.75
+    },
+    {
+      "rank": 4,
+      "token_id": 185,
+      "text": "\n",
+      "score": 9.0
+    },
+    {
+      "rank": 5,
+      "token_id": 4052,
+      "text": " expected",
+      "score": 8.625
+    },
+    {
+      "rank": 6,
+      "token_id": 821,
+      "text": " [",
+      "score": 8.25
+    },
+    {
+      "rank": 7,
+      "token_id": 31421,
+      "text": " \"[",
+      "score": 7.84375
+    },
+    {
+      "rank": 8,
+      "token_id": 440,
+      "text": " \"",
+      "score": 7.6875
+    },
+    {
+      "rank": 9,
+      "token_id": 58,
+      "text": "[",
+      "score": 7.5625
+    },
+    {
+      "rank": 10,
+      "token_id": 23691,
+      "text": " defaults",
+      "score": 7.4375
+    },
+    {
+      "rank": 11,
+      "token_id": 2220,
+      "text": " `",
+      "score": 7.4375
+    },
+    {
+      "rank": 12,
+      "token_id": 3558,
+      "text": " today",
+      "score": 7.15625
+    },
+    {
+      "rank": 13,
+      "token_id": 357,
+      "text": " \\",
+      "score": 7.125
+    },
+    {
+      "rank": 14,
+      "token_id": 1938,
+      "text": " >",
+      "score": 7.09375
+    },
+    {
+      "rank": 15,
+      "token_id": 6183,
+      "text": " sex",
+      "score": 6.9375
+    },
+    {
+      "rank": 16,
+      "token_id": 1013,
+      "text": " <",
+      "score": 6.8125
+    },
+    {
+      "rank": 17,
+      "token_id": 6236,
+      "text": " ``",
+      "score": 6.71875
+    },
+    {
+      "rank": 18,
+      "token_id": 4077,
+      "text": " http",
+      "score": 6.71875
+    },
+    {
+      "rank": 19,
+      "token_id": 1585,
+      "text": " --",
+      "score": 6.625
+    },
+    {
+      "rank": 20,
+      "token_id": 24066,
+      "text": "\u4eca\u65e5",
+      "score": 6.625
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 22231,
+      "text": " mysterious",
+      "score": 34.5
+    },
+    {
+      "rank": 2,
+      "token_id": 18971,
+      "text": " mystery",
+      "score": 33.0
+    },
+    {
+      "rank": 3,
+      "token_id": 17121,
+      "text": " myster",
+      "score": 29.875
+    },
+    {
+      "rank": 4,
+      "token_id": 16503,
+      "text": " weird",
+      "score": 28.5
+    },
+    {
+      "rank": 5,
+      "token_id": 8392,
+      "text": " strange",
+      "score": 27.0
+    },
+    {
+      "rank": 6,
+      "token_id": 10796,
+      "text": " surprise",
+      "score": 26.5
+    },
+    {
+      "rank": 7,
+      "token_id": 5397,
+      "text": " surpr",
+      "score": 25.125
+    },
+    {
+      "rank": 8,
+      "token_id": 15250,
+      "text": " surprising",
+      "score": 25.125
+    },
+    {
+      "rank": 9,
+      "token_id": 16015,
+      "text": " unusual",
+      "score": 25.0
+    },
+    {
+      "rank": 10,
+      "token_id": 12933,
+      "text": " suspect",
+      "score": 22.125
+    },
+    {
+      "rank": 11,
+      "token_id": 28580,
+      "text": " strang",
+      "score": 21.625
+    },
+    {
+      "rank": 12,
+      "token_id": 14522,
+      "text": " unexpected",
+      "score": 21.125
+    },
+    {
+      "rank": 13,
+      "token_id": 26573,
+      "text": " suspicion",
+      "score": 20.875
+    },
+    {
+      "rank": 14,
+      "token_id": 10054,
+      "text": "\u60ca",
+      "score": 20.875
+    },
+    {
+      "rank": 15,
+      "token_id": 14321,
+      "text": "\u602a",
+      "score": 20.75
+    },
+    {
+      "rank": 16,
+      "token_id": 29437,
+      "text": " suspicious",
+      "score": 20.375
+    },
+    {
+      "rank": 17,
+      "token_id": 25196,
+      "text": " suspected",
+      "score": 19.875
+    },
+    {
+      "rank": 18,
+      "token_id": 7103,
+      "text": "\u5947",
+      "score": 19.75
+    },
+    {
+      "rank": 19,
+      "token_id": 28018,
+      "text": "\u731c",
+      "score": 19.75
+    },
+    {
+      "rank": 20,
+      "token_id": 6509,
+      "text": " stuff",
+      "score": 19.125
+    }
+  ],
+  "residual_norm": 43.356529235839844,
+  "projected_residual_norm": 1.098232388496399
+}

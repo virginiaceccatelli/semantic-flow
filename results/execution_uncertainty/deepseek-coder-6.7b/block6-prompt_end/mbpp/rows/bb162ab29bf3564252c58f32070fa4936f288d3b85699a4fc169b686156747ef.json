@@ -1,0 +1,382 @@
+{
+  "case_id": "475:0",
+  "program_id": "475",
+  "code": "from collections import Counter\r\ndef sort_counter(dict1):\r\n x = Counter(dict1)\r\n sort_counter=x.most_common()\r\n return sort_counter",
+  "call": "sort_counter({'Math':81, 'Physics':83, 'Chemistry':87})",
+  "expected": "[('Chemistry', 87), ('Physics', 83), ('Math', 81)]",
+  "dataset": "mbpp",
+  "source_group": "4a4777a975d699c144511aac9a3634c5e47d1921597fa23310ea2a55519ad785",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\nfrom collections import Counter\r\ndef sort_counter(dict1):\r\n x = Counter(dict1)\r\n sort_counter=x.most_common()\r\n return sort_counter\n\nassert sort_counter({'Math':81, 'Physics':83, 'Chemistry':87}) ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 90,
+  "answer": "[('Chemistry', 87), ('Physics', 83), ('Math', 81)]",
+  "raw_generation": " [('Chemistry', 87), ('Physics', 83), ('Math', 81)]\n",
+  "generated_token_ids": [
+    821,
+    1497,
+    5554,
+    76,
+    6252,
+    1183,
+    207,
+    23,
+    22,
+    650,
+    10234,
+    25520,
+    959,
+    1183,
+    207,
+    23,
+    18,
+    650,
+    10234,
+    19770,
+    1183,
+    207,
+    23,
+    16,
+    6651,
+    185
+  ],
+  "stop_reason": "newline",
+  "answer_last_token_offset": 24,
+  "n_generated_tokens": 26,
+  "n_answer_tokens": 25,
+  "token_entropy": [
+    0.4931899905204773,
+    0.29731208086013794,
+    0.09322459250688553,
+    0.00021637353347614408,
+    0.000641530379652977,
+    0.0054296948947012424,
+    0.3443477749824524,
+    0.010062335059046745,
+    0.0038679977878928185,
+    0.016328271478414536,
+    0.28790685534477234,
+    0.3157549202442169,
+    4.720939614344388e-05,
+    0.003047944512218237,
+    0.036797214299440384,
+    0.001674189930781722,
+    0.0019546598196029663,
+    0.011710508726537228,
+    0.13430210947990417,
+    0.004750862251967192,
+    0.003023614641278982,
+    0.057576730847358704,
+    0.0016239066608250141,
+    0.0016525131650269032,
+    0.5494139194488525,
+    1.019423246383667
+  ],
+  "token_nll": [
+    0.10316604375839233,
+    0.05854322388768196,
+    0.017560716718435287,
+    1.5139465176616795e-05,
+    4.6967357775429264e-05,
+    0.0005634627304971218,
+    0.10362312942743301,
+    0.00103586888872087,
+    0.0003449321957305074,
+    0.0018700745422393084,
+    0.05555349588394165,
+    0.10030341893434525,
+    2.7418097943154862e-06,
+    0.0003084660565946251,
+    0.005369171034544706,
+    0.00014852374442853034,
+    0.00015817821258679032,
+    0.0013323486782610416,
+    0.02089032717049122,
+    0.0004371640970930457,
+    0.0002787916746456176,
+    0.009410074912011623,
+    0.00014435203047469258,
+    0.00013565097469836473,
+    0.2541813254356384,
+    0.6696898341178894
+  ],
+  "mean_answer_entropy": 0.10703431203088258,
+  "mean_answer_nll": 0.029416943584865293,
+  "correct": true,
+  "answer_status": "parsed",
+  "parsed_answer": "[('Chemistry', 87), ('Physics', 83), ('Math', 81)]",
+  "status": "ok",
+  "read_token_index": 89,
+  "a_cone": 2.1527587344216985,
+  "category_cosines": {
+    "ambiguity": 0.018408365547657013,
+    "incompleteness": 0.0011181182926520705,
+    "conflicting_evidence": -0.022600673139095306,
+    "general_uncertainty": 0.025351734831929207
+  },
+  "category_normalized": {
+    "ambiguity": 0.4763161540031433,
+    "incompleteness": 0.02893129177391529,
+    "conflicting_evidence": -0.5847920179367065,
+    "general_uncertainty": 0.6559756994247437
+  },
+  "uspace_projection_norm": 0.0386473685503006,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    278,
+    281
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 0.23041905010729996,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 19476,
+      "text": " ([",
+      "score": 15.5625
+    },
+    {
+      "rank": 2,
+      "token_id": 821,
+      "text": " [",
+      "score": 14.0625
+    },
+    {
+      "rank": 3,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 13.8125
+    },
+    {
+      "rank": 4,
+      "token_id": 185,
+      "text": "\n",
+      "score": 13.4375
+    },
+    {
+      "rank": 5,
+      "token_id": 17794,
+      "text": " [\\",
+      "score": 13.125
+    },
+    {
+      "rank": 6,
+      "token_id": 572,
+      "text": " *",
+      "score": 11.75
+    },
+    {
+      "rank": 7,
+      "token_id": 16603,
+      "text": " [[",
+      "score": 11.625
+    },
+    {
+      "rank": 8,
+      "token_id": 58,
+      "text": "[",
+      "score": 11.4375
+    },
+    {
+      "rank": 9,
+      "token_id": 25234,
+      "text": " [_",
+      "score": 11.25
+    },
+    {
+      "rank": 10,
+      "token_id": 357,
+      "text": " \\",
+      "score": 11.125
+    },
+    {
+      "rank": 11,
+      "token_id": 17079,
+      "text": " {{",
+      "score": 9.9375
+    },
+    {
+      "rank": 12,
+      "token_id": 5154,
+      "text": "[\\",
+      "score": 9.9375
+    },
+    {
+      "rank": 13,
+      "token_id": 2220,
+      "text": " `",
+      "score": 9.8125
+    },
+    {
+      "rank": 14,
+      "token_id": 1013,
+      "text": " <",
+      "score": 9.3125
+    },
+    {
+      "rank": 15,
+      "token_id": 1585,
+      "text": " --",
+      "score": 9.25
+    },
+    {
+      "rank": 16,
+      "token_id": 31421,
+      "text": " \"[",
+      "score": 9.25
+    },
+    {
+      "rank": 17,
+      "token_id": 1938,
+      "text": " >",
+      "score": 9.1875
+    },
+    {
+      "rank": 18,
+      "token_id": 12867,
+      "text": " \\(",
+      "score": 9.125
+    },
+    {
+      "rank": 19,
+      "token_id": 243,
+      "text": "  ",
+      "score": 8.8125
+    },
+    {
+      "rank": 20,
+      "token_id": 16850,
+      "text": "  `",
+      "score": 8.625
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 16503,
+      "text": " weird",
+      "score": 31.5
+    },
+    {
+      "rank": 2,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 27.375
+    },
+    {
+      "rank": 3,
+      "token_id": 10796,
+      "text": " surprise",
+      "score": 25.75
+    },
+    {
+      "rank": 4,
+      "token_id": 10047,
+      "text": "\ufffd",
+      "score": 24.75
+    },
+    {
+      "rank": 5,
+      "token_id": 22709,
+      "text": " \ufffd",
+      "score": 22.75
+    },
+    {
+      "rank": 6,
+      "token_id": 14522,
+      "text": " unexpected",
+      "score": 22.75
+    },
+    {
+      "rank": 7,
+      "token_id": 5397,
+      "text": " surpr",
+      "score": 22.625
+    },
+    {
+      "rank": 8,
+      "token_id": 15250,
+      "text": " surprising",
+      "score": 22.5
+    },
+    {
+      "rank": 9,
+      "token_id": 12081,
+      "text": " surprised",
+      "score": 20.125
+    },
+    {
+      "rank": 10,
+      "token_id": 24331,
+      "text": " fuck",
+      "score": 20.0
+    },
+    {
+      "rank": 11,
+      "token_id": 22900,
+      "text": "\u610f\u5916",
+      "score": 18.625
+    },
+    {
+      "rank": 12,
+      "token_id": 30499,
+      "text": " tricky",
+      "score": 18.375
+    },
+    {
+      "rank": 13,
+      "token_id": 26754,
+      "text": "\u65b0\u51a0",
+      "score": 18.25
+    },
+    {
+      "rank": 14,
+      "token_id": 24717,
+      "text": " COVID",
+      "score": 18.125
+    },
+    {
+      "rank": 15,
+      "token_id": 15428,
+      "text": " crazy",
+      "score": 18.125
+    },
+    {
+      "rank": 16,
+      "token_id": 6509,
+      "text": " stuff",
+      "score": 18.125
+    },
+    {
+      "rank": 17,
+      "token_id": 8392,
+      "text": " strange",
+      "score": 17.875
+    },
+    {
+      "rank": 18,
+      "token_id": 28527,
+      "text": " scared",
+      "score": 17.75
+    },
+    {
+      "rank": 19,
+      "token_id": 29437,
+      "text": " suspicious",
+      "score": 17.625
+    },
+    {
+      "rank": 20,
+      "token_id": 12365,
+      "text": " Maybe",
+      "score": 17.625
+    }
+  ],
+  "residual_norm": 41.746238708496094,
+  "projected_residual_norm": 1.6133818626403809
+}

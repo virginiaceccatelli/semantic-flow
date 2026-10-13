@@ -1,0 +1,355 @@
+{
+  "case_id": "sample_229",
+  "program_id": "sample_229",
+  "code": "def f(dic, value):\n    result = []\n    for e in dic:\n        result.append(e[0])\n        if e[1] == value:\n            result.reverse()\n        else:\n            result.append(e[1])\n    return result",
+  "call": "f({'9m':2, 'mA':1, '10K':2, 'Lk':2}, 1)",
+  "expected": "['9', 'm', 'm', 'A', '1', '0', 'L', 'k']",
+  "dataset": "cruxeval",
+  "source_group": "a5f4e0082e8298f06129016cdfd941ee319ff97a999711b6825b7a78d27eeb47",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\ndef f(dic, value):\n    result = []\n    for e in dic:\n        result.append(e[0])\n        if e[1] == value:\n            result.reverse()\n        else:\n            result.append(e[1])\n    return result\n\nassert f({'9m':2, 'mA':1, '10K':2, 'Lk':2}, 1) ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 115,
+  "answer": "['mA', '9m', '10K', 'Lk']",
+  "raw_generation": " ['mA', '9m', '10K', 'Lk']\n",
+  "generated_token_ids": [
+    12036,
+    16923,
+    1183,
+    651,
+    24,
+    76,
+    1183,
+    651,
+    16,
+    15,
+    42,
+    1183,
+    651,
+    43,
+    74,
+    3676,
+    185
+  ],
+  "stop_reason": "newline",
+  "answer_last_token_offset": 15,
+  "n_generated_tokens": 17,
+  "n_answer_tokens": 16,
+  "token_entropy": [
+    0.9753671884536743,
+    1.6231560707092285,
+    0.6313084959983826,
+    0.5474413633346558,
+    1.2400425672531128,
+    0.07418398559093475,
+    0.357435405254364,
+    0.2732650637626648,
+    0.9730725288391113,
+    0.02272174134850502,
+    0.10430993139743805,
+    0.3625127077102661,
+    0.087600938975811,
+    0.2026473879814148,
+    0.019156333059072495,
+    0.6555060148239136,
+    0.6405571103096008
+  ],
+  "token_nll": [
+    0.33447355031967163,
+    0.8964905738830566,
+    0.18535009026527405,
+    0.19453932344913483,
+    0.6469495892524719,
+    0.009844089858233929,
+    0.0927736833691597,
+    0.07131640613079071,
+    0.7509087324142456,
+    0.0025788643397390842,
+    0.019578540697693825,
+    0.09419508278369904,
+    0.014706303365528584,
+    0.03366087004542351,
+    0.002333182143047452,
+    0.2192981094121933,
+    0.2674395442008972
+  ],
+  "mean_answer_entropy": 0.5093579827807844,
+  "mean_answer_nll": 0.22306231198308524,
+  "correct": false,
+  "answer_status": "parsed",
+  "parsed_answer": "['mA', '9m', '10K', 'Lk']",
+  "status": "ok",
+  "read_token_index": 114,
+  "a_cone": 1.6837336947523218,
+  "category_cosines": {
+    "ambiguity": 0.058203257620334625,
+    "incompleteness": -0.06857489049434662,
+    "conflicting_evidence": -0.03243696317076683,
+    "general_uncertainty": -0.002803900744765997
+  },
+  "category_normalized": {
+    "ambiguity": 0.6084614992141724,
+    "incompleteness": -0.7168874144554138,
+    "conflicting_evidence": -0.33909860253334045,
+    "general_uncertainty": -0.02931220270693302
+  },
+  "uspace_projection_norm": 0.09565643221139908,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    330,
+    333
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 0.8576231982990796,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 7.4375
+    },
+    {
+      "rank": 2,
+      "token_id": 185,
+      "text": "\n",
+      "score": 6.53125
+    },
+    {
+      "rank": 3,
+      "token_id": 11181,
+      "text": " somewhere",
+      "score": 6.0625
+    },
+    {
+      "rank": 4,
+      "token_id": 440,
+      "text": " \"",
+      "score": 5.59375
+    },
+    {
+      "rank": 5,
+      "token_id": 1585,
+      "text": " --",
+      "score": 5.5625
+    },
+    {
+      "rank": 6,
+      "token_id": 25,
+      "text": ":",
+      "score": 5.46875
+    },
+    {
+      "rank": 7,
+      "token_id": 2220,
+      "text": " `",
+      "score": 5.3125
+    },
+    {
+      "rank": 8,
+      "token_id": 1866,
+      "text": " something",
+      "score": 5.1875
+    },
+    {
+      "rank": 9,
+      "token_id": 1368,
+      "text": " because",
+      "score": 5.03125
+    },
+    {
+      "rank": 10,
+      "token_id": 8528,
+      "text": " +=",
+      "score": 4.84375
+    },
+    {
+      "rank": 11,
+      "token_id": 6236,
+      "text": " ``",
+      "score": 4.78125
+    },
+    {
+      "rank": 12,
+      "token_id": 8507,
+      "text": " (\"",
+      "score": 4.65625
+    },
+    {
+      "rank": 13,
+      "token_id": 19423,
+      "text": " TODO",
+      "score": 4.625
+    },
+    {
+      "rank": 14,
+      "token_id": 334,
+      "text": " (",
+      "score": 4.5625
+    },
+    {
+      "rank": 15,
+      "token_id": 16352,
+      "text": " elsewhere",
+      "score": 4.4375
+    },
+    {
+      "rank": 16,
+      "token_id": 945,
+      "text": " +",
+      "score": 3.9375
+    },
+    {
+      "rank": 17,
+      "token_id": 26702,
+      "text": " (#",
+      "score": 3.90625
+    },
+    {
+      "rank": 18,
+      "token_id": 4052,
+      "text": " expected",
+      "score": 3.84375
+    },
+    {
+      "rank": 19,
+      "token_id": 3552,
+      "text": " ...",
+      "score": 3.796875
+    },
+    {
+      "rank": 20,
+      "token_id": 17625,
+      "text": " [\"",
+      "score": 3.703125
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 25.75
+    },
+    {
+      "rank": 2,
+      "token_id": 10047,
+      "text": "\ufffd",
+      "score": 25.5
+    },
+    {
+      "rank": 3,
+      "token_id": 24122,
+      "text": " gonna",
+      "score": 19.5
+    },
+    {
+      "rank": 4,
+      "token_id": 22709,
+      "text": " \ufffd",
+      "score": 18.875
+    },
+    {
+      "rank": 5,
+      "token_id": 30052,
+      "text": " lol",
+      "score": 14.1875
+    },
+    {
+      "rank": 6,
+      "token_id": 24331,
+      "text": " fuck",
+      "score": 13.5625
+    },
+    {
+      "rank": 7,
+      "token_id": 14176,
+      "text": " anymore",
+      "score": 12.9375
+    },
+    {
+      "rank": 8,
+      "token_id": 7678,
+      "text": " strugg",
+      "score": 12.5
+    },
+    {
+      "rank": 9,
+      "token_id": 24717,
+      "text": " COVID",
+      "score": 12.3125
+    },
+    {
+      "rank": 10,
+      "token_id": 19149,
+      "text": " Instagram",
+      "score": 11.125
+    },
+    {
+      "rank": 11,
+      "token_id": 31586,
+      "text": " germans",
+      "score": 10.75
+    },
+    {
+      "rank": 12,
+      "token_id": 30475,
+      "text": " musul",
+      "score": 10.625
+    },
+    {
+      "rank": 13,
+      "token_id": 30727,
+      "text": "\u5360\u6bd4",
+      "score": 10.5
+    },
+    {
+      "rank": 14,
+      "token_id": 22028,
+      "text": " dumpster",
+      "score": 10.5
+    },
+    {
+      "rank": 15,
+      "token_id": 26754,
+      "text": "\u65b0\u51a0",
+      "score": 10.25
+    },
+    {
+      "rank": 16,
+      "token_id": 7045,
+      "text": " couldn",
+      "score": 9.8125
+    },
+    {
+      "rank": 17,
+      "token_id": 6740,
+      "text": " wasn",
+      "score": 9.8125
+    },
+    {
+      "rank": 18,
+      "token_id": 8632,
+      "text": " impossible",
+      "score": 9.6875
+    },
+    {
+      "rank": 19,
+      "token_id": 7361,
+      "text": " wouldn",
+      "score": 9.5
+    },
+    {
+      "rank": 20,
+      "token_id": 18268,
+      "text": " scenarios",
+      "score": 9.375
+    }
+  ],
+  "residual_norm": 15.89535903930664,
+  "projected_residual_norm": 1.5204932689666748
+}

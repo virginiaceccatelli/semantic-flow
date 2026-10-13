@@ -1,0 +1,322 @@
+{
+  "case_id": "159:0",
+  "program_id": "159",
+  "code": "def month_season(month,days):\r\n if month in ('January', 'February', 'March'):\r\n\t season = 'winter'\r\n elif month in ('April', 'May', 'June'):\r\n\t season = 'spring'\r\n elif month in ('July', 'August', 'September'):\r\n\t season = 'summer'\r\n else:\r\n\t season = 'autumn'\r\n if (month == 'March') and (days > 19):\r\n\t season = 'spring'\r\n elif (month == 'June') and (days > 20):\r\n\t season = 'summer'\r\n elif (month == 'September') and (days > 21):\r\n\t season = 'autumn'\r\n elif (month == 'October') and (days > 21):\r\n\t season = 'autumn'\r\n elif (month == 'November') and (days > 21):\r\n\t season = 'autumn'\r\n elif (month == 'December') and (days > 20):\r\n\t season = 'winter'\r\n return season",
+  "call": "month_season('January',4)",
+  "expected": "'winter'",
+  "dataset": "mbpp",
+  "source_group": "2a49063d8b9a49c0d4b69b6fa2d146a1fabd0b4847e6160192b61fe8b731cf21",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\ndef month_season(month,days):\r\n if month in ('January', 'February', 'March'):\r\n\t season = 'winter'\r\n elif month in ('April', 'May', 'June'):\r\n\t season = 'spring'\r\n elif month in ('July', 'August', 'September'):\r\n\t season = 'summer'\r\n else:\r\n\t season = 'autumn'\r\n if (month == 'March') and (days > 19):\r\n\t season = 'spring'\r\n elif (month == 'June') and (days > 20):\r\n\t season = 'summer'\r\n elif (month == 'September') and (days > 21):\r\n\t season = 'autumn'\r\n elif (month == 'October') and (days > 21):\r\n\t season = 'autumn'\r\n elif (month == 'November') and (days > 21):\r\n\t season = 'autumn'\r\n elif (month == 'December') and (days > 20):\r\n\t season = 'winter'\r\n return season\n\nassert month_season('January',4) ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 276,
+  "answer": "'winter'",
+  "raw_generation": " 'winter'\r\n",
+  "generated_token_ids": [
+    651,
+    86,
+    2263,
+    6,
+    188,
+    185
+  ],
+  "stop_reason": "newline",
+  "answer_last_token_offset": 3,
+  "n_generated_tokens": 6,
+  "n_answer_tokens": 4,
+  "token_entropy": [
+    0.35736846923828125,
+    0.5324298143386841,
+    0.0009478825377300382,
+    0.7903189063072205,
+    1.146869421005249,
+    0.07978255301713943
+  ],
+  "token_nll": [
+    0.0726170763373375,
+    0.1299883872270584,
+    7.30726242181845e-05,
+    0.37405598163604736,
+    0.7388198375701904,
+    0.008497155271470547
+  ],
+  "mean_answer_entropy": 0.42026626810547896,
+  "mean_answer_nll": 0.14418362945616536,
+  "correct": true,
+  "answer_status": "parsed",
+  "parsed_answer": "'winter'",
+  "status": "ok",
+  "read_token_index": 275,
+  "a_cone": 1.7034796149609688,
+  "category_cosines": {
+    "ambiguity": 0.05711521953344345,
+    "incompleteness": -0.07250983268022537,
+    "conflicting_evidence": -0.029336048290133476,
+    "general_uncertainty": 0.006513334810733795
+  },
+  "category_normalized": {
+    "ambiguity": 0.5883837938308716,
+    "incompleteness": -0.7469744086265564,
+    "conflicting_evidence": -0.30221113562583923,
+    "general_uncertainty": 0.06709840893745422
+  },
+  "uspace_projection_norm": 0.09707137197256088,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    786,
+    789
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 0.7159150205734046,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 7.1875
+    },
+    {
+      "rank": 2,
+      "token_id": 2220,
+      "text": " `",
+      "score": 6.8125
+    },
+    {
+      "rank": 3,
+      "token_id": 8528,
+      "text": " +=",
+      "score": 6.65625
+    },
+    {
+      "rank": 4,
+      "token_id": 1368,
+      "text": " because",
+      "score": 6.34375
+    },
+    {
+      "rank": 5,
+      "token_id": 1585,
+      "text": " --",
+      "score": 6.15625
+    },
+    {
+      "rank": 6,
+      "token_id": 19423,
+      "text": " TODO",
+      "score": 6.15625
+    },
+    {
+      "rank": 7,
+      "token_id": 6236,
+      "text": " ``",
+      "score": 5.96875
+    },
+    {
+      "rank": 8,
+      "token_id": 945,
+      "text": " +",
+      "score": 5.90625
+    },
+    {
+      "rank": 9,
+      "token_id": 440,
+      "text": " \"",
+      "score": 5.28125
+    },
+    {
+      "rank": 10,
+      "token_id": 9678,
+      "text": " implementation",
+      "score": 5.0
+    },
+    {
+      "rank": 11,
+      "token_id": 26022,
+      "text": " \"#",
+      "score": 5.0
+    },
+    {
+      "rank": 12,
+      "token_id": 2956,
+      "text": " &&",
+      "score": 4.875
+    },
+    {
+      "rank": 13,
+      "token_id": 4341,
+      "text": " implement",
+      "score": 4.8125
+    },
+    {
+      "rank": 14,
+      "token_id": 23323,
+      "text": " += ",
+      "score": 4.8125
+    },
+    {
+      "rank": 15,
+      "token_id": 4052,
+      "text": " expected",
+      "score": 4.8125
+    },
+    {
+      "rank": 16,
+      "token_id": 19748,
+      "text": " canonical",
+      "score": 4.78125
+    },
+    {
+      "rank": 17,
+      "token_id": 371,
+      "text": " $",
+      "score": 4.65625
+    },
+    {
+      "rank": 18,
+      "token_id": 19788,
+      "text": " {\"",
+      "score": 4.625
+    },
+    {
+      "rank": 19,
+      "token_id": 8507,
+      "text": " (\"",
+      "score": 4.46875
+    },
+    {
+      "rank": 20,
+      "token_id": 26073,
+      "text": " Git",
+      "score": 4.40625
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 26.0
+    },
+    {
+      "rank": 2,
+      "token_id": 10047,
+      "text": "\ufffd",
+      "score": 25.75
+    },
+    {
+      "rank": 3,
+      "token_id": 24122,
+      "text": " gonna",
+      "score": 19.25
+    },
+    {
+      "rank": 4,
+      "token_id": 22709,
+      "text": " \ufffd",
+      "score": 19.125
+    },
+    {
+      "rank": 5,
+      "token_id": 30052,
+      "text": " lol",
+      "score": 13.75
+    },
+    {
+      "rank": 6,
+      "token_id": 24331,
+      "text": " fuck",
+      "score": 13.25
+    },
+    {
+      "rank": 7,
+      "token_id": 7678,
+      "text": " strugg",
+      "score": 12.4375
+    },
+    {
+      "rank": 8,
+      "token_id": 14176,
+      "text": " anymore",
+      "score": 12.375
+    },
+    {
+      "rank": 9,
+      "token_id": 24717,
+      "text": " COVID",
+      "score": 12.0625
+    },
+    {
+      "rank": 10,
+      "token_id": 31586,
+      "text": " germans",
+      "score": 11.25
+    },
+    {
+      "rank": 11,
+      "token_id": 22028,
+      "text": " dumpster",
+      "score": 11.125
+    },
+    {
+      "rank": 12,
+      "token_id": 30475,
+      "text": " musul",
+      "score": 10.875
+    },
+    {
+      "rank": 13,
+      "token_id": 19149,
+      "text": " Instagram",
+      "score": 10.875
+    },
+    {
+      "rank": 14,
+      "token_id": 30727,
+      "text": "\u5360\u6bd4",
+      "score": 10.8125
+    },
+    {
+      "rank": 15,
+      "token_id": 26754,
+      "text": "\u65b0\u51a0",
+      "score": 10.6875
+    },
+    {
+      "rank": 16,
+      "token_id": 18268,
+      "text": " scenarios",
+      "score": 9.5
+    },
+    {
+      "rank": 17,
+      "token_id": 6740,
+      "text": " wasn",
+      "score": 9.5
+    },
+    {
+      "rank": 18,
+      "token_id": 24950,
+      "text": " medalla",
+      "score": 9.5
+    },
+    {
+      "rank": 19,
+      "token_id": 10193,
+      "text": "\u75ab\u60c5",
+      "score": 9.375
+    },
+    {
+      "rank": 20,
+      "token_id": 7045,
+      "text": " couldn",
+      "score": 9.3125
+    }
+  ],
+  "residual_norm": 16.842927932739258,
+  "projected_residual_norm": 1.634965419769287
+}

@@ -1,0 +1,61 @@
+{
+  "stage": "280_evaluate",
+  "timestamp": "20261012_225725",
+  "git_sha": "f303d3e",
+  "python": "3.11.16",
+  "argv": [
+    "scripts/280_def_survival.py",
+    "evaluate",
+    "--prepared",
+    "results/binding_flow_v2/deepseek-coder-1.3b/seed42/prepared",
+    "--activations",
+    "results/binding_flow_v2/deepseek-coder-1.3b/seed42/activations",
+    "--output",
+    "results/binding_flow_v2/deepseek-coder-1.3b/seed42/evaluation"
+  ],
+  "args": {
+    "prepared_sha256": "515ee855ce907ba23f406597ba69d83aac0ef4803e81f72fe6471b74df62013f",
+    "activations_sha256": "b3f7a81562db3f83bda3d0d389fd2c00199e587c992aabc28d3ffe4bc5fa5bed",
+    "max_train_rows": "4000",
+    "match_budget": "False",
+    "n_train": "{'synthetic': 3592, 'cruxeval': 250, 'real': 4000}",
+    "max_iter": "5000",
+    "solver": "saga",
+    "n_boot": "1000",
+    "seed": "42"
+  },
+  "wall_time_s": 8170.1,
+  "extra": {
+    "stage": "280_evaluate",
+    "status": "passed",
+    "args": {
+      "prepared_sha256": "515ee855ce907ba23f406597ba69d83aac0ef4803e81f72fe6471b74df62013f",
+      "activations_sha256": "b3f7a81562db3f83bda3d0d389fd2c00199e587c992aabc28d3ffe4bc5fa5bed",
+      "max_train_rows": 4000,
+      "match_budget": false,
+      "n_train": {
+        "synthetic": 3592,
+        "cruxeval": 250,
+        "real": 4000
+      },
+      "max_iter": 5000,
+      "solver": "saga",
+      "n_boot": 1000,
+      "seed": 42
+    },
+    "files": {
+      "predictions.csv.gz": "5e6a5e6b470a092049460533c1d9866469e2eb7a19c40f1ea617dd390eeadb6f",
+      "directions.npz": "2042d38ea91a9a67048c050635f3a513ec75fa19838fc6e7db2b43e7bf45d006",
+      "directions.json": "899d070004549c06c3174820bd39b12f21c1cb5c097a2546dc296f2f49c5fb46",
+      "report.md": "19c722ac7e2a032ad7d7b711a2cc51686961581168ca5f307f2c127633a13f7b",
+      "layers.csv": "f56311c9364853a3903c87f3cee837fa5b857636438c74493643d501c87404ef",
+      "summary.csv": "b187fdba5960e16912e5db2ee9a667dd6e871ad61b6c4e84a65dff3fc03b04a2",
+      "breakdown.csv": "a49446d6feef86523c08209ee2ca1d735aef82afb1846b7a9cbf8774df250de0",
+      "fits.csv": "3815e0c7bf7b43c4fe4b843c37b047341179c359290f6e2b3dd88a2097713ac7",
+      "cosines.csv": "fd89b47297ea5b7d33f704e725a898713252cb35453e6dd785e4d85608c7ba2f",
+      "direction_grid.csv": "75d1eace549543b1d8309cb4836828b3f9813d3e37f184f35ab57f0155d4905d",
+      "baselines.csv": "1ab682b4152cc51a76392f38c2375b50357c7dd7ad2fb277950388ecdba33a63"
+    },
+    "wall_time_s": 8170.04
+  }
+}

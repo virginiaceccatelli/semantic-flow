@@ -1,0 +1,376 @@
+{
+  "case_id": "73:1",
+  "program_id": "73",
+  "code": "import re\r\ndef multiple_split(text):\r\n  return (re.split('; |, |\\*|\\n',text))",
+  "call": "multiple_split('Mi Box runs on the \\n Latest android*which has google assistance and chromecast.')",
+  "expected": "['Mi Box runs on the ', ' Latest android', 'which has google assistance and chromecast.']",
+  "dataset": "mbpp",
+  "source_group": "5f1230c0f9b30bbfb534726613a6791f911392d9be11cc07b24d19073fb21e46",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\nimport re\r\ndef multiple_split(text):\r\n  return (re.split('; |, |\\*|\\n',text))\n\nassert multiple_split('Mi Box runs on the \\n Latest android*which has google assistance and chromecast.') ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 79,
+  "answer": "['Mi Box runs on the ', 'Latest android', 'which has google assistance and chromecast.']",
+  "raw_generation": " ['Mi Box runs on the ', 'Latest android', 'which has google assistance and chromecast.']\n",
+  "generated_token_ids": [
+    12036,
+    22299,
+    14507,
+    7516,
+    331,
+    254,
+    19329,
+    651,
+    19022,
+    370,
+    5020,
+    1183,
+    651,
+    3249,
+    638,
+    13483,
+    10989,
+    285,
+    24622,
+    865,
+    537,
+    13,
+    3676,
+    185
+  ],
+  "stop_reason": "newline",
+  "answer_last_token_offset": 22,
+  "n_generated_tokens": 24,
+  "n_answer_tokens": 23,
+  "token_entropy": [
+    1.0355080366134644,
+    0.11574406921863556,
+    0.2666364908218384,
+    0.5841389894485474,
+    0.01912805624306202,
+    0.05641119182109833,
+    1.4192423820495605,
+    0.3033490478992462,
+    0.8358792662620544,
+    9.786442387849092e-05,
+    0.06134974956512451,
+    0.8063182830810547,
+    0.19901573657989502,
+    0.17045958340168,
+    0.010829228907823563,
+    0.05787736177444458,
+    0.01763400435447693,
+    0.07343339174985886,
+    0.05771208554506302,
+    0.0005310691194608808,
+    0.0003808130568359047,
+    0.6611288785934448,
+    0.13525740802288055,
+    1.0625895261764526
+  ],
+  "token_nll": [
+    0.2532397210597992,
+    0.012463421560823917,
+    0.05650739371776581,
+    0.24054600298404694,
+    0.0022573007736355066,
+    0.008677513338625431,
+    0.540346622467041,
+    0.052386149764060974,
+    0.45903223752975464,
+    6.318072337307967e-06,
+    0.009321383200585842,
+    0.19077564775943756,
+    0.032843779772520065,
+    0.023826580494642258,
+    0.0011963837314397097,
+    0.007876290939748287,
+    0.00197168393060565,
+    0.012261606752872467,
+    0.007099875248968601,
+    3.635817120084539e-05,
+    2.8371408916427754e-05,
+    0.1808064877986908,
+    0.022422712296247482,
+    0.5778926014900208
+  ],
+  "mean_answer_entropy": 0.299480999502323,
+  "mean_answer_nll": 0.09199694968581594,
+  "correct": false,
+  "answer_status": "parsed",
+  "parsed_answer": "['Mi Box runs on the ', 'Latest android', 'which has google assistance and chromecast.']",
+  "status": "ok",
+  "read_token_index": 78,
+  "a_cone": 1.6348496424707772,
+  "category_cosines": {
+    "ambiguity": 0.05004963278770447,
+    "incompleteness": -0.07373204082250595,
+    "conflicting_evidence": -0.008643046021461487,
+    "general_uncertainty": -0.011073557659983635
+  },
+  "category_normalized": {
+    "ambiguity": 0.5547831058502197,
+    "incompleteness": -0.8172945380210876,
+    "conflicting_evidence": -0.09580522030591965,
+    "general_uncertainty": -0.12274660915136337
+  },
+  "uspace_projection_norm": 0.09021477401256561,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    267,
+    270
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 0.48960640496316377,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 13.125
+    },
+    {
+      "rank": 2,
+      "token_id": 185,
+      "text": "\n",
+      "score": 10.0
+    },
+    {
+      "rank": 3,
+      "token_id": 19423,
+      "text": " TODO",
+      "score": 6.875
+    },
+    {
+      "rank": 4,
+      "token_id": 1368,
+      "text": " because",
+      "score": 6.34375
+    },
+    {
+      "rank": 5,
+      "token_id": 9678,
+      "text": " implementation",
+      "score": 5.84375
+    },
+    {
+      "rank": 6,
+      "token_id": 16603,
+      "text": " [[",
+      "score": 5.8125
+    },
+    {
+      "rank": 7,
+      "token_id": 17079,
+      "text": " {{",
+      "score": 5.4375
+    },
+    {
+      "rank": 8,
+      "token_id": 4341,
+      "text": " implement",
+      "score": 5.09375
+    },
+    {
+      "rank": 9,
+      "token_id": 17625,
+      "text": " [\"",
+      "score": 4.90625
+    },
+    {
+      "rank": 10,
+      "token_id": 26702,
+      "text": " (#",
+      "score": 4.75
+    },
+    {
+      "rank": 11,
+      "token_id": 11181,
+      "text": " somewhere",
+      "score": 4.71875
+    },
+    {
+      "rank": 12,
+      "token_id": 4052,
+      "text": " expected",
+      "score": 4.6875
+    },
+    {
+      "rank": 13,
+      "token_id": 31421,
+      "text": " \"[",
+      "score": 4.6875
+    },
+    {
+      "rank": 14,
+      "token_id": 8690,
+      "text": " API",
+      "score": 4.53125
+    },
+    {
+      "rank": 15,
+      "token_id": 6486,
+      "text": " https",
+      "score": 4.46875
+    },
+    {
+      "rank": 16,
+      "token_id": 16352,
+      "text": " elsewhere",
+      "score": 4.46875
+    },
+    {
+      "rank": 17,
+      "token_id": 26022,
+      "text": " \"#",
+      "score": 4.4375
+    },
+    {
+      "rank": 18,
+      "token_id": 25,
+      "text": ":",
+      "score": 4.4375
+    },
+    {
+      "rank": 19,
+      "token_id": 2220,
+      "text": " `",
+      "score": 4.375
+    },
+    {
+      "rank": 20,
+      "token_id": 19476,
+      "text": " ([",
+      "score": 4.3125
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 10047,
+      "text": "\ufffd",
+      "score": 24.75
+    },
+    {
+      "rank": 2,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 24.375
+    },
+    {
+      "rank": 3,
+      "token_id": 24122,
+      "text": " gonna",
+      "score": 19.375
+    },
+    {
+      "rank": 4,
+      "token_id": 22709,
+      "text": " \ufffd",
+      "score": 18.875
+    },
+    {
+      "rank": 5,
+      "token_id": 14176,
+      "text": " anymore",
+      "score": 14.0625
+    },
+    {
+      "rank": 6,
+      "token_id": 30052,
+      "text": " lol",
+      "score": 13.375
+    },
+    {
+      "rank": 7,
+      "token_id": 24331,
+      "text": " fuck",
+      "score": 12.3125
+    },
+    {
+      "rank": 8,
+      "token_id": 30475,
+      "text": " musul",
+      "score": 12.25
+    },
+    {
+      "rank": 9,
+      "token_id": 7678,
+      "text": " strugg",
+      "score": 11.5625
+    },
+    {
+      "rank": 10,
+      "token_id": 24717,
+      "text": " COVID",
+      "score": 11.375
+    },
+    {
+      "rank": 11,
+      "token_id": 30727,
+      "text": "\u5360\u6bd4",
+      "score": 10.75
+    },
+    {
+      "rank": 12,
+      "token_id": 19149,
+      "text": " Instagram",
+      "score": 10.375
+    },
+    {
+      "rank": 13,
+      "token_id": 31804,
+      "text": " Nigeria",
+      "score": 9.875
+    },
+    {
+      "rank": 14,
+      "token_id": 9482,
+      "text": " => ",
+      "score": 9.6875
+    },
+    {
+      "rank": 15,
+      "token_id": 22199,
+      "text": "\u6210\u4e3a\u4e86",
+      "score": 9.5
+    },
+    {
+      "rank": 16,
+      "token_id": 29881,
+      "text": " anytime",
+      "score": 9.4375
+    },
+    {
+      "rank": 17,
+      "token_id": 7045,
+      "text": " couldn",
+      "score": 9.3125
+    },
+    {
+      "rank": 18,
+      "token_id": 24950,
+      "text": " medalla",
+      "score": 9.3125
+    },
+    {
+      "rank": 19,
+      "token_id": 30603,
+      "text": " fulfilled",
+      "score": 9.125
+    },
+    {
+      "rank": 20,
+      "token_id": 7361,
+      "text": " wouldn",
+      "score": 9.125
+    }
+  ],
+  "residual_norm": 16.333314895629883,
+  "projected_residual_norm": 1.4735068082809448
+}

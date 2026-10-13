@@ -1,0 +1,373 @@
+{
+  "case_id": "sample_185",
+  "program_id": "sample_185",
+  "code": "def f(L):\n    N = len(L)\n    for k in range(1, N//2 + 1):\n        i = k - 1\n        j = N - k\n        while i < j:\n            # swap elements:\n            L[i], L[j] = L[j], L[i]\n            # update i, j:\n            i += 1\n            j -= 1\n    return L",
+  "call": "f([16, 14, 12, 7, 9, 11])",
+  "expected": "[11, 14, 7, 12, 9, 16]",
+  "dataset": "cruxeval",
+  "source_group": "e84152c2801d51e21abc832ea70176523f3ee7242cb4ab3134e498b397019691",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\ndef f(L):\n    N = len(L)\n    for k in range(1, N//2 + 1):\n        i = k - 1\n        j = N - k\n        while i < j:\n            # swap elements:\n            L[i], L[j] = L[j], L[i]\n            # update i, j:\n            i += 1\n            j -= 1\n    return L\n\nassert f([16, 14, 12, 7, 9, 11]) ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 143,
+  "answer": "[16, 11, 12, 7, 9, 14]",
+  "raw_generation": " [16, 11, 12, 7, 9, 14]\n",
+  "generated_token_ids": [
+    821,
+    16,
+    21,
+    11,
+    207,
+    16,
+    16,
+    11,
+    207,
+    16,
+    17,
+    11,
+    207,
+    22,
+    11,
+    207,
+    24,
+    11,
+    207,
+    16,
+    19,
+    60,
+    185
+  ],
+  "stop_reason": "newline",
+  "answer_last_token_offset": 21,
+  "n_generated_tokens": 23,
+  "n_answer_tokens": 22,
+  "token_entropy": [
+    0.2564191520214081,
+    0.550520122051239,
+    1.0090501308441162,
+    0.0343913808465004,
+    0.06522195041179657,
+    1.0684821605682373,
+    1.098672866821289,
+    0.006765136495232582,
+    0.013675378635525703,
+    0.8060585260391235,
+    0.29944247007369995,
+    0.008349569514393806,
+    0.01192454993724823,
+    0.9366251230239868,
+    0.005173392593860626,
+    0.007779952138662338,
+    0.1301814466714859,
+    0.03444978967308998,
+    0.017889777198433876,
+    0.005745614413172007,
+    0.006065172143280506,
+    0.5285161137580872,
+    0.9087059497833252
+  ],
+  "token_nll": [
+    0.038782257586717606,
+    0.15000399947166443,
+    0.6282488107681274,
+    0.004659509286284447,
+    0.009072980843484402,
+    0.8023192882537842,
+    0.9146854877471924,
+    0.0007123793475329876,
+    0.0014848408754915,
+    0.3424939513206482,
+    0.08986411243677139,
+    0.0008911690674722195,
+    0.0012462714221328497,
+    0.5791980624198914,
+    0.0005137792322784662,
+    0.0008395960903726518,
+    0.027399102225899696,
+    0.004580006934702396,
+    0.0021151569671928883,
+    0.0005579821881838143,
+    0.0006118332967162132,
+    0.22837552428245544,
+    0.7330693602561951
+  ],
+  "mean_answer_entropy": 0.3136999898124486,
+  "mean_answer_nll": 0.17402982282113622,
+  "correct": false,
+  "answer_status": "parsed",
+  "parsed_answer": "[16, 11, 12, 7, 9, 14]",
+  "status": "ok",
+  "read_token_index": 142,
+  "a_cone": 2.1579015754094457,
+  "category_cosines": {
+    "ambiguity": 0.014581818133592606,
+    "incompleteness": 0.0139121413230896,
+    "conflicting_evidence": -0.024739736691117287,
+    "general_uncertainty": 0.02331399731338024
+  },
+  "category_normalized": {
+    "ambiguity": 0.3689797818660736,
+    "incompleteness": 0.35203421115875244,
+    "conflicting_evidence": -0.6260167956352234,
+    "general_uncertainty": 0.5899397134780884
+  },
+  "uspace_projection_norm": 0.0395192876458168,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    374,
+    377
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 0.6769337022222099,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 572,
+      "text": " *",
+      "score": 12.6875
+    },
+    {
+      "rank": 2,
+      "token_id": 2220,
+      "text": " `",
+      "score": 11.25
+    },
+    {
+      "rank": 3,
+      "token_id": 19476,
+      "text": " ([",
+      "score": 10.875
+    },
+    {
+      "rank": 4,
+      "token_id": 821,
+      "text": " [",
+      "score": 10.875
+    },
+    {
+      "rank": 5,
+      "token_id": 4052,
+      "text": " expected",
+      "score": 10.5
+    },
+    {
+      "rank": 6,
+      "token_id": 58,
+      "text": "[",
+      "score": 9.8125
+    },
+    {
+      "rank": 7,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 9.0
+    },
+    {
+      "rank": 8,
+      "token_id": 16603,
+      "text": " [[",
+      "score": 8.8125
+    },
+    {
+      "rank": 9,
+      "token_id": 1013,
+      "text": " <",
+      "score": 8.6875
+    },
+    {
+      "rank": 10,
+      "token_id": 1585,
+      "text": " --",
+      "score": 8.625
+    },
+    {
+      "rank": 11,
+      "token_id": 1070,
+      "text": " _",
+      "score": 8.125
+    },
+    {
+      "rank": 12,
+      "token_id": 6236,
+      "text": " ``",
+      "score": 8.0625
+    },
+    {
+      "rank": 13,
+      "token_id": 25234,
+      "text": " [_",
+      "score": 7.9375
+    },
+    {
+      "rank": 14,
+      "token_id": 23691,
+      "text": " defaults",
+      "score": 7.8125
+    },
+    {
+      "rank": 15,
+      "token_id": 17079,
+      "text": " {{",
+      "score": 7.8125
+    },
+    {
+      "rank": 16,
+      "token_id": 31421,
+      "text": " \"[",
+      "score": 7.75
+    },
+    {
+      "rank": 17,
+      "token_id": 185,
+      "text": "\n",
+      "score": 7.6875
+    },
+    {
+      "rank": 18,
+      "token_id": 440,
+      "text": " \"",
+      "score": 7.59375
+    },
+    {
+      "rank": 19,
+      "token_id": 3558,
+      "text": " today",
+      "score": 7.5625
+    },
+    {
+      "rank": 20,
+      "token_id": 2974,
+      "text": " code",
+      "score": 7.46875
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 16503,
+      "text": " weird",
+      "score": 32.5
+    },
+    {
+      "rank": 2,
+      "token_id": 22231,
+      "text": " mysterious",
+      "score": 28.5
+    },
+    {
+      "rank": 3,
+      "token_id": 18971,
+      "text": " mystery",
+      "score": 27.625
+    },
+    {
+      "rank": 4,
+      "token_id": 10796,
+      "text": " surprise",
+      "score": 27.125
+    },
+    {
+      "rank": 5,
+      "token_id": 8392,
+      "text": " strange",
+      "score": 25.25
+    },
+    {
+      "rank": 6,
+      "token_id": 15250,
+      "text": " surprising",
+      "score": 25.0
+    },
+    {
+      "rank": 7,
+      "token_id": 5397,
+      "text": " surpr",
+      "score": 25.0
+    },
+    {
+      "rank": 8,
+      "token_id": 17121,
+      "text": " myster",
+      "score": 24.5
+    },
+    {
+      "rank": 9,
+      "token_id": 14522,
+      "text": " unexpected",
+      "score": 23.875
+    },
+    {
+      "rank": 10,
+      "token_id": 6509,
+      "text": " stuff",
+      "score": 21.0
+    },
+    {
+      "rank": 11,
+      "token_id": 12081,
+      "text": " surprised",
+      "score": 20.125
+    },
+    {
+      "rank": 12,
+      "token_id": 29437,
+      "text": " suspicious",
+      "score": 20.0
+    },
+    {
+      "rank": 13,
+      "token_id": 30499,
+      "text": " tricky",
+      "score": 19.875
+    },
+    {
+      "rank": 14,
+      "token_id": 22900,
+      "text": "\u610f\u5916",
+      "score": 19.625
+    },
+    {
+      "rank": 15,
+      "token_id": 10054,
+      "text": "\u60ca",
+      "score": 19.375
+    },
+    {
+      "rank": 16,
+      "token_id": 28281,
+      "text": " accidentally",
+      "score": 19.375
+    },
+    {
+      "rank": 17,
+      "token_id": 14321,
+      "text": "\u602a",
+      "score": 19.25
+    },
+    {
+      "rank": 18,
+      "token_id": 12933,
+      "text": " suspect",
+      "score": 19.125
+    },
+    {
+      "rank": 19,
+      "token_id": 12365,
+      "text": " Maybe",
+      "score": 18.875
+    },
+    {
+      "rank": 20,
+      "token_id": 16015,
+      "text": " unusual",
+      "score": 18.875
+    }
+  ],
+  "residual_norm": 42.983463287353516,
+  "projected_residual_norm": 1.698676347732544
+}

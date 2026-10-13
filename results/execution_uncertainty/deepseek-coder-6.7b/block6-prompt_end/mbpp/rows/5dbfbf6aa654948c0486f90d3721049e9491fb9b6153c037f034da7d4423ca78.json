@@ -1,0 +1,388 @@
+{
+  "case_id": "209:1",
+  "program_id": "209",
+  "code": "import heapq as hq\r\ndef heap_replace(heap,a):\r\n  hq.heapify(heap)\r\n  hq.heapreplace(heap, a)\r\n  return heap",
+  "call": "heap_replace([25, 44, 68, 21, 39, 23, 89],110)",
+  "expected": "[23, 25, 68, 44, 39, 110, 89]",
+  "dataset": "mbpp",
+  "source_group": "54525211ecc636da32b491b12868c5a0df25f5d23d0b97984eb5abb71db2b9f7",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\nimport heapq as hq\r\ndef heap_replace(heap,a):\r\n  hq.heapify(heap)\r\n  hq.heapreplace(heap, a)\r\n  return heap\n\nassert heap_replace([25, 44, 68, 21, 39, 23, 89],110) ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 108,
+  "answer": "[21, 23, 68, 25, 39, 44, 89]",
+  "raw_generation": " [21, 23, 68, 25, 39, 44, 89]",
+  "generated_token_ids": [
+    821,
+    17,
+    16,
+    11,
+    207,
+    17,
+    18,
+    11,
+    207,
+    21,
+    23,
+    11,
+    207,
+    17,
+    20,
+    11,
+    207,
+    18,
+    24,
+    11,
+    207,
+    19,
+    19,
+    11,
+    207,
+    23,
+    24,
+    60
+  ],
+  "stop_reason": "eos",
+  "answer_last_token_offset": 27,
+  "n_generated_tokens": 28,
+  "n_answer_tokens": 28,
+  "token_entropy": [
+    0.24133583903312683,
+    0.9486955404281616,
+    0.8847211599349976,
+    0.015758845955133438,
+    0.2812977135181427,
+    1.207563877105713,
+    0.6778208017349243,
+    0.004039868712425232,
+    0.021104911342263222,
+    1.1274144649505615,
+    0.010811304673552513,
+    0.004443080630153418,
+    0.022083844989538193,
+    1.3027150630950928,
+    0.06440332531929016,
+    0.0038722436875104904,
+    0.013233388774096966,
+    0.3311620056629181,
+    0.009585347957909107,
+    0.00836588442325592,
+    0.02251504361629486,
+    0.623881995677948,
+    0.006615115329623222,
+    0.02201220579445362,
+    0.04301423579454422,
+    0.40516093373298645,
+    0.0028865584172308445,
+    0.4702942371368408
+  ],
+  "token_nll": [
+    0.035307206213474274,
+    0.36786413192749023,
+    0.4641399383544922,
+    0.001712523982860148,
+    0.053350530564785004,
+    0.5585850477218628,
+    0.3946892321109772,
+    0.00041416651220060885,
+    0.002358514117076993,
+    0.4399006962776184,
+    0.0010767144849523902,
+    0.0004481264913920313,
+    0.0025500894989818335,
+    0.7630820870399475,
+    0.009312053211033344,
+    0.00036459474358707666,
+    0.0014448452275246382,
+    0.07946740090847015,
+    0.000947622349485755,
+    0.0008931938209570944,
+    0.0029487009160220623,
+    0.17964723706245422,
+    0.000621840707026422,
+    0.002735684160143137,
+    0.005838009063154459,
+    0.14422200620174408,
+    0.0002441108226776123,
+    0.14489710330963135
+  ],
+  "mean_answer_entropy": 0.31345745847959605,
+  "mean_answer_nll": 0.1306808359929294,
+  "correct": false,
+  "answer_status": "parsed",
+  "parsed_answer": "[21, 23, 68, 25, 39, 44, 89]",
+  "status": "ok",
+  "read_token_index": 107,
+  "a_cone": 2.1433228043566697,
+  "category_cosines": {
+    "ambiguity": 0.0163503997027874,
+    "incompleteness": 0.01106368936598301,
+    "conflicting_evidence": -0.02800111286342144,
+    "general_uncertainty": 0.028367212042212486
+  },
+  "category_normalized": {
+    "ambiguity": 0.36758700013160706,
+    "incompleteness": 0.2487320452928543,
+    "conflicting_evidence": -0.6295164227485657,
+    "general_uncertainty": 0.6377469897270203
+  },
+  "uspace_projection_norm": 0.044480353593826294,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    245,
+    248
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 0.6718405189550022,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 19476,
+      "text": " ([",
+      "score": 14.9375
+    },
+    {
+      "rank": 2,
+      "token_id": 821,
+      "text": " [",
+      "score": 13.625
+    },
+    {
+      "rank": 3,
+      "token_id": 572,
+      "text": " *",
+      "score": 13.0625
+    },
+    {
+      "rank": 4,
+      "token_id": 185,
+      "text": "\n",
+      "score": 12.5
+    },
+    {
+      "rank": 5,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 11.875
+    },
+    {
+      "rank": 6,
+      "token_id": 25234,
+      "text": " [_",
+      "score": 11.1875
+    },
+    {
+      "rank": 7,
+      "token_id": 16603,
+      "text": " [[",
+      "score": 11.1875
+    },
+    {
+      "rank": 8,
+      "token_id": 58,
+      "text": "[",
+      "score": 11.125
+    },
+    {
+      "rank": 9,
+      "token_id": 17794,
+      "text": " [\\",
+      "score": 11.0625
+    },
+    {
+      "rank": 10,
+      "token_id": 1585,
+      "text": " --",
+      "score": 10.875
+    },
+    {
+      "rank": 11,
+      "token_id": 2220,
+      "text": " `",
+      "score": 10.3125
+    },
+    {
+      "rank": 12,
+      "token_id": 4052,
+      "text": " expected",
+      "score": 10.25
+    },
+    {
+      "rank": 13,
+      "token_id": 357,
+      "text": " \\",
+      "score": 10.125
+    },
+    {
+      "rank": 14,
+      "token_id": 1013,
+      "text": " <",
+      "score": 9.9375
+    },
+    {
+      "rank": 15,
+      "token_id": 1938,
+      "text": " >",
+      "score": 9.875
+    },
+    {
+      "rank": 16,
+      "token_id": 17079,
+      "text": " {{",
+      "score": 9.6875
+    },
+    {
+      "rank": 17,
+      "token_id": 31421,
+      "text": " \"[",
+      "score": 9.4375
+    },
+    {
+      "rank": 18,
+      "token_id": 1070,
+      "text": " _",
+      "score": 9.125
+    },
+    {
+      "rank": 19,
+      "token_id": 243,
+      "text": "  ",
+      "score": 8.8125
+    },
+    {
+      "rank": 20,
+      "token_id": 5154,
+      "text": "[\\",
+      "score": 8.375
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 16503,
+      "text": " weird",
+      "score": 32.25
+    },
+    {
+      "rank": 2,
+      "token_id": 10796,
+      "text": " surprise",
+      "score": 27.375
+    },
+    {
+      "rank": 3,
+      "token_id": 5397,
+      "text": " surpr",
+      "score": 24.75
+    },
+    {
+      "rank": 4,
+      "token_id": 15250,
+      "text": " surprising",
+      "score": 24.375
+    },
+    {
+      "rank": 5,
+      "token_id": 18971,
+      "text": " mystery",
+      "score": 23.875
+    },
+    {
+      "rank": 6,
+      "token_id": 22231,
+      "text": " mysterious",
+      "score": 23.875
+    },
+    {
+      "rank": 7,
+      "token_id": 14522,
+      "text": " unexpected",
+      "score": 23.125
+    },
+    {
+      "rank": 8,
+      "token_id": 8392,
+      "text": " strange",
+      "score": 23.0
+    },
+    {
+      "rank": 9,
+      "token_id": 17121,
+      "text": " myster",
+      "score": 21.0
+    },
+    {
+      "rank": 10,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 20.5
+    },
+    {
+      "rank": 11,
+      "token_id": 6509,
+      "text": " stuff",
+      "score": 20.5
+    },
+    {
+      "rank": 12,
+      "token_id": 12081,
+      "text": " surprised",
+      "score": 20.375
+    },
+    {
+      "rank": 13,
+      "token_id": 30499,
+      "text": " tricky",
+      "score": 19.625
+    },
+    {
+      "rank": 14,
+      "token_id": 29437,
+      "text": " suspicious",
+      "score": 19.5
+    },
+    {
+      "rank": 15,
+      "token_id": 22900,
+      "text": "\u610f\u5916",
+      "score": 19.25
+    },
+    {
+      "rank": 16,
+      "token_id": 12933,
+      "text": " suspect",
+      "score": 19.25
+    },
+    {
+      "rank": 17,
+      "token_id": 26573,
+      "text": " suspicion",
+      "score": 18.5
+    },
+    {
+      "rank": 18,
+      "token_id": 24331,
+      "text": " fuck",
+      "score": 18.5
+    },
+    {
+      "rank": 19,
+      "token_id": 12365,
+      "text": " Maybe",
+      "score": 18.5
+    },
+    {
+      "rank": 20,
+      "token_id": 10054,
+      "text": "\u60ca",
+      "score": 18.5
+    }
+  ],
+  "residual_norm": 42.86104202270508,
+  "projected_residual_norm": 1.9064750671386719
+}

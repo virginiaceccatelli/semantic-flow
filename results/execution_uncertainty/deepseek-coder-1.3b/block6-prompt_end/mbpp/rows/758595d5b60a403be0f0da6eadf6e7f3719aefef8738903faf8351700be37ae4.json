@@ -1,0 +1,313 @@
+{
+  "case_id": "20:1",
+  "program_id": "20",
+  "code": "def is_woodall(x): \r\n\tif (x % 2 == 0): \r\n\t\treturn False\r\n\tif (x == 1): \r\n\t\treturn True\r\n\tx = x + 1 \r\n\tp = 0\r\n\twhile (x % 2 == 0): \r\n\t\tx = x/2\r\n\t\tp = p + 1\r\n\t\tif (p == x): \r\n\t\t\treturn True\r\n\treturn False",
+  "call": "is_woodall(254)",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "9ef19946b4c37c8a2c9e8db2d35611af8cb021129ee105dc7521ec8a452449e8",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\ndef is_woodall(x): \r\n\tif (x % 2 == 0): \r\n\t\treturn False\r\n\tif (x == 1): \r\n\t\treturn True\r\n\tx = x + 1 \r\n\tp = 0\r\n\twhile (x % 2 == 0): \r\n\t\tx = x/2\r\n\t\tp = p + 1\r\n\t\tif (p == x): \r\n\t\t\treturn True\r\n\treturn False\n\nassert is_woodall(254) ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 134,
+  "answer": "True",
+  "raw_generation": " True\r\n",
+  "generated_token_ids": [
+    10502,
+    188,
+    185
+  ],
+  "stop_reason": "newline",
+  "answer_last_token_offset": 0,
+  "n_generated_tokens": 3,
+  "n_answer_tokens": 1,
+  "token_entropy": [
+    0.7845407128334045,
+    1.5111058950424194,
+    0.03038644604384899
+  ],
+  "token_nll": [
+    0.5883169770240784,
+    1.0055859088897705,
+    0.002994222566485405
+  ],
+  "mean_answer_entropy": 0.7845407128334045,
+  "mean_answer_nll": 0.5883169770240784,
+  "correct": false,
+  "answer_status": "parsed",
+  "parsed_answer": "True",
+  "status": "ok",
+  "read_token_index": 133,
+  "a_cone": 1.7986710669977066,
+  "category_cosines": {
+    "ambiguity": 0.06298556178808212,
+    "incompleteness": -0.06882692873477936,
+    "conflicting_evidence": -0.020494336262345314,
+    "general_uncertainty": 0.002587417606264353
+  },
+  "category_normalized": {
+    "ambiguity": 0.6591448783874512,
+    "incompleteness": -0.7202748656272888,
+    "conflicting_evidence": -0.21447354555130005,
+    "general_uncertainty": 0.027077365666627884
+  },
+  "uspace_projection_norm": 0.09555647522211075,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    309,
+    312
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 1.4111306810552011,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 2220,
+      "text": " `",
+      "score": 7.09375
+    },
+    {
+      "rank": 2,
+      "token_id": 1585,
+      "text": " --",
+      "score": 7.0625
+    },
+    {
+      "rank": 3,
+      "token_id": 8528,
+      "text": " +=",
+      "score": 6.1875
+    },
+    {
+      "rank": 4,
+      "token_id": 9678,
+      "text": " implementation",
+      "score": 6.0625
+    },
+    {
+      "rank": 5,
+      "token_id": 26073,
+      "text": " Git",
+      "score": 5.59375
+    },
+    {
+      "rank": 6,
+      "token_id": 4341,
+      "text": " implement",
+      "score": 5.59375
+    },
+    {
+      "rank": 7,
+      "token_id": 1368,
+      "text": " because",
+      "score": 5.53125
+    },
+    {
+      "rank": 8,
+      "token_id": 945,
+      "text": " +",
+      "score": 5.34375
+    },
+    {
+      "rank": 9,
+      "token_id": 4052,
+      "text": " expected",
+      "score": 5.28125
+    },
+    {
+      "rank": 10,
+      "token_id": 19423,
+      "text": " TODO",
+      "score": 5.15625
+    },
+    {
+      "rank": 11,
+      "token_id": 19788,
+      "text": " {\"",
+      "score": 5.09375
+    },
+    {
+      "rank": 12,
+      "token_id": 8690,
+      "text": " API",
+      "score": 4.875
+    },
+    {
+      "rank": 13,
+      "token_id": 440,
+      "text": " \"",
+      "score": 4.84375
+    },
+    {
+      "rank": 14,
+      "token_id": 19748,
+      "text": " canonical",
+      "score": 4.78125
+    },
+    {
+      "rank": 15,
+      "token_id": 23323,
+      "text": " += ",
+      "score": 4.75
+    },
+    {
+      "rank": 16,
+      "token_id": 24531,
+      "text": " foo",
+      "score": 4.59375
+    },
+    {
+      "rank": 17,
+      "token_id": 4813,
+      "text": " ~",
+      "score": 4.59375
+    },
+    {
+      "rank": 18,
+      "token_id": 30191,
+      "text": " Assume",
+      "score": 4.5
+    },
+    {
+      "rank": 19,
+      "token_id": 12766,
+      "text": " implemented",
+      "score": 4.3125
+    },
+    {
+      "rank": 20,
+      "token_id": 371,
+      "text": " $",
+      "score": 4.25
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 26.625
+    },
+    {
+      "rank": 2,
+      "token_id": 10047,
+      "text": "\ufffd",
+      "score": 26.375
+    },
+    {
+      "rank": 3,
+      "token_id": 22709,
+      "text": " \ufffd",
+      "score": 20.125
+    },
+    {
+      "rank": 4,
+      "token_id": 24122,
+      "text": " gonna",
+      "score": 18.875
+    },
+    {
+      "rank": 5,
+      "token_id": 30052,
+      "text": " lol",
+      "score": 14.0
+    },
+    {
+      "rank": 6,
+      "token_id": 24331,
+      "text": " fuck",
+      "score": 13.4375
+    },
+    {
+      "rank": 7,
+      "token_id": 14176,
+      "text": " anymore",
+      "score": 12.625
+    },
+    {
+      "rank": 8,
+      "token_id": 24717,
+      "text": " COVID",
+      "score": 12.3125
+    },
+    {
+      "rank": 9,
+      "token_id": 30475,
+      "text": " musul",
+      "score": 12.25
+    },
+    {
+      "rank": 10,
+      "token_id": 7678,
+      "text": " strugg",
+      "score": 12.0625
+    },
+    {
+      "rank": 11,
+      "token_id": 19149,
+      "text": " Instagram",
+      "score": 11.3125
+    },
+    {
+      "rank": 12,
+      "token_id": 26754,
+      "text": "\u65b0\u51a0",
+      "score": 11.1875
+    },
+    {
+      "rank": 13,
+      "token_id": 31586,
+      "text": " germans",
+      "score": 10.9375
+    },
+    {
+      "rank": 14,
+      "token_id": 22028,
+      "text": " dumpster",
+      "score": 10.6875
+    },
+    {
+      "rank": 15,
+      "token_id": 30727,
+      "text": "\u5360\u6bd4",
+      "score": 10.625
+    },
+    {
+      "rank": 16,
+      "token_id": 24950,
+      "text": " medalla",
+      "score": 10.125
+    },
+    {
+      "rank": 17,
+      "token_id": 7045,
+      "text": " couldn",
+      "score": 10.0625
+    },
+    {
+      "rank": 18,
+      "token_id": 6740,
+      "text": " wasn",
+      "score": 10.0
+    },
+    {
+      "rank": 19,
+      "token_id": 7361,
+      "text": " wouldn",
+      "score": 9.625
+    },
+    {
+      "rank": 20,
+      "token_id": 10193,
+      "text": "\u75ab\u60c5",
+      "score": 9.5625
+    }
+  ],
+  "residual_norm": 17.34447479248047,
+  "projected_residual_norm": 1.657377004623413
+}

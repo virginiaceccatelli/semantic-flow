@@ -1,0 +1,343 @@
+{
+  "case_id": "sample_731",
+  "program_id": "sample_731",
+  "code": "def f(text, use):\n    return text.replace(use, '')",
+  "call": "f('Chris requires a ride to the airport on Friday.', 'a')",
+  "expected": "'Chris requires  ride to the irport on Fridy.'",
+  "dataset": "cruxeval",
+  "source_group": "a5f79191ee59a659c78c9ac9aa4044c798c2b5b56965e9a625d450215b94d749",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\ndef f(text, use):\n    return text.replace(use, '')\n\nassert f('Chris requires a ride to the airport on Friday.', 'a') ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 57,
+  "answer": "'Chris requires a ride to the airport on Friday.'",
+  "raw_generation": " 'Chris requires a ride to the airport on Friday.'\n",
+  "generated_token_ids": [
+    651,
+    1915,
+    6146,
+    6234,
+    245,
+    10515,
+    276,
+    254,
+    17775,
+    331,
+    8211,
+    4677,
+    185
+  ],
+  "stop_reason": "newline",
+  "answer_last_token_offset": 11,
+  "n_generated_tokens": 13,
+  "n_answer_tokens": 12,
+  "token_entropy": [
+    0.4784516394138336,
+    0.8251017332077026,
+    1.396533727645874,
+    1.0190433263778687,
+    0.8170984983444214,
+    0.25507867336273193,
+    0.5508831143379211,
+    0.2353247106075287,
+    0.9157253503799438,
+    1.9220249652862549,
+    3.1343226432800293,
+    1.0556914806365967,
+    0.5672257542610168
+  ],
+  "token_nll": [
+    0.08527931571006775,
+    0.12361235171556473,
+    0.6912129521369934,
+    0.2078530490398407,
+    0.15560707449913025,
+    0.029946649447083473,
+    0.09514427185058594,
+    0.028849517926573753,
+    0.13318903744220734,
+    0.5543679594993591,
+    0.9770054817199707,
+    0.2985703945159912,
+    0.18896032869815826
+  ],
+  "mean_answer_entropy": 1.0504399885733922,
+  "mean_answer_nll": 0.28171983795861405,
+  "correct": false,
+  "answer_status": "parsed",
+  "parsed_answer": "'Chris requires a ride to the airport on Friday.'",
+  "status": "ok",
+  "read_token_index": 56,
+  "a_cone": 1.7207910595188654,
+  "category_cosines": {
+    "ambiguity": 0.053753070533275604,
+    "incompleteness": -0.07031562179327011,
+    "conflicting_evidence": -0.010110928677022457,
+    "general_uncertainty": -0.003545940387994051
+  },
+  "category_normalized": {
+    "ambiguity": 0.6029219627380371,
+    "incompleteness": -0.7886960506439209,
+    "conflicting_evidence": -0.11340935528278351,
+    "general_uncertainty": -0.039773084223270416
+  },
+  "uspace_projection_norm": 0.08915427327156067,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    199,
+    202
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 1.8075877408981924,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 185,
+      "text": "\n",
+      "score": 9.3125
+    },
+    {
+      "rank": 2,
+      "token_id": 2220,
+      "text": " `",
+      "score": 6.84375
+    },
+    {
+      "rank": 3,
+      "token_id": 6236,
+      "text": " ``",
+      "score": 5.78125
+    },
+    {
+      "rank": 4,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 5.59375
+    },
+    {
+      "rank": 5,
+      "token_id": 19423,
+      "text": " TODO",
+      "score": 5.25
+    },
+    {
+      "rank": 6,
+      "token_id": 1368,
+      "text": " because",
+      "score": 5.21875
+    },
+    {
+      "rank": 7,
+      "token_id": 17079,
+      "text": " {{",
+      "score": 5.15625
+    },
+    {
+      "rank": 8,
+      "token_id": 440,
+      "text": " \"",
+      "score": 5.15625
+    },
+    {
+      "rank": 9,
+      "token_id": 26022,
+      "text": " \"#",
+      "score": 5.0625
+    },
+    {
+      "rank": 10,
+      "token_id": 1585,
+      "text": " --",
+      "score": 4.84375
+    },
+    {
+      "rank": 11,
+      "token_id": 25,
+      "text": ":",
+      "score": 4.75
+    },
+    {
+      "rank": 12,
+      "token_id": 31421,
+      "text": " \"[",
+      "score": 4.46875
+    },
+    {
+      "rank": 13,
+      "token_id": 8528,
+      "text": " +=",
+      "score": 4.40625
+    },
+    {
+      "rank": 14,
+      "token_id": 19788,
+      "text": " {\"",
+      "score": 4.34375
+    },
+    {
+      "rank": 15,
+      "token_id": 17625,
+      "text": " [\"",
+      "score": 4.28125
+    },
+    {
+      "rank": 16,
+      "token_id": 4052,
+      "text": " expected",
+      "score": 4.25
+    },
+    {
+      "rank": 17,
+      "token_id": 11181,
+      "text": " somewhere",
+      "score": 4.21875
+    },
+    {
+      "rank": 18,
+      "token_id": 3552,
+      "text": " ...",
+      "score": 4.1875
+    },
+    {
+      "rank": 19,
+      "token_id": 26,
+      "text": ";",
+      "score": 4.15625
+    },
+    {
+      "rank": 20,
+      "token_id": 23323,
+      "text": " += ",
+      "score": 4.15625
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 10047,
+      "text": "\ufffd",
+      "score": 25.625
+    },
+    {
+      "rank": 2,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 25.625
+    },
+    {
+      "rank": 3,
+      "token_id": 22709,
+      "text": " \ufffd",
+      "score": 19.625
+    },
+    {
+      "rank": 4,
+      "token_id": 24122,
+      "text": " gonna",
+      "score": 19.125
+    },
+    {
+      "rank": 5,
+      "token_id": 30052,
+      "text": " lol",
+      "score": 13.5625
+    },
+    {
+      "rank": 6,
+      "token_id": 14176,
+      "text": " anymore",
+      "score": 13.4375
+    },
+    {
+      "rank": 7,
+      "token_id": 24331,
+      "text": " fuck",
+      "score": 12.75
+    },
+    {
+      "rank": 8,
+      "token_id": 30475,
+      "text": " musul",
+      "score": 12.625
+    },
+    {
+      "rank": 9,
+      "token_id": 24717,
+      "text": " COVID",
+      "score": 11.8125
+    },
+    {
+      "rank": 10,
+      "token_id": 7678,
+      "text": " strugg",
+      "score": 11.75
+    },
+    {
+      "rank": 11,
+      "token_id": 30727,
+      "text": "\u5360\u6bd4",
+      "score": 10.8125
+    },
+    {
+      "rank": 12,
+      "token_id": 19149,
+      "text": " Instagram",
+      "score": 10.8125
+    },
+    {
+      "rank": 13,
+      "token_id": 24950,
+      "text": " medalla",
+      "score": 9.9375
+    },
+    {
+      "rank": 14,
+      "token_id": 26754,
+      "text": "\u65b0\u51a0",
+      "score": 9.75
+    },
+    {
+      "rank": 15,
+      "token_id": 9482,
+      "text": " => ",
+      "score": 9.6875
+    },
+    {
+      "rank": 16,
+      "token_id": 31586,
+      "text": " germans",
+      "score": 9.6875
+    },
+    {
+      "rank": 17,
+      "token_id": 7045,
+      "text": " couldn",
+      "score": 9.625
+    },
+    {
+      "rank": 18,
+      "token_id": 7361,
+      "text": " wouldn",
+      "score": 9.375
+    },
+    {
+      "rank": 19,
+      "token_id": 10193,
+      "text": "\u75ab\u60c5",
+      "score": 9.3125
+    },
+    {
+      "rank": 20,
+      "token_id": 18268,
+      "text": " scenarios",
+      "score": 9.125
+    }
+  ],
+  "residual_norm": 15.924919128417969,
+  "projected_residual_norm": 1.4197744131088257
+}

@@ -1,0 +1,370 @@
+{
+  "case_id": "213:0",
+  "program_id": "213",
+  "code": "def concatenate_strings(test_tup1, test_tup2):\r\n  res = tuple(ele1 + ele2 for ele1, ele2 in zip(test_tup1, test_tup2))\r\n  return (res)",
+  "call": "concatenate_strings((\"Manjeet\", \"Nikhil\", \"Akshat\"), (\" Singh\", \" Meherwal\", \" Garg\"))",
+  "expected": "('Manjeet Singh', 'Nikhil Meherwal', 'Akshat Garg')",
+  "dataset": "mbpp",
+  "source_group": "a9212f2173e3aba45959bbe4bff5d848a5e99c016add8dfcd5e803879f138336",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\ndef concatenate_strings(test_tup1, test_tup2):\r\n  res = tuple(ele1 + ele2 for ele1, ele2 in zip(test_tup1, test_tup2))\r\n  return (res)\n\nassert concatenate_strings((\"Manjeet\", \"Nikhil\", \"Akshat\"), (\" Singh\", \" Meherwal\", \" Garg\")) ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 113,
+  "answer": "(\"Manjeet Singh\", \"Nikhil Meherwal\", \"Akshat Garg\")",
+  "raw_generation": " (\"Manjeet Singh\", \"Nikhil Meherwal\", \"Akshat Garg\")",
+  "generated_token_ids": [
+    8507,
+    3845,
+    9009,
+    290,
+    29871,
+    950,
+    440,
+    45,
+    1913,
+    71,
+    297,
+    4226,
+    396,
+    25626,
+    950,
+    440,
+    32,
+    705,
+    936,
+    452,
+    1139,
+    2456
+  ],
+  "stop_reason": "eos",
+  "answer_last_token_offset": 21,
+  "n_generated_tokens": 22,
+  "n_answer_tokens": 22,
+  "token_entropy": [
+    1.3855841159820557,
+    0.027237439528107643,
+    0.006612712517380714,
+    0.04099879413843155,
+    0.19172018766403198,
+    0.10071336477994919,
+    0.09617218375205994,
+    0.08956354856491089,
+    0.0026624631136655807,
+    0.003040523733943701,
+    0.008087808266282082,
+    0.02802843414247036,
+    0.03266649320721626,
+    0.007667091675102711,
+    0.03243109583854675,
+    0.025812331587076187,
+    0.010894903913140297,
+    0.0047499812208116055,
+    0.02323898859322071,
+    0.02616196870803833,
+    0.0014270199462771416,
+    0.5059812068939209
+  ],
+  "token_nll": [
+    0.6791316866874695,
+    0.00238693761639297,
+    0.0006037319544702768,
+    0.006380425300449133,
+    0.030351953580975533,
+    0.01613839901983738,
+    0.013873923569917679,
+    0.016744542866945267,
+    0.00022933237778488547,
+    0.0002460177056491375,
+    0.0007731309160590172,
+    0.0029393110889941454,
+    0.004671493079513311,
+    0.0006927236099727452,
+    0.004083510022610426,
+    0.0028942623175680637,
+    0.0010503972880542278,
+    0.0005018643569201231,
+    0.0026434261817485094,
+    0.002493607811629772,
+    0.00010787858627736568,
+    0.17312967777252197
+  ],
+  "mean_answer_entropy": 0.1205205753530291,
+  "mean_answer_nll": 0.04373037425962552,
+  "correct": true,
+  "answer_status": "parsed",
+  "parsed_answer": "('Manjeet Singh', 'Nikhil Meherwal', 'Akshat Garg')",
+  "status": "ok",
+  "read_token_index": 112,
+  "a_cone": 2.051690088724428,
+  "category_cosines": {
+    "ambiguity": 0.014372119680047035,
+    "incompleteness": 0.006584434770047665,
+    "conflicting_evidence": -0.02137652039527893,
+    "general_uncertainty": 0.014758980832993984
+  },
+  "category_normalized": {
+    "ambiguity": 0.472630113363266,
+    "incompleteness": 0.21653048694133759,
+    "conflicting_evidence": -0.7029712796211243,
+    "general_uncertainty": 0.48535212874412537
+  },
+  "uspace_projection_norm": 0.030408810824155807,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    312,
+    315
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 0.24727086993917538,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 14.4375
+    },
+    {
+      "rank": 2,
+      "token_id": 19476,
+      "text": " ([",
+      "score": 14.0
+    },
+    {
+      "rank": 3,
+      "token_id": 185,
+      "text": "\n",
+      "score": 13.5625
+    },
+    {
+      "rank": 4,
+      "token_id": 821,
+      "text": " [",
+      "score": 13.0625
+    },
+    {
+      "rank": 5,
+      "token_id": 16603,
+      "text": " [[",
+      "score": 11.9375
+    },
+    {
+      "rank": 6,
+      "token_id": 58,
+      "text": "[",
+      "score": 11.8125
+    },
+    {
+      "rank": 7,
+      "token_id": 17794,
+      "text": " [\\",
+      "score": 10.5625
+    },
+    {
+      "rank": 8,
+      "token_id": 357,
+      "text": " \\",
+      "score": 10.125
+    },
+    {
+      "rank": 9,
+      "token_id": 27366,
+      "text": "[[",
+      "score": 9.875
+    },
+    {
+      "rank": 10,
+      "token_id": 243,
+      "text": "  ",
+      "score": 9.8125
+    },
+    {
+      "rank": 11,
+      "token_id": 8653,
+      "text": "                                                                ",
+      "score": 9.8125
+    },
+    {
+      "rank": 12,
+      "token_id": 572,
+      "text": " *",
+      "score": 9.75
+    },
+    {
+      "rank": 13,
+      "token_id": 4052,
+      "text": " expected",
+      "score": 9.6875
+    },
+    {
+      "rank": 14,
+      "token_id": 5154,
+      "text": "[\\",
+      "score": 9.25
+    },
+    {
+      "rank": 15,
+      "token_id": 17079,
+      "text": " {{",
+      "score": 8.6875
+    },
+    {
+      "rank": 16,
+      "token_id": 188,
+      "text": "\r",
+      "score": 8.4375
+    },
+    {
+      "rank": 17,
+      "token_id": 31421,
+      "text": " \"[",
+      "score": 8.375
+    },
+    {
+      "rank": 18,
+      "token_id": 6236,
+      "text": " ``",
+      "score": 8.3125
+    },
+    {
+      "rank": 19,
+      "token_id": 18663,
+      "text": "{[",
+      "score": 8.0
+    },
+    {
+      "rank": 20,
+      "token_id": 1938,
+      "text": " >",
+      "score": 8.0
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 16503,
+      "text": " weird",
+      "score": 32.5
+    },
+    {
+      "rank": 2,
+      "token_id": 10796,
+      "text": " surprise",
+      "score": 23.5
+    },
+    {
+      "rank": 3,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 23.5
+    },
+    {
+      "rank": 4,
+      "token_id": 14522,
+      "text": " unexpected",
+      "score": 23.5
+    },
+    {
+      "rank": 5,
+      "token_id": 22231,
+      "text": " mysterious",
+      "score": 21.875
+    },
+    {
+      "rank": 6,
+      "token_id": 8392,
+      "text": " strange",
+      "score": 21.75
+    },
+    {
+      "rank": 7,
+      "token_id": 18971,
+      "text": " mystery",
+      "score": 21.125
+    },
+    {
+      "rank": 8,
+      "token_id": 15250,
+      "text": " surprising",
+      "score": 21.125
+    },
+    {
+      "rank": 9,
+      "token_id": 5397,
+      "text": " surpr",
+      "score": 21.0
+    },
+    {
+      "rank": 10,
+      "token_id": 6509,
+      "text": " stuff",
+      "score": 21.0
+    },
+    {
+      "rank": 11,
+      "token_id": 10047,
+      "text": "\ufffd",
+      "score": 20.875
+    },
+    {
+      "rank": 12,
+      "token_id": 24331,
+      "text": " fuck",
+      "score": 20.125
+    },
+    {
+      "rank": 13,
+      "token_id": 22709,
+      "text": " \ufffd",
+      "score": 19.375
+    },
+    {
+      "rank": 14,
+      "token_id": 28281,
+      "text": " accidentally",
+      "score": 19.125
+    },
+    {
+      "rank": 15,
+      "token_id": 15428,
+      "text": " crazy",
+      "score": 18.875
+    },
+    {
+      "rank": 16,
+      "token_id": 12081,
+      "text": " surprised",
+      "score": 18.25
+    },
+    {
+      "rank": 17,
+      "token_id": 2001,
+      "text": " things",
+      "score": 18.25
+    },
+    {
+      "rank": 18,
+      "token_id": 17121,
+      "text": " myster",
+      "score": 18.125
+    },
+    {
+      "rank": 19,
+      "token_id": 12365,
+      "text": " Maybe",
+      "score": 18.125
+    },
+    {
+      "rank": 20,
+      "token_id": 30499,
+      "text": " tricky",
+      "score": 18.0
+    }
+  ],
+  "residual_norm": 43.87437438964844,
+  "projected_residual_norm": 1.33416748046875
+}

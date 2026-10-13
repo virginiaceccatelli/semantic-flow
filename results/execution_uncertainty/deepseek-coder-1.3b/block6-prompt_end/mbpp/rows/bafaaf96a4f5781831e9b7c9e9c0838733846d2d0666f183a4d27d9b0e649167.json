@@ -1,0 +1,367 @@
+{
+  "case_id": "423:2",
+  "program_id": "423",
+  "code": "def get_maxgold(gold, m, n): \r\n    goldTable = [[0 for i in range(n)] \r\n                        for j in range(m)]   \r\n    for col in range(n-1, -1, -1): \r\n        for row in range(m):  \r\n            if (col == n-1): \r\n                right = 0\r\n            else: \r\n                right = goldTable[row][col+1] \r\n            if (row == 0 or col == n-1): \r\n                right_up = 0\r\n            else: \r\n                right_up = goldTable[row-1][col+1] \r\n            if (row == m-1 or col == n-1): \r\n                right_down = 0\r\n            else: \r\n                right_down = goldTable[row+1][col+1] \r\n            goldTable[row][col] = gold[row][col] + max(right, right_up, right_down) \r\n    res = goldTable[0][0] \r\n    for i in range(1, m): \r\n        res = max(res, goldTable[i][0])  \r\n    return res",
+  "call": "get_maxgold([[4,9],[3,7]],2,2)",
+  "expected": "13",
+  "dataset": "mbpp",
+  "source_group": "f63534202d6e1dc67d56b70314caebae2fa399a0f4ebf58a23337f84af19be7f",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\ndef get_maxgold(gold, m, n): \r\n    goldTable = [[0 for i in range(n)] \r\n                        for j in range(m)]   \r\n    for col in range(n-1, -1, -1): \r\n        for row in range(m):  \r\n            if (col == n-1): \r\n                right = 0\r\n            else: \r\n                right = goldTable[row][col+1] \r\n            if (row == 0 or col == n-1): \r\n                right_up = 0\r\n            else: \r\n                right_up = goldTable[row-1][col+1] \r\n            if (row == m-1 or col == n-1): \r\n                right_down = 0\r\n            else: \r\n                right_down = goldTable[row+1][col+1] \r\n            goldTable[row][col] = gold[row][col] + max(right, right_up, right_down) \r\n    res = goldTable[0][0] \r\n    for i in range(1, m): \r\n        res = max(res, goldTable[i][0])  \r\n    return res\n\nassert get_maxgold([[4,9],[3,7]],2,2) ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 330,
+  "answer": "get_maxgold([[4,9],[3,7]],2,2)",
+  "raw_generation": " get_maxgold([[4,9],[3,7]],2,2)\n",
+  "generated_token_ids": [
+    748,
+    62,
+    3966,
+    26477,
+    9156,
+    58,
+    19,
+    11,
+    24,
+    2705,
+    58,
+    18,
+    11,
+    22,
+    60,
+    2705,
+    17,
+    11,
+    17,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "answer_last_token_offset": 19,
+  "n_generated_tokens": 21,
+  "n_answer_tokens": 20,
+  "token_entropy": [
+    2.986284017562866,
+    0.08047397434711456,
+    0.08511132001876831,
+    0.029543869197368622,
+    0.4876062273979187,
+    0.12175191938877106,
+    0.6484707593917847,
+    0.16529324650764465,
+    0.43946176767349243,
+    0.27616751194000244,
+    0.04753880202770233,
+    0.04480678215622902,
+    0.0024443771690130234,
+    0.05367099121212959,
+    0.04183850809931755,
+    0.015491409227252007,
+    0.5358756184577942,
+    0.014461038634181023,
+    0.1482643038034439,
+    0.43664950132369995,
+    1.7648801803588867
+  ],
+  "token_nll": [
+    1.6499085426330566,
+    0.009477385319769382,
+    0.009465222246944904,
+    0.002936696168035269,
+    0.11413600295782089,
+    0.016673147678375244,
+    0.14462779462337494,
+    0.030315525829792023,
+    0.09133937954902649,
+    0.07129830867052078,
+    0.007292320020496845,
+    0.005406045820564032,
+    0.00019691436318680644,
+    0.006562231108546257,
+    0.006117903161793947,
+    0.0019722788129001856,
+    0.1218063235282898,
+    0.0014844838296994567,
+    0.02434932440519333,
+    0.08617499470710754,
+    0.8633991479873657
+  ],
+  "mean_answer_entropy": 0.33306029727682473,
+  "mean_answer_nll": 0.12007704127172474,
+  "correct": false,
+  "answer_status": "invalid_literal",
+  "parsed_answer": null,
+  "status": "ok",
+  "read_token_index": 329,
+  "a_cone": 1.4888183254613205,
+  "category_cosines": {
+    "ambiguity": 0.04321609064936638,
+    "incompleteness": -0.07257847487926483,
+    "conflicting_evidence": -0.03961636871099472,
+    "general_uncertainty": -0.001011791406199336
+  },
+  "category_normalized": {
+    "ambiguity": 0.46317222714424133,
+    "incompleteness": -0.7778661251068115,
+    "conflicting_evidence": -0.42459189891815186,
+    "general_uncertainty": -0.01084396243095398
+  },
+  "uspace_projection_norm": 0.0933045819401741,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    933,
+    936
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 0.4958662740693318,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 440,
+      "text": " \"",
+      "score": 6.0625
+    },
+    {
+      "rank": 2,
+      "token_id": 2220,
+      "text": " `",
+      "score": 5.4375
+    },
+    {
+      "rank": 3,
+      "token_id": 19423,
+      "text": " TODO",
+      "score": 5.375
+    },
+    {
+      "rank": 4,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 5.21875
+    },
+    {
+      "rank": 5,
+      "token_id": 1585,
+      "text": " --",
+      "score": 5.0
+    },
+    {
+      "rank": 6,
+      "token_id": 25,
+      "text": ":",
+      "score": 4.78125
+    },
+    {
+      "rank": 7,
+      "token_id": 334,
+      "text": " (",
+      "score": 4.46875
+    },
+    {
+      "rank": 8,
+      "token_id": 945,
+      "text": " +",
+      "score": 4.21875
+    },
+    {
+      "rank": 9,
+      "token_id": 11181,
+      "text": " somewhere",
+      "score": 4.21875
+    },
+    {
+      "rank": 10,
+      "token_id": 6236,
+      "text": " ``",
+      "score": 3.953125
+    },
+    {
+      "rank": 11,
+      "token_id": 9678,
+      "text": " implementation",
+      "score": 3.921875
+    },
+    {
+      "rank": 12,
+      "token_id": 572,
+      "text": " *",
+      "score": 3.828125
+    },
+    {
+      "rank": 13,
+      "token_id": 185,
+      "text": "\n",
+      "score": 3.78125
+    },
+    {
+      "rank": 14,
+      "token_id": 4341,
+      "text": " implement",
+      "score": 3.765625
+    },
+    {
+      "rank": 15,
+      "token_id": 1368,
+      "text": " because",
+      "score": 3.71875
+    },
+    {
+      "rank": 16,
+      "token_id": 371,
+      "text": " $",
+      "score": 3.59375
+    },
+    {
+      "rank": 17,
+      "token_id": 4813,
+      "text": " ~",
+      "score": 3.578125
+    },
+    {
+      "rank": 18,
+      "token_id": 8528,
+      "text": " +=",
+      "score": 3.359375
+    },
+    {
+      "rank": 19,
+      "token_id": 8507,
+      "text": " (\"",
+      "score": 3.265625
+    },
+    {
+      "rank": 20,
+      "token_id": 26,
+      "text": ";",
+      "score": 2.953125
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 10047,
+      "text": "\ufffd",
+      "score": 24.0
+    },
+    {
+      "rank": 2,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 23.875
+    },
+    {
+      "rank": 3,
+      "token_id": 24122,
+      "text": " gonna",
+      "score": 20.0
+    },
+    {
+      "rank": 4,
+      "token_id": 22709,
+      "text": " \ufffd",
+      "score": 16.875
+    },
+    {
+      "rank": 5,
+      "token_id": 30052,
+      "text": " lol",
+      "score": 13.5625
+    },
+    {
+      "rank": 6,
+      "token_id": 24331,
+      "text": " fuck",
+      "score": 12.8125
+    },
+    {
+      "rank": 7,
+      "token_id": 7678,
+      "text": " strugg",
+      "score": 12.8125
+    },
+    {
+      "rank": 8,
+      "token_id": 14176,
+      "text": " anymore",
+      "score": 12.8125
+    },
+    {
+      "rank": 9,
+      "token_id": 24717,
+      "text": " COVID",
+      "score": 11.5
+    },
+    {
+      "rank": 10,
+      "token_id": 30727,
+      "text": "\u5360\u6bd4",
+      "score": 10.75
+    },
+    {
+      "rank": 11,
+      "token_id": 31586,
+      "text": " germans",
+      "score": 10.4375
+    },
+    {
+      "rank": 12,
+      "token_id": 22028,
+      "text": " dumpster",
+      "score": 10.125
+    },
+    {
+      "rank": 13,
+      "token_id": 19149,
+      "text": " Instagram",
+      "score": 10.0625
+    },
+    {
+      "rank": 14,
+      "token_id": 22199,
+      "text": "\u6210\u4e3a\u4e86",
+      "score": 9.6875
+    },
+    {
+      "rank": 15,
+      "token_id": 18268,
+      "text": " scenarios",
+      "score": 9.4375
+    },
+    {
+      "rank": 16,
+      "token_id": 29881,
+      "text": " anytime",
+      "score": 9.25
+    },
+    {
+      "rank": 17,
+      "token_id": 31804,
+      "text": " Nigeria",
+      "score": 9.1875
+    },
+    {
+      "rank": 18,
+      "token_id": 26696,
+      "text": " utilizing",
+      "score": 9.125
+    },
+    {
+      "rank": 19,
+      "token_id": 9482,
+      "text": " => ",
+      "score": 9.0
+    },
+    {
+      "rank": 20,
+      "token_id": 7361,
+      "text": " wouldn",
+      "score": 8.8125
+    }
+  ],
+  "residual_norm": 15.855785369873047,
+  "projected_residual_norm": 1.4794178009033203
+}

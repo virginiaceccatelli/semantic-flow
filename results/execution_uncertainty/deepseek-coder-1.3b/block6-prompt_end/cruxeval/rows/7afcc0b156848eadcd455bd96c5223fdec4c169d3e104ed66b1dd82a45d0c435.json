@@ -1,0 +1,337 @@
+{
+  "case_id": "sample_12",
+  "program_id": "sample_12",
+  "code": "def f(s, x):\n    count = 0\n    while s[:len(x)] == x and count < len(s)-len(x):\n        s = s[len(x):]\n        count += len(x)\n    return s",
+  "call": "f('If you want to live a happy life! Daniel', 'Daniel')",
+  "expected": "'If you want to live a happy life! Daniel'",
+  "dataset": "cruxeval",
+  "source_group": "eab01a48dd18e45d136a749462870ece1fd8f98f388bf83291182457f027d1e0",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\ndef f(s, x):\n    count = 0\n    while s[:len(x)] == x and count < len(s)-len(x):\n        s = s[len(x):]\n        count += len(x)\n    return s\n\nassert f('If you want to live a happy life! Daniel', 'Daniel') ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 96,
+  "answer": "'If you want to live a happy life!'",
+  "raw_generation": " 'If you want to live a happy life!'\n",
+  "generated_token_ids": [
+    651,
+    1840,
+    340,
+    1120,
+    276,
+    3516,
+    245,
+    4966,
+    1720,
+    13837,
+    185
+  ],
+  "stop_reason": "newline",
+  "answer_last_token_offset": 9,
+  "n_generated_tokens": 11,
+  "n_answer_tokens": 10,
+  "token_entropy": [
+    0.3242694139480591,
+    0.8155418634414673,
+    0.031037604436278343,
+    0.03212564438581467,
+    0.04541703313589096,
+    0.049751006066799164,
+    0.16527549922466278,
+    0.10876722633838654,
+    0.41873493790626526,
+    0.2176540046930313,
+    0.6315208673477173
+  ],
+  "token_nll": [
+    0.05239519849419594,
+    0.14076463878154755,
+    0.0033163807820528746,
+    0.0031558494083583355,
+    0.005159989930689335,
+    0.005584117025136948,
+    0.02634584717452526,
+    0.014198238030076027,
+    0.07966853678226471,
+    0.043307382613420486,
+    0.31965869665145874
+  ],
+  "mean_answer_entropy": 0.22085742335766553,
+  "mean_answer_nll": 0.037389617902226745,
+  "correct": false,
+  "answer_status": "parsed",
+  "parsed_answer": "'If you want to live a happy life!'",
+  "status": "ok",
+  "read_token_index": 95,
+  "a_cone": 1.602539937646712,
+  "category_cosines": {
+    "ambiguity": 0.053153906017541885,
+    "incompleteness": -0.07102512568235397,
+    "conflicting_evidence": -0.026462366804480553,
+    "general_uncertainty": -0.01256799977272749
+  },
+  "category_normalized": {
+    "ambiguity": 0.5689510107040405,
+    "incompleteness": -0.7602417469024658,
+    "conflicting_evidence": -0.28324899077415466,
+    "general_uncertainty": -0.13452589511871338
+  },
+  "uspace_projection_norm": 0.09342439472675323,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    286,
+    289
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 0.3539328414564068,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 185,
+      "text": "\n",
+      "score": 8.625
+    },
+    {
+      "rank": 2,
+      "token_id": 1368,
+      "text": " because",
+      "score": 6.625
+    },
+    {
+      "rank": 3,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 6.59375
+    },
+    {
+      "rank": 4,
+      "token_id": 19423,
+      "text": " TODO",
+      "score": 5.8125
+    },
+    {
+      "rank": 5,
+      "token_id": 2220,
+      "text": " `",
+      "score": 5.5625
+    },
+    {
+      "rank": 6,
+      "token_id": 11181,
+      "text": " somewhere",
+      "score": 5.28125
+    },
+    {
+      "rank": 7,
+      "token_id": 440,
+      "text": " \"",
+      "score": 4.65625
+    },
+    {
+      "rank": 8,
+      "token_id": 4052,
+      "text": " expected",
+      "score": 4.65625
+    },
+    {
+      "rank": 9,
+      "token_id": 1866,
+      "text": " something",
+      "score": 4.59375
+    },
+    {
+      "rank": 10,
+      "token_id": 8528,
+      "text": " +=",
+      "score": 4.4375
+    },
+    {
+      "rank": 11,
+      "token_id": 17079,
+      "text": " {{",
+      "score": 4.4375
+    },
+    {
+      "rank": 12,
+      "token_id": 750,
+      "text": " when",
+      "score": 4.40625
+    },
+    {
+      "rank": 13,
+      "token_id": 9678,
+      "text": " implementation",
+      "score": 4.375
+    },
+    {
+      "rank": 14,
+      "token_id": 6617,
+      "text": " otherwise",
+      "score": 4.3125
+    },
+    {
+      "rank": 15,
+      "token_id": 25,
+      "text": ":",
+      "score": 4.25
+    },
+    {
+      "rank": 16,
+      "token_id": 26,
+      "text": ";",
+      "score": 4.15625
+    },
+    {
+      "rank": 17,
+      "token_id": 1585,
+      "text": " --",
+      "score": 4.15625
+    },
+    {
+      "rank": 18,
+      "token_id": 357,
+      "text": " \\",
+      "score": 4.09375
+    },
+    {
+      "rank": 19,
+      "token_id": 371,
+      "text": " $",
+      "score": 4.0625
+    },
+    {
+      "rank": 20,
+      "token_id": 945,
+      "text": " +",
+      "score": 4.03125
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 10047,
+      "text": "\ufffd",
+      "score": 24.75
+    },
+    {
+      "rank": 2,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 24.5
+    },
+    {
+      "rank": 3,
+      "token_id": 24122,
+      "text": " gonna",
+      "score": 19.75
+    },
+    {
+      "rank": 4,
+      "token_id": 22709,
+      "text": " \ufffd",
+      "score": 18.25
+    },
+    {
+      "rank": 5,
+      "token_id": 30052,
+      "text": " lol",
+      "score": 14.0
+    },
+    {
+      "rank": 6,
+      "token_id": 14176,
+      "text": " anymore",
+      "score": 13.875
+    },
+    {
+      "rank": 7,
+      "token_id": 24331,
+      "text": " fuck",
+      "score": 13.125
+    },
+    {
+      "rank": 8,
+      "token_id": 7678,
+      "text": " strugg",
+      "score": 12.25
+    },
+    {
+      "rank": 9,
+      "token_id": 24717,
+      "text": " COVID",
+      "score": 11.875
+    },
+    {
+      "rank": 10,
+      "token_id": 30475,
+      "text": " musul",
+      "score": 10.6875
+    },
+    {
+      "rank": 11,
+      "token_id": 19149,
+      "text": " Instagram",
+      "score": 10.6875
+    },
+    {
+      "rank": 12,
+      "token_id": 30727,
+      "text": "\u5360\u6bd4",
+      "score": 10.4375
+    },
+    {
+      "rank": 13,
+      "token_id": 22199,
+      "text": "\u6210\u4e3a\u4e86",
+      "score": 10.0625
+    },
+    {
+      "rank": 14,
+      "token_id": 31804,
+      "text": " Nigeria",
+      "score": 9.875
+    },
+    {
+      "rank": 15,
+      "token_id": 8632,
+      "text": " impossible",
+      "score": 9.625
+    },
+    {
+      "rank": 16,
+      "token_id": 7045,
+      "text": " couldn",
+      "score": 9.625
+    },
+    {
+      "rank": 17,
+      "token_id": 30603,
+      "text": " fulfilled",
+      "score": 9.625
+    },
+    {
+      "rank": 18,
+      "token_id": 29881,
+      "text": " anytime",
+      "score": 9.5
+    },
+    {
+      "rank": 19,
+      "token_id": 31586,
+      "text": " germans",
+      "score": 9.375
+    },
+    {
+      "rank": 20,
+      "token_id": 7361,
+      "text": " wouldn",
+      "score": 9.3125
+    }
+  ],
+  "residual_norm": 16.142229080200195,
+  "projected_residual_norm": 1.508077621459961
+}

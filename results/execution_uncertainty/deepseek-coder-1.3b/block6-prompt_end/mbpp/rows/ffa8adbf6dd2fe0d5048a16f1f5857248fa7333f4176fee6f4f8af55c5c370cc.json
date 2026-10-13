@@ -1,0 +1,496 @@
+{
+  "case_id": "462:1",
+  "program_id": "462",
+  "code": "def combinations_list(list1):\r\n    if len(list1) == 0:\r\n        return [[]]\r\n    result = []\r\n    for el in combinations_list(list1[1:]):\r\n        result += [el, el+[list1[0]]]\r\n    return result",
+  "call": "combinations_list(['red', 'green', 'blue', 'white', 'black', 'orange'])",
+  "expected": "[[], ['red'], ['green'], ['green', 'red'], ['blue'], ['blue', 'red'], ['blue', 'green'], ['blue', 'green', 'red'], ['white'], ['white', 'red'], ['white', 'green'], ['white', 'green', 'red'], ['white', 'blue'], ['white', 'blue', 'red'], ['white', 'blue', 'green'], ['white', 'blue', 'green', 'red'], ['black'], ['black', 'red'], ['black', 'green'], ['black', 'green', 'red'], ['black', 'blue'], ['black', 'blue', 'red'], ['black', 'blue', 'green'], ['black', 'blue', 'green', 'red'], ['black', 'white'], ['black', 'white', 'red'], ['black', 'white', 'green'], ['black', 'white', 'green', 'red'], ['black', 'white', 'blue'], ['black', 'white', 'blue', 'red'], ['black', 'white', 'blue', 'green'], ['black', 'white', 'blue', 'green', 'red'], ['orange'], ['orange', 'red'], ['orange', 'green'], ['orange', 'green', 'red'], ['orange', 'blue'], ['orange', 'blue', 'red'], ['orange', 'blue', 'green'], ['orange', 'blue', 'green', 'red'], ['orange', 'white'], ['orange', 'white', 'red'], ['orange', 'white', 'green'], ['orange', 'white', 'green', 'red'], ['orange', 'white', 'blue'], ['orange', 'white', 'blue', 'red'], ['orange', 'white', 'blue', 'green'], ['orange', 'white', 'blue', 'green', 'red'], ['orange', 'black'], ['orange', 'black', 'red'], ['orange', 'black', 'green'], ['orange', 'black', 'green', 'red'], ['orange', 'black', 'blue'], ['orange', 'black', 'blue', 'red'], ['orange', 'black', 'blue', 'green'], ['orange', 'black', 'blue', 'green', 'red'], ['orange', 'black', 'white'], ['orange', 'black', 'white', 'red'], ['orange', 'black', 'white', 'green'], ['orange', 'black', 'white', 'green', 'red'], ['orange', 'black', 'white', 'blue'], ['orange', 'black', 'white', 'blue', 'red'], ['orange', 'black', 'white', 'blue', 'green'], ['orange', 'black', 'white', 'blue', 'green', 'red']]",
+  "dataset": "mbpp",
+  "source_group": "52c08b84b56c5e4e6ed7fa1b72f2d62fc178dabb1bf6129e66719f538eae19f1",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\ndef combinations_list(list1):\r\n    if len(list1) == 0:\r\n        return [[]]\r\n    result = []\r\n    for el in combinations_list(list1[1:]):\r\n        result += [el, el+[list1[0]]]\r\n    return result\n\nassert combinations_list(['red', 'green', 'blue', 'white', 'black', 'orange']) ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 114,
+  "answer": "[['red', 'green', 'blue'], ['red', 'green', 'white', 'black'], ['red', 'green', 'black', 'orange'], ['red', 'blue', 'white', 'black'], ['red', 'blue', 'black', 'orange'], ['red', 'white',",
+  "raw_generation": " [['red', 'green', 'blue'], ['red', 'green', 'white', 'black'], ['red', 'green', 'black', 'orange'], ['red', 'blue', 'white', 'black'], ['red', 'blue', 'black', 'orange'], ['red', 'white',",
+  "generated_token_ids": [
+    821,
+    3204,
+    504,
+    1183,
+    651,
+    12377,
+    1183,
+    651,
+    10948,
+    12544,
+    12036,
+    504,
+    1183,
+    651,
+    12377,
+    1183,
+    651,
+    9999,
+    1183,
+    651,
+    8718,
+    12544,
+    12036,
+    504,
+    1183,
+    651,
+    12377,
+    1183,
+    651,
+    8718,
+    1183,
+    651,
+    30946,
+    12544,
+    12036,
+    504,
+    1183,
+    651,
+    10948,
+    1183,
+    651,
+    9999,
+    1183,
+    651,
+    8718,
+    12544,
+    12036,
+    504,
+    1183,
+    651,
+    10948,
+    1183,
+    651,
+    8718,
+    1183,
+    651,
+    30946,
+    12544,
+    12036,
+    504,
+    1183,
+    651,
+    9999,
+    1183
+  ],
+  "stop_reason": "max_new_tokens",
+  "answer_last_token_offset": 63,
+  "n_generated_tokens": 64,
+  "n_answer_tokens": 64,
+  "token_entropy": [
+    1.0050450563430786,
+    0.9437429904937744,
+    0.2690143287181854,
+    0.4910781979560852,
+    0.012752372771501541,
+    0.8864423632621765,
+    0.5459291934967041,
+    0.004960685968399048,
+    0.7420918941497803,
+    0.6500862836837769,
+    0.6276508569717407,
+    0.5412335395812988,
+    0.029110077768564224,
+    0.00592168839648366,
+    0.31118667125701904,
+    0.06671999394893646,
+    0.012323306873440742,
+    0.9011939764022827,
+    0.7187830209732056,
+    0.01222652941942215,
+    0.5611587166786194,
+    0.6878747940063477,
+    0.17018376290798187,
+    0.34239667654037476,
+    0.013713071122765541,
+    0.004004340618848801,
+    0.9995958805084229,
+    0.01808745786547661,
+    0.0027822167612612247,
+    1.1898179054260254,
+    0.1704190969467163,
+    0.0031222649849951267,
+    0.03715510666370392,
+    0.16836902499198914,
+    0.1868751049041748,
+    0.9656434655189514,
+    0.015252484008669853,
+    0.0028340574353933334,
+    1.002133846282959,
+    0.17872358858585358,
+    0.002444559708237648,
+    0.45114362239837646,
+    0.055731818079948425,
+    0.0013991795713081956,
+    0.05503099039196968,
+    0.5675517320632935,
+    0.04625384509563446,
+    0.2905985116958618,
+    0.005261966958642006,
+    0.0015682688681408763,
+    0.1856585443019867,
+    0.006548124831169844,
+    0.001137739745900035,
+    0.11849187314510345,
+    0.01579730398952961,
+    0.001450850861147046,
+    0.006307284347712994,
+    0.10712213814258575,
+    0.0386185497045517,
+    0.8349084854125977,
+    0.007167131174355745,
+    0.00145671796053648,
+    0.20015084743499756,
+    0.006501059979200363
+  ],
+  "token_nll": [
+    0.3037653863430023,
+    0.444201797246933,
+    0.045642927289009094,
+    0.14562751352787018,
+    0.0013187768636271358,
+    0.24860596656799316,
+    0.25384408235549927,
+    0.0004687402688432485,
+    0.21557888388633728,
+    0.3898252546787262,
+    0.1788020133972168,
+    0.12559723854064941,
+    0.003851616056635976,
+    0.0005891970940865576,
+    0.06310413032770157,
+    0.011712475679814816,
+    0.0013736584223806858,
+    0.4153784513473511,
+    0.6966605186462402,
+    0.0013466347008943558,
+    0.2151281237602234,
+    0.4775174856185913,
+    0.02715526707470417,
+    0.06789875775575638,
+    0.001522811478935182,
+    0.0003746046277228743,
+    0.36575862765312195,
+    0.002314390614628792,
+    0.0002475670480635017,
+    0.7911534309387207,
+    0.03927408903837204,
+    0.0002914242504630238,
+    0.004816952161490917,
+    0.03787350654602051,
+    0.03304056078195572,
+    0.4221358001232147,
+    0.0016683719586580992,
+    0.00025948495022021234,
+    0.5735522508621216,
+    0.04340966045856476,
+    0.00021479207498487085,
+    0.1168101355433464,
+    0.009274259209632874,
+    0.00011955977242905647,
+    0.00911468081176281,
+    0.2824130952358246,
+    0.006064229179173708,
+    0.06373705714941025,
+    0.0005026984144933522,
+    0.00013457823661156,
+    0.033564966171979904,
+    0.0006743779522366822,
+    9.500529267825186e-05,
+    0.0209701769053936,
+    0.0019957164768129587,
+    0.0001262346631847322,
+    0.0005915798828937113,
+    0.021378785371780396,
+    0.00472500454634428,
+    0.5127214193344116,
+    0.0006971312686800957,
+    0.00012408917245920748,
+    0.03856056556105614,
+    0.0006754500791430473
+  ],
+  "mean_answer_entropy": 0.289155266204034,
+  "mean_answer_nll": 0.12153084405076697,
+  "correct": false,
+  "answer_status": "invalid_literal",
+  "parsed_answer": null,
+  "status": "ok",
+  "read_token_index": 113,
+  "a_cone": 1.5951927279070743,
+  "category_cosines": {
+    "ambiguity": 0.04231329634785652,
+    "incompleteness": -0.05883841589093208,
+    "conflicting_evidence": -0.02181028388440609,
+    "general_uncertainty": -0.007673628628253937
+  },
+  "category_normalized": {
+    "ambiguity": 0.5562270283699036,
+    "incompleteness": -0.7734571099281311,
+    "conflicting_evidence": -0.2867058515548706,
+    "general_uncertainty": -0.10087325423955917
+  },
+  "uspace_projection_norm": 0.07607198506593704,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    358,
+    361
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 0.46125837788470925,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 185,
+      "text": "\n",
+      "score": 10.6875
+    },
+    {
+      "rank": 2,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 9.875
+    },
+    {
+      "rank": 3,
+      "token_id": 1368,
+      "text": " because",
+      "score": 6.3125
+    },
+    {
+      "rank": 4,
+      "token_id": 16352,
+      "text": " elsewhere",
+      "score": 6.125
+    },
+    {
+      "rank": 5,
+      "token_id": 3552,
+      "text": " ...",
+      "score": 5.3125
+    },
+    {
+      "rank": 6,
+      "token_id": 11181,
+      "text": " somewhere",
+      "score": 5.3125
+    },
+    {
+      "rank": 7,
+      "token_id": 26022,
+      "text": " \"#",
+      "score": 5.21875
+    },
+    {
+      "rank": 8,
+      "token_id": 25,
+      "text": ":",
+      "score": 5.15625
+    },
+    {
+      "rank": 9,
+      "token_id": 26,
+      "text": ";",
+      "score": 5.03125
+    },
+    {
+      "rank": 10,
+      "token_id": 1866,
+      "text": " something",
+      "score": 5.0
+    },
+    {
+      "rank": 11,
+      "token_id": 440,
+      "text": " \"",
+      "score": 5.0
+    },
+    {
+      "rank": 12,
+      "token_id": 17079,
+      "text": " {{",
+      "score": 5.0
+    },
+    {
+      "rank": 13,
+      "token_id": 16603,
+      "text": " [[",
+      "score": 4.90625
+    },
+    {
+      "rank": 14,
+      "token_id": 19423,
+      "text": " TODO",
+      "score": 4.875
+    },
+    {
+      "rank": 15,
+      "token_id": 26702,
+      "text": " (#",
+      "score": 4.78125
+    },
+    {
+      "rank": 16,
+      "token_id": 1585,
+      "text": " --",
+      "score": 4.78125
+    },
+    {
+      "rank": 17,
+      "token_id": 4052,
+      "text": " expected",
+      "score": 4.625
+    },
+    {
+      "rank": 18,
+      "token_id": 357,
+      "text": " \\",
+      "score": 4.5
+    },
+    {
+      "rank": 19,
+      "token_id": 8528,
+      "text": " +=",
+      "score": 4.5
+    },
+    {
+      "rank": 20,
+      "token_id": 6617,
+      "text": " otherwise",
+      "score": 4.3125
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 10047,
+      "text": "\ufffd",
+      "score": 24.75
+    },
+    {
+      "rank": 2,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 24.625
+    },
+    {
+      "rank": 3,
+      "token_id": 24122,
+      "text": " gonna",
+      "score": 19.875
+    },
+    {
+      "rank": 4,
+      "token_id": 22709,
+      "text": " \ufffd",
+      "score": 18.25
+    },
+    {
+      "rank": 5,
+      "token_id": 30052,
+      "text": " lol",
+      "score": 13.875
+    },
+    {
+      "rank": 6,
+      "token_id": 14176,
+      "text": " anymore",
+      "score": 13.625
+    },
+    {
+      "rank": 7,
+      "token_id": 24331,
+      "text": " fuck",
+      "score": 13.0
+    },
+    {
+      "rank": 8,
+      "token_id": 7678,
+      "text": " strugg",
+      "score": 12.25
+    },
+    {
+      "rank": 9,
+      "token_id": 24717,
+      "text": " COVID",
+      "score": 11.8125
+    },
+    {
+      "rank": 10,
+      "token_id": 19149,
+      "text": " Instagram",
+      "score": 10.625
+    },
+    {
+      "rank": 11,
+      "token_id": 30475,
+      "text": " musul",
+      "score": 10.625
+    },
+    {
+      "rank": 12,
+      "token_id": 30727,
+      "text": "\u5360\u6bd4",
+      "score": 10.5625
+    },
+    {
+      "rank": 13,
+      "token_id": 22199,
+      "text": "\u6210\u4e3a\u4e86",
+      "score": 9.875
+    },
+    {
+      "rank": 14,
+      "token_id": 31804,
+      "text": " Nigeria",
+      "score": 9.6875
+    },
+    {
+      "rank": 15,
+      "token_id": 31586,
+      "text": " germans",
+      "score": 9.625
+    },
+    {
+      "rank": 16,
+      "token_id": 7045,
+      "text": " couldn",
+      "score": 9.4375
+    },
+    {
+      "rank": 17,
+      "token_id": 30603,
+      "text": " fulfilled",
+      "score": 9.375
+    },
+    {
+      "rank": 18,
+      "token_id": 29881,
+      "text": " anytime",
+      "score": 9.375
+    },
+    {
+      "rank": 19,
+      "token_id": 9482,
+      "text": " => ",
+      "score": 9.3125
+    },
+    {
+      "rank": 20,
+      "token_id": 7361,
+      "text": " wouldn",
+      "score": 9.25
+    }
+  ],
+  "residual_norm": 16.3697452545166,
+  "projected_residual_norm": 1.245279312133789
+}

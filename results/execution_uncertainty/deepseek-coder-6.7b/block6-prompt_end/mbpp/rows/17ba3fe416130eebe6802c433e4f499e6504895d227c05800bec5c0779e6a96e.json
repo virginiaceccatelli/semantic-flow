@@ -1,0 +1,370 @@
+{
+  "case_id": "165:2",
+  "program_id": "165",
+  "code": "def count_char_position(str1): \r\n    count_chars = 0\r\n    for i in range(len(str1)):\r\n        if ((i == ord(str1[i]) - ord('A')) or \r\n            (i == ord(str1[i]) - ord('a'))): \r\n            count_chars += 1\r\n    return count_chars",
+  "call": "count_char_position(\"AbgdeF\")",
+  "expected": "5",
+  "dataset": "mbpp",
+  "source_group": "d5a8b583f7f0c1041fbfbcff2634ff1e35f1665999b765d64ce8c33b7202c931",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\ndef count_char_position(str1): \r\n    count_chars = 0\r\n    for i in range(len(str1)):\r\n        if ((i == ord(str1[i]) - ord('A')) or \r\n            (i == ord(str1[i]) - ord('a'))): \r\n            count_chars += 1\r\n    return count_chars\n\nassert count_char_position(\"AbgdeF\") ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 125,
+  "answer": "[1, 0, 0, 0, 1, 0, 1]",
+  "raw_generation": " [1, 0, 0, 0, 1, 0, 1]\n",
+  "generated_token_ids": [
+    821,
+    16,
+    11,
+    207,
+    15,
+    11,
+    207,
+    15,
+    11,
+    207,
+    15,
+    11,
+    207,
+    16,
+    11,
+    207,
+    15,
+    11,
+    207,
+    16,
+    60,
+    185
+  ],
+  "stop_reason": "newline",
+  "answer_last_token_offset": 20,
+  "n_generated_tokens": 22,
+  "n_answer_tokens": 21,
+  "token_entropy": [
+    3.425962209701538,
+    1.4017804861068726,
+    0.2646631896495819,
+    1.141470193862915,
+    1.3031034469604492,
+    0.07371379435062408,
+    0.08138887584209442,
+    0.6035190224647522,
+    0.026677075773477554,
+    0.05186363309621811,
+    0.8162835836410522,
+    0.02393764816224575,
+    0.05344688147306442,
+    0.6675723195075989,
+    0.07741241157054901,
+    0.04125966504216194,
+    0.6020257472991943,
+    0.8250652551651001,
+    0.07759284228086472,
+    0.8503354787826538,
+    1.010785698890686,
+    1.1394662857055664
+  ],
+  "token_nll": [
+    1.8546524047851562,
+    0.3848448693752289,
+    0.04602985456585884,
+    0.3351653516292572,
+    0.8120784163475037,
+    0.010854133404791355,
+    0.00977963674813509,
+    0.1770055592060089,
+    0.0032823991496115923,
+    0.0057863350957632065,
+    0.3307417929172516,
+    0.002908050548285246,
+    0.006043375004082918,
+    0.28084471821784973,
+    0.012117933481931686,
+    0.0046726795844733715,
+    0.24486345052719116,
+    0.3448038697242737,
+    0.009531467221677303,
+    0.5158222913742065,
+    0.5594866275787354,
+    0.5907541513442993
+  ],
+  "mean_answer_entropy": 0.6390409266487473,
+  "mean_answer_nll": 0.28339596268987016,
+  "correct": false,
+  "answer_status": "parsed",
+  "parsed_answer": "[1, 0, 0, 0, 1, 0, 1]",
+  "status": "ok",
+  "read_token_index": 124,
+  "a_cone": 2.028023691002347,
+  "category_cosines": {
+    "ambiguity": 0.007322760298848152,
+    "incompleteness": 0.0003088024677708745,
+    "conflicting_evidence": -0.01394018903374672,
+    "general_uncertainty": 0.013060564175248146
+  },
+  "category_normalized": {
+    "ambiguity": 0.3579002618789673,
+    "incompleteness": 0.01509273611009121,
+    "conflicting_evidence": -0.6813274025917053,
+    "general_uncertainty": 0.6383357048034668
+  },
+  "uspace_projection_norm": 0.0204603374004364,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    354,
+    357
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 1.2959901387637527,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 32014,
+      "text": "<\uff5cend\u2581of\u2581sentence\uff5c>",
+      "score": 13.375
+    },
+    {
+      "rank": 2,
+      "token_id": 185,
+      "text": "\n",
+      "score": 11.6875
+    },
+    {
+      "rank": 3,
+      "token_id": 19476,
+      "text": " ([",
+      "score": 10.8125
+    },
+    {
+      "rank": 4,
+      "token_id": 357,
+      "text": " \\",
+      "score": 10.5625
+    },
+    {
+      "rank": 5,
+      "token_id": 821,
+      "text": " [",
+      "score": 10.3125
+    },
+    {
+      "rank": 6,
+      "token_id": 572,
+      "text": " *",
+      "score": 9.5625
+    },
+    {
+      "rank": 7,
+      "token_id": 1013,
+      "text": " <",
+      "score": 9.0625
+    },
+    {
+      "rank": 8,
+      "token_id": 58,
+      "text": "[",
+      "score": 8.25
+    },
+    {
+      "rank": 9,
+      "token_id": 243,
+      "text": "  ",
+      "score": 8.0625
+    },
+    {
+      "rank": 10,
+      "token_id": 12867,
+      "text": " \\(",
+      "score": 8.0
+    },
+    {
+      "rank": 11,
+      "token_id": 4052,
+      "text": " expected",
+      "score": 8.0
+    },
+    {
+      "rank": 12,
+      "token_id": 1938,
+      "text": " >",
+      "score": 7.96875
+    },
+    {
+      "rank": 13,
+      "token_id": 4077,
+      "text": " http",
+      "score": 7.9375
+    },
+    {
+      "rank": 14,
+      "token_id": 19118,
+      "text": " attempting",
+      "score": 7.6875
+    },
+    {
+      "rank": 15,
+      "token_id": 17794,
+      "text": " [\\",
+      "score": 7.625
+    },
+    {
+      "rank": 16,
+      "token_id": 2220,
+      "text": " `",
+      "score": 7.4375
+    },
+    {
+      "rank": 17,
+      "token_id": 31421,
+      "text": " \"[",
+      "score": 7.34375
+    },
+    {
+      "rank": 18,
+      "token_id": 1585,
+      "text": " --",
+      "score": 7.21875
+    },
+    {
+      "rank": 19,
+      "token_id": 440,
+      "text": " \"",
+      "score": 7.03125
+    },
+    {
+      "rank": 20,
+      "token_id": 14607,
+      "text": "\\_",
+      "score": 6.9375
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 16503,
+      "text": " weird",
+      "score": 28.625
+    },
+    {
+      "rank": 2,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 25.625
+    },
+    {
+      "rank": 3,
+      "token_id": 10796,
+      "text": " surprise",
+      "score": 23.5
+    },
+    {
+      "rank": 4,
+      "token_id": 10047,
+      "text": "\ufffd",
+      "score": 22.75
+    },
+    {
+      "rank": 5,
+      "token_id": 22709,
+      "text": " \ufffd",
+      "score": 20.125
+    },
+    {
+      "rank": 6,
+      "token_id": 5397,
+      "text": " surpr",
+      "score": 20.125
+    },
+    {
+      "rank": 7,
+      "token_id": 14522,
+      "text": " unexpected",
+      "score": 19.0
+    },
+    {
+      "rank": 8,
+      "token_id": 15250,
+      "text": " surprising",
+      "score": 18.875
+    },
+    {
+      "rank": 9,
+      "token_id": 6509,
+      "text": " stuff",
+      "score": 18.5
+    },
+    {
+      "rank": 10,
+      "token_id": 24331,
+      "text": " fuck",
+      "score": 18.375
+    },
+    {
+      "rank": 11,
+      "token_id": 12081,
+      "text": " surprised",
+      "score": 17.25
+    },
+    {
+      "rank": 12,
+      "token_id": 6643,
+      "text": " maybe",
+      "score": 17.125
+    },
+    {
+      "rank": 13,
+      "token_id": 2001,
+      "text": " things",
+      "score": 16.875
+    },
+    {
+      "rank": 14,
+      "token_id": 15428,
+      "text": " crazy",
+      "score": 16.375
+    },
+    {
+      "rank": 15,
+      "token_id": 30499,
+      "text": " tricky",
+      "score": 16.375
+    },
+    {
+      "rank": 16,
+      "token_id": 28527,
+      "text": " scared",
+      "score": 16.125
+    },
+    {
+      "rank": 17,
+      "token_id": 6486,
+      "text": " https",
+      "score": 15.875
+    },
+    {
+      "rank": 18,
+      "token_id": 9220,
+      "text": " **",
+      "score": 15.8125
+    },
+    {
+      "rank": 19,
+      "token_id": 8392,
+      "text": " strange",
+      "score": 15.6875
+    },
+    {
+      "rank": 20,
+      "token_id": 12365,
+      "text": " Maybe",
+      "score": 15.5
+    }
+  ],
+  "residual_norm": 43.20329284667969,
+  "projected_residual_norm": 0.8839545249938965
+}

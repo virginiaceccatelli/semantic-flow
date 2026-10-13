@@ -1,0 +1,60 @@
+{
+  "stage": "280_prepare",
+  "timestamp": "20261012_162720",
+  "git_sha": "f303d3e",
+  "python": "3.11.16",
+  "argv": [
+    "scripts/280_def_survival.py",
+    "prepare",
+    "--model",
+    "deepseek-coder-1.3b",
+    "--output",
+    "results/binding_flow_v2/deepseek-coder-1.3b/seed42/prepared"
+  ],
+  "args": {
+    "model": "deepseek-coder-1.3b",
+    "real_programs": "3000",
+    "synthetic_pairs": "3000",
+    "seed": "42",
+    "max_tokens": "1024",
+    "bos_token_id": "32013",
+    "provenance": "{'real': {'kind': 'codesearchnet', 'dataset': 'code-search-net/code_search_net', 'revision': '7e3332b8032ff895377dba3e57f0152fcb32ff7d', 'files': ['python/train/0000.parquet']}, 'cruxeval': {'kind': 'cruxeval', 'dataset': 'cruxeval-org/cruxeval', 'revision': 'b96af0450242eb4da433032b90998f25588a5d0f'}}"
+  },
+  "wall_time_s": 473.6,
+  "extra": {
+    "stage": "280_prepare",
+    "status": "passed",
+    "args": {
+      "model": "deepseek-coder-1.3b",
+      "real_programs": 3000,
+      "synthetic_pairs": 3000,
+      "seed": 42,
+      "max_tokens": 1024,
+      "bos_token_id": 32013,
+      "provenance": {
+        "real": {
+          "kind": "codesearchnet",
+          "dataset": "code-search-net/code_search_net",
+          "revision": "7e3332b8032ff895377dba3e57f0152fcb32ff7d",
+          "files": [
+            "python/train/0000.parquet"
+          ]
+        },
+        "cruxeval": {
+          "kind": "cruxeval",
+          "dataset": "cruxeval-org/cruxeval",
+          "revision": "b96af0450242eb4da433032b90998f25588a5d0f"
+        }
+      }
+    },
+    "files": {
+      "programs.jsonl": "54f3eff3f8d704b0d866a6ec28bd363294d871a459a6b760387aae317c913ae2",
+      "candidates.csv": "bb7ddb4a4374525b30b7e4d03f2e68795b1528ada007d98081c7add23afaf193",
+      "coverage.csv": "838e165eb08b1b7194a8bda4edef75b21ee69d9f2a22cd406c4e0e547bba4fd1",
+      "exclusions.csv": "06d4479777b45bc83932e8505bc3e53fd43cba9ffa985b2e78423660df035dd5",
+      "meta.json": "f74f79e016eb948df36735658ae45290af52ec4515489eb8fcc6075b98745cae",
+      "report.md": "2d9b53fa670a24195acfb0b0d6b2469509ac82c2ed068f8aa2b0ffba504f8d12"
+    },
+    "wall_time_s": 473.62
+  }
+}

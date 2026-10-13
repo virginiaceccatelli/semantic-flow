@@ -1,0 +1,361 @@
+{
+  "case_id": "sample_698",
+  "program_id": "sample_698",
+  "code": "def f(text):\n    return ''.join(x for x in text if x != ')')",
+  "call": "f(('(((((((((((d))))))))).))))((((('))",
+  "expected": "'(((((((((((d.((((('",
+  "dataset": "cruxeval",
+  "source_group": "b7854dbad786f7eae231516de83670bebfe1e10249b6542ac7774eddcd296aad",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Complete the final assertion. Give only the returned Python literal on one line.\ndef f(text):\n    return ''.join(x for x in text if x != ')')\n\nassert f(('(((((((((((d))))))))).))))(((((')) ==",
+  "layer": 6,
+  "location": "prompt_end",
+  "n_prompt_tokens": 67,
+  "answer": "'(((((((((((d))))))))).))))((((('",
+  "raw_generation": " '(((((((((((d))))))))).))))((((('\n",
+  "generated_token_ids": [
+    651,
+    5930,
+    5930,
+    5930,
+    5930,
+    5930,
+    7,
+    67,
+    1435,
+    1435,
+    1435,
+    1435,
+    628,
+    1435,
+    1435,
+    5930,
+    5930,
+    1497,
+    185
+  ],
+  "stop_reason": "newline",
+  "answer_last_token_offset": 17,
+  "n_generated_tokens": 19,
+  "n_answer_tokens": 18,
+  "token_entropy": [
+    0.8975315093994141,
+    1.3457391262054443,
+    0.16836267709732056,
+    0.20650380849838257,
+    0.23859983682632446,
+    0.2241278886795044,
+    0.5703795552253723,
+    0.09738555550575256,
+    0.12310062348842621,
+    0.1069699078798294,
+    0.07155080139636993,
+    0.10648591816425323,
+    0.24833345413208008,
+    0.2935771644115448,
+    0.3801797032356262,
+    0.8707963228225708,
+    0.24167534708976746,
+    0.402236670255661,
+    1.006753921508789
+  ],
+  "token_nll": [
+    0.2061120569705963,
+    0.5469721555709839,
+    0.027738424018025398,
+    0.034715667366981506,
+    0.042191676795482635,
+    0.0427338071167469,
+    0.14838431775569916,
+    0.012160331010818481,
+    0.01868351921439171,
+    0.016715820878744125,
+    0.010235556401312351,
+    0.017411241307854652,
+    0.050872862339019775,
+    0.0535094179213047,
+    0.08660613000392914,
+    0.274405300617218,
+    0.0488756038248539,
+    0.0879811942577362,
+    0.451985239982605
+  ],
+  "mean_answer_entropy": 0.366307548350758,
+  "mean_answer_nll": 0.09590583796509439,
+  "correct": false,
+  "answer_status": "parsed",
+  "parsed_answer": "'(((((((((((d))))))))).))))((((('",
+  "status": "ok",
+  "read_token_index": 66,
+  "a_cone": 1.6646014270446337,
+  "category_cosines": {
+    "ambiguity": 0.013749265111982822,
+    "incompleteness": -0.037736766040325165,
+    "conflicting_evidence": -0.015804963186383247,
+    "general_uncertainty": 0.021442992612719536
+  },
+  "category_normalized": {
+    "ambiguity": 0.28528735041618347,
+    "incompleteness": -0.7830106616020203,
+    "conflicting_evidence": -0.3279415965080261,
+    "general_uncertainty": 0.4449266493320465
+  },
+  "uspace_projection_norm": 0.04819444566965103,
+  "readout_status": "ok",
+  "read_token_id": 2312,
+  "read_token_text": " ==",
+  "read_char_span": [
+    190,
+    193
+  ],
+  "read_is_after_answer_started": false,
+  "ulens_score": 0.609756067721893,
+  "top_jlens_tokens": [
+    {
+      "rank": 1,
+      "token_id": 572,
+      "text": " *",
+      "score": 16.625
+    },
+    {
+      "rank": 2,
+      "token_id": 17237,
+      "text": " >=",
+      "score": 14.6875
+    },
+    {
+      "rank": 3,
+      "token_id": 19476,
+      "text": " ([",
+      "score": 14.25
+    },
+    {
+      "rank": 4,
+      "token_id": 16603,
+      "text": " [[",
+      "score": 14.0625
+    },
+    {
+      "rank": 5,
+      "token_id": 945,
+      "text": " +",
+      "score": 13.9375
+    },
+    {
+      "rank": 6,
+      "token_id": 1938,
+      "text": " >",
+      "score": 13.9375
+    },
+    {
+      "rank": 7,
+      "token_id": 2312,
+      "text": " ==",
+      "score": 13.875
+    },
+    {
+      "rank": 8,
+      "token_id": 16895,
+      "text": " >>",
+      "score": 12.9375
+    },
+    {
+      "rank": 9,
+      "token_id": 821,
+      "text": " [",
+      "score": 12.125
+    },
+    {
+      "rank": 10,
+      "token_id": 1070,
+      "text": " _",
+      "score": 12.0
+    },
+    {
+      "rank": 11,
+      "token_id": 12376,
+      "text": " *)",
+      "score": 11.875
+    },
+    {
+      "rank": 12,
+      "token_id": 2220,
+      "text": " `",
+      "score": 11.875
+    },
+    {
+      "rank": 13,
+      "token_id": 9220,
+      "text": " **",
+      "score": 11.8125
+    },
+    {
+      "rank": 14,
+      "token_id": 4813,
+      "text": " ~",
+      "score": 11.75
+    },
+    {
+      "rank": 15,
+      "token_id": 6213,
+      "text": " > ",
+      "score": 11.625
+    },
+    {
+      "rank": 16,
+      "token_id": 16684,
+      "text": " >= ",
+      "score": 11.5
+    },
+    {
+      "rank": 17,
+      "token_id": 1585,
+      "text": " --",
+      "score": 11.375
+    },
+    {
+      "rank": 18,
+      "token_id": 5548,
+      "text": " ===",
+      "score": 10.9375
+    },
+    {
+      "rank": 19,
+      "token_id": 22322,
+      "text": " <= ",
+      "score": 10.75
+    },
+    {
+      "rank": 20,
+      "token_id": 185,
+      "text": "\n",
+      "score": 10.75
+    }
+  ],
+  "uspace_token_readout_status": "ok",
+  "top_uspace_tokens": [
+    {
+      "rank": 1,
+      "token_id": 12394,
+      "text": " \ufffd",
+      "score": 26.875
+    },
+    {
+      "rank": 2,
+      "token_id": 10047,
+      "text": "\ufffd",
+      "score": 24.875
+    },
+    {
+      "rank": 3,
+      "token_id": 24717,
+      "text": " COVID",
+      "score": 22.25
+    },
+    {
+      "rank": 4,
+      "token_id": 22709,
+      "text": " \ufffd",
+      "score": 18.5
+    },
+    {
+      "rank": 5,
+      "token_id": 6486,
+      "text": " https",
+      "score": 17.625
+    },
+    {
+      "rank": 6,
+      "token_id": 9220,
+      "text": " **",
+      "score": 17.25
+    },
+    {
+      "rank": 7,
+      "token_id": 5442,
+      "text": " impact",
+      "score": 16.125
+    },
+    {
+      "rank": 8,
+      "token_id": 26754,
+      "text": "\u65b0\u51a0",
+      "score": 15.75
+    },
+    {
+      "rank": 9,
+      "token_id": 24122,
+      "text": " gonna",
+      "score": 15.3125
+    },
+    {
+      "rank": 10,
+      "token_id": 26594,
+      "text": " impacts",
+      "score": 15.0
+    },
+    {
+      "rank": 11,
+      "token_id": 11872,
+      "text": " :)",
+      "score": 14.3125
+    },
+    {
+      "rank": 12,
+      "token_id": 7889,
+      "text": " setup",
+      "score": 14.3125
+    },
+    {
+      "rank": 13,
+      "token_id": 10193,
+      "text": "\u75ab\u60c5",
+      "score": 14.1875
+    },
+    {
+      "rank": 14,
+      "token_id": 31682,
+      "text": " stakeholders",
+      "score": 14.1875
+    },
+    {
+      "rank": 15,
+      "token_id": 31164,
+      "text": " backend",
+      "score": 14.0
+    },
+    {
+      "rank": 16,
+      "token_id": 17960,
+      "text": " healthcare",
+      "score": 13.875
+    },
+    {
+      "rank": 17,
+      "token_id": 7678,
+      "text": " strugg",
+      "score": 13.5625
+    },
+    {
+      "rank": 18,
+      "token_id": 18268,
+      "text": " scenarios",
+      "score": 13.4375
+    },
+    {
+      "rank": 19,
+      "token_id": 12213,
+      "text": " scenario",
+      "score": 13.4375
+    },
+    {
+      "rank": 20,
+      "token_id": 12088,
+      "text": " happening",
+      "score": 12.875
+    }
+  ],
+  "residual_norm": 44.186458587646484,
+  "projected_residual_norm": 2.129542350769043
+}
