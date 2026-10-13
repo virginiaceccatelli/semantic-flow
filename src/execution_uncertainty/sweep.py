@@ -278,7 +278,11 @@ def evaluate_sweep(prepared, output, model="deepseek-coder-1.3b", lens_dir=None,
 def aggregate(output, rows):
     """readout.npz: summary [N, B, slots, bases, 4]; per-token main z concatenated [sum P, B, 4]."""
     stems = [hashlib.sha256(r["case_id"].encode()).hexdigest() for r in rows]
-    loaded = [np.load(output / "rows" / (s + ".npz")) for s in stems]
+    loaded = []
+    for s in stems:
+        # NpzFile keeps its file open until closed; thousands of rows exhaust the fd limit.
+        with np.load(output / "rows" / (s + ".npz")) as z:
+            loaded.append({"tokens": z["tokens"], "summary": z["summary"]})
     tokens = [z["tokens"] for z in loaded]
     n = np.array([t.shape[1] for t in tokens])
     np.savez_compressed(output / "readout.npz", case_id=np.array([r["case_id"] for r in rows]),
