@@ -3,6 +3,7 @@
 
     prepare --dataset {cruxeval,mbpp,cfpairs} [--input-jsonl F]   execution-verified item pools (CPU)
     step <01_sample_items|...|07_tables> [upstream args]           an upstream pipeline step, this config
+    generate --model M [--seeds ..] [--batch-size B]               step 02 with transformers (no vLLM)
     bank --model M                                                  direction bank (after step 05)
     forward --model M [--datasets ..] [--seeds ..]                  E-Space pass (GPU, after step 03)
     freeze                                                          freeze E-Space anchors on dev pairs (CPU)
@@ -77,13 +78,15 @@ def main():
     pre.add_argument("--output", type=Path)
     pre.add_argument("--n-programs", type=int, default=200, help="MBPP programs kept")
     pre.add_argument("--per-dimension", type=int, default=100, help="counterfactual pairs per dimension")
-    for name in ("bank", "forward"):
+    for name in ("bank", "forward", "generate"):
         p = sub.add_parser(name)
         p.add_argument("--config", type=Path, default=CONFIG)
         p.add_argument("--model", required=True)
-        if name == "forward":
+        if name in ("forward", "generate"):
             p.add_argument("--datasets", nargs="*")
             p.add_argument("--seeds", nargs="*", type=int)
+        if name == "generate":
+            p.add_argument("--batch-size", type=int, default=8)
     fr = sub.add_parser("freeze", help="Freeze E-Space anchors on dev pairs (refuses to overwrite)")
     fr.add_argument("--config", type=Path, default=CONFIG)
     fr.add_argument("--force", action="store_true", help="overwrite an existing freeze (documented reruns only)")
@@ -100,11 +103,13 @@ def main():
             print(prepare.counterfactual(out, args.per_dimension))
         else:
             print(prepare.benchmark(args.dataset, out, args.input_jsonl, args.revision, args.n_programs))
-    elif args.stage in ("bank", "forward"):
+    elif args.stage in ("bank", "forward", "generate"):
         from src.espace import gpu
-        from src.execution_uncertainty import reasoning
+        from src.execution_uncertainty import generate, reasoning
         reasoning.bootstrap()
-        if args.stage == "bank":
+        if args.stage == "generate":
+            generate.generate(args.config, args.model, args.datasets, args.seeds, args.batch_size)
+        elif args.stage == "bank":
             print(gpu.bank(args.config, args.model))
         else:
             print(gpu.forward(args.config, args.model, args.datasets, args.seeds))

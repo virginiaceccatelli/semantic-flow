@@ -67,7 +67,10 @@ exclusions counted wrong.
 
 ## What runs on the GPU
 
-Upstream steps 01–06 run unmodified on `configs/execsem_reasoning.yaml`: three seeds
+Upstream steps 01 and 03–06 run unmodified on `configs/execsem_reasoning.yaml`; step 02
+is replaced by stage 292's transformers generator (`generate`; same trace files, prompt
+ids, budgets and sampling settings, different random draws; see
+`docs/EXECUTION_UNCERTAINTY.md`, "Generation without vLLM"). Together: three seeds
 (41, 42, 43), the paper's sampling settings and token budgets, labelling at the
 end-of-thinking token, a teacher-forced pass, the basis at the paper's readout block,
 and every upstream score. The model entries are stage 292's verbatim copies of
@@ -213,8 +216,7 @@ as error scores.
 ## Commands
 
 ```bash
-bash jobs/uspace_reasoning.sh setup                     # once (stage 292): upstream checkout + .venv-uspace
-                                                        # (CUDA_VARIANT=cu129 on drivers older than CUDA 13)
+bash jobs/uspace_reasoning.sh setup                     # once (stage 292): upstream checkout + .venv-uspace (no vLLM)
 bash jobs/execsem_reasoning.sh prepare                  # CPU, network (already run; outputs in results/)
 MODEL=qwen bash jobs/uspace_reasoning.sh download       # weights + J-lens (stage 292 entries)
 MODEL=qwen4b SEEDS=41 bash jobs/execsem_reasoning.sh run   # smoke first
@@ -228,7 +230,8 @@ MODELS=qwen bash jobs/execsem_reasoning.sh tables       # upstream Tables 1-2
 bash jobs/execsem_reasoning.sh analyze                  # CPU, repository venv
 ```
 
-`run` invokes `forward` before step 06; `forward` needs only steps 02–03 and the bank,
+`BATCH` (default 8) sets the generation batch size; lower it if the GPU runs out of
+memory at long budgets. `run` invokes `forward` before step 06; `forward` needs only steps 02–03 and the bank,
 and both it and the upstream steps skip files that already exist.
 
 ## Outputs

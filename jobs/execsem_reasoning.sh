@@ -2,7 +2,7 @@
 # Stage 293: execution uncertainty + E-Space with reasoning models (upstream U-Space pipeline).
 # Run inside an allocated cluster job; this script does not request GPUs.
 #
-#   bash jobs/uspace_reasoning.sh setup                       # once (stage 292): checkout + .venv-uspace
+#   bash jobs/uspace_reasoning.sh setup                       # once (stage 292): checkout + .venv-uspace (no vLLM)
 #   bash jobs/execsem_reasoning.sh prepare                    # CPU, network: CRUXEval 800, MBPP 200, pairs
 #   MODEL=qwen bash jobs/uspace_reasoning.sh download         # weights + J-lens (same entries as 292)
 #   MODEL=qwen bash jobs/execsem_reasoning.sh run             # GPU: steps 01-06 + bank + E-Space pass
@@ -12,12 +12,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-UPY=${UPY:-.venv-uspace/bin/python}   # upstream pipeline environment (vLLM etc.)
+UPY=${UPY:-.venv-uspace/bin/python}   # upstream pipeline environment (torch + transformers, no vLLM)
 PYTHON=${PYTHON:-.venv/bin/python}    # this repository's environment (prepare, freeze, analysis)
 MODEL=${MODEL:-qwen}
 MODELS=${MODELS:-$MODEL}
 SEEDS=${SEEDS:-"41,42,43"}
-TP=${TP:-1}
+BATCH=${BATCH:-8}                     # generation batch size (transformers; no vLLM)
 STAGE=scripts/293_execsem_reasoning.py
 
 case "${1:-}" in
@@ -29,7 +29,7 @@ case "${1:-}" in
   run)
     "$UPY" "$STAGE" step 01_sample_items
     seeds=${SEEDS//,/ }
-    "$UPY" "$STAGE" step 02_generate --model "$MODEL" --seeds $seeds --tensor-parallel "$TP"
+    "$UPY" "$STAGE" generate --model "$MODEL" --seeds $seeds --batch-size "$BATCH"
     for step in 03_label 04_forward; do
       "$UPY" "$STAGE" step "$step" --model "$MODEL" --seeds $seeds
     done

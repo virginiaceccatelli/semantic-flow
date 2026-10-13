@@ -308,8 +308,9 @@ execution-verified CRUXEval and MBPP calls.
 
 ## What is upstream and what is added
 
-Upstream steps 01–07 run unmodified: item sampling, vLLM generation with the
-paper's sampling settings and token budgets, labelling at the end-of-thinking
+Upstream steps 01 and 03–07 run unmodified; step 02 (generation) is replaced by a
+transformers generator with the paper's sampling settings and token budgets (see
+"Generation without vLLM" below); then labelling at the end-of-thinking
 token (truncated, marker-less and answer-less traces excluded), teacher-forced
 forward pass, basis at the paper's readout block, all methods, Tables 1–2. The
 model entries in `configs/uspace_reasoning.yaml` are verbatim copies of upstream's
@@ -345,19 +346,24 @@ repository's adapters first, re-registers them under `semflow_src.*`, and then l
 ## Commands (cluster)
 
 ```bash
-bash jobs/uspace_reasoning.sh setup                         # clone + .venv-uspace (vLLM 0.23, torch 2.11)
-CUDA_VARIANT=cu129 bash jobs/uspace_reasoning.sh setup      # instead, on drivers older than CUDA 13
+bash jobs/uspace_reasoning.sh setup                         # clone + .venv-uspace (torch 2.11 cu126, no vLLM)
 MODEL=qwen4b bash jobs/uspace_reasoning.sh download         # weights + published J-lens
 MODEL=qwen4b SEEDS=42 bash jobs/uspace_reasoning.sh run     # GPU: steps 01–06 + controls
 MODELS=qwen4b SEEDS=42 bash jobs/uspace_reasoning.sh tables # upstream Tables 1–2
 bash jobs/uspace_reasoning.sh analyze                       # repository venv, CPU
 ```
 
-The pinned PyPI wheels (torch 2.11.0, vLLM 0.23.0) are CUDA 13 builds and fail on older
-drivers (`driver too old`, then `libcudart.so.13` missing once torch alone is swapped).
-`CUDA_VARIANT=cu129` installs the same versions built for CUDA 12.9 (PyTorch index and
-vLLM's GitHub release), which run on any CUDA 12 driver. This is an environment
-difference from upstream (same library versions, different CUDA build).
+**Generation without vLLM.** Upstream step 02 generates with vLLM, whose pinned wheels
+(vLLM 0.23.0, torch 2.11.0) are CUDA 13 builds that cannot run on the cluster's CUDA 12.6
+driver. `generate` (`src/execution_uncertainty/generate.py`) replaces step 02 with
+`transformers.generate` and writes the same trace files, so steps 03-07 are unchanged.
+Kept from upstream: prompt ids, token budget, sampling settings (unset fields pinned to
+vLLM's defaults, not the model's generation config), stop tokens included in `gen_ids`.
+Different: the random draws (torch RNG seeded per batch) and batching (left-padded,
+sorted by prompt length); the trace meta file records the generator. The environment
+(`setup`) therefore has no vLLM; torch 2.11.0 is installed from the CUDA 12.6 index
+(`TORCH_CUDA`), plus `accelerate` (upstream's `device_map="auto"`) and
+`flash-linear-attention` (fast kernels for Qwen3.5's linear-attention layers).
 
 Outputs: `results/uspace_reasoning/{items,labels,forward,uspace,scores,controls,tables,analysis}`;
 `traces/` and `*.npz` are git-ignored. Tests:

@@ -2,6 +2,7 @@
 """Stage 292: the published U-Space pipeline on CRUXEval / MBPP with reasoning models.
 
     step <01_sample_items|02_generate|...|07_tables> [upstream args]   run an upstream step
+    generate --model M [--seeds ..] [--batch-size B]                  step 02 with transformers (no vLLM)
     controls --model M                                                random-word bases (after 05)
     analyze --output DIR                                              CPU report (after controls)
 
@@ -71,6 +72,12 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="stage", required=True)
     sub.add_parser("step", help="Run one upstream pipeline step (see usage above)")
+    gen = sub.add_parser("generate", help="Upstream step 02 with transformers instead of vLLM")
+    gen.add_argument("--config", type=Path, default=CONFIG)
+    gen.add_argument("--model", required=True)
+    gen.add_argument("--datasets", nargs="*")
+    gen.add_argument("--seeds", nargs="*", type=int)
+    gen.add_argument("--batch-size", type=int, default=8)
     ctl = sub.add_parser("controls", help="Random-word control bases and projections")
     ctl.add_argument("--config", type=Path, default=CONFIG)
     ctl.add_argument("--model", required=True)
@@ -81,7 +88,11 @@ def main():
     ana.add_argument("--output", type=Path, default=ROOT / "results/uspace_reasoning/analysis")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    if args.stage == "controls":
+    if args.stage == "generate":
+        from src.execution_uncertainty import generate, reasoning
+        reasoning.bootstrap()
+        generate.generate(args.config, args.model, args.datasets, args.seeds, args.batch_size)
+    elif args.stage == "controls":
         from src.execution_uncertainty import reasoning, reasoning_analysis
         reasoning.bootstrap()
         print(reasoning_analysis.controls(args.config, args.model, args.n_controls, args.seed))
