@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_89",
+  "program_id": "sample_89",
+  "code": "def f(char):\n    if char not in 'aeiouAEIOU':\n        return None\n    if char in 'AEIOU':\n        return char.lower()\n    return char.upper()",
+  "call": "f('o')",
+  "expected": "'O'",
+  "dataset": "cruxeval",
+  "source_group": "6025251a9a40422db3c98d1601833c41435a90bd11d3bcd59f2089cb598b4012",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(char):\n    if char not in 'aeiouAEIOU':\n        return None\n    if char in 'AEIOU':\n        return char.lower()\n    return char.upper()\n\nassert f('o') ==",
+  "n_prompt_tokens": 209,
+  "raw_generation": " 'O'\n",
+  "answer": "'O'",
+  "generated_token_ids": [
+    651,
+    46,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'O'",
+  "token_logprob": [
+    -0.2660019099712372,
+    -0.43326467275619507,
+    -0.010043677873909473,
+    -0.06536547094583511
+  ],
+  "token_entropy": [
+    0.6294235587120056,
+    1.1417065858840942,
+    0.07183269411325455,
+    0.2715882956981659
+  ],
+  "token_logprob_sum": [
+    -777102.875,
+    -776194.375,
+    -744708.3125,
+    -811319.5
+  ],
+  "token_topk_mean_logprob": [
+    -7.666001796722412,
+    -6.24810791015625,
+    -9.09504222869873,
+    -8.537240982055664
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    822,
+    2312
+  ]
+}

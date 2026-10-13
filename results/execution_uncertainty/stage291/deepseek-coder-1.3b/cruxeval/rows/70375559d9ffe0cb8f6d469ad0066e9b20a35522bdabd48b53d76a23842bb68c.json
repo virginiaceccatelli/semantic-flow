@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_725",
+  "program_id": "sample_725",
+  "code": "def f(text):\n    result_list = ['3', '3', '3', '3']\n    if result_list:\n        result_list.clear()\n    return len(text)",
+  "call": "f(\"mrq7y\")",
+  "expected": "5",
+  "dataset": "cruxeval",
+  "source_group": "f71c99463e8b2c3218494e772c6d956633ec895e91be87c71f58284aaa5d85eb",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    result_list = ['3', '3', '3', '3']\n    if result_list:\n        result_list.clear()\n    return len(text)\n\nassert f(\"mrq7y\") ==",
+  "n_prompt_tokens": 210,
+  "raw_generation": " False\n",
+  "answer": "False",
+  "generated_token_ids": [
+    14729,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "False",
+  "token_logprob": [
+    -1.1066128015518188,
+    -0.1885327398777008
+  ],
+  "token_entropy": [
+    2.254253625869751,
+    0.5545346736907959
+  ],
+  "token_logprob_sum": [
+    -679923.25,
+    -777004.4375
+  ],
+  "token_topk_mean_logprob": [
+    -4.109737396240234,
+    -7.691658020019531
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 198,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

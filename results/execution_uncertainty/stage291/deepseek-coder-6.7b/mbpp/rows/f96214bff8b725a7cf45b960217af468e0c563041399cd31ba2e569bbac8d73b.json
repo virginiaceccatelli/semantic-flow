@@ -1,0 +1,53 @@
+{
+  "case_id": "225:0",
+  "program_id": "225",
+  "code": "def find_Min(arr,low,high): \r\n    while (low < high): \r\n        mid = low + (high - low) // 2;   \r\n        if (arr[mid] == arr[high]): \r\n            high -= 1; \r\n        elif (arr[mid] > arr[high]): \r\n            low = mid + 1; \r\n        else: \r\n            high = mid; \r\n    return arr[high];",
+  "call": "find_Min([1,2,3,4,5],0,4)",
+  "expected": "1",
+  "dataset": "mbpp",
+  "source_group": "01371813a66864f0e92e6fa8b8a86a9b74d486a3fc1bc85bad4806814ac67a9b",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_Min(arr,low,high): \r\n    while (low < high): \r\n        mid = low + (high - low) // 2;   \r\n        if (arr[mid] == arr[high]): \r\n            high -= 1; \r\n        elif (arr[mid] > arr[high]): \r\n            low = mid + 1; \r\n        else: \r\n            high = mid; \r\n    return arr[high];\n\nassert find_Min([1,2,3,4,5],0,4) ==",
+  "n_prompt_tokens": 288,
+  "raw_generation": "1\n",
+  "answer": "1",
+  "generated_token_ids": [
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "1",
+  "token_logprob": [
+    -1.0202088356018066,
+    -0.5131437182426453
+  ],
+  "token_entropy": [
+    2.024506092071533,
+    1.0130677223205566
+  ],
+  "token_logprob_sum": [
+    -684694.1875,
+    -756750.3125
+  ],
+  "token_topk_mean_logprob": [
+    -4.432708740234375,
+    -6.469394207000732
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 265,
+  "read_token_ids": [
+    2818,
+    2312
+  ]
+}

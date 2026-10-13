@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_246",
+  "program_id": "sample_246",
+  "code": "def f(haystack, needle):\n    for i in range(haystack.find(needle), -1, -1):\n        if haystack[i:] == needle:\n            return i\n    return -1",
+  "call": "f(\"345gerghjehg\", \"345\")",
+  "expected": "-1",
+  "dataset": "cruxeval",
+  "source_group": "fda120db808c80c02db86f9c601cad9b1fe99e7dfcd3a2b6c4844888e14fe93f",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(haystack, needle):\n    for i in range(haystack.find(needle), -1, -1):\n        if haystack[i:] == needle:\n            return i\n    return -1\n\nassert f(\"345gerghjehg\", \"345\") ==",
+  "n_prompt_tokens": 225,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.3672570288181305,
+    -0.01107780635356903,
+    -0.16857147216796875
+  ],
+  "token_entropy": [
+    1.2398991584777832,
+    0.08235608041286469,
+    0.554212212562561
+  ],
+  "token_logprob_sum": [
+    -718132.9375,
+    -804209.6875,
+    -810463.5
+  ],
+  "token_topk_mean_logprob": [
+    -5.036006927490234,
+    -8.729827880859375,
+    -7.106071472167969
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 204,
+  "read_token_ids": [
+    16,
+    2312
+  ]
+}

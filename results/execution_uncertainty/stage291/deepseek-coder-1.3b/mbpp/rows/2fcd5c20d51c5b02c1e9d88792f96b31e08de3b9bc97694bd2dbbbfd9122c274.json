@@ -1,0 +1,73 @@
+{
+  "case_id": "100:0",
+  "program_id": "100",
+  "code": "import sys\r\ndef next_smallest_palindrome(num):\r\n    numstr = str(num)\r\n    for i in range(num+1,sys.maxsize):\r\n        if str(i) == str(i)[::-1]:\r\n            return i",
+  "call": "next_smallest_palindrome(99)",
+  "expected": "101",
+  "dataset": "mbpp",
+  "source_group": "480d3be5752c37f3225947f7a21664aabe6737d8aa0bb52f2f2aee5199519f7f",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport sys\r\ndef next_smallest_palindrome(num):\r\n    numstr = str(num)\r\n    for i in range(num+1,sys.maxsize):\r\n        if str(i) == str(i)[::-1]:\r\n            return i\n\nassert next_smallest_palindrome(99) ==",
+  "n_prompt_tokens": 235,
+  "raw_generation": " '101'\n",
+  "answer": "'101'",
+  "generated_token_ids": [
+    651,
+    16,
+    15,
+    16,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'101'",
+  "token_logprob": [
+    -1.1053078174591064,
+    -0.03467421233654022,
+    -0.07101365178823471,
+    -0.23141640424728394,
+    -0.02116907574236393,
+    -0.31043246388435364
+  ],
+  "token_entropy": [
+    2.1903669834136963,
+    0.18078485131263733,
+    0.2988584339618683,
+    0.545315146446228,
+    0.11701281368732452,
+    0.8311265707015991
+  ],
+  "token_logprob_sum": [
+    -642310.6875,
+    -731329.75,
+    -814994.9375,
+    -902411.375,
+    -801105.5625,
+    -736744.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.430307865142822,
+    -8.428423881530762,
+    -8.742888450622559,
+    -9.712666511535645,
+    -8.971168518066406,
+    -7.2541823387146
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 218,
+  "read_token_ids": [
+    460,
+    2312
+  ]
+}

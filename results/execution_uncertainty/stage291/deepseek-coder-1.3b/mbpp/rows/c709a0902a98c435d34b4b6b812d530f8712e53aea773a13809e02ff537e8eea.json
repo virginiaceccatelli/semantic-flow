@@ -1,0 +1,53 @@
+{
+  "case_id": "201:0",
+  "program_id": "201",
+  "code": "def chkList(lst): \r\n    return len(set(lst)) == 1",
+  "call": "chkList(['one','one','one'])",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "adfe05911e26197576e7db093b074deaeaf7b96505f71bedf4c27a9003bd17cc",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef chkList(lst): \r\n    return len(set(lst)) == 1\n\nassert chkList(['one','one','one']) ==",
+  "n_prompt_tokens": 190,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.13448551297187805,
+    -0.3096544146537781
+  ],
+  "token_entropy": [
+    0.424799382686615,
+    0.8681216835975647
+  ],
+  "token_logprob_sum": [
+    -748258.4375,
+    -753204.125
+  ],
+  "token_topk_mean_logprob": [
+    -8.34698486328125,
+    -6.534654140472412
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 175,
+  "read_token_ids": [
+    16,
+    2312
+  ]
+}

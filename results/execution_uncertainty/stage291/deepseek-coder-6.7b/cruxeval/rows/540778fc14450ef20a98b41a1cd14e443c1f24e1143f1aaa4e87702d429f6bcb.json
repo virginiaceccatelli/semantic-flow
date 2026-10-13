@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_656",
+  "program_id": "sample_656",
+  "code": "def f(letters):\n    a = [] \n    for i in range(len(letters)):\n        if letters[i] in a:\n            return 'no'\n        a.append(letters[i]) \n    return 'yes'",
+  "call": "f(['b', 'i', 'r', 'o', 's', 'j', 'v', 'p'])",
+  "expected": "'yes'",
+  "dataset": "cruxeval",
+  "source_group": "1196d2bb660c5486dfa4fb708b4462651335701ddb179c1a439bb15635709e23",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(letters):\n    a = [] \n    for i in range(len(letters)):\n        if letters[i] in a:\n            return 'no'\n        a.append(letters[i]) \n    return 'yes'\n\nassert f(['b', 'i', 'r', 'o', 's', 'j', 'v', 'p']) ==",
+  "n_prompt_tokens": 242,
+  "raw_generation": " 'yes'\n",
+  "answer": "'yes'",
+  "generated_token_ids": [
+    651,
+    8714,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'yes'",
+  "token_logprob": [
+    -0.02010631188750267,
+    -0.4339355230331421,
+    -0.007327585481107235,
+    -0.1654554009437561
+  ],
+  "token_entropy": [
+    0.11712668836116791,
+    0.7031775712966919,
+    0.05037243291735649,
+    0.520494818687439
+  ],
+  "token_logprob_sum": [
+    -814158.0,
+    -732155.25,
+    -751974.0,
+    -783421.125
+  ],
+  "token_topk_mean_logprob": [
+    -8.707606315612793,
+    -8.427685737609863,
+    -9.694828033447266,
+    -7.7904558181762695
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 212,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

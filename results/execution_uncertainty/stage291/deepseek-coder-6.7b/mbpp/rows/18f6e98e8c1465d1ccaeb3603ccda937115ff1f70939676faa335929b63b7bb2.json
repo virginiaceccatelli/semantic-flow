@@ -1,0 +1,63 @@
+{
+  "case_id": "314:1",
+  "program_id": "314",
+  "code": "def max_sum_rectangular_grid(grid, n) : \r\n\tincl = max(grid[0][0], grid[1][0]) \r\n\texcl = 0\r\n\tfor i in range(1, n) : \r\n\t\texcl_new = max(excl, incl) \r\n\t\tincl = excl + max(grid[0][i], grid[1][i]) \r\n\t\texcl = excl_new \r\n\treturn max(excl, incl)",
+  "call": "max_sum_rectangular_grid([ [ 1, 2, 3, 4, 5], [ 6, 7, 8, 9, 10] ], 5)",
+  "expected": "24",
+  "dataset": "mbpp",
+  "source_group": "42ad0ede51c6a3ba86dc4aff6cda088583a0ea7f7c907ae81dbf9712085c3e26",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_sum_rectangular_grid(grid, n) : \r\n\tincl = max(grid[0][0], grid[1][0]) \r\n\texcl = 0\r\n\tfor i in range(1, n) : \r\n\t\texcl_new = max(excl, incl) \r\n\t\tincl = excl + max(grid[0][i], grid[1][i]) \r\n\t\texcl = excl_new \r\n\treturn max(excl, incl)\n\nassert max_sum_rectangular_grid([ [ 1, 2, 3, 4, 5], [ 6, 7, 8, 9, 10] ], 5) ==",
+  "n_prompt_tokens": 323,
+  "raw_generation": "  25\n",
+  "answer": "25",
+  "generated_token_ids": [
+    243,
+    17,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "25",
+  "token_logprob": [
+    -0.826120138168335,
+    -0.6432814002037048,
+    -1.1838819980621338,
+    -0.5545516610145569
+  ],
+  "token_entropy": [
+    2.087769031524658,
+    1.251680850982666,
+    2.068559169769287,
+    1.005370020866394
+  ],
+  "token_logprob_sum": [
+    -673721.5,
+    -792272.75,
+    -824748.875,
+    -746297.75
+  ],
+  "token_topk_mean_logprob": [
+    -4.369870662689209,
+    -6.949531555175781,
+    -6.515132427215576,
+    -6.701426982879639
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 272,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

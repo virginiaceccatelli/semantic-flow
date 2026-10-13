@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_606",
+  "program_id": "sample_606",
+  "code": "def f(value):\n    ls = list(value)\n    ls.append('NHIB')\n    return ''.join(ls)",
+  "call": "f('ruam')",
+  "expected": "'ruamNHIB'",
+  "dataset": "cruxeval",
+  "source_group": "a27c948d627be4c2895311bd437f18f89c4fbb5cf49973f0f2a13760f2fec681",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(value):\n    ls = list(value)\n    ls.append('NHIB')\n    return ''.join(ls)\n\nassert f('ruam') ==",
+  "n_prompt_tokens": 195,
+  "raw_generation": " 'ruamNHIB'\n",
+  "answer": "'ruamNHIB'",
+  "generated_token_ids": [
+    651,
+    729,
+    302,
+    45,
+    39,
+    8194,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'ruamNHIB'",
+  "token_logprob": [
+    -0.02230042777955532,
+    -0.8676268458366394,
+    -0.3557646572589874,
+    -0.044160228222608566,
+    -0.008026251569390297,
+    -0.002589684445410967,
+    -0.006917575374245644,
+    -0.20409414172172546
+  ],
+  "token_entropy": [
+    0.14677473902702332,
+    2.6162238121032715,
+    1.4235599040985107,
+    0.36447399854660034,
+    0.06464715301990509,
+    0.023356843739748,
+    0.0692276582121849,
+    0.496840238571167
+  ],
+  "token_logprob_sum": [
+    -759879.0625,
+    -597364.625,
+    -630376.3125,
+    -622183.4375,
+    -774032.5,
+    -842286.625,
+    -701556.1875,
+    -798675.75
+  ],
+  "token_topk_mean_logprob": [
+    -8.100425720214844,
+    -4.436377048492432,
+    -5.0299835205078125,
+    -6.6660356521606445,
+    -8.795526504516602,
+    -9.740089416503906,
+    -8.4069185256958,
+    -9.666203498840332
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 185,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

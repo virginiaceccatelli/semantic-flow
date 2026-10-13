@@ -1,0 +1,58 @@
+{
+  "case_id": "313:0",
+  "program_id": "313",
+  "code": "def pos_nos(list1):\r\n  for num in list1: \r\n    if num >= 0: \r\n       return num",
+  "call": "pos_nos([-1,-2,1,2])",
+  "expected": "1",
+  "dataset": "mbpp",
+  "source_group": "9d604b74835c4e96889aa77e22e320bb9520c7dc10a7d4cac33bd5d7f2db383e",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef pos_nos(list1):\r\n  for num in list1: \r\n    if num >= 0: \r\n       return num\n\nassert pos_nos([-1,-2,1,2]) ==",
+  "n_prompt_tokens": 203,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.7473338842391968,
+    -0.2025061696767807,
+    -0.41186970472335815
+  ],
+  "token_entropy": [
+    1.903699517250061,
+    0.4859464764595032,
+    1.0136559009552002
+  ],
+  "token_logprob_sum": [
+    -687160.0,
+    -777215.75,
+    -713991.9375
+  ],
+  "token_topk_mean_logprob": [
+    -4.541084289550781,
+    -9.699429512023926,
+    -6.518119812011719
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 185,
+  "read_token_ids": [
+    1181,
+    2312
+  ]
+}

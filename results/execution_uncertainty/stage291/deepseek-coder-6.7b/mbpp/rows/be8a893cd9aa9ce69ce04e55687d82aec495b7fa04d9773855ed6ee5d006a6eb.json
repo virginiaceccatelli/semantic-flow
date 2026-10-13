@@ -1,0 +1,83 @@
+{
+  "case_id": "123:2",
+  "program_id": "123",
+  "code": "def amicable_numbers_sum(limit):\r\n    if not isinstance(limit, int):\r\n        return \"Input is not an integer!\"\r\n    if limit < 1:\r\n        return \"Input must be bigger than 0!\"\r\n    amicables = set()\r\n    for num in range(2, limit+1):\r\n        if num in amicables:\r\n            continue\r\n        sum_fact = sum([fact for fact in range(1, num) if num % fact == 0])\r\n        sum_fact2 = sum([fact for fact in range(1, sum_fact) if sum_fact % fact == 0])\r\n        if num == sum_fact2 and num != sum_fact:\r\n            amicables.add(num)\r\n            amicables.add(sum_fact2)\r\n    return sum(amicables)",
+  "call": "amicable_numbers_sum(99)",
+  "expected": "0",
+  "dataset": "mbpp",
+  "source_group": "da68bf9223213752c3e9b7f1bbdebd823e8b85e48aab02f37ea651e722d357e3",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef amicable_numbers_sum(limit):\r\n    if not isinstance(limit, int):\r\n        return \"Input is not an integer!\"\r\n    if limit < 1:\r\n        return \"Input must be bigger than 0!\"\r\n    amicables = set()\r\n    for num in range(2, limit+1):\r\n        if num in amicables:\r\n            continue\r\n        sum_fact = sum([fact for fact in range(1, num) if num % fact == 0])\r\n        sum_fact2 = sum([fact for fact in range(1, sum_fact) if sum_fact % fact == 0])\r\n        if num == sum_fact2 and num != sum_fact:\r\n            amicables.add(num)\r\n            amicables.add(sum_fact2)\r\n    return sum(amicables)\n\nassert amicable_numbers_sum(99) ==",
+  "n_prompt_tokens": 372,
+  "raw_generation": " \"Input is not an integer!\"\n",
+  "answer": "\"Input is not an integer!\"",
+  "generated_token_ids": [
+    440,
+    6546,
+    317,
+    441,
+    274,
+    10878,
+    2524,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Input is not an integer!'",
+  "token_logprob": [
+    -1.3106874227523804,
+    -0.021715955808758736,
+    -0.5829070210456848,
+    -0.0005706112715415657,
+    -0.0004223884898237884,
+    -0.0002548369811847806,
+    -0.0028620492666959763,
+    -0.24087397754192352
+  ],
+  "token_entropy": [
+    2.32637357711792,
+    0.20470121502876282,
+    0.7403126358985901,
+    0.006367581430822611,
+    0.004729398526251316,
+    0.003294424619525671,
+    0.024144571274518967,
+    0.6889069080352783
+  ],
+  "token_logprob_sum": [
+    -679468.875,
+    -684965.125,
+    -790460.25,
+    -864613.6875,
+    -876592.25,
+    -908667.0625,
+    -790616.0,
+    -789882.9375
+  ],
+  "token_topk_mean_logprob": [
+    -4.229437351226807,
+    -7.199841499328613,
+    -8.10790729522705,
+    -10.813071250915527,
+    -11.181673049926758,
+    -11.294005393981934,
+    -10.062237739562988,
+    -7.628373622894287
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 355,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

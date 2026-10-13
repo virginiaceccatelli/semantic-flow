@@ -1,0 +1,63 @@
+{
+  "case_id": "477:1",
+  "program_id": "477",
+  "code": "def is_lower(string):\r\n  return (string.lower())",
+  "call": "is_lower(\"TruE\")",
+  "expected": "'true'",
+  "dataset": "mbpp",
+  "source_group": "60c1970d0e44839d6ded14ffe862af1f748c3ab80b36f496795bb1c05e73f77b",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef is_lower(string):\r\n  return (string.lower())\n\nassert is_lower(\"TruE\") ==",
+  "n_prompt_tokens": 182,
+  "raw_generation": " \"true\"\n",
+  "answer": "\"true\"",
+  "generated_token_ids": [
+    440,
+    4481,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'true'",
+  "token_logprob": [
+    -0.2274019718170166,
+    -0.027332060039043427,
+    -0.020004309713840485,
+    -0.4333512485027313
+  ],
+  "token_entropy": [
+    0.8352544903755188,
+    0.1742154359817505,
+    0.11670292913913727,
+    0.9544743299484253
+  ],
+  "token_logprob_sum": [
+    -748455.4375,
+    -792629.375,
+    -738551.4375,
+    -726274.8125
+  ],
+  "token_topk_mean_logprob": [
+    -6.3524017333984375,
+    -8.43983268737793,
+    -8.782504081726074,
+    -7.6489763259887695
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 169,
+  "read_token_ids": [
+    4683,
+    2312
+  ]
+}

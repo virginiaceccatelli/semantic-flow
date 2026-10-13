@@ -1,0 +1,63 @@
+{
+  "case_id": "131:2",
+  "program_id": "131",
+  "code": "def reverse_vowels(str1):\r\n\tvowels = \"\"\r\n\tfor char in str1:\r\n\t\tif char in \"aeiouAEIOU\":\r\n\t\t\tvowels += char\r\n\tresult_string = \"\"\r\n\tfor char in str1:\r\n\t\tif char in \"aeiouAEIOU\":\r\n\t\t\tresult_string += vowels[-1]\r\n\t\t\tvowels = vowels[:-1]\r\n\t\telse:\r\n\t\t\tresult_string += char\r\n\treturn result_string",
+  "call": "reverse_vowels(\"ab\")",
+  "expected": "'ab'",
+  "dataset": "mbpp",
+  "source_group": "70f8d8d31a1dd31d063aa8e24d9b0ffe3c5979e7f8872a2801008e3f5ec128bc",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef reverse_vowels(str1):\r\n\tvowels = \"\"\r\n\tfor char in str1:\r\n\t\tif char in \"aeiouAEIOU\":\r\n\t\t\tvowels += char\r\n\tresult_string = \"\"\r\n\tfor char in str1:\r\n\t\tif char in \"aeiouAEIOU\":\r\n\t\t\tresult_string += vowels[-1]\r\n\t\t\tvowels = vowels[:-1]\r\n\t\telse:\r\n\t\t\tresult_string += char\r\n\treturn result_string\n\nassert reverse_vowels(\"ab\") ==",
+  "n_prompt_tokens": 292,
+  "raw_generation": " \"ab\"\n",
+  "answer": "\"ab\"",
+  "generated_token_ids": [
+    440,
+    356,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'ab'",
+  "token_logprob": [
+    -0.06840264052152634,
+    -0.7565284967422485,
+    -0.033885031938552856,
+    -0.19294749200344086
+  ],
+  "token_entropy": [
+    0.32451704144477844,
+    1.5513370037078857,
+    0.18846219778060913,
+    0.5933101177215576
+  ],
+  "token_logprob_sum": [
+    -772559.125,
+    -727227.5,
+    -717620.75,
+    -790925.75
+  ],
+  "token_topk_mean_logprob": [
+    -7.344671726226807,
+    -5.250278472900391,
+    -8.15888500213623,
+    -7.449197292327881
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 279,
+  "read_token_ids": [
+    2600,
+    2312
+  ]
+}

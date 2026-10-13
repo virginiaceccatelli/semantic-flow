@@ -1,0 +1,83 @@
+{
+  "case_id": "27:0",
+  "program_id": "27",
+  "code": "import re  \r\ndef remove(list): \r\n    pattern = '[0-9]'\r\n    list = [re.sub(pattern, '', i) for i in list] \r\n    return list",
+  "call": "remove(['4words', '3letters', '4digits'])",
+  "expected": "['words', 'letters', 'digits']",
+  "dataset": "mbpp",
+  "source_group": "36a974403c5b3b2a740f4613cdf003da97d5d5dafe52074d53d10f30bc7dc73c",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re  \r\ndef remove(list): \r\n    pattern = '[0-9]'\r\n    list = [re.sub(pattern, '', i) for i in list] \r\n    return list\n\nassert remove(['4words', '3letters', '4digits']) ==",
+  "n_prompt_tokens": 222,
+  "raw_generation": " ['words', 'letters']\n",
+  "answer": "['words', 'letters']",
+  "generated_token_ids": [
+    12036,
+    10438,
+    1183,
+    651,
+    1160,
+    1710,
+    3676,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "['words', 'letters']",
+  "token_logprob": [
+    -0.03844207525253296,
+    -0.10049696266651154,
+    -0.01899820752441883,
+    -0.003570849308744073,
+    -0.040902748703956604,
+    -0.000271521887043491,
+    -0.5905252695083618,
+    -0.2643277943134308
+  ],
+  "token_entropy": [
+    0.24249053001403809,
+    0.5172069668769836,
+    0.10940437763929367,
+    0.02861557900905609,
+    0.27811017632484436,
+    0.003045682329684496,
+    0.7733244895935059,
+    0.7684082984924316
+  ],
+  "token_logprob_sum": [
+    -733880.8125,
+    -702717.5,
+    -753659.0,
+    -868966.8125,
+    -766978.6875,
+    -899300.3125,
+    -671219.0,
+    -712856.625
+  ],
+  "token_topk_mean_logprob": [
+    -7.200941562652588,
+    -6.512997627258301,
+    -9.150248527526855,
+    -10.272320747375488,
+    -6.8119964599609375,
+    -12.028396606445312,
+    -8.103026390075684,
+    -7.876828193664551
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 202,
+  "read_token_ids": [
+    1517,
+    2312
+  ]
+}

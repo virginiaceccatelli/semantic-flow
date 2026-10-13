@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_641",
+  "program_id": "sample_641",
+  "code": "def f(number):\n    return True if number.isdecimal() else False",
+  "call": "f('dummy33;d')",
+  "expected": "False",
+  "dataset": "cruxeval",
+  "source_group": "d62c4fb39e7862c6be7367253249339ad27e47f6e49f3fb5a0e2bf3507b91e1f",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(number):\n    return True if number.isdecimal() else False\n\nassert f('dummy33;d') ==",
+  "n_prompt_tokens": 185,
+  "raw_generation": " False\n",
+  "answer": "False",
+  "generated_token_ids": [
+    14729,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "False",
+  "token_logprob": [
+    -0.5796754360198975,
+    -0.08642508089542389
+  ],
+  "token_entropy": [
+    0.7189913392066956,
+    0.32358869910240173
+  ],
+  "token_logprob_sum": [
+    -761779.625,
+    -809763.75
+  ],
+  "token_topk_mean_logprob": [
+    -8.41717529296875,
+    -8.736424446105957
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 171,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

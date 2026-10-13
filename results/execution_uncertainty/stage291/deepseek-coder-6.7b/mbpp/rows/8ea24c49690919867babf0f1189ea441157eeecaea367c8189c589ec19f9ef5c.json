@@ -1,0 +1,53 @@
+{
+  "case_id": "126:0",
+  "program_id": "126",
+  "code": "def sum(a,b): \r\n    sum = 0\r\n    for i in range (1,min(a,b)): \r\n        if (a % i == 0 and b % i == 0): \r\n            sum += i \r\n    return sum",
+  "call": "sum(10,15)",
+  "expected": "6",
+  "dataset": "mbpp",
+  "source_group": "f287c5ff750d5cf90d89ab6be5726b3b4e7c099a23ebce3d06134c3a5aef3fc7",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum(a,b): \r\n    sum = 0\r\n    for i in range (1,min(a,b)): \r\n        if (a % i == 0 and b % i == 0): \r\n            sum += i \r\n    return sum\n\nassert sum(10,15) ==",
+  "n_prompt_tokens": 228,
+  "raw_generation": "3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.4141076803207397,
+    -0.48718151450157166
+  ],
+  "token_entropy": [
+    2.4693946838378906,
+    1.0777536630630493
+  ],
+  "token_logprob_sum": [
+    -648182.125,
+    -747806.0625
+  ],
+  "token_topk_mean_logprob": [
+    -3.9953575134277344,
+    -5.93093204498291
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 215,
+  "read_token_ids": [
+    2545,
+    2312
+  ]
+}

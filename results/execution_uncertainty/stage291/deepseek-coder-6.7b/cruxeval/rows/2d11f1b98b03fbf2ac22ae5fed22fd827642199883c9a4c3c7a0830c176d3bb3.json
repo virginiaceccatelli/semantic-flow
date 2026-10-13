@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_273",
+  "program_id": "sample_273",
+  "code": "def f(name):\n    new_name =''\n    name = name[::-1]\n    for i in range(len(name)):\n        n = name[i]\n        if n !='.' and  new_name.count('.')<2:\n            new_name=n+new_name\n        else:\n            break\n    return new_name",
+  "call": "f('.NET')",
+  "expected": "'NET'",
+  "dataset": "cruxeval",
+  "source_group": "b2be02ea7bdded6d19d150de0d35971d95240b7e847a0181d44d70eeb8a56a7c",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(name):\n    new_name =''\n    name = name[::-1]\n    for i in range(len(name)):\n        n = name[i]\n        if n !='.' and  new_name.count('.')<2:\n            new_name=n+new_name\n        else:\n            break\n    return new_name\n\nassert f('.NET') ==",
+  "n_prompt_tokens": 248,
+  "raw_generation": " 'T.E.N'\n",
+  "answer": "'T.E.N'",
+  "generated_token_ids": [
+    651,
+    51,
+    13,
+    36,
+    13,
+    45,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'T.E.N'",
+  "token_logprob": [
+    -0.6867724657058716,
+    -0.21691760420799255,
+    -0.4511289596557617,
+    -0.16694287955760956,
+    -0.5926099419593811,
+    -0.539804995059967,
+    -0.24419619143009186,
+    -0.12254039198160172
+  ],
+  "token_entropy": [
+    1.145262360572815,
+    0.9178344011306763,
+    1.1584562063217163,
+    0.6942354440689087,
+    1.0388696193695068,
+    1.299199104309082,
+    0.6677241921424866,
+    0.41265878081321716
+  ],
+  "token_logprob_sum": [
+    -719918.625,
+    -660772.4375,
+    -808666.5,
+    -747554.375,
+    -814576.5,
+    -685047.125,
+    -751299.9375,
+    -746915.3125
+  ],
+  "token_topk_mean_logprob": [
+    -6.043022155761719,
+    -5.645042419433594,
+    -6.20112943649292,
+    -6.432567596435547,
+    -7.448860168457031,
+    -5.427304744720459,
+    -7.759820461273193,
+    -7.888165473937988
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 239,
+  "read_token_ids": [
+    1523,
+    2312
+  ]
+}

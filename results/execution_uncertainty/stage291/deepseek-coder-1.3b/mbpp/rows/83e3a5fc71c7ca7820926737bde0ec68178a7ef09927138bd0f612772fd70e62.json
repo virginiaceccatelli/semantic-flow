@@ -1,0 +1,63 @@
+{
+  "case_id": "53:0",
+  "program_id": "53",
+  "code": "def check_Equality(str):\r\n  if (str[0] == str[-1]):  \r\n    return (\"Equal\") \r\n  else:  \r\n    return (\"Not Equal\")",
+  "call": "check_Equality(\"abcda\")",
+  "expected": "'Equal'",
+  "dataset": "mbpp",
+  "source_group": "e30a8d4879a778dadcf780ce580fd2b6ae811be8ef84af49f9419cc3405e2ad1",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_Equality(str):\r\n  if (str[0] == str[-1]):  \r\n    return (\"Equal\") \r\n  else:  \r\n    return (\"Not Equal\")\n\nassert check_Equality(\"abcda\") ==",
+  "n_prompt_tokens": 213,
+  "raw_generation": " \"Equal\"\n",
+  "answer": "\"Equal\"",
+  "generated_token_ids": [
+    440,
+    8417,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Equal'",
+  "token_logprob": [
+    -0.4096542298793793,
+    -0.5782372951507568,
+    -0.009155670180916786,
+    -0.24460595846176147
+  ],
+  "token_entropy": [
+    0.9071773290634155,
+    0.7082220315933228,
+    0.06285808980464935,
+    0.7771811485290527
+  ],
+  "token_logprob_sum": [
+    -772949.6875,
+    -814871.25,
+    -743322.625,
+    -761697.5
+  ],
+  "token_topk_mean_logprob": [
+    -6.653404235839844,
+    -8.9719877243042,
+    -9.2904052734375,
+    -7.080543518066406
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    2456,
+    2312
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "case_id": "74:2",
+  "program_id": "74",
+  "code": "def is_samepatterns(colors, patterns):    \r\n    if len(colors) != len(patterns):\r\n        return False    \r\n    sdict = {}\r\n    pset = set()\r\n    sset = set()    \r\n    for i in range(len(patterns)):\r\n        pset.add(patterns[i])\r\n        sset.add(colors[i])\r\n        if patterns[i] not in sdict.keys():\r\n            sdict[patterns[i]] = []\r\n\r\n        keys = sdict[patterns[i]]\r\n        keys.append(colors[i])\r\n        sdict[patterns[i]] = keys\r\n\r\n    if len(pset) != len(sset):\r\n        return False   \r\n\r\n    for values in sdict.values():\r\n\r\n        for i in range(len(values) - 1):\r\n            if values[i] != values[i+1]:\r\n                return False\r\n\r\n    return True",
+  "call": "is_samepatterns([\"red\",\"green\",\"greenn\"], [\"a\",\"b\"])",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "d6c5f7e105545e753541b78897b889acf9c5a58717cd07875eba6ee34860a9f3",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef is_samepatterns(colors, patterns):    \r\n    if len(colors) != len(patterns):\r\n        return False    \r\n    sdict = {}\r\n    pset = set()\r\n    sset = set()    \r\n    for i in range(len(patterns)):\r\n        pset.add(patterns[i])\r\n        sset.add(colors[i])\r\n        if patterns[i] not in sdict.keys():\r\n            sdict[patterns[i]] = []\r\n\r\n        keys = sdict[patterns[i]]\r\n        keys.append(colors[i])\r\n        sdict[patterns[i]] = keys\r\n\r\n    if len(pset) != len(sset):\r\n        return False   \r\n\r\n    for values in sdict.values():\r\n\r\n        for i in range(len(values) - 1):\r\n            if values[i] != values[i+1]:\r\n                return False\r\n\r\n    return True\n\nassert is_samepatterns([\"red\",\"green\",\"greenn\"], [\"a\",\"b\"]) ==",
+  "n_prompt_tokens": 428,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.7006465792655945,
+    -0.26703739166259766
+  ],
+  "token_entropy": [
+    0.7544040083885193,
+    0.8765246272087097
+  ],
+  "token_logprob_sum": [
+    -737092.0,
+    -770602.3125
+  ],
+  "token_topk_mean_logprob": [
+    -7.763146877288818,
+    -6.117038249969482
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 403,
+  "read_token_ids": [
+    10502,
+    2312
+  ]
+}

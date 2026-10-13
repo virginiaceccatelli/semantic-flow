@@ -1,0 +1,63 @@
+{
+  "case_id": "119:1",
+  "program_id": "119",
+  "code": "def search(arr,n) :\r\n    XOR = 0\r\n    for i in range(n) :\r\n        XOR = XOR ^ arr[i]\r\n    return (XOR)",
+  "call": "search([1,1,3,3,4,4,5,5,7,7,8],11)",
+  "expected": "8",
+  "dataset": "mbpp",
+  "source_group": "6c80933d61ed0f8b313c650313fe8a9516a407757faa82e418cf43a965a9857e",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef search(arr,n) :\r\n    XOR = 0\r\n    for i in range(n) :\r\n        XOR = XOR ^ arr[i]\r\n    return (XOR)\n\nassert search([1,1,3,3,4,4,5,5,7,7,8],11) ==",
+  "n_prompt_tokens": 232,
+  "raw_generation": " (7)\n",
+  "answer": "(7)",
+  "generated_token_ids": [
+    334,
+    22,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "7",
+  "token_logprob": [
+    -1.6308929920196533,
+    -1.5288769006729126,
+    -0.0760602056980133,
+    -0.4406379461288452
+  ],
+  "token_entropy": [
+    2.716671943664551,
+    2.2712807655334473,
+    0.43457749485969543,
+    0.8505117297172546
+  ],
+  "token_logprob_sum": [
+    -665278.0625,
+    -707912.875,
+    -740586.8125,
+    -730197.625
+  ],
+  "token_topk_mean_logprob": [
+    -3.6777679920196533,
+    -4.728877544403076,
+    -6.313560485839844,
+    -7.578137397766113
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

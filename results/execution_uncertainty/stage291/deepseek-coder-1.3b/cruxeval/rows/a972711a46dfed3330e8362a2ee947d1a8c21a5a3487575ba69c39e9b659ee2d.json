@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_413",
+  "program_id": "sample_413",
+  "code": "def f(s):\n    return '{}{}{}'.format(s[3:], s[2], s[5:8])",
+  "call": "f('jbucwc')",
+  "expected": "'cwcuc'",
+  "dataset": "cruxeval",
+  "source_group": "37d8252f941d16d2a86f846bc4c3a6bd48b795457b3f78538772bdaca4426eff",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s):\n    return '{}{}{}'.format(s[3:], s[2], s[5:8])\n\nassert f('jbucwc') ==",
+  "n_prompt_tokens": 196,
+  "raw_generation": " 'cwc'\n",
+  "answer": "'cwc'",
+  "generated_token_ids": [
+    651,
+    66,
+    86,
+    66,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'cwc'",
+  "token_logprob": [
+    -0.014491664245724678,
+    -1.5727378129959106,
+    -0.8230072259902954,
+    -0.263349711894989,
+    -0.015988711267709732,
+    -0.16683149337768555
+  ],
+  "token_entropy": [
+    0.1127467155456543,
+    3.6940507888793945,
+    1.751598834991455,
+    0.869748592376709,
+    0.11926133185625076,
+    0.44967788457870483
+  ],
+  "token_logprob_sum": [
+    -758574.875,
+    -582727.0,
+    -633373.5,
+    -667360.375,
+    -718304.0,
+    -807194.1875
+  ],
+  "token_topk_mean_logprob": [
+    -7.703554630279541,
+    -4.157894134521484,
+    -4.985507488250732,
+    -5.982100009918213,
+    -8.325363159179688,
+    -9.58519172668457
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 183,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

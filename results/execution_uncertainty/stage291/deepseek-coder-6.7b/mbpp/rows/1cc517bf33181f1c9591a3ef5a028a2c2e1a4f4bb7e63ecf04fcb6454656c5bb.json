@@ -1,0 +1,58 @@
+{
+  "case_id": "61:1",
+  "program_id": "61",
+  "code": "from collections import defaultdict\r\ndef count_Substrings(s,n):\r\n    count,sum = 0,0\r\n    mp = defaultdict(lambda : 0)\r\n    mp[0] += 1\r\n    for i in range(n):\r\n        sum += ord(s[i]) - ord('0')\r\n        count += mp[sum - (i + 1)]\r\n        mp[sum - (i + 1)] += 1\r\n    return count",
+  "call": "count_Substrings('111',3)",
+  "expected": "6",
+  "dataset": "mbpp",
+  "source_group": "20c8c2c75b7f5ac01ff1e3cd2a8a7f81025d2d32432300c11595ec1f7f930c49",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nfrom collections import defaultdict\r\ndef count_Substrings(s,n):\r\n    count,sum = 0,0\r\n    mp = defaultdict(lambda : 0)\r\n    mp[0] += 1\r\n    for i in range(n):\r\n        sum += ord(s[i]) - ord('0')\r\n        count += mp[sum - (i + 1)]\r\n        mp[sum - (i + 1)] += 1\r\n    return count\n\nassert count_Substrings('111',3) ==",
+  "n_prompt_tokens": 277,
+  "raw_generation": "  3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    243,
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.4759645462036133,
+    -1.4695829153060913,
+    -0.45520421862602234
+  ],
+  "token_entropy": [
+    2.5888397693634033,
+    1.9709913730621338,
+    1.0261783599853516
+  ],
+  "token_logprob_sum": [
+    -662981.375,
+    -775574.125,
+    -717839.125
+  ],
+  "token_topk_mean_logprob": [
+    -3.89471435546875,
+    -6.263333320617676,
+    -6.227078914642334
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 261,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

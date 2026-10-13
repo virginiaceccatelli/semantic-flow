@@ -1,0 +1,83 @@
+{
+  "case_id": "342:1",
+  "program_id": "342",
+  "code": "from heapq import heappop, heappush\r\nclass Node:\r\n    def __init__(self, value, list_num, index):\r\n        self.value = value\r\n        self.list_num = list_num\r\n        self.index = index\r\n    def __lt__(self, other):\r\n        return self.value < other.value\r\ndef find_minimum_range(list):\r\n    high = float('-inf')\r\n    p = (0, float('inf'))\r\n    pq = []\r\n    for i in range(len(list)):\r\n        heappush(pq, Node(list[i][0], i, 0))\r\n        high = max(high, list[i][0])\r\n    while True:\r\n        top = heappop(pq)\r\n        low = top.value\r\n        i = top.list_num\r\n        j = top.index\r\n        if high - low < p[1] - p[0]:\r\n            p = (low, high)\r\n        if j == len(list[i]) - 1:\r\n            return p\r\n        heappush(pq, Node(list[i][j + 1], i, j + 1))\r\n        high = max(high, list[i][j + 1])",
+  "call": "find_minimum_range([[ 2, 3, 4, 8, 10, 15 ], [1, 5, 12], [7, 8, 15, 16], [3, 6]])",
+  "expected": "(4, 7)",
+  "dataset": "mbpp",
+  "source_group": "a54548dd7b9755ed40a342d8a789e8a3c20925b19cb8380c2e57ce8ba728ba2a",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nfrom heapq import heappop, heappush\r\nclass Node:\r\n    def __init__(self, value, list_num, index):\r\n        self.value = value\r\n        self.list_num = list_num\r\n        self.index = index\r\n    def __lt__(self, other):\r\n        return self.value < other.value\r\ndef find_minimum_range(list):\r\n    high = float('-inf')\r\n    p = (0, float('inf'))\r\n    pq = []\r\n    for i in range(len(list)):\r\n        heappush(pq, Node(list[i][0], i, 0))\r\n        high = max(high, list[i][0])\r\n    while True:\r\n        top = heappop(pq)\r\n        low = top.value\r\n        i = top.list_num\r\n        j = top.index\r\n        if high - low < p[1] - p[0]:\r\n            p = (low, high)\r\n        if j == len(list[i]) - 1:\r\n            return p\r\n        heappush(pq, Node(list[i][j + 1], i, j + 1))\r\n        high = max(high, list[i][j + 1])\n\nassert find_minimum_range([[ 2, 3, 4, 8, 10, 15 ], [1, 5, 12], [7, 8, 15, 16], [3, 6]]) ==",
+  "n_prompt_tokens": 525,
+  "raw_generation": " (3, 10)\n",
+  "answer": "(3, 10)",
+  "generated_token_ids": [
+    334,
+    18,
+    11,
+    207,
+    16,
+    15,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "(3, 10)",
+  "token_logprob": [
+    -0.029486320912837982,
+    -1.037696123123169,
+    -0.004173854365944862,
+    -0.02364392764866352,
+    -0.7731484174728394,
+    -1.0783170461654663,
+    -0.0032410495914518833,
+    -0.2898648977279663
+  ],
+  "token_entropy": [
+    0.1699564903974533,
+    1.3598816394805908,
+    0.03256826475262642,
+    0.147192120552063,
+    1.517795443534851,
+    1.4837206602096558,
+    0.02667689137160778,
+    0.7575933337211609
+  ],
+  "token_logprob_sum": [
+    -806491.375,
+    -781605.625,
+    -808342.125,
+    -832386.8125,
+    -803720.9375,
+    -808599.4375,
+    -851949.625,
+    -708971.0625
+  ],
+  "token_topk_mean_logprob": [
+    -8.448846817016602,
+    -6.931445598602295,
+    -9.885424613952637,
+    -8.636143684387207,
+    -9.335647583007812,
+    -8.140817642211914,
+    -9.942108154296875,
+    -8.164865493774414
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 462,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

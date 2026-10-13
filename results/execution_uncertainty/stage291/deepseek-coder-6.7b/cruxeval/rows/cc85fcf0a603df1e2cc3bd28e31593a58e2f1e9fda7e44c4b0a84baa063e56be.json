@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_443",
+  "program_id": "sample_443",
+  "code": "def f(text):\n    for space in text:\n        if space == ' ':\n            text = text.lstrip()\n        else:\n            text = text.replace('cd', space)\n    return text",
+  "call": "f(\"lorem ipsum\")",
+  "expected": "'lorem ipsum'",
+  "dataset": "cruxeval",
+  "source_group": "fe8b524077727476e22390cd135fcf3b2f4ec384eb15ec51bbccbbe19b113531",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    for space in text:\n        if space == ' ':\n            text = text.lstrip()\n        else:\n            text = text.replace('cd', space)\n    return text\n\nassert f(\"lorem ipsum\") ==",
+  "n_prompt_tokens": 214,
+  "raw_generation": " \"lorem ipsum\"\n",
+  "answer": "\"lorem ipsum\"",
+  "generated_token_ids": [
+    440,
+    75,
+    3571,
+    460,
+    829,
+    377,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'lorem ipsum'",
+  "token_logprob": [
+    -0.22977207601070404,
+    -0.27642133831977844,
+    -0.34861063957214355,
+    -0.6249983906745911,
+    -0.02075384370982647,
+    -0.12349435687065125,
+    -0.052185673266649246,
+    -0.08715793490409851
+  ],
+  "token_entropy": [
+    0.6634712219238281,
+    1.4979157447814941,
+    1.3678873777389526,
+    2.2378292083740234,
+    0.19863072037696838,
+    0.7393936514854431,
+    0.374965101480484,
+    0.3299078047275543
+  ],
+  "token_logprob_sum": [
+    -759164.4375,
+    -574837.0,
+    -565859.375,
+    -557267.25,
+    -624568.875,
+    -596727.25,
+    -635521.75,
+    -776732.375
+  ],
+  "token_topk_mean_logprob": [
+    -6.742271423339844,
+    -5.0951714515686035,
+    -5.464235782623291,
+    -4.434373378753662,
+    -7.139503479003906,
+    -5.9078688621521,
+    -6.277185916900635,
+    -8.368408203125
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 201,
+  "read_token_ids": [
+    2422,
+    2312
+  ]
+}

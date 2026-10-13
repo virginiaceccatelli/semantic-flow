@@ -1,0 +1,63 @@
+{
+  "case_id": "268:0",
+  "program_id": "268",
+  "code": "def find_star_num(n): \r\n\treturn (6 * n * (n - 1) + 1)",
+  "call": "find_star_num(3)",
+  "expected": "37",
+  "dataset": "mbpp",
+  "source_group": "8804c6ce0c6959cb1af91440d0146518fe1b6b7aed6d035e1a7d8c6de1b8b5d1",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_star_num(n): \r\n\treturn (6 * n * (n - 1) + 1)\n\nassert find_star_num(3) ==",
+  "n_prompt_tokens": 193,
+  "raw_generation": "  15\n",
+  "answer": "15",
+  "generated_token_ids": [
+    243,
+    16,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "15",
+  "token_logprob": [
+    -1.034869909286499,
+    -0.6434409022331238,
+    -1.0906827449798584,
+    -0.32821378111839294
+  ],
+  "token_entropy": [
+    1.9328382015228271,
+    1.1622060537338257,
+    1.827999234199524,
+    0.9919776320457458
+  ],
+  "token_logprob_sum": [
+    -684190.125,
+    -801896.25,
+    -770790.625,
+    -757765.75
+  ],
+  "token_topk_mean_logprob": [
+    -4.52862024307251,
+    -7.205941677093506,
+    -5.146933078765869,
+    -6.209463596343994
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 180,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

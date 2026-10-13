@@ -1,0 +1,63 @@
+{
+  "case_id": "202:1",
+  "program_id": "202",
+  "code": "def remove_even(str1):\r\n str2 = ''\r\n for i in range(1, len(str1) + 1):\r\n    if(i % 2 != 0):\r\n        str2 = str2 + str1[i - 1]\r\n return str2",
+  "call": "remove_even(\"program\")",
+  "expected": "'porm'",
+  "dataset": "mbpp",
+  "source_group": "73800dd4cfb74183d14e60cfdf01ecc6b68695106b719696aafc077f5a6414c2",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef remove_even(str1):\r\n str2 = ''\r\n for i in range(1, len(str1) + 1):\r\n    if(i % 2 != 0):\r\n        str2 = str2 + str1[i - 1]\r\n return str2\n\nassert remove_even(\"program\") ==",
+  "n_prompt_tokens": 230,
+  "raw_generation": " \"rog\"\n",
+  "answer": "\"rog\"",
+  "generated_token_ids": [
+    440,
+    12483,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'rog'",
+  "token_logprob": [
+    -0.14267416298389435,
+    -0.3430384695529938,
+    -0.5638034343719482,
+    -0.3057186007499695
+  ],
+  "token_entropy": [
+    0.5096443295478821,
+    1.4468473196029663,
+    1.2207845449447632,
+    0.7539934515953064
+  ],
+  "token_logprob_sum": [
+    -760329.125,
+    -760049.375,
+    -789812.875,
+    -719057.5
+  ],
+  "token_topk_mean_logprob": [
+    -7.611424446105957,
+    -4.574288845062256,
+    -5.888803958892822,
+    -7.805718898773193
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 219,
+  "read_token_ids": [
+    17,
+    2312
+  ]
+}

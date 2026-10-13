@@ -1,0 +1,68 @@
+{
+  "case_id": "171:1",
+  "program_id": "171",
+  "code": "import math\r\ndef perimeter_pentagon(a):\r\n  perimeter=(5*a)\r\n  return perimeter",
+  "call": "perimeter_pentagon(10)",
+  "expected": "50",
+  "dataset": "mbpp",
+  "source_group": "f59b1f1de313b50c65b38051aeb79515419e9d0983ba725b9803e840665fab4d",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport math\r\ndef perimeter_pentagon(a):\r\n  perimeter=(5*a)\r\n  return perimeter\n\nassert perimeter_pentagon(10) ==",
+  "n_prompt_tokens": 197,
+  "raw_generation": " (50)\n",
+  "answer": "(50)",
+  "generated_token_ids": [
+    334,
+    20,
+    15,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "50",
+  "token_logprob": [
+    -1.568882703781128,
+    -0.5469232201576233,
+    -0.017875172197818756,
+    -0.21596913039684296,
+    -0.2588202953338623
+  ],
+  "token_entropy": [
+    2.8321571350097656,
+    1.4843071699142456,
+    0.12209559977054596,
+    0.833520770072937,
+    0.7837518453598022
+  ],
+  "token_logprob_sum": [
+    -636742.4375,
+    -732303.0,
+    -800848.375,
+    -757932.375,
+    -732468.375
+  ],
+  "token_topk_mean_logprob": [
+    -3.7688827514648438,
+    -5.3594231605529785,
+    -7.764749050140381,
+    -6.265969276428223,
+    -7.1025710105896
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 183,
+  "read_token_ids": [
+    23073,
+    2312
+  ]
+}

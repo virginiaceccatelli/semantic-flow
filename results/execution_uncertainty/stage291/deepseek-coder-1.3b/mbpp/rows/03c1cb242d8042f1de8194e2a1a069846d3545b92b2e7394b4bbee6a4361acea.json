@@ -1,0 +1,58 @@
+{
+  "case_id": "501:1",
+  "program_id": "501",
+  "code": "def ngcd(x,y):\r\n    i=1\r\n    while(i<=x and i<=y):\r\n        if(x%i==0 and y%i == 0):\r\n            gcd=i;\r\n        i+=1\r\n    return gcd;\r\ndef num_comm_div(x,y):\r\n  n = ngcd(x,y)\r\n  result = 0\r\n  z = int(n**0.5)\r\n  i = 1\r\n  while(i <= z):\r\n    if(n % i == 0):\r\n      result += 2 \r\n      if(i == n/i):\r\n        result-=1\r\n    i+=1\r\n  return result",
+  "call": "num_comm_div(2,8)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "b1283dab9ae9440b7b0a84083b7271583655014b727dd528e79c679ae4514c32",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef ngcd(x,y):\r\n    i=1\r\n    while(i<=x and i<=y):\r\n        if(x%i==0 and y%i == 0):\r\n            gcd=i;\r\n        i+=1\r\n    return gcd;\r\ndef num_comm_div(x,y):\r\n  n = ngcd(x,y)\r\n  result = 0\r\n  z = int(n**0.5)\r\n  i = 1\r\n  while(i <= z):\r\n    if(n % i == 0):\r\n      result += 2 \r\n      if(i == n/i):\r\n        result-=1\r\n    i+=1\r\n  return result\n\nassert num_comm_div(2,8) ==",
+  "n_prompt_tokens": 343,
+  "raw_generation": "  2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    243,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.2328966856002808,
+    -1.1734360456466675,
+    -0.3996010422706604
+  ],
+  "token_entropy": [
+    2.3894007205963135,
+    1.6999270915985107,
+    0.9864885807037354
+  ],
+  "token_logprob_sum": [
+    -674191.625,
+    -775698.25,
+    -761460.625
+  ],
+  "token_topk_mean_logprob": [
+    -4.020396709442139,
+    -7.748435974121094,
+    -6.3339762687683105
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 328,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

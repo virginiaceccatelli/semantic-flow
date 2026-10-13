@@ -1,0 +1,68 @@
+{
+  "case_id": "319:1",
+  "program_id": "319",
+  "code": "import re\r\ndef find_long_word(text):\r\n  return (re.findall(r\"\\b\\w{5}\\b\", text))",
+  "call": "find_long_word('4K Ultra HD streaming player')",
+  "expected": "['Ultra']",
+  "dataset": "mbpp",
+  "source_group": "844f4b785a0fd2374fb38d807e35b9478bd3200d5c58413af0a186890cfa60a0",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef find_long_word(text):\r\n  return (re.findall(r\"\\b\\w{5}\\b\", text))\n\nassert find_long_word('4K Ultra HD streaming player') ==",
+  "n_prompt_tokens": 208,
+  "raw_generation": " ['streaming']\n",
+  "answer": "['streaming']",
+  "generated_token_ids": [
+    12036,
+    6832,
+    272,
+    3676,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "['streaming']",
+  "token_logprob": [
+    -0.320493221282959,
+    -0.7982854247093201,
+    -0.039310768246650696,
+    -0.2641543447971344,
+    -0.4179816246032715
+  ],
+  "token_entropy": [
+    0.9793883562088013,
+    1.2857139110565186,
+    0.19904491305351257,
+    0.6116553544998169,
+    0.9314444065093994
+  ],
+  "token_logprob_sum": [
+    -710239.125,
+    -701853.625,
+    -833721.875,
+    -732407.3125,
+    -720492.75
+  ],
+  "token_topk_mean_logprob": [
+    -5.657993316650391,
+    -6.351409912109375,
+    -9.826810836791992,
+    -8.232904434204102,
+    -7.811732769012451
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 189,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

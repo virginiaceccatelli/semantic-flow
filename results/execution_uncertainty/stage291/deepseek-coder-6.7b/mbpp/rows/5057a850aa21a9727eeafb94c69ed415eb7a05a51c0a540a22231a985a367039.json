@@ -1,0 +1,73 @@
+{
+  "case_id": "53:2",
+  "program_id": "53",
+  "code": "def check_Equality(str):\r\n  if (str[0] == str[-1]):  \r\n    return (\"Equal\") \r\n  else:  \r\n    return (\"Not Equal\")",
+  "call": "check_Equality(\"mad\")",
+  "expected": "'Not Equal'",
+  "dataset": "mbpp",
+  "source_group": "e30a8d4879a778dadcf780ce580fd2b6ae811be8ef84af49f9419cc3405e2ad1",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_Equality(str):\r\n  if (str[0] == str[-1]):  \r\n    return (\"Equal\") \r\n  else:  \r\n    return (\"Not Equal\")\n\nassert check_Equality(\"mad\") ==",
+  "n_prompt_tokens": 212,
+  "raw_generation": " \"Not Equal\"\n",
+  "answer": "\"Not Equal\"",
+  "generated_token_ids": [
+    440,
+    3635,
+    9812,
+    266,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Not Equal'",
+  "token_logprob": [
+    -0.2760346233844757,
+    -0.3663073778152466,
+    -0.0022625343408435583,
+    -0.00037996700848452747,
+    -0.01750507578253746,
+    -0.28954005241394043
+  ],
+  "token_entropy": [
+    0.8424866199493408,
+    0.7528189420700073,
+    0.020659515634179115,
+    0.004109018482267857,
+    0.10399625450372696,
+    0.7817931175231934
+  ],
+  "token_logprob_sum": [
+    -742563.9375,
+    -694711.25,
+    -809007.25,
+    -879023.3125,
+    -753617.75,
+    -750700.5
+  ],
+  "token_topk_mean_logprob": [
+    -6.319784641265869,
+    -6.947556972503662,
+    -9.949137687683105,
+    -11.622255325317383,
+    -8.908129692077637,
+    -7.370790004730225
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    2456,
+    2312
+  ]
+}

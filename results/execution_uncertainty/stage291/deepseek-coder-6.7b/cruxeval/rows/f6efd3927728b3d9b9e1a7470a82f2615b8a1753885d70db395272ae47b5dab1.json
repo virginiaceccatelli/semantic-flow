@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_82",
+  "program_id": "sample_82",
+  "code": "def f(a, b, c, d):\n    return a and b or c and d",
+  "call": "f('CJU', 'BFS', 'WBYDZPVES', 'Y')",
+  "expected": "'BFS'",
+  "dataset": "cruxeval",
+  "source_group": "db5229201b0137b2b18942b3173d73899c741752850828ad0fb3921243cdb05f",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(a, b, c, d):\n    return a and b or c and d\n\nassert f('CJU', 'BFS', 'WBYDZPVES', 'Y') ==",
+  "n_prompt_tokens": 201,
+  "raw_generation": " 'CJU'\n",
+  "answer": "'CJU'",
+  "generated_token_ids": [
+    651,
+    34,
+    41,
+    52,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'CJU'",
+  "token_logprob": [
+    -0.41441789269447327,
+    -0.8316324353218079,
+    -0.01602988876402378,
+    -0.169658824801445,
+    -0.1134558767080307,
+    -0.13900595903396606
+  ],
+  "token_entropy": [
+    0.9539170861244202,
+    1.682167649269104,
+    0.1140027567744255,
+    0.4974491596221924,
+    0.6166863441467285,
+    0.4925152659416199
+  ],
+  "token_logprob_sum": [
+    -768363.625,
+    -628487.4375,
+    -695342.5,
+    -768197.0625,
+    -628712.625,
+    -786259.3125
+  ],
+  "token_topk_mean_logprob": [
+    -6.845668315887451,
+    -5.703507900238037,
+    -8.797281265258789,
+    -7.263408660888672,
+    -6.422830104827881,
+    -7.964005947113037
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 174,
+  "read_token_ids": [
+    263,
+    2312
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case_id": "364:2",
+  "program_id": "364",
+  "code": "def make_flip(ch): \r\n\treturn '1' if (ch == '0') else '0'\r\ndef get_flip_with_starting_charcter(str, expected): \r\n\tflip_count = 0\r\n\tfor i in range(len( str)): \r\n\t\tif (str[i] != expected): \r\n\t\t\tflip_count += 1\r\n\t\texpected = make_flip(expected) \r\n\treturn flip_count \r\ndef min_flip_to_make_string_alternate(str): \r\n\treturn min(get_flip_with_starting_charcter(str, '0'),get_flip_with_starting_charcter(str, '1'))",
+  "call": "min_flip_to_make_string_alternate(\"010111011\")",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "1e798123b834e5f3856a31b0d7c015fe1abcd1469d4564b3a07845716305c53b",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef make_flip(ch): \r\n\treturn '1' if (ch == '0') else '0'\r\ndef get_flip_with_starting_charcter(str, expected): \r\n\tflip_count = 0\r\n\tfor i in range(len( str)): \r\n\t\tif (str[i] != expected): \r\n\t\t\tflip_count += 1\r\n\t\texpected = make_flip(expected) \r\n\treturn flip_count \r\ndef min_flip_to_make_string_alternate(str): \r\n\treturn min(get_flip_with_starting_charcter(str, '0'),get_flip_with_starting_charcter(str, '1'))\n\nassert min_flip_to_make_string_alternate(\"010111011\") ==",
+  "n_prompt_tokens": 360,
+  "raw_generation": "  2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    243,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -0.7556820511817932,
+    -1.0354342460632324,
+    -0.3831448256969452
+  ],
+  "token_entropy": [
+    2.081264019012451,
+    1.5699938535690308,
+    1.021855354309082
+  ],
+  "token_logprob_sum": [
+    -688430.8125,
+    -777509.5,
+    -748577.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.202264308929443,
+    -7.147934913635254,
+    -6.566097259521484
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 331,
+  "read_token_ids": [
+    14621,
+    2312
+  ]
+}

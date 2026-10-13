@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_392",
+  "program_id": "sample_392",
+  "code": "def f(text):\n    if text.upper() == text:\n        return 'ALL UPPERCASE'\n    return text",
+  "call": "f('Hello Is It MyClass')",
+  "expected": "'Hello Is It MyClass'",
+  "dataset": "cruxeval",
+  "source_group": "dc84a54bcb64d8bbb6f8a88ce477df2be0edad13142b66bb844fc10ee30b3395",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    if text.upper() == text:\n        return 'ALL UPPERCASE'\n    return text\n\nassert f('Hello Is It MyClass') ==",
+  "n_prompt_tokens": 196,
+  "raw_generation": " 'Hello Is It MyClass'\n",
+  "answer": "'Hello Is It MyClass'",
+  "generated_token_ids": [
+    651,
+    17535,
+    2115,
+    804,
+    2669,
+    3667,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Hello Is It MyClass'",
+  "token_logprob": [
+    -0.03705376386642456,
+    -0.2945369780063629,
+    -0.1548854559659958,
+    -0.004106304608285427,
+    -0.002499910071492195,
+    -0.02635025978088379,
+    -0.0017896364443004131,
+    -0.05249926820397377
+  ],
+  "token_entropy": [
+    0.2196958363056183,
+    1.0311013460159302,
+    0.5806134939193726,
+    0.034894272685050964,
+    0.02191593497991562,
+    0.14173392951488495,
+    0.019523408263921738,
+    0.22180189192295074
+  ],
+  "token_logprob_sum": [
+    -820110.625,
+    -708753.625,
+    -743837.5,
+    -871983.875,
+    -866206.625,
+    -779848.625,
+    -736094.625,
+    -822346.875
+  ],
+  "token_topk_mean_logprob": [
+    -7.543304443359375,
+    -5.994536876678467,
+    -7.604886054992676,
+    -9.675981521606445,
+    -10.183749198913574,
+    -9.426350593566895,
+    -9.558039665222168,
+    -9.302499771118164
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 183,
+  "read_token_ids": [
+    2422,
+    2312
+  ]
+}

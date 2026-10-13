@@ -1,0 +1,73 @@
+{
+  "case_id": "379:2",
+  "program_id": "379",
+  "code": "def surfacearea_cuboid(l,w,h):\r\n  SA = 2*(l*w + l * h + w * h)\r\n  return SA",
+  "call": "surfacearea_cuboid(10,15,21)",
+  "expected": "1350",
+  "dataset": "mbpp",
+  "source_group": "de11bc7efae1aedc50a6120ff83def403291dfdb96444ab9e6a779adcfa4dc1a",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef surfacearea_cuboid(l,w,h):\r\n  SA = 2*(l*w + l * h + w * h)\r\n  return SA\n\nassert surfacearea_cuboid(10,15,21) ==",
+  "n_prompt_tokens": 212,
+  "raw_generation": "  1000\n",
+  "answer": "1000",
+  "generated_token_ids": [
+    243,
+    16,
+    15,
+    15,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 1,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "1000",
+  "token_logprob": [
+    -0.9763975143432617,
+    -0.8264639377593994,
+    -1.5284684896469116,
+    -0.9401432275772095,
+    -0.3075677156448364,
+    -0.5758679509162903
+  ],
+  "token_entropy": [
+    2.5706918239593506,
+    1.8367161750793457,
+    2.1691126823425293,
+    1.981782078742981,
+    1.2228909730911255,
+    1.2671300172805786
+  ],
+  "token_logprob_sum": [
+    -632806.375,
+    -719749.125,
+    -825150.875,
+    -779764.375,
+    -751842.625,
+    -717772.0625
+  ],
+  "token_topk_mean_logprob": [
+    -3.788897752761841,
+    -5.963963508605957,
+    -6.903468608856201,
+    -4.890143394470215,
+    -5.032567501068115,
+    -5.882118225097656
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 191,
+  "read_token_ids": [
+    17369,
+    2312
+  ]
+}

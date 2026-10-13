@@ -1,0 +1,68 @@
+{
+  "case_id": "245:1",
+  "program_id": "245",
+  "code": "def max_sum(arr, n): \r\n\tMSIBS = arr[:] \r\n\tfor i in range(n): \r\n\t\tfor j in range(0, i): \r\n\t\t\tif arr[i] > arr[j] and MSIBS[i] < MSIBS[j] + arr[i]: \r\n\t\t\t\tMSIBS[i] = MSIBS[j] + arr[i] \r\n\tMSDBS = arr[:] \r\n\tfor i in range(1, n + 1): \r\n\t\tfor j in range(1, i): \r\n\t\t\tif arr[-i] > arr[-j] and MSDBS[-i] < MSDBS[-j] + arr[-i]: \r\n\t\t\t\tMSDBS[-i] = MSDBS[-j] + arr[-i] \r\n\tmax_sum = float(\"-Inf\") \r\n\tfor i, j, k in zip(MSIBS, MSDBS, arr): \r\n\t\tmax_sum = max(max_sum, i + j - k) \r\n\treturn max_sum",
+  "call": "max_sum([80, 60, 30, 40, 20, 10], 6)",
+  "expected": "210",
+  "dataset": "mbpp",
+  "source_group": "16becf15dc54bb24b10918d76b130c616632979ebc60e6f2763cec7f01db4ed0",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_sum(arr, n): \r\n\tMSIBS = arr[:] \r\n\tfor i in range(n): \r\n\t\tfor j in range(0, i): \r\n\t\t\tif arr[i] > arr[j] and MSIBS[i] < MSIBS[j] + arr[i]: \r\n\t\t\t\tMSIBS[i] = MSIBS[j] + arr[i] \r\n\tMSDBS = arr[:] \r\n\tfor i in range(1, n + 1): \r\n\t\tfor j in range(1, i): \r\n\t\t\tif arr[-i] > arr[-j] and MSDBS[-i] < MSDBS[-j] + arr[-i]: \r\n\t\t\t\tMSDBS[-i] = MSDBS[-j] + arr[-i] \r\n\tmax_sum = float(\"-Inf\") \r\n\tfor i, j, k in zip(MSIBS, MSDBS, arr): \r\n\t\tmax_sum = max(max_sum, i + j - k) \r\n\treturn max_sum\n\nassert max_sum([80, 60, 30, 40, 20, 10], 6) ==",
+  "n_prompt_tokens": 444,
+  "raw_generation": "  350\n",
+  "answer": "350",
+  "generated_token_ids": [
+    243,
+    18,
+    20,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 1,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "350",
+  "token_logprob": [
+    -1.3498116731643677,
+    -0.976232647895813,
+    -1.5936681032180786,
+    -0.038628581911325455,
+    -0.27168992161750793
+  ],
+  "token_entropy": [
+    2.1474437713623047,
+    1.4637324810028076,
+    2.1706442832946777,
+    0.22764435410499573,
+    0.8317939043045044
+  ],
+  "token_logprob_sum": [
+    -683128.1875,
+    -797529.75,
+    -745552.375,
+    -822480.5,
+    -749941.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.509284496307373,
+    -7.15435791015625,
+    -6.045077800750732,
+    -7.73237943649292,
+    -6.812315464019775
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 409,
+  "read_token_ids": [
+    1828,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "424:1",
+  "program_id": "424",
+  "code": "def extract_rear(test_tuple):\r\n  res = list(sub[len(sub) - 1] for sub in test_tuple)\r\n  return (res)",
+  "call": "extract_rear(('Avenge', 'for', 'People') )",
+  "expected": "['e', 'r', 'e']",
+  "dataset": "mbpp",
+  "source_group": "d5af007d8e31cd2a6dbe04a809c3c2a4db2fd3c2dd7bf3964b56e925f7c61414",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef extract_rear(test_tuple):\r\n  res = list(sub[len(sub) - 1] for sub in test_tuple)\r\n  return (res)\n\nassert extract_rear(('Avenge', 'for', 'People') ) ==",
+  "n_prompt_tokens": 218,
+  "raw_generation": " ('People')\n",
+  "answer": "('People')",
+  "generated_token_ids": [
+    10234,
+    19752,
+    2462,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'People'",
+  "token_logprob": [
+    -0.42201879620552063,
+    -0.08331512659788132,
+    -0.4072292149066925,
+    -0.29248493909835815
+  ],
+  "token_entropy": [
+    1.2397326231002808,
+    0.4674871563911438,
+    0.7381076216697693,
+    0.8280646204948425
+  ],
+  "token_logprob_sum": [
+    -673745.125,
+    -669359.6875,
+    -741974.25,
+    -726655.5
+  ],
+  "token_topk_mean_logprob": [
+    -5.384519100189209,
+    -6.667689800262451,
+    -8.09472942352295,
+    -7.504985332489014
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 196,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

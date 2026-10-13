@@ -1,0 +1,68 @@
+{
+  "case_id": "375:0",
+  "program_id": "375",
+  "code": "def round_num(n,m):\r\n    a = (n //m) * m\r\n    b = a + m\r\n    return (b if n - a > b - n else a)",
+  "call": "round_num(4722,10)",
+  "expected": "4720",
+  "dataset": "mbpp",
+  "source_group": "10bae1d404c246f4bafddcc02fb70657a6f355a39af7876c69154e0efd7df971",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef round_num(n,m):\r\n    a = (n //m) * m\r\n    b = a + m\r\n    return (b if n - a > b - n else a)\n\nassert round_num(4722,10) ==",
+  "n_prompt_tokens": 216,
+  "raw_generation": "4720\n",
+  "answer": "4720",
+  "generated_token_ids": [
+    19,
+    22,
+    17,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "4720",
+  "token_logprob": [
+    -0.6731265783309937,
+    -0.0062805661000311375,
+    -0.29764261841773987,
+    -0.016727544367313385,
+    -0.4725024998188019
+  ],
+  "token_entropy": [
+    1.5650694370269775,
+    0.051235947757959366,
+    0.6534586548805237,
+    0.11115548014640808,
+    1.0725620985031128
+  ],
+  "token_logprob_sum": [
+    -680142.0625,
+    -839350.0,
+    -851348.75,
+    -808410.125,
+    -754217.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.948127269744873,
+    -9.009406089782715,
+    -9.085143089294434,
+    -8.257352828979492,
+    -6.5350022315979
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 199,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

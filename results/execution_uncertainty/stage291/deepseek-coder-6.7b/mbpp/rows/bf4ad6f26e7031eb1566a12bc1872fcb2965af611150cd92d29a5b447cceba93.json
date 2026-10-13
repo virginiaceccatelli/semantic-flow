@@ -1,0 +1,63 @@
+{
+  "case_id": "346:0",
+  "program_id": "346",
+  "code": "def zigzag(n, k): \r\n\tif (n == 0 and k == 0): \r\n\t\treturn 1\r\n\tif (k == 0): \r\n\t\treturn 0\r\n\treturn zigzag(n, k - 1) + zigzag(n - 1, n - k)",
+  "call": "zigzag(4, 3)",
+  "expected": "5",
+  "dataset": "mbpp",
+  "source_group": "85be2400a29233e7312fbc0e614c196e3c48f683df1e953c067e3c54b49187c6",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef zigzag(n, k): \r\n\tif (n == 0 and k == 0): \r\n\t\treturn 1\r\n\tif (k == 0): \r\n\t\treturn 0\r\n\treturn zigzag(n, k - 1) + zigzag(n - 1, n - k)\n\nassert zigzag(4, 3) ==",
+  "n_prompt_tokens": 243,
+  "raw_generation": "  10\n",
+  "answer": "10",
+  "generated_token_ids": [
+    243,
+    16,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "10",
+  "token_logprob": [
+    -1.0728344917297363,
+    -1.5222480297088623,
+    -1.2941569089889526,
+    -0.4006880521774292
+  ],
+  "token_entropy": [
+    1.9779833555221558,
+    2.1687254905700684,
+    2.333390474319458,
+    1.1113994121551514
+  ],
+  "token_logprob_sum": [
+    -674604.875,
+    -772772.25,
+    -742680.4375,
+    -752372.1875
+  ],
+  "token_topk_mean_logprob": [
+    -4.3415846824646,
+    -5.878498554229736,
+    -4.2816572189331055,
+    -5.51943826675415
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 228,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

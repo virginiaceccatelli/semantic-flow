@@ -1,0 +1,63 @@
+{
+  "case_id": "418:0",
+  "program_id": "418",
+  "code": "def Find_Max(lst): \r\n    maxList = max((x) for x in lst) \r\n    return maxList",
+  "call": "Find_Max([['A'],['A','B'],['A','B','C']])",
+  "expected": "['A', 'B', 'C']",
+  "dataset": "mbpp",
+  "source_group": "d35ff111e2a7786cbf7d24ffc4e86975d6c657f6042dd3c667db37265eff8b0d",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef Find_Max(lst): \r\n    maxList = max((x) for x in lst) \r\n    return maxList\n\nassert Find_Max([['A'],['A','B'],['A','B','C']]) ==",
+  "n_prompt_tokens": 210,
+  "raw_generation": " 'C'\n",
+  "answer": "'C'",
+  "generated_token_ids": [
+    651,
+    34,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'C'",
+  "token_logprob": [
+    -0.40047696232795715,
+    -0.25167474150657654,
+    -0.007108042482286692,
+    -0.500259280204773
+  ],
+  "token_entropy": [
+    1.012739658355713,
+    0.6818441152572632,
+    0.05333565175533295,
+    0.991422176361084
+  ],
+  "token_logprob_sum": [
+    -736387.375,
+    -784388.375,
+    -758699.0,
+    -711473.625
+  ],
+  "token_topk_mean_logprob": [
+    -5.925477027893066,
+    -8.209486961364746,
+    -9.011893272399902,
+    -7.387759685516357
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 185,
+  "read_token_ids": [
+    2245,
+    2312
+  ]
+}

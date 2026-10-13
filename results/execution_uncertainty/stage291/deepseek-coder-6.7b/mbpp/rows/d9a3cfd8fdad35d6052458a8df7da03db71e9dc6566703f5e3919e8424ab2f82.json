@@ -1,0 +1,63 @@
+{
+  "case_id": "286:0",
+  "program_id": "286",
+  "code": "def max_sub_array_sum_repeated(a, n, k): \r\n\tmax_so_far = -2147483648\r\n\tmax_ending_here = 0\r\n\tfor i in range(n*k): \r\n\t\tmax_ending_here = max_ending_here + a[i%n] \r\n\t\tif (max_so_far < max_ending_here): \r\n\t\t\tmax_so_far = max_ending_here \r\n\t\tif (max_ending_here < 0): \r\n\t\t\tmax_ending_here = 0\r\n\treturn max_so_far",
+  "call": "max_sub_array_sum_repeated([10, 20, -30, -1], 4, 3)",
+  "expected": "30",
+  "dataset": "mbpp",
+  "source_group": "6ae25a44eb5395311e9f6994813f7e605227819de474d8c33dd22895311b8df9",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_sub_array_sum_repeated(a, n, k): \r\n\tmax_so_far = -2147483648\r\n\tmax_ending_here = 0\r\n\tfor i in range(n*k): \r\n\t\tmax_ending_here = max_ending_here + a[i%n] \r\n\t\tif (max_so_far < max_ending_here): \r\n\t\t\tmax_so_far = max_ending_here \r\n\t\tif (max_ending_here < 0): \r\n\t\t\tmax_ending_here = 0\r\n\treturn max_so_far\n\nassert max_sub_array_sum_repeated([10, 20, -30, -1], 4, 3) ==",
+  "n_prompt_tokens": 342,
+  "raw_generation": " -10\n",
+  "answer": "-10",
+  "generated_token_ids": [
+    567,
+    16,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-10",
+  "token_logprob": [
+    -0.07669404149055481,
+    -0.2677093744277954,
+    -0.18479342758655548,
+    -0.40680763125419617
+  ],
+  "token_entropy": [
+    0.4238779544830322,
+    0.806141197681427,
+    0.6740478873252869,
+    0.9710261225700378
+  ],
+  "token_logprob_sum": [
+    -731601.375,
+    -738018.25,
+    -807753.75,
+    -805869.25
+  ],
+  "token_topk_mean_logprob": [
+    -6.5579447746276855,
+    -7.602084636688232,
+    -6.516043186187744,
+    -6.813057899475098
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 305,
+  "read_token_ids": [
+    18601,
+    2312
+  ]
+}

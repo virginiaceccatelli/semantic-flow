@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_196",
+  "program_id": "sample_196",
+  "code": "def f(text):\n    text = text.replace(' x', ' x.')\n    if text.istitle(): return 'correct'\n    text = text.replace(' x.', ' x')\n    return 'mixed'",
+  "call": "f(\"398 Is A Poor Year To Sow\")",
+  "expected": "'correct'",
+  "dataset": "cruxeval",
+  "source_group": "5be126eeb078f90a6bdf745fe9b499060a68f7a7583ef34ddcb2002ca601c93e",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    text = text.replace(' x', ' x.')\n    if text.istitle(): return 'correct'\n    text = text.replace(' x.', ' x')\n    return 'mixed'\n\nassert f(\"398 Is A Poor Year To Sow\") ==",
+  "n_prompt_tokens": 223,
+  "raw_generation": " \"mixed\"\n",
+  "answer": "\"mixed\"",
+  "generated_token_ids": [
+    440,
+    76,
+    8339,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'mixed'",
+  "token_logprob": [
+    -0.6982822418212891,
+    -0.6837239265441895,
+    -1.0967194612021558e-05,
+    -0.00802908930927515,
+    -0.20682866871356964
+  ],
+  "token_entropy": [
+    0.7338349223136902,
+    0.9762884378433228,
+    0.00016976086772046983,
+    0.0541117899119854,
+    0.5149236917495728
+  ],
+  "token_logprob_sum": [
+    -801131.5625,
+    -688540.375,
+    -968964.0625,
+    -747851.3125,
+    -797166.75
+  ],
+  "token_topk_mean_logprob": [
+    -8.292032241821289,
+    -6.714973449707031,
+    -14.80313777923584,
+    -9.742403984069824,
+    -8.963079452514648
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 205,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

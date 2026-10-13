@@ -1,0 +1,63 @@
+{
+  "case_id": "449:0",
+  "program_id": "449",
+  "code": "def check_Triangle(x1,y1,x2,y2,x3,y3): \r\n    a = (x1*(y2-y3)+x2*(y3-y1)+x3*(y1-y2))   \r\n    if a == 0: \r\n        return ('No') \r\n    else: \r\n        return ('Yes')",
+  "call": "check_Triangle(1,5,2,5,4,6)",
+  "expected": "'Yes'",
+  "dataset": "mbpp",
+  "source_group": "f0240aae731966e3be548da8930c1097d7b4a48420cc67d0980bd30e9a7c5a31",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_Triangle(x1,y1,x2,y2,x3,y3): \r\n    a = (x1*(y2-y3)+x2*(y3-y1)+x3*(y1-y2))   \r\n    if a == 0: \r\n        return ('No') \r\n    else: \r\n        return ('Yes')\n\nassert check_Triangle(1,5,2,5,4,6) ==",
+  "n_prompt_tokens": 266,
+  "raw_generation": " 'Yes'\n",
+  "answer": "'Yes'",
+  "generated_token_ids": [
+    651,
+    5652,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Yes'",
+  "token_logprob": [
+    -0.37925297021865845,
+    -0.5261591672897339,
+    -0.007357642985880375,
+    -0.47956788539886475
+  ],
+  "token_entropy": [
+    1.0092562437057495,
+    0.703522801399231,
+    0.05355279892683029,
+    0.8888148069381714
+  ],
+  "token_logprob_sum": [
+    -734674.5,
+    -764559.875,
+    -737530.0625,
+    -725313.0625
+  ],
+  "token_topk_mean_logprob": [
+    -6.407378673553467,
+    -9.24491024017334,
+    -9.179232597351074,
+    -7.045192241668701
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 244,
+  "read_token_ids": [
+    2462,
+    2312
+  ]
+}

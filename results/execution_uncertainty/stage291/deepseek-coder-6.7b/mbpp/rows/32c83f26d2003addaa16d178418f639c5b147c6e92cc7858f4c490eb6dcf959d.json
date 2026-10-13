@@ -1,0 +1,53 @@
+{
+  "case_id": "121:2",
+  "program_id": "121",
+  "code": "def check_triplet(A, n, sum, count):\r\n    if count == 3 and sum == 0:\r\n        return True\r\n    if count == 3 or n == 0 or sum < 0:\r\n        return False\r\n    return check_triplet(A, n - 1, sum - A[n - 1], count + 1) or\\\r\n           check_triplet(A, n - 1, sum, count)",
+  "call": "check_triplet([10, 4, 2, 3, 5], 5, 15, 0)",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "e004e6df401efed29e4b1e9fabc8488d104e212b74a14cc48de4b75f5cce65f8",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_triplet(A, n, sum, count):\r\n    if count == 3 and sum == 0:\r\n        return True\r\n    if count == 3 or n == 0 or sum < 0:\r\n        return False\r\n    return check_triplet(A, n - 1, sum - A[n - 1], count + 1) or\\\r\n           check_triplet(A, n - 1, sum, count)\n\nassert check_triplet([10, 4, 2, 3, 5], 5, 15, 0) ==",
+  "n_prompt_tokens": 294,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.09038297832012177,
+    -0.4442496597766876
+  ],
+  "token_entropy": [
+    0.30548185110092163,
+    0.94512939453125
+  ],
+  "token_logprob_sum": [
+    -823004.375,
+    -773341.375
+  ],
+  "token_topk_mean_logprob": [
+    -9.327882766723633,
+    -7.35675048828125
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 258,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

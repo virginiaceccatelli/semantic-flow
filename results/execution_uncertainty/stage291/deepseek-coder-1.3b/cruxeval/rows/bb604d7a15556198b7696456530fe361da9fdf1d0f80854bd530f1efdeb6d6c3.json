@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_400",
+  "program_id": "sample_400",
+  "code": "def f(multi_string):\n    cond_string = map(str.isascii, multi_string.split())\n    if True in cond_string:\n        return ', '.join(x for x in multi_string.split() if x.isascii())\n    return ''",
+  "call": "f('I am hungry! eat food.')",
+  "expected": "'I, am, hungry!, eat, food.'",
+  "dataset": "cruxeval",
+  "source_group": "b56f0ea2677e1deca752c2d3e9806f249c4acca59540a1688d9075ddbf33de93",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(multi_string):\n    cond_string = map(str.isascii, multi_string.split())\n    if True in cond_string:\n        return ', '.join(x for x in multi_string.split() if x.isascii())\n    return ''\n\nassert f('I am hungry! eat food.') ==",
+  "n_prompt_tokens": 234,
+  "raw_generation": " 'I am hungry!'\n",
+  "answer": "'I am hungry!'",
+  "generated_token_ids": [
+    651,
+    40,
+    604,
+    21511,
+    13837,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'I am hungry!'",
+  "token_logprob": [
+    -0.10158354043960571,
+    -0.7594907283782959,
+    -0.5471105575561523,
+    -0.023289937525987625,
+    -0.7065363526344299,
+    -0.10408914089202881
+  ],
+  "token_entropy": [
+    0.45896339416503906,
+    1.597287654876709,
+    1.3518785238265991,
+    0.1594713181257248,
+    1.434079885482788,
+    0.3459826409816742
+  ],
+  "token_logprob_sum": [
+    -773469.25,
+    -638651.625,
+    -650305.875,
+    -717951.0625,
+    -690674.1875,
+    -830582.125
+  ],
+  "token_topk_mean_logprob": [
+    -6.801583766937256,
+    -5.228240966796875,
+    -5.465860843658447,
+    -7.742039680480957,
+    -5.594036102294922,
+    -9.291589736938477
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 219,
+  "read_token_ids": [
+    15355,
+    2312
+  ]
+}

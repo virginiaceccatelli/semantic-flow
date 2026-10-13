@@ -1,0 +1,63 @@
+{
+  "case_id": "36:0",
+  "program_id": "36",
+  "code": "def find_Nth_Digit(p,q,N) :  \r\n    while (N > 0) : \r\n        N -= 1;  \r\n        p *= 10;  \r\n        res = p // q;  \r\n        p %= q;  \r\n    return res;",
+  "call": "find_Nth_Digit(1,2,1)",
+  "expected": "5",
+  "dataset": "mbpp",
+  "source_group": "c4b3a43dbe0af828a82a13932531cb2fae66594edf388ea0d84d110f1083f9ba",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_Nth_Digit(p,q,N) :  \r\n    while (N > 0) : \r\n        N -= 1;  \r\n        p *= 10;  \r\n        res = p // q;  \r\n        p %= q;  \r\n    return res;\n\nassert find_Nth_Digit(1,2,1) ==",
+  "n_prompt_tokens": 244,
+  "raw_generation": " (5)\n",
+  "answer": "(5)",
+  "generated_token_ids": [
+    334,
+    20,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "5",
+  "token_logprob": [
+    -0.9566775560379028,
+    -0.8332544565200806,
+    -0.08154848963022232,
+    -0.497708261013031
+  ],
+  "token_entropy": [
+    2.263735771179199,
+    1.4286001920700073,
+    0.45847249031066895,
+    0.9454807043075562
+  ],
+  "token_logprob_sum": [
+    -652261.3125,
+    -704311.875,
+    -751480.125,
+    -716744.8125
+  ],
+  "token_topk_mean_logprob": [
+    -4.15667724609375,
+    -5.758254528045654,
+    -6.081549167633057,
+    -7.094583034515381
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 225,
+  "read_token_ids": [
+    26,
+    2312
+  ]
+}

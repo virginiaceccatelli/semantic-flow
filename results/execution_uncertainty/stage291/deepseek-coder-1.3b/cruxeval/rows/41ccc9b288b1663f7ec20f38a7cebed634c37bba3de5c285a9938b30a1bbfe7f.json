@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_28",
+  "program_id": "sample_28",
+  "code": "def f(mylist):\n    revl = mylist[:]\n    revl.reverse()\n    mylist.sort(reverse=True)\n    return mylist == revl",
+  "call": "f([5, 8])",
+  "expected": "True",
+  "dataset": "cruxeval",
+  "source_group": "78dd11ca57dd6e06e743f51afad3c87eafb59f0a510eeefa2a54da8bca123609",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(mylist):\n    revl = mylist[:]\n    revl.reverse()\n    mylist.sort(reverse=True)\n    return mylist == revl\n\nassert f([5, 8]) ==",
+  "n_prompt_tokens": 208,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.5327340960502625,
+    -0.15961648523807526
+  ],
+  "token_entropy": [
+    0.8914843201637268,
+    0.4798465371131897
+  ],
+  "token_logprob_sum": [
+    -748971.25,
+    -797821.125
+  ],
+  "token_topk_mean_logprob": [
+    -7.457734107971191,
+    -8.325632095336914
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 196,
+  "read_token_ids": [
+    75,
+    2312
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "case_id": "134:0",
+  "program_id": "134",
+  "code": "def check_last (arr,n,p): \r\n    _sum = 0\r\n    for i in range(n): \r\n        _sum = _sum + arr[i] \r\n    if p == 1: \r\n        if _sum % 2 == 0: \r\n            return \"ODD\"\r\n        else: \r\n            return \"EVEN\"\r\n    return \"EVEN\"",
+  "call": "check_last([5,7,10],3,1)",
+  "expected": "'ODD'",
+  "dataset": "mbpp",
+  "source_group": "b610b2e5374f87f3e59cb92a756134cea806161977ec10d7357157e66f3927b5",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_last (arr,n,p): \r\n    _sum = 0\r\n    for i in range(n): \r\n        _sum = _sum + arr[i] \r\n    if p == 1: \r\n        if _sum % 2 == 0: \r\n            return \"ODD\"\r\n        else: \r\n            return \"EVEN\"\r\n    return \"EVEN\"\n\nassert check_last([5,7,10],3,1) ==",
+  "n_prompt_tokens": 271,
+  "raw_generation": " \"EVEN\"\n",
+  "answer": "\"EVEN\"",
+  "generated_token_ids": [
+    440,
+    36,
+    53,
+    1732,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'EVEN'",
+  "token_logprob": [
+    -0.20463190972805023,
+    -0.43386051058769226,
+    -0.000226472009671852,
+    -0.00011634149996098131,
+    -0.013595251366496086,
+    -0.5694047212600708
+  ],
+  "token_entropy": [
+    0.6162601709365845,
+    0.6915426254272461,
+    0.002765514887869358,
+    0.0013948485720902681,
+    0.08949066698551178,
+    0.8891723155975342
+  ],
+  "token_logprob_sum": [
+    -752705.75,
+    -770643.3125,
+    -912508.125,
+    -1016707.0,
+    -760394.0625,
+    -723528.375
+  ],
+  "token_topk_mean_logprob": [
+    -6.704631805419922,
+    -8.683860778808594,
+    -11.681475639343262,
+    -12.693865776062012,
+    -8.772971153259277,
+    -7.35690450668335
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 251,
+  "read_token_ids": [
+    1,
+    2312
+  ]
+}

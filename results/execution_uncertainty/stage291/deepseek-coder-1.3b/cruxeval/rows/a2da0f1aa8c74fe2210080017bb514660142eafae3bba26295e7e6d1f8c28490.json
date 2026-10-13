@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_232",
+  "program_id": "sample_232",
+  "code": "def f(text, changes):\n    result = ''\n    count = 0\n    changes = list(changes)\n    for char in text:\n        result += char if char in 'e' else changes[count % len(changes)]\n        count += (1 if char not in 'e' else 0)\n    return result",
+  "call": "f('fssnvd', 'yes')",
+  "expected": "'yesyes'",
+  "dataset": "cruxeval",
+  "source_group": "b13e5f07867aab3cd9cd659326728baaf5684d62df15eebf06c6c3ce4f208aa4",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, changes):\n    result = ''\n    count = 0\n    changes = list(changes)\n    for char in text:\n        result += char if char in 'e' else changes[count % len(changes)]\n        count += (1 if char not in 'e' else 0)\n    return result\n\nassert f('fssnvd', 'yes') ==",
+  "n_prompt_tokens": 241,
+  "raw_generation": " 'fssnvy'\n",
+  "answer": "'fssnvy'",
+  "generated_token_ids": [
+    651,
+    69,
+    925,
+    77,
+    15037,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'fssnvy'",
+  "token_logprob": [
+    -0.02846689336001873,
+    -1.642829179763794,
+    -1.053412914276123,
+    -1.6602723598480225,
+    -1.1341792345046997,
+    -0.08482756465673447,
+    -0.10776832699775696
+  ],
+  "token_entropy": [
+    0.18681037425994873,
+    3.119295358657837,
+    3.2670300006866455,
+    3.419727087020874,
+    2.5173192024230957,
+    0.5363720059394836,
+    0.3691326081752777
+  ],
+  "token_logprob_sum": [
+    -768652.3125,
+    -597590.0625,
+    -590174.5,
+    -595785.5,
+    -591844.875,
+    -651330.375,
+    -821438.5
+  ],
+  "token_topk_mean_logprob": [
+    -7.515966892242432,
+    -4.127204418182373,
+    -4.1409125328063965,
+    -3.661835193634033,
+    -4.413280487060547,
+    -6.075891971588135,
+    -8.857768058776855
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 226,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

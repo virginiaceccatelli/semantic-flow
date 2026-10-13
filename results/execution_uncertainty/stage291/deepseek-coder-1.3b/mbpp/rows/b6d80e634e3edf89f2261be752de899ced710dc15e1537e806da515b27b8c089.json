@@ -1,0 +1,58 @@
+{
+  "case_id": "172:0",
+  "program_id": "172",
+  "code": "def count_occurance(s):\r\n  count=0\r\n  for i in range(len(s)):\r\n    if (s[i]== 's' and s[i+1]=='t' and s[i+2]== 'd'):\r\n      count = count + 1\r\n  return count",
+  "call": "count_occurance(\"letstdlenstdporstd\")",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "869df40de1abb81f4c3a4c224eb47943246ce9c2889297ce0ad75ff72320330d",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_occurance(s):\r\n  count=0\r\n  for i in range(len(s)):\r\n    if (s[i]== 's' and s[i+1]=='t' and s[i+2]== 'd'):\r\n      count = count + 1\r\n  return count\n\nassert count_occurance(\"letstdlenstdporstd\") ==",
+  "n_prompt_tokens": 248,
+  "raw_generation": "  3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    243,
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.5045140981674194,
+    -1.198781132698059,
+    -0.4747512638568878
+  ],
+  "token_entropy": [
+    2.3808696269989014,
+    1.8215281963348389,
+    1.0458581447601318
+  ],
+  "token_logprob_sum": [
+    -659170.0,
+    -756371.0625,
+    -727711.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.113108158111572,
+    -7.061280727386475,
+    -6.6310014724731445
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 230,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

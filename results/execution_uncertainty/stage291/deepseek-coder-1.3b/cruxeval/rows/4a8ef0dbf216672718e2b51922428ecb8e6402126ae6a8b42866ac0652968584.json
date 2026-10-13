@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_700",
+  "program_id": "sample_700",
+  "code": "def f(text):\n    return len(text) - text.count('bot')",
+  "call": "f(\"Where is the bot in this world?\")",
+  "expected": "30",
+  "dataset": "cruxeval",
+  "source_group": "d0b8f52452306813a5c05db8b86d698ba8b33e427796f3e83720af1e5ddd5e4e",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    return len(text) - text.count('bot')\n\nassert f(\"Where is the bot in this world?\") ==",
+  "n_prompt_tokens": 188,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.6987009644508362,
+    -0.781111478805542,
+    -0.14266206324100494
+  ],
+  "token_entropy": [
+    1.8105043172836304,
+    1.5793951749801636,
+    0.5919188261032104
+  ],
+  "token_logprob_sum": [
+    -680396.875,
+    -713851.9375,
+    -796437.8125
+  ],
+  "token_topk_mean_logprob": [
+    -4.86120080947876,
+    -6.818611145019531,
+    -6.186412334442139
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 172,
+  "read_token_ids": [
+    2462,
+    2312
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_544",
+  "program_id": "sample_544",
+  "code": "def f(text):\n    a = text.split('\\n')\n    b = []\n    for i in range(len(a)):\n        c = a[i].replace('\\t', '    ')\n        b.append(c)\n    return '\\n'.join(b)",
+  "call": "f(\"\\t\\t\\ttab tab tabulates\")",
+  "expected": "'            tab tab tabulates'",
+  "dataset": "cruxeval",
+  "source_group": "3ab2055ac3c6d49f3944443d6f3624864b47e20773ff14e16fc2cec149d0f235",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    a = text.split('\\n')\n    b = []\n    for i in range(len(a)):\n        c = a[i].replace('\\t', '    ')\n        b.append(c)\n    return '\\n'.join(b)\n\nassert f(\"\\t\\t\\ttab tab tabulates\") ==",
+  "n_prompt_tokens": 238,
+  "raw_generation": " \"    tab tab tabulates\"\n",
+  "answer": "\"    tab tab tabulates\"",
+  "generated_token_ids": [
+    440,
+    315,
+    7758,
+    7758,
+    7758,
+    25227,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'    tab tab tabulates'",
+  "token_logprob": [
+    -0.5212017297744751,
+    -0.8053040504455566,
+    -0.10877978056669235,
+    -0.11684545129537582,
+    -0.010677115991711617,
+    -0.0009076051646843553,
+    -0.008901792578399181,
+    -0.20388874411582947
+  ],
+  "token_entropy": [
+    1.2131118774414062,
+    0.9569157361984253,
+    0.4694707691669464,
+    0.49658578634262085,
+    0.08761106431484222,
+    0.00944826751947403,
+    0.0598183274269104,
+    0.49621817469596863
+  ],
+  "token_logprob_sum": [
+    -748274.3125,
+    -770919.75,
+    -748091.125,
+    -718492.25,
+    -739629.4375,
+    -858965.25,
+    -801101.4375,
+    -805549.375
+  ],
+  "token_topk_mean_logprob": [
+    -6.236827373504639,
+    -6.333428859710693,
+    -7.221280097961426,
+    -6.929345607757568,
+    -7.988802433013916,
+    -10.563407897949219,
+    -10.033902168273926,
+    -9.182014465332031
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 221,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

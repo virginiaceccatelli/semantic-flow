@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_205",
+  "program_id": "sample_205",
+  "code": "def f(a):\n    for _ in range(10):\n        for j in range(len(a)):\n            if a[j] != '#':\n                a = a[j:]\n                break\n        else:\n            a = \"\"\n            break\n    while a[-1] == '#':\n        a = a[:-1]\n    return a",
+  "call": "f(\"##fiu##nk#he###wumun##\")",
+  "expected": "'fiu##nk#he###wumun'",
+  "dataset": "cruxeval",
+  "source_group": "4599394011c32a9a005dc0d4dde01290c38a319a228a3003c74c8120bd353367",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(a):\n    for _ in range(10):\n        for j in range(len(a)):\n            if a[j] != '#':\n                a = a[j:]\n                break\n        else:\n            a = \"\"\n            break\n    while a[-1] == '#':\n        a = a[:-1]\n    return a\n\nassert f(\"##fiu##nk#he###wumun##\") ==",
+  "n_prompt_tokens": 258,
+  "raw_generation": " \"nk#he\"\n",
+  "answer": "\"nk#he\"",
+  "generated_token_ids": [
+    440,
+    77,
+    74,
+    2,
+    247,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'nk#he'",
+  "token_logprob": [
+    -0.12341754883527756,
+    -1.4476879835128784,
+    -0.028291111811995506,
+    -0.5530722141265869,
+    -0.025294503197073936,
+    -0.3966463506221771,
+    -0.20346038043498993
+  ],
+  "token_entropy": [
+    0.5127992033958435,
+    2.294973373413086,
+    0.18266436457633972,
+    1.0949020385742188,
+    0.15073391795158386,
+    1.0236504077911377,
+    0.4928302764892578
+  ],
+  "token_logprob_sum": [
+    -784530.1875,
+    -669455.75,
+    -797677.5,
+    -722022.1875,
+    -841606.875,
+    -737127.5,
+    -822000.0625
+  ],
+  "token_topk_mean_logprob": [
+    -7.460917949676514,
+    -4.447688579559326,
+    -7.49704122543335,
+    -6.259321689605713,
+    -8.300294876098633,
+    -6.971646308898926,
+    -9.484710693359375
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 237,
+  "read_token_ids": [
+    245,
+    2312
+  ]
+}

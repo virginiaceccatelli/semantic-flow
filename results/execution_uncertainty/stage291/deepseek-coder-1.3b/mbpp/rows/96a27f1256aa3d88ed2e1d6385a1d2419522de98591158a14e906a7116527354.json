@@ -1,0 +1,63 @@
+{
+  "case_id": "270:0",
+  "program_id": "270",
+  "code": "def sum_even_and_even_index(arr,n):  \r\n    i = 0\r\n    sum = 0\r\n    for i in range(0,n,2): \r\n        if (arr[i] % 2 == 0) : \r\n            sum += arr[i]  \r\n    return sum",
+  "call": "sum_even_and_even_index([5, 6, 12, 1, 18, 8],6)",
+  "expected": "30",
+  "dataset": "mbpp",
+  "source_group": "eca1556e923fc610ec04844e9687c2a0b4df95786a46a0f8b6ac24c3a4f1d5f4",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_even_and_even_index(arr,n):  \r\n    i = 0\r\n    sum = 0\r\n    for i in range(0,n,2): \r\n        if (arr[i] % 2 == 0) : \r\n            sum += arr[i]  \r\n    return sum\n\nassert sum_even_and_even_index([5, 6, 12, 1, 18, 8],6) ==",
+  "n_prompt_tokens": 264,
+  "raw_generation": "  20\n",
+  "answer": "20",
+  "generated_token_ids": [
+    243,
+    17,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "20",
+  "token_logprob": [
+    -1.317190408706665,
+    -1.0727765560150146,
+    -1.3805025815963745,
+    -0.36997437477111816
+  ],
+  "token_entropy": [
+    2.3525586128234863,
+    1.6634339094161987,
+    1.997259497642517,
+    1.0663400888442993
+  ],
+  "token_logprob_sum": [
+    -690784.8125,
+    -776131.125,
+    -814660.375,
+    -725449.875
+  ],
+  "token_topk_mean_logprob": [
+    -3.94531512260437,
+    -6.885276794433594,
+    -5.036752700805664,
+    -5.997317790985107
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 228,
+  "read_token_ids": [
+    2545,
+    2312
+  ]
+}

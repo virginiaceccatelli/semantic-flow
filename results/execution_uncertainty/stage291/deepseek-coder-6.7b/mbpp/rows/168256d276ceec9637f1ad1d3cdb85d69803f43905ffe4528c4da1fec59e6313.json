@@ -1,0 +1,68 @@
+{
+  "case_id": "373:2",
+  "program_id": "373",
+  "code": "def volume_cuboid(l,w,h):\r\n  volume=l*w*h\r\n  return volume",
+  "call": "volume_cuboid(10,15,21)",
+  "expected": "3150",
+  "dataset": "mbpp",
+  "source_group": "ff46c074ba32b51e5fd6e8aace7e39e6d93a072df2b65c4cc582b6f5b8ae8acc",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef volume_cuboid(l,w,h):\r\n  volume=l*w*h\r\n  return volume\n\nassert volume_cuboid(10,15,21) ==",
+  "n_prompt_tokens": 201,
+  "raw_generation": "3150\n",
+  "answer": "3150",
+  "generated_token_ids": [
+    18,
+    16,
+    20,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3150",
+  "token_logprob": [
+    -1.1881574392318726,
+    -0.041459303349256516,
+    -0.004301818553358316,
+    -0.01411396637558937,
+    -0.4884124994277954
+  ],
+  "token_entropy": [
+    1.684997320175171,
+    0.22538764774799347,
+    0.03559577465057373,
+    0.09498731791973114,
+    1.0685570240020752
+  ],
+  "token_logprob_sum": [
+    -662600.25,
+    -856605.3125,
+    -887183.75,
+    -805246.0,
+    -718046.5625
+  ],
+  "token_topk_mean_logprob": [
+    -5.281907558441162,
+    -8.166460037231445,
+    -10.319926261901855,
+    -8.757864952087402,
+    -6.5290374755859375
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 181,
+  "read_token_ids": [
+    6530,
+    2312
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "case_id": "319:0",
+  "program_id": "319",
+  "code": "import re\r\ndef find_long_word(text):\r\n  return (re.findall(r\"\\b\\w{5}\\b\", text))",
+  "call": "find_long_word('Please move back to strem')",
+  "expected": "['strem']",
+  "dataset": "mbpp",
+  "source_group": "844f4b785a0fd2374fb38d807e35b9478bd3200d5c58413af0a186890cfa60a0",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef find_long_word(text):\r\n  return (re.findall(r\"\\b\\w{5}\\b\", text))\n\nassert find_long_word('Please move back to strem') ==",
+  "n_prompt_tokens": 207,
+  "raw_generation": " ['strem']\n",
+  "answer": "['strem']",
+  "generated_token_ids": [
+    12036,
+    292,
+    1836,
+    3676,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "['strem']",
+  "token_logprob": [
+    -0.33981087803840637,
+    -0.7535508871078491,
+    -0.041077014058828354,
+    -0.16135981678962708,
+    -0.44505947828292847
+  ],
+  "token_entropy": [
+    1.0882644653320312,
+    1.7569338083267212,
+    0.23351749777793884,
+    0.5353242754936218,
+    0.9469466805458069
+  ],
+  "token_logprob_sum": [
+    -695486.625,
+    -626910.0,
+    -797335.0625,
+    -682938.125,
+    -710053.5625
+  ],
+  "token_topk_mean_logprob": [
+    -5.352311134338379,
+    -5.578550815582275,
+    -7.382483005523682,
+    -8.148859977722168,
+    -7.6075592041015625
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 189,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

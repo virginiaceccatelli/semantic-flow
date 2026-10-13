@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_752",
+  "program_id": "sample_752",
+  "code": "def f(s, amount):\n    return (amount - len(s)) * 'z' + s",
+  "call": "f('abc', 8)",
+  "expected": "'zzzzzabc'",
+  "dataset": "cruxeval",
+  "source_group": "8bbb95ef56826e3943395e21c199e76bf2f8f5374bcb00def7fed868ef1139a1",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s, amount):\n    return (amount - len(s)) * 'z' + s\n\nassert f('abc', 8) ==",
+  "n_prompt_tokens": 188,
+  "raw_generation": " 'zzzabc'\n",
+  "answer": "'zzzabc'",
+  "generated_token_ids": [
+    651,
+    4877,
+    89,
+    22729,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'zzzabc'",
+  "token_logprob": [
+    -0.018147151917219162,
+    -0.0536511056125164,
+    -0.9162863492965698,
+    -0.031797632575035095,
+    -0.010568012483417988,
+    -0.144765704870224
+  ],
+  "token_entropy": [
+    0.10909678041934967,
+    0.30150091648101807,
+    1.2030543088912964,
+    0.15311001241207123,
+    0.07211878150701523,
+    0.4098603427410126
+  ],
+  "token_logprob_sum": [
+    -836134.0,
+    -723950.25,
+    -788112.625,
+    -877122.125,
+    -869683.875,
+    -808809.625
+  ],
+  "token_topk_mean_logprob": [
+    -8.961897850036621,
+    -7.134901523590088,
+    -6.785036563873291,
+    -9.094298362731934,
+    -9.660568237304688,
+    -9.7260160446167
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 176,
+  "read_token_ids": [
+    252,
+    2312
+  ]
+}

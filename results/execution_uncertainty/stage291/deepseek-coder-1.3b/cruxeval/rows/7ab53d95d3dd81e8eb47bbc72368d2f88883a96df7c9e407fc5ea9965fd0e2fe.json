@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_642",
+  "program_id": "sample_642",
+  "code": "def f(text):\n    i = 0\n    while i < len(text) and text[i].isspace():\n        i+=1\n    if i == len(text):\n        return 'space'\n    return 'no'",
+  "call": "f(\"     \")",
+  "expected": "'space'",
+  "dataset": "cruxeval",
+  "source_group": "7f09b70b59382e4383c5c39563782dac5740c17256bbcda6004d841de25a3520",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    i = 0\n    while i < len(text) and text[i].isspace():\n        i+=1\n    if i == len(text):\n        return 'space'\n    return 'no'\n\nassert f(\"     \") ==",
+  "n_prompt_tokens": 216,
+  "raw_generation": " 'space'\n",
+  "answer": "'space'",
+  "generated_token_ids": [
+    651,
+    3291,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'space'",
+  "token_logprob": [
+    -0.2756502032279968,
+    -0.2045171707868576,
+    -0.0010052633006125689,
+    -0.13156193494796753
+  ],
+  "token_entropy": [
+    0.6147209405899048,
+    0.5053837895393372,
+    0.009247465059161186,
+    0.4019320607185364
+  ],
+  "token_logprob_sum": [
+    -840580.875,
+    -760476.8125,
+    -806995.875,
+    -812505.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.7653961181640625,
+    -8.692017555236816,
+    -11.135380744934082,
+    -8.906562805175781
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 207,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

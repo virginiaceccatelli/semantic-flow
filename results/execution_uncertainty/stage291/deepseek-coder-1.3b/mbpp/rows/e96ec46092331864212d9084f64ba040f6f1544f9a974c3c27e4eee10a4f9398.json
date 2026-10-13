@@ -1,0 +1,63 @@
+{
+  "case_id": "62:2",
+  "program_id": "62",
+  "code": "def smallest_num(xs):\n  return min(xs)",
+  "call": "smallest_num([45, 46, 50, 60])",
+  "expected": "45",
+  "dataset": "mbpp",
+  "source_group": "7cdec08798de1627de92322c0ec25822be5bee9a86c8ff073fd758d4009f9e0f",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef smallest_num(xs):\n  return min(xs)\n\nassert smallest_num([45, 46, 50, 60]) ==",
+  "n_prompt_tokens": 191,
+  "raw_generation": "  45\n",
+  "answer": "45",
+  "generated_token_ids": [
+    243,
+    19,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "45",
+  "token_logprob": [
+    -1.277795433998108,
+    -0.061282217502593994,
+    -0.04836927726864815,
+    -0.1421341747045517
+  ],
+  "token_entropy": [
+    2.3522207736968994,
+    0.2719334065914154,
+    0.2148311585187912,
+    0.4663238525390625
+  ],
+  "token_logprob_sum": [
+    -676317.9375,
+    -903191.9375,
+    -898748.125,
+    -767485.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.301232814788818,
+    -9.317532539367676,
+    -10.632158279418945,
+    -7.874946594238281
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 167,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

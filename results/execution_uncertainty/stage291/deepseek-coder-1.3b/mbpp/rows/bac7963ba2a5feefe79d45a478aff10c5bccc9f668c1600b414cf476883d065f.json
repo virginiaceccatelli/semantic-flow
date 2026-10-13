@@ -1,0 +1,53 @@
+{
+  "case_id": "250:0",
+  "program_id": "250",
+  "code": "def count_X(tup, x): \r\n    count = 0\r\n    for ele in tup: \r\n        if (ele == x): \r\n            count = count + 1\r\n    return count",
+  "call": "count_X((10, 8, 5, 2, 10, 15, 10, 8, 5, 8, 8, 2),4)",
+  "expected": "0",
+  "dataset": "mbpp",
+  "source_group": "ad08409fc1d16c48d100461a75445ea59d10ca7c5de31118e3ef4a9558315a5d",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_X(tup, x): \r\n    count = 0\r\n    for ele in tup: \r\n        if (ele == x): \r\n            count = count + 1\r\n    return count\n\nassert count_X((10, 8, 5, 2, 10, 15, 10, 8, 5, 8, 8, 2),4) ==",
+  "n_prompt_tokens": 253,
+  "raw_generation": "3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.6349530220031738,
+    -0.5227084159851074
+  ],
+  "token_entropy": [
+    2.505356788635254,
+    1.1673588752746582
+  ],
+  "token_logprob_sum": [
+    -680620.875,
+    -689931.5625
+  ],
+  "token_topk_mean_logprob": [
+    -3.9755783081054688,
+    -6.260209083557129
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 203,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

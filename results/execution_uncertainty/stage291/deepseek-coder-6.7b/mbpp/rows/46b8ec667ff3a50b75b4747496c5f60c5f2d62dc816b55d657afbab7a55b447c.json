@@ -1,0 +1,53 @@
+{
+  "case_id": "109:0",
+  "program_id": "109",
+  "code": "def odd_Equivalent(s,n): \r\n    count=0\r\n    for i in range(0,n): \r\n        if (s[i] == '1'): \r\n            count = count + 1\r\n    return count",
+  "call": "odd_Equivalent(\"011001\",6)",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "fdc0dbc831503e48adbb17948bf1e0d8bed1ed3755cb9a1c7391d9edbbea8852",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef odd_Equivalent(s,n): \r\n    count=0\r\n    for i in range(0,n): \r\n        if (s[i] == '1'): \r\n            count = count + 1\r\n    return count\n\nassert odd_Equivalent(\"011001\",6) ==",
+  "n_prompt_tokens": 230,
+  "raw_generation": "3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -0.6996096968650818,
+    -0.654374361038208
+  ],
+  "token_entropy": [
+    1.8288869857788086,
+    1.017242193222046
+  ],
+  "token_logprob_sum": [
+    -668421.125,
+    -746735.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.62460994720459,
+    -6.654374599456787
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 211,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

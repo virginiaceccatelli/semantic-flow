@@ -1,0 +1,68 @@
+{
+  "case_id": "132:0",
+  "program_id": "132",
+  "code": "def tup_string(tup1):\r\n  str =  ''.join(tup1)\r\n  return str",
+  "call": "tup_string(('e', 'x', 'e', 'r', 'c', 'i', 's', 'e', 's'))",
+  "expected": "'exercises'",
+  "dataset": "mbpp",
+  "source_group": "0cdb18a76bdb5b75a083f50026ebf14a3060bdda1f0cb9cea0a67d59885c0df4",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef tup_string(tup1):\r\n  str =  ''.join(tup1)\r\n  return str\n\nassert tup_string(('e', 'x', 'e', 'r', 'c', 'i', 's', 'e', 's')) ==",
+  "n_prompt_tokens": 218,
+  "raw_generation": " 'excise'\n",
+  "answer": "'excise'",
+  "generated_token_ids": [
+    651,
+    19534,
+    1007,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'excise'",
+  "token_logprob": [
+    -0.13132831454277039,
+    -0.2106657773256302,
+    -0.6216913461685181,
+    -0.03691338002681732,
+    -0.3450934588909149
+  ],
+  "token_entropy": [
+    0.5074082016944885,
+    0.7902699708938599,
+    1.1423845291137695,
+    0.20964577794075012,
+    0.8569944500923157
+  ],
+  "token_logprob_sum": [
+    -752989.375,
+    -810590.0,
+    -731913.8125,
+    -740085.5,
+    -716574.1875
+  ],
+  "token_topk_mean_logprob": [
+    -6.74646520614624,
+    -5.949882507324219,
+    -5.8091912269592285,
+    -7.617088317871094,
+    -8.10759449005127
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 181,
+  "read_token_ids": [
+    1401,
+    2312
+  ]
+}

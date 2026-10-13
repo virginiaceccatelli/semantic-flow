@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_798",
+  "program_id": "sample_798",
+  "code": "def f(text, pre):\n    if not text.startswith(pre):\n        return text\n    return text.removeprefix(pre)",
+  "call": "f('@hihu@!', '@hihu')",
+  "expected": "'@!'",
+  "dataset": "cruxeval",
+  "source_group": "385e24e1981c1d27a5a6fa4e4e331f3f1a0d7c13a6fbcc089dca4496d09b99f3",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, pre):\n    if not text.startswith(pre):\n        return text\n    return text.removeprefix(pre)\n\nassert f('@hihu@!', '@hihu') ==",
+  "n_prompt_tokens": 204,
+  "raw_generation": " '!'\n",
+  "answer": "'!'",
+  "generated_token_ids": [
+    651,
+    13837,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'!'",
+  "token_logprob": [
+    -0.06716001033782959,
+    -0.4246954917907715,
+    -0.02946837991476059
+  ],
+  "token_entropy": [
+    0.3275667428970337,
+    1.0458972454071045,
+    0.1474129557609558
+  ],
+  "token_logprob_sum": [
+    -792557.5,
+    -668558.125,
+    -812329.0
+  ],
+  "token_topk_mean_logprob": [
+    -7.029660224914551,
+    -6.349696636199951,
+    -9.248218536376953
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 186,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

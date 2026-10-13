@@ -1,0 +1,68 @@
+{
+  "case_id": "453:1",
+  "program_id": "453",
+  "code": "import math \r\ndef sumofFactors(n) : \r\n    if (n % 2 != 0) : \r\n        return 0\r\n    res = 1\r\n    for i in range(2, (int)(math.sqrt(n)) + 1) :    \r\n        count = 0\r\n        curr_sum = 1\r\n        curr_term = 1\r\n        while (n % i == 0) : \r\n            count= count + 1\r\n            n = n // i \r\n            if (i == 2 and count == 1) : \r\n                curr_sum = 0\r\n            curr_term = curr_term * i \r\n            curr_sum = curr_sum + curr_term \r\n        res = res * curr_sum  \r\n    if (n >= 2) : \r\n        res = res * (1 + n) \r\n    return res",
+  "call": "sumofFactors(30)",
+  "expected": "48",
+  "dataset": "mbpp",
+  "source_group": "76a8103f8569362e7c90d36b685ab3abab2e49773b898380a0f35635311581f3",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport math \r\ndef sumofFactors(n) : \r\n    if (n % 2 != 0) : \r\n        return 0\r\n    res = 1\r\n    for i in range(2, (int)(math.sqrt(n)) + 1) :    \r\n        count = 0\r\n        curr_sum = 1\r\n        curr_term = 1\r\n        while (n % i == 0) : \r\n            count= count + 1\r\n            n = n // i \r\n            if (i == 2 and count == 1) : \r\n                curr_sum = 0\r\n            curr_term = curr_term * i \r\n            curr_sum = curr_sum + curr_term \r\n        res = res * curr_sum  \r\n    if (n >= 2) : \r\n        res = res * (1 + n) \r\n    return res\n\nassert sumofFactors(30) ==",
+  "n_prompt_tokens": 384,
+  "raw_generation": "  120\n",
+  "answer": "120",
+  "generated_token_ids": [
+    243,
+    16,
+    17,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 1,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "120",
+  "token_logprob": [
+    -1.1653529405593872,
+    -1.1175236701965332,
+    -1.6552233695983887,
+    -1.3181270360946655,
+    -0.4749731123447418
+  ],
+  "token_entropy": [
+    2.561565637588501,
+    1.9907617568969727,
+    2.319869041442871,
+    2.3736073970794678,
+    1.4138567447662354
+  ],
+  "token_logprob_sum": [
+    -657048.5625,
+    -728400.125,
+    -780087.6875,
+    -788603.625,
+    -760088.4375
+  ],
+  "token_topk_mean_logprob": [
+    -3.7091026306152344,
+    -5.736273288726807,
+    -4.517723560333252,
+    -4.293127536773682,
+    -4.7937235832214355
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 371,
+  "read_token_ids": [
+    593,
+    2312
+  ]
+}

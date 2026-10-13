@@ -1,0 +1,53 @@
+{
+  "case_id": "283:1",
+  "program_id": "283",
+  "code": "def validate(n): \r\n    for i in range(10): \r\n        temp = n;  \r\n        count = 0; \r\n        while (temp): \r\n            if (temp % 10 == i): \r\n                count+=1;  \r\n            if (count > i): \r\n                return False\r\n            temp //= 10; \r\n    return True",
+  "call": "validate(51241)",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "fa80159bf62ac2849cee1240280a5570c73b95c0845bb39b6dc79360ff19e534",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef validate(n): \r\n    for i in range(10): \r\n        temp = n;  \r\n        count = 0; \r\n        while (temp): \r\n            if (temp % 10 == i): \r\n                count+=1;  \r\n            if (count > i): \r\n                return False\r\n            temp //= 10; \r\n    return True\n\nassert validate(51241) ==",
+  "n_prompt_tokens": 261,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.47634509205818176,
+    -0.4682275652885437
+  ],
+  "token_entropy": [
+    0.6844971179962158,
+    0.9455165266990662
+  ],
+  "token_logprob_sum": [
+    -765646.1875,
+    -755054.4375
+  ],
+  "token_topk_mean_logprob": [
+    -8.791970252990723,
+    -7.011977672576904
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 248,
+  "read_token_ids": [
+    10502,
+    2312
+  ]
+}

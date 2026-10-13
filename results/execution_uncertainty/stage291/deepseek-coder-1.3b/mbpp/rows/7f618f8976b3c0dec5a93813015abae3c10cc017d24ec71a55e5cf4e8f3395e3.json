@@ -1,0 +1,53 @@
+{
+  "case_id": "192:1",
+  "program_id": "192",
+  "code": "def check_String(str): \r\n    flag_l = False\r\n    flag_n = False\r\n    for i in str: \r\n        if i.isalpha(): \r\n            flag_l = True  \r\n        if i.isdigit(): \r\n            flag_n = True\r\n    return flag_l and flag_n",
+  "call": "check_String('python')",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "0d1a4229693bfe43bc37c58eb7d755aefef43ce1ba2b07d2911426d530f94704",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_String(str): \r\n    flag_l = False\r\n    flag_n = False\r\n    for i in str: \r\n        if i.isalpha(): \r\n            flag_l = True  \r\n        if i.isdigit(): \r\n            flag_n = True\r\n    return flag_l and flag_n\n\nassert check_String('python') ==",
+  "n_prompt_tokens": 246,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.21057221293449402,
+    -0.3209344446659088
+  ],
+  "token_entropy": [
+    0.5432219505310059,
+    0.9074162840843201
+  ],
+  "token_logprob_sum": [
+    -759922.875,
+    -782736.9375
+  ],
+  "token_topk_mean_logprob": [
+    -8.085573196411133,
+    -6.503051280975342
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 235,
+  "read_token_ids": [
+    77,
+    2312
+  ]
+}

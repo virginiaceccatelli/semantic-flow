@@ -1,0 +1,73 @@
+{
+  "case_id": "212:0",
+  "program_id": "212",
+  "code": "import math  \r\ndef fourth_Power_Sum(n): \r\n    sum = 0\r\n    for i in range(1,n+1) : \r\n        sum = sum + (i*i*i*i) \r\n    return sum",
+  "call": "fourth_Power_Sum(2)",
+  "expected": "17",
+  "dataset": "mbpp",
+  "source_group": "0d1cbdcb90a66ee00bbeb1a91b1b7f4c3921077b4e3788592195542ebeb6dae3",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport math  \r\ndef fourth_Power_Sum(n): \r\n    sum = 0\r\n    for i in range(1,n+1) : \r\n        sum = sum + (i*i*i*i) \r\n    return sum\n\nassert fourth_Power_Sum(2) ==",
+  "n_prompt_tokens": 225,
+  "raw_generation": " (1+8)\n",
+  "answer": "(1+8)",
+  "generated_token_ids": [
+    334,
+    16,
+    10,
+    23,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "constant_expression",
+  "invalid_reason": null,
+  "parsed_answer": "9",
+  "token_logprob": [
+    -1.0060627460479736,
+    -0.4902748465538025,
+    -1.1098706722259521,
+    -0.6411975026130676,
+    -0.010975939221680164,
+    -0.313747376203537
+  ],
+  "token_entropy": [
+    2.4011099338531494,
+    1.4376009702682495,
+    1.7591495513916016,
+    1.3876726627349854,
+    0.08318091928958893,
+    1.0766643285751343
+  ],
+  "token_logprob_sum": [
+    -663398.625,
+    -719541.9375,
+    -821348.375,
+    -751104.4375,
+    -886016.5,
+    -763004.875
+  ],
+  "token_topk_mean_logprob": [
+    -3.9248123168945312,
+    -5.252774715423584,
+    -4.759871006011963,
+    -6.356822490692139,
+    -8.279726028442383,
+    -5.713747501373291
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 212,
+  "read_token_ids": [
+    2545,
+    2312
+  ]
+}

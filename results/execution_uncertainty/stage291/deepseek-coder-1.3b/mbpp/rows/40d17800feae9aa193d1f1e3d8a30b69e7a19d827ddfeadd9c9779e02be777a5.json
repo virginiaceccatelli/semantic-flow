@@ -1,0 +1,73 @@
+{
+  "case_id": "274:2",
+  "program_id": "274",
+  "code": "import math  \r\ndef even_binomial_Coeff_Sum( n): \r\n    return (1 << (n - 1))",
+  "call": "even_binomial_Coeff_Sum(2)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "72d8fe4d078a0b1704ac5f4c1af9f7a933e4852babdb3664f8b0c897a169d479",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport math  \r\ndef even_binomial_Coeff_Sum( n): \r\n    return (1 << (n - 1))\n\nassert even_binomial_Coeff_Sum(2) ==",
+  "n_prompt_tokens": 204,
+  "raw_generation": " (1 << 1)\n",
+  "answer": "(1 << 1)",
+  "generated_token_ids": [
+    334,
+    16,
+    30252,
+    16,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "constant_expression",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.2978206872940063,
+    -0.3573320508003235,
+    -0.9564513564109802,
+    -0.2541443407535553,
+    -0.022874653339385986,
+    -0.2882236838340759
+  ],
+  "token_entropy": [
+    2.3244805335998535,
+    1.2053247690200806,
+    1.7383191585540771,
+    0.7198580503463745,
+    0.16335591673851013,
+    1.0468919277191162
+  ],
+  "token_logprob_sum": [
+    -657048.875,
+    -700215.25,
+    -689783.75,
+    -814231.375,
+    -757204.25,
+    -730700.25
+  ],
+  "token_topk_mean_logprob": [
+    -4.1228203773498535,
+    -5.269832134246826,
+    -5.012701511383057,
+    -9.129144668579102,
+    -7.410374641418457,
+    -5.6716227531433105
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 186,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "289:2",
+  "program_id": "289",
+  "code": "def odd_Days(N): \r\n    hund1 = N // 100\r\n    hund4 = N // 400\r\n    leap = N >> 2\r\n    ordd = N - leap \r\n    if (hund1): \r\n        ordd += hund1 \r\n        leap -= hund1 \r\n    if (hund4): \r\n        ordd -= hund4 \r\n        leap += hund4 \r\n    days = ordd + leap * 2\r\n    odd = days % 7\r\n    return odd",
+  "call": "odd_Days(75)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "208382b3a9ed00d579e4e8f0f6c3d768e2335b69c6ed9b532e5e28ef3953c678",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef odd_Days(N): \r\n    hund1 = N // 100\r\n    hund4 = N // 400\r\n    leap = N >> 2\r\n    ordd = N - leap \r\n    if (hund1): \r\n        ordd += hund1 \r\n        leap -= hund1 \r\n    if (hund4): \r\n        ordd -= hund4 \r\n        leap += hund4 \r\n    days = ordd + leap * 2\r\n    odd = days % 7\r\n    return odd\n\nassert odd_Days(75) ==",
+  "n_prompt_tokens": 306,
+  "raw_generation": " (1)\n",
+  "answer": "(1)",
+  "generated_token_ids": [
+    334,
+    16,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "1",
+  "token_logprob": [
+    -1.4423229694366455,
+    -1.7769628763198853,
+    -0.657210648059845,
+    -0.5540319681167603
+  ],
+  "token_entropy": [
+    2.916062355041504,
+    2.246898889541626,
+    2.071425437927246,
+    1.0998284816741943
+  ],
+  "token_logprob_sum": [
+    -636854.0,
+    -679768.5,
+    -727468.5,
+    -702962.5
+  ],
+  "token_topk_mean_logprob": [
+    -3.592322587966919,
+    -4.6769633293151855,
+    -4.063460826873779,
+    -6.504033088684082
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 293,
+  "read_token_ids": [
+    8792,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "254:2",
+  "program_id": "254",
+  "code": "import re\r\ndef words_ae(text):\r\n list = re.findall(\"[ae]\\w+\", text)\r\n return list",
+  "call": "words_ae(\"assert statement\")",
+  "expected": "['assert', 'atement']",
+  "dataset": "mbpp",
+  "source_group": "267036e8d8a7cce1e3a8fe9f8747e9b87b82290f216ba897503bffeebdb2db0b",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef words_ae(text):\r\n list = re.findall(\"[ae]\\w+\", text)\r\n return list\n\nassert words_ae(\"assert statement\") ==",
+  "n_prompt_tokens": 197,
+  "raw_generation": " ['assert']\n",
+  "answer": "['assert']",
+  "generated_token_ids": [
+    12036,
+    5666,
+    3676,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "['assert']",
+  "token_logprob": [
+    -0.5789222717285156,
+    -0.059830062091350555,
+    -0.49195045232772827,
+    -0.23787342011928558
+  ],
+  "token_entropy": [
+    1.0440489053726196,
+    0.37944239377975464,
+    0.7701753377914429,
+    0.7019792199134827
+  ],
+  "token_logprob_sum": [
+    -710425.25,
+    -708977.375,
+    -712875.5,
+    -739976.75
+  ],
+  "token_topk_mean_logprob": [
+    -6.316422462463379,
+    -6.812954902648926,
+    -8.116950035095215,
+    -7.91912317276001
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 185,
+  "read_token_ids": [
+    1517,
+    2312
+  ]
+}

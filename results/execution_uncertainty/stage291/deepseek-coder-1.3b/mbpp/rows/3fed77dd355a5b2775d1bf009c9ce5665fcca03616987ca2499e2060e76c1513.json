@@ -1,0 +1,53 @@
+{
+  "case_id": "455:1",
+  "program_id": "455",
+  "code": "def check_monthnumb_number(monthnum2):\r\n  if(monthnum2==1 or monthnum2==3 or monthnum2==5 or monthnum2==7 or monthnum2==8 or monthnum2==10 or monthnum2==12):\r\n    return True\r\n  else:\r\n    return False",
+  "call": "check_monthnumb_number(2)",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "c1c20073e0a0efa605777c0326895fa250a04f93570b2b156bce6a1dc6d0e25c",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_monthnumb_number(monthnum2):\r\n  if(monthnum2==1 or monthnum2==3 or monthnum2==5 or monthnum2==7 or monthnum2==8 or monthnum2==10 or monthnum2==12):\r\n    return True\r\n  else:\r\n    return False\n\nassert check_monthnumb_number(2) ==",
+  "n_prompt_tokens": 245,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.26826879382133484,
+    -0.30174216628074646
+  ],
+  "token_entropy": [
+    0.6262620091438293,
+    0.8247103691101074
+  ],
+  "token_logprob_sum": [
+    -754113.375,
+    -753101.375
+  ],
+  "token_topk_mean_logprob": [
+    -8.230769157409668,
+    -7.045492649078369
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 230,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_108",
+  "program_id": "sample_108",
+  "code": "def f(var):\n    amount = len(var) if type(var) == list else 0\n    if type(var) == dict:\n        amount = len(var.keys())\n    nonzero = amount if amount > 0 else 0\n    return nonzero",
+  "call": "f(1)",
+  "expected": "0",
+  "dataset": "cruxeval",
+  "source_group": "be0159eb539fbc15ef259168c09c788da578f7c1e9439c7895eeec3ba031c731",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(var):\n    amount = len(var) if type(var) == list else 0\n    if type(var) == dict:\n        amount = len(var.keys())\n    nonzero = amount if amount > 0 else 0\n    return nonzero\n\nassert f(1) ==",
+  "n_prompt_tokens": 223,
+  "raw_generation": " False\n",
+  "answer": "False",
+  "generated_token_ids": [
+    14729,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "False",
+  "token_logprob": [
+    -1.1707732677459717,
+    -0.03366087004542351
+  ],
+  "token_entropy": [
+    2.1621315479278564,
+    0.20089833438396454
+  ],
+  "token_logprob_sum": [
+    -689097.375,
+    -812394.0
+  ],
+  "token_topk_mean_logprob": [
+    -4.3707733154296875,
+    -7.958661079406738
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 214,
+  "read_token_ids": [
+    12057,
+    2312
+  ]
+}

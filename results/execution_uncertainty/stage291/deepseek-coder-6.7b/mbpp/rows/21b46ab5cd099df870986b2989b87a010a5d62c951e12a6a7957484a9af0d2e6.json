@@ -1,0 +1,68 @@
+{
+  "case_id": "86:0",
+  "program_id": "86",
+  "code": "def centered_hexagonal_number(n):\r\n  return 3 * n * (n - 1) + 1",
+  "call": "centered_hexagonal_number(10)",
+  "expected": "271",
+  "dataset": "mbpp",
+  "source_group": "f4fa17df6cac3f416bdcf0420a5567129d123a2946b9660109d906a2d3bd577f",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef centered_hexagonal_number(n):\r\n  return 3 * n * (n - 1) + 1\n\nassert centered_hexagonal_number(10) ==",
+  "n_prompt_tokens": 195,
+  "raw_generation": "  121\n",
+  "answer": "121",
+  "generated_token_ids": [
+    243,
+    16,
+    17,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 1,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "121",
+  "token_logprob": [
+    -0.9629395008087158,
+    -1.1768550872802734,
+    -1.343866229057312,
+    -0.17333006858825684,
+    -0.516035795211792
+  ],
+  "token_entropy": [
+    2.2975010871887207,
+    1.9042001962661743,
+    2.1330080032348633,
+    0.7352192997932434,
+    1.3371691703796387
+  ],
+  "token_logprob_sum": [
+    -650785.375,
+    -775561.6875,
+    -691533.6875,
+    -819335.125,
+    -779798.8125
+  ],
+  "token_topk_mean_logprob": [
+    -4.106689453125,
+    -6.18310546875,
+    -4.853241443634033,
+    -6.598330974578857,
+    -5.434786319732666
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 180,
+  "read_token_ids": [
+    16,
+    2312
+  ]
+}

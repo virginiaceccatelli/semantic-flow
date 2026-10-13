@@ -1,0 +1,83 @@
+{
+  "case_id": "448:2",
+  "program_id": "448",
+  "code": "def cal_sum(n): \r\n\ta = 3\r\n\tb = 0\r\n\tc = 2\r\n\tif (n == 0): \r\n\t\treturn 3\r\n\tif (n == 1): \r\n\t\treturn 3\r\n\tif (n == 2): \r\n\t\treturn 5\r\n\tsum = 5\r\n\twhile (n > 2): \r\n\t\td = a + b \r\n\t\tsum = sum + d \r\n\t\ta = b \r\n\t\tb = c \r\n\t\tc = d \r\n\t\tn = n-1\r\n\treturn sum",
+  "call": "cal_sum(11)",
+  "expected": "88",
+  "dataset": "mbpp",
+  "source_group": "51d77a6390a93d550da1f2d0d86dca4ffcb7d11f0e0f9df6c0e6e66522a42623",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef cal_sum(n): \r\n\ta = 3\r\n\tb = 0\r\n\tc = 2\r\n\tif (n == 0): \r\n\t\treturn 3\r\n\tif (n == 1): \r\n\t\treturn 3\r\n\tif (n == 2): \r\n\t\treturn 5\r\n\tsum = 5\r\n\twhile (n > 2): \r\n\t\td = a + b \r\n\t\tsum = sum + d \r\n\t\ta = b \r\n\t\tb = c \r\n\t\tc = d \r\n\t\tn = n-1\r\n\treturn sum\n\nassert cal_sum(11) ==",
+  "n_prompt_tokens": 307,
+  "raw_generation": " cal_sum(10)\n",
+  "answer": "cal_sum(10)",
+  "generated_token_ids": [
+    2173,
+    62,
+    1828,
+    7,
+    16,
+    15,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "invalid",
+  "answer_form": null,
+  "invalid_reason": "non_constant: not a constant expression: Call",
+  "parsed_answer": null,
+  "token_logprob": [
+    -0.6800139546394348,
+    -0.002181176096200943,
+    -0.0018099845619872212,
+    -0.027126843109726906,
+    -0.6310426592826843,
+    -0.7202873826026917,
+    -0.10343169420957565,
+    -1.2236241102218628
+  ],
+  "token_entropy": [
+    2.0684595108032227,
+    0.022292111068964005,
+    0.022455213591456413,
+    0.20296582579612732,
+    1.6841880083084106,
+    1.483187198638916,
+    0.4404345750808716,
+    2.1076629161834717
+  ],
+  "token_logprob_sum": [
+    -646069.75,
+    -745439.5,
+    -817757.8125,
+    -710106.4375,
+    -679607.25,
+    -732983.0,
+    -746902.25,
+    -698413.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.242514133453369,
+    -9.639680862426758,
+    -9.66430950164795,
+    -6.7427520751953125,
+    -5.731042385101318,
+    -5.9327874183654785,
+    -6.678431987762451,
+    -4.736124515533447
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 295,
+  "read_token_ids": [
+    2545,
+    2312
+  ]
+}

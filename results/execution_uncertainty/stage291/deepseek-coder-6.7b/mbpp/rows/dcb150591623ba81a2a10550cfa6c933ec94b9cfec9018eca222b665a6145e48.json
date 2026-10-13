@@ -1,0 +1,53 @@
+{
+  "case_id": "464:0",
+  "program_id": "464",
+  "code": "def check_value(dict, n):\r\n    result = all(x == n for x in dict.values()) \r\n    return result",
+  "call": "check_value({'Cierra Vega': 12, 'Alden Cantrell': 12, 'Kierra Gentry': 12, 'Pierre Cox': 12},10)",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "78b8f6f17a6bb5146d7b4cd9442926d2dadf8bcdc93a6416093559f3da2841e4",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_value(dict, n):\r\n    result = all(x == n for x in dict.values()) \r\n    return result\n\nassert check_value({'Cierra Vega': 12, 'Alden Cantrell': 12, 'Kierra Gentry': 12, 'Pierre Cox': 12},10) ==",
+  "n_prompt_tokens": 238,
+  "raw_generation": " False\n",
+  "answer": "False",
+  "generated_token_ids": [
+    14729,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "False",
+  "token_logprob": [
+    -0.11790785193443298,
+    -0.6512014269828796
+  ],
+  "token_entropy": [
+    0.4430065453052521,
+    1.1235631704330444
+  ],
+  "token_logprob_sum": [
+    -715382.625,
+    -746259.3125
+  ],
+  "token_topk_mean_logprob": [
+    -7.161657810211182,
+    -6.916825771331787
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 185,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

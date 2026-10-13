@@ -1,0 +1,53 @@
+{
+  "case_id": "223:2",
+  "program_id": "223",
+  "code": "def is_majority(arr, n, x):\r\n\ti = binary_search(arr, 0, n-1, x)\r\n\tif i == -1:\r\n\t\treturn False\r\n\tif ((i + n//2) <= (n -1)) and arr[i + n//2] == x:\r\n\t\treturn True\r\n\telse:\r\n\t\treturn False\r\ndef binary_search(arr, low, high, x):\r\n\tif high >= low:\r\n\t\tmid = (low + high)//2 \r\n\t\tif (mid == 0 or x > arr[mid-1]) and (arr[mid] == x):\r\n\t\t\treturn mid\r\n\t\telif x > arr[mid]:\r\n\t\t\treturn binary_search(arr, (mid + 1), high, x)\r\n\t\telse:\r\n\t\t\treturn binary_search(arr, low, (mid -1), x)\r\n\treturn -1",
+  "call": "is_majority([1, 1, 1, 2, 2], 5, 1)",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "92f8dd236431da224f4bf006a39148e01a5be0afed577e96666ced17f78ed924",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef is_majority(arr, n, x):\r\n\ti = binary_search(arr, 0, n-1, x)\r\n\tif i == -1:\r\n\t\treturn False\r\n\tif ((i + n//2) <= (n -1)) and arr[i + n//2] == x:\r\n\t\treturn True\r\n\telse:\r\n\t\treturn False\r\ndef binary_search(arr, low, high, x):\r\n\tif high >= low:\r\n\t\tmid = (low + high)//2 \r\n\t\tif (mid == 0 or x > arr[mid-1]) and (arr[mid] == x):\r\n\t\t\treturn mid\r\n\t\telif x > arr[mid]:\r\n\t\t\treturn binary_search(arr, (mid + 1), high, x)\r\n\t\telse:\r\n\t\t\treturn binary_search(arr, low, (mid -1), x)\r\n\treturn -1\n\nassert is_majority([1, 1, 1, 2, 2], 5, 1) ==",
+  "n_prompt_tokens": 397,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.08391719311475754,
+    -0.35465729236602783
+  ],
+  "token_entropy": [
+    0.3111359477043152,
+    0.922858476638794
+  ],
+  "token_logprob_sum": [
+    -760373.875,
+    -751325.375
+  ],
+  "token_topk_mean_logprob": [
+    -8.355792045593262,
+    -7.104657173156738
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 367,
+  "read_token_ids": [
+    16,
+    2312
+  ]
+}

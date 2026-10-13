@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_8",
+  "program_id": "sample_8",
+  "code": "def f(string, encryption):\n    if encryption == 0:\n        return string\n    else:\n        return string.upper().encode('rot13')",
+  "call": "f('UppEr', 0)",
+  "expected": "'UppEr'",
+  "dataset": "cruxeval",
+  "source_group": "1c6ae7a4022a9f3c95028bf3aeb216ab99c3a725bacdd0b1eddc96f3b7d9bd5a",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(string, encryption):\n    if encryption == 0:\n        return string\n    else:\n        return string.upper().encode('rot13')\n\nassert f('UppEr', 0) ==",
+  "n_prompt_tokens": 202,
+  "raw_generation": " 'uppER'\n",
+  "answer": "'uppER'",
+  "generated_token_ids": [
+    651,
+    393,
+    79,
+    1004,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'uppER'",
+  "token_logprob": [
+    -0.034686993807554245,
+    -1.27199125289917,
+    -0.3474445343017578,
+    -0.6346103549003601,
+    -0.13362134993076324,
+    -0.02099679224193096
+  ],
+  "token_entropy": [
+    0.21407434344291687,
+    2.5060455799102783,
+    1.1821942329406738,
+    1.3450815677642822,
+    0.43173491954803467,
+    0.12267519533634186
+  ],
+  "token_logprob_sum": [
+    -796862.875,
+    -619629.875,
+    -676794.625,
+    -658438.5,
+    -687280.25,
+    -815354.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.6112494468688965,
+    -4.734490871429443,
+    -5.244319438934326,
+    -5.409610271453857,
+    -8.102371215820312,
+    -8.827247619628906
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 188,
+  "read_token_ids": [
+    2462,
+    2312
+  ]
+}

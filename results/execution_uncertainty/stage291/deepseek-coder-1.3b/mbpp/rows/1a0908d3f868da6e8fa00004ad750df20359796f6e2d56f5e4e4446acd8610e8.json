@@ -1,0 +1,63 @@
+{
+  "case_id": "478:2",
+  "program_id": "478",
+  "code": "import re\r\ndef remove_lowercase(str1):\r\n remove_lower = lambda text: re.sub('[a-z]', '', text)\r\n result =  remove_lower(str1)\r\n return result",
+  "call": "remove_lowercase(\"STRinG\")",
+  "expected": "'STRG'",
+  "dataset": "mbpp",
+  "source_group": "73e268fc9190d5a6b25937194a6047ee9bb492f7d63675397b63aa62b39b3f50",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef remove_lowercase(str1):\r\n remove_lower = lambda text: re.sub('[a-z]', '', text)\r\n result =  remove_lower(str1)\r\n return result\n\nassert remove_lowercase(\"STRinG\") ==",
+  "n_prompt_tokens": 220,
+  "raw_generation": " \"STR\"\n",
+  "answer": "\"STR\"",
+  "generated_token_ids": [
+    440,
+    10673,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'STR'",
+  "token_logprob": [
+    -0.14939598739147186,
+    -0.18341246247291565,
+    -0.9994999170303345,
+    -0.28027859330177307
+  ],
+  "token_entropy": [
+    0.5853135585784912,
+    0.7397912740707397,
+    1.9227842092514038,
+    0.7792943716049194
+  ],
+  "token_logprob_sum": [
+    -755561.3125,
+    -703218.875,
+    -699728.25,
+    -735112.0625
+  ],
+  "token_topk_mean_logprob": [
+    -6.905645847320557,
+    -6.3209123611450195,
+    -4.805749416351318,
+    -7.830277919769287
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 205,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "case_id": "274:2",
+  "program_id": "274",
+  "code": "import math  \r\ndef even_binomial_Coeff_Sum( n): \r\n    return (1 << (n - 1))",
+  "call": "even_binomial_Coeff_Sum(2)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "72d8fe4d078a0b1704ac5f4c1af9f7a933e4852babdb3664f8b0c897a169d479",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport math  \r\ndef even_binomial_Coeff_Sum( n): \r\n    return (1 << (n - 1))\n\nassert even_binomial_Coeff_Sum(2) ==",
+  "n_prompt_tokens": 204,
+  "raw_generation": " (1 << 1)\n",
+  "answer": "(1 << 1)",
+  "generated_token_ids": [
+    334,
+    16,
+    30252,
+    16,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "constant_expression",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -0.9261641502380371,
+    -0.3241867125034332,
+    -0.6347556710243225,
+    -0.1428544968366623,
+    -0.03251264989376068,
+    -0.40928956866264343
+  ],
+  "token_entropy": [
+    2.238010883331299,
+    0.9894788861274719,
+    1.4239846467971802,
+    0.5889325737953186,
+    0.2051585465669632,
+    1.2755584716796875
+  ],
+  "token_logprob_sum": [
+    -663599.875,
+    -727706.875,
+    -706080.125,
+    -827563.625,
+    -817667.25,
+    -748216.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.088664531707764,
+    -5.924186706542969,
+    -5.672255992889404,
+    -7.824104309082031,
+    -7.41376256942749,
+    -5.590539455413818
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 186,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

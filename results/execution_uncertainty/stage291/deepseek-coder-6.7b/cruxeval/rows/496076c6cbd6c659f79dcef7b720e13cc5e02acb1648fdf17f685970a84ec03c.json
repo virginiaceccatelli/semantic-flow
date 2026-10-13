@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_448",
+  "program_id": "sample_448",
+  "code": "def f(text, suffix):\n    if suffix == '':\n        suffix = None\n    return text.endswith(suffix)",
+  "call": "f('uMeGndkGh', 'kG')",
+  "expected": "False",
+  "dataset": "cruxeval",
+  "source_group": "c785c939846a6bb1e8c7fb962ceac1bea9e16911bf134d765923fbc17ce1fbad",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, suffix):\n    if suffix == '':\n        suffix = None\n    return text.endswith(suffix)\n\nassert f('uMeGndkGh', 'kG') ==",
+  "n_prompt_tokens": 203,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.31458237767219543,
+    -0.07094114273786545
+  ],
+  "token_entropy": [
+    0.594719648361206,
+    0.29316776990890503
+  ],
+  "token_logprob_sum": [
+    -818683.3125,
+    -813566.5625
+  ],
+  "token_topk_mean_logprob": [
+    -9.733332633972168,
+    -8.352190971374512
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 184,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case_id": "199:2",
+  "program_id": "199",
+  "code": "def highest_Power_of_2(n): \r\n    res = 0; \r\n    for i in range(n, 0, -1):  \r\n        if ((i & (i - 1)) == 0): \r\n            res = i; \r\n            break;      \r\n    return res;",
+  "call": "highest_Power_of_2(32)",
+  "expected": "32",
+  "dataset": "mbpp",
+  "source_group": "82bc3915c751f35c9c9418376e29dfc6305c17ecbf6b4b3c214b2fb3c9e19a4f",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef highest_Power_of_2(n): \r\n    res = 0; \r\n    for i in range(n, 0, -1):  \r\n        if ((i & (i - 1)) == 0): \r\n            res = i; \r\n            break;      \r\n    return res;\n\nassert highest_Power_of_2(32) ==",
+  "n_prompt_tokens": 243,
+  "raw_generation": "32\n",
+  "answer": "32",
+  "generated_token_ids": [
+    18,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "32",
+  "token_logprob": [
+    -1.2721333503723145,
+    -0.0022946475073695183,
+    -0.2736705243587494
+  ],
+  "token_entropy": [
+    2.086545944213867,
+    0.018773425370454788,
+    0.8222095966339111
+  ],
+  "token_logprob_sum": [
+    -656318.9375,
+    -875652.5625,
+    -775896.75
+  ],
+  "token_topk_mean_logprob": [
+    -4.403383731842041,
+    -10.864794731140137,
+    -6.448670387268066
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 227,
+  "read_token_ids": [
+    26,
+    2312
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "case_id": "508:1",
+  "program_id": "508",
+  "code": "def same_order(l1, l2):\r\n    common_elements = set(l1) & set(l2)\r\n    l1 = [e for e in l1 if e in common_elements]\r\n    l2 = [e for e in l2 if e in common_elements]\r\n    return l1 == l2",
+  "call": "same_order([\"red\",\"pink\",\"green\",\"white\",\"black\"],[\"white\",\"orange\",\"pink\",\"black\"])",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "3690fa95684df2776011b8c6641e07fa30de4f1a7f16fb312a03f0fd4aaf4726",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef same_order(l1, l2):\r\n    common_elements = set(l1) & set(l2)\r\n    l1 = [e for e in l1 if e in common_elements]\r\n    l2 = [e for e in l2 if e in common_elements]\r\n    return l1 == l2\n\nassert same_order([\"red\",\"pink\",\"green\",\"white\",\"black\"],[\"white\",\"orange\",\"pink\",\"black\"]) ==",
+  "n_prompt_tokens": 263,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.21218620240688324,
+    -0.2524712383747101
+  ],
+  "token_entropy": [
+    0.5542708039283752,
+    0.75030916929245
+  ],
+  "token_logprob_sum": [
+    -760824.8125,
+    -772593.5
+  ],
+  "token_topk_mean_logprob": [
+    -7.812185764312744,
+    -7.417314052581787
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 231,
+  "read_token_ids": [
+    17,
+    2312
+  ]
+}

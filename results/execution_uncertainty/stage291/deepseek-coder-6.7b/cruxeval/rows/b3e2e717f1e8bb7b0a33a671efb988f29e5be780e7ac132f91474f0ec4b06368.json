@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_679",
+  "program_id": "sample_679",
+  "code": "def f(text):\n    if text == '':\n        return False\n    first_char = text[0]\n    if text[0].isdigit():\n        return False\n    for last_char in text:\n        if (last_char != '_') and not last_char.isidentifier():\n            return False\n    return True",
+  "call": "f('meet')",
+  "expected": "True",
+  "dataset": "cruxeval",
+  "source_group": "1d27c91d744080f0f6d8796b7616e52ef8621f06562b7aaa028ba77a1f93f6e4",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    if text == '':\n        return False\n    first_char = text[0]\n    if text[0].isdigit():\n        return False\n    for last_char in text:\n        if (last_char != '_') and not last_char.isidentifier():\n            return False\n    return True\n\nassert f('meet') ==",
+  "n_prompt_tokens": 241,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.11527490615844727,
+    -0.062408532947301865
+  ],
+  "token_entropy": [
+    0.36114656925201416,
+    0.264954537153244
+  ],
+  "token_logprob_sum": [
+    -805759.0625,
+    -816002.625
+  ],
+  "token_topk_mean_logprob": [
+    -9.421524047851562,
+    -8.537408828735352
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 231,
+  "read_token_ids": [
+    10502,
+    2312
+  ]
+}

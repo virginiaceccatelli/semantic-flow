@@ -1,0 +1,83 @@
+{
+  "case_id": "500:1",
+  "program_id": "500",
+  "code": "def concatenate_elements(list):\r\n  ans = ' '\r\n  for i in list:\r\n    ans = ans+ ' '+i\r\n  return (ans)",
+  "call": "concatenate_elements([ 'Hi', 'there', 'How','are', 'you'] )",
+  "expected": "'  Hi there How are you'",
+  "dataset": "mbpp",
+  "source_group": "fae122d1f79c6f56b76057b9334950a450fedc26b71293cf51aec89eb33afb5c",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef concatenate_elements(list):\r\n  ans = ' '\r\n  for i in list:\r\n    ans = ans+ ' '+i\r\n  return (ans)\n\nassert concatenate_elements([ 'Hi', 'there', 'How','are', 'you'] ) ==",
+  "n_prompt_tokens": 222,
+  "raw_generation": " ' Hi there How are you'\n",
+  "answer": "' Hi there How are you'",
+  "generated_token_ids": [
+    651,
+    11648,
+    741,
+    1717,
+    417,
+    340,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "' Hi there How are you'",
+  "token_logprob": [
+    -0.2645450234413147,
+    -0.3104172348976135,
+    -0.02676108479499817,
+    -0.014313174411654472,
+    -0.01040687132626772,
+    -0.0019271865021437407,
+    -0.2396271973848343,
+    -0.4423869252204895
+  ],
+  "token_entropy": [
+    0.8890863060951233,
+    0.8325557708740234,
+    0.15426631271839142,
+    0.08845990151166916,
+    0.07111530750989914,
+    0.018048427999019623,
+    0.6032069325447083,
+    0.9274937510490417
+  ],
+  "token_logprob_sum": [
+    -727876.25,
+    -649279.0,
+    -811799.5,
+    -830976.375,
+    -824386.0,
+    -859531.875,
+    -698200.625,
+    -719674.125
+  ],
+  "token_topk_mean_logprob": [
+    -6.064545631408691,
+    -6.6791672706604,
+    -8.120511054992676,
+    -9.470562934875488,
+    -9.216656684875488,
+    -9.89567756652832,
+    -7.5240020751953125,
+    -7.729886531829834
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 197,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

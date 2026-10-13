@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_8",
+  "program_id": "sample_8",
+  "code": "def f(string, encryption):\n    if encryption == 0:\n        return string\n    else:\n        return string.upper().encode('rot13')",
+  "call": "f('UppEr', 0)",
+  "expected": "'UppEr'",
+  "dataset": "cruxeval",
+  "source_group": "1c6ae7a4022a9f3c95028bf3aeb216ab99c3a725bacdd0b1eddc96f3b7d9bd5a",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(string, encryption):\n    if encryption == 0:\n        return string\n    else:\n        return string.upper().encode('rot13')\n\nassert f('UppEr', 0) ==",
+  "n_prompt_tokens": 202,
+  "raw_generation": " 'UppEr'\n",
+  "answer": "'UppEr'",
+  "generated_token_ids": [
+    651,
+    4622,
+    79,
+    25647,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'UppEr'",
+  "token_logprob": [
+    -0.04487660527229309,
+    -0.00637414725497365,
+    -0.026553545147180557,
+    -0.00046659549116156995,
+    -0.012136305682361126,
+    -0.03051627241075039
+  ],
+  "token_entropy": [
+    0.22040197253227234,
+    0.05080030858516693,
+    0.1234033927321434,
+    0.004622231237590313,
+    0.07377734780311584,
+    0.17221496999263763
+  ],
+  "token_logprob_sum": [
+    -825249.125,
+    -769037.5,
+    -863793.6875,
+    -1064037.0,
+    -780975.75,
+    -808410.375
+  ],
+  "token_topk_mean_logprob": [
+    -8.513628005981445,
+    -9.931374549865723,
+    -11.1984281539917,
+    -12.122342109680176,
+    -10.37463665008545,
+    -8.318016052246094
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 188,
+  "read_token_ids": [
+    2462,
+    2312
+  ]
+}

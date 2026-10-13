@@ -1,0 +1,63 @@
+{
+  "case_id": "482:0",
+  "program_id": "482",
+  "code": "import re \r\ndef match(text): \r\n\t\tpattern = '[A-Z]+[a-z]+$'\r\n\t\tif re.search(pattern, text): \r\n\t\t\t\treturn('Yes') \r\n\t\telse: \r\n\t\t\t\treturn('No')",
+  "call": "match(\"Geeks\")",
+  "expected": "'Yes'",
+  "dataset": "mbpp",
+  "source_group": "29637adec256e0ea0d01e094653c4f9d6f8c3cf713c5a14cdf78f0be31ec205c",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re \r\ndef match(text): \r\n\t\tpattern = '[A-Z]+[a-z]+$'\r\n\t\tif re.search(pattern, text): \r\n\t\t\t\treturn('Yes') \r\n\t\telse: \r\n\t\t\t\treturn('No')\n\nassert match(\"Geeks\") ==",
+  "n_prompt_tokens": 229,
+  "raw_generation": " \"Yes\"\n",
+  "answer": "\"Yes\"",
+  "generated_token_ids": [
+    440,
+    5652,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Yes'",
+  "token_logprob": [
+    -0.5257188081741333,
+    -0.35106056928634644,
+    -0.008094246499240398,
+    -0.3744300305843353
+  ],
+  "token_entropy": [
+    0.9322930574417114,
+    0.6314663887023926,
+    0.05728587508201599,
+    0.9976851940155029
+  ],
+  "token_logprob_sum": [
+    -748616.625,
+    -769908.9375,
+    -752073.9375,
+    -741972.5
+  ],
+  "token_topk_mean_logprob": [
+    -6.600718975067139,
+    -8.910435676574707,
+    -9.239343643188477,
+    -6.861929416656494
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 218,
+  "read_token_ids": [
+    2462,
+    2312
+  ]
+}

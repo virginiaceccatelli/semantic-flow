@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_108",
+  "program_id": "sample_108",
+  "code": "def f(var):\n    amount = len(var) if type(var) == list else 0\n    if type(var) == dict:\n        amount = len(var.keys())\n    nonzero = amount if amount > 0 else 0\n    return nonzero",
+  "call": "f(1)",
+  "expected": "0",
+  "dataset": "cruxeval",
+  "source_group": "be0159eb539fbc15ef259168c09c788da578f7c1e9439c7895eeec3ba031c731",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(var):\n    amount = len(var) if type(var) == list else 0\n    if type(var) == dict:\n        amount = len(var.keys())\n    nonzero = amount if amount > 0 else 0\n    return nonzero\n\nassert f(1) ==",
+  "n_prompt_tokens": 223,
+  "raw_generation": " nonzero\n",
+  "answer": "nonzero",
+  "generated_token_ids": [
+    2159,
+    12057,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "invalid",
+  "answer_form": null,
+  "invalid_reason": "non_constant: not a constant expression: Name",
+  "parsed_answer": null,
+  "token_logprob": [
+    -1.243638038635254,
+    -0.004226680379360914,
+    -0.5683044791221619
+  ],
+  "token_entropy": [
+    2.460657835006714,
+    0.03852805867791176,
+    1.3974738121032715
+  ],
+  "token_logprob_sum": [
+    -707572.0625,
+    -796187.4375,
+    -681997.8125
+  ],
+  "token_topk_mean_logprob": [
+    -3.993637800216675,
+    -9.004226684570312,
+    -5.00892972946167
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 214,
+  "read_token_ids": [
+    12057,
+    2312
+  ]
+}

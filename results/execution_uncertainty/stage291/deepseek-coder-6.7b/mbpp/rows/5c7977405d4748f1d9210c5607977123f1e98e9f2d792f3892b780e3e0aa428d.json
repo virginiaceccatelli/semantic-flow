@@ -1,0 +1,58 @@
+{
+  "case_id": "346:1",
+  "program_id": "346",
+  "code": "def zigzag(n, k): \r\n\tif (n == 0 and k == 0): \r\n\t\treturn 1\r\n\tif (k == 0): \r\n\t\treturn 0\r\n\treturn zigzag(n, k - 1) + zigzag(n - 1, n - k)",
+  "call": "zigzag(4, 2)",
+  "expected": "4",
+  "dataset": "mbpp",
+  "source_group": "85be2400a29233e7312fbc0e614c196e3c48f683df1e953c067e3c54b49187c6",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef zigzag(n, k): \r\n\tif (n == 0 and k == 0): \r\n\t\treturn 1\r\n\tif (k == 0): \r\n\t\treturn 0\r\n\treturn zigzag(n, k - 1) + zigzag(n - 1, n - k)\n\nassert zigzag(4, 2) ==",
+  "n_prompt_tokens": 243,
+  "raw_generation": "  6\n",
+  "answer": "6",
+  "generated_token_ids": [
+    243,
+    21,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "6",
+  "token_logprob": [
+    -0.9346016645431519,
+    -1.378401756286621,
+    -0.3490854799747467
+  ],
+  "token_entropy": [
+    2.045175313949585,
+    2.0524916648864746,
+    0.9966325759887695
+  ],
+  "token_logprob_sum": [
+    -670808.75,
+    -769960.625,
+    -747354.875
+  ],
+  "token_topk_mean_logprob": [
+    -4.2033514976501465,
+    -5.8846516609191895,
+    -6.0178351402282715
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 228,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

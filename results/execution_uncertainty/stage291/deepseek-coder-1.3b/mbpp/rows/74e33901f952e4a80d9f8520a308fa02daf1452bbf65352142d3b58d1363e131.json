@@ -1,0 +1,78 @@
+{
+  "case_id": "280:2",
+  "program_id": "280",
+  "code": "def sequential_search(dlist, item):\r\n    pos = 0\r\n    found = False\r\n    while pos < len(dlist) and not found:\r\n        if dlist[pos] == item:\r\n            found = True\r\n        else:\r\n            pos = pos + 1\r\n    return found, pos",
+  "call": "sequential_search([9, 10, 17, 19, 22, 39, 48, 56],48)",
+  "expected": "(True, 6)",
+  "dataset": "mbpp",
+  "source_group": "5e43f4ee9d15a4eaaefae872f19533a4e1691c8b2cd2c980663fc37a161c72a8",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sequential_search(dlist, item):\r\n    pos = 0\r\n    found = False\r\n    while pos < len(dlist) and not found:\r\n        if dlist[pos] == item:\r\n            found = True\r\n        else:\r\n            pos = pos + 1\r\n    return found, pos\n\nassert sequential_search([9, 10, 17, 19, 22, 39, 48, 56],48) ==",
+  "n_prompt_tokens": 272,
+  "raw_generation": " (True, 5)\n",
+  "answer": "(True, 5)",
+  "generated_token_ids": [
+    334,
+    8179,
+    11,
+    207,
+    20,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "(True, 5)",
+  "token_logprob": [
+    -0.17658671736717224,
+    -0.012306000106036663,
+    -0.005133661441504955,
+    -0.48045143485069275,
+    -0.8656198382377625,
+    -0.009985021315515041,
+    -0.229093998670578
+  ],
+  "token_entropy": [
+    0.5634002685546875,
+    0.08690768480300903,
+    0.038382187485694885,
+    1.2806576490402222,
+    1.2600040435791016,
+    0.06996101886034012,
+    0.7075687050819397
+  ],
+  "token_logprob_sum": [
+    -759514.75,
+    -801403.0,
+    -826364.75,
+    -714088.25,
+    -769230.75,
+    -793088.375,
+    -740991.3125
+  ],
+  "token_topk_mean_logprob": [
+    -7.234399318695068,
+    -8.615431785583496,
+    -10.105133056640625,
+    -6.5679521560668945,
+    -9.015620231628418,
+    -9.178735733032227,
+    -7.616593837738037
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 229,
+  "read_token_ids": [
+    984,
+    2312
+  ]
+}

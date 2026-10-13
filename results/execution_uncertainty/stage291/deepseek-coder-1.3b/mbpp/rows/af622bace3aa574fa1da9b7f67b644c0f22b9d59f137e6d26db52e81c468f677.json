@@ -1,0 +1,63 @@
+{
+  "case_id": "244:0",
+  "program_id": "244",
+  "code": "import math  \r\ndef next_Perfect_Square(N): \r\n    nextN = math.floor(math.sqrt(N)) + 1\r\n    return nextN * nextN",
+  "call": "next_Perfect_Square(35)",
+  "expected": "36",
+  "dataset": "mbpp",
+  "source_group": "a24be247e7ec3afcadfafd2d20d773d504537ae7e35a2955d9bf43d63a03080d",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport math  \r\ndef next_Perfect_Square(N): \r\n    nextN = math.floor(math.sqrt(N)) + 1\r\n    return nextN * nextN\n\nassert next_Perfect_Square(35) ==",
+  "n_prompt_tokens": 213,
+  "raw_generation": "  49\n",
+  "answer": "49",
+  "generated_token_ids": [
+    243,
+    19,
+    24,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "49",
+  "token_logprob": [
+    -1.167588710784912,
+    -0.6653636693954468,
+    -0.19647932052612305,
+    -0.5431889295578003
+  ],
+  "token_entropy": [
+    2.2201642990112305,
+    1.5377696752548218,
+    0.8108145594596863,
+    1.124363660812378
+  ],
+  "token_logprob_sum": [
+    -673603.375,
+    -787583.0625,
+    -820606.375,
+    -758069.6875
+  ],
+  "token_topk_mean_logprob": [
+    -4.200987339019775,
+    -7.527863502502441,
+    -6.490230083465576,
+    -6.433813571929932
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 197,
+  "read_token_ids": [
+    45,
+    2312
+  ]
+}

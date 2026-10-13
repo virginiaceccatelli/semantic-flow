@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_200",
+  "program_id": "sample_200",
+  "code": "def f(text, value):\n    length = len(text)\n    index = 0\n    while length > 0:\n        value = text[index] + value\n        length -= 1\n        index += 1\n    return value",
+  "call": "f('jao mt', 'house')",
+  "expected": "'tm oajhouse'",
+  "dataset": "cruxeval",
+  "source_group": "1a12e1a99f19f627ce20e9877900568afd650140d2e55d457913f68e45f4e947",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, value):\n    length = len(text)\n    index = 0\n    while length > 0:\n        value = text[index] + value\n        length -= 1\n        index += 1\n    return value\n\nassert f('jao mt', 'house') ==",
+  "n_prompt_tokens": 220,
+  "raw_generation": " 'jmhseou'\n",
+  "answer": "'jmhseou'",
+  "generated_token_ids": [
+    651,
+    73,
+    76,
+    71,
+    346,
+    264,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'jmhseou'",
+  "token_logprob": [
+    -0.024094153195619583,
+    -1.6079738140106201,
+    -1.9123765230178833,
+    -2.3336501121520996,
+    -2.470571517944336,
+    -1.676274299621582,
+    -1.1594992876052856,
+    -0.21139651536941528
+  ],
+  "token_entropy": [
+    0.15652357041835785,
+    4.276143550872803,
+    4.184826850891113,
+    4.808021545410156,
+    4.708879470825195,
+    3.691235065460205,
+    3.0329856872558594,
+    0.5149470567703247
+  ],
+  "token_logprob_sum": [
+    -745702.0,
+    -546408.625,
+    -560267.0,
+    -522076.5625,
+    -530085.25,
+    -566525.625,
+    -584061.75,
+    -787433.5625
+  ],
+  "token_topk_mean_logprob": [
+    -7.936595439910889,
+    -3.932974338531494,
+    -3.806126356124878,
+    -3.8039627075195312,
+    -3.72662615776062,
+    -3.9012742042541504,
+    -4.059499263763428,
+    -8.981709480285645
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 205,
+  "read_token_ids": [
+    1432,
+    2312
+  ]
+}

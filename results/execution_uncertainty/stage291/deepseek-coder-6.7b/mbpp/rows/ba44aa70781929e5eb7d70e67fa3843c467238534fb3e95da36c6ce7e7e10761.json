@@ -1,0 +1,58 @@
+{
+  "case_id": "107:0",
+  "program_id": "107",
+  "code": "def count_Hexadecimal(L,R) :  \r\n    count = 0;  \r\n    for i in range(L,R + 1) : \r\n        if (i >= 10 and i <= 15) : \r\n            count += 1;  \r\n        elif (i > 15) : \r\n            k = i;  \r\n            while (k != 0) :  \r\n                if (k % 16 >= 10) : \r\n                    count += 1;  \r\n                k = k // 16;  \r\n    return count;",
+  "call": "count_Hexadecimal(10,15)",
+  "expected": "6",
+  "dataset": "mbpp",
+  "source_group": "89ea3084e7423c62cfb2f732a80aeb53cf42181cfe1099ad7eb585fb42b71da5",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_Hexadecimal(L,R) :  \r\n    count = 0;  \r\n    for i in range(L,R + 1) : \r\n        if (i >= 10 and i <= 15) : \r\n            count += 1;  \r\n        elif (i > 15) : \r\n            k = i;  \r\n            while (k != 0) :  \r\n                if (k % 16 >= 10) : \r\n                    count += 1;  \r\n                k = k // 16;  \r\n    return count;\n\nassert count_Hexadecimal(10,15) ==",
+  "n_prompt_tokens": 310,
+  "raw_generation": "  2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    243,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.122008204460144,
+    -1.384183406829834,
+    -0.39347463846206665
+  ],
+  "token_entropy": [
+    2.3768372535705566,
+    1.984251856803894,
+    1.1135231256484985
+  ],
+  "token_logprob_sum": [
+    -669173.25,
+    -776791.5,
+    -740434.875
+  ],
+  "token_topk_mean_logprob": [
+    -3.9282586574554443,
+    -5.909183502197266,
+    -5.749724864959717
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 291,
+  "read_token_ids": [
+    26,
+    2312
+  ]
+}

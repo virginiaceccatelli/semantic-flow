@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_796",
+  "program_id": "sample_796",
+  "code": "def f(str,toget):\n    if str.startswith(toget): return str[len(toget):]\n    else: return str",
+  "call": "f('fnuiyh', 'ni')",
+  "expected": "'fnuiyh'",
+  "dataset": "cruxeval",
+  "source_group": "1a0cf61232dc85bc3642692ed91dfe6844cc7c6c96a40b88d093625c281fa3de",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(str,toget):\n    if str.startswith(toget): return str[len(toget):]\n    else: return str\n\nassert f('fnuiyh', 'ni') ==",
+  "n_prompt_tokens": 206,
+  "raw_generation": " 'h'\n",
+  "answer": "'h'",
+  "generated_token_ids": [
+    651,
+    71,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'h'",
+  "token_logprob": [
+    -0.020174775272607803,
+    -1.215209722518921,
+    -0.46843793988227844,
+    -0.14637108147144318
+  ],
+  "token_entropy": [
+    0.13907717168331146,
+    2.168431520462036,
+    1.0367575883865356,
+    0.43361321091651917
+  ],
+  "token_logprob_sum": [
+    -769387.25,
+    -702100.1875,
+    -703654.375,
+    -778362.625
+  ],
+  "token_topk_mean_logprob": [
+    -8.082674980163574,
+    -4.3489990234375,
+    -5.871856212615967,
+    -8.5768404006958
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 191,
+  "read_token_ids": [
+    1401,
+    2312
+  ]
+}

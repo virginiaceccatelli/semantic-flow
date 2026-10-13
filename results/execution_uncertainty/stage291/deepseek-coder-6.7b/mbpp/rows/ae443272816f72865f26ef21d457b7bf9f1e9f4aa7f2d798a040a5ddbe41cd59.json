@@ -1,0 +1,63 @@
+{
+  "case_id": "383:1",
+  "program_id": "383",
+  "code": "def even_bit_toggle_number(n) : \r\n    res = 0; count = 0; temp = n    \r\n    while(temp > 0 ) : \r\n        if (count % 2 == 0) : \r\n            res = res | (1 << count)      \r\n        count = count + 1\r\n        temp >>= 1 \r\n    return n ^ res",
+  "call": "even_bit_toggle_number(20)",
+  "expected": "1",
+  "dataset": "mbpp",
+  "source_group": "3b9de181567655f472a09022ec2f0dd9ca73a1efd875da881778be625cba1f33",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef even_bit_toggle_number(n) : \r\n    res = 0; count = 0; temp = n    \r\n    while(temp > 0 ) : \r\n        if (count % 2 == 0) : \r\n            res = res | (1 << count)      \r\n        count = count + 1\r\n        temp >>= 1 \r\n    return n ^ res\n\nassert even_bit_toggle_number(20) ==",
+  "n_prompt_tokens": 258,
+  "raw_generation": "  16\n",
+  "answer": "16",
+  "generated_token_ids": [
+    243,
+    16,
+    21,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "16",
+  "token_logprob": [
+    -0.9588296413421631,
+    -0.8966979384422302,
+    -1.4863442182540894,
+    -0.5529256463050842
+  ],
+  "token_entropy": [
+    1.9616599082946777,
+    1.5537530183792114,
+    2.121243476867676,
+    1.165041446685791
+  ],
+  "token_logprob_sum": [
+    -663335.625,
+    -754252.125,
+    -760042.3125,
+    -729105.9375
+  ],
+  "token_topk_mean_logprob": [
+    -4.552579879760742,
+    -6.09669828414917,
+    -5.123844146728516,
+    -5.771676063537598
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 242,
+  "read_token_ids": [
+    593,
+    2312
+  ]
+}

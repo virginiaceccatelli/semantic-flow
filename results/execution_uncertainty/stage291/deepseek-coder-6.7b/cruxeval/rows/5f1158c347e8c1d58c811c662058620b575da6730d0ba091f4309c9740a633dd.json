@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_111",
+  "program_id": "sample_111",
+  "code": "def f(marks):\n    highest = 0\n    lowest = 100\n    for value in marks.values():\n        if value > highest:\n            highest = value\n        if value < lowest:\n            lowest = value\n    return highest, lowest",
+  "call": "f({'x': 67, 'v': 89, '': 4, 'alij': 11, 'kgfsd': 72, 'yafby': 83})",
+  "expected": "(89, 4)",
+  "dataset": "cruxeval",
+  "source_group": "32018793924b737185981ec843427184a8b3761e87b0deda6c67236181567a65",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(marks):\n    highest = 0\n    lowest = 100\n    for value in marks.values():\n        if value > highest:\n            highest = value\n        if value < lowest:\n            lowest = value\n    return highest, lowest\n\nassert f({'x': 67, 'v': 89, '': 4, 'alij': 11, 'kgfsd': 72, 'yafby': 83}) ==",
+  "n_prompt_tokens": 261,
+  "raw_generation": " (89, 4)\n",
+  "answer": "(89, 4)",
+  "generated_token_ids": [
+    334,
+    23,
+    24,
+    11,
+    207,
+    19,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "(89, 4)",
+  "token_logprob": [
+    -0.0506606362760067,
+    -0.24068273603916168,
+    -0.020795408636331558,
+    -0.0007397775771096349,
+    -0.011379575356841087,
+    -0.05989428982138634,
+    -0.005303835961967707,
+    -0.1827375590801239
+  ],
+  "token_entropy": [
+    0.2306232750415802,
+    0.737908661365509,
+    0.10220921784639359,
+    0.007059838622808456,
+    0.07415135949850082,
+    0.30638954043388367,
+    0.03659695014357567,
+    0.47162705659866333
+  ],
+  "token_logprob_sum": [
+    -817508.875,
+    -816995.0,
+    -905546.6875,
+    -908988.0625,
+    -851868.625,
+    -908014.0,
+    -964125.4375,
+    -793803.125
+  ],
+  "token_topk_mean_logprob": [
+    -8.731910705566406,
+    -8.081308364868164,
+    -11.802046775817871,
+    -11.925740242004395,
+    -9.16762924194336,
+    -10.141144752502441,
+    -10.336554527282715,
+    -9.182738304138184
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 209,
+  "read_token_ids": [
+    13772,
+    2312
+  ]
+}

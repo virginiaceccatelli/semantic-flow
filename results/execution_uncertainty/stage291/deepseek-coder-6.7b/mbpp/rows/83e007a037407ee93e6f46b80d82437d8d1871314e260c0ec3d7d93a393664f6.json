@@ -1,0 +1,53 @@
+{
+  "case_id": "362:0",
+  "program_id": "362",
+  "code": "def max_occurrences(nums):\r\n    max_val = 0\r\n    result = nums[0] \r\n    for i in nums:\r\n        occu = nums.count(i)\r\n        if occu > max_val:\r\n            max_val = occu\r\n            result = i \r\n    return result",
+  "call": "max_occurrences([1,2,3,1,2,3,12,4,2])",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "e9966c6403f7227428b1eb8942889803c0f37b2503d66314a5258e07cfd2e6be",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_occurrences(nums):\r\n    max_val = 0\r\n    result = nums[0] \r\n    for i in nums:\r\n        occu = nums.count(i)\r\n        if occu > max_val:\r\n            max_val = occu\r\n            result = i \r\n    return result\n\nassert max_occurrences([1,2,3,1,2,3,12,4,2]) ==",
+  "n_prompt_tokens": 268,
+  "raw_generation": "1\n",
+  "answer": "1",
+  "generated_token_ids": [
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "1",
+  "token_logprob": [
+    -1.641037940979004,
+    -0.5803504586219788
+  ],
+  "token_entropy": [
+    2.253833293914795,
+    1.3326842784881592
+  ],
+  "token_logprob_sum": [
+    -698452.4375,
+    -759485.5625
+  ],
+  "token_topk_mean_logprob": [
+    -4.341037750244141,
+    -5.786600589752197
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 237,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

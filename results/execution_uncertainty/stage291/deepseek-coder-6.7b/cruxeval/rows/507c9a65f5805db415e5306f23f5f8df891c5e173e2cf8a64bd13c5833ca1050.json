@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_105",
+  "program_id": "sample_105",
+  "code": "def f(text):\n    if not text.istitle():\n        return text.title()\n    return text.lower()",
+  "call": "f(\"PermissioN is GRANTed\")",
+  "expected": "'Permission Is Granted'",
+  "dataset": "cruxeval",
+  "source_group": "543f7d3dce4be6dbb7b65e0b16f1f45d92265053dbc080713d0e2597845d46ab",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    if not text.istitle():\n        return text.title()\n    return text.lower()\n\nassert f(\"PermissioN is GRANTed\") ==",
+  "n_prompt_tokens": 197,
+  "raw_generation": " \"Permission Is Granted\"\n",
+  "answer": "\"Permission Is Granted\"",
+  "generated_token_ids": [
+    440,
+    27878,
+    2115,
+    2404,
+    7891,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Permission Is Granted'",
+  "token_logprob": [
+    -0.13938650488853455,
+    -0.2212723195552826,
+    -0.3261675536632538,
+    -0.017386991530656815,
+    -7.986990567587782e-06,
+    -0.005782898049801588,
+    -0.14550548791885376
+  ],
+  "token_entropy": [
+    0.4435238838195801,
+    0.7553823590278625,
+    0.6515003442764282,
+    0.12142188847064972,
+    0.00011052538320655003,
+    0.04551852494478226,
+    0.41532284021377563
+  ],
+  "token_logprob_sum": [
+    -819550.5625,
+    -715447.125,
+    -805107.5,
+    -908543.75,
+    -1171866.875,
+    -795446.5,
+    -815926.75
+  ],
+  "token_topk_mean_logprob": [
+    -8.420636177062988,
+    -7.183772563934326,
+    -9.035542488098145,
+    -8.204887390136719,
+    -16.321882247924805,
+    -9.455782890319824,
+    -9.30488109588623
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 181,
+  "read_token_ids": [
+    822,
+    2312
+  ]
+}

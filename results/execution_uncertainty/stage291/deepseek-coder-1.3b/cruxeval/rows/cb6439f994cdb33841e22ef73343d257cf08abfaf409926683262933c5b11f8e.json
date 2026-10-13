@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_745",
+  "program_id": "sample_745",
+  "code": "def f(address):\n    suffix_start = address.index('@') + 1\n    if address[suffix_start:].count('.') > 1:\n        address = address.removesuffix('.'.join(address.split('@')[1].split('.')[:2]))\n    return address",
+  "call": "f('minimc@minimc.io')",
+  "expected": "'minimc@minimc.io'",
+  "dataset": "cruxeval",
+  "source_group": "4b293196eef7dd72ad6654617449849a1212217d42e3bdf1acef44ad01ed8534",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(address):\n    suffix_start = address.index('@') + 1\n    if address[suffix_start:].count('.') > 1:\n        address = address.removesuffix('.'.join(address.split('@')[1].split('.')[:2]))\n    return address\n\nassert f('minimc@minimc.io') ==",
+  "n_prompt_tokens": 240,
+  "raw_generation": " 'minimc'\n",
+  "answer": "'minimc'",
+  "generated_token_ids": [
+    651,
+    1513,
+    308,
+    66,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'minimc'",
+  "token_logprob": [
+    -0.01836405135691166,
+    -0.033503755927085876,
+    -0.016091594472527504,
+    -0.015396899543702602,
+    -0.6850647330284119,
+    -0.17596857249736786
+  ],
+  "token_entropy": [
+    0.12930242717266083,
+    0.2388838827610016,
+    0.12164671719074249,
+    0.12691496312618256,
+    1.0297695398330688,
+    0.4668554961681366
+  ],
+  "token_logprob_sum": [
+    -781406.625,
+    -700293.0,
+    -764566.875,
+    -710280.625,
+    -646425.875,
+    -808571.625
+  ],
+  "token_topk_mean_logprob": [
+    -8.068364143371582,
+    -7.283504009246826,
+    -7.703591823577881,
+    -7.851335048675537,
+    -7.410064697265625,
+    -9.236124992370605
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 223,
+  "read_token_ids": [
+    2983,
+    2312
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_594",
+  "program_id": "sample_594",
+  "code": "def f(file):\n    return file.index('\\n')",
+  "call": "f(\"n wez szize lnson tilebi it 504n.\\n\")",
+  "expected": "33",
+  "dataset": "cruxeval",
+  "source_group": "091983558babd66f09ccec62a82e957a7d69bb120eab1204348c533b7b166f81",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(file):\n    return file.index('\\n')\n\nassert f(\"n wez szize lnson tilebi it 504n.\\n\") ==",
+  "n_prompt_tokens": 195,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.6599740386009216,
+    -0.23409034311771393,
+    -0.1993783861398697
+  ],
+  "token_entropy": [
+    2.0727977752685547,
+    0.8239288330078125,
+    0.6297227144241333
+  ],
+  "token_logprob_sum": [
+    -683366.125,
+    -754697.9375,
+    -763324.0625
+  ],
+  "token_topk_mean_logprob": [
+    -4.222474098205566,
+    -7.921591281890869,
+    -6.491663455963135
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 168,
+  "read_token_ids": [
+    2462,
+    2312
+  ]
+}

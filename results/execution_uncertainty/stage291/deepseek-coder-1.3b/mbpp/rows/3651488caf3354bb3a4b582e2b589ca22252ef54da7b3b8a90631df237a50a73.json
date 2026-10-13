@@ -1,0 +1,68 @@
+{
+  "case_id": "256:2",
+  "program_id": "256",
+  "code": "def count_Primes_nums(n):\r\n    ctr = 0\r\n    for num in range(n):\r\n        if num <= 1:\r\n            continue\r\n        for i in range(2,num):\r\n            if (num % i) == 0:\r\n                break\r\n        else:\r\n            ctr += 1\r\n    return ctr",
+  "call": "count_Primes_nums(100)",
+  "expected": "25",
+  "dataset": "mbpp",
+  "source_group": "eda9089b6e8e04c78e2c28bea4f51ffd2e068bd9b766640ba1ecfff31665814a",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_Primes_nums(n):\r\n    ctr = 0\r\n    for num in range(n):\r\n        if num <= 1:\r\n            continue\r\n        for i in range(2,num):\r\n            if (num % i) == 0:\r\n                break\r\n        else:\r\n            ctr += 1\r\n    return ctr\n\nassert count_Primes_nums(100) ==",
+  "n_prompt_tokens": 256,
+  "raw_generation": "  168\n",
+  "answer": "168",
+  "generated_token_ids": [
+    243,
+    16,
+    21,
+    23,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 1,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "168",
+  "token_logprob": [
+    -1.3259483575820923,
+    -0.2200089693069458,
+    -0.08059290051460266,
+    -0.28764086961746216,
+    -0.6085156202316284
+  ],
+  "token_entropy": [
+    3.231508731842041,
+    0.7314863801002502,
+    0.39338985085487366,
+    0.9204058647155762,
+    1.1637624502182007
+  ],
+  "token_logprob_sum": [
+    -608509.625,
+    -731158.875,
+    -830476.25,
+    -754197.875,
+    -735467.375
+  ],
+  "token_topk_mean_logprob": [
+    -3.7259483337402344,
+    -6.8012590408325195,
+    -8.04934310913086,
+    -6.25951623916626,
+    -6.381953716278076
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 239,
+  "read_token_ids": [
+    648,
+    2312
+  ]
+}

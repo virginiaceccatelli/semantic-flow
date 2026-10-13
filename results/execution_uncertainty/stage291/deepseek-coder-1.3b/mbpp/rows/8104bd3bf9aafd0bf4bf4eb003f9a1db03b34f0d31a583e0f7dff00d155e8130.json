@@ -1,0 +1,63 @@
+{
+  "case_id": "294:1",
+  "program_id": "294",
+  "code": "def max_val(listval):\r\n     max_val = max(i for i in listval if isinstance(i, int)) \r\n     return(max_val)",
+  "call": "max_val(['Python', 15, 20, 25])",
+  "expected": "25",
+  "dataset": "mbpp",
+  "source_group": "e4ef11619c6c093014eb5a98fbaf6c1e0c8e29c7e79b24cee38447cde5f72577",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_val(listval):\r\n     max_val = max(i for i in listval if isinstance(i, int)) \r\n     return(max_val)\n\nassert max_val(['Python', 15, 20, 25]) ==",
+  "n_prompt_tokens": 217,
+  "raw_generation": " 'Python'\n",
+  "answer": "'Python'",
+  "generated_token_ids": [
+    651,
+    28607,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Python'",
+  "token_logprob": [
+    -1.2301514148712158,
+    -0.069675974547863,
+    -0.03730151429772377,
+    -0.40565305948257446
+  ],
+  "token_entropy": [
+    2.4519779682159424,
+    0.47907447814941406,
+    0.2325574904680252,
+    0.9793878793716431
+  ],
+  "token_logprob_sum": [
+    -658522.625,
+    -659888.875,
+    -650903.25,
+    -711502.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.173901557922363,
+    -6.724363803863525,
+    -7.199801921844482,
+    -6.974403381347656
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 194,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

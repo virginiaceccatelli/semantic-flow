@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_735",
+  "program_id": "sample_735",
+  "code": "def f(sentence):\n    if sentence == '':\n        return ''\n    sentence = sentence.replace('(', '')\n    sentence = sentence.replace(')', '')\n    return sentence.capitalize().replace(' ', '')",
+  "call": "f('(A (b B))')",
+  "expected": "'Abb'",
+  "dataset": "cruxeval",
+  "source_group": "a9d1f1eecc5d8552bf806d82c4238dbe2c30f135ce6fe538dc99cb5a20fcd6ba",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(sentence):\n    if sentence == '':\n        return ''\n    sentence = sentence.replace('(', '')\n    sentence = sentence.replace(')', '')\n    return sentence.capitalize().replace(' ', '')\n\nassert f('(A (b B))') ==",
+  "n_prompt_tokens": 222,
+  "raw_generation": " 'ABB'\n",
+  "answer": "'ABB'",
+  "generated_token_ids": [
+    651,
+    3323,
+    33,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'ABB'",
+  "token_logprob": [
+    -0.03527325764298439,
+    -0.7422546744346619,
+    -0.36414557695388794,
+    -0.009116689674556255,
+    -0.1650324910879135
+  ],
+  "token_entropy": [
+    0.19068388640880585,
+    1.1133393049240112,
+    0.9521133303642273,
+    0.06778824329376221,
+    0.45618143677711487
+  ],
+  "token_logprob_sum": [
+    -833715.625,
+    -779821.875,
+    -766210.9375,
+    -766907.5,
+    -810025.9375
+  ],
+  "token_topk_mean_logprob": [
+    -8.629023551940918,
+    -6.998504638671875,
+    -7.595395088195801,
+    -8.946617126464844,
+    -9.177533149719238
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 208,
+  "read_token_ids": [
+    2462,
+    2312
+  ]
+}

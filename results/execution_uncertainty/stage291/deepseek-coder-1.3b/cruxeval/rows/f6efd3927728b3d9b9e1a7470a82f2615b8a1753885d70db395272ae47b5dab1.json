@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_82",
+  "program_id": "sample_82",
+  "code": "def f(a, b, c, d):\n    return a and b or c and d",
+  "call": "f('CJU', 'BFS', 'WBYDZPVES', 'Y')",
+  "expected": "'BFS'",
+  "dataset": "cruxeval",
+  "source_group": "db5229201b0137b2b18942b3173d73899c741752850828ad0fb3921243cdb05f",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(a, b, c, d):\n    return a and b or c and d\n\nassert f('CJU', 'BFS', 'WBYDZPVES', 'Y') ==",
+  "n_prompt_tokens": 201,
+  "raw_generation": " 'BFS'\n",
+  "answer": "'BFS'",
+  "generated_token_ids": [
+    651,
+    33,
+    8625,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'BFS'",
+  "token_logprob": [
+    -0.44325006008148193,
+    -0.819794774055481,
+    -0.04925878345966339,
+    -0.04989134520292282,
+    -0.16179056465625763
+  ],
+  "token_entropy": [
+    1.045698881149292,
+    1.7706871032714844,
+    0.3216665983200073,
+    0.2874137759208679,
+    0.4771907925605774
+  ],
+  "token_logprob_sum": [
+    -772780.3125,
+    -652232.125,
+    -679564.0,
+    -691457.3125,
+    -796890.625
+  ],
+  "token_topk_mean_logprob": [
+    -6.568249702453613,
+    -5.48717737197876,
+    -6.886759281158447,
+    -7.268641948699951,
+    -8.71491527557373
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 174,
+  "read_token_ids": [
+    263,
+    2312
+  ]
+}

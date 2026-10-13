@@ -1,0 +1,63 @@
+{
+  "case_id": "57:0",
+  "program_id": "57",
+  "code": "def find_Max_Num(arr,n) : \r\n    arr.sort(reverse = True) \r\n    num = arr[0] \r\n    for i in range(1,n) : \r\n        num = num * 10 + arr[i] \r\n    return num",
+  "call": "find_Max_Num([1,2,3],3)",
+  "expected": "321",
+  "dataset": "mbpp",
+  "source_group": "532b96ed307fb6524532176ddc22d3c26ee8dc606c9b2dd38db534ab9a1080e8",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_Max_Num(arr,n) : \r\n    arr.sort(reverse = True) \r\n    num = arr[0] \r\n    for i in range(1,n) : \r\n        num = num * 10 + arr[i] \r\n    return num\n\nassert find_Max_Num([1,2,3],3) ==",
+  "n_prompt_tokens": 243,
+  "raw_generation": "321\n",
+  "answer": "321",
+  "generated_token_ids": [
+    18,
+    17,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "321",
+  "token_logprob": [
+    -1.736559510231018,
+    -0.07032065093517303,
+    -0.019107095897197723,
+    -0.5353423357009888
+  ],
+  "token_entropy": [
+    2.465768575668335,
+    0.3671271502971649,
+    0.12482902407646179,
+    1.2672792673110962
+  ],
+  "token_logprob_sum": [
+    -690633.25,
+    -843256.8125,
+    -853196.0,
+    -730466.0
+  ],
+  "token_topk_mean_logprob": [
+    -4.161559581756592,
+    -7.113437175750732,
+    -8.437857627868652,
+    -5.7103424072265625
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 224,
+  "read_token_ids": [
+    1181,
+    2312
+  ]
+}

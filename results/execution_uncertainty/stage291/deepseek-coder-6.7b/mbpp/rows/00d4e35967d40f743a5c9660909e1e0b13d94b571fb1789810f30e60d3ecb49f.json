@@ -1,0 +1,53 @@
+{
+  "case_id": "301:1",
+  "program_id": "301",
+  "code": "def dict_depth(d):\r\n    if isinstance(d, dict):\r\n        return 1 + (max(map(dict_depth, d.values())) if d else 0)\r\n    return 0",
+  "call": "dict_depth({'a':1, 'b': {'c':'python'}})",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "f327de3982b3212bb80f49af22a993a565a25cb1705f165fab8568b6e08fac40",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef dict_depth(d):\r\n    if isinstance(d, dict):\r\n        return 1 + (max(map(dict_depth, d.values())) if d else 0)\r\n    return 0\n\nassert dict_depth({'a':1, 'b': {'c':'python'}}) ==",
+  "n_prompt_tokens": 227,
+  "raw_generation": "3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -0.8644861578941345,
+    -0.3688979744911194
+  ],
+  "token_entropy": [
+    1.6848640441894531,
+    0.9735741019248962
+  ],
+  "token_logprob_sum": [
+    -711378.4375,
+    -778738.625
+  ],
+  "token_topk_mean_logprob": [
+    -4.783236026763916,
+    -6.743897914886475
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 203,
+  "read_token_ids": [
+    15,
+    2312
+  ]
+}

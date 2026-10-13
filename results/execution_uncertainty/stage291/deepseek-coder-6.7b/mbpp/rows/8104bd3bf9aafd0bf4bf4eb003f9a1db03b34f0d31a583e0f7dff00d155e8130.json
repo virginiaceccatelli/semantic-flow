@@ -1,0 +1,58 @@
+{
+  "case_id": "294:1",
+  "program_id": "294",
+  "code": "def max_val(listval):\r\n     max_val = max(i for i in listval if isinstance(i, int)) \r\n     return(max_val)",
+  "call": "max_val(['Python', 15, 20, 25])",
+  "expected": "25",
+  "dataset": "mbpp",
+  "source_group": "e4ef11619c6c093014eb5a98fbaf6c1e0c8e29c7e79b24cee38447cde5f72577",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_val(listval):\r\n     max_val = max(i for i in listval if isinstance(i, int)) \r\n     return(max_val)\n\nassert max_val(['Python', 15, 20, 25]) ==",
+  "n_prompt_tokens": 217,
+  "raw_generation": "25\n",
+  "answer": "25",
+  "generated_token_ids": [
+    17,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "25",
+  "token_logprob": [
+    -1.127856731414795,
+    -0.04396653547883034,
+    -0.3360486924648285
+  ],
+  "token_entropy": [
+    1.9515857696533203,
+    0.1843593567609787,
+    0.9452465772628784
+  ],
+  "token_logprob_sum": [
+    -692297.0,
+    -814726.75,
+    -754047.4375
+  ],
+  "token_topk_mean_logprob": [
+    -4.6153564453125,
+    -9.875216484069824,
+    -6.454799175262451
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 194,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

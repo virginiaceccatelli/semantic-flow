@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_655",
+  "program_id": "sample_655",
+  "code": "def f(s):\n    return s.replace('a', '').replace('r', '')",
+  "call": "f('rpaar')",
+  "expected": "'p'",
+  "dataset": "cruxeval",
+  "source_group": "2f88e5c57e10a05cf7f57a3cf199b9916a77a60907ad13e8960f37bcfdcf3cb9",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s):\n    return s.replace('a', '').replace('r', '')\n\nassert f('rpaar') ==",
+  "n_prompt_tokens": 186,
+  "raw_generation": " 'p'\n",
+  "answer": "'p'",
+  "generated_token_ids": [
+    651,
+    79,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'p'",
+  "token_logprob": [
+    -0.10170630365610123,
+    -1.1305489540100098,
+    -0.50074303150177,
+    -0.1886775642633438
+  ],
+  "token_entropy": [
+    0.42454782128334045,
+    2.6660540103912354,
+    1.3842039108276367,
+    0.5074904561042786
+  ],
+  "token_logprob_sum": [
+    -797430.25,
+    -626105.0,
+    -646708.5,
+    -802596.5
+  ],
+  "token_topk_mean_logprob": [
+    -6.8892059326171875,
+    -4.15740442276001,
+    -5.219493389129639,
+    -8.932428359985352
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 175,
+  "read_token_ids": [
+    2462,
+    2312
+  ]
+}

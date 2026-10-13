@@ -1,0 +1,58 @@
+{
+  "case_id": "143:2",
+  "program_id": "143",
+  "code": "def find_lists(Input): \r\n\tif isinstance(Input, list): \r\n\t\treturn 1\r\n\telse: \r\n\t\treturn len(Input)",
+  "call": "find_lists(([9, 8, 7, 6, 5, 4, 3, 2, 1]))",
+  "expected": "1",
+  "dataset": "mbpp",
+  "source_group": "99f97c8d919438eacce31c84b311bf294b6edd76c021d9572cd875bee96c3b01",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_lists(Input): \r\n\tif isinstance(Input, list): \r\n\t\treturn 1\r\n\telse: \r\n\t\treturn len(Input)\n\nassert find_lists(([9, 8, 7, 6, 5, 4, 3, 2, 1])) ==",
+  "n_prompt_tokens": 227,
+  "raw_generation": "  9\n",
+  "answer": "9",
+  "generated_token_ids": [
+    243,
+    24,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "9",
+  "token_logprob": [
+    -1.5801162719726562,
+    -0.746401309967041,
+    -0.5910034775733948
+  ],
+  "token_entropy": [
+    2.6153485774993896,
+    1.547378420829773,
+    1.208799123764038
+  ],
+  "token_logprob_sum": [
+    -682215.75,
+    -759527.5,
+    -728700.3125
+  ],
+  "token_topk_mean_logprob": [
+    -3.846522569656372,
+    -5.883901119232178,
+    -5.98162841796875
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 191,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

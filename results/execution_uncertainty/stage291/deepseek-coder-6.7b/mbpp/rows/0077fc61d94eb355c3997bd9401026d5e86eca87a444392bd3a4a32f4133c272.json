@@ -1,0 +1,53 @@
+{
+  "case_id": "208:1",
+  "program_id": "208",
+  "code": "import re\r\ndef is_decimal(num):\r\n  num_fetch = re.compile(r\"\"\"^[0-9]+(\\.[0-9]{1,2})?$\"\"\")\r\n  result = num_fetch.search(num)\r\n  return bool(result)",
+  "call": "is_decimal('0.21')",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "3f1047ae9bd97b7ea7c8298fbd79fc7c8dbf269981883d92a63cb53deb186cc5",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef is_decimal(num):\r\n  num_fetch = re.compile(r\"\"\"^[0-9]+(\\.[0-9]{1,2})?$\"\"\")\r\n  result = num_fetch.search(num)\r\n  return bool(result)\n\nassert is_decimal('0.21') ==",
+  "n_prompt_tokens": 235,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.014862759970128536,
+    -0.22548645734786987
+  ],
+  "token_entropy": [
+    0.08916530013084412,
+    0.6842789649963379
+  ],
+  "token_logprob_sum": [
+    -794351.625,
+    -761956.5625
+  ],
+  "token_topk_mean_logprob": [
+    -9.292988777160645,
+    -7.584861755371094
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 220,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

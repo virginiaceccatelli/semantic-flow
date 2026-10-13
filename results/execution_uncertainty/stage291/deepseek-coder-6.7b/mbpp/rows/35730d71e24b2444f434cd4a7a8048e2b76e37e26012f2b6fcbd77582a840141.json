@@ -1,0 +1,53 @@
+{
+  "case_id": "93:1",
+  "program_id": "93",
+  "code": "def power(a,b):\r\n\tif b==0:\r\n\t\treturn 1\r\n\telif a==0:\r\n\t\treturn 0\r\n\telif b==1:\r\n\t\treturn a\r\n\telse:\r\n\t\treturn a*power(a,b-1)",
+  "call": "power(2,3)",
+  "expected": "8",
+  "dataset": "mbpp",
+  "source_group": "1912849ee28ca8497e604413175efc874b6d13faa9e482ffb714c3f7ab18bd66",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef power(a,b):\r\n\tif b==0:\r\n\t\treturn 1\r\n\telif a==0:\r\n\t\treturn 0\r\n\telif b==1:\r\n\t\treturn a\r\n\telse:\r\n\t\treturn a*power(a,b-1)\n\nassert power(2,3) ==",
+  "n_prompt_tokens": 231,
+  "raw_generation": "8\n",
+  "answer": "8",
+  "generated_token_ids": [
+    23,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "8",
+  "token_logprob": [
+    -0.6249377131462097,
+    -0.35675665736198425
+  ],
+  "token_entropy": [
+    1.6289584636688232,
+    0.9316518306732178
+  ],
+  "token_logprob_sum": [
+    -658288.875,
+    -767410.875
+  ],
+  "token_topk_mean_logprob": [
+    -4.956187725067139,
+    -6.78175687789917
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 220,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

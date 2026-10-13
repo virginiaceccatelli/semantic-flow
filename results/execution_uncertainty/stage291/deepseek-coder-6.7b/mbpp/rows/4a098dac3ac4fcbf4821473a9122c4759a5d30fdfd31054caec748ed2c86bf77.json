@@ -1,0 +1,73 @@
+{
+  "case_id": "65:2",
+  "program_id": "65",
+  "code": "def recursive_list_sum(data_list):\r\n\ttotal = 0\r\n\tfor element in data_list:\r\n\t\tif type(element) == type([]):\r\n\t\t\ttotal = total + recursive_list_sum(element)\r\n\t\telse:\r\n\t\t\ttotal = total + element\r\n\treturn total",
+  "call": "recursive_list_sum(([10, 20, [30,40],[50,60]]))",
+  "expected": "210",
+  "dataset": "mbpp",
+  "source_group": "c0afa90a7c32686fcd5f8974b6cb7a2e837cf57cc7c7f6d52a25369f2e1906cf",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef recursive_list_sum(data_list):\r\n\ttotal = 0\r\n\tfor element in data_list:\r\n\t\tif type(element) == type([]):\r\n\t\t\ttotal = total + recursive_list_sum(element)\r\n\t\telse:\r\n\t\t\ttotal = total + element\r\n\treturn total\n\nassert recursive_list_sum(([10, 20, [30,40],[50,60]])) ==",
+  "n_prompt_tokens": 263,
+  "raw_generation": " (100)\n",
+  "answer": "(100)",
+  "generated_token_ids": [
+    334,
+    16,
+    15,
+    15,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "100",
+  "token_logprob": [
+    -0.7411588430404663,
+    -0.5221124291419983,
+    -0.5321797132492065,
+    -0.898015022277832,
+    -0.27394169569015503,
+    -0.5588631629943848
+  ],
+  "token_entropy": [
+    1.8265666961669922,
+    0.8820273280143738,
+    1.3365657329559326,
+    1.1597989797592163,
+    0.8555741310119629,
+    0.9519482851028442
+  ],
+  "token_logprob_sum": [
+    -700345.3125,
+    -805405.0,
+    -855637.8125,
+    -800711.75,
+    -784456.0,
+    -735563.625
+  ],
+  "token_topk_mean_logprob": [
+    -4.691159248352051,
+    -7.109612941741943,
+    -6.738429546356201,
+    -7.129264831542969,
+    -6.573941707611084,
+    -7.424487590789795
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 228,
+  "read_token_ids": [
+    3212,
+    2312
+  ]
+}

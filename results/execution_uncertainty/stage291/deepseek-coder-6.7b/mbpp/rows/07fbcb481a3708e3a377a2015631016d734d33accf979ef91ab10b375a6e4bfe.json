@@ -1,0 +1,68 @@
+{
+  "case_id": "387:2",
+  "program_id": "387",
+  "code": "def even_or_odd(N): \r\n    l = len(N) \r\n    if (N[l-1] =='0'or N[l-1] =='2'or \r\n        N[l-1] =='4'or N[l-1] =='6'or \r\n        N[l-1] =='8'or N[l-1] =='A'or \r\n        N[l-1] =='C'or N[l-1] =='E'): \r\n        return (\"Even\") \r\n    else: \r\n        return (\"Odd\")",
+  "call": "even_or_odd(\"AAD\")",
+  "expected": "'Odd'",
+  "dataset": "mbpp",
+  "source_group": "c3fe6a1bc172fe631298a36f9c01c5dd2dfad7cb8233bc193a91cfc50ef6da86",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef even_or_odd(N): \r\n    l = len(N) \r\n    if (N[l-1] =='0'or N[l-1] =='2'or \r\n        N[l-1] =='4'or N[l-1] =='6'or \r\n        N[l-1] =='8'or N[l-1] =='A'or \r\n        N[l-1] =='C'or N[l-1] =='E'): \r\n        return (\"Even\") \r\n    else: \r\n        return (\"Odd\")\n\nassert even_or_odd(\"AAD\") ==",
+  "n_prompt_tokens": 315,
+  "raw_generation": " \"Odd\"\n",
+  "answer": "\"Odd\"",
+  "generated_token_ids": [
+    440,
+    46,
+    1511,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Odd'",
+  "token_logprob": [
+    -0.18071356415748596,
+    -0.3908373713493347,
+    -0.0001479277852922678,
+    -0.008121679536998272,
+    -0.46029722690582275
+  ],
+  "token_entropy": [
+    0.6416493058204651,
+    0.662326455116272,
+    0.001807673368602991,
+    0.05696181207895279,
+    0.8150904774665833
+  ],
+  "token_logprob_sum": [
+    -747476.1875,
+    -777974.875,
+    -917521.625,
+    -737854.625,
+    -730074.6875
+  ],
+  "token_topk_mean_logprob": [
+    -6.927588939666748,
+    -8.968962669372559,
+    -12.31889820098877,
+    -9.379996299743652,
+    -7.33529806137085
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 301,
+  "read_token_ids": [
+    2456,
+    2312
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_518",
+  "program_id": "sample_518",
+  "code": "def f(text):\n    return not text.isdecimal()",
+  "call": "f('the speed is -36 miles per hour')",
+  "expected": "True",
+  "dataset": "cruxeval",
+  "source_group": "598da6d1f36f8fb8474665ad122e63e69723be899956c24966e0b6539788f3e7",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    return not text.isdecimal()\n\nassert f('the speed is -36 miles per hour') ==",
+  "n_prompt_tokens": 185,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.3170616924762726,
+    -0.18272176384925842
+  ],
+  "token_entropy": [
+    0.6155075430870056,
+    0.47117942571640015
+  ],
+  "token_logprob_sum": [
+    -773571.125,
+    -814128.125
+  ],
+  "token_topk_mean_logprob": [
+    -8.454561233520508,
+    -9.426472663879395
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 168,
+  "read_token_ids": [
+    822,
+    2312
+  ]
+}

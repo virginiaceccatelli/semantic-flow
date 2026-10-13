@@ -1,0 +1,83 @@
+{
+  "case_id": "289:1",
+  "program_id": "289",
+  "code": "def odd_Days(N): \r\n    hund1 = N // 100\r\n    hund4 = N // 400\r\n    leap = N >> 2\r\n    ordd = N - leap \r\n    if (hund1): \r\n        ordd += hund1 \r\n        leap -= hund1 \r\n    if (hund4): \r\n        ordd -= hund4 \r\n        leap += hund4 \r\n    days = ordd + leap * 2\r\n    odd = days % 7\r\n    return odd",
+  "call": "odd_Days(50)",
+  "expected": "6",
+  "dataset": "mbpp",
+  "source_group": "208382b3a9ed00d579e4e8f0f6c3d768e2335b69c6ed9b532e5e28ef3953c678",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef odd_Days(N): \r\n    hund1 = N // 100\r\n    hund4 = N // 400\r\n    leap = N >> 2\r\n    ordd = N - leap \r\n    if (hund1): \r\n        ordd += hund1 \r\n        leap -= hund1 \r\n    if (hund4): \r\n        ordd -= hund4 \r\n        leap += hund4 \r\n    days = ordd + leap * 2\r\n    odd = days % 7\r\n    return odd\n\nassert odd_Days(50) ==",
+  "n_prompt_tokens": 306,
+  "raw_generation": " (50, 1)\n",
+  "answer": "(50, 1)",
+  "generated_token_ids": [
+    334,
+    20,
+    15,
+    11,
+    207,
+    16,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "(50, 1)",
+  "token_logprob": [
+    -1.308301329612732,
+    -1.5170111656188965,
+    -0.46009039878845215,
+    -1.3240993022918701,
+    -0.20323246717453003,
+    -1.2081236839294434,
+    -1.3640931844711304,
+    -0.45323434472084045
+  ],
+  "token_entropy": [
+    2.8640077114105225,
+    2.154648780822754,
+    1.5375231504440308,
+    2.5992932319641113,
+    0.9916058778762817,
+    2.0018508434295654,
+    2.3533875942230225,
+    1.0728305578231812
+  ],
+  "token_logprob_sum": [
+    -636644.75,
+    -683523.875,
+    -755309.0,
+    -688631.5,
+    -672432.875,
+    -767584.875,
+    -812333.875,
+    -713569.875
+  ],
+  "token_topk_mean_logprob": [
+    -3.6208016872406006,
+    -4.654511451721191,
+    -4.491340637207031,
+    -3.7803497314453125,
+    -4.903232574462891,
+    -6.742498874664307,
+    -4.64534330368042,
+    -6.59698486328125
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 293,
+  "read_token_ids": [
+    8792,
+    2312
+  ]
+}

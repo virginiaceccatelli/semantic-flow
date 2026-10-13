@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_739",
+  "program_id": "sample_739",
+  "code": "def f(st, pattern):\n    for p in pattern:\n        if not st.startswith(p): return False\n        st = st[len(p):]\n    return True",
+  "call": "f('qwbnjrxs', ['jr', 'b', 'r', 'qw'])",
+  "expected": "False",
+  "dataset": "cruxeval",
+  "source_group": "05898bdf5949ad8b03fa90910691770eff9cd4a7aed4a0b8c9e5853a894742a4",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(st, pattern):\n    for p in pattern:\n        if not st.startswith(p): return False\n        st = st[len(p):]\n    return True\n\nassert f('qwbnjrxs', ['jr', 'b', 'r', 'qw']) ==",
+  "n_prompt_tokens": 224,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.2551960349082947,
+    -0.09401930868625641
+  ],
+  "token_entropy": [
+    0.5585401058197021,
+    0.3313440978527069
+  ],
+  "token_logprob_sum": [
+    -806981.625,
+    -820564.875
+  ],
+  "token_topk_mean_logprob": [
+    -8.642695426940918,
+    -8.850268363952637
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 196,
+  "read_token_ids": [
+    10502,
+    2312
+  ]
+}

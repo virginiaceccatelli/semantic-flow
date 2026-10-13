@@ -1,0 +1,68 @@
+{
+  "case_id": "373:2",
+  "program_id": "373",
+  "code": "def volume_cuboid(l,w,h):\r\n  volume=l*w*h\r\n  return volume",
+  "call": "volume_cuboid(10,15,21)",
+  "expected": "3150",
+  "dataset": "mbpp",
+  "source_group": "ff46c074ba32b51e5fd6e8aace7e39e6d93a072df2b65c4cc582b6f5b8ae8acc",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef volume_cuboid(l,w,h):\r\n  volume=l*w*h\r\n  return volume\n\nassert volume_cuboid(10,15,21) ==",
+  "n_prompt_tokens": 201,
+  "raw_generation": "1500\n",
+  "answer": "1500",
+  "generated_token_ids": [
+    16,
+    20,
+    15,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "1500",
+  "token_logprob": [
+    -1.4519680738449097,
+    -0.8273257613182068,
+    -0.6570941805839539,
+    -0.05996210500597954,
+    -0.640796422958374
+  ],
+  "token_entropy": [
+    2.615447998046875,
+    1.8685896396636963,
+    1.5482548475265503,
+    0.32634449005126953,
+    1.287055492401123
+  ],
+  "token_logprob_sum": [
+    -639798.0625,
+    -809586.125,
+    -799237.125,
+    -810948.625,
+    -738309.875
+  ],
+  "token_topk_mean_logprob": [
+    -3.82071852684021,
+    -6.70857572555542,
+    -6.1219377517700195,
+    -7.192775249481201,
+    -6.3189215660095215
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 181,
+  "read_token_ids": [
+    6530,
+    2312
+  ]
+}

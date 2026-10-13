@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_480",
+  "program_id": "sample_480",
+  "code": "def f(s, c1, c2):\n    if s == '':\n        return s\n    ls = s.split(c1)\n    for index, item in enumerate(ls):\n        if c1 in item:\n            ls[index] = item.replace(c1, c2, 1)\n    return c1.join(ls)",
+  "call": "f('', 'mi', 'siast')",
+  "expected": "''",
+  "dataset": "cruxeval",
+  "source_group": "e07e2f170d515dd0b31a80f49c952da679ca6d42d7e173d17393c28f996fe89f",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s, c1, c2):\n    if s == '':\n        return s\n    ls = s.split(c1)\n    for index, item in enumerate(ls):\n        if c1 in item:\n            ls[index] = item.replace(c1, c2, 1)\n    return c1.join(ls)\n\nassert f('', 'mi', 'siast') ==",
+  "n_prompt_tokens": 251,
+  "raw_generation": " ''\n",
+  "answer": "''",
+  "generated_token_ids": [
+    15355,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "''",
+  "token_logprob": [
+    -0.21165132522583008,
+    -0.016914980486035347
+  ],
+  "token_entropy": [
+    0.5548337697982788,
+    0.1033334881067276
+  ],
+  "token_logprob_sum": [
+    -783961.25,
+    -820383.4375
+  ],
+  "token_topk_mean_logprob": [
+    -7.56165075302124,
+    -8.829416275024414
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 236,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "case_id": "356:1",
+  "program_id": "356",
+  "code": "def find_angle(a,b):\r\n c = 180 - (a + b)\r\n return c",
+  "call": "find_angle(45,95)",
+  "expected": "40",
+  "dataset": "mbpp",
+  "source_group": "2e29597107af9eefffc548292dd03167a34594858906d2b7e7d4b09f31c696d1",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_angle(a,b):\r\n c = 180 - (a + b)\r\n return c\n\nassert find_angle(45,95) ==",
+  "n_prompt_tokens": 194,
+  "raw_generation": " (135)\n",
+  "answer": "(135)",
+  "generated_token_ids": [
+    334,
+    16,
+    18,
+    20,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "135",
+  "token_logprob": [
+    -1.6231725215911865,
+    -1.221472144126892,
+    -0.9413391351699829,
+    -0.16521905362606049,
+    -0.16772893071174622,
+    -0.35234272480010986
+  ],
+  "token_entropy": [
+    2.8978757858276367,
+    1.9774165153503418,
+    1.9062244892120361,
+    0.49915388226509094,
+    0.6593672037124634,
+    0.8844747543334961
+  ],
+  "token_logprob_sum": [
+    -639000.125,
+    -692532.25,
+    -812949.625,
+    -846275.5,
+    -725109.1875,
+    -721058.375
+  ],
+  "token_topk_mean_logprob": [
+    -3.566922903060913,
+    -5.94647216796875,
+    -7.028839111328125,
+    -7.824985027313232,
+    -6.586479187011719,
+    -7.067967414855957
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 179,
+  "read_token_ids": [
+    258,
+    2312
+  ]
+}

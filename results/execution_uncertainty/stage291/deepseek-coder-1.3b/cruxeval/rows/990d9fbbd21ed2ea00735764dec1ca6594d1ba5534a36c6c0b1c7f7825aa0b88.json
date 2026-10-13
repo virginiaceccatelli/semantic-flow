@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_503",
+  "program_id": "sample_503",
+  "code": "def f(d):\n    result = [None] * len(d)\n    a = b = 0\n    while d:\n        result[a] = d.popitem(a == b)\n        a, b = b, (b+1) % len(result)\n    return result",
+  "call": "f({})",
+  "expected": "[]",
+  "dataset": "cruxeval",
+  "source_group": "bc158aced704ccba3ede01d3b948353fffd7957dc78269741722e9fc0df28e29",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(d):\n    result = [None] * len(d)\n    a = b = 0\n    while d:\n        result[a] = d.popitem(a == b)\n        a, b = b, (b+1) % len(result)\n    return result\n\nassert f({}) ==",
+  "n_prompt_tokens": 228,
+  "raw_generation": " [None]\n",
+  "answer": "[None]",
+  "generated_token_ids": [
+    821,
+    11161,
+    60,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "[None]",
+  "token_logprob": [
+    -0.4922455847263336,
+    -0.28865304589271545,
+    -0.581655740737915,
+    -0.5331515073776245
+  ],
+  "token_entropy": [
+    1.1172103881835938,
+    0.925884485244751,
+    0.723564088344574,
+    0.9109615087509155
+  ],
+  "token_logprob_sum": [
+    -754502.4375,
+    -797949.875,
+    -777289.375,
+    -807904.375
+  ],
+  "token_topk_mean_logprob": [
+    -5.592245578765869,
+    -6.073028087615967,
+    -9.306655883789062,
+    -7.858151435852051
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 220,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

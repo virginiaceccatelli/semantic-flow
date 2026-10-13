@@ -1,0 +1,73 @@
+{
+  "case_id": "39:2",
+  "program_id": "39",
+  "code": "import heapq\r\nfrom collections import Counter\r\ndef rearange_string(S):\r\n    ctr = Counter(S)\r\n    heap = [(-value, key) for key, value in ctr.items()]\r\n    heapq.heapify(heap)\r\n    if (-heap[0][0]) * 2 > len(S) + 1: \r\n        return \"\"\r\n    ans = []\r\n    while len(heap) >= 2:\r\n        nct1, char1 = heapq.heappop(heap)\r\n        nct2, char2 = heapq.heappop(heap)\r\n        ans.extend([char1, char2])\r\n        if nct1 + 1: heapq.heappush(heap, (nct1 + 1, char1))\r\n        if nct2 + 1: heapq.heappush(heap, (nct2 + 1, char2))\r\n    return \"\".join(ans) + (heap[0][1] if heap else \"\")",
+  "call": "rearange_string(\"abccdd\")",
+  "expected": "'cdabcd'",
+  "dataset": "mbpp",
+  "source_group": "5a2b442cc74d08c85d1f45d7dbed1b5a828a0b29971dccd2a75f322617634bab",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport heapq\r\nfrom collections import Counter\r\ndef rearange_string(S):\r\n    ctr = Counter(S)\r\n    heap = [(-value, key) for key, value in ctr.items()]\r\n    heapq.heapify(heap)\r\n    if (-heap[0][0]) * 2 > len(S) + 1: \r\n        return \"\"\r\n    ans = []\r\n    while len(heap) >= 2:\r\n        nct1, char1 = heapq.heappop(heap)\r\n        nct2, char2 = heapq.heappop(heap)\r\n        ans.extend([char1, char2])\r\n        if nct1 + 1: heapq.heappush(heap, (nct1 + 1, char1))\r\n        if nct2 + 1: heapq.heappush(heap, (nct2 + 1, char2))\r\n    return \"\".join(ans) + (heap[0][1] if heap else \"\")\n\nassert rearange_string(\"abccdd\") ==",
+  "n_prompt_tokens": 419,
+  "raw_generation": " \"abcdcd\"\n",
+  "answer": "\"abcdcd\"",
+  "generated_token_ids": [
+    440,
+    356,
+    2243,
+    2243,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'abcdcd'",
+  "token_logprob": [
+    -0.23469027876853943,
+    -1.3712782859802246,
+    -0.7052531242370605,
+    -0.19123348593711853,
+    -0.03296155482530594,
+    -0.49553316831588745
+  ],
+  "token_entropy": [
+    0.794921875,
+    2.5196545124053955,
+    1.241147756576538,
+    0.5314658880233765,
+    0.19362568855285645,
+    0.9159136414527893
+  ],
+  "token_logprob_sum": [
+    -734057.875,
+    -670227.75,
+    -736752.0,
+    -798777.3125,
+    -763479.0,
+    -733621.6875
+  ],
+  "token_topk_mean_logprob": [
+    -6.397190570831299,
+    -3.8212783336639404,
+    -5.992753505706787,
+    -7.794358730316162,
+    -7.742337226867676,
+    -7.683032989501953
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 405,
+  "read_token_ids": [
+    2456,
+    2312
+  ]
+}

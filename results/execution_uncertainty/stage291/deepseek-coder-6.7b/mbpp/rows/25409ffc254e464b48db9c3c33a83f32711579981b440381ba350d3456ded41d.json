@@ -1,0 +1,58 @@
+{
+  "case_id": "183:1",
+  "program_id": "183",
+  "code": "def count_pairs(arr, n, k):\r\n  count=0;\r\n  for i in range(0,n):\r\n    for j in range(i+1, n):\r\n      if arr[i] - arr[j] == k or arr[j] - arr[i] == k:\r\n        count += 1\r\n  return count",
+  "call": "count_pairs([8, 12, 16, 4, 0, 20], 6, 4)",
+  "expected": "5",
+  "dataset": "mbpp",
+  "source_group": "df53be1e81609803f2c1723331474be5911ffcd961f479b79dea55cbd80052e7",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_pairs(arr, n, k):\r\n  count=0;\r\n  for i in range(0,n):\r\n    for j in range(i+1, n):\r\n      if arr[i] - arr[j] == k or arr[j] - arr[i] == k:\r\n        count += 1\r\n  return count\n\nassert count_pairs([8, 12, 16, 4, 0, 20], 6, 4) ==",
+  "n_prompt_tokens": 273,
+  "raw_generation": "  4\n",
+  "answer": "4",
+  "generated_token_ids": [
+    243,
+    19,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "4",
+  "token_logprob": [
+    -0.9092272520065308,
+    -0.6826367974281311,
+    -0.588866114616394
+  ],
+  "token_entropy": [
+    2.0970194339752197,
+    1.3795520067214966,
+    0.943426251411438
+  ],
+  "token_logprob_sum": [
+    -666807.625,
+    -777414.0,
+    -735189.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.28422737121582,
+    -5.945137023925781,
+    -7.313865661621094
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 237,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

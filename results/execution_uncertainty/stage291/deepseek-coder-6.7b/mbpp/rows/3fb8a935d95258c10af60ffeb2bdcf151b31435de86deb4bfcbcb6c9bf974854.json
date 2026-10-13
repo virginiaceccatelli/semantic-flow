@@ -1,0 +1,63 @@
+{
+  "case_id": "144:2",
+  "program_id": "144",
+  "code": "def sum_Pairs(arr,n): \r\n    sum = 0\r\n    for i in range(n - 1,-1,-1): \r\n        sum += i*arr[i] - (n-1-i) * arr[i] \r\n    return sum",
+  "call": "sum_Pairs([1,2,3,4,5,7,9,11,14],9)",
+  "expected": "188",
+  "dataset": "mbpp",
+  "source_group": "6c1cc5cc79f6dc551c49da785c6af578d6a50de51df081822e40796cbc0d8260",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_Pairs(arr,n): \r\n    sum = 0\r\n    for i in range(n - 1,-1,-1): \r\n        sum += i*arr[i] - (n-1-i) * arr[i] \r\n    return sum\n\nassert sum_Pairs([1,2,3,4,5,7,9,11,14],9) ==",
+  "n_prompt_tokens": 250,
+  "raw_generation": " -10\n",
+  "answer": "-10",
+  "generated_token_ids": [
+    567,
+    16,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-10",
+  "token_logprob": [
+    -0.17618578672409058,
+    -1.045547604560852,
+    -2.051020622253418,
+    -1.5175995826721191
+  ],
+  "token_entropy": [
+    0.8551173210144043,
+    1.924547791481018,
+    2.50392484664917,
+    2.409420967102051
+  ],
+  "token_logprob_sum": [
+    -705759.75,
+    -763729.5,
+    -825558.625,
+    -784141.3125
+  ],
+  "token_topk_mean_logprob": [
+    -5.263685703277588,
+    -6.445547580718994,
+    -4.38852071762085,
+    -4.267599582672119
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 218,
+  "read_token_ids": [
+    2545,
+    2312
+  ]
+}

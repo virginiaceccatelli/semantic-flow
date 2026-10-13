@@ -1,0 +1,53 @@
+{
+  "case_id": "91:0",
+  "program_id": "91",
+  "code": "def find_substring(str1, sub_str):\r\n   if any(sub_str in s for s in str1):\r\n       return True\r\n   return False",
+  "call": "find_substring([\"red\", \"black\", \"white\", \"green\", \"orange\"],\"ack\")",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "8d92d7c5de37a5831bf118092474f4d1a91fc450cc237da9b888be4ce1240f7d",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_substring(str1, sub_str):\r\n   if any(sub_str in s for s in str1):\r\n       return True\r\n   return False\n\nassert find_substring([\"red\", \"black\", \"white\", \"green\", \"orange\"],\"ack\") ==",
+  "n_prompt_tokens": 221,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.031250230967998505,
+    -0.43981632590293884
+  ],
+  "token_entropy": [
+    0.2020721435546875,
+    1.0201239585876465
+  ],
+  "token_logprob_sum": [
+    -740829.75,
+    -752468.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.462500095367432,
+    -6.852316379547119
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 193,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

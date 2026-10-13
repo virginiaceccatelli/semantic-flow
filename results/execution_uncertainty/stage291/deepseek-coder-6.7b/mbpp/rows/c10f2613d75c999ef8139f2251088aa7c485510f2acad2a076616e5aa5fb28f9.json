@@ -1,0 +1,78 @@
+{
+  "case_id": "18:0",
+  "program_id": "18",
+  "code": "NO_OF_CHARS = 256\r\ndef str_to_list(string): \r\n\ttemp = [] \r\n\tfor x in string: \r\n\t\ttemp.append(x) \r\n\treturn temp \r\ndef lst_to_string(List): \r\n\treturn ''.join(List) \r\ndef get_char_count_array(string): \r\n\tcount = [0] * NO_OF_CHARS \r\n\tfor i in string: \r\n\t\tcount[ord(i)] += 1\r\n\treturn count \r\ndef remove_dirty_chars(string, second_string): \r\n\tcount = get_char_count_array(second_string) \r\n\tip_ind = 0\r\n\tres_ind = 0\r\n\ttemp = '' \r\n\tstr_list = str_to_list(string) \r\n\twhile ip_ind != len(str_list): \r\n\t\ttemp = str_list[ip_ind] \r\n\t\tif count[ord(temp)] == 0: \r\n\t\t\tstr_list[res_ind] = str_list[ip_ind] \r\n\t\t\tres_ind += 1\r\n\t\tip_ind+=1\r\n\treturn lst_to_string(str_list[0:res_ind])",
+  "call": "remove_dirty_chars(\"probasscurve\", \"pros\")",
+  "expected": "'bacuve'",
+  "dataset": "mbpp",
+  "source_group": "ad8a04acd90ea75a9c7e1a718d149cdb9cb53860f0c434afc55089777645f8e0",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nNO_OF_CHARS = 256\r\ndef str_to_list(string): \r\n\ttemp = [] \r\n\tfor x in string: \r\n\t\ttemp.append(x) \r\n\treturn temp \r\ndef lst_to_string(List): \r\n\treturn ''.join(List) \r\ndef get_char_count_array(string): \r\n\tcount = [0] * NO_OF_CHARS \r\n\tfor i in string: \r\n\t\tcount[ord(i)] += 1\r\n\treturn count \r\ndef remove_dirty_chars(string, second_string): \r\n\tcount = get_char_count_array(second_string) \r\n\tip_ind = 0\r\n\tres_ind = 0\r\n\ttemp = '' \r\n\tstr_list = str_to_list(string) \r\n\twhile ip_ind != len(str_list): \r\n\t\ttemp = str_list[ip_ind] \r\n\t\tif count[ord(temp)] == 0: \r\n\t\t\tstr_list[res_ind] = str_list[ip_ind] \r\n\t\t\tres_ind += 1\r\n\t\tip_ind+=1\r\n\treturn lst_to_string(str_list[0:res_ind])\n\nassert remove_dirty_chars(\"probasscurve\", \"pros\") ==",
+  "n_prompt_tokens": 487,
+  "raw_generation": " \"bsscurve\"\n",
+  "answer": "\"bsscurve\"",
+  "generated_token_ids": [
+    440,
+    65,
+    925,
+    1862,
+    312,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'bsscurve'",
+  "token_logprob": [
+    -0.12615779042243958,
+    -1.0871808528900146,
+    -1.3805859088897705,
+    -1.2820382118225098,
+    -0.5022304058074951,
+    -0.01886696182191372,
+    -0.46527355909347534
+  ],
+  "token_entropy": [
+    0.4409972131252289,
+    3.0855817794799805,
+    2.143219470977783,
+    2.709151268005371,
+    0.9841904044151306,
+    0.11966400593519211,
+    0.822190523147583
+  ],
+  "token_logprob_sum": [
+    -719745.125,
+    -603730.625,
+    -671404.125,
+    -619632.4375,
+    -760253.5,
+    -704172.6875,
+    -731281.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.579283237457275,
+    -3.824681043624878,
+    -4.486835479736328,
+    -3.9476630687713623,
+    -7.283481121063232,
+    -8.356366157531738,
+    -7.912148952484131
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 465,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

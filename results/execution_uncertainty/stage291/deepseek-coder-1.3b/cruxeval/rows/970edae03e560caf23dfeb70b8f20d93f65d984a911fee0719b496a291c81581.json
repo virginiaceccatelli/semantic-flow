@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_634",
+  "program_id": "sample_634",
+  "code": "def f(input_string):\n    table = str.maketrans('aioe', 'ioua')\n    while 'a' in input_string or 'A' in input_string:\n        input_string = input_string.translate(table)\n    return input_string",
+  "call": "f('biec')",
+  "expected": "'biec'",
+  "dataset": "cruxeval",
+  "source_group": "843668d5948dc835b0da834a34cf68901db36096e256329a75a36d2da2c06fec",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(input_string):\n    table = str.maketrans('aioe', 'ioua')\n    while 'a' in input_string or 'A' in input_string:\n        input_string = input_string.translate(table)\n    return input_string\n\nassert f('biec') ==",
+  "n_prompt_tokens": 229,
+  "raw_generation": " 'iec'\n",
+  "answer": "'iec'",
+  "generated_token_ids": [
+    651,
+    520,
+    66,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'iec'",
+  "token_logprob": [
+    -0.02388361655175686,
+    -1.8034981489181519,
+    -0.6202573180198669,
+    -0.0352807380259037,
+    -0.17562219500541687
+  ],
+  "token_entropy": [
+    0.1579650342464447,
+    3.7379631996154785,
+    1.7047466039657593,
+    0.2219122052192688,
+    0.47707822918891907
+  ],
+  "token_logprob_sum": [
+    -775754.375,
+    -581230.0625,
+    -668336.375,
+    -722638.0,
+    -807516.125
+  ],
+  "token_topk_mean_logprob": [
+    -7.7801337242126465,
+    -3.640998125076294,
+    -4.731194972991943,
+    -7.229031562805176,
+    -8.956286430358887
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 219,
+  "read_token_ids": [
+    2600,
+    2312
+  ]
+}

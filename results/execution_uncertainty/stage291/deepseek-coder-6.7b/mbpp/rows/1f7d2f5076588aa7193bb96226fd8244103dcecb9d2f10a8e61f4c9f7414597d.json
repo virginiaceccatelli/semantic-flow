@@ -1,0 +1,58 @@
+{
+  "case_id": "288:0",
+  "program_id": "288",
+  "code": "def modular_inverse(arr, N, P):\r\n\tcurrent_element = 0\r\n\tfor i in range(0, N):\r\n\t\tif ((arr[i] * arr[i]) % P == 1):\r\n\t\t\tcurrent_element = current_element + 1\r\n\treturn current_element",
+  "call": "modular_inverse([ 1, 6, 4, 5 ], 4, 7)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "e172ca1197bb516666d1a351c4642d9eaa5221a9e83d33600b0a288ed2ff5c06",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef modular_inverse(arr, N, P):\r\n\tcurrent_element = 0\r\n\tfor i in range(0, N):\r\n\t\tif ((arr[i] * arr[i]) % P == 1):\r\n\t\t\tcurrent_element = current_element + 1\r\n\treturn current_element\n\nassert modular_inverse([ 1, 6, 4, 5 ], 4, 7) ==",
+  "n_prompt_tokens": 250,
+  "raw_generation": "  2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    243,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.0223997831344604,
+    -0.7904443740844727,
+    -0.6132928133010864
+  ],
+  "token_entropy": [
+    2.316537380218506,
+    1.377478003501892,
+    1.0761433839797974
+  ],
+  "token_logprob_sum": [
+    -648494.5625,
+    -750569.125,
+    -718795.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.016149997711182,
+    -7.2216949462890625,
+    -6.92891788482666
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 222,
+  "read_token_ids": [
+    7637,
+    2312
+  ]
+}

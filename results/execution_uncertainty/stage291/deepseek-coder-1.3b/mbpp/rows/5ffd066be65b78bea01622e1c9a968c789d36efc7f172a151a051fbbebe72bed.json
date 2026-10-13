@@ -1,0 +1,83 @@
+{
+  "case_id": "67:2",
+  "program_id": "67",
+  "code": "def bell_number(n):   \r\n    bell = [[0 for i in range(n+1)] for j in range(n+1)] \r\n    bell[0][0] = 1\r\n    for i in range(1, n+1): \r\n        bell[i][0] = bell[i-1][i-1]  \r\n        for j in range(1, i+1): \r\n            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   \r\n    return bell[n][0]",
+  "call": "bell_number(56)",
+  "expected": "6775685320645824322581483068371419745979053216268760300",
+  "dataset": "mbpp",
+  "source_group": "e1d525054b97194c33ab0699f20f1d40b4e5674af9e545e0d7a42bb5db9583b6",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef bell_number(n):   \r\n    bell = [[0 for i in range(n+1)] for j in range(n+1)] \r\n    bell[0][0] = 1\r\n    for i in range(1, n+1): \r\n        bell[i][0] = bell[i-1][i-1]  \r\n        for j in range(1, i+1): \r\n            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   \r\n    return bell[n][0]\n\nassert bell_number(56) ==",
+  "n_prompt_tokens": 301,
+  "raw_generation": " bell_number(55)\n",
+  "answer": "bell_number(55)",
+  "generated_token_ids": [
+    15758,
+    62,
+    7675,
+    7,
+    20,
+    20,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "invalid",
+  "answer_form": null,
+  "invalid_reason": "non_constant: not a constant expression: Call",
+  "parsed_answer": null,
+  "token_logprob": [
+    -0.26099833846092224,
+    -0.0031294680666178465,
+    -0.003414635546505451,
+    -0.021179812029004097,
+    -0.9575147032737732,
+    -1.2741305828094482,
+    -0.024699684232473373,
+    -0.6866015195846558
+  ],
+  "token_entropy": [
+    1.2857247591018677,
+    0.029693616554141045,
+    0.03258226066827774,
+    0.15806953608989716,
+    1.9225919246673584,
+    1.7982800006866455,
+    0.1687966287136078,
+    1.7596354484558105
+  ],
+  "token_logprob_sum": [
+    -624940.875,
+    -757019.875,
+    -829021.1875,
+    -732077.0,
+    -673566.125,
+    -709565.125,
+    -768385.25,
+    -707503.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.954748630523682,
+    -9.309379577636719,
+    -9.62841510772705,
+    -7.202430248260498,
+    -5.85751485824585,
+    -5.499131202697754,
+    -7.1309494972229,
+    -4.717851638793945
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 289,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

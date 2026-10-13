@@ -1,0 +1,68 @@
+{
+  "case_id": "190:2",
+  "program_id": "190",
+  "code": "def count_Intgral_Points(x1,y1,x2,y2): \r\n    return ((y2 - y1 - 1) * (x2 - x1 - 1))",
+  "call": "count_Intgral_Points(4,2,6,4)",
+  "expected": "1",
+  "dataset": "mbpp",
+  "source_group": "e05252a9ea1d8782eaea703c0921346f2d99294f1ef899a2245bb396a10eaa51",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_Intgral_Points(x1,y1,x2,y2): \r\n    return ((y2 - y1 - 1) * (x2 - x1 - 1))\n\nassert count_Intgral_Points(4,2,6,4) ==",
+  "n_prompt_tokens": 221,
+  "raw_generation": " (12)\n",
+  "answer": "(12)",
+  "generated_token_ids": [
+    334,
+    16,
+    17,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "12",
+  "token_logprob": [
+    -1.2874212265014648,
+    -1.00837242603302,
+    -1.19782292842865,
+    -0.4557505249977112,
+    -0.33514222502708435
+  ],
+  "token_entropy": [
+    2.298717498779297,
+    2.002267360687256,
+    2.0253310203552246,
+    1.3126485347747803,
+    0.8674888610839844
+  ],
+  "token_logprob_sum": [
+    -653396.5,
+    -684606.0,
+    -713854.875,
+    -743506.125,
+    -704189.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.17492151260376,
+    -5.120872497558594,
+    -4.810323238372803,
+    -5.043250560760498,
+    -7.191392421722412
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

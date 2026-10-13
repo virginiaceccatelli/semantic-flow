@@ -1,0 +1,68 @@
+{
+  "case_id": "478:1",
+  "program_id": "478",
+  "code": "import re\r\ndef remove_lowercase(str1):\r\n remove_lower = lambda text: re.sub('[a-z]', '', text)\r\n result =  remove_lower(str1)\r\n return result",
+  "call": "remove_lowercase(\"FInD\")",
+  "expected": "'FID'",
+  "dataset": "mbpp",
+  "source_group": "73e268fc9190d5a6b25937194a6047ee9bb492f7d63675397b63aa62b39b3f50",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef remove_lowercase(str1):\r\n remove_lower = lambda text: re.sub('[a-z]', '', text)\r\n result =  remove_lower(str1)\r\n return result\n\nassert remove_lowercase(\"FInD\") ==",
+  "n_prompt_tokens": 220,
+  "raw_generation": " \"FIN\"\n",
+  "answer": "\"FIN\"",
+  "generated_token_ids": [
+    440,
+    37,
+    1154,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'FIN'",
+  "token_logprob": [
+    -0.2015460729598999,
+    -0.5229710340499878,
+    -1.083168625831604,
+    -0.12498830258846283,
+    -0.34501782059669495
+  ],
+  "token_entropy": [
+    0.7853893637657166,
+    1.9933089017868042,
+    2.0531675815582275,
+    0.6030308604240417,
+    0.8599861860275269
+  ],
+  "token_logprob_sum": [
+    -717515.375,
+    -634603.75,
+    -625086.75,
+    -697899.4375,
+    -730497.0
+  ],
+  "token_topk_mean_logprob": [
+    -6.164045810699463,
+    -4.363596439361572,
+    -4.976528167724609,
+    -6.224206447601318,
+    -7.857518196105957
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 205,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

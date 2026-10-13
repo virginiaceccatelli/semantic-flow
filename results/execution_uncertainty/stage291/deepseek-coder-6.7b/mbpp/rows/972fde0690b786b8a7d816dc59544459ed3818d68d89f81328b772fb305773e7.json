@@ -1,0 +1,53 @@
+{
+  "case_id": "327:1",
+  "program_id": "327",
+  "code": "def check_isosceles(x,y,z):\r\n  if x==y or y==z or z==x:\r\n\t   return True\r\n  else:\r\n     return False",
+  "call": "check_isosceles(6,6,12)",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "9fc05425660e4038240fd5569f74d8d3f042ea8d1a4424599a9b063faf847d4a",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_isosceles(x,y,z):\r\n  if x==y or y==z or z==x:\r\n\t   return True\r\n  else:\r\n     return False\n\nassert check_isosceles(6,6,12) ==",
+  "n_prompt_tokens": 218,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.4585079550743103,
+    -0.4638351798057556
+  ],
+  "token_entropy": [
+    0.8270575404167175,
+    1.0473837852478027
+  ],
+  "token_logprob_sum": [
+    -698327.5625,
+    -719499.1875
+  ],
+  "token_topk_mean_logprob": [
+    -7.0772576332092285,
+    -6.4794602394104
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 199,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "133:1",
+  "program_id": "133",
+  "code": "def sum_negativenum(nums):\r\n  sum_negativenum = list(filter(lambda nums:nums<0,nums))\r\n  return sum(sum_negativenum)",
+  "call": "sum_negativenum([10,15,-14,13,-18,12,-20])",
+  "expected": "-52",
+  "dataset": "mbpp",
+  "source_group": "47bdad82f0984faa5241402ac55c362043a642e210c9630786fc3c5b5a3af1e8",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_negativenum(nums):\r\n  sum_negativenum = list(filter(lambda nums:nums<0,nums))\r\n  return sum(sum_negativenum)\n\nassert sum_negativenum([10,15,-14,13,-18,12,-20]) ==",
+  "n_prompt_tokens": 236,
+  "raw_generation": " -42\n",
+  "answer": "-42",
+  "generated_token_ids": [
+    567,
+    19,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-42",
+  "token_logprob": [
+    -0.060715049505233765,
+    -0.9786618947982788,
+    -1.605655550956726,
+    -0.5954471826553345
+  ],
+  "token_entropy": [
+    0.3365522623062134,
+    1.5271239280700684,
+    2.2757387161254883,
+    1.0326049327850342
+  ],
+  "token_logprob_sum": [
+    -704920.625,
+    -780270.25,
+    -789376.3125,
+    -730941.3125
+  ],
+  "token_topk_mean_logprob": [
+    -7.054464817047119,
+    -7.566162109375,
+    -5.880655765533447,
+    -7.076697826385498
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 203,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

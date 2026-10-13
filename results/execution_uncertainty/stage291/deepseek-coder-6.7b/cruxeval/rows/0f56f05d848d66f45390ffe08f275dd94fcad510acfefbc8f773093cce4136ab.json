@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_98",
+  "program_id": "sample_98",
+  "code": "def f(s):\n    return sum([s.istitle() for s in s.split()])",
+  "call": "f('SOME OF THIS Is uknowN!')",
+  "expected": "1",
+  "dataset": "cruxeval",
+  "source_group": "86e884fe8551de3e04cf132712d2d5b8258b31ef2eb2962ab43557a8a1ef2ffa",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s):\n    return sum([s.istitle() for s in s.split()])\n\nassert f('SOME OF THIS Is uknowN!') ==",
+  "n_prompt_tokens": 193,
+  "raw_generation": "  2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    243,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.135432481765747,
+    -0.9954192638397217,
+    -0.3274345099925995
+  ],
+  "token_entropy": [
+    2.0881080627441406,
+    1.507451057434082,
+    0.6724802255630493
+  ],
+  "token_logprob_sum": [
+    -701293.75,
+    -805677.0,
+    -800268.875
+  ],
+  "token_topk_mean_logprob": [
+    -4.1604323387146,
+    -7.5079193115234375,
+    -8.033684730529785
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 176,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

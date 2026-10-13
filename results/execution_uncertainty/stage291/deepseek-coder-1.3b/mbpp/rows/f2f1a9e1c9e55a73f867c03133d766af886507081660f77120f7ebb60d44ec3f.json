@@ -1,0 +1,58 @@
+{
+  "case_id": "382:0",
+  "program_id": "382",
+  "code": "def find_rotation_count(A):\r\n    (left, right) = (0, len(A) - 1)\r\n    while left <= right:\r\n        if A[left] <= A[right]:\r\n            return left\r\n        mid = (left + right) // 2\r\n        next = (mid + 1) % len(A)\r\n        prev = (mid - 1 + len(A)) % len(A)\r\n        if A[mid] <= A[next] and A[mid] <= A[prev]:\r\n            return mid\r\n        elif A[mid] <= A[right]:\r\n            right = mid - 1\r\n        elif A[mid] >= A[left]:\r\n            left = mid + 1\r\n    return -1",
+  "call": "find_rotation_count([8, 9, 10, 1, 2, 3, 4, 5, 6, 7])",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "2066e3e81a8c25cff1cdce70e031c529116ec1be6c9a060580c0369cdf22ada6",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_rotation_count(A):\r\n    (left, right) = (0, len(A) - 1)\r\n    while left <= right:\r\n        if A[left] <= A[right]:\r\n            return left\r\n        mid = (left + right) // 2\r\n        next = (mid + 1) % len(A)\r\n        prev = (mid - 1 + len(A)) % len(A)\r\n        if A[mid] <= A[next] and A[mid] <= A[prev]:\r\n            return mid\r\n        elif A[mid] <= A[right]:\r\n            right = mid - 1\r\n        elif A[mid] >= A[left]:\r\n            left = mid + 1\r\n    return -1\n\nassert find_rotation_count([8, 9, 10, 1, 2, 3, 4, 5, 6, 7]) ==",
+  "n_prompt_tokens": 376,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.10599830001592636,
+    -0.001722401357255876,
+    -0.346764475107193
+  ],
+  "token_entropy": [
+    0.5862170457839966,
+    0.014979022555053234,
+    0.8722583055496216
+  ],
+  "token_logprob_sum": [
+    -737131.0625,
+    -838060.375,
+    -748651.0
+  ],
+  "token_topk_mean_logprob": [
+    -6.011125087738037,
+    -10.701723098754883,
+    -7.478015422821045
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 334,
+  "read_token_ids": [
+    16,
+    2312
+  ]
+}

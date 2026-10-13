@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_634",
+  "program_id": "sample_634",
+  "code": "def f(input_string):\n    table = str.maketrans('aioe', 'ioua')\n    while 'a' in input_string or 'A' in input_string:\n        input_string = input_string.translate(table)\n    return input_string",
+  "call": "f('biec')",
+  "expected": "'biec'",
+  "dataset": "cruxeval",
+  "source_group": "843668d5948dc835b0da834a34cf68901db36096e256329a75a36d2da2c06fec",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(input_string):\n    table = str.maketrans('aioe', 'ioua')\n    while 'a' in input_string or 'A' in input_string:\n        input_string = input_string.translate(table)\n    return input_string\n\nassert f('biec') ==",
+  "n_prompt_tokens": 229,
+  "raw_generation": " 'biua'\n",
+  "answer": "'biua'",
+  "generated_token_ids": [
+    651,
+    65,
+    3680,
+    64,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'biua'",
+  "token_logprob": [
+    -0.04140806570649147,
+    -1.6045432090759277,
+    -0.7803677320480347,
+    -0.489130437374115,
+    -0.020096497610211372,
+    -0.18582378327846527
+  ],
+  "token_entropy": [
+    0.23848578333854675,
+    3.127354621887207,
+    2.7571310997009277,
+    1.7623097896575928,
+    0.13290660083293915,
+    0.4929487705230713
+  ],
+  "token_logprob_sum": [
+    -774498.625,
+    -590481.9375,
+    -591751.125,
+    -651269.5625,
+    -709523.1875,
+    -792220.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.503908634185791,
+    -3.9920432567596436,
+    -4.149117946624756,
+    -4.42663049697876,
+    -8.016972541809082,
+    -8.857698440551758
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 219,
+  "read_token_ids": [
+    2600,
+    2312
+  ]
+}

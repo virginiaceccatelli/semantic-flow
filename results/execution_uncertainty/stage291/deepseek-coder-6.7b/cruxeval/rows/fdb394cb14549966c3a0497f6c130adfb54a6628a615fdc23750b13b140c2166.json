@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_130",
+  "program_id": "sample_130",
+  "code": "def f(m):\n    items = list(m.items())\n    for i in range(len(items)-2, -1, -1):\n        tmp = items[i]\n        items[i] = items[i+1] \n        items[i+1] = tmp\n    return ['{}={}', '{1}={0}'][len(items) % 2].format(\n        *m.keys(), **m\n    )",
+  "call": "f({'l':4, 'h':6, 'o':9})",
+  "expected": "'h=l'",
+  "dataset": "cruxeval",
+  "source_group": "9493a077a9e1b0c190a24970c3a89bc66221ededed3f0d60a6dd677674ea8a46",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(m):\n    items = list(m.items())\n    for i in range(len(items)-2, -1, -1):\n        tmp = items[i]\n        items[i] = items[i+1] \n        items[i+1] = tmp\n    return ['{}={}', '{1}={0}'][len(items) % 2].format(\n        *m.keys(), **m\n    )\n\nassert f({'l':4, 'h':6, 'o':9}) ==",
+  "n_prompt_tokens": 281,
+  "raw_generation": " 'h=6'\n",
+  "answer": "'h=6'",
+  "generated_token_ids": [
+    651,
+    71,
+    28,
+    21,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'h=6'",
+  "token_logprob": [
+    -0.09111162275075912,
+    -0.9039815664291382,
+    -0.011734625324606895,
+    -0.3490665555000305,
+    -0.8026689291000366,
+    -0.16551581025123596
+  ],
+  "token_entropy": [
+    0.4042087197303772,
+    1.7651100158691406,
+    0.10288114100694656,
+    1.0264859199523926,
+    1.7329013347625732,
+    0.5305761694908142
+  ],
+  "token_logprob_sum": [
+    -744917.5,
+    -665067.25,
+    -724705.4375,
+    -750376.375,
+    -663404.0,
+    -774473.75
+  ],
+  "token_topk_mean_logprob": [
+    -6.772361755371094,
+    -5.097732067108154,
+    -7.605485439300537,
+    -6.549066066741943,
+    -4.615169048309326,
+    -7.721765995025635
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 259,
+  "read_token_ids": [
+    2189,
+    2312
+  ]
+}

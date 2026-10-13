@@ -1,0 +1,58 @@
+{
+  "case_id": "60:0",
+  "program_id": "60",
+  "code": "def max_len_sub( arr, n): \r\n\tmls=[] \r\n\tmax = 0\r\n\tfor i in range(n): \r\n\t\tmls.append(1) \r\n\tfor i in range(n): \r\n\t\tfor j in range(i): \r\n\t\t\tif (abs(arr[i] - arr[j]) <= 1 and mls[i] < mls[j] + 1): \r\n\t\t\t\tmls[i] = mls[j] + 1\r\n\tfor i in range(n): \r\n\t\tif (max < mls[i]): \r\n\t\t\tmax = mls[i] \r\n\treturn max",
+  "call": "max_len_sub([2, 5, 6, 3, 7, 6, 5, 8], 8)",
+  "expected": "5",
+  "dataset": "mbpp",
+  "source_group": "ea5a9a375006506695d7e951b137a5cdfa24c28653919bbfe1a71cd9cfb9f0e0",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_len_sub( arr, n): \r\n\tmls=[] \r\n\tmax = 0\r\n\tfor i in range(n): \r\n\t\tmls.append(1) \r\n\tfor i in range(n): \r\n\t\tfor j in range(i): \r\n\t\t\tif (abs(arr[i] - arr[j]) <= 1 and mls[i] < mls[j] + 1): \r\n\t\t\t\tmls[i] = mls[j] + 1\r\n\tfor i in range(n): \r\n\t\tif (max < mls[i]): \r\n\t\t\tmax = mls[i] \r\n\treturn max\n\nassert max_len_sub([2, 5, 6, 3, 7, 6, 5, 8], 8) ==",
+  "n_prompt_tokens": 350,
+  "raw_generation": "  3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    243,
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -0.8480210304260254,
+    -0.9043241739273071,
+    -0.36409926414489746
+  ],
+  "token_entropy": [
+    2.0528974533081055,
+    1.2751728296279907,
+    0.9520671367645264
+  ],
+  "token_logprob_sum": [
+    -695466.4375,
+    -825874.9375,
+    -732296.25
+  ],
+  "token_topk_mean_logprob": [
+    -4.291770935058594,
+    -7.9168243408203125,
+    -6.729724407196045
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 313,
+  "read_token_ids": [
+    3034,
+    2312
+  ]
+}

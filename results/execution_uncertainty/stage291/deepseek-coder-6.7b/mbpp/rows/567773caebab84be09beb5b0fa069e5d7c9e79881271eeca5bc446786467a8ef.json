@@ -1,0 +1,63 @@
+{
+  "case_id": "410:1",
+  "program_id": "410",
+  "code": "def min_val(listval):\r\n     min_val = min(i for i in listval if isinstance(i, int))\r\n     return min_val",
+  "call": "min_val(['Python', 15, 20, 25])",
+  "expected": "15",
+  "dataset": "mbpp",
+  "source_group": "c975dbea3c35c18458c1f4963fadc7d5da922bb64541568b46cb8ea78828b3a7",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef min_val(listval):\r\n     min_val = min(i for i in listval if isinstance(i, int))\r\n     return min_val\n\nassert min_val(['Python', 15, 20, 25]) ==",
+  "n_prompt_tokens": 214,
+  "raw_generation": "  15\n",
+  "answer": "15",
+  "generated_token_ids": [
+    243,
+    16,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "15",
+  "token_logprob": [
+    -0.9512588977813721,
+    -0.02153571881353855,
+    -0.0011720937909558415,
+    -0.39201977849006653
+  ],
+  "token_entropy": [
+    2.2314352989196777,
+    0.12122888118028641,
+    0.011764965951442719,
+    0.9562039375305176
+  ],
+  "token_logprob_sum": [
+    -672513.125,
+    -860613.125,
+    -855335.5625,
+    -753666.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.1450090408325195,
+    -8.459036827087402,
+    -10.294921875,
+    -6.892019748687744
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 191,
+  "read_token_ids": [
+    1284,
+    2312
+  ]
+}

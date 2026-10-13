@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_618",
+  "program_id": "sample_618",
+  "code": "def f(match, fill, n):\n    return fill[:n] + match",
+  "call": "f('9', '8', 2)",
+  "expected": "'89'",
+  "dataset": "cruxeval",
+  "source_group": "7390ba5040c02cdab362b1d9d4095f03a4d57b613801bc0415da610b6c70c737",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(match, fill, n):\n    return fill[:n] + match\n\nassert f('9', '8', 2) ==",
+  "n_prompt_tokens": 186,
+  "raw_generation": " '89'\n",
+  "answer": "'89'",
+  "generated_token_ids": [
+    651,
+    23,
+    24,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'89'",
+  "token_logprob": [
+    -0.009492145851254463,
+    -0.4770824909210205,
+    -0.15284383296966553,
+    -0.14094501733779907,
+    -0.1322108656167984
+  ],
+  "token_entropy": [
+    0.06802701205015182,
+    0.6895580291748047,
+    0.45956528186798096,
+    0.5059245228767395,
+    0.4066905677318573
+  ],
+  "token_logprob_sum": [
+    -824992.25,
+    -746074.625,
+    -781564.6875,
+    -784946.0,
+    -816809.875
+  ],
+  "token_topk_mean_logprob": [
+    -8.840743064880371,
+    -8.911458015441895,
+    -8.502843856811523,
+    -8.265945434570312,
+    -8.579086303710938
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 171,
+  "read_token_ids": [
+    4168,
+    2312
+  ]
+}

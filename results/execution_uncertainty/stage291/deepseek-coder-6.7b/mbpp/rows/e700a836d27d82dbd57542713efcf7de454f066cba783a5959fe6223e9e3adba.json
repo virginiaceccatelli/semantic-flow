@@ -1,0 +1,83 @@
+{
+  "case_id": "111:1",
+  "program_id": "111",
+  "code": "def common_in_nested_lists(nestedlist):\r\n    result = list(set.intersection(*map(set, nestedlist)))\r\n    return result",
+  "call": "common_in_nested_lists([[12, 5, 23, 25, 45], [7, 11, 5, 23, 28], [1, 5, 8, 18, 23, 16]])",
+  "expected": "[5, 23]",
+  "dataset": "mbpp",
+  "source_group": "3ab87a7ecd6d8c2f050d288bfc2a39ae12453ee603cff026cb8df1a63d894ac5",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef common_in_nested_lists(nestedlist):\r\n    result = list(set.intersection(*map(set, nestedlist)))\r\n    return result\n\nassert common_in_nested_lists([[12, 5, 23, 25, 45], [7, 11, 5, 23, 28], [1, 5, 8, 18, 23, 16]]) ==",
+  "n_prompt_tokens": 264,
+  "raw_generation": " [5, 23]\n",
+  "answer": "[5, 23]",
+  "generated_token_ids": [
+    821,
+    20,
+    11,
+    207,
+    17,
+    18,
+    60,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "[5, 23]",
+  "token_logprob": [
+    -0.011899439617991447,
+    -0.1960747390985489,
+    -0.021455328911542892,
+    -0.031101517379283905,
+    -0.021890796720981598,
+    -0.0007183355046436191,
+    -0.014732145704329014,
+    -0.39751794934272766
+  ],
+  "token_entropy": [
+    0.09612132608890533,
+    0.6106553077697754,
+    0.10771460831165314,
+    0.14516998827457428,
+    0.11118592321872711,
+    0.006606032140552998,
+    0.09092571586370468,
+    0.8647357225418091
+  ],
+  "token_logprob_sum": [
+    -792112.0625,
+    -824117.5,
+    -921874.4375,
+    -892477.875,
+    -1028600.875,
+    -937843.0,
+    -925526.0,
+    -741727.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.568149089813232,
+    -7.264823913574219,
+    -10.702705383300781,
+    -9.862351417541504,
+    -11.734390258789062,
+    -12.285094261169434,
+    -9.58348274230957,
+    -7.781893253326416
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 191,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

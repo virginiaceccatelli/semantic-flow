@@ -1,0 +1,63 @@
+{
+  "case_id": "467:1",
+  "program_id": "467",
+  "code": "def decimal_to_Octal(deciNum):\r\n    octalNum = 0\r\n    countval = 1;\r\n    dNo = deciNum;\r\n    while (deciNum!= 0):\r\n        remainder= deciNum % 8;\r\n        octalNum+= remainder*countval;\r\n        countval= countval*10;\r\n        deciNum //= 8; \r\n    return (octalNum)",
+  "call": "decimal_to_Octal(2)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "bb313817bbc35c54298158f570701a1a3b36b8a8bf7e86e936aa454a092953e0",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef decimal_to_Octal(deciNum):\r\n    octalNum = 0\r\n    countval = 1;\r\n    dNo = deciNum;\r\n    while (deciNum!= 0):\r\n        remainder= deciNum % 8;\r\n        octalNum+= remainder*countval;\r\n        countval= countval*10;\r\n        deciNum //= 8; \r\n    return (octalNum)\n\nassert decimal_to_Octal(2) ==",
+  "n_prompt_tokens": 274,
+  "raw_generation": " '2'\n",
+  "answer": "'2'",
+  "generated_token_ids": [
+    651,
+    17,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'2'",
+  "token_logprob": [
+    -1.2265665531158447,
+    -0.37052518129348755,
+    -0.02746347337961197,
+    -0.3126015365123749
+  ],
+  "token_entropy": [
+    2.4308550357818604,
+    1.069234848022461,
+    0.19129011034965515,
+    0.8412154912948608
+  ],
+  "token_logprob_sum": [
+    -668788.625,
+    -755284.625,
+    -706080.5625,
+    -762125.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.045316219329834,
+    -6.464275360107422,
+    -7.202464580535889,
+    -6.516897678375244
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 260,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

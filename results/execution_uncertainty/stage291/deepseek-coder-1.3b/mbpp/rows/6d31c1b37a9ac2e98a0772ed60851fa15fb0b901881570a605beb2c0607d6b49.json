@@ -1,0 +1,53 @@
+{
+  "case_id": "183:0",
+  "program_id": "183",
+  "code": "def count_pairs(arr, n, k):\r\n  count=0;\r\n  for i in range(0,n):\r\n    for j in range(i+1, n):\r\n      if arr[i] - arr[j] == k or arr[j] - arr[i] == k:\r\n        count += 1\r\n  return count",
+  "call": "count_pairs([1, 5, 3, 4, 2], 5, 3)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "df53be1e81609803f2c1723331474be5911ffcd961f479b79dea55cbd80052e7",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_pairs(arr, n, k):\r\n  count=0;\r\n  for i in range(0,n):\r\n    for j in range(i+1, n):\r\n      if arr[i] - arr[j] == k or arr[j] - arr[i] == k:\r\n        count += 1\r\n  return count\n\nassert count_pairs([1, 5, 3, 4, 2], 5, 3) ==",
+  "n_prompt_tokens": 267,
+  "raw_generation": "2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.4595041275024414,
+    -0.3770536482334137
+  ],
+  "token_entropy": [
+    2.732740640640259,
+    1.0126292705535889
+  ],
+  "token_logprob_sum": [
+    -654897.375,
+    -717961.375
+  ],
+  "token_topk_mean_logprob": [
+    -3.8345038890838623,
+    -6.389554023742676
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 237,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_293",
+  "program_id": "sample_293",
+  "code": "def f(text):\n    s = text.lower()\n    for i in range(len(s)):\n        if s[i] == 'x':\n            return 'no'\n    return text.isupper()",
+  "call": "f('dEXE')",
+  "expected": "'no'",
+  "dataset": "cruxeval",
+  "source_group": "c1567ef175fef51f2a409f2b16cec1db3c2579afd227c6f459079a7174a8aec3",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    s = text.lower()\n    for i in range(len(s)):\n        if s[i] == 'x':\n            return 'no'\n    return text.isupper()\n\nassert f('dEXE') ==",
+  "n_prompt_tokens": 214,
+  "raw_generation": " 'no'\n",
+  "answer": "'no'",
+  "generated_token_ids": [
+    651,
+    2459,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'no'",
+  "token_logprob": [
+    -0.20932620763778687,
+    -0.07004671543836594,
+    -0.005263281520456076,
+    -0.14887070655822754
+  ],
+  "token_entropy": [
+    0.6236997246742249,
+    0.31595295667648315,
+    0.03680703416466713,
+    0.4382704198360443
+  ],
+  "token_logprob_sum": [
+    -813475.875,
+    -765591.875,
+    -771377.0,
+    -812498.375
+  ],
+  "token_topk_mean_logprob": [
+    -8.42807674407959,
+    -8.176297187805176,
+    -10.220888137817383,
+    -8.708246231079102
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 203,
+  "read_token_ids": [
+    822,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "320:0",
+  "program_id": "320",
+  "code": "def sum_difference(n):\r\n    sumofsquares = 0\r\n    squareofsum = 0\r\n    for num in range(1, n+1):\r\n        sumofsquares += num * num\r\n        squareofsum += num\r\n    squareofsum = squareofsum ** 2\r\n    return squareofsum - sumofsquares",
+  "call": "sum_difference(12)",
+  "expected": "5434",
+  "dataset": "mbpp",
+  "source_group": "50b2fbecc5431fef5a7e1d50a69a527324b891942e1f27880e80906740762fc7",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_difference(n):\r\n    sumofsquares = 0\r\n    squareofsum = 0\r\n    for num in range(1, n+1):\r\n        sumofsquares += num * num\r\n        squareofsum += num\r\n    squareofsum = squareofsum ** 2\r\n    return squareofsum - sumofsquares\n\nassert sum_difference(12) ==",
+  "n_prompt_tokens": 249,
+  "raw_generation": " -58\n",
+  "answer": "-58",
+  "generated_token_ids": [
+    567,
+    20,
+    23,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-58",
+  "token_logprob": [
+    -0.6121369004249573,
+    -1.0743305683135986,
+    -1.2469775676727295,
+    -1.397659420967102
+  ],
+  "token_entropy": [
+    1.8127638101577759,
+    1.9582545757293701,
+    2.1636924743652344,
+    2.0983805656433105
+  ],
+  "token_logprob_sum": [
+    -696624.5,
+    -735482.6875,
+    -791097.875,
+    -793809.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.462136745452881,
+    -5.7462053298950195,
+    -4.778228282928467,
+    -4.578909397125244
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 236,
+  "read_token_ids": [
+    5325,
+    2312
+  ]
+}

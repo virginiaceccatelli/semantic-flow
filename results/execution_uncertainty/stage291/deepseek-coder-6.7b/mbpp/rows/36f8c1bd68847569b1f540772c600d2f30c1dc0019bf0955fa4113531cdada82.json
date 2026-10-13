@@ -1,0 +1,73 @@
+{
+  "case_id": "186:1",
+  "program_id": "186",
+  "code": "import re\r\ndef check_literals(text, patterns):\r\n  for pattern in patterns:\r\n    if re.search(pattern,  text):\r\n        return ('Matched!')\r\n    else:\r\n        return ('Not Matched!')",
+  "call": "check_literals('The quick brown fox jumps over the lazy dog.',['horse'])",
+  "expected": "'Not Matched!'",
+  "dataset": "mbpp",
+  "source_group": "6bf7b74d85903f16175d9c62d8ad3c37f7728f68c5b7de76c010e6a4cfd30ea7",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef check_literals(text, patterns):\r\n  for pattern in patterns:\r\n    if re.search(pattern,  text):\r\n        return ('Matched!')\r\n    else:\r\n        return ('Not Matched!')\n\nassert check_literals('The quick brown fox jumps over the lazy dog.',['horse']) ==",
+  "n_prompt_tokens": 238,
+  "raw_generation": " 'Not Matched!'\n",
+  "answer": "'Not Matched!'",
+  "generated_token_ids": [
+    651,
+    3635,
+    6727,
+    2949,
+    13837,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Not Matched!'",
+  "token_logprob": [
+    -0.40399712324142456,
+    -0.057336337864398956,
+    -0.0073813097551465034,
+    -0.00011276562872808427,
+    -0.005185250658541918,
+    -0.3074778616428375
+  ],
+  "token_entropy": [
+    1.0821765661239624,
+    0.2347007691860199,
+    0.051382847130298615,
+    0.0013481370406225324,
+    0.03757340461015701,
+    0.8531879782676697
+  ],
+  "token_logprob_sum": [
+    -717496.875,
+    -766568.0,
+    -797443.75,
+    -989686.375,
+    -811882.875,
+    -729972.25
+  ],
+  "token_topk_mean_logprob": [
+    -5.81024694442749,
+    -8.976086616516113,
+    -9.501132011413574,
+    -13.225112915039062,
+    -10.042685508728027,
+    -7.016853332519531
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 212,
+  "read_token_ids": [
+    2462,
+    2312
+  ]
+}

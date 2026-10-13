@@ -1,0 +1,53 @@
+{
+  "case_id": "339:2",
+  "program_id": "339",
+  "code": "def find_Divisor(x,y):  \r\n    if (x==y): \r\n        return y \r\n    return 2",
+  "call": "find_Divisor(5,10)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "31a6bf966c2f94bab4512dea0658f3c7a6af236fbd42dd2c65c1e3408546e650",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_Divisor(x,y):  \r\n    if (x==y): \r\n        return y \r\n    return 2\n\nassert find_Divisor(5,10) ==",
+  "n_prompt_tokens": 201,
+  "raw_generation": "2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -0.9321392774581909,
+    -0.6897820830345154
+  ],
+  "token_entropy": [
+    2.3620896339416504,
+    1.119511604309082
+  ],
+  "token_logprob_sum": [
+    -649707.625,
+    -709163.625
+  ],
+  "token_topk_mean_logprob": [
+    -4.125889778137207,
+    -6.242907524108887
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 186,
+  "read_token_ids": [
+    17,
+    2312
+  ]
+}

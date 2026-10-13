@@ -1,0 +1,63 @@
+{
+  "case_id": "53:2",
+  "program_id": "53",
+  "code": "def check_Equality(str):\r\n  if (str[0] == str[-1]):  \r\n    return (\"Equal\") \r\n  else:  \r\n    return (\"Not Equal\")",
+  "call": "check_Equality(\"mad\")",
+  "expected": "'Not Equal'",
+  "dataset": "mbpp",
+  "source_group": "e30a8d4879a778dadcf780ce580fd2b6ae811be8ef84af49f9419cc3405e2ad1",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_Equality(str):\r\n  if (str[0] == str[-1]):  \r\n    return (\"Equal\") \r\n  else:  \r\n    return (\"Not Equal\")\n\nassert check_Equality(\"mad\") ==",
+  "n_prompt_tokens": 212,
+  "raw_generation": " \"Equal\"\n",
+  "answer": "\"Equal\"",
+  "generated_token_ids": [
+    440,
+    8417,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Equal'",
+  "token_logprob": [
+    -0.3819781243801117,
+    -0.476243793964386,
+    -0.009174687787890434,
+    -0.23011383414268494
+  ],
+  "token_entropy": [
+    0.9190700650215149,
+    0.6848641633987427,
+    0.06349626183509827,
+    0.7509626746177673
+  ],
+  "token_logprob_sum": [
+    -761143.0,
+    -802544.9375,
+    -740495.6875,
+    -758163.75
+  ],
+  "token_topk_mean_logprob": [
+    -6.488227844238281,
+    -9.019993782043457,
+    -9.140424728393555,
+    -7.08089542388916
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    2456,
+    2312
+  ]
+}

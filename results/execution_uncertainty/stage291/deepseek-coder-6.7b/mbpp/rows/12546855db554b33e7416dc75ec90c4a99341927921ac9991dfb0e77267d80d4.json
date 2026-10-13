@@ -1,0 +1,63 @@
+{
+  "case_id": "239:0",
+  "program_id": "239",
+  "code": "def get_total_number_of_sequences(m,n): \r\n\tT=[[0 for i in range(n+1)] for i in range(m+1)] \r\n\tfor i in range(m+1): \r\n\t\tfor j in range(n+1): \r\n\t\t\tif i==0 or j==0: \r\n\t\t\t\tT[i][j]=0\r\n\t\t\telif i<j: \r\n\t\t\t\tT[i][j]=0\r\n\t\t\telif j==1: \r\n\t\t\t\tT[i][j]=i \r\n\t\t\telse: \r\n\t\t\t\tT[i][j]=T[i-1][j]+T[i//2][j-1] \r\n\treturn T[m][n]",
+  "call": "get_total_number_of_sequences(10, 4)",
+  "expected": "4",
+  "dataset": "mbpp",
+  "source_group": "ca7b27565004cee7e4020c49f58dcd89abb51265b496947fb30d57acee81c4f3",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef get_total_number_of_sequences(m,n): \r\n\tT=[[0 for i in range(n+1)] for i in range(m+1)] \r\n\tfor i in range(m+1): \r\n\t\tfor j in range(n+1): \r\n\t\t\tif i==0 or j==0: \r\n\t\t\t\tT[i][j]=0\r\n\t\t\telif i<j: \r\n\t\t\t\tT[i][j]=0\r\n\t\t\telif j==1: \r\n\t\t\t\tT[i][j]=i \r\n\t\t\telse: \r\n\t\t\t\tT[i][j]=T[i-1][j]+T[i//2][j-1] \r\n\treturn T[m][n]\n\nassert get_total_number_of_sequences(10, 4) ==",
+  "n_prompt_tokens": 361,
+  "raw_generation": "  16\n",
+  "answer": "16",
+  "generated_token_ids": [
+    243,
+    16,
+    21,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "16",
+  "token_logprob": [
+    -1.1868902444839478,
+    -1.3583177328109741,
+    -1.4100620746612549,
+    -0.762005627155304
+  ],
+  "token_entropy": [
+    2.685934066772461,
+    1.956012487411499,
+    2.2719850540161133,
+    2.0008485317230225
+  ],
+  "token_logprob_sum": [
+    -658246.375,
+    -770483.3125,
+    -773843.375,
+    -767643.0
+  ],
+  "token_topk_mean_logprob": [
+    -3.618140459060669,
+    -5.764567852020264,
+    -4.810061931610107,
+    -4.28700590133667
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 339,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

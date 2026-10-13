@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_568",
+  "program_id": "sample_568",
+  "code": "def f(num):\n    letter = 1\n    for i in '1234567890':\n        num = num.replace(i,'')\n        if len(num) == 0: break\n        num = num[letter:] + num[:letter]\n        letter += 1\n    return num",
+  "call": "f('bwmm7h')",
+  "expected": "'mhbwm'",
+  "dataset": "cruxeval",
+  "source_group": "685049c389f8f20f6ad1a5e4a674ebda7c9ba67dd28f78781a3882ec16f9d8c7",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(num):\n    letter = 1\n    for i in '1234567890':\n        num = num.replace(i,'')\n        if len(num) == 0: break\n        num = num[letter:] + num[:letter]\n        letter += 1\n    return num\n\nassert f('bwmm7h') ==",
+  "n_prompt_tokens": 237,
+  "raw_generation": " '7hbwmm'\n",
+  "answer": "'7hbwmm'",
+  "generated_token_ids": [
+    651,
+    22,
+    71,
+    65,
+    86,
+    3297,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'7hbwmm'",
+  "token_logprob": [
+    -0.0732920914888382,
+    -1.548588514328003,
+    -0.6769990921020508,
+    -0.44539618492126465,
+    -0.021640248596668243,
+    -0.09427395462989807,
+    -0.010563883930444717,
+    -0.1867513209581375
+  ],
+  "token_entropy": [
+    0.36695367097854614,
+    3.2836270332336426,
+    2.014808177947998,
+    0.939394474029541,
+    0.13648761808872223,
+    0.33792272210121155,
+    0.08554790914058685,
+    0.5003111362457275
+  ],
+  "token_logprob_sum": [
+    -781269.4375,
+    -583534.875,
+    -648238.625,
+    -727102.9375,
+    -835070.0625,
+    -853406.125,
+    -729310.125,
+    -772573.0
+  ],
+  "token_topk_mean_logprob": [
+    -6.942041873931885,
+    -3.7423386573791504,
+    -4.1894989013671875,
+    -6.232896327972412,
+    -8.337265014648438,
+    -8.094273567199707,
+    -7.979313850402832,
+    -8.333625793457031
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 224,
+  "read_token_ids": [
+    1181,
+    2312
+  ]
+}

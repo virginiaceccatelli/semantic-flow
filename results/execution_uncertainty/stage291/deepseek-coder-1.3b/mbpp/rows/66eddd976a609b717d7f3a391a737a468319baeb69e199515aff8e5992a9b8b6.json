@@ -1,0 +1,78 @@
+{
+  "case_id": "219:2",
+  "program_id": "219",
+  "code": "\r\ndef extract_min_max(test_tup, K):\r\n  res = []\r\n  test_tup = list(test_tup)\r\n  temp = sorted(test_tup)\r\n  for idx, val in enumerate(temp):\r\n    if idx < K or idx >= len(temp) - K:\r\n      res.append(val)\r\n  res = tuple(res)\r\n  return (res)",
+  "call": "extract_min_max((2, 3, 4, 8, 9, 11, 7), 4)",
+  "expected": "(2, 3, 4, 7, 8, 9, 11)",
+  "dataset": "mbpp",
+  "source_group": "61781fbbd969a27eab0aaa3985c9ef50114729c48ea8e86429b4a7dc050fdbd2",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\n\r\ndef extract_min_max(test_tup, K):\r\n  res = []\r\n  test_tup = list(test_tup)\r\n  temp = sorted(test_tup)\r\n  for idx, val in enumerate(temp):\r\n    if idx < K or idx >= len(temp) - K:\r\n      res.append(val)\r\n  res = tuple(res)\r\n  return (res)\n\nassert extract_min_max((2, 3, 4, 8, 9, 11, 7), 4) ==",
+  "n_prompt_tokens": 292,
+  "raw_generation": " (3, 9)\n",
+  "answer": "(3, 9)",
+  "generated_token_ids": [
+    334,
+    18,
+    11,
+    207,
+    24,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "(3, 9)",
+  "token_logprob": [
+    -0.012490145862102509,
+    -1.002808690071106,
+    -0.005969434045255184,
+    -0.024540571495890617,
+    -0.5776957273483276,
+    -0.048534296452999115,
+    -0.4231685996055603
+  ],
+  "token_entropy": [
+    0.09750217199325562,
+    1.7465192079544067,
+    0.04575162008404732,
+    0.14558430016040802,
+    1.1531709432601929,
+    0.2156945765018463,
+    0.941187858581543
+  ],
+  "token_logprob_sum": [
+    -780925.375,
+    -744704.125,
+    -796902.5625,
+    -815845.0,
+    -835637.875,
+    -800782.0,
+    -710144.5
+  ],
+  "token_topk_mean_logprob": [
+    -8.037490844726562,
+    -6.190309047698975,
+    -9.787219047546387,
+    -8.912040710449219,
+    -10.302696228027344,
+    -9.28603458404541,
+    -7.748168468475342
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 257,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

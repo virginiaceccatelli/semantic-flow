@@ -1,0 +1,68 @@
+{
+  "case_id": "369:0",
+  "program_id": "369",
+  "code": "def lateralsurface_cuboid(l,w,h):\r\n  LSA = 2*h*(l+w)\r\n  return LSA",
+  "call": "lateralsurface_cuboid(8,5,6)",
+  "expected": "156",
+  "dataset": "mbpp",
+  "source_group": "bbcf107ea5e83887ea5962f3af1a518dd6c448a2394775e441cf83b71954715d",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef lateralsurface_cuboid(l,w,h):\r\n  LSA = 2*h*(l+w)\r\n  return LSA\n\nassert lateralsurface_cuboid(8,5,6) ==",
+  "n_prompt_tokens": 209,
+  "raw_generation": "  100\n",
+  "answer": "100",
+  "generated_token_ids": [
+    243,
+    16,
+    15,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 1,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "100",
+  "token_logprob": [
+    -1.3366628885269165,
+    -0.8293948769569397,
+    -1.7952675819396973,
+    -1.061722993850708,
+    -0.5038597583770752
+  ],
+  "token_entropy": [
+    2.934048652648926,
+    1.859493374824524,
+    2.262704610824585,
+    1.8119975328445435,
+    1.3431822061538696
+  ],
+  "token_logprob_sum": [
+    -602714.1875,
+    -688583.875,
+    -789359.625,
+    -782978.6875,
+    -725648.8125
+  ],
+  "token_topk_mean_logprob": [
+    -3.7366631031036377,
+    -6.204395294189453,
+    -6.970266819000244,
+    -5.3367228507995605,
+    -5.316359996795654
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 189,
+  "read_token_ids": [
+    9163,
+    2312
+  ]
+}

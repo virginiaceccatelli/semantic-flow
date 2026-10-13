@@ -1,0 +1,53 @@
+{
+  "case_id": "477:2",
+  "program_id": "477",
+  "code": "def is_lower(string):\r\n  return (string.lower())",
+  "call": "is_lower(\"SenTenCE\")",
+  "expected": "'sentence'",
+  "dataset": "mbpp",
+  "source_group": "60c1970d0e44839d6ded14ffe862af1f748c3ab80b36f496795bb1c05e73f77b",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef is_lower(string):\r\n  return (string.lower())\n\nassert is_lower(\"SenTenCE\") ==",
+  "n_prompt_tokens": 182,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.20752346515655518,
+    -0.198450967669487
+  ],
+  "token_entropy": [
+    0.6572213172912598,
+    0.6762323975563049
+  ],
+  "token_logprob_sum": [
+    -730106.0625,
+    -745520.8125
+  ],
+  "token_topk_mean_logprob": [
+    -7.045023441314697,
+    -7.154701232910156
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 169,
+  "read_token_ids": [
+    4683,
+    2312
+  ]
+}

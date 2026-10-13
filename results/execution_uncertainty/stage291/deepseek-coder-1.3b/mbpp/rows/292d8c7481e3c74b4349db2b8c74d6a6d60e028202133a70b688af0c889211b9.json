@@ -1,0 +1,63 @@
+{
+  "case_id": "226:2",
+  "program_id": "226",
+  "code": "def odd_values_string(str):\r\n  result = \"\" \r\n  for i in range(len(str)):\r\n    if i % 2 == 0:\r\n      result = result + str[i]\r\n  return result",
+  "call": "odd_values_string('data')",
+  "expected": "'dt'",
+  "dataset": "mbpp",
+  "source_group": "b2861b11b0f110fbd7f2157fc86b839709cd349dc90721674bdaf3c75557c5f7",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef odd_values_string(str):\r\n  result = \"\" \r\n  for i in range(len(str)):\r\n    if i % 2 == 0:\r\n      result = result + str[i]\r\n  return result\n\nassert odd_values_string('data') ==",
+  "n_prompt_tokens": 222,
+  "raw_generation": " 'da'\n",
+  "answer": "'da'",
+  "generated_token_ids": [
+    651,
+    1356,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'da'",
+  "token_logprob": [
+    -0.08047796785831451,
+    -1.1521902084350586,
+    -0.3011951744556427,
+    -0.2334318906068802
+  ],
+  "token_entropy": [
+    0.3648570775985718,
+    2.621272563934326,
+    1.1618103981018066,
+    0.7367857694625854
+  ],
+  "token_logprob_sum": [
+    -768982.375,
+    -609713.75,
+    -665988.375,
+    -768004.3125
+  ],
+  "token_topk_mean_logprob": [
+    -7.515634059906006,
+    -4.222503185272217,
+    -5.415648460388184,
+    -7.168454170227051
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 209,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

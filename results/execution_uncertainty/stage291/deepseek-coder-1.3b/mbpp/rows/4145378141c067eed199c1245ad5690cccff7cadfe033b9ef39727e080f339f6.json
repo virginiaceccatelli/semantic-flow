@@ -1,0 +1,58 @@
+{
+  "case_id": "218:1",
+  "program_id": "218",
+  "code": "import math   \r\ndef min_Operations(A,B):  \r\n    if (A > B): \r\n        swap(A,B)  \r\n    B = B // math.gcd(A,B);  \r\n    return B - 1",
+  "call": "min_Operations(4,10)",
+  "expected": "4",
+  "dataset": "mbpp",
+  "source_group": "94b2f3f69a9a0aafea1050b98406b2150fc4a4b33e83402dc089bea76d3c74df",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport math   \r\ndef min_Operations(A,B):  \r\n    if (A > B): \r\n        swap(A,B)  \r\n    B = B // math.gcd(A,B);  \r\n    return B - 1\n\nassert min_Operations(4,10) ==",
+  "n_prompt_tokens": 229,
+  "raw_generation": "  2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    243,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.1539515256881714,
+    -1.3548616170883179,
+    -0.44699326157569885
+  ],
+  "token_entropy": [
+    2.5766336917877197,
+    1.885627269744873,
+    1.253983736038208
+  ],
+  "token_logprob_sum": [
+    -654043.875,
+    -757685.0,
+    -713769.125
+  ],
+  "token_topk_mean_logprob": [
+    -3.8977017402648926,
+    -6.0298614501953125,
+    -5.609493255615234
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 214,
+  "read_token_ids": [
+    16,
+    2312
+  ]
+}

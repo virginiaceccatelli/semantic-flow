@@ -1,0 +1,53 @@
+{
+  "case_id": "56:2",
+  "program_id": "56",
+  "code": "def rev(num):    \r\n    rev_num = 0\r\n    while (num > 0):  \r\n        rev_num = (rev_num * 10 + num % 10) \r\n        num = num // 10  \r\n    return rev_num  \r\ndef check(n):    \r\n    return (2 * rev(n) == n + 1)",
+  "call": "check(73)",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "c5dcb93723c0b1efac4204d7ecc14265401f29a1de44f1c083095ea9df7c3c06",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef rev(num):    \r\n    rev_num = 0\r\n    while (num > 0):  \r\n        rev_num = (rev_num * 10 + num % 10) \r\n        num = num // 10  \r\n    return rev_num  \r\ndef check(n):    \r\n    return (2 * rev(n) == n + 1)\n\nassert check(73) ==",
+  "n_prompt_tokens": 253,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.3969871997833252,
+    -0.23435235023498535
+  ],
+  "token_entropy": [
+    0.7044643759727478,
+    0.7206730246543884
+  ],
+  "token_logprob_sum": [
+    -713655.0,
+    -753372.25
+  ],
+  "token_topk_mean_logprob": [
+    -7.7344865798950195,
+    -6.993727207183838
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 243,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

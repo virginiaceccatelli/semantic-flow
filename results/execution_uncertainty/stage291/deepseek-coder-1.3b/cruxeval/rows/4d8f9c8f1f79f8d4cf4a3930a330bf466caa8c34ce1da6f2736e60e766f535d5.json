@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_421",
+  "program_id": "sample_421",
+  "code": "def f(str, n):\n    if len(str) < n:\n        return str\n    else:\n        return str.removeprefix(str[:n])",
+  "call": "f(\"try.\", 5)",
+  "expected": "'try.'",
+  "dataset": "cruxeval",
+  "source_group": "99cdf71d61220bc8c50e6979fd0c38e218413e4503e228363292ef46ec07c3a6",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(str, n):\n    if len(str) < n:\n        return str\n    else:\n        return str.removeprefix(str[:n])\n\nassert f(\"try.\", 5) ==",
+  "n_prompt_tokens": 202,
+  "raw_generation": " \"try.\"\n",
+  "answer": "\"try.\"",
+  "generated_token_ids": [
+    440,
+    10696,
+    876,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'try.'",
+  "token_logprob": [
+    -0.24751754105091095,
+    -0.30536746978759766,
+    -0.5738766193389893,
+    -0.06517840921878815
+  ],
+  "token_entropy": [
+    0.8725466132164001,
+    1.5285018682479858,
+    1.1536279916763306,
+    0.28590789437294006
+  ],
+  "token_logprob_sum": [
+    -767511.3125,
+    -589450.375,
+    -598495.0625,
+    -810676.875
+  ],
+  "token_topk_mean_logprob": [
+    -6.0475172996521,
+    -5.311617374420166,
+    -5.873876094818115,
+    -7.996429443359375
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 190,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

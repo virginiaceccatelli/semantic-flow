@@ -1,0 +1,78 @@
+{
+  "case_id": "50:1",
+  "program_id": "50",
+  "code": "def min_length_list(input_list):\r\n    min_length = min(len(x) for x in input_list )  \r\n    min_list = min(input_list, key = lambda i: len(i))\r\n    return(min_length, min_list)",
+  "call": "min_length_list([[1,2,3,4,5],[1,2,3,4],[1,2,3],[1,2],[1]])",
+  "expected": "(1, [1])",
+  "dataset": "mbpp",
+  "source_group": "0c4424b78b4f5c0f9bede0493fc1f56d539d04e0dbbc1a3a797930899010ef21",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef min_length_list(input_list):\r\n    min_length = min(len(x) for x in input_list )  \r\n    min_list = min(input_list, key = lambda i: len(i))\r\n    return(min_length, min_list)\n\nassert min_length_list([[1,2,3,4,5],[1,2,3,4],[1,2,3],[1,2],[1]]) ==",
+  "n_prompt_tokens": 268,
+  "raw_generation": " (1, [1])\n",
+  "answer": "(1, [1])",
+  "generated_token_ids": [
+    334,
+    16,
+    11,
+    821,
+    16,
+    5589,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "(1, [1])",
+  "token_logprob": [
+    -0.022069105878472328,
+    -0.026477273553609848,
+    -0.06803140789270401,
+    -0.02825854904949665,
+    -0.0006403064471669495,
+    -0.008418903686106205,
+    -0.4729422330856323
+  ],
+  "token_entropy": [
+    0.15238356590270996,
+    0.17380879819393158,
+    0.2724510133266449,
+    0.17847630381584167,
+    0.006581335794180632,
+    0.058289721608161926,
+    0.9869258403778076
+  ],
+  "token_logprob_sum": [
+    -786402.5,
+    -810399.25,
+    -875749.0625,
+    -769239.6875,
+    -883652.75,
+    -894087.125,
+    -748912.5
+  ],
+  "token_topk_mean_logprob": [
+    -7.759568691253662,
+    -7.645226955413818,
+    -9.218031883239746,
+    -8.01575756072998,
+    -10.925639152526855,
+    -10.589669227600098,
+    -7.251067638397217
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 221,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

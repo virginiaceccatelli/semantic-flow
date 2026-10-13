@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_625",
+  "program_id": "sample_625",
+  "code": "def f(text):\n    count = 0\n    for i in text:\n        if i in '.?!.,':\n            count += 1\n    return count",
+  "call": "f(\"bwiajegrwjd??djoda,?\")",
+  "expected": "4",
+  "dataset": "cruxeval",
+  "source_group": "fef798f77c7dde7c88e9feb1ef5326113d80d9beeeb2e12f02747ec18bff28c4",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    count = 0\n    for i in text:\n        if i in '.?!.,':\n            count += 1\n    return count\n\nassert f(\"bwiajegrwjd??djoda,?\") ==",
+  "n_prompt_tokens": 209,
+  "raw_generation": "  10\n",
+  "answer": "10",
+  "generated_token_ids": [
+    243,
+    16,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "10",
+  "token_logprob": [
+    -0.6577317714691162,
+    -1.521488904953003,
+    -1.5971132516860962,
+    -0.22101908922195435
+  ],
+  "token_entropy": [
+    2.4405674934387207,
+    2.155123472213745,
+    2.2967660427093506,
+    0.615443229675293
+  ],
+  "token_logprob_sum": [
+    -653043.0625,
+    -766432.3125,
+    -752542.5,
+    -778812.0625
+  ],
+  "token_topk_mean_logprob": [
+    -4.0310139656066895,
+    -7.271489143371582,
+    -5.372113227844238,
+    -6.611644268035889
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 188,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

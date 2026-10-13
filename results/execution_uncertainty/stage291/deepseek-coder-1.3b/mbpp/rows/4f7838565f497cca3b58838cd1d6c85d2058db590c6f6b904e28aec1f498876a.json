@@ -1,0 +1,58 @@
+{
+  "case_id": "227:1",
+  "program_id": "227",
+  "code": "def min_of_three(a,b,c): \r\n      if (a <= b) and (a <= c): \r\n        smallest = a \r\n      elif (b <= a) and (b <= c): \r\n        smallest = b \r\n      else: \r\n        smallest = c \r\n      return smallest",
+  "call": "min_of_three(19,15,18)",
+  "expected": "15",
+  "dataset": "mbpp",
+  "source_group": "9606c4f543bace0b1ee97bb1f22b74e30842cdf56f89878078201ce1646d233e",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef min_of_three(a,b,c): \r\n      if (a <= b) and (a <= c): \r\n        smallest = a \r\n      elif (b <= a) and (b <= c): \r\n        smallest = b \r\n      else: \r\n        smallest = c \r\n      return smallest\n\nassert min_of_three(19,15,18) ==",
+  "n_prompt_tokens": 251,
+  "raw_generation": "15\n",
+  "answer": "15",
+  "generated_token_ids": [
+    16,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "15",
+  "token_logprob": [
+    -0.9208364486694336,
+    -0.053172964602708817,
+    -0.42358124256134033
+  ],
+  "token_entropy": [
+    1.8439847230911255,
+    0.246658593416214,
+    1.0876970291137695
+  ],
+  "token_logprob_sum": [
+    -659670.625,
+    -860086.625,
+    -704758.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.727086544036865,
+    -9.843798637390137,
+    -6.136081218719482
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 231,
+  "read_token_ids": [
+    19702,
+    2312
+  ]
+}

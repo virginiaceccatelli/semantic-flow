@@ -1,0 +1,53 @@
+{
+  "case_id": "352:1",
+  "program_id": "352",
+  "code": "def unique_Characters(str):\r\n    for i in range(len(str)):\r\n        for j in range(i + 1,len(str)): \r\n            if (str[i] == str[j]):\r\n                return False;\r\n    return True;",
+  "call": "unique_Characters('abc')",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "869b2d4747ba3fa78a3475ae6015a7eb6bfcf296eee1039c0010e3d9a32d5822",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef unique_Characters(str):\r\n    for i in range(len(str)):\r\n        for j in range(i + 1,len(str)): \r\n            if (str[i] == str[j]):\r\n                return False;\r\n    return True;\n\nassert unique_Characters('abc') ==",
+  "n_prompt_tokens": 231,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.04438113793730736,
+    -0.35344958305358887
+  ],
+  "token_entropy": [
+    0.20946428179740906,
+    1.003516674041748
+  ],
+  "token_logprob_sum": [
+    -792032.25,
+    -772599.125
+  ],
+  "token_topk_mean_logprob": [
+    -8.644381523132324,
+    -6.1409502029418945
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 219,
+  "read_token_ids": [
+    26,
+    2312
+  ]
+}

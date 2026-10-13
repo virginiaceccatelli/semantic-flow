@@ -1,0 +1,68 @@
+{
+  "case_id": "65:0",
+  "program_id": "65",
+  "code": "def recursive_list_sum(data_list):\r\n\ttotal = 0\r\n\tfor element in data_list:\r\n\t\tif type(element) == type([]):\r\n\t\t\ttotal = total + recursive_list_sum(element)\r\n\t\telse:\r\n\t\t\ttotal = total + element\r\n\treturn total",
+  "call": "recursive_list_sum(([1, 2, [3,4],[5,6]]))",
+  "expected": "21",
+  "dataset": "mbpp",
+  "source_group": "c0afa90a7c32686fcd5f8974b6cb7a2e837cf57cc7c7f6d52a25369f2e1906cf",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef recursive_list_sum(data_list):\r\n\ttotal = 0\r\n\tfor element in data_list:\r\n\t\tif type(element) == type([]):\r\n\t\t\ttotal = total + recursive_list_sum(element)\r\n\t\telse:\r\n\t\t\ttotal = total + element\r\n\treturn total\n\nassert recursive_list_sum(([1, 2, [3,4],[5,6]])) ==",
+  "n_prompt_tokens": 257,
+  "raw_generation": " (15)\n",
+  "answer": "(15)",
+  "generated_token_ids": [
+    334,
+    16,
+    20,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "15",
+  "token_logprob": [
+    -1.1518476009368896,
+    -0.6113585233688354,
+    -0.6726095080375671,
+    -0.03512249514460564,
+    -0.47003018856048584
+  ],
+  "token_entropy": [
+    1.9910011291503906,
+    0.871722400188446,
+    1.368064522743225,
+    0.19395096600055695,
+    0.9187423586845398
+  ],
+  "token_logprob_sum": [
+    -696761.75,
+    -753326.3125,
+    -840091.625,
+    -775848.6875,
+    -723179.25
+  ],
+  "token_topk_mean_logprob": [
+    -4.745597839355469,
+    -7.164483547210693,
+    -5.610108852386475,
+    -7.660122871398926,
+    -7.448155403137207
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 228,
+  "read_token_ids": [
+    3212,
+    2312
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case_id": "304:2",
+  "program_id": "304",
+  "code": "def find_Element(arr,ranges,rotations,index) :  \r\n    for i in range(rotations - 1,-1,-1 ) : \r\n        left = ranges[i][0] \r\n        right = ranges[i][1] \r\n        if (left <= index and right >= index) : \r\n            if (index == left) : \r\n                index = right \r\n            else : \r\n                index = index - 1 \r\n    return arr[index]",
+  "call": "find_Element([1,2,3,4,5,6],[[0,1],[0,2]],1,1)",
+  "expected": "1",
+  "dataset": "mbpp",
+  "source_group": "c5e0668d961c04daa1c3f217acbfc5fe8f7278b309c0327fbf4c2e9121cf3597",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_Element(arr,ranges,rotations,index) :  \r\n    for i in range(rotations - 1,-1,-1 ) : \r\n        left = ranges[i][0] \r\n        right = ranges[i][1] \r\n        if (left <= index and right >= index) : \r\n            if (index == left) : \r\n                index = right \r\n            else : \r\n                index = index - 1 \r\n    return arr[index]\n\nassert find_Element([1,2,3,4,5,6],[[0,1],[0,2]],1,1) ==",
+  "n_prompt_tokens": 307,
+  "raw_generation": "  2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    243,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.6864640712738037,
+    -0.9571961164474487,
+    -0.31264594197273254
+  ],
+  "token_entropy": [
+    2.5748660564422607,
+    1.656005620956421,
+    0.989902138710022
+  ],
+  "token_logprob_sum": [
+    -678531.375,
+    -778328.0625,
+    -726858.4375
+  ],
+  "token_topk_mean_logprob": [
+    -3.7739644050598145,
+    -6.594696044921875,
+    -6.053271293640137
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 271,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

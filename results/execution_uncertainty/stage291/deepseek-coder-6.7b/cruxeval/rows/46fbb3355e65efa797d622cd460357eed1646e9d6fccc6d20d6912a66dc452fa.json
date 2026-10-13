@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_103",
+  "program_id": "sample_103",
+  "code": "def f(s):\n    return ''.join((c.casefold() for c in s))",
+  "call": "f('abcDEFGhIJ')",
+  "expected": "'abcdefghij'",
+  "dataset": "cruxeval",
+  "source_group": "bb0f6887082a14f7e614bfa73ff900ee6081c9c785d58b3ca7c9454a1d3558c0",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s):\n    return ''.join((c.casefold() for c in s))\n\nassert f('abcDEFGhIJ') ==",
+  "n_prompt_tokens": 189,
+  "raw_generation": " 'abcdefghij'\n",
+  "answer": "'abcdefghij'",
+  "generated_token_ids": [
+    651,
+    22729,
+    1551,
+    633,
+    4012,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'abcdefghij'",
+  "token_logprob": [
+    -0.009026671759784222,
+    -0.14383359253406525,
+    -0.0008839037618599832,
+    -0.0019502682844176888,
+    -5.8887653722194955e-05,
+    -0.010385989211499691,
+    -0.16251178085803986
+  ],
+  "token_entropy": [
+    0.06352688372135162,
+    0.4034509062767029,
+    0.007519170641899109,
+    0.014274269342422485,
+    0.0006792265921831131,
+    0.06142702326178551,
+    0.43809789419174194
+  ],
+  "token_logprob_sum": [
+    -856724.8125,
+    -922863.125,
+    -1005775.1875,
+    -1097480.625,
+    -1188416.25,
+    -809378.0625,
+    -804049.25
+  ],
+  "token_topk_mean_logprob": [
+    -9.759027481079102,
+    -9.71570873260498,
+    -12.669633865356445,
+    -13.473825454711914,
+    -15.3594331741333,
+    -10.5228853225708,
+    -9.96563720703125
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 175,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

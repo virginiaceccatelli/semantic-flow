@@ -1,0 +1,53 @@
+{
+  "case_id": "492:1",
+  "program_id": "492",
+  "code": "def binary_search(item_list,item):\r\n\tfirst = 0\r\n\tlast = len(item_list)-1\r\n\tfound = False\r\n\twhile( first<=last and not found):\r\n\t\tmid = (first + last)//2\r\n\t\tif item_list[mid] == item :\r\n\t\t\tfound = True\r\n\t\telse:\r\n\t\t\tif item < item_list[mid]:\r\n\t\t\t\tlast = mid - 1\r\n\t\t\telse:\r\n\t\t\t\tfirst = mid + 1\t\r\n\treturn found",
+  "call": "binary_search([7, 8, 9, 10, 13], 10)",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "14ebdc209a16db6934f2e59fb29b4cdd84196d91482d69436d59eb13ee52ecb6",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef binary_search(item_list,item):\r\n\tfirst = 0\r\n\tlast = len(item_list)-1\r\n\tfound = False\r\n\twhile( first<=last and not found):\r\n\t\tmid = (first + last)//2\r\n\t\tif item_list[mid] == item :\r\n\t\t\tfound = True\r\n\t\telse:\r\n\t\t\tif item < item_list[mid]:\r\n\t\t\t\tlast = mid - 1\r\n\t\t\telse:\r\n\t\t\t\tfirst = mid + 1\t\r\n\treturn found\n\nassert binary_search([7, 8, 9, 10, 13], 10) ==",
+  "n_prompt_tokens": 309,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.007285811007022858,
+    -0.3883863389492035
+  ],
+  "token_entropy": [
+    0.057072173804044724,
+    0.9199322462081909
+  ],
+  "token_logprob_sum": [
+    -784962.125,
+    -751697.5625
+  ],
+  "token_topk_mean_logprob": [
+    -9.038536071777344,
+    -6.9696364402771
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 280,
+  "read_token_ids": [
+    1496,
+    2312
+  ]
+}

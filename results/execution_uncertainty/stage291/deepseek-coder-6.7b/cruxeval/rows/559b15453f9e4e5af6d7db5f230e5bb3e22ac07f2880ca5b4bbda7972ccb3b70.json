@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_709",
+  "program_id": "sample_709",
+  "code": "def f(text):\n    my_list = text.split()\n    my_list.sort(reverse=True)\n    return ' '.join(my_list)",
+  "call": "f('a loved')",
+  "expected": "'loved a'",
+  "dataset": "cruxeval",
+  "source_group": "a341b847f07085cb468c1c7caa9cc98083450e9d52ae72f978b4f351a84d7861",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    my_list = text.split()\n    my_list.sort(reverse=True)\n    return ' '.join(my_list)\n\nassert f('a loved') ==",
+  "n_prompt_tokens": 202,
+  "raw_generation": " 'loved a'\n",
+  "answer": "'loved a'",
+  "generated_token_ids": [
+    651,
+    785,
+    1773,
+    245,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'loved a'",
+  "token_logprob": [
+    -0.018775595352053642,
+    -0.45616769790649414,
+    -2.455681169521995e-05,
+    -0.003902558935806155,
+    -0.005062262061983347,
+    -0.18360505998134613
+  ],
+  "token_entropy": [
+    0.11265257000923157,
+    1.7638399600982666,
+    0.00031140685314312577,
+    0.03351049870252609,
+    0.03762088716030121,
+    0.4770297408103943
+  ],
+  "token_logprob_sum": [
+    -827312.5,
+    -679950.625,
+    -1138735.75,
+    -846107.75,
+    -851201.875,
+    -805361.75
+  ],
+  "token_topk_mean_logprob": [
+    -9.431276321411133,
+    -4.828042507171631,
+    -14.843774795532227,
+    -9.478902816772461,
+    -10.348812103271484,
+    -9.31173038482666
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 192,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

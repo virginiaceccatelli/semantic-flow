@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_357",
+  "program_id": "sample_357",
+  "code": "def f(s):\n    r = []\n    for i in range(len(s) - 1, 0 - 1, -1):\n        r += s[i]\n    return ''.join(r)",
+  "call": "f('crew')",
+  "expected": "'werc'",
+  "dataset": "cruxeval",
+  "source_group": "6d2c88c6c44455809ff65bd07d13a38a7ef7eedee085c5639d50d20ba42bb817",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s):\n    r = []\n    for i in range(len(s) - 1, 0 - 1, -1):\n        r += s[i]\n    return ''.join(r)\n\nassert f('crew') ==",
+  "n_prompt_tokens": 214,
+  "raw_generation": " 'rew'\n",
+  "answer": "'rew'",
+  "generated_token_ids": [
+    651,
+    3338,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'rew'",
+  "token_logprob": [
+    -0.008881942369043827,
+    -0.41141024231910706,
+    -0.6884731650352478,
+    -0.20509055256843567
+  ],
+  "token_entropy": [
+    0.06781934946775436,
+    1.716834306716919,
+    0.9891723394393921,
+    0.5053728222846985
+  ],
+  "token_logprob_sum": [
+    -794287.25,
+    -654828.375,
+    -753768.875,
+    -815945.25
+  ],
+  "token_topk_mean_logprob": [
+    -8.840132713317871,
+    -4.596566677093506,
+    -6.336910247802734,
+    -8.880090713500977
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 204,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

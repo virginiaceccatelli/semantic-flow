@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_329",
+  "program_id": "sample_329",
+  "code": "def f(text):\n    for i in range(len(text)):\n        if text[i] == text[i].upper() and text[i-1].islower():\n            return True\n    return False",
+  "call": "f('jh54kkk6')",
+  "expected": "True",
+  "dataset": "cruxeval",
+  "source_group": "9ce2a07eba553f9bdac6edd7432f98fb33f39421d54c162ffa63921fdd4df2d1",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    for i in range(len(text)):\n        if text[i] == text[i].upper() and text[i-1].islower():\n            return True\n    return False\n\nassert f('jh54kkk6') ==",
+  "n_prompt_tokens": 217,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.42953959107398987,
+    -0.11928225308656693
+  ],
+  "token_entropy": [
+    0.6552721858024597,
+    0.39056915044784546
+  ],
+  "token_logprob_sum": [
+    -816353.375,
+    -797116.9375
+  ],
+  "token_topk_mean_logprob": [
+    -9.76078987121582,
+    -8.231782913208008
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 202,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

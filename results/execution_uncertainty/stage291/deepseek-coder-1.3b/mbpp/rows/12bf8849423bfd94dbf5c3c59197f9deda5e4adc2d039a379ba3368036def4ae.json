@@ -1,0 +1,63 @@
+{
+  "case_id": "315:1",
+  "program_id": "315",
+  "code": "def find_Max_Len_Even(str): \r\n    n = len(str) \r\n    i = 0\r\n    currlen = 0\r\n    maxlen = 0\r\n    st = -1\r\n    while (i < n): \r\n        if (str[i] == ' '): \r\n            if (currlen % 2 == 0): \r\n                if (maxlen < currlen): \r\n                    maxlen = currlen \r\n                    st = i - currlen \r\n            currlen = 0 \r\n        else : \r\n            currlen += 1\r\n        i += 1\r\n    if (currlen % 2 == 0): \r\n        if (maxlen < currlen): \r\n            maxlen = currlen \r\n            st = i - currlen \r\n    if (st == -1): \r\n        return \"-1\" \r\n    return str[st: st + maxlen]",
+  "call": "find_Max_Len_Even(\"maximum even length\")",
+  "expected": "'length'",
+  "dataset": "mbpp",
+  "source_group": "b61aba98b7ae88be49027c96494066e107c7bb804573caba347e6a117baaa564",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_Max_Len_Even(str): \r\n    n = len(str) \r\n    i = 0\r\n    currlen = 0\r\n    maxlen = 0\r\n    st = -1\r\n    while (i < n): \r\n        if (str[i] == ' '): \r\n            if (currlen % 2 == 0): \r\n                if (maxlen < currlen): \r\n                    maxlen = currlen \r\n                    st = i - currlen \r\n            currlen = 0 \r\n        else : \r\n            currlen += 1\r\n        i += 1\r\n    if (currlen % 2 == 0): \r\n        if (maxlen < currlen): \r\n            maxlen = currlen \r\n            st = i - currlen \r\n    if (st == -1): \r\n        return \"-1\" \r\n    return str[st: st + maxlen]\n\nassert find_Max_Len_Even(\"maximum even length\") ==",
+  "n_prompt_tokens": 404,
+  "raw_generation": " \"even\"\n",
+  "answer": "\"even\"",
+  "generated_token_ids": [
+    440,
+    8591,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'even'",
+  "token_logprob": [
+    -0.15662604570388794,
+    -0.4246310293674469,
+    -0.7180491089820862,
+    -0.3627412021160126
+  ],
+  "token_entropy": [
+    0.561684250831604,
+    1.6232452392578125,
+    0.8837217092514038,
+    0.9350624084472656
+  ],
+  "token_logprob_sum": [
+    -774616.625,
+    -639529.75,
+    -690230.0625,
+    -743344.0
+  ],
+  "token_topk_mean_logprob": [
+    -6.612875461578369,
+    -4.724631309509277,
+    -6.586799621582031,
+    -7.281491279602051
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 386,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

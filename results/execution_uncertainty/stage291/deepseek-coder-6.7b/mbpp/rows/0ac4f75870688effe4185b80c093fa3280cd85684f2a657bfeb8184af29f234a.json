@@ -1,0 +1,63 @@
+{
+  "case_id": "133:0",
+  "program_id": "133",
+  "code": "def sum_negativenum(nums):\r\n  sum_negativenum = list(filter(lambda nums:nums<0,nums))\r\n  return sum(sum_negativenum)",
+  "call": "sum_negativenum([2, 4, -6, -9, 11, -12, 14, -5, 17])",
+  "expected": "-32",
+  "dataset": "mbpp",
+  "source_group": "47bdad82f0984faa5241402ac55c362043a642e210c9630786fc3c5b5a3af1e8",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_negativenum(nums):\r\n  sum_negativenum = list(filter(lambda nums:nums<0,nums))\r\n  return sum(sum_negativenum)\n\nassert sum_negativenum([2, 4, -6, -9, 11, -12, 14, -5, 17]) ==",
+  "n_prompt_tokens": 245,
+  "raw_generation": " -20\n",
+  "answer": "-20",
+  "generated_token_ids": [
+    567,
+    17,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-20",
+  "token_logprob": [
+    -0.029220765456557274,
+    -0.18496544659137726,
+    -0.7818828821182251,
+    -0.6551763415336609
+  ],
+  "token_entropy": [
+    0.19637411832809448,
+    0.5543721318244934,
+    1.353730320930481,
+    1.0683183670043945
+  ],
+  "token_logprob_sum": [
+    -717214.6875,
+    -788109.4375,
+    -839868.1875,
+    -736589.5
+  ],
+  "token_topk_mean_logprob": [
+    -7.285470485687256,
+    -8.663090705871582,
+    -7.641258239746094,
+    -7.089550971984863
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 203,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

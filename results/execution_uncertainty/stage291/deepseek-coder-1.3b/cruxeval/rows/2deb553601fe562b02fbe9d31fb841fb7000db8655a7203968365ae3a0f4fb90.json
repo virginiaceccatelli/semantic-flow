@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_752",
+  "program_id": "sample_752",
+  "code": "def f(s, amount):\n    return (amount - len(s)) * 'z' + s",
+  "call": "f('abc', 8)",
+  "expected": "'zzzzzabc'",
+  "dataset": "cruxeval",
+  "source_group": "8bbb95ef56826e3943395e21c199e76bf2f8f5374bcb00def7fed868ef1139a1",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s, amount):\n    return (amount - len(s)) * 'z' + s\n\nassert f('abc', 8) ==",
+  "n_prompt_tokens": 188,
+  "raw_generation": " 'zzzzzzzabc'\n",
+  "answer": "'zzzzzzzabc'",
+  "generated_token_ids": [
+    651,
+    4877,
+    4877,
+    4877,
+    89,
+    22729,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'zzzzzzzabc'",
+  "token_logprob": [
+    -0.020746253430843353,
+    -0.34031087160110474,
+    -0.2595924437046051,
+    -0.8300336003303528,
+    -1.1330156326293945,
+    -0.6826960444450378,
+    -0.009382677264511585,
+    -0.1656637042760849
+  ],
+  "token_entropy": [
+    0.1319633424282074,
+    1.105290412902832,
+    0.7764120697975159,
+    1.4700584411621094,
+    1.68023681640625,
+    1.383331537246704,
+    0.07155490666627884,
+    0.4479691982269287
+  ],
+  "token_logprob_sum": [
+    -809048.5,
+    -711098.1875,
+    -700945.125,
+    -694801.6875,
+    -694811.375,
+    -713017.5,
+    -747737.625,
+    -824507.5
+  ],
+  "token_topk_mean_logprob": [
+    -8.323870658874512,
+    -5.724686145782471,
+    -6.592404365539551,
+    -5.405034065246582,
+    -5.3205156326293945,
+    -5.645195960998535,
+    -8.871882438659668,
+    -9.49144458770752
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 176,
+  "read_token_ids": [
+    252,
+    2312
+  ]
+}

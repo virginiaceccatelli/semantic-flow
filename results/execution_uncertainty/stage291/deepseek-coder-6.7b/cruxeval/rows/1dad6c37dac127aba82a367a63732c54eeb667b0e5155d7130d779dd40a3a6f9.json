@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_210",
+  "program_id": "sample_210",
+  "code": "def f(n, m, num):\n    x_list = list(range(n, m+1))\n    j = 0\n    while True:\n        j = (j + num) % len(x_list)\n        if x_list[j] % 2 == 0:\n            return x_list[j]",
+  "call": "f(46, 48, 21)",
+  "expected": "46",
+  "dataset": "cruxeval",
+  "source_group": "8bdd0c0d5a3ac6a95d3dcc76a28bd9b85010a2314a525ac1a051b914f1363d7e",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(n, m, num):\n    x_list = list(range(n, m+1))\n    j = 0\n    while True:\n        j = (j + num) % len(x_list)\n        if x_list[j] % 2 == 0:\n            return x_list[j]\n\nassert f(46, 48, 21) ==",
+  "n_prompt_tokens": 246,
+  "raw_generation": "  46\n",
+  "answer": "46",
+  "generated_token_ids": [
+    243,
+    19,
+    21,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "46",
+  "token_logprob": [
+    -0.984588623046875,
+    -0.058279089629650116,
+    -0.8979677557945251,
+    -0.20228971540927887
+  ],
+  "token_entropy": [
+    2.25313401222229,
+    0.31461960077285767,
+    1.1192009449005127,
+    0.5927578806877136
+  ],
+  "token_logprob_sum": [
+    -668260.75,
+    -805551.4375,
+    -765215.25,
+    -791438.75
+  ],
+  "token_topk_mean_logprob": [
+    -4.30958890914917,
+    -8.35827922821045,
+    -7.829217433929443,
+    -7.1772894859313965
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 228,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "case_id": "305:0",
+  "program_id": "305",
+  "code": "import re\r\ndef start_withp(words):\r\n for w in words:\r\n        m = re.match(\"(P\\w+)\\W(P\\w+)\", w)\r\n        if m:\r\n            return m.groups()",
+  "call": "start_withp([\"Python PHP\", \"Java JavaScript\", \"c c++\"])",
+  "expected": "('Python', 'PHP')",
+  "dataset": "mbpp",
+  "source_group": "8670ebbba8fc68d7a059664e2a83fde6675403dc897f054a523607e0fb30aa29",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef start_withp(words):\r\n for w in words:\r\n        m = re.match(\"(P\\w+)\\W(P\\w+)\", w)\r\n        if m:\r\n            return m.groups()\n\nassert start_withp([\"Python PHP\", \"Java JavaScript\", \"c c++\"]) ==",
+  "n_prompt_tokens": 234,
+  "raw_generation": " (\"Python\", \"PHP\")\n",
+  "answer": "(\"Python\", \"PHP\")",
+  "generated_token_ids": [
+    8507,
+    28607,
+    950,
+    440,
+    24080,
+    2456,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "('Python', 'PHP')",
+  "token_logprob": [
+    -0.8556502461433411,
+    -0.3060897886753082,
+    -0.07417333126068115,
+    -0.009549650363624096,
+    -0.07940100878477097,
+    -0.038366131484508514,
+    -0.6958947777748108
+  ],
+  "token_entropy": [
+    1.4629164934158325,
+    0.7999026775360107,
+    0.31247013807296753,
+    0.06775236129760742,
+    0.30811938643455505,
+    0.18351587653160095,
+    1.0908654928207397
+  ],
+  "token_logprob_sum": [
+    -703349.375,
+    -761091.875,
+    -740912.75,
+    -815772.125,
+    -884580.875,
+    -749774.0,
+    -705308.125
+  ],
+  "token_topk_mean_logprob": [
+    -5.246275424957275,
+    -7.234214782714844,
+    -7.955422878265381,
+    -9.137675285339355,
+    -9.473151206970215,
+    -8.875866889953613,
+    -7.0896453857421875
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 210,
+  "read_token_ids": [
+    822,
+    2312
+  ]
+}

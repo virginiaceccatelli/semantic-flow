@@ -1,0 +1,73 @@
+{
+  "case_id": "411:1",
+  "program_id": "411",
+  "code": "import re\r\ndef snake_to_camel(word):\r\n  return ''.join(x.capitalize() or '_' for x in word.split('_'))",
+  "call": "snake_to_camel('google_pixel')",
+  "expected": "'GooglePixel'",
+  "dataset": "mbpp",
+  "source_group": "b5cdcb8b051083c727abc88996edff437cf6fdcd8095d84bb0f980a00be717eb",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef snake_to_camel(word):\r\n  return ''.join(x.capitalize() or '_' for x in word.split('_'))\n\nassert snake_to_camel('google_pixel') ==",
+  "n_prompt_tokens": 212,
+  "raw_generation": " 'GooglePixel'\n",
+  "answer": "'GooglePixel'",
+  "generated_token_ids": [
+    651,
+    14473,
+    47,
+    16939,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'GooglePixel'",
+  "token_logprob": [
+    -0.07568074762821198,
+    -0.02301003225147724,
+    -0.010001308284699917,
+    -7.295342220459133e-05,
+    -0.025670209899544716,
+    -0.4106632471084595
+  ],
+  "token_entropy": [
+    0.2909693717956543,
+    0.12134557962417603,
+    0.06159922853112221,
+    0.0008555678650736809,
+    0.13278667628765106,
+    0.8946115970611572
+  ],
+  "token_logprob_sum": [
+    -798211.5,
+    -853778.625,
+    -857489.25,
+    -926003.9375,
+    -724676.625,
+    -734924.625
+  ],
+  "token_topk_mean_logprob": [
+    -8.844430923461914,
+    -9.69488525390625,
+    -10.728751182556152,
+    -13.9500732421875,
+    -9.135045051574707,
+    -8.173163414001465
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 194,
+  "read_token_ids": [
+    14621,
+    2312
+  ]
+}

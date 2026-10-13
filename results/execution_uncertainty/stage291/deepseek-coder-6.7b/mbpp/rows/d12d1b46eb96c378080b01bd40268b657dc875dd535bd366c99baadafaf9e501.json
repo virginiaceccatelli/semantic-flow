@@ -1,0 +1,58 @@
+{
+  "case_id": "187:0",
+  "program_id": "187",
+  "code": "def longest_common_subsequence(X, Y, m, n): \r\n    if m == 0 or n == 0: \r\n       return 0 \r\n    elif X[m-1] == Y[n-1]: \r\n       return 1 + longest_common_subsequence(X, Y, m-1, n-1) \r\n    else: \r\n       return max(longest_common_subsequence(X, Y, m, n-1), longest_common_subsequence(X, Y, m-1, n))",
+  "call": "longest_common_subsequence(\"AGGTAB\" , \"GXTXAYB\", 6, 7)",
+  "expected": "4",
+  "dataset": "mbpp",
+  "source_group": "c8f219e80b4ccfbb36363f208b52ef25dc411f436479e71191c4c919adcf2888",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef longest_common_subsequence(X, Y, m, n): \r\n    if m == 0 or n == 0: \r\n       return 0 \r\n    elif X[m-1] == Y[n-1]: \r\n       return 1 + longest_common_subsequence(X, Y, m-1, n-1) \r\n    else: \r\n       return max(longest_common_subsequence(X, Y, m, n-1), longest_common_subsequence(X, Y, m-1, n))\n\nassert longest_common_subsequence(\"AGGTAB\" , \"GXTXAYB\", 6, 7) ==",
+  "n_prompt_tokens": 312,
+  "raw_generation": "  4\n",
+  "answer": "4",
+  "generated_token_ids": [
+    243,
+    19,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "4",
+  "token_logprob": [
+    -0.6521380543708801,
+    -0.011072147637605667,
+    -0.46217912435531616
+  ],
+  "token_entropy": [
+    2.1536147594451904,
+    0.08231093734502792,
+    1.020222544670105
+  ],
+  "token_logprob_sum": [
+    -661091.0,
+    -820288.875,
+    -734605.875
+  ],
+  "token_topk_mean_logprob": [
+    -4.139638423919678,
+    -8.554821968078613,
+    -6.680929660797119
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 282,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

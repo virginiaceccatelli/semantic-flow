@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_262",
+  "program_id": "sample_262",
+  "code": "def f(nums):\n    count = len(nums)\n    score = {0: \"F\", 1: \"E\", 2: \"D\", 3: \"C\", 4: \"B\", 5: \"A\", 6: \"\"}\n    result = []\n    for i in range(count):\n        result.append(score.get(nums[i]))\n    return ''.join(result)",
+  "call": "f([4, 5])",
+  "expected": "'BA'",
+  "dataset": "cruxeval",
+  "source_group": "c6c1709a54d4bf1eb242709c95f7ba6058fec8be382d0c84911a10f6619d9210",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(nums):\n    count = len(nums)\n    score = {0: \"F\", 1: \"E\", 2: \"D\", 3: \"C\", 4: \"B\", 5: \"A\", 6: \"\"}\n    result = []\n    for i in range(count):\n        result.append(score.get(nums[i]))\n    return ''.join(result)\n\nassert f([4, 5]) ==",
+  "n_prompt_tokens": 263,
+  "raw_generation": " 'F'\n",
+  "answer": "'F'",
+  "generated_token_ids": [
+    651,
+    37,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'F'",
+  "token_logprob": [
+    -0.4405014216899872,
+    -1.8713477849960327,
+    -1.263525128364563,
+    -0.11744781583547592
+  ],
+  "token_entropy": [
+    0.873767614364624,
+    3.277520179748535,
+    2.4133591651916504,
+    0.42818188667297363
+  ],
+  "token_logprob_sum": [
+    -791611.0625,
+    -666201.625,
+    -648274.875,
+    -804257.25
+  ],
+  "token_topk_mean_logprob": [
+    -6.953001499176025,
+    -3.4838478565216064,
+    -4.082274913787842,
+    -7.892448425292969
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 251,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

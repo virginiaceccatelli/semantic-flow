@@ -1,0 +1,53 @@
+{
+  "case_id": "367:1",
+  "program_id": "367",
+  "code": "class Node: \r\n\tdef __init__(self, data): \r\n\t\tself.data = data \r\n\t\tself.left = None\r\n\t\tself.right = None\r\ndef get_height(root): \r\n\tif root is None: \r\n\t\treturn 0\r\n\treturn max(get_height(root.left), get_height(root.right)) + 1\r\ndef is_tree_balanced(root): \r\n\tif root is None: \r\n\t\treturn True\r\n\tlh = get_height(root.left) \r\n\trh = get_height(root.right) \r\n\tif (abs(lh - rh) <= 1) and is_tree_balanced( \r\n\troot.left) is True and is_tree_balanced( root.right) is True: \r\n\t\treturn True\r\n\treturn False\n\nroot = Node(1) \r\nroot.left = Node(2) \r\nroot.right = Node(3) \r\nroot.left.left = Node(4) \r\nroot.left.right = Node(5) \r\nroot.left.left.left = Node(8) \r\nroot1 = Node(1) \r\nroot1.left = Node(2) \r\nroot1.right = Node(3) \r\nroot1.left.left = Node(4) \r\nroot1.left.right = Node(5) \r\nroot1.right.left = Node(6) \r\nroot1.left.left.left = Node(7)\r\nroot2 = Node(1) \r\nroot2.left = Node(2) \r\nroot2.right = Node(3) \r\nroot2.left.left = Node(4) \r\nroot2.left.right = Node(5)\r\nroot2.left.left.left = Node(7)",
+  "call": "is_tree_balanced(root1)",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "15d75ad2c44906613b161587c0211041c4778ea6b62f57bbf6096d4aa3a5e840",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nclass Node: \r\n\tdef __init__(self, data): \r\n\t\tself.data = data \r\n\t\tself.left = None\r\n\t\tself.right = None\r\ndef get_height(root): \r\n\tif root is None: \r\n\t\treturn 0\r\n\treturn max(get_height(root.left), get_height(root.right)) + 1\r\ndef is_tree_balanced(root): \r\n\tif root is None: \r\n\t\treturn True\r\n\tlh = get_height(root.left) \r\n\trh = get_height(root.right) \r\n\tif (abs(lh - rh) <= 1) and is_tree_balanced( \r\n\troot.left) is True and is_tree_balanced( root.right) is True: \r\n\t\treturn True\r\n\treturn False\n\nroot = Node(1) \r\nroot.left = Node(2) \r\nroot.right = Node(3) \r\nroot.left.left = Node(4) \r\nroot.left.right = Node(5) \r\nroot.left.left.left = Node(8) \r\nroot1 = Node(1) \r\nroot1.left = Node(2) \r\nroot1.right = Node(3) \r\nroot1.left.left = Node(4) \r\nroot1.left.right = Node(5) \r\nroot1.right.left = Node(6) \r\nroot1.left.left.left = Node(7)\r\nroot2 = Node(1) \r\nroot2.left = Node(2) \r\nroot2.right = Node(3) \r\nroot2.left.left = Node(4) \r\nroot2.left.right = Node(5)\r\nroot2.left.left.left = Node(7)\n\nassert is_tree_balanced(root1) ==",
+  "n_prompt_tokens": 610,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.3961992561817169,
+    -0.39335110783576965
+  ],
+  "token_entropy": [
+    0.6984028816223145,
+    0.9169480204582214
+  ],
+  "token_logprob_sum": [
+    -745936.75,
+    -768550.625
+  ],
+  "token_topk_mean_logprob": [
+    -7.921199321746826,
+    -6.620170593261719
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 595,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

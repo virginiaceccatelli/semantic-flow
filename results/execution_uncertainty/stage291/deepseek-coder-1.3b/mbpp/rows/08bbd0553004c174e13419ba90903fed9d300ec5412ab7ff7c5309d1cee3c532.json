@@ -1,0 +1,58 @@
+{
+  "case_id": "144:0",
+  "program_id": "144",
+  "code": "def sum_Pairs(arr,n): \r\n    sum = 0\r\n    for i in range(n - 1,-1,-1): \r\n        sum += i*arr[i] - (n-1-i) * arr[i] \r\n    return sum",
+  "call": "sum_Pairs([1,8,9,15,16],5)",
+  "expected": "74",
+  "dataset": "mbpp",
+  "source_group": "6c1cc5cc79f6dc551c49da785c6af578d6a50de51df081822e40796cbc0d8260",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_Pairs(arr,n): \r\n    sum = 0\r\n    for i in range(n - 1,-1,-1): \r\n        sum += i*arr[i] - (n-1-i) * arr[i] \r\n    return sum\n\nassert sum_Pairs([1,8,9,15,16],5) ==",
+  "n_prompt_tokens": 242,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.2550085186958313,
+    -0.9539545178413391,
+    -1.4908313751220703
+  ],
+  "token_entropy": [
+    1.0866508483886719,
+    1.870411992073059,
+    2.5165112018585205
+  ],
+  "token_logprob_sum": [
+    -757767.75,
+    -744686.1875,
+    -734569.0
+  ],
+  "token_topk_mean_logprob": [
+    -4.967508792877197,
+    -5.966454982757568,
+    -3.9783313274383545
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 218,
+  "read_token_ids": [
+    2545,
+    2312
+  ]
+}

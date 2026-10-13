@@ -1,0 +1,73 @@
+{
+  "case_id": "94:0",
+  "program_id": "94",
+  "code": "from operator import itemgetter \r\ndef index_minimum(test_list):\r\n  res = min(test_list, key = itemgetter(1))[0]\r\n  return (res)",
+  "call": "index_minimum([('Rash', 143), ('Manjeet', 200), ('Varsha', 100)])",
+  "expected": "'Varsha'",
+  "dataset": "mbpp",
+  "source_group": "39b72727a9feae3077f89665524cb82656ff71a968a57a5b74086c711edd966e",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nfrom operator import itemgetter \r\ndef index_minimum(test_list):\r\n  res = min(test_list, key = itemgetter(1))[0]\r\n  return (res)\n\nassert index_minimum([('Rash', 143), ('Manjeet', 200), ('Varsha', 100)]) ==",
+  "n_prompt_tokens": 238,
+  "raw_generation": " 'Manjeet'\n",
+  "answer": "'Manjeet'",
+  "generated_token_ids": [
+    651,
+    3845,
+    9009,
+    290,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Manjeet'",
+  "token_logprob": [
+    -0.13732635974884033,
+    -0.7301239967346191,
+    -9.572047565598041e-05,
+    -5.960446742392378e-06,
+    -0.01183394156396389,
+    -0.4268253445625305
+  ],
+  "token_entropy": [
+    0.5448230504989624,
+    1.0365798473358154,
+    0.00120693224016577,
+    9.106419747695327e-05,
+    0.08140362054109573,
+    0.8956620693206787
+  ],
+  "token_logprob_sum": [
+    -763549.6875,
+    -748796.75,
+    -922161.875,
+    -1092058.0,
+    -737592.6875,
+    -722637.0
+  ],
+  "token_topk_mean_logprob": [
+    -6.668576240539551,
+    -8.033248901367188,
+    -12.543845176696777,
+    -15.400006294250488,
+    -8.736834526062012,
+    -7.904950141906738
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

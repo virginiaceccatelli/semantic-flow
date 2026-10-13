@@ -1,0 +1,58 @@
+{
+  "case_id": "469:1",
+  "program_id": "469",
+  "code": "def max_profit(price, k):\r\n    n = len(price)\r\n    final_profit = [[None for x in range(n)] for y in range(k + 1)]\r\n    for i in range(k + 1):\r\n        for j in range(n):\r\n            if i == 0 or j == 0:\r\n                final_profit[i][j] = 0\r\n            else:\r\n                max_so_far = 0\r\n                for x in range(j):\r\n                    curr_price = price[j] - price[x] + final_profit[i-1][x]\r\n                    if max_so_far < curr_price:\r\n                        max_so_far = curr_price\r\n                final_profit[i][j] = max(final_profit[i][j-1], max_so_far)\r\n    return final_profit[k][n-1]",
+  "call": "max_profit([2, 4, 7, 5, 4, 3, 5], 2)",
+  "expected": "7",
+  "dataset": "mbpp",
+  "source_group": "5bcdc6d37dc98734f73cbf41900e4bc1e7857f25e15a4f6b447346b7d263d3ce",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_profit(price, k):\r\n    n = len(price)\r\n    final_profit = [[None for x in range(n)] for y in range(k + 1)]\r\n    for i in range(k + 1):\r\n        for j in range(n):\r\n            if i == 0 or j == 0:\r\n                final_profit[i][j] = 0\r\n            else:\r\n                max_so_far = 0\r\n                for x in range(j):\r\n                    curr_price = price[j] - price[x] + final_profit[i-1][x]\r\n                    if max_so_far < curr_price:\r\n                        max_so_far = curr_price\r\n                final_profit[i][j] = max(final_profit[i][j-1], max_so_far)\r\n    return final_profit[k][n-1]\n\nassert max_profit([2, 4, 7, 5, 4, 3, 5], 2) ==",
+  "n_prompt_tokens": 400,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.6654361486434937,
+    -0.5963782668113708,
+    -0.41241440176963806
+  ],
+  "token_entropy": [
+    1.7657843828201294,
+    1.473892092704773,
+    1.3195449113845825
+  ],
+  "token_logprob_sum": [
+    -702055.0,
+    -751449.5,
+    -744571.625
+  ],
+  "token_topk_mean_logprob": [
+    -4.756061553955078,
+    -6.152628421783447,
+    -4.84991455078125
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 368,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

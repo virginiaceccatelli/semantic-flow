@@ -1,0 +1,68 @@
+{
+  "case_id": "269:2",
+  "program_id": "269",
+  "code": "def ascii_value(k):\r\n  ch=k\r\n  return ord(ch)",
+  "call": "ascii_value('S')",
+  "expected": "83",
+  "dataset": "mbpp",
+  "source_group": "a1922163a0d3c22b2352d458247d7696d780c26504690c5fd50c162ddc4dccf6",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef ascii_value(k):\r\n  ch=k\r\n  return ord(ch)\n\nassert ascii_value('S') ==",
+  "n_prompt_tokens": 189,
+  "raw_generation": " ord('S')\n",
+  "answer": "ord('S')",
+  "generated_token_ids": [
+    4882,
+    1497,
+    50,
+    2462,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "invalid",
+  "answer_form": null,
+  "invalid_reason": "non_constant: not a constant expression: Call",
+  "parsed_answer": null,
+  "token_logprob": [
+    -0.3447251617908478,
+    -0.03999500721693039,
+    -0.01168372668325901,
+    -0.01171895582228899,
+    -0.4638444781303406
+  ],
+  "token_entropy": [
+    1.337280035018921,
+    0.18950024247169495,
+    0.08555220067501068,
+    0.07217356562614441,
+    1.047608733177185
+  ],
+  "token_logprob_sum": [
+    -661021.25,
+    -786651.75,
+    -788758.75,
+    -783799.75,
+    -737300.0
+  ],
+  "token_topk_mean_logprob": [
+    -5.032225131988525,
+    -9.108744621276855,
+    -8.514808654785156,
+    -9.94296932220459,
+    -6.445094585418701
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 176,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "349:2",
+  "program_id": "349",
+  "code": "def check(string) :\r\n    p = set(string) \r\n    s = {'0', '1'} \r\n    if s == p or p == {'0'} or p == {'1'}: \r\n        return (\"Yes\") \r\n    else : \r\n        return (\"No\")",
+  "call": "check(\"101\")",
+  "expected": "'Yes'",
+  "dataset": "mbpp",
+  "source_group": "695720c6e50f0a53fbfdeff523f1edef9a99f9c3e07eb6ffe939259e326bb2df",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check(string) :\r\n    p = set(string) \r\n    s = {'0', '1'} \r\n    if s == p or p == {'0'} or p == {'1'}: \r\n        return (\"Yes\") \r\n    else : \r\n        return (\"No\")\n\nassert check(\"101\") ==",
+  "n_prompt_tokens": 234,
+  "raw_generation": " \"Yes\"\n",
+  "answer": "\"Yes\"",
+  "generated_token_ids": [
+    440,
+    5652,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Yes'",
+  "token_logprob": [
+    -0.3564433753490448,
+    -0.6949263215065002,
+    -0.011012962087988853,
+    -0.15785299241542816
+  ],
+  "token_entropy": [
+    0.9527714848518372,
+    0.7114744782447815,
+    0.07685418426990509,
+    0.5710934400558472
+  ],
+  "token_logprob_sum": [
+    -771929.3125,
+    -784394.125,
+    -740680.5625,
+    -765075.75
+  ],
+  "token_topk_mean_logprob": [
+    -6.456443786621094,
+    -9.144927024841309,
+    -8.81726360321045,
+    -7.562638759613037
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 223,
+  "read_token_ids": [
+    2456,
+    2312
+  ]
+}

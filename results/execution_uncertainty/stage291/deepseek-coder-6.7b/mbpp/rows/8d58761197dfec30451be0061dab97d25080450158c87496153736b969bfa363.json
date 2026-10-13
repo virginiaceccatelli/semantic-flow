@@ -1,0 +1,63 @@
+{
+  "case_id": "502:0",
+  "program_id": "502",
+  "code": "def find(n,m):\r\n  r = n%m\r\n  return (r)",
+  "call": "find(3,3)",
+  "expected": "0",
+  "dataset": "mbpp",
+  "source_group": "22662d71686c8d4990e36ec034a86f32517d92267a4e876cb7bcfc0e860dc23a",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find(n,m):\r\n  r = n%m\r\n  return (r)\n\nassert find(3,3) ==",
+  "n_prompt_tokens": 186,
+  "raw_generation": " (0)\n",
+  "answer": "(0)",
+  "generated_token_ids": [
+    334,
+    15,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "0",
+  "token_logprob": [
+    -0.3552674949169159,
+    -0.09873960167169571,
+    -0.02245989628136158,
+    -0.38159289956092834
+  ],
+  "token_entropy": [
+    1.461253046989441,
+    0.44348832964897156,
+    0.15532001852989197,
+    0.8867489099502563
+  ],
+  "token_logprob_sum": [
+    -670944.6875,
+    -722922.1875,
+    -777430.125,
+    -723213.875
+  ],
+  "token_topk_mean_logprob": [
+    -4.574017524719238,
+    -6.761239528656006,
+    -7.703709602355957,
+    -7.437843322753906
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 175,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

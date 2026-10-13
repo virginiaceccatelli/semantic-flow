@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_153",
+  "program_id": "sample_153",
+  "code": "def f(text, suffix, num):\n    str_num = str(num)\n    return text.endswith(suffix + str_num)",
+  "call": "f('friends and love', 'and', 3)",
+  "expected": "False",
+  "dataset": "cruxeval",
+  "source_group": "cc7447bbd98a001392d5bb77d2d1ad4c7d9c7a302cfaf338ebb2b31c1583d6c7",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, suffix, num):\n    str_num = str(num)\n    return text.endswith(suffix + str_num)\n\nassert f('friends and love', 'and', 3) ==",
+  "n_prompt_tokens": 205,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.3928295373916626,
+    -0.14642801880836487
+  ],
+  "token_entropy": [
+    0.6722614169120789,
+    0.42242884635925293
+  ],
+  "token_logprob_sum": [
+    -785129.4375,
+    -817755.375
+  ],
+  "token_topk_mean_logprob": [
+    -8.392829895019531,
+    -9.133928298950195
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 188,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

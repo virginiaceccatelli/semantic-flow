@@ -1,0 +1,58 @@
+{
+  "case_id": "95:2",
+  "program_id": "95",
+  "code": "def Find_Min_Length(lst):  \r\n    minLength = min(len(x) for x in lst )\r\n    return minLength",
+  "call": "Find_Min_Length([[3,3,3],[4,4,4,4]])",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "fafd028091ff380cbf61bec06fd93d95ad1725f47af81727567bc1025ebf8c73",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef Find_Min_Length(lst):  \r\n    minLength = min(len(x) for x in lst )\r\n    return minLength\n\nassert Find_Min_Length([[3,3,3],[4,4,4,4]]) ==",
+  "n_prompt_tokens": 216,
+  "raw_generation": "  3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    243,
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.4403762817382812,
+    -0.7939038276672363,
+    -0.43681928515434265
+  ],
+  "token_entropy": [
+    2.4126715660095215,
+    1.33091139793396,
+    1.118220567703247
+  ],
+  "token_logprob_sum": [
+    -674945.375,
+    -758347.75,
+    -686503.25
+  ],
+  "token_topk_mean_logprob": [
+    -4.215376377105713,
+    -7.418903350830078,
+    -6.111819744110107
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 188,
+  "read_token_ids": [
+    9409,
+    2312
+  ]
+}

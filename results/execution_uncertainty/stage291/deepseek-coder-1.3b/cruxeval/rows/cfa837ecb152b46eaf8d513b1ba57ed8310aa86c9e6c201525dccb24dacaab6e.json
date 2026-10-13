@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_31",
+  "program_id": "sample_31",
+  "code": "def f(string):\n    upper = 0\n    for c in string:\n        if c.isupper():\n            upper += 1\n    return upper * (2,1)[upper % 2]",
+  "call": "f('PoIOarTvpoead')",
+  "expected": "8",
+  "dataset": "cruxeval",
+  "source_group": "b0f66e12ff1c00aea42a31ec412dddb03938967bfb6ba2f584ab90f3befd3e4f",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(string):\n    upper = 0\n    for c in string:\n        if c.isupper():\n            upper += 1\n    return upper * (2,1)[upper % 2]\n\nassert f('PoIOarTvpoead') ==",
+  "n_prompt_tokens": 213,
+  "raw_generation": " 'P'\n",
+  "answer": "'P'",
+  "generated_token_ids": [
+    651,
+    47,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'P'",
+  "token_logprob": [
+    -0.4104624092578888,
+    -2.029099225997925,
+    -0.7366178035736084,
+    -0.23667068779468536
+  ],
+  "token_entropy": [
+    1.4261071681976318,
+    4.25310754776001,
+    2.960373878479004,
+    0.5826538801193237
+  ],
+  "token_logprob_sum": [
+    -698373.25,
+    -564797.0,
+    -578575.125,
+    -783981.0625
+  ],
+  "token_topk_mean_logprob": [
+    -4.979212284088135,
+    -3.966599225997925,
+    -4.217868328094482,
+    -7.861670017242432
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 198,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

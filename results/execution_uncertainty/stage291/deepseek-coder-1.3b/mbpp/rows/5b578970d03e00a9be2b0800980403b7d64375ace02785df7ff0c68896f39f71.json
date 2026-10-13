@@ -1,0 +1,58 @@
+{
+  "case_id": "344:1",
+  "program_id": "344",
+  "code": "def count_Odd_Squares(n,m): \r\n    return int(m**0.5) - int((n-1)**0.5)",
+  "call": "count_Odd_Squares(8,65)",
+  "expected": "6",
+  "dataset": "mbpp",
+  "source_group": "fbc64389d5a377eec3a507d281cfa00fc7ac8c04494a6a57a56d8cd76d1095ba",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_Odd_Squares(n,m): \r\n    return int(m**0.5) - int((n-1)**0.5)\n\nassert count_Odd_Squares(8,65) ==",
+  "n_prompt_tokens": 211,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.8729373216629028,
+    -0.7398278117179871,
+    -0.39217981696128845
+  ],
+  "token_entropy": [
+    2.0462355613708496,
+    1.5166081190109253,
+    1.1816306114196777
+  ],
+  "token_logprob_sum": [
+    -672619.625,
+    -726182.375,
+    -723196.25
+  ],
+  "token_topk_mean_logprob": [
+    -4.35418701171875,
+    -6.552328586578369,
+    -5.214055061340332
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 192,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

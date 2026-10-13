@@ -1,0 +1,58 @@
+{
+  "case_id": "169:0",
+  "program_id": "169",
+  "code": "def get_pell(n): \r\n\tif (n <= 2): \r\n\t\treturn n \r\n\ta = 1\r\n\tb = 2\r\n\tfor i in range(3, n+1): \r\n\t\tc = 2 * b + a \r\n\t\ta = b \r\n\t\tb = c \r\n\treturn b",
+  "call": "get_pell(4)",
+  "expected": "12",
+  "dataset": "mbpp",
+  "source_group": "12171074eb143e48c136f72c2f5a30807a9025110e631074637e2cd79050fa3e",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef get_pell(n): \r\n\tif (n <= 2): \r\n\t\treturn n \r\n\ta = 1\r\n\tb = 2\r\n\tfor i in range(3, n+1): \r\n\t\tc = 2 * b + a \r\n\t\ta = b \r\n\t\tb = c \r\n\treturn b\n\nassert get_pell(4) ==",
+  "n_prompt_tokens": 246,
+  "raw_generation": "  5\n",
+  "answer": "5",
+  "generated_token_ids": [
+    243,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "5",
+  "token_logprob": [
+    -1.2902683019638062,
+    -1.1003955602645874,
+    -0.5114458799362183
+  ],
+  "token_entropy": [
+    2.322535753250122,
+    1.507363200187683,
+    1.0800589323043823
+  ],
+  "token_logprob_sum": [
+    -658984.375,
+    -793854.5,
+    -752847.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.152768611907959,
+    -6.25039529800415,
+    -6.505195617675781
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 234,
+  "read_token_ids": [
+    270,
+    2312
+  ]
+}

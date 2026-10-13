@@ -1,0 +1,53 @@
+{
+  "case_id": "142:1",
+  "program_id": "142",
+  "code": "def count_samepair(list1,list2,list3):\r\n    result = sum(m == n == o for m, n, o in zip(list1,list2,list3))\r\n    return result",
+  "call": "count_samepair([1,2,3,4,5,6,7,8],[2,2,3,1,2,6,7,8],[2,1,3,1,2,6,7,8])",
+  "expected": "4",
+  "dataset": "mbpp",
+  "source_group": "1adb1b6616d667e18c511bd40ee69c52a299d94b53ba14b4f18b068a1035ac91",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_samepair(list1,list2,list3):\r\n    result = sum(m == n == o for m, n, o in zip(list1,list2,list3))\r\n    return result\n\nassert count_samepair([1,2,3,4,5,6,7,8],[2,2,3,1,2,6,7,8],[2,1,3,1,2,6,7,8]) ==",
+  "n_prompt_tokens": 263,
+  "raw_generation": "3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.6283807754516602,
+    -0.4438619017601013
+  ],
+  "token_entropy": [
+    2.666412115097046,
+    1.004106044769287
+  ],
+  "token_logprob_sum": [
+    -685906.25,
+    -729163.25
+  ],
+  "token_topk_mean_logprob": [
+    -3.7299187183380127,
+    -6.525111675262451
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 203,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

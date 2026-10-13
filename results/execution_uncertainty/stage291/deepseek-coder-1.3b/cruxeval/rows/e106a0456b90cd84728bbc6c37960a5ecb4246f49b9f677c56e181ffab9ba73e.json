@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_525",
+  "program_id": "sample_525",
+  "code": "def f(c, st, ed):\n    d = {}\n    a, b = 0, 0\n    for x, y in c.items():\n        d[y] = x\n        if y == st:\n            a = x\n        if y == ed:\n            b = x\n    w = d[st]\n    return (w, b) if a > b else (b, w)",
+  "call": "f({'TEXT': 7, 'CODE': 3}, 7, 3)",
+  "expected": "('TEXT', 'CODE')",
+  "dataset": "cruxeval",
+  "source_group": "4231796d7e33054f5f97cd8b3d78ed10578a89e5f5108c6716225fb451f94910",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(c, st, ed):\n    d = {}\n    a, b = 0, 0\n    for x, y in c.items():\n        d[y] = x\n        if y == st:\n            a = x\n        if y == ed:\n            b = x\n    w = d[st]\n    return (w, b) if a > b else (b, w)\n\nassert f({'TEXT': 7, 'CODE': 3}, 7, 3) ==",
+  "n_prompt_tokens": 271,
+  "raw_generation": " ('TEXT', 'CODE')\n",
+  "answer": "('TEXT', 'CODE')",
+  "generated_token_ids": [
+    10234,
+    19603,
+    1183,
+    651,
+    11087,
+    2462,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "('TEXT', 'CODE')",
+  "token_logprob": [
+    -0.4859922528266907,
+    -0.8029279112815857,
+    -0.00374770350754261,
+    -0.4301551878452301,
+    -0.01248814444988966,
+    -0.0012484145117923617,
+    -0.20658668875694275
+  ],
+  "token_entropy": [
+    0.7421631813049316,
+    1.782358169555664,
+    0.038634784519672394,
+    0.6603057980537415,
+    0.09414505213499069,
+    0.012154154479503632,
+    0.5142241716384888
+  ],
+  "token_logprob_sum": [
+    -788673.5625,
+    -628922.25,
+    -726150.125,
+    -846407.375,
+    -779596.9375,
+    -793390.5625,
+    -797653.75
+  ],
+  "token_topk_mean_logprob": [
+    -7.948492527008057,
+    -5.184178352355957,
+    -8.706872940063477,
+    -9.40515422821045,
+    -8.837488174438477,
+    -10.844217300415039,
+    -8.944087028503418
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 246,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

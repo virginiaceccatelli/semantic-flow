@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_508",
+  "program_id": "sample_508",
+  "code": "def f(text, sep, maxsplit):\n    splitted = text.rsplit(sep, maxsplit)\n    length = len(splitted)\n    new_splitted = splitted[:length // 2]\n    new_splitted.reverse()\n    new_splitted += splitted[length // 2:]\n    return sep.join(new_splitted)",
+  "call": "f('ertubwi', 'p', 5)",
+  "expected": "'ertubwi'",
+  "dataset": "cruxeval",
+  "source_group": "db19a403387d2835ffed69424e5afd912d8f747eb9eaa6173dcef667557791e7",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, sep, maxsplit):\n    splitted = text.rsplit(sep, maxsplit)\n    length = len(splitted)\n    new_splitted = splitted[:length // 2]\n    new_splitted.reverse()\n    new_splitted += splitted[length // 2:]\n    return sep.join(new_splitted)\n\nassert f('ertubwi', 'p', 5) ==",
+  "n_prompt_tokens": 256,
+  "raw_generation": " 'pibtur'\n",
+  "answer": "'pibtur'",
+  "generated_token_ids": [
+    651,
+    79,
+    551,
+    83,
+    332,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'pibtur'",
+  "token_logprob": [
+    -0.02559421956539154,
+    -2.382326602935791,
+    -1.5550810098648071,
+    -2.396073341369629,
+    -1.6364728212356567,
+    -0.4932165741920471,
+    -0.2900157570838928
+  ],
+  "token_entropy": [
+    0.1693231761455536,
+    4.920380592346191,
+    4.267668724060059,
+    4.410592079162598,
+    3.0439834594726562,
+    1.9802422523498535,
+    0.598913311958313
+  ],
+  "token_logprob_sum": [
+    -772333.9375,
+    -554579.4375,
+    -555690.25,
+    -579601.125,
+    -628241.25,
+    -608538.0,
+    -781198.6875
+  ],
+  "token_topk_mean_logprob": [
+    -7.4818434715271,
+    -3.8885765075683594,
+    -3.842581272125244,
+    -3.602323293685913,
+    -3.9395978450775146,
+    -4.486966609954834,
+    -8.713454246520996
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 239,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

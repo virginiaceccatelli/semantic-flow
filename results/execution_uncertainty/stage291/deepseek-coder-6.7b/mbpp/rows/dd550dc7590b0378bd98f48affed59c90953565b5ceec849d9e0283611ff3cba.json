@@ -1,0 +1,63 @@
+{
+  "case_id": "430:0",
+  "program_id": "430",
+  "code": "def parabola_directrix(a, b, c): \r\n  directrix=((int)(c - ((b * b) + 1) * 4 * a ))\r\n  return directrix",
+  "call": "parabola_directrix(5,3,2)",
+  "expected": "-198",
+  "dataset": "mbpp",
+  "source_group": "def4e53de79d17f0a211e6f4f9cbc06b14c53430625a7123a12504aaaeef5779",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef parabola_directrix(a, b, c): \r\n  directrix=((int)(c - ((b * b) + 1) * 4 * a ))\r\n  return directrix\n\nassert parabola_directrix(5,3,2) ==",
+  "n_prompt_tokens": 218,
+  "raw_generation": " -11\n",
+  "answer": "-11",
+  "generated_token_ids": [
+    567,
+    16,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-11",
+  "token_logprob": [
+    -0.10925398021936417,
+    -1.0750577449798584,
+    -1.934700846672058,
+    -0.6794840693473816
+  ],
+  "token_entropy": [
+    0.5572659969329834,
+    1.969311237335205,
+    2.4765892028808594,
+    1.496233582496643
+  ],
+  "token_logprob_sum": [
+    -735162.6875,
+    -744698.9375,
+    -765502.25,
+    -736585.5
+  ],
+  "token_topk_mean_logprob": [
+    -6.028004169464111,
+    -6.834433078765869,
+    -4.247200965881348,
+    -4.654483795166016
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    3088,
+    2312
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_613",
+  "program_id": "sample_613",
+  "code": "def f(text):\n    result = ''\n    mid = (len(text) - 1) // 2\n    for i in range(mid):\n        result += text[i]\n    for i in range(mid, len(text)-1):\n        result += text[mid + len(text) - 1 - i]\n    return result.ljust(len(text), text[-1])",
+  "call": "f('eat!')",
+  "expected": "'e!t!'",
+  "dataset": "cruxeval",
+  "source_group": "b8e8b20b5dc0e3e909dff452663f154393cb9452a5b3bbae94e7255544c88372",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    result = ''\n    mid = (len(text) - 1) // 2\n    for i in range(mid):\n        result += text[i]\n    for i in range(mid, len(text)-1):\n        result += text[mid + len(text) - 1 - i]\n    return result.ljust(len(text), text[-1])\n\nassert f('eat!') ==",
+  "n_prompt_tokens": 256,
+  "raw_generation": " 'eat!'\n",
+  "answer": "'eat!'",
+  "generated_token_ids": [
+    651,
+    68,
+    253,
+    13837,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'eat!'",
+  "token_logprob": [
+    -0.012577027082443237,
+    -1.329263687133789,
+    -0.7352696061134338,
+    -0.32408782839775085,
+    -0.0287324171513319
+  ],
+  "token_entropy": [
+    0.0912868082523346,
+    3.1141605377197266,
+    2.729872465133667,
+    1.362210750579834,
+    0.16546398401260376
+  ],
+  "token_logprob_sum": [
+    -789418.875,
+    -558231.5,
+    -558935.75,
+    -597315.875,
+    -821771.5
+  ],
+  "token_topk_mean_logprob": [
+    -8.287577629089355,
+    -3.9886386394500732,
+    -3.8946444988250732,
+    -5.170962810516357,
+    -7.916232585906982
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 245,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

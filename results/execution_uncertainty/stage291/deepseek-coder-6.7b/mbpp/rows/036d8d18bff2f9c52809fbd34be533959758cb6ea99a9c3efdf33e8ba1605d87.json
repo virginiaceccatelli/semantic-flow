@@ -1,0 +1,68 @@
+{
+  "case_id": "122:1",
+  "program_id": "122",
+  "code": "MAX = 3000 \r\ndef smartNumber(n): \r\n\tprimes = [0] * MAX \r\n\tresult = [] \r\n\tfor i in range(2, MAX): \r\n\t\tif (primes[i] == 0): \r\n\t\t\tprimes[i] = 1 \r\n\t\t\tj = i * 2 \r\n\t\t\twhile (j < MAX): \r\n\t\t\t\tprimes[j] -= 1 \r\n\t\t\t\tif ( (primes[j] + 3) == 0): \r\n\t\t\t\t\tresult.append(j) \r\n\t\t\t\tj = j + i \r\n\tresult.sort() \r\n\treturn result[n - 1]",
+  "call": "smartNumber(50)",
+  "expected": "273",
+  "dataset": "mbpp",
+  "source_group": "2c923d057fb8f2ac9d45edca0ab7109ea4f0acc39ba99d44a3fc2cb0a7959aa9",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nMAX = 3000 \r\ndef smartNumber(n): \r\n\tprimes = [0] * MAX \r\n\tresult = [] \r\n\tfor i in range(2, MAX): \r\n\t\tif (primes[i] == 0): \r\n\t\t\tprimes[i] = 1 \r\n\t\t\tj = i * 2 \r\n\t\t\twhile (j < MAX): \r\n\t\t\t\tprimes[j] -= 1 \r\n\t\t\t\tif ( (primes[j] + 3) == 0): \r\n\t\t\t\t\tresult.append(j) \r\n\t\t\t\tj = j + i \r\n\tresult.sort() \r\n\treturn result[n - 1]\n\nassert smartNumber(50) ==",
+  "n_prompt_tokens": 329,
+  "raw_generation": "  127\n",
+  "answer": "127",
+  "generated_token_ids": [
+    243,
+    16,
+    17,
+    22,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 1,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "127",
+  "token_logprob": [
+    -0.7742371559143066,
+    -1.4743072986602783,
+    -1.741073489189148,
+    -1.3131661415100098,
+    -0.5835229754447937
+  ],
+  "token_entropy": [
+    2.349316120147705,
+    1.9972435235977173,
+    2.247246503829956,
+    2.1565918922424316,
+    1.5324444770812988
+  ],
+  "token_logprob_sum": [
+    -654024.5625,
+    -757983.125,
+    -743649.0,
+    -720589.9375,
+    -739728.875
+  ],
+  "token_topk_mean_logprob": [
+    -4.017987251281738,
+    -5.9930572509765625,
+    -5.587948799133301,
+    -5.431916236877441,
+    -4.839772701263428
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 318,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

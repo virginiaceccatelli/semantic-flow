@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_309",
+  "program_id": "sample_309",
+  "code": "def f(text, suffix):\n    text += suffix\n    while text[-len(suffix):] == suffix:\n        text = text[:-1]\n    return text",
+  "call": "f('faqo osax f', 'f')",
+  "expected": "'faqo osax '",
+  "dataset": "cruxeval",
+  "source_group": "8b1e70a76d5d84530a67b127d673ce89b73d1c2988043dea5eb3ed397d0542ff",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, suffix):\n    text += suffix\n    while text[-len(suffix):] == suffix:\n        text = text[:-1]\n    return text\n\nassert f('faqo osax f', 'f') ==",
+  "n_prompt_tokens": 209,
+  "raw_generation": " 'faqo osax'\n",
+  "answer": "'faqo osax'",
+  "generated_token_ids": [
+    651,
+    6868,
+    80,
+    78,
+    10925,
+    1099,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'faqo osax'",
+  "token_logprob": [
+    -0.019276663661003113,
+    -0.3012525141239166,
+    -0.010865924879908562,
+    -0.03873409330844879,
+    -0.09113970398902893,
+    -0.08306831866502762,
+    -0.2760047912597656,
+    -0.14220811426639557
+  ],
+  "token_entropy": [
+    0.13155172765254974,
+    1.171226978302002,
+    0.08701151609420776,
+    0.26189589500427246,
+    0.5129750967025757,
+    0.3904070556163788,
+    1.0664427280426025,
+    0.41396600008010864
+  ],
+  "token_logprob_sum": [
+    -809277.0625,
+    -633742.4375,
+    -709758.25,
+    -661097.4375,
+    -676533.5,
+    -710169.375,
+    -634914.375,
+    -813386.375
+  ],
+  "token_topk_mean_logprob": [
+    -8.197402000427246,
+    -5.631721019744873,
+    -8.21086597442627,
+    -7.069984436035156,
+    -6.341139316558838,
+    -6.989317417144775,
+    -5.676004886627197,
+    -9.353145599365234
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 192,
+  "read_token_ids": [
+    2422,
+    2312
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "case_id": "369:0",
+  "program_id": "369",
+  "code": "def lateralsurface_cuboid(l,w,h):\r\n  LSA = 2*h*(l+w)\r\n  return LSA",
+  "call": "lateralsurface_cuboid(8,5,6)",
+  "expected": "156",
+  "dataset": "mbpp",
+  "source_group": "bbcf107ea5e83887ea5962f3af1a518dd6c448a2394775e441cf83b71954715d",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef lateralsurface_cuboid(l,w,h):\r\n  LSA = 2*h*(l+w)\r\n  return LSA\n\nassert lateralsurface_cuboid(8,5,6) ==",
+  "n_prompt_tokens": 209,
+  "raw_generation": "  104\n",
+  "answer": "104",
+  "generated_token_ids": [
+    243,
+    16,
+    15,
+    19,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 1,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "104",
+  "token_logprob": [
+    -1.5280135869979858,
+    -1.420794129371643,
+    -1.2358715534210205,
+    -0.7221545577049255,
+    -0.6197174787521362
+  ],
+  "token_entropy": [
+    2.6909031867980957,
+    2.144963502883911,
+    1.9966989755630493,
+    1.12248694896698,
+    1.1992460489273071
+  ],
+  "token_logprob_sum": [
+    -633857.875,
+    -688612.0,
+    -781205.25,
+    -769865.75,
+    -727455.0625
+  ],
+  "token_topk_mean_logprob": [
+    -3.665513753890991,
+    -6.027044773101807,
+    -7.038997173309326,
+    -7.919029235839844,
+    -6.822842597961426
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 189,
+  "read_token_ids": [
+    9163,
+    2312
+  ]
+}

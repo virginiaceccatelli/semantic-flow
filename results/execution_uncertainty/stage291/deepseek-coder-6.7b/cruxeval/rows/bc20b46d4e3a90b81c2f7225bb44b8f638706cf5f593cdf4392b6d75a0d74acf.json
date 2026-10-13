@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_271",
+  "program_id": "sample_271",
+  "code": "def f(text, c):\n    ls = list(text)\n    if c not in text:\n        raise ValueError('Text has no {c}')\n    ls.pop(text.rindex(c))\n    return ''.join(ls)",
+  "call": "f('uufhl', 'l')",
+  "expected": "'uufh'",
+  "dataset": "cruxeval",
+  "source_group": "a3020cd219a58cdb0c92291be9d156718e9be5d4947dc26abc183b917f60f833",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, c):\n    ls = list(text)\n    if c not in text:\n        raise ValueError('Text has no {c}')\n    ls.pop(text.rindex(c))\n    return ''.join(ls)\n\nassert f('uufhl', 'l') ==",
+  "n_prompt_tokens": 225,
+  "raw_generation": " 'uufh'\n",
+  "answer": "'uufh'",
+  "generated_token_ids": [
+    651,
+    84,
+    3818,
+    71,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'uufh'",
+  "token_logprob": [
+    -0.0040551344864070415,
+    -0.47917091846466064,
+    -0.007703951094299555,
+    -0.0048742517828941345,
+    -0.008769689127802849,
+    -0.13127489387989044
+  ],
+  "token_entropy": [
+    0.033113911747932434,
+    0.8650115132331848,
+    0.05178245157003403,
+    0.03594854101538658,
+    0.056404173374176025,
+    0.40060707926750183
+  ],
+  "token_logprob_sum": [
+    -848172.875,
+    -766466.5625,
+    -873861.0,
+    -928022.875,
+    -830026.625,
+    -784620.625
+  ],
+  "token_topk_mean_logprob": [
+    -10.03530502319336,
+    -7.860420227050781,
+    -10.40770435333252,
+    -10.3048734664917,
+    -9.977519989013672,
+    -9.006275177001953
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 211,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case_id": "204:1",
+  "program_id": "204",
+  "code": "def count(s,c) : \r\n    res = 0 \r\n    for i in range(len(s)) : \r\n        if (s[i] == c): \r\n            res = res + 1\r\n    return res",
+  "call": "count(\"ababca\",\"a\")",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "8663a11e43d4e67e58b671a74424767c06521ec6584c4e5e22390ac84774e125",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count(s,c) : \r\n    res = 0 \r\n    for i in range(len(s)) : \r\n        if (s[i] == c): \r\n            res = res + 1\r\n    return res\n\nassert count(\"ababca\",\"a\") ==",
+  "n_prompt_tokens": 222,
+  "raw_generation": "  4\n",
+  "answer": "4",
+  "generated_token_ids": [
+    243,
+    19,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "4",
+  "token_logprob": [
+    -0.8116936087608337,
+    -0.6051589846611023,
+    -0.5105994343757629
+  ],
+  "token_entropy": [
+    2.019697427749634,
+    0.8303773999214172,
+    0.9883263111114502
+  ],
+  "token_logprob_sum": [
+    -682259.5625,
+    -789726.125,
+    -740113.25
+  ],
+  "token_topk_mean_logprob": [
+    -4.480443477630615,
+    -8.214533805847168,
+    -6.5980987548828125
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 209,
+  "read_token_ids": [
+    593,
+    2312
+  ]
+}

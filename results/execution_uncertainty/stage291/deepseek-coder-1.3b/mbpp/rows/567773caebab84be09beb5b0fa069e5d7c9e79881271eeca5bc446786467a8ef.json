@@ -1,0 +1,63 @@
+{
+  "case_id": "410:1",
+  "program_id": "410",
+  "code": "def min_val(listval):\r\n     min_val = min(i for i in listval if isinstance(i, int))\r\n     return min_val",
+  "call": "min_val(['Python', 15, 20, 25])",
+  "expected": "15",
+  "dataset": "mbpp",
+  "source_group": "c975dbea3c35c18458c1f4963fadc7d5da922bb64541568b46cb8ea78828b3a7",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef min_val(listval):\r\n     min_val = min(i for i in listval if isinstance(i, int))\r\n     return min_val\n\nassert min_val(['Python', 15, 20, 25]) ==",
+  "n_prompt_tokens": 214,
+  "raw_generation": " -15\n",
+  "answer": "-15",
+  "generated_token_ids": [
+    567,
+    16,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-15",
+  "token_logprob": [
+    -0.6409221291542053,
+    -0.9414055943489075,
+    -0.8907119035720825,
+    -0.3189552426338196
+  ],
+  "token_entropy": [
+    1.8475947380065918,
+    1.750392198562622,
+    1.6665877103805542,
+    0.8816194534301758
+  ],
+  "token_logprob_sum": [
+    -697820.125,
+    -722687.75,
+    -741024.625,
+    -734575.75
+  ],
+  "token_topk_mean_logprob": [
+    -4.616465091705322,
+    -5.077147960662842,
+    -4.7875871658325195,
+    -6.747081279754639
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 191,
+  "read_token_ids": [
+    1284,
+    2312
+  ]
+}

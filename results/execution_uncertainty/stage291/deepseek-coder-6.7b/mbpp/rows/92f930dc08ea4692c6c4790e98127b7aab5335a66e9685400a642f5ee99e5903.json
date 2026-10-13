@@ -1,0 +1,68 @@
+{
+  "case_id": "133:2",
+  "program_id": "133",
+  "code": "def sum_negativenum(nums):\r\n  sum_negativenum = list(filter(lambda nums:nums<0,nums))\r\n  return sum(sum_negativenum)",
+  "call": "sum_negativenum([19, -65, 57, 39, 152,-639, 121, 44, 90, -190])",
+  "expected": "-894",
+  "dataset": "mbpp",
+  "source_group": "47bdad82f0984faa5241402ac55c362043a642e210c9630786fc3c5b5a3af1e8",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_negativenum(nums):\r\n  sum_negativenum = list(filter(lambda nums:nums<0,nums))\r\n  return sum(sum_negativenum)\n\nassert sum_negativenum([19, -65, 57, 39, 152,-639, 121, 44, 90, -190]) ==",
+  "n_prompt_tokens": 257,
+  "raw_generation": " -206\n",
+  "answer": "-206",
+  "generated_token_ids": [
+    567,
+    17,
+    15,
+    21,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-206",
+  "token_logprob": [
+    -0.03295659273862839,
+    -0.9519509077072144,
+    -1.2313436269760132,
+    -0.37391138076782227,
+    -0.5787664651870728
+  ],
+  "token_entropy": [
+    0.22117802500724792,
+    1.7984272241592407,
+    1.9208825826644897,
+    1.2371184825897217,
+    1.1153595447540283
+  ],
+  "token_logprob_sum": [
+    -709692.625,
+    -763523.125,
+    -686398.625,
+    -785296.875,
+    -720804.625
+  ],
+  "token_topk_mean_logprob": [
+    -7.095456123352051,
+    -7.311326503753662,
+    -6.175093173980713,
+    -6.323910713195801,
+    -5.625641822814941
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 203,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

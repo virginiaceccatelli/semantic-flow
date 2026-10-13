@@ -1,0 +1,63 @@
+{
+  "case_id": "398:0",
+  "program_id": "398",
+  "code": "def sum_of_digits(nums):\r\n    return sum(int(el) for n in nums for el in str(n) if el.isdigit())",
+  "call": "sum_of_digits([10,2,56])",
+  "expected": "14",
+  "dataset": "mbpp",
+  "source_group": "94768f411cbd3d2a817982c7943f23384844990673a7a2ac6d8bea6d4528b989",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_of_digits(nums):\r\n    return sum(int(el) for n in nums for el in str(n) if el.isdigit())\n\nassert sum_of_digits([10,2,56]) ==",
+  "n_prompt_tokens": 213,
+  "raw_generation": "  17\n",
+  "answer": "17",
+  "generated_token_ids": [
+    243,
+    16,
+    22,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "17",
+  "token_logprob": [
+    -1.2459321022033691,
+    -0.8299968838691711,
+    -0.823753297328949,
+    -0.4408433735370636
+  ],
+  "token_entropy": [
+    2.0094635486602783,
+    1.539090633392334,
+    1.9037028551101685,
+    1.0872668027877808
+  ],
+  "token_logprob_sum": [
+    -702598.0625,
+    -795005.4375,
+    -783094.625,
+    -753786.625
+  ],
+  "token_topk_mean_logprob": [
+    -4.527182102203369,
+    -6.7174973487854,
+    -4.692503452301025,
+    -6.334593296051025
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 193,
+  "read_token_ids": [
+    4683,
+    2312
+  ]
+}

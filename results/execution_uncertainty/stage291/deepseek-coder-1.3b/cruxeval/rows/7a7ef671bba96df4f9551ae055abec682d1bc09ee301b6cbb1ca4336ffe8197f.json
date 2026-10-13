@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_435",
+  "program_id": "sample_435",
+  "code": "def f(numbers, num, val):\n    while len(numbers) < num:\n        numbers.insert(len(numbers) // 2, val)\n    for _ in range(len(numbers) // (num - 1) - 4):\n        numbers.insert(len(numbers) // 2, val)\n    return ' '.join(numbers)",
+  "call": "f([], 0, 1)",
+  "expected": "''",
+  "dataset": "cruxeval",
+  "source_group": "caddabaf40056c86d1a33d47960ca923a5a18f3ba943e2eb4c373567944177d5",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(numbers, num, val):\n    while len(numbers) < num:\n        numbers.insert(len(numbers) // 2, val)\n    for _ in range(len(numbers) // (num - 1) - 4):\n        numbers.insert(len(numbers) // 2, val)\n    return ' '.join(numbers)\n\nassert f([], 0, 1) ==",
+  "n_prompt_tokens": 255,
+  "raw_generation": " ''\n",
+  "answer": "''",
+  "generated_token_ids": [
+    15355,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "''",
+  "token_logprob": [
+    -0.3676374554634094,
+    -0.022569924592971802
+  ],
+  "token_entropy": [
+    0.8800094127655029,
+    0.1315259337425232
+  ],
+  "token_logprob_sum": [
+    -771492.375,
+    -834577.1875
+  ],
+  "token_topk_mean_logprob": [
+    -6.230137825012207,
+    -8.93506908416748
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 241,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

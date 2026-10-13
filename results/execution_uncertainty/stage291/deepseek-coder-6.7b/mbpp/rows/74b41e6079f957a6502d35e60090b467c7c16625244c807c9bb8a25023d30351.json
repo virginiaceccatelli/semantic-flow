@@ -1,0 +1,78 @@
+{
+  "case_id": "374:0",
+  "program_id": "374",
+  "code": "def permute_string(str):\r\n    if len(str) == 0:\r\n        return ['']\r\n    prev_list = permute_string(str[1:len(str)])\r\n    next_list = []\r\n    for i in range(0,len(prev_list)):\r\n        for j in range(0,len(str)):\r\n            new_str = prev_list[i][0:j]+str[0]+prev_list[i][j:len(str)-1]\r\n            if new_str not in next_list:\r\n                next_list.append(new_str)\r\n    return next_list",
+  "call": "permute_string('ab')",
+  "expected": "['ab', 'ba']",
+  "dataset": "mbpp",
+  "source_group": "6bc24b57c644d87c7b819ba13685259367b4e67518b52e5b5d88150edd428bf1",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef permute_string(str):\r\n    if len(str) == 0:\r\n        return ['']\r\n    prev_list = permute_string(str[1:len(str)])\r\n    next_list = []\r\n    for i in range(0,len(prev_list)):\r\n        for j in range(0,len(str)):\r\n            new_str = prev_list[i][0:j]+str[0]+prev_list[i][j:len(str)-1]\r\n            if new_str not in next_list:\r\n                next_list.append(new_str)\r\n    return next_list\n\nassert permute_string('ab') ==",
+  "n_prompt_tokens": 321,
+  "raw_generation": " ['ab', 'ba']\n",
+  "answer": "['ab', 'ba']",
+  "generated_token_ids": [
+    12036,
+    356,
+    1183,
+    651,
+    3205,
+    3676,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "['ab', 'ba']",
+  "token_logprob": [
+    -0.0667499527335167,
+    -0.042614325881004333,
+    -0.129120334982872,
+    -0.0008742563077248633,
+    -0.0027643346693366766,
+    -0.013147332705557346,
+    -0.2697954773902893
+  ],
+  "token_entropy": [
+    0.38893476128578186,
+    0.1954331398010254,
+    0.38319748640060425,
+    0.008846008218824863,
+    0.02417374774813652,
+    0.08472226560115814,
+    0.7390480041503906
+  ],
+  "token_logprob_sum": [
+    -741175.0,
+    -862947.375,
+    -819422.125,
+    -836924.8125,
+    -902057.625,
+    -871073.1875,
+    -750811.75
+  ],
+  "token_topk_mean_logprob": [
+    -6.426124572753906,
+    -9.180113792419434,
+    -10.138495445251465,
+    -10.975874900817871,
+    -10.102765083312988,
+    -10.550646781921387,
+    -7.7072954177856445
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 309,
+  "read_token_ids": [
+    2493,
+    2312
+  ]
+}

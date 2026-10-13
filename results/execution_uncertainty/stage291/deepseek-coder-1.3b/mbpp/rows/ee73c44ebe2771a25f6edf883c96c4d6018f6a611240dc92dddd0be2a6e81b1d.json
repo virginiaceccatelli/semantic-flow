@@ -1,0 +1,53 @@
+{
+  "case_id": "416:1",
+  "program_id": "416",
+  "code": "MAX = 1000000\r\ndef breakSum(n): \r\n\tdp = [0]*(n+1) \r\n\tdp[0] = 0\r\n\tdp[1] = 1\r\n\tfor i in range(2, n+1): \r\n\t\tdp[i] = max(dp[int(i/2)] + dp[int(i/3)] + dp[int(i/4)], i); \r\n\treturn dp[n]",
+  "call": "breakSum(24)",
+  "expected": "27",
+  "dataset": "mbpp",
+  "source_group": "0bec90f9197316fba720f31f436ac32544002734283863882280c2f168b798c1",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nMAX = 1000000\r\ndef breakSum(n): \r\n\tdp = [0]*(n+1) \r\n\tdp[0] = 0\r\n\tdp[1] = 1\r\n\tfor i in range(2, n+1): \r\n\t\tdp[i] = max(dp[int(i/2)] + dp[int(i/3)] + dp[int(i/4)], i); \r\n\treturn dp[n]\n\nassert breakSum(24) ==",
+  "n_prompt_tokens": 279,
+  "raw_generation": " MAX\n",
+  "answer": "MAX",
+  "generated_token_ids": [
+    21234,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "invalid",
+  "answer_form": null,
+  "invalid_reason": "non_constant: not a constant expression: Name",
+  "parsed_answer": null,
+  "token_logprob": [
+    -0.5738000273704529,
+    -0.5701488256454468
+  ],
+  "token_entropy": [
+    2.049842119216919,
+    1.3902723789215088
+  ],
+  "token_logprob_sum": [
+    -690606.1875,
+    -732398.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.011300086975098,
+    -5.251399517059326
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 268,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case_id": "195:0",
+  "program_id": "195",
+  "code": "def first(arr,x,n): \r\n    low = 0\r\n    high = n - 1\r\n    res = -1  \r\n    while (low <= high):\r\n        mid = (low + high) // 2 \r\n        if arr[mid] > x:\r\n            high = mid - 1\r\n        elif arr[mid] < x:\r\n            low = mid + 1\r\n        else:\r\n            res = mid\r\n            high = mid - 1\r\n    return res",
+  "call": "first([1,2,3,4,5,6,6],6,6)",
+  "expected": "5",
+  "dataset": "mbpp",
+  "source_group": "4f307f9c179965bdc866bfdeba73d458780be401e048d8482196284b6ab0a536",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef first(arr,x,n): \r\n    low = 0\r\n    high = n - 1\r\n    res = -1  \r\n    while (low <= high):\r\n        mid = (low + high) // 2 \r\n        if arr[mid] > x:\r\n            high = mid - 1\r\n        elif arr[mid] < x:\r\n            low = mid + 1\r\n        else:\r\n            res = mid\r\n            high = mid - 1\r\n    return res\n\nassert first([1,2,3,4,5,6,6],6,6) ==",
+  "n_prompt_tokens": 298,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.5945332050323486,
+    -0.00403317017480731,
+    -0.4142549932003021
+  ],
+  "token_entropy": [
+    1.8240293264389038,
+    0.03309580311179161,
+    1.0438456535339355
+  ],
+  "token_logprob_sum": [
+    -681091.25,
+    -793591.8125,
+    -730200.25
+  ],
+  "token_topk_mean_logprob": [
+    -4.4851579666137695,
+    -9.891532897949219,
+    -6.445504665374756
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 273,
+  "read_token_ids": [
+    593,
+    2312
+  ]
+}

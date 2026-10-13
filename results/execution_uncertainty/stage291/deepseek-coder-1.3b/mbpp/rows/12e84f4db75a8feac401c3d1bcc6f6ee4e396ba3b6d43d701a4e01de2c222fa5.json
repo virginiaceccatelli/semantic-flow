@@ -1,0 +1,83 @@
+{
+  "case_id": "240:2",
+  "program_id": "240",
+  "code": "def replace_list(list1,list2):\r\n list1[-1:] = list2\r\n replace_list=list1\r\n return replace_list",
+  "call": "replace_list([\"red\",\"blue\",\"green\"],[\"yellow\"])",
+  "expected": "['red', 'blue', 'yellow']",
+  "dataset": "mbpp",
+  "source_group": "2276518b020c5c226c6242f2682cd6ec534ba17c812ea0a0bf888a9e5a56e55c",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef replace_list(list1,list2):\r\n list1[-1:] = list2\r\n replace_list=list1\r\n return replace_list\n\nassert replace_list([\"red\",\"blue\",\"green\"],[\"yellow\"]) ==",
+  "n_prompt_tokens": 208,
+  "raw_generation": " [\"red\",\"blue\",\"yellow\"]\n",
+  "answer": "[\"red\",\"blue\",\"yellow\"]",
+  "generated_token_ids": [
+    17625,
+    504,
+    8816,
+    10948,
+    8816,
+    27790,
+    7330,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "['red', 'blue', 'yellow']",
+  "token_logprob": [
+    -0.23103214800357819,
+    -0.43688058853149414,
+    -0.1823669970035553,
+    -0.24913214147090912,
+    -0.01682824268937111,
+    -0.26064687967300415,
+    -0.04239828139543533,
+    -0.37767207622528076
+  ],
+  "token_entropy": [
+    0.8064960241317749,
+    0.8304218649864197,
+    0.4687587022781372,
+    0.6257719993591309,
+    0.09575039148330688,
+    0.5961182117462158,
+    0.21800145506858826,
+    0.9275740385055542
+  ],
+  "token_logprob_sum": [
+    -688067.6875,
+    -761574.375,
+    -759286.5,
+    -784172.375,
+    -766520.125,
+    -770575.625,
+    -755725.5,
+    -720402.0625
+  ],
+  "token_topk_mean_logprob": [
+    -6.237281799316406,
+    -8.061881065368652,
+    -9.583148002624512,
+    -8.330382347106934,
+    -9.853548049926758,
+    -8.19814682006836,
+    -8.492398262023926,
+    -7.313609600067139
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 188,
+  "read_token_ids": [
+    2493,
+    2312
+  ]
+}

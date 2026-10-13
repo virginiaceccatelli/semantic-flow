@@ -1,0 +1,83 @@
+{
+  "case_id": "419:1",
+  "program_id": "419",
+  "code": "def round_and_sum(list1):\r\n  lenght=len(list1)\r\n  round_and_sum=sum(list(map(round,list1))* lenght)\r\n  return round_and_sum",
+  "call": "round_and_sum([5,2,9,24.3,29])",
+  "expected": "345",
+  "dataset": "mbpp",
+  "source_group": "7b84f196795f31eddf3fb09c81139559440e1354d9ef829af9507e7729cdaceb",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef round_and_sum(list1):\r\n  lenght=len(list1)\r\n  round_and_sum=sum(list(map(round,list1))* lenght)\r\n  return round_and_sum\n\nassert round_and_sum([5,2,9,24.3,29]) ==",
+  "n_prompt_tokens": 234,
+  "raw_generation": " round(10.3)\n",
+  "answer": "round(10.3)",
+  "generated_token_ids": [
+    4069,
+    7,
+    16,
+    15,
+    13,
+    18,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "invalid",
+  "answer_form": null,
+  "invalid_reason": "non_constant: not a constant expression: Call",
+  "parsed_answer": null,
+  "token_logprob": [
+    -1.0785770416259766,
+    -0.16028624773025513,
+    -1.443660020828247,
+    -2.253290891647339,
+    -1.9015052318572998,
+    -1.9476836919784546,
+    -1.1097818613052368,
+    -0.7563501596450806
+  ],
+  "token_entropy": [
+    2.543368101119995,
+    0.5787733197212219,
+    2.075200319290161,
+    2.3743343353271484,
+    2.6540439128875732,
+    2.2647335529327393,
+    2.1726584434509277,
+    1.6668165922164917
+  ],
+  "token_logprob_sum": [
+    -645684.3125,
+    -765640.0625,
+    -728559.9375,
+    -716094.9375,
+    -706584.6875,
+    -724498.125,
+    -703523.6875,
+    -725049.5625
+  ],
+  "token_topk_mean_logprob": [
+    -3.678577184677124,
+    -7.776301860809326,
+    -4.956160068511963,
+    -5.02829122543335,
+    -3.7890052795410156,
+    -7.060184001922607,
+    -3.9097816944122314,
+    -5.317287445068359
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 209,
+  "read_token_ids": [
+    1828,
+    2312
+  ]
+}

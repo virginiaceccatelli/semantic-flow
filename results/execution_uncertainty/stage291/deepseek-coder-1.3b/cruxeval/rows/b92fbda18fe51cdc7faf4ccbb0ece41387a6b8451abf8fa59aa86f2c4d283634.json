@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_482",
+  "program_id": "sample_482",
+  "code": "def f(text):\n    return text.replace('\\\\\"', '\"')",
+  "call": "f('Because it intrigues them')",
+  "expected": "'Because it intrigues them'",
+  "dataset": "cruxeval",
+  "source_group": "ce1965ad4dc0a2235e402a76d2827f8c4ea8b043ea30e85af10ac82f2982c2e8",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    return text.replace('\\\\\"', '\"')\n\nassert f('Because it intrigues them') ==",
+  "n_prompt_tokens": 183,
+  "raw_generation": " 'Because it intrigues them'\n",
+  "answer": "'Because it intrigues them'",
+  "generated_token_ids": [
+    651,
+    13811,
+    359,
+    8927,
+    18788,
+    763,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Because it intrigues them'",
+  "token_logprob": [
+    -0.4293610751628876,
+    -0.016637858003377914,
+    -0.46214938163757324,
+    -0.4562774896621704,
+    -0.658443808555603,
+    -0.13040074706077576,
+    -0.03944668918848038,
+    -0.12252414971590042
+  ],
+  "token_entropy": [
+    1.2168807983398438,
+    0.1516505628824234,
+    1.1347101926803589,
+    1.2815641164779663,
+    1.1850608587265015,
+    0.7256869673728943,
+    0.23670266568660736,
+    0.3749670088291168
+  ],
+  "token_logprob_sum": [
+    -772186.625,
+    -721199.875,
+    -692085.3125,
+    -625383.375,
+    -634364.625,
+    -662642.625,
+    -697948.3125,
+    -808654.3125
+  ],
+  "token_topk_mean_logprob": [
+    -5.879361152648926,
+    -7.610388278961182,
+    -6.037149429321289,
+    -5.693777561187744,
+    -5.745944499969482,
+    -5.711650848388672,
+    -7.169134616851807,
+    -9.541274070739746
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 170,
+  "read_token_ids": [
+    2462,
+    2312
+  ]
+}

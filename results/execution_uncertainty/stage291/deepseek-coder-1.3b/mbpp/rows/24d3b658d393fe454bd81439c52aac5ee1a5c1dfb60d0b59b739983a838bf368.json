@@ -1,0 +1,53 @@
+{
+  "case_id": "19:1",
+  "program_id": "19",
+  "code": "def test_duplicate(arraynums):\r\n    nums_set = set(arraynums)    \r\n    return len(arraynums) != len(nums_set)",
+  "call": "test_duplicate(([1,2,3,4, 4]))",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "1c9b9960519b9aa356d6e6bddec7dacffd38d53981239965bbeab5f367aa796d",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef test_duplicate(arraynums):\r\n    nums_set = set(arraynums)    \r\n    return len(arraynums) != len(nums_set)\n\nassert test_duplicate(([1,2,3,4, 4])) ==",
+  "n_prompt_tokens": 219,
+  "raw_generation": " False\n",
+  "answer": "False",
+  "generated_token_ids": [
+    14729,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "False",
+  "token_logprob": [
+    -0.585875391960144,
+    -0.3154059052467346
+  ],
+  "token_entropy": [
+    0.764582633972168,
+    0.9100639820098877
+  ],
+  "token_logprob_sum": [
+    -737751.375,
+    -733201.5
+  ],
+  "token_topk_mean_logprob": [
+    -7.510875225067139,
+    -6.652905464172363
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 197,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

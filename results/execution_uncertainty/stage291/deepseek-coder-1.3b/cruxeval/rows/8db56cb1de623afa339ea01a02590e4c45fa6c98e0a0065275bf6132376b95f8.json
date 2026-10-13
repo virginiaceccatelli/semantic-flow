@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_353",
+  "program_id": "sample_353",
+  "code": "def f(x):\n    if x == []:\n        return -1\n    else:\n        cache = {}\n        for item in x:\n            if item in cache:\n                cache[item] += 1\n            else:\n                cache[item] = 1\n        return max(cache.values())",
+  "call": "f([1, 0, 2, 2, 0, 0, 0, 1])",
+  "expected": "4",
+  "dataset": "cruxeval",
+  "source_group": "dd9f7070346e72be5494b1d7aabc9eafac20d1e81c40d3f536aaddd30aea0977",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(x):\n    if x == []:\n        return -1\n    else:\n        cache = {}\n        for item in x:\n            if item in cache:\n                cache[item] += 1\n            else:\n                cache[item] = 1\n        return max(cache.values())\n\nassert f([1, 0, 2, 2, 0, 0, 0, 1]) ==",
+  "n_prompt_tokens": 252,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.49113696813583374,
+    -0.003446711925789714,
+    -0.23835736513137817
+  ],
+  "token_entropy": [
+    1.5652762651443481,
+    0.02913350984454155,
+    0.5949267148971558
+  ],
+  "token_logprob_sum": [
+    -706380.0,
+    -793051.6875,
+    -786616.25
+  ],
+  "token_topk_mean_logprob": [
+    -4.716136932373047,
+    -9.778447151184082,
+    -7.859841823577881
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 222,
+  "read_token_ids": [
+    4683,
+    2312
+  ]
+}

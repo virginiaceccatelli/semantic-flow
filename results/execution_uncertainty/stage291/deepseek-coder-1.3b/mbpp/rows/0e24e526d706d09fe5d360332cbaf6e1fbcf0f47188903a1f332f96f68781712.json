@@ -1,0 +1,58 @@
+{
+  "case_id": "36:2",
+  "program_id": "36",
+  "code": "def find_Nth_Digit(p,q,N) :  \r\n    while (N > 0) : \r\n        N -= 1;  \r\n        p *= 10;  \r\n        res = p // q;  \r\n        p %= q;  \r\n    return res;",
+  "call": "find_Nth_Digit(5,6,5)",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "c4b3a43dbe0af828a82a13932531cb2fae66594edf388ea0d84d110f1083f9ba",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_Nth_Digit(p,q,N) :  \r\n    while (N > 0) : \r\n        N -= 1;  \r\n        p *= 10;  \r\n        res = p // q;  \r\n        p %= q;  \r\n    return res;\n\nassert find_Nth_Digit(5,6,5) ==",
+  "n_prompt_tokens": 244,
+  "raw_generation": "  0\n",
+  "answer": "0",
+  "generated_token_ids": [
+    243,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "0",
+  "token_logprob": [
+    -1.3348352909088135,
+    -1.4251962900161743,
+    -0.34193485975265503
+  ],
+  "token_entropy": [
+    2.874558687210083,
+    1.9504297971725464,
+    1.112311601638794
+  ],
+  "token_logprob_sum": [
+    -642291.875,
+    -746559.9375,
+    -714761.375
+  ],
+  "token_topk_mean_logprob": [
+    -3.51921010017395,
+    -6.287696838378906,
+    -5.698184967041016
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 225,
+  "read_token_ids": [
+    26,
+    2312
+  ]
+}

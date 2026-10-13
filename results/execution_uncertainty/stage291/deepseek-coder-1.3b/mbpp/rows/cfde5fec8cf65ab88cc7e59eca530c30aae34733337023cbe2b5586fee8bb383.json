@@ -1,0 +1,73 @@
+{
+  "case_id": "202:0",
+  "program_id": "202",
+  "code": "def remove_even(str1):\r\n str2 = ''\r\n for i in range(1, len(str1) + 1):\r\n    if(i % 2 != 0):\r\n        str2 = str2 + str1[i - 1]\r\n return str2",
+  "call": "remove_even(\"python\")",
+  "expected": "'pto'",
+  "dataset": "mbpp",
+  "source_group": "73800dd4cfb74183d14e60cfdf01ecc6b68695106b719696aafc077f5a6414c2",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef remove_even(str1):\r\n str2 = ''\r\n for i in range(1, len(str1) + 1):\r\n    if(i % 2 != 0):\r\n        str2 = str2 + str1[i - 1]\r\n return str2\n\nassert remove_even(\"python\") ==",
+  "n_prompt_tokens": 230,
+  "raw_generation": " \"ythn\"\n",
+  "answer": "\"ythn\"",
+  "generated_token_ids": [
+    440,
+    88,
+    392,
+    77,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'ythn'",
+  "token_logprob": [
+    -0.15243276953697205,
+    -1.072944164276123,
+    -1.3042799234390259,
+    -1.063014030456543,
+    -0.007901838049292564,
+    -0.27292096614837646
+  ],
+  "token_entropy": [
+    0.5422075986862183,
+    2.5892364978790283,
+    2.617518663406372,
+    1.9303131103515625,
+    0.06762095540761948,
+    0.7507785558700562
+  ],
+  "token_logprob_sum": [
+    -745849.25,
+    -655915.625,
+    -698939.6875,
+    -743534.375,
+    -734548.375,
+    -749166.0
+  ],
+  "token_topk_mean_logprob": [
+    -7.328213691711426,
+    -4.1135687828063965,
+    -3.943342685699463,
+    -4.6591081619262695,
+    -8.564152717590332,
+    -7.696089267730713
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 219,
+  "read_token_ids": [
+    17,
+    2312
+  ]
+}

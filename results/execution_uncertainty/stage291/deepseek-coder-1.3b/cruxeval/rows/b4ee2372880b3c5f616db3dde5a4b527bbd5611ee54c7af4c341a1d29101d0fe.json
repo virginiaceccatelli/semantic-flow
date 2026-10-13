@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_69",
+  "program_id": "sample_69",
+  "code": "def f(student_marks, name):\n    if name in student_marks:\n        value = student_marks.pop(name)\n        return value\n    return 'Name unknown'",
+  "call": "f({'882afmfp': 56}, '6f53p')",
+  "expected": "'Name unknown'",
+  "dataset": "cruxeval",
+  "source_group": "005ea8bde745fea937753677ef6ad4df40aa9409be3b72d50260f95c3249f871",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(student_marks, name):\n    if name in student_marks:\n        value = student_marks.pop(name)\n        return value\n    return 'Name unknown'\n\nassert f({'882afmfp': 56}, '6f53p') ==",
+  "n_prompt_tokens": 221,
+  "raw_generation": " 'Name unknown'\n",
+  "answer": "'Name unknown'",
+  "generated_token_ids": [
+    651,
+    1737,
+    9257,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Name unknown'",
+  "token_logprob": [
+    -0.05283074453473091,
+    -0.3042418658733368,
+    -0.001576134585775435,
+    -0.0006599632324650884,
+    -0.18298755586147308
+  ],
+  "token_entropy": [
+    0.3264901638031006,
+    0.9007596969604492,
+    0.013251260854303837,
+    0.0068496232852339745,
+    0.4719092547893524
+  ],
+  "token_logprob_sum": [
+    -791198.875,
+    -724282.75,
+    -949524.5625,
+    -822118.875,
+    -789127.125
+  ],
+  "token_topk_mean_logprob": [
+    -6.540330410003662,
+    -6.652288913726807,
+    -11.457826614379883,
+    -11.088160514831543,
+    -9.726737022399902
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 195,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "case_id": "384:1",
+  "program_id": "384",
+  "code": "def frequency_Of_Smallest(n,arr): \r\n    mn = arr[0] \r\n    freq = 1\r\n    for i in range(1,n): \r\n        if (arr[i] < mn): \r\n            mn = arr[i] \r\n            freq = 1\r\n        elif (arr[i] == mn): \r\n            freq += 1\r\n    return freq",
+  "call": "frequency_Of_Smallest(7,[3,1,2,5,6,2,3])",
+  "expected": "1",
+  "dataset": "mbpp",
+  "source_group": "9d9a91f1da6a305821c43b0305074c4e9d72b6b1da95d6022b913f5774e8ccf0",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef frequency_Of_Smallest(n,arr): \r\n    mn = arr[0] \r\n    freq = 1\r\n    for i in range(1,n): \r\n        if (arr[i] < mn): \r\n            mn = arr[i] \r\n            freq = 1\r\n        elif (arr[i] == mn): \r\n            freq += 1\r\n    return freq\n\nassert frequency_Of_Smallest(7,[3,1,2,5,6,2,3]) ==",
+  "n_prompt_tokens": 284,
+  "raw_generation": "2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -0.9670732617378235,
+    -0.6556689143180847
+  ],
+  "token_entropy": [
+    1.8556894063949585,
+    1.009840488433838
+  ],
+  "token_logprob_sum": [
+    -691136.4375,
+    -736911.4375
+  ],
+  "token_topk_mean_logprob": [
+    -4.7420735359191895,
+    -6.78066873550415
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 256,
+  "read_token_ids": [
+    80,
+    2312
+  ]
+}

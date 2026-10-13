@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_283",
+  "program_id": "sample_283",
+  "code": "def f(dictionary, key):\n    del dictionary[key]\n    if min(dictionary) == key:\n        key = list(dictionary)[0]\n    return key",
+  "call": "f({'Iron Man': 4, 'Captain America': 3, 'Black Panther': 0,'Thor': 1, 'Ant-Man': 6}, 'Iron Man')",
+  "expected": "'Iron Man'",
+  "dataset": "cruxeval",
+  "source_group": "331ded97bd19d5f390fa47cbe353704e8154b02350687cafa0da168fcbd3dcf2",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(dictionary, key):\n    del dictionary[key]\n    if min(dictionary) == key:\n        key = list(dictionary)[0]\n    return key\n\nassert f({'Iron Man': 4, 'Captain America': 3, 'Black Panther': 0,'Thor': 1, 'Ant-Man': 6}, 'Iron Man') ==",
+  "n_prompt_tokens": 244,
+  "raw_generation": " 'Captain America'\n",
+  "answer": "'Captain America'",
+  "generated_token_ids": [
+    651,
+    11715,
+    1424,
+    6092,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Captain America'",
+  "token_logprob": [
+    -0.06518064439296722,
+    -0.9913090467453003,
+    -0.0011388728162273765,
+    -0.001456629834137857,
+    -0.010874651372432709,
+    -0.288103848695755
+  ],
+  "token_entropy": [
+    0.35880881547927856,
+    1.318921446800232,
+    0.011279800906777382,
+    0.014606541022658348,
+    0.06650042533874512,
+    0.6069110035896301
+  ],
+  "token_logprob_sum": [
+    -768988.125,
+    -750235.375,
+    -832633.8125,
+    -859768.25,
+    -782847.125,
+    -759956.0625
+  ],
+  "token_topk_mean_logprob": [
+    -6.765181064605713,
+    -7.413183689117432,
+    -10.841763496398926,
+    -10.010830879211426,
+    -9.61400032043457,
+    -8.666229248046875
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 194,
+  "read_token_ids": [
+    2119,
+    2312
+  ]
+}

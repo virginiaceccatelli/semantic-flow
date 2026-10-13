@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_86",
+  "program_id": "sample_86",
+  "code": "def f(instagram, imgur, wins):\n    photos = [instagram, imgur]\n    if instagram == imgur:\n        return wins\n    if wins == 1:\n        return photos.pop()\n    else:\n        photos.reverse()\n        return photos.pop()",
+  "call": "f(['sdfs', 'drcr', '2e'], ['sdfs', 'dr2c', 'QWERTY'], 0)",
+  "expected": "['sdfs', 'drcr', '2e']",
+  "dataset": "cruxeval",
+  "source_group": "a8810965cd4ed5425e1faaaae49cbdf1440d326a1230a11e91834906d6d738b5",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(instagram, imgur, wins):\n    photos = [instagram, imgur]\n    if instagram == imgur:\n        return wins\n    if wins == 1:\n        return photos.pop()\n    else:\n        photos.reverse()\n        return photos.pop()\n\nassert f(['sdfs', 'drcr', '2e'], ['sdfs', 'dr2c', 'QWERTY'], 0) ==",
+  "n_prompt_tokens": 259,
+  "raw_generation": " 'sdfs'\n",
+  "answer": "'sdfs'",
+  "generated_token_ids": [
+    651,
+    82,
+    3934,
+    82,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'sdfs'",
+  "token_logprob": [
+    -0.3158580958843231,
+    -0.8597924113273621,
+    -0.0018842339050024748,
+    -0.0009053422254510224,
+    -0.0025705411098897457,
+    -0.032150011509656906
+  ],
+  "token_entropy": [
+    0.8663912415504456,
+    1.5715584754943848,
+    0.01713738404214382,
+    0.009967571124434471,
+    0.02657345123589039,
+    0.1659885048866272
+  ],
+  "token_logprob_sum": [
+    -722973.625,
+    -656256.5,
+    -811175.875,
+    -751539.75,
+    -719714.625,
+    -810427.75
+  ],
+  "token_topk_mean_logprob": [
+    -6.05335807800293,
+    -5.972292423248291,
+    -10.426884651184082,
+    -10.56340503692627,
+    -9.203742027282715,
+    -8.888400077819824
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 220,
+  "read_token_ids": [
+    822,
+    2312
+  ]
+}

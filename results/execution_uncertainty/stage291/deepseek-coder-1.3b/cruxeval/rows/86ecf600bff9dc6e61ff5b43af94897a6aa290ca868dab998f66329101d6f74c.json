@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_715",
+  "program_id": "sample_715",
+  "code": "def f(text, char):\n    return text.count(char) % 2 != 0",
+  "call": "f('abababac', 'a')",
+  "expected": "False",
+  "dataset": "cruxeval",
+  "source_group": "92661b38a35bdf737128475864f4ddd48e65b18bd4ae709efb2856653ac01fcf",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, char):\n    return text.count(char) % 2 != 0\n\nassert f('abababac', 'a') ==",
+  "n_prompt_tokens": 190,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.3155505061149597,
+    -0.18334250152111053
+  ],
+  "token_entropy": [
+    0.6048783659934998,
+    0.4762963652610779
+  ],
+  "token_logprob_sum": [
+    -766598.3125,
+    -808230.0
+  ],
+  "token_topk_mean_logprob": [
+    -8.728050231933594,
+    -9.220843315124512
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 175,
+  "read_token_ids": [
+    15,
+    2312
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_17",
+  "program_id": "sample_17",
+  "code": "def f(text):\n    return text.find(\",\")",
+  "call": "f(\"There are, no, commas, in this text\")",
+  "expected": "9",
+  "dataset": "cruxeval",
+  "source_group": "094f616ee9f700ae6f25c1428150358145082d61483123fb589693ce6a08d456",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    return text.find(\",\")\n\nassert f(\"There are, no, commas, in this text\") ==",
+  "n_prompt_tokens": 186,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.14439690113067627,
+    -0.00417088670656085,
+    -0.09602541476488113
+  ],
+  "token_entropy": [
+    0.7519555687904358,
+    0.03442218899726868,
+    0.36478960514068604
+  ],
+  "token_logprob_sum": [
+    -745025.625,
+    -841486.25,
+    -794349.5625
+  ],
+  "token_topk_mean_logprob": [
+    -5.438147068023682,
+    -10.410420417785645,
+    -8.161650657653809
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 167,
+  "read_token_ids": [
+    2456,
+    2312
+  ]
+}

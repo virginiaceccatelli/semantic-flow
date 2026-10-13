@@ -1,0 +1,53 @@
+{
+  "case_id": "416:2",
+  "program_id": "416",
+  "code": "MAX = 1000000\r\ndef breakSum(n): \r\n\tdp = [0]*(n+1) \r\n\tdp[0] = 0\r\n\tdp[1] = 1\r\n\tfor i in range(2, n+1): \r\n\t\tdp[i] = max(dp[int(i/2)] + dp[int(i/3)] + dp[int(i/4)], i); \r\n\treturn dp[n]",
+  "call": "breakSum(23)",
+  "expected": "23",
+  "dataset": "mbpp",
+  "source_group": "0bec90f9197316fba720f31f436ac32544002734283863882280c2f168b798c1",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nMAX = 1000000\r\ndef breakSum(n): \r\n\tdp = [0]*(n+1) \r\n\tdp[0] = 0\r\n\tdp[1] = 1\r\n\tfor i in range(2, n+1): \r\n\t\tdp[i] = max(dp[int(i/2)] + dp[int(i/3)] + dp[int(i/4)], i); \r\n\treturn dp[n]\n\nassert breakSum(23) ==",
+  "n_prompt_tokens": 279,
+  "raw_generation": " MAX\n",
+  "answer": "MAX",
+  "generated_token_ids": [
+    21234,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "invalid",
+  "answer_form": null,
+  "invalid_reason": "non_constant: not a constant expression: Name",
+  "parsed_answer": null,
+  "token_logprob": [
+    -0.8421472311019897,
+    -0.5780899524688721
+  ],
+  "token_entropy": [
+    2.40163254737854,
+    1.4158623218536377
+  ],
+  "token_logprob_sum": [
+    -677193.375,
+    -730478.25
+  ],
+  "token_topk_mean_logprob": [
+    -3.8796470165252686,
+    -5.221839904785156
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 268,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

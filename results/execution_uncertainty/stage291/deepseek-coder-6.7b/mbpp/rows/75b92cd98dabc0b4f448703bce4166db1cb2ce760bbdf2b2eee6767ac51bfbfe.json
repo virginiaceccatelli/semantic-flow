@@ -1,0 +1,53 @@
+{
+  "case_id": "203:0",
+  "program_id": "203",
+  "code": "def hamming_Distance(n1,n2) : \r\n    x = n1 ^ n2  \r\n    setBits = 0\r\n    while (x > 0) : \r\n        setBits += x & 1\r\n        x >>= 1\r\n    return setBits",
+  "call": "hamming_Distance(4,8)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "0cdf697bab4289d952cf8913742b7955e08488dbf7435d47324d6758b0f56395",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef hamming_Distance(n1,n2) : \r\n    x = n1 ^ n2  \r\n    setBits = 0\r\n    while (x > 0) : \r\n        setBits += x & 1\r\n        x >>= 1\r\n    return setBits\n\nassert hamming_Distance(4,8) ==",
+  "n_prompt_tokens": 236,
+  "raw_generation": "2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.4305336475372314,
+    -0.6948789954185486
+  ],
+  "token_entropy": [
+    2.509669303894043,
+    0.9929829835891724
+  ],
+  "token_logprob_sum": [
+    -645742.0,
+    -727417.0625
+  ],
+  "token_topk_mean_logprob": [
+    -3.9117836952209473,
+    -6.48237943649292
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 222,
+  "read_token_ids": [
+    1043,
+    2312
+  ]
+}

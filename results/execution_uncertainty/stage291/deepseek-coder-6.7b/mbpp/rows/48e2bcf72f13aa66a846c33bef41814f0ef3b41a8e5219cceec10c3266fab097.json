@@ -1,0 +1,58 @@
+{
+  "case_id": "441:1",
+  "program_id": "441",
+  "code": "def surfacearea_cube(l):\r\n  surfacearea= 6*l*l\r\n  return surfacearea",
+  "call": "surfacearea_cube(3)",
+  "expected": "54",
+  "dataset": "mbpp",
+  "source_group": "16482c1ee427eab6fcb0ddfa233b278a613e6027ed446d4c8025f39aceded52b",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef surfacearea_cube(l):\r\n  surfacearea= 6*l*l\r\n  return surfacearea\n\nassert surfacearea_cube(3) ==",
+  "n_prompt_tokens": 192,
+  "raw_generation": "21\n",
+  "answer": "21",
+  "generated_token_ids": [
+    17,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "21",
+  "token_logprob": [
+    -1.1990877389907837,
+    -0.7307287454605103,
+    -1.104365348815918
+  ],
+  "token_entropy": [
+    2.3833372592926025,
+    1.4378608465194702,
+    1.5635157823562622
+  ],
+  "token_logprob_sum": [
+    -637606.75,
+    -706179.875,
+    -675414.25
+  ],
+  "token_topk_mean_logprob": [
+    -4.0178375244140625,
+    -5.924479007720947,
+    -5.0949907302856445
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 179,
+  "read_token_ids": [
+    12181,
+    2312
+  ]
+}

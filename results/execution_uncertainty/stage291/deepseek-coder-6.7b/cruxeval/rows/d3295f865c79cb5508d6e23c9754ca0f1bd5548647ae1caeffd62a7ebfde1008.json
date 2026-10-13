@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_175",
+  "program_id": "sample_175",
+  "code": "def f(s, amount):\n    lines = s.splitlines()\n    w = max(map(lambda l: l.rfind(' '), lines))\n    ls = [[l, (w + 1) * amount - l.rfind(' ')] for l in lines]\n    for i, line in enumerate(ls):\n        ls[i][0] = line[0] + ' ' * line[1]\n    return '\\n'.join(map(lambda l: l[0], ls))",
+  "call": "f('\\n', 2)",
+  "expected": "' '",
+  "dataset": "cruxeval",
+  "source_group": "fc9e5c13af09fb7d36f0ccbde0e81e94351f26cbafebf3a1dc8d737284ae1fc3",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s, amount):\n    lines = s.splitlines()\n    w = max(map(lambda l: l.rfind(' '), lines))\n    ls = [[l, (w + 1) * amount - l.rfind(' ')] for l in lines]\n    for i, line in enumerate(ls):\n        ls[i][0] = line[0] + ' ' * line[1]\n    return '\\n'.join(map(lambda l: l[0], ls))\n\nassert f('\\n', 2) ==",
+  "n_prompt_tokens": 281,
+  "raw_generation": " '\\n'\n",
+  "answer": "'\\n'",
+  "generated_token_ids": [
+    20521,
+    77,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'\\n'",
+  "token_logprob": [
+    -0.21117165684700012,
+    -0.002052940195426345,
+    -0.6346536874771118,
+    -0.04445274546742439
+  ],
+  "token_entropy": [
+    0.7326717972755432,
+    0.019422616809606552,
+    1.3233572244644165,
+    0.24868369102478027
+  ],
+  "token_logprob_sum": [
+    -745890.0625,
+    -813089.0625,
+    -685650.5,
+    -818238.125
+  ],
+  "token_topk_mean_logprob": [
+    -6.667422771453857,
+    -9.720804214477539,
+    -6.240903854370117,
+    -7.888202667236328
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 268,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

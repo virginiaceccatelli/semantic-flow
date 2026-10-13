@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_131",
+  "program_id": "sample_131",
+  "code": "def f(text):\n    a = len(text)\n    count = 0\n    while text:\n        if text.startswith('a'):\n            count += text.find(' ')\n        else:\n            count += text.find('\\n')\n        text = text[text.find('\\n')+1:text.find('\\n')+a+1]\n    return count",
+  "call": "f(\"a\\nkgf\\nasd\\n\")",
+  "expected": "1",
+  "dataset": "cruxeval",
+  "source_group": "402b3f3558773453588a47176dbbb2737edddb4c3dcf7d8ae74ed4cc2e669f17",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    a = len(text)\n    count = 0\n    while text:\n        if text.startswith('a'):\n            count += text.find(' ')\n        else:\n            count += text.find('\\n')\n        text = text[text.find('\\n')+1:text.find('\\n')+a+1]\n    return count\n\nassert f(\"a\\nkgf\\nasd\\n\") ==",
+  "n_prompt_tokens": 263,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.5899436473846436,
+    -0.772087574005127,
+    -0.4118061363697052
+  ],
+  "token_entropy": [
+    1.7990028858184814,
+    1.585156798362732,
+    1.2713807821273804
+  ],
+  "token_logprob_sum": [
+    -698125.1875,
+    -746335.875,
+    -777752.0
+  ],
+  "token_topk_mean_logprob": [
+    -4.446193695068359,
+    -6.509587287902832,
+    -4.818056106567383
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 245,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

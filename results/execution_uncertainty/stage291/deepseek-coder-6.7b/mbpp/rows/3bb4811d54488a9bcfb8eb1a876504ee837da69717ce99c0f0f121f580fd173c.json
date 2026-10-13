@@ -1,0 +1,83 @@
+{
+  "case_id": "235:1",
+  "program_id": "235",
+  "code": "def even_bit_set_number(n): \r\n    count = 0;res = 0;temp = n \r\n    while(temp > 0): \r\n        if (count % 2 == 1): \r\n            res |= (1 << count)\r\n        count+=1\r\n        temp >>= 1\r\n    return (n | res)",
+  "call": "even_bit_set_number(20)",
+  "expected": "30",
+  "dataset": "mbpp",
+  "source_group": "0b9d50930fb1867161d7ea80bc2295f21840f10c3ce9f2bc5b436a770e2c7733",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef even_bit_set_number(n): \r\n    count = 0;res = 0;temp = n \r\n    while(temp > 0): \r\n        if (count % 2 == 1): \r\n            res |= (1 << count)\r\n        count+=1\r\n        temp >>= 1\r\n    return (n | res)\n\nassert even_bit_set_number(20) ==",
+  "n_prompt_tokens": 252,
+  "raw_generation": " (20 | 16)\n",
+  "answer": "(20 | 16)",
+  "generated_token_ids": [
+    334,
+    17,
+    15,
+    8715,
+    16,
+    21,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "constant_expression",
+  "invalid_reason": null,
+  "parsed_answer": "20",
+  "token_logprob": [
+    -0.8851349949836731,
+    -0.561975359916687,
+    -0.7002528309822083,
+    -0.3727113604545593,
+    -0.9209606647491455,
+    -1.7689189910888672,
+    -0.24100391566753387,
+    -0.5584320425987244
+  ],
+  "token_entropy": [
+    1.8787908554077148,
+    1.233791708946228,
+    1.7888667583465576,
+    1.3370918035507202,
+    1.9580378532409668,
+    2.4550440311431885,
+    0.7122983932495117,
+    1.2727932929992676
+  ],
+  "token_logprob_sum": [
+    -663626.5,
+    -707793.125,
+    -725559.0,
+    -697678.75,
+    -763061.9375,
+    -794812.6875,
+    -807506.8125,
+    -751075.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.578885078430176,
+    -5.736975193023682,
+    -4.919003486633301,
+    -5.110211372375488,
+    -6.633460998535156,
+    -4.125169277191162,
+    -6.572253704071045,
+    -5.870932102203369
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 236,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case_id": "325:2",
+  "program_id": "325",
+  "code": "def get_Min_Squares(n):\r\n    if n <= 3:\r\n        return n;\r\n    res = n \r\n    for x in range(1,n + 1):\r\n        temp = x * x;\r\n        if temp > n:\r\n            break\r\n        else:\r\n            res = min(res,1 + get_Min_Squares(n  - temp)) \r\n    return res;",
+  "call": "get_Min_Squares(4)",
+  "expected": "1",
+  "dataset": "mbpp",
+  "source_group": "b74f946f4dd855a5fdd32ccb84a48c0ed81bf2c140c4d2b12490c3607eed410e",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef get_Min_Squares(n):\r\n    if n <= 3:\r\n        return n;\r\n    res = n \r\n    for x in range(1,n + 1):\r\n        temp = x * x;\r\n        if temp > n:\r\n            break\r\n        else:\r\n            res = min(res,1 + get_Min_Squares(n  - temp)) \r\n    return res;\n\nassert get_Min_Squares(4) ==",
+  "n_prompt_tokens": 271,
+  "raw_generation": "  1\n",
+  "answer": "1",
+  "generated_token_ids": [
+    243,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "1",
+  "token_logprob": [
+    -0.9059050679206848,
+    -0.08652468770742416,
+    -0.4034325182437897
+  ],
+  "token_entropy": [
+    2.141235828399658,
+    0.36904075741767883,
+    1.033349871635437
+  ],
+  "token_logprob_sum": [
+    -675810.4375,
+    -878918.75,
+    -773833.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.199655055999756,
+    -8.467775344848633,
+    -6.303433418273926
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 256,
+  "read_token_ids": [
+    26,
+    2312
+  ]
+}

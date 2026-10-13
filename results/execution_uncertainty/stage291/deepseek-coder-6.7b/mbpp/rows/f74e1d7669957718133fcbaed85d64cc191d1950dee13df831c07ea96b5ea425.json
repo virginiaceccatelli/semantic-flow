@@ -1,0 +1,53 @@
+{
+  "case_id": "498:1",
+  "program_id": "498",
+  "code": "def gcd(x, y):\r\n    gcd = 1\r\n    if x % y == 0:\r\n        return y\r\n    for k in range(int(y / 2), 0, -1):\r\n        if x % k == 0 and y % k == 0:\r\n            gcd = k\r\n            break  \r\n    return gcd",
+  "call": "gcd(4,6)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "e7ed8afb0b9fe7e55b1a1df5e2aea11387bc5d16fbe5f33cdae7d51ca009f55f",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef gcd(x, y):\r\n    gcd = 1\r\n    if x % y == 0:\r\n        return y\r\n    for k in range(int(y / 2), 0, -1):\r\n        if x % k == 0 and y % k == 0:\r\n            gcd = k\r\n            break  \r\n    return gcd\n\nassert gcd(4,6) ==",
+  "n_prompt_tokens": 250,
+  "raw_generation": "2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.0532137155532837,
+    -0.35289186239242554
+  ],
+  "token_entropy": [
+    1.5779355764389038,
+    0.9379719495773315
+  ],
+  "token_logprob_sum": [
+    -703233.25,
+    -769892.1875
+  ],
+  "token_topk_mean_logprob": [
+    -5.2469635009765625,
+    -6.552891731262207
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 238,
+  "read_token_ids": [
+    2243,
+    2312
+  ]
+}

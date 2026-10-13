@@ -1,0 +1,58 @@
+{
+  "case_id": "463:2",
+  "program_id": "463",
+  "code": "def max_subarray_product(arr):\r\n\tn = len(arr)\r\n\tmax_ending_here = 1\r\n\tmin_ending_here = 1\r\n\tmax_so_far = 0\r\n\tflag = 0\r\n\tfor i in range(0, n):\r\n\t\tif arr[i] > 0:\r\n\t\t\tmax_ending_here = max_ending_here * arr[i]\r\n\t\t\tmin_ending_here = min (min_ending_here * arr[i], 1)\r\n\t\t\tflag = 1\r\n\t\telif arr[i] == 0:\r\n\t\t\tmax_ending_here = 1\r\n\t\t\tmin_ending_here = 1\r\n\t\telse:\r\n\t\t\ttemp = max_ending_here\r\n\t\t\tmax_ending_here = max (min_ending_here * arr[i], 1)\r\n\t\t\tmin_ending_here = temp * arr[i]\r\n\t\tif (max_so_far < max_ending_here):\r\n\t\t\tmax_so_far = max_ending_here\r\n\tif flag == 0 and max_so_far == 0:\r\n\t\treturn 0\r\n\treturn max_so_far",
+  "call": "max_subarray_product([-2, -40, 0, -2, -3])",
+  "expected": "80",
+  "dataset": "mbpp",
+  "source_group": "40884db87aa0cb9f4a8abf84ba7b370d004c2b41c38ddcd0e5f48e2744328b56",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_subarray_product(arr):\r\n\tn = len(arr)\r\n\tmax_ending_here = 1\r\n\tmin_ending_here = 1\r\n\tmax_so_far = 0\r\n\tflag = 0\r\n\tfor i in range(0, n):\r\n\t\tif arr[i] > 0:\r\n\t\t\tmax_ending_here = max_ending_here * arr[i]\r\n\t\t\tmin_ending_here = min (min_ending_here * arr[i], 1)\r\n\t\t\tflag = 1\r\n\t\telif arr[i] == 0:\r\n\t\t\tmax_ending_here = 1\r\n\t\t\tmin_ending_here = 1\r\n\t\telse:\r\n\t\t\ttemp = max_ending_here\r\n\t\t\tmax_ending_here = max (min_ending_here * arr[i], 1)\r\n\t\t\tmin_ending_here = temp * arr[i]\r\n\t\tif (max_so_far < max_ending_here):\r\n\t\t\tmax_so_far = max_ending_here\r\n\tif flag == 0 and max_so_far == 0:\r\n\t\treturn 0\r\n\treturn max_so_far\n\nassert max_subarray_product([-2, -40, 0, -2, -3]) ==",
+  "n_prompt_tokens": 463,
+  "raw_generation": " -8\n",
+  "answer": "-8",
+  "generated_token_ids": [
+    567,
+    23,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-8",
+  "token_logprob": [
+    -0.19302484393119812,
+    -0.8821682929992676,
+    -0.5776864290237427
+  ],
+  "token_entropy": [
+    0.9364057779312134,
+    1.3132380247116089,
+    1.208380937576294
+  ],
+  "token_logprob_sum": [
+    -727450.875,
+    -827062.75,
+    -751985.75
+  ],
+  "token_topk_mean_logprob": [
+    -5.186774730682373,
+    -7.880800724029541,
+    -6.277686595916748
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 435,
+  "read_token_ids": [
+    18601,
+    2312
+  ]
+}

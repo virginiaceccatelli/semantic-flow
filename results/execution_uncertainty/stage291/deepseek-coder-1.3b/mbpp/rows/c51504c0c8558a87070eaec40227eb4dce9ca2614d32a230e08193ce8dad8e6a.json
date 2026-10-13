@@ -1,0 +1,53 @@
+{
+  "case_id": "407:0",
+  "program_id": "407",
+  "code": "def rearrange_bigger(n):\r\n    nums = list(str(n))\r\n    for i in range(len(nums)-2,-1,-1):\r\n        if nums[i] < nums[i+1]:\r\n            z = nums[i:]\r\n            y = min(filter(lambda x: x > z[0], z))\r\n            z.remove(y)\r\n            z.sort()\r\n            nums[i:] = [y] + z\r\n            return int(\"\".join(nums))\r\n    return False",
+  "call": "rearrange_bigger(12)",
+  "expected": "21",
+  "dataset": "mbpp",
+  "source_group": "631290404f706c183a22eb15fb17b7c1dc9c30666555e26277da1f1ee998bb65",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef rearrange_bigger(n):\r\n    nums = list(str(n))\r\n    for i in range(len(nums)-2,-1,-1):\r\n        if nums[i] < nums[i+1]:\r\n            z = nums[i:]\r\n            y = min(filter(lambda x: x > z[0], z))\r\n            z.remove(y)\r\n            z.sort()\r\n            nums[i:] = [y] + z\r\n            return int(\"\".join(nums))\r\n    return False\n\nassert rearrange_bigger(12) ==",
+  "n_prompt_tokens": 303,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.7605822682380676,
+    -0.5090586543083191
+  ],
+  "token_entropy": [
+    1.4419262409210205,
+    0.9435580372810364
+  ],
+  "token_logprob_sum": [
+    -695803.625,
+    -782934.25
+  ],
+  "token_topk_mean_logprob": [
+    -5.210582256317139,
+    -6.793043613433838
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 288,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

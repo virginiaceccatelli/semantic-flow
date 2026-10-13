@@ -1,0 +1,63 @@
+{
+  "case_id": "457:2",
+  "program_id": "457",
+  "code": "def Find_Min(lst): \r\n    minList = min((x) for x in lst) \r\n    return minList",
+  "call": "Find_Min([['x'],['x','y'],['x','y','z']])",
+  "expected": "['x']",
+  "dataset": "mbpp",
+  "source_group": "2b4e406035f0d21af9e37de746d445a423c0ff59eb8a396d54c81f8a6c71f781",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef Find_Min(lst): \r\n    minList = min((x) for x in lst) \r\n    return minList\n\nassert Find_Min([['x'],['x','y'],['x','y','z']]) ==",
+  "n_prompt_tokens": 210,
+  "raw_generation": " 'x'\n",
+  "answer": "'x'",
+  "generated_token_ids": [
+    651,
+    87,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'x'",
+  "token_logprob": [
+    -0.7049622535705566,
+    -0.019150134176015854,
+    -0.00529992301017046,
+    -0.36819350719451904
+  ],
+  "token_entropy": [
+    1.0656466484069824,
+    0.13381201028823853,
+    0.043483905494213104,
+    0.8988207578659058
+  ],
+  "token_logprob_sum": [
+    -725802.3125,
+    -729911.4375,
+    -745806.5625,
+    -722380.25
+  ],
+  "token_topk_mean_logprob": [
+    -5.858087062835693,
+    -8.172274589538574,
+    -8.892799377441406,
+    -7.143193244934082
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 185,
+  "read_token_ids": [
+    2245,
+    2312
+  ]
+}

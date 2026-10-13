@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_626",
+  "program_id": "sample_626",
+  "code": "def f(line, equalityMap):\n    rs = {\n        k[0]: k[1] for k in equalityMap\n    }\n    return line.translate(str.maketrans(rs))",
+  "call": "f('abab', [('a', 'b'), ('b', 'a')])",
+  "expected": "'baba'",
+  "dataset": "cruxeval",
+  "source_group": "4f8d90b4ea9ec7052369cd7ec143523366dea9ef87ff3f4cb67bf9b42d7407dd",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(line, equalityMap):\n    rs = {\n        k[0]: k[1] for k in equalityMap\n    }\n    return line.translate(str.maketrans(rs))\n\nassert f('abab', [('a', 'b'), ('b', 'a')]) ==",
+  "n_prompt_tokens": 225,
+  "raw_generation": " 'baba'\n",
+  "answer": "'baba'",
+  "generated_token_ids": [
+    651,
+    65,
+    16045,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'baba'",
+  "token_logprob": [
+    -0.016882162541151047,
+    -0.6537916660308838,
+    -0.4886366128921509,
+    -0.012451647780835629,
+    -0.22787459194660187
+  ],
+  "token_entropy": [
+    0.1040126234292984,
+    1.329033374786377,
+    0.7443158626556396,
+    0.07468961179256439,
+    0.5229474306106567
+  ],
+  "token_logprob_sum": [
+    -828755.9375,
+    -693053.0625,
+    -823843.0,
+    -798422.8125,
+    -792154.4375
+  ],
+  "token_topk_mean_logprob": [
+    -8.74188232421875,
+    -5.8350419998168945,
+    -8.423011779785156,
+    -9.637451171875,
+    -9.702875137329102
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 201,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

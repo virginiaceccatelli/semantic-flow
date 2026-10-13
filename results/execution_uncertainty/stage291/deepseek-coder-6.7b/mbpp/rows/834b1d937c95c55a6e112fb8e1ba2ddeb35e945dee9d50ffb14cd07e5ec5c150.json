@@ -1,0 +1,58 @@
+{
+  "case_id": "247:1",
+  "program_id": "247",
+  "code": "def lps(str): \r\n\tn = len(str) \r\n\tL = [[0 for x in range(n)] for x in range(n)] \r\n\tfor i in range(n): \r\n\t\tL[i][i] = 1\r\n\tfor cl in range(2, n+1): \r\n\t\tfor i in range(n-cl+1): \r\n\t\t\tj = i+cl-1\r\n\t\t\tif str[i] == str[j] and cl == 2: \r\n\t\t\t\tL[i][j] = 2\r\n\t\t\telif str[i] == str[j]: \r\n\t\t\t\tL[i][j] = L[i+1][j-1] + 2\r\n\t\t\telse: \r\n\t\t\t\tL[i][j] = max(L[i][j-1], L[i+1][j]); \r\n\treturn L[0][n-1]",
+  "call": "lps(\"CARDIO FOR CARDS\")",
+  "expected": "7",
+  "dataset": "mbpp",
+  "source_group": "25a78ad179336b7a805f4962eeb915617923ea2867037115b8ee96033a5bc107",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef lps(str): \r\n\tn = len(str) \r\n\tL = [[0 for x in range(n)] for x in range(n)] \r\n\tfor i in range(n): \r\n\t\tL[i][i] = 1\r\n\tfor cl in range(2, n+1): \r\n\t\tfor i in range(n-cl+1): \r\n\t\t\tj = i+cl-1\r\n\t\t\tif str[i] == str[j] and cl == 2: \r\n\t\t\t\tL[i][j] = 2\r\n\t\t\telif str[i] == str[j]: \r\n\t\t\t\tL[i][j] = L[i+1][j-1] + 2\r\n\t\t\telse: \r\n\t\t\t\tL[i][j] = max(L[i][j-1], L[i+1][j]); \r\n\treturn L[0][n-1]\n\nassert lps(\"CARDIO FOR CARDS\") ==",
+  "n_prompt_tokens": 387,
+  "raw_generation": "  7\n",
+  "answer": "7",
+  "generated_token_ids": [
+    243,
+    22,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "7",
+  "token_logprob": [
+    -1.4837760925292969,
+    -1.6584947109222412,
+    -0.42537975311279297
+  ],
+  "token_entropy": [
+    2.826787233352661,
+    2.0548741817474365,
+    0.971027135848999
+  ],
+  "token_logprob_sum": [
+    -632388.6875,
+    -697898.625,
+    -730316.5625
+  ],
+  "token_topk_mean_logprob": [
+    -3.702526092529297,
+    -5.764744758605957,
+    -6.4003801345825195
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 371,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

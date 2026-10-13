@@ -1,0 +1,78 @@
+{
+  "case_id": "342:2",
+  "program_id": "342",
+  "code": "from heapq import heappop, heappush\r\nclass Node:\r\n    def __init__(self, value, list_num, index):\r\n        self.value = value\r\n        self.list_num = list_num\r\n        self.index = index\r\n    def __lt__(self, other):\r\n        return self.value < other.value\r\ndef find_minimum_range(list):\r\n    high = float('-inf')\r\n    p = (0, float('inf'))\r\n    pq = []\r\n    for i in range(len(list)):\r\n        heappush(pq, Node(list[i][0], i, 0))\r\n        high = max(high, list[i][0])\r\n    while True:\r\n        top = heappop(pq)\r\n        low = top.value\r\n        i = top.list_num\r\n        j = top.index\r\n        if high - low < p[1] - p[0]:\r\n            p = (low, high)\r\n        if j == len(list[i]) - 1:\r\n            return p\r\n        heappush(pq, Node(list[i][j + 1], i, j + 1))\r\n        high = max(high, list[i][j + 1])",
+  "call": "find_minimum_range([[4, 7, 9, 11, 16], [2, 6, 13], [5, 9, 16, 17], [3, 7]])",
+  "expected": "(5, 7)",
+  "dataset": "mbpp",
+  "source_group": "a54548dd7b9755ed40a342d8a789e8a3c20925b19cb8380c2e57ce8ba728ba2a",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nfrom heapq import heappop, heappush\r\nclass Node:\r\n    def __init__(self, value, list_num, index):\r\n        self.value = value\r\n        self.list_num = list_num\r\n        self.index = index\r\n    def __lt__(self, other):\r\n        return self.value < other.value\r\ndef find_minimum_range(list):\r\n    high = float('-inf')\r\n    p = (0, float('inf'))\r\n    pq = []\r\n    for i in range(len(list)):\r\n        heappush(pq, Node(list[i][0], i, 0))\r\n        high = max(high, list[i][0])\r\n    while True:\r\n        top = heappop(pq)\r\n        low = top.value\r\n        i = top.list_num\r\n        j = top.index\r\n        if high - low < p[1] - p[0]:\r\n            p = (low, high)\r\n        if j == len(list[i]) - 1:\r\n            return p\r\n        heappush(pq, Node(list[i][j + 1], i, j + 1))\r\n        high = max(high, list[i][j + 1])\n\nassert find_minimum_range([[4, 7, 9, 11, 16], [2, 6, 13], [5, 9, 16, 17], [3, 7]]) ==",
+  "n_prompt_tokens": 521,
+  "raw_generation": " (2, 9)\n",
+  "answer": "(2, 9)",
+  "generated_token_ids": [
+    334,
+    17,
+    11,
+    207,
+    24,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "(2, 9)",
+  "token_logprob": [
+    -0.023079346865415573,
+    -0.5601359009742737,
+    -0.001613506581634283,
+    -0.017511868849396706,
+    -1.074543833732605,
+    -0.003633328014984727,
+    -0.33583033084869385
+  ],
+  "token_entropy": [
+    0.13994960486888885,
+    1.071547031402588,
+    0.015153259970247746,
+    0.11803636699914932,
+    1.5855432748794556,
+    0.03038543462753296,
+    0.7967088222503662
+  ],
+  "token_logprob_sum": [
+    -815929.5625,
+    -823639.8125,
+    -820743.5,
+    -847639.125,
+    -838938.0625,
+    -830065.125,
+    -709677.9375
+  ],
+  "token_topk_mean_logprob": [
+    -8.560579299926758,
+    -7.978886604309082,
+    -10.22036361694336,
+    -9.067512512207031,
+    -10.112044334411621,
+    -10.059883117675781,
+    -8.310831069946289
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 462,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

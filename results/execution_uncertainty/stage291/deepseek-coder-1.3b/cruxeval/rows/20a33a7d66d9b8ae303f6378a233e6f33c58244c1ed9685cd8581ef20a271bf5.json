@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_762",
+  "program_id": "sample_762",
+  "code": "def f(text):\n    text = text.lower()\n    capitalize = text.capitalize()\n    return text[:1] + capitalize[1:]",
+  "call": "f('this And cPanel')",
+  "expected": "'this and cpanel'",
+  "dataset": "cruxeval",
+  "source_group": "32cecdb9fb06ccd5febe4a010789a31f4a726d8eedb7295a337e82e0c6234df8",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    text = text.lower()\n    capitalize = text.capitalize()\n    return text[:1] + capitalize[1:]\n\nassert f('this And cPanel') ==",
+  "n_prompt_tokens": 202,
+  "raw_generation": " 'This and cPanel'\n",
+  "answer": "'This and cPanel'",
+  "generated_token_ids": [
+    651,
+    1559,
+    285,
+    258,
+    16450,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'This and cPanel'",
+  "token_logprob": [
+    -0.022296113893389702,
+    -1.142724633216858,
+    -0.25203847885131836,
+    -0.3010372817516327,
+    -0.3124238848686218,
+    -0.0025983641389757395,
+    -0.22823026776313782
+  ],
+  "token_entropy": [
+    0.14299878478050232,
+    2.1707005500793457,
+    0.8058606386184692,
+    0.8648227453231812,
+    0.7888169288635254,
+    0.023885905742645264,
+    0.5252565145492554
+  ],
+  "token_logprob_sum": [
+    -771755.125,
+    -674297.5,
+    -662799.125,
+    -743446.75,
+    -775755.125,
+    -776006.875,
+    -808332.5625
+  ],
+  "token_topk_mean_logprob": [
+    -8.287920951843262,
+    -4.607275485992432,
+    -6.239538669586182,
+    -7.063537120819092,
+    -7.756173610687256,
+    -9.55884838104248,
+    -9.653230667114258
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 190,
+  "read_token_ids": [
+    28442,
+    2312
+  ]
+}

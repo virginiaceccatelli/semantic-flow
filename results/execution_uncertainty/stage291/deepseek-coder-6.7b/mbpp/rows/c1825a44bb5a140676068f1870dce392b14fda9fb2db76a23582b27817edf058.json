@@ -1,0 +1,68 @@
+{
+  "case_id": "159:1",
+  "program_id": "159",
+  "code": "def month_season(month,days):\r\n if month in ('January', 'February', 'March'):\r\n\t season = 'winter'\r\n elif month in ('April', 'May', 'June'):\r\n\t season = 'spring'\r\n elif month in ('July', 'August', 'September'):\r\n\t season = 'summer'\r\n else:\r\n\t season = 'autumn'\r\n if (month == 'March') and (days > 19):\r\n\t season = 'spring'\r\n elif (month == 'June') and (days > 20):\r\n\t season = 'summer'\r\n elif (month == 'September') and (days > 21):\r\n\t season = 'autumn'\r\n elif (month == 'October') and (days > 21):\r\n\t season = 'autumn'\r\n elif (month == 'November') and (days > 21):\r\n\t season = 'autumn'\r\n elif (month == 'December') and (days > 20):\r\n\t season = 'winter'\r\n return season",
+  "call": "month_season('October',28)",
+  "expected": "'autumn'",
+  "dataset": "mbpp",
+  "source_group": "2a49063d8b9a49c0d4b69b6fa2d146a1fabd0b4847e6160192b61fe8b731cf21",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef month_season(month,days):\r\n if month in ('January', 'February', 'March'):\r\n\t season = 'winter'\r\n elif month in ('April', 'May', 'June'):\r\n\t season = 'spring'\r\n elif month in ('July', 'August', 'September'):\r\n\t season = 'summer'\r\n else:\r\n\t season = 'autumn'\r\n if (month == 'March') and (days > 19):\r\n\t season = 'spring'\r\n elif (month == 'June') and (days > 20):\r\n\t season = 'summer'\r\n elif (month == 'September') and (days > 21):\r\n\t season = 'autumn'\r\n elif (month == 'October') and (days > 21):\r\n\t season = 'autumn'\r\n elif (month == 'November') and (days > 21):\r\n\t season = 'autumn'\r\n elif (month == 'December') and (days > 20):\r\n\t season = 'winter'\r\n return season\n\nassert month_season('October',28) ==",
+  "n_prompt_tokens": 413,
+  "raw_generation": " 'autumn'\n",
+  "answer": "'autumn'",
+  "generated_token_ids": [
+    651,
+    1577,
+    1872,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'autumn'",
+  "token_logprob": [
+    -0.07299813628196716,
+    -0.2256404012441635,
+    -0.0006286313873715699,
+    -0.018796419724822044,
+    -0.5381501317024231
+  ],
+  "token_entropy": [
+    0.3432191014289856,
+    0.7714229822158813,
+    0.006309054791927338,
+    0.11337922513484955,
+    0.9838278293609619
+  ],
+  "token_logprob_sum": [
+    -742426.5,
+    -734349.875,
+    -876471.0625,
+    -718025.5,
+    -717527.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.360497951507568,
+    -7.31001615524292,
+    -11.385004043579102,
+    -8.725046157836914,
+    -7.238150119781494
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 399,
+  "read_token_ids": [
+    4314,
+    2312
+  ]
+}

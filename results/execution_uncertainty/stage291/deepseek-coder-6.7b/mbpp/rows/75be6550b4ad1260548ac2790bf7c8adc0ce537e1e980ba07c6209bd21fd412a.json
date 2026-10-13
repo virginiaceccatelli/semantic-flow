@@ -1,0 +1,73 @@
+{
+  "case_id": "406:2",
+  "program_id": "406",
+  "code": "def find_Parity(x): \r\n    y = x ^ (x >> 1); \r\n    y = y ^ (y >> 2); \r\n    y = y ^ (y >> 4); \r\n    y = y ^ (y >> 8); \r\n    y = y ^ (y >> 16); \r\n    if (y & 1): \r\n        return (\"Odd Parity\"); \r\n    return (\"Even Parity\");",
+  "call": "find_Parity(10)",
+  "expected": "'Even Parity'",
+  "dataset": "mbpp",
+  "source_group": "42ad547607d70e8134d13ea800469769f6e634f508ee3d670e948f46648f4a70",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_Parity(x): \r\n    y = x ^ (x >> 1); \r\n    y = y ^ (y >> 2); \r\n    y = y ^ (y >> 4); \r\n    y = y ^ (y >> 8); \r\n    y = y ^ (y >> 16); \r\n    if (y & 1): \r\n        return (\"Odd Parity\"); \r\n    return (\"Even Parity\");\n\nassert find_Parity(10) ==",
+  "n_prompt_tokens": 277,
+  "raw_generation": " \"Even Parity\"\n",
+  "answer": "\"Even Parity\"",
+  "generated_token_ids": [
+    440,
+    13120,
+    3113,
+    465,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Even Parity'",
+  "token_logprob": [
+    -0.30457475781440735,
+    -0.3500986695289612,
+    -0.002199375070631504,
+    -4.672895011026412e-05,
+    -0.023940416052937508,
+    -0.4213064908981323
+  ],
+  "token_entropy": [
+    0.8865785598754883,
+    0.6229195594787598,
+    0.020346101373434067,
+    0.0006115079740993679,
+    0.1360020935535431,
+    0.8062267303466797
+  ],
+  "token_logprob_sum": [
+    -740360.25,
+    -796801.0,
+    -815711.625,
+    -1015469.5,
+    -755162.5625,
+    -735478.375
+  ],
+  "token_topk_mean_logprob": [
+    -6.520199775695801,
+    -9.28447437286377,
+    -9.777198791503906,
+    -13.575045585632324,
+    -8.983314514160156,
+    -7.436931610107422
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 264,
+  "read_token_ids": [
+    2583,
+    2312
+  ]
+}

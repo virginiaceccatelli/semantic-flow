@@ -1,0 +1,63 @@
+{
+  "case_id": "11:1",
+  "program_id": "11",
+  "code": "def remove_Occ(s,ch): \r\n    for i in range(len(s)): \r\n        if (s[i] == ch): \r\n            s = s[0 : i] + s[i + 1:] \r\n            break\r\n    for i in range(len(s) - 1,-1,-1):  \r\n        if (s[i] == ch): \r\n            s = s[0 : i] + s[i + 1:] \r\n            break\r\n    return s",
+  "call": "remove_Occ(\"abcda\",\"a\")",
+  "expected": "'bcd'",
+  "dataset": "mbpp",
+  "source_group": "14bb9cd2a482937b4f5d82c0c7b05169c5ad0db52c7e5a3179121da9bdec0af3",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef remove_Occ(s,ch): \r\n    for i in range(len(s)): \r\n        if (s[i] == ch): \r\n            s = s[0 : i] + s[i + 1:] \r\n            break\r\n    for i in range(len(s) - 1,-1,-1):  \r\n        if (s[i] == ch): \r\n            s = s[0 : i] + s[i + 1:] \r\n            break\r\n    return s\n\nassert remove_Occ(\"abcda\",\"a\") ==",
+  "n_prompt_tokens": 289,
+  "raw_generation": " \"cd\"\n",
+  "answer": "\"cd\"",
+  "generated_token_ids": [
+    440,
+    2243,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'cd'",
+  "token_logprob": [
+    -0.06724249571561813,
+    -0.7625285983085632,
+    -0.02706848457455635,
+    -0.3665790855884552
+  ],
+  "token_entropy": [
+    0.33930593729019165,
+    1.292165756225586,
+    0.1655280590057373,
+    0.9602656364440918
+  ],
+  "token_logprob_sum": [
+    -759946.0,
+    -857459.5,
+    -805422.0625,
+    -737376.125
+  ],
+  "token_topk_mean_logprob": [
+    -7.513336181640625,
+    -6.78909158706665,
+    -8.092692375183105,
+    -6.779078960418701
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 275,
+  "read_token_ids": [
+    252,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "395:1",
+  "program_id": "395",
+  "code": "def first_non_repeating_character(str1):\r\n  char_order = []\r\n  ctr = {}\r\n  for c in str1:\r\n    if c in ctr:\r\n      ctr[c] += 1\r\n    else:\r\n      ctr[c] = 1 \r\n      char_order.append(c)\r\n  for c in char_order:\r\n    if ctr[c] == 1:\r\n      return c\r\n  return None",
+  "call": "first_non_repeating_character(\"abc\")",
+  "expected": "'a'",
+  "dataset": "mbpp",
+  "source_group": "2ee5d5627bf5e22701d5e802a7639b324e4968e886bcbbcbd47c33c31c942e8e",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef first_non_repeating_character(str1):\r\n  char_order = []\r\n  ctr = {}\r\n  for c in str1:\r\n    if c in ctr:\r\n      ctr[c] += 1\r\n    else:\r\n      ctr[c] = 1 \r\n      char_order.append(c)\r\n  for c in char_order:\r\n    if ctr[c] == 1:\r\n      return c\r\n  return None\n\nassert first_non_repeating_character(\"abc\") ==",
+  "n_prompt_tokens": 286,
+  "raw_generation": " \"a\"\n",
+  "answer": "\"a\"",
+  "generated_token_ids": [
+    440,
+    64,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'a'",
+  "token_logprob": [
+    -0.36194953322410583,
+    -0.02903747372329235,
+    -0.007817743346095085,
+    -0.3002660870552063
+  ],
+  "token_entropy": [
+    0.6988868117332458,
+    0.16171765327453613,
+    0.05313749611377716,
+    0.8129526376724243
+  ],
+  "token_logprob_sum": [
+    -820289.25,
+    -789373.4375,
+    -800899.75,
+    -760016.6875
+  ],
+  "token_topk_mean_logprob": [
+    -7.530700206756592,
+    -8.900912284851074,
+    -10.051567077636719,
+    -7.400266170501709
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 269,
+  "read_token_ids": [
+    7747,
+    2312
+  ]
+}

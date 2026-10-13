@@ -1,0 +1,58 @@
+{
+  "case_id": "509:1",
+  "program_id": "509",
+  "code": "def average_Odd(n) : \r\n    if (n%2==0) : \r\n        return (\"Invalid Input\") \r\n        return -1 \r\n    sm =0\r\n    count =0\r\n    while (n>=1) : \r\n        count=count+1\r\n        sm = sm + n \r\n        n = n-2\r\n    return sm//count",
+  "call": "average_Odd(5)",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "0741d8141aff54f86147f4266dd866c77d95f0af27a6ad5952a7dfb31c9a5db2",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef average_Odd(n) : \r\n    if (n%2==0) : \r\n        return (\"Invalid Input\") \r\n        return -1 \r\n    sm =0\r\n    count =0\r\n    while (n>=1) : \r\n        count=count+1\r\n        sm = sm + n \r\n        n = n-2\r\n    return sm//count\n\nassert average_Odd(5) ==",
+  "n_prompt_tokens": 259,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.5417594909667969,
+    -0.0021736822091042995,
+    -0.2867807447910309
+  ],
+  "token_entropy": [
+    1.6046391725540161,
+    0.01987329125404358,
+    0.9199450016021729
+  ],
+  "token_logprob_sum": [
+    -693665.125,
+    -833426.25,
+    -733812.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.616759777069092,
+    -9.839673042297363,
+    -6.239905834197998
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 247,
+  "read_token_ids": [
+    4241,
+    2312
+  ]
+}

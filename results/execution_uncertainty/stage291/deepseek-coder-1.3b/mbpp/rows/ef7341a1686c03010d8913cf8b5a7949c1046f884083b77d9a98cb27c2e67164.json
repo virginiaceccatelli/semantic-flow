@@ -1,0 +1,73 @@
+{
+  "case_id": "408:1",
+  "program_id": "408",
+  "code": "import heapq\r\ndef k_smallest_pairs(nums1, nums2, k):\r\n   queue = []\r\n   def push(i, j):\r\n       if i < len(nums1) and j < len(nums2):\r\n           heapq.heappush(queue, [nums1[i] + nums2[j], i, j])\r\n   push(0, 0)\r\n   pairs = []\r\n   while queue and len(pairs) < k:\r\n       _, i, j = heapq.heappop(queue)\r\n       pairs.append([nums1[i], nums2[j]])\r\n       push(i, j + 1)\r\n       if j == 0:\r\n           push(i + 1, 0)\r\n   return pairs",
+  "call": "k_smallest_pairs([1,3,7],[2,4,6],1)",
+  "expected": "[[1, 2]]",
+  "dataset": "mbpp",
+  "source_group": "91cc5ab0652010bebb84e6d23539263bf98a2bf4af73be943dd82608c9beae88",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport heapq\r\ndef k_smallest_pairs(nums1, nums2, k):\r\n   queue = []\r\n   def push(i, j):\r\n       if i < len(nums1) and j < len(nums2):\r\n           heapq.heappush(queue, [nums1[i] + nums2[j], i, j])\r\n   push(0, 0)\r\n   pairs = []\r\n   while queue and len(pairs) < k:\r\n       _, i, j = heapq.heappop(queue)\r\n       pairs.append([nums1[i], nums2[j]])\r\n       push(i, j + 1)\r\n       if j == 0:\r\n           push(i + 1, 0)\r\n   return pairs\n\nassert k_smallest_pairs([1,3,7],[2,4,6],1) ==",
+  "n_prompt_tokens": 375,
+  "raw_generation": " [[1,2]]\n",
+  "answer": "[[1,2]]",
+  "generated_token_ids": [
+    16603,
+    16,
+    11,
+    17,
+    13797,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "[[1, 2]]",
+  "token_logprob": [
+    -0.1425161063671112,
+    -0.20072978734970093,
+    -0.001179118873551488,
+    -0.362853080034256,
+    -0.14672134816646576,
+    -0.32477590441703796
+  ],
+  "token_entropy": [
+    0.4694324731826782,
+    0.7006934285163879,
+    0.012162609025835991,
+    0.7932111024856567,
+    0.42196208238601685,
+    0.8370354175567627
+  ],
+  "token_logprob_sum": [
+    -751590.0625,
+    -794447.1875,
+    -841405.5,
+    -758884.75,
+    -824755.75,
+    -764141.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.755015850067139,
+    -7.613229274749756,
+    -9.882429122924805,
+    -9.012852668762207,
+    -10.184449195861816,
+    -7.470869541168213
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 347,
+  "read_token_ids": [
+    12042,
+    2312
+  ]
+}

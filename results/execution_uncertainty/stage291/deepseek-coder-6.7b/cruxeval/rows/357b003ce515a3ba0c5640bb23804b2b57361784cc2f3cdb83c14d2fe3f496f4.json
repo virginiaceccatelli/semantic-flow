@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_140",
+  "program_id": "sample_140",
+  "code": "def f(st):\n    if st.lower().rindex('h', st.lower().rindex('i')) >= st.lower().rindex('i'):\n        return 'Hey'\n    else:\n        return 'Hi'",
+  "call": "f('Hi there')",
+  "expected": "'Hey'",
+  "dataset": "cruxeval",
+  "source_group": "7272328645e64b5cec107f640ffccf9e5a2ff4c1a42cfedab83a7faf093fc1bf",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(st):\n    if st.lower().rindex('h', st.lower().rindex('i')) >= st.lower().rindex('i'):\n        return 'Hey'\n    else:\n        return 'Hi'\n\nassert f('Hi there') ==",
+  "n_prompt_tokens": 216,
+  "raw_generation": " 'Hey'\n",
+  "answer": "'Hey'",
+  "generated_token_ids": [
+    651,
+    22605,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Hey'",
+  "token_logprob": [
+    -0.011354823596775532,
+    -0.2051413357257843,
+    -0.009194177575409412,
+    -0.18454833328723907
+  ],
+  "token_entropy": [
+    0.07502520084381104,
+    0.5980998873710632,
+    0.0650675818324089,
+    0.48529207706451416
+  ],
+  "token_logprob_sum": [
+    -852499.125,
+    -753614.875,
+    -763587.5,
+    -794769.5625
+  ],
+  "token_topk_mean_logprob": [
+    -9.486353874206543,
+    -7.767640590667725,
+    -9.259195327758789,
+    -8.64392375946045
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 206,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

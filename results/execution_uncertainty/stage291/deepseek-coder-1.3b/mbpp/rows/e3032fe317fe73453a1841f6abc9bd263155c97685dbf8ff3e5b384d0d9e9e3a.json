@@ -1,0 +1,58 @@
+{
+  "case_id": "278:0",
+  "program_id": "278",
+  "code": "def count_first_elements(test_tup):\r\n  for count, ele in enumerate(test_tup):\r\n    if isinstance(ele, tuple):\r\n      break\r\n  return (count)",
+  "call": "count_first_elements((1, 5, 7, (4, 6), 10) )",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "112ecaf49a55d490777c7773d9c9eec5821e6d07946edf813674b8780da54a20",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_first_elements(test_tup):\r\n  for count, ele in enumerate(test_tup):\r\n    if isinstance(ele, tuple):\r\n      break\r\n  return (count)\n\nassert count_first_elements((1, 5, 7, (4, 6), 10) ) ==",
+  "n_prompt_tokens": 233,
+  "raw_generation": "  2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    243,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -0.8302490711212158,
+    -1.09318208694458,
+    -0.3751071095466614
+  ],
+  "token_entropy": [
+    1.6566369533538818,
+    1.4947388172149658,
+    0.94541335105896
+  ],
+  "token_logprob_sum": [
+    -704238.0,
+    -769179.4375,
+    -735052.8125
+  ],
+  "token_topk_mean_logprob": [
+    -4.648999214172363,
+    -7.518181800842285,
+    -6.900106906890869
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 203,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

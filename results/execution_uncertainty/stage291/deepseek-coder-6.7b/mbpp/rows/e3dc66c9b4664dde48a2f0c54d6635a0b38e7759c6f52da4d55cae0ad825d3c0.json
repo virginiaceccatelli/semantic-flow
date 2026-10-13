@@ -1,0 +1,53 @@
+{
+  "case_id": "105:2",
+  "program_id": "105",
+  "code": "def count(lst):   \r\n    return sum(lst)",
+  "call": "count([True,True,True])",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "89a7579151efed8280fcba3099a94ba0c232c024dbe4aed91343c024e9fa9b87",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count(lst):   \r\n    return sum(lst)\n\nassert count([True,True,True]) ==",
+  "n_prompt_tokens": 182,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.4159395694732666,
+    -0.46765434741973877
+  ],
+  "token_entropy": [
+    1.3009133338928223,
+    1.1772966384887695
+  ],
+  "token_logprob_sum": [
+    -686967.5,
+    -733853.75
+  ],
+  "token_topk_mean_logprob": [
+    -5.190939426422119,
+    -5.567654609680176
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 169,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

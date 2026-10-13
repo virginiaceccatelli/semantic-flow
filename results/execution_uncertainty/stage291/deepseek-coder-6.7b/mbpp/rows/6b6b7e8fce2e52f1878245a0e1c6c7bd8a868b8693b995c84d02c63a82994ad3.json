@@ -1,0 +1,53 @@
+{
+  "case_id": "20:0",
+  "program_id": "20",
+  "code": "def is_woodall(x): \r\n\tif (x % 2 == 0): \r\n\t\treturn False\r\n\tif (x == 1): \r\n\t\treturn True\r\n\tx = x + 1 \r\n\tp = 0\r\n\twhile (x % 2 == 0): \r\n\t\tx = x/2\r\n\t\tp = p + 1\r\n\t\tif (p == x): \r\n\t\t\treturn True\r\n\treturn False",
+  "call": "is_woodall(383)",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "9ef19946b4c37c8a2c9e8db2d35611af8cb021129ee105dc7521ec8a452449e8",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef is_woodall(x): \r\n\tif (x % 2 == 0): \r\n\t\treturn False\r\n\tif (x == 1): \r\n\t\treturn True\r\n\tx = x + 1 \r\n\tp = 0\r\n\twhile (x % 2 == 0): \r\n\t\tx = x/2\r\n\t\tp = p + 1\r\n\t\tif (p == x): \r\n\t\t\treturn True\r\n\treturn False\n\nassert is_woodall(383) ==",
+  "n_prompt_tokens": 270,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.43209198117256165,
+    -0.4042585492134094
+  ],
+  "token_entropy": [
+    0.6767356991767883,
+    0.9697952270507812
+  ],
+  "token_logprob_sum": [
+    -759878.625,
+    -744343.375
+  ],
+  "token_topk_mean_logprob": [
+    -8.45709228515625,
+    -7.041759014129639
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 256,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

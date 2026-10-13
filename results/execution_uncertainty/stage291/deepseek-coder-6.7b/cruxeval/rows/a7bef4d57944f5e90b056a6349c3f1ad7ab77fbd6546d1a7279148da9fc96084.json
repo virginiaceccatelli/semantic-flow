@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_653",
+  "program_id": "sample_653",
+  "code": "def f(text, letter):\n    t = text\n    for alph in text:\n        t = t.replace(alph, \"\")\n    return len(t.split(letter))",
+  "call": "f(\"c, c, c ,c, c\", \"c\")",
+  "expected": "1",
+  "dataset": "cruxeval",
+  "source_group": "7e2b231ca8e1b9f9f13baef2ccf528384c386beab0d62923571c3794d7ad3db4",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, letter):\n    t = text\n    for alph in text:\n        t = t.replace(alph, \"\")\n    return len(t.split(letter))\n\nassert f(\"c, c, c ,c, c\", \"c\") ==",
+  "n_prompt_tokens": 216,
+  "raw_generation": "  5\n",
+  "answer": "5",
+  "generated_token_ids": [
+    243,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "5",
+  "token_logprob": [
+    -1.009791612625122,
+    -0.970657467842102,
+    -0.24405695497989655
+  ],
+  "token_entropy": [
+    2.2565126419067383,
+    1.8082592487335205,
+    0.6263498067855835
+  ],
+  "token_logprob_sum": [
+    -698261.625,
+    -820294.0,
+    -799014.75
+  ],
+  "token_topk_mean_logprob": [
+    -4.097291469573975,
+    -7.020657539367676,
+    -7.2628068923950195
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 196,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

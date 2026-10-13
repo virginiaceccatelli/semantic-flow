@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_73",
+  "program_id": "sample_73",
+  "code": "def f(row):\n    return (row.count('1'), row.count('0'))",
+  "call": "f(\"100010010\")",
+  "expected": "(3, 6)",
+  "dataset": "cruxeval",
+  "source_group": "3aa8bc4fbc3c9c2308079589903d45dbfcdf3b85ab401a6e32dd25436e5d6de4",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(row):\n    return (row.count('1'), row.count('0'))\n\nassert f(\"100010010\") ==",
+  "n_prompt_tokens": 191,
+  "raw_generation": " (4, 5)\n",
+  "answer": "(4, 5)",
+  "generated_token_ids": [
+    334,
+    19,
+    11,
+    207,
+    20,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "(4, 5)",
+  "token_logprob": [
+    -0.0025175088085234165,
+    -0.6784367561340332,
+    -0.0006189814303070307,
+    -0.040477316826581955,
+    -0.6922422647476196,
+    -0.005543336272239685,
+    -0.20667500793933868
+  ],
+  "token_entropy": [
+    0.023160047829151154,
+    1.164129614830017,
+    0.006219031289219856,
+    0.20932425558567047,
+    1.0979541540145874,
+    0.03606407344341278,
+    0.5136626362800598
+  ],
+  "token_logprob_sum": [
+    -828572.5,
+    -781813.25,
+    -888749.625,
+    -810294.5,
+    -891600.75,
+    -933705.75,
+    -803750.0
+  ],
+  "token_topk_mean_logprob": [
+    -9.658767700195312,
+    -8.047186851501465,
+    -11.206870079040527,
+    -9.18422794342041,
+    -10.820366859436035,
+    -11.355544090270996,
+    -9.1097993850708
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 174,
+  "read_token_ids": [
+    14621,
+    2312
+  ]
+}

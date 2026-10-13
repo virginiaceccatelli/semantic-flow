@@ -1,0 +1,83 @@
+{
+  "case_id": "131:0",
+  "program_id": "131",
+  "code": "def reverse_vowels(str1):\r\n\tvowels = \"\"\r\n\tfor char in str1:\r\n\t\tif char in \"aeiouAEIOU\":\r\n\t\t\tvowels += char\r\n\tresult_string = \"\"\r\n\tfor char in str1:\r\n\t\tif char in \"aeiouAEIOU\":\r\n\t\t\tresult_string += vowels[-1]\r\n\t\t\tvowels = vowels[:-1]\r\n\t\telse:\r\n\t\t\tresult_string += char\r\n\treturn result_string",
+  "call": "reverse_vowels(\"Python\")",
+  "expected": "'Python'",
+  "dataset": "mbpp",
+  "source_group": "70f8d8d31a1dd31d063aa8e24d9b0ffe3c5979e7f8872a2801008e3f5ec128bc",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef reverse_vowels(str1):\r\n\tvowels = \"\"\r\n\tfor char in str1:\r\n\t\tif char in \"aeiouAEIOU\":\r\n\t\t\tvowels += char\r\n\tresult_string = \"\"\r\n\tfor char in str1:\r\n\t\tif char in \"aeiouAEIOU\":\r\n\t\t\tresult_string += vowels[-1]\r\n\t\t\tvowels = vowels[:-1]\r\n\t\telse:\r\n\t\t\tresult_string += char\r\n\treturn result_string\n\nassert reverse_vowels(\"Python\") ==",
+  "n_prompt_tokens": 292,
+  "raw_generation": " \"PthoNy\"\n",
+  "answer": "\"PthoNy\"",
+  "generated_token_ids": [
+    440,
+    47,
+    392,
+    78,
+    45,
+    88,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'PthoNy'",
+  "token_logprob": [
+    -0.05533774942159653,
+    -0.854154109954834,
+    -1.9741747379302979,
+    -1.4508875608444214,
+    -0.8639295697212219,
+    -0.24308528006076813,
+    -0.015733277425169945,
+    -0.3240149915218353
+  ],
+  "token_entropy": [
+    0.28126978874206543,
+    2.2721619606018066,
+    3.5334243774414062,
+    2.3504528999328613,
+    2.045579671859741,
+    0.6852525472640991,
+    0.1007063090801239,
+    0.7369327545166016
+  ],
+  "token_logprob_sum": [
+    -732583.8125,
+    -682905.75,
+    -639712.375,
+    -781819.75,
+    -786369.25,
+    -834923.25,
+    -803479.0,
+    -753243.625
+  ],
+  "token_topk_mean_logprob": [
+    -7.680337429046631,
+    -4.310404300689697,
+    -3.558549642562866,
+    -4.238387584686279,
+    -4.279554843902588,
+    -7.280584812164307,
+    -8.762608528137207,
+    -8.0646390914917
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 279,
+  "read_token_ids": [
+    2600,
+    2312
+  ]
+}

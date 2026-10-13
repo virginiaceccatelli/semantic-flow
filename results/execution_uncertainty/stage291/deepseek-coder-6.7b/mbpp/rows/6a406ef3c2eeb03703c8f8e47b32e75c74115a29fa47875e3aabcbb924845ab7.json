@@ -1,0 +1,53 @@
+{
+  "case_id": "403:1",
+  "program_id": "403",
+  "code": "import re\r\ndef is_valid_URL(str):\r\n\tregex = (\"((http|https)://)(www.)?\" +\r\n\t\t\t\"[a-zA-Z0-9@:%._\\\\+~#?&//=]\" +\r\n\t\t\t\"{2,256}\\\\.[a-z]\" +\r\n\t\t\t\"{2,6}\\\\b([-a-zA-Z0-9@:%\" +\r\n\t\t\t\"._\\\\+~#?&//=]*)\")\r\n\tp = re.compile(regex)\r\n\tif (str == None):\r\n\t\treturn False\r\n\tif(re.search(p, str)):\r\n\t\treturn True\r\n\telse:\r\n\t\treturn False",
+  "call": "is_valid_URL(\"https:/www.gmail.com\")",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "55ff30072ea81384bcbb7925cdd29b7ee7ffdc96208f3833fdc933d982336945",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef is_valid_URL(str):\r\n\tregex = (\"((http|https)://)(www.)?\" +\r\n\t\t\t\"[a-zA-Z0-9@:%._\\\\+~#?&//=]\" +\r\n\t\t\t\"{2,256}\\\\.[a-z]\" +\r\n\t\t\t\"{2,6}\\\\b([-a-zA-Z0-9@:%\" +\r\n\t\t\t\"._\\\\+~#?&//=]*)\")\r\n\tp = re.compile(regex)\r\n\tif (str == None):\r\n\t\treturn False\r\n\tif(re.search(p, str)):\r\n\t\treturn True\r\n\telse:\r\n\t\treturn False\n\nassert is_valid_URL(\"https:/www.gmail.com\") ==",
+  "n_prompt_tokens": 339,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.5464781522750854,
+    -0.5153053998947144
+  ],
+  "token_entropy": [
+    0.8334093689918518,
+    1.0038434267044067
+  ],
+  "token_logprob_sum": [
+    -708720.1875,
+    -725496.0625
+  ],
+  "token_topk_mean_logprob": [
+    -6.912103176116943,
+    -7.149681091308594
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 320,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

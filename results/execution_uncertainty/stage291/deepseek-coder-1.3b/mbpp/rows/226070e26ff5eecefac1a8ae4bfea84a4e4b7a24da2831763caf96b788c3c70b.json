@@ -1,0 +1,63 @@
+{
+  "case_id": "23:0",
+  "program_id": "23",
+  "code": "def maximum_Sum(list1): \r\n    maxi = -100000\r\n    for x in list1: \r\n        sum = 0 \r\n        for y in x: \r\n            sum+= y      \r\n        maxi = max(sum,maxi)     \r\n    return maxi",
+  "call": "maximum_Sum([[1,2,3],[4,5,6],[10,11,12],[7,8,9]])",
+  "expected": "33",
+  "dataset": "mbpp",
+  "source_group": "11eff77e3c4c7fc2d4272814dff7dbcdbe2dc379df40e5a45669d0e73b67c193",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef maximum_Sum(list1): \r\n    maxi = -100000\r\n    for x in list1: \r\n        sum = 0 \r\n        for y in x: \r\n            sum+= y      \r\n        maxi = max(sum,maxi)     \r\n    return maxi\n\nassert maximum_Sum([[1,2,3],[4,5,6],[10,11,12],[7,8,9]]) ==",
+  "n_prompt_tokens": 270,
+  "raw_generation": "  45\n",
+  "answer": "45",
+  "generated_token_ids": [
+    243,
+    19,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "45",
+  "token_logprob": [
+    -1.8055486679077148,
+    -1.1104562282562256,
+    -0.25960808992385864,
+    -0.32459908723831177
+  ],
+  "token_entropy": [
+    2.974790096282959,
+    1.6387118101119995,
+    1.003574013710022,
+    0.9163765907287598
+  ],
+  "token_logprob_sum": [
+    -642133.0,
+    -771541.0,
+    -819605.375,
+    -721723.5625
+  ],
+  "token_topk_mean_logprob": [
+    -3.574298858642578,
+    -6.3338942527771,
+    -6.584608554840088,
+    -6.418348789215088
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 229,
+  "read_token_ids": [
+    72,
+    2312
+  ]
+}

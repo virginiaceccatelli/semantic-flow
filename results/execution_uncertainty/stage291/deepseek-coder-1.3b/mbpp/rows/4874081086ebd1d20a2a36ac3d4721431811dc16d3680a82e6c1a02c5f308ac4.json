@@ -1,0 +1,63 @@
+{
+  "case_id": "398:2",
+  "program_id": "398",
+  "code": "def sum_of_digits(nums):\r\n    return sum(int(el) for n in nums for el in str(n) if el.isdigit())",
+  "call": "sum_of_digits([10,20,-4,5,-70])",
+  "expected": "19",
+  "dataset": "mbpp",
+  "source_group": "94768f411cbd3d2a817982c7943f23384844990673a7a2ac6d8bea6d4528b989",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_of_digits(nums):\r\n    return sum(int(el) for n in nums for el in str(n) if el.isdigit())\n\nassert sum_of_digits([10,20,-4,5,-70]) ==",
+  "n_prompt_tokens": 218,
+  "raw_generation": " -10\n",
+  "answer": "-10",
+  "generated_token_ids": [
+    567,
+    16,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-10",
+  "token_logprob": [
+    -0.07210000604391098,
+    -1.437923789024353,
+    -2.0980429649353027,
+    -0.5649092793464661
+  ],
+  "token_entropy": [
+    0.43428564071655273,
+    1.9917346239089966,
+    2.5047895908355713,
+    1.3197706937789917
+  ],
+  "token_logprob_sum": [
+    -734825.125,
+    -716016.25,
+    -796952.25,
+    -736608.125
+  ],
+  "token_topk_mean_logprob": [
+    -6.02209997177124,
+    -7.087923526763916,
+    -4.460543155670166,
+    -5.089909553527832
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 193,
+  "read_token_ids": [
+    4683,
+    2312
+  ]
+}

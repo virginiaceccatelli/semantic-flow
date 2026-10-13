@@ -1,0 +1,53 @@
+{
+  "case_id": "481:1",
+  "program_id": "481",
+  "code": "def is_subset_sum(set, n, sum):\r\n\tif (sum == 0):\r\n\t\treturn True\r\n\tif (n == 0):\r\n\t\treturn False\r\n\tif (set[n - 1] > sum):\r\n\t\treturn is_subset_sum(set, n - 1, sum)\r\n\treturn is_subset_sum(set, n-1, sum) or is_subset_sum(set, n-1, sum-set[n-1])",
+  "call": "is_subset_sum([3, 34, 4, 12, 5, 2], 6, 30)",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "020fc5c88f6715207cda1d5b60f6e7edf1569660b8d6e628293f39a5180a5d45",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef is_subset_sum(set, n, sum):\r\n\tif (sum == 0):\r\n\t\treturn True\r\n\tif (n == 0):\r\n\t\treturn False\r\n\tif (set[n - 1] > sum):\r\n\t\treturn is_subset_sum(set, n - 1, sum)\r\n\treturn is_subset_sum(set, n-1, sum) or is_subset_sum(set, n-1, sum-set[n-1])\n\nassert is_subset_sum([3, 34, 4, 12, 5, 2], 6, 30) ==",
+  "n_prompt_tokens": 300,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.13366036117076874,
+    -0.39511457085609436
+  ],
+  "token_entropy": [
+    0.42258304357528687,
+    0.8824052810668945
+  ],
+  "token_logprob_sum": [
+    -767382.375,
+    -761934.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.95241117477417,
+    -7.354489803314209
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 263,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

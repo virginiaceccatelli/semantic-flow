@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_206",
+  "program_id": "sample_206",
+  "code": "def f(a):\n    return ' '.join(a.split())",
+  "call": "f(' h e l l o   w o r l d! ')",
+  "expected": "'h e l l o w o r l d!'",
+  "dataset": "cruxeval",
+  "source_group": "c2efe7edb69e48fe030c0bbb7a637d5d0edf94d9d4368cc9933835fc09acb989",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(a):\n    return ' '.join(a.split())\n\nassert f(' h e l l o   w o r l d! ') ==",
+  "n_prompt_tokens": 190,
+  "raw_generation": " 'Hello World!'\n",
+  "answer": "'Hello World!'",
+  "generated_token_ids": [
+    651,
+    17535,
+    5414,
+    13837,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Hello World!'",
+  "token_logprob": [
+    -0.022638102993369102,
+    -0.012254777364432812,
+    -0.05744439736008644,
+    -0.4088191092014313,
+    -0.2539438009262085
+  ],
+  "token_entropy": [
+    0.13428494334220886,
+    0.08117285370826721,
+    0.308913916349411,
+    0.6499190330505371,
+    0.5467895865440369
+  ],
+  "token_logprob_sum": [
+    -844251.0,
+    -1055599.25,
+    -923226.375,
+    -847836.75,
+    -817721.5
+  ],
+  "token_topk_mean_logprob": [
+    -8.624981880187988,
+    -9.74662971496582,
+    -7.488694667816162,
+    -9.901007652282715,
+    -9.87894344329834
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 169,
+  "read_token_ids": [
+    4683,
+    2312
+  ]
+}

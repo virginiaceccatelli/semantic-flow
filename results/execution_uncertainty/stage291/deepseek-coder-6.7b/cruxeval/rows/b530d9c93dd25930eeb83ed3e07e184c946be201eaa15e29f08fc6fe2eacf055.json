@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_571",
+  "program_id": "sample_571",
+  "code": "def f(input_string, spaces):\n    return input_string.expandtabs(spaces)",
+  "call": "f(r'a\\tb', 4)",
+  "expected": "'a\\\\tb'",
+  "dataset": "cruxeval",
+  "source_group": "62201ded5c80f75b404c44af27c993cd8efd939d2ee3d8d56e5c77b155b1f081",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(input_string, spaces):\n    return input_string.expandtabs(spaces)\n\nassert f(r'a\\tb', 4) ==",
+  "n_prompt_tokens": 191,
+  "raw_generation": " 'a   b'\n",
+  "answer": "'a   b'",
+  "generated_token_ids": [
+    651,
+    64,
+    243,
+    270,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'a   b'",
+  "token_logprob": [
+    -0.36862656474113464,
+    -0.007020685356110334,
+    -0.6597797274589539,
+    -0.07396200299263,
+    -0.008311799727380276,
+    -0.16787034273147583
+  ],
+  "token_entropy": [
+    0.7244606018066406,
+    0.051978107541799545,
+    1.0182785987854004,
+    0.328763484954834,
+    0.05486246570944786,
+    0.4738645851612091
+  ],
+  "token_logprob_sum": [
+    -773508.625,
+    -816825.875,
+    -800718.375,
+    -1040274.4375,
+    -823352.125,
+    -819944.9375
+  ],
+  "token_topk_mean_logprob": [
+    -7.868626594543457,
+    -9.303895950317383,
+    -6.981654644012451,
+    -10.111462593078613,
+    -9.983312606811523,
+    -8.49912166595459
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 175,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

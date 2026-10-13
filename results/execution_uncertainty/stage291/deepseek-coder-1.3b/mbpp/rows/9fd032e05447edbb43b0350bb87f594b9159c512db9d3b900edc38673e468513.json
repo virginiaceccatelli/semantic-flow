@@ -1,0 +1,58 @@
+{
+  "case_id": "446:0",
+  "program_id": "446",
+  "code": "from collections import Counter \r\ndef count_Occurrence(tup, lst): \r\n    count = 0\r\n    for item in tup: \r\n        if item in lst: \r\n            count+= 1 \r\n    return count",
+  "call": "count_Occurrence(('a', 'a', 'c', 'b', 'd'),['a', 'b'] )",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "a131e662ec66f0b07493284a44ccea4c78750f402903325db94175c03f2859c1",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nfrom collections import Counter \r\ndef count_Occurrence(tup, lst): \r\n    count = 0\r\n    for item in tup: \r\n        if item in lst: \r\n            count+= 1 \r\n    return count\n\nassert count_Occurrence(('a', 'a', 'c', 'b', 'd'),['a', 'b'] ) ==",
+  "n_prompt_tokens": 247,
+  "raw_generation": "  2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    243,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -0.9453508257865906,
+    -0.5272506475448608,
+    -0.459369033575058
+  ],
+  "token_entropy": [
+    1.876258134841919,
+    0.887107789516449,
+    1.1319173574447632
+  ],
+  "token_logprob_sum": [
+    -688893.625,
+    -798615.6875,
+    -731646.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.551600933074951,
+    -8.364750862121582,
+    -6.215619087219238
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 214,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

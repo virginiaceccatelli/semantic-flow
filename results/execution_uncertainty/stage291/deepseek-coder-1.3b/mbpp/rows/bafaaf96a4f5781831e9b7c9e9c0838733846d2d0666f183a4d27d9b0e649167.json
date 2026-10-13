@@ -1,0 +1,63 @@
+{
+  "case_id": "423:2",
+  "program_id": "423",
+  "code": "def get_maxgold(gold, m, n): \r\n    goldTable = [[0 for i in range(n)] \r\n                        for j in range(m)]   \r\n    for col in range(n-1, -1, -1): \r\n        for row in range(m):  \r\n            if (col == n-1): \r\n                right = 0\r\n            else: \r\n                right = goldTable[row][col+1] \r\n            if (row == 0 or col == n-1): \r\n                right_up = 0\r\n            else: \r\n                right_up = goldTable[row-1][col+1] \r\n            if (row == m-1 or col == n-1): \r\n                right_down = 0\r\n            else: \r\n                right_down = goldTable[row+1][col+1] \r\n            goldTable[row][col] = gold[row][col] + max(right, right_up, right_down) \r\n    res = goldTable[0][0] \r\n    for i in range(1, m): \r\n        res = max(res, goldTable[i][0])  \r\n    return res",
+  "call": "get_maxgold([[4,9],[3,7]],2,2)",
+  "expected": "13",
+  "dataset": "mbpp",
+  "source_group": "f63534202d6e1dc67d56b70314caebae2fa399a0f4ebf58a23337f84af19be7f",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef get_maxgold(gold, m, n): \r\n    goldTable = [[0 for i in range(n)] \r\n                        for j in range(m)]   \r\n    for col in range(n-1, -1, -1): \r\n        for row in range(m):  \r\n            if (col == n-1): \r\n                right = 0\r\n            else: \r\n                right = goldTable[row][col+1] \r\n            if (row == 0 or col == n-1): \r\n                right_up = 0\r\n            else: \r\n                right_up = goldTable[row-1][col+1] \r\n            if (row == m-1 or col == n-1): \r\n                right_down = 0\r\n            else: \r\n                right_down = goldTable[row+1][col+1] \r\n            goldTable[row][col] = gold[row][col] + max(right, right_up, right_down) \r\n    res = goldTable[0][0] \r\n    for i in range(1, m): \r\n        res = max(res, goldTable[i][0])  \r\n    return res\n\nassert get_maxgold([[4,9],[3,7]],2,2) ==",
+  "n_prompt_tokens": 466,
+  "raw_generation": "  16\n",
+  "answer": "16",
+  "generated_token_ids": [
+    243,
+    16,
+    21,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "16",
+  "token_logprob": [
+    -1.1922707557678223,
+    -0.14026516675949097,
+    -1.589501976966858,
+    -0.29106882214546204
+  ],
+  "token_entropy": [
+    2.2985851764678955,
+    0.5809438824653625,
+    2.185133218765259,
+    0.9147781133651733
+  ],
+  "token_logprob_sum": [
+    -674028.25,
+    -813292.5,
+    -730287.25,
+    -732208.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.150083065032959,
+    -8.596514701843262,
+    -6.464501857757568,
+    -6.40981912612915
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 441,
+  "read_token_ids": [
+    593,
+    2312
+  ]
+}

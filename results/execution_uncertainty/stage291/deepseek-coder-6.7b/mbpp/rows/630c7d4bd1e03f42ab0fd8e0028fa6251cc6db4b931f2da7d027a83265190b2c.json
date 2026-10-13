@@ -1,0 +1,68 @@
+{
+  "case_id": "319:0",
+  "program_id": "319",
+  "code": "import re\r\ndef find_long_word(text):\r\n  return (re.findall(r\"\\b\\w{5}\\b\", text))",
+  "call": "find_long_word('Please move back to strem')",
+  "expected": "['strem']",
+  "dataset": "mbpp",
+  "source_group": "844f4b785a0fd2374fb38d807e35b9478bd3200d5c58413af0a186890cfa60a0",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef find_long_word(text):\r\n  return (re.findall(r\"\\b\\w{5}\\b\", text))\n\nassert find_long_word('Please move back to strem') ==",
+  "n_prompt_tokens": 207,
+  "raw_generation": " ['strem']\n",
+  "answer": "['strem']",
+  "generated_token_ids": [
+    12036,
+    292,
+    1836,
+    3676,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "['strem']",
+  "token_logprob": [
+    -0.20100440084934235,
+    -0.6315403580665588,
+    -0.007832883857190609,
+    -0.02655424177646637,
+    -0.3894280791282654
+  ],
+  "token_entropy": [
+    0.8739155530929565,
+    1.7831597328186035,
+    0.05711524188518524,
+    0.15497657656669617,
+    0.8487696647644043
+  ],
+  "token_logprob_sum": [
+    -696830.5,
+    -640532.0,
+    -864711.75,
+    -720311.875,
+    -721852.5625
+  ],
+  "token_topk_mean_logprob": [
+    -5.622879981994629,
+    -5.300290584564209,
+    -9.254707336425781,
+    -8.770304679870605,
+    -8.020678520202637
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 189,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

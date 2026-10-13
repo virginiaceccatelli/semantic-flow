@@ -1,0 +1,63 @@
+{
+  "case_id": "402:1",
+  "program_id": "402",
+  "code": "def ncr_modp(n, r, p): \r\n    C = [0 for i in range(r+1)]   \r\n    C[0] = 1\r\n    for i in range(1, n+1): \r\n        for j in range(min(i, r), 0, -1): \r\n            C[j] = (C[j] + C[j-1]) % p   \r\n    return C[r]",
+  "call": "ncr_modp(15,12,43)",
+  "expected": "25",
+  "dataset": "mbpp",
+  "source_group": "b49f6516fbd396555969852f3db885a6c4e4ed863dfc4d3fb60f5603dd7812e4",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef ncr_modp(n, r, p): \r\n    C = [0 for i in range(r+1)]   \r\n    C[0] = 1\r\n    for i in range(1, n+1): \r\n        for j in range(min(i, r), 0, -1): \r\n            C[j] = (C[j] + C[j-1]) % p   \r\n    return C[r]\n\nassert ncr_modp(15,12,43) ==",
+  "n_prompt_tokens": 280,
+  "raw_generation": "  10\n",
+  "answer": "10",
+  "generated_token_ids": [
+    243,
+    16,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "10",
+  "token_logprob": [
+    -1.5135746002197266,
+    -1.2158596515655518,
+    -2.223548173904419,
+    -1.713590145111084
+  ],
+  "token_entropy": [
+    2.628544330596924,
+    2.090930461883545,
+    2.5520598888397217,
+    2.548447608947754
+  ],
+  "token_logprob_sum": [
+    -644125.75,
+    -741776.625,
+    -727742.75,
+    -748621.125
+  ],
+  "token_topk_mean_logprob": [
+    -3.801074743270874,
+    -6.140859603881836,
+    -4.148548126220703,
+    -4.076090335845947
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 260,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

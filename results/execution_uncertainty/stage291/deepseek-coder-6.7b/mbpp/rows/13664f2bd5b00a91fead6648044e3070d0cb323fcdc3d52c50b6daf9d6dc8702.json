@@ -1,0 +1,78 @@
+{
+  "case_id": "324:1",
+  "program_id": "324",
+  "code": "def sum_of_alternates(test_tuple):\r\n  sum1 = 0\r\n  sum2 = 0\r\n  for idx, ele in enumerate(test_tuple):\r\n    if idx % 2:\r\n      sum1 += ele\r\n    else:\r\n      sum2 += ele\r\n  return ((sum1),(sum2))",
+  "call": "sum_of_alternates((1, 2, 3, 4, 5))",
+  "expected": "(6, 9)",
+  "dataset": "mbpp",
+  "source_group": "1abff3f9c30dbe46a1b78159169c363d98e268209f3ef30787c3b8298c0f92c7",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_of_alternates(test_tuple):\r\n  sum1 = 0\r\n  sum2 = 0\r\n  for idx, ele in enumerate(test_tuple):\r\n    if idx % 2:\r\n      sum1 += ele\r\n    else:\r\n      sum2 += ele\r\n  return ((sum1),(sum2))\n\nassert sum_of_alternates((1, 2, 3, 4, 5)) ==",
+  "n_prompt_tokens": 261,
+  "raw_generation": " (9, 6)\n",
+  "answer": "(9, 6)",
+  "generated_token_ids": [
+    334,
+    24,
+    11,
+    207,
+    21,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "(9, 6)",
+  "token_logprob": [
+    -0.166541188955307,
+    -0.5054398775100708,
+    -0.004898452199995518,
+    -0.08955886214971542,
+    -0.35836365818977356,
+    -0.01710859313607216,
+    -0.3953162729740143
+  ],
+  "token_entropy": [
+    0.4712922275066376,
+    1.3861085176467896,
+    0.037122100591659546,
+    0.42689794301986694,
+    1.106348991394043,
+    0.10005205869674683,
+    0.9128084182739258
+  ],
+  "token_logprob_sum": [
+    -783392.6875,
+    -774442.8125,
+    -832452.0,
+    -779904.125,
+    -868297.875,
+    -886971.625,
+    -737644.0625
+  ],
+  "token_topk_mean_logprob": [
+    -7.98529052734375,
+    -6.66793966293335,
+    -9.723648071289062,
+    -7.489558696746826,
+    -9.333364486694336,
+    -9.160859107971191,
+    -7.548440456390381
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 235,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case_id": "204:2",
+  "program_id": "204",
+  "code": "def count(s,c) : \r\n    res = 0 \r\n    for i in range(len(s)) : \r\n        if (s[i] == c): \r\n            res = res + 1\r\n    return res",
+  "call": "count(\"mnmm0pm\",\"m\")",
+  "expected": "4",
+  "dataset": "mbpp",
+  "source_group": "8663a11e43d4e67e58b671a74424767c06521ec6584c4e5e22390ac84774e125",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count(s,c) : \r\n    res = 0 \r\n    for i in range(len(s)) : \r\n        if (s[i] == c): \r\n            res = res + 1\r\n    return res\n\nassert count(\"mnmm0pm\",\"m\") ==",
+  "n_prompt_tokens": 223,
+  "raw_generation": "  3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    243,
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.143154501914978,
+    -0.7216232419013977,
+    -0.31753310561180115
+  ],
+  "token_entropy": [
+    2.07631778717041,
+    1.140325665473938,
+    0.9392292499542236
+  ],
+  "token_logprob_sum": [
+    -659847.25,
+    -769120.375,
+    -713263.625
+  ],
+  "token_topk_mean_logprob": [
+    -4.4994049072265625,
+    -8.321623802185059,
+    -6.461284160614014
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 209,
+  "read_token_ids": [
+    593,
+    2312
+  ]
+}

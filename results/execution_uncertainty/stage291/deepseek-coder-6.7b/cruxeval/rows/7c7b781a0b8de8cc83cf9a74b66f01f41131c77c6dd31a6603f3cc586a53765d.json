@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_297",
+  "program_id": "sample_297",
+  "code": "def f(num):\n    if 0 < num < 1000 and num != 6174:\n        return 'Half Life'\n    return 'Not found'",
+  "call": "f(6173)",
+  "expected": "'Not found'",
+  "dataset": "cruxeval",
+  "source_group": "2a08a4755316758fda3fee42584b83fc03a6becfc725a38e580235b801aa03b4",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(num):\n    if 0 < num < 1000 and num != 6174:\n        return 'Half Life'\n    return 'Not found'\n\nassert f(6173) ==",
+  "n_prompt_tokens": 206,
+  "raw_generation": " 'Not found'\n",
+  "answer": "'Not found'",
+  "generated_token_ids": [
+    651,
+    3635,
+    1496,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Not found'",
+  "token_logprob": [
+    -0.02590116485953331,
+    -0.254477858543396,
+    -0.0038285781629383564,
+    -0.009200319647789001,
+    -0.16396883130073547
+  ],
+  "token_entropy": [
+    0.13379523158073425,
+    0.5588600635528564,
+    0.0269102081656456,
+    0.05574628338217735,
+    0.4483509659767151
+  ],
+  "token_logprob_sum": [
+    -845213.5625,
+    -795137.6875,
+    -833812.0,
+    -783698.75,
+    -807164.625
+  ],
+  "token_topk_mean_logprob": [
+    -8.969650268554688,
+    -9.316977500915527,
+    -11.156953811645508,
+    -10.365449905395508,
+    -9.451469421386719
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 194,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

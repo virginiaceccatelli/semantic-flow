@@ -1,0 +1,68 @@
+{
+  "case_id": "269:0",
+  "program_id": "269",
+  "code": "def ascii_value(k):\r\n  ch=k\r\n  return ord(ch)",
+  "call": "ascii_value('A')",
+  "expected": "65",
+  "dataset": "mbpp",
+  "source_group": "a1922163a0d3c22b2352d458247d7696d780c26504690c5fd50c162ddc4dccf6",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef ascii_value(k):\r\n  ch=k\r\n  return ord(ch)\n\nassert ascii_value('A') ==",
+  "n_prompt_tokens": 189,
+  "raw_generation": " ord('A')\n",
+  "answer": "ord('A')",
+  "generated_token_ids": [
+    4882,
+    1497,
+    32,
+    2462,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "invalid",
+  "answer_form": null,
+  "invalid_reason": "non_constant: not a constant expression: Call",
+  "parsed_answer": null,
+  "token_logprob": [
+    -0.2289755940437317,
+    -0.05078459903597832,
+    -0.006928348448127508,
+    -0.02669074945151806,
+    -0.28165608644485474
+  ],
+  "token_entropy": [
+    0.9137897491455078,
+    0.23799973726272583,
+    0.054290227591991425,
+    0.13832247257232666,
+    0.910579264163971
+  ],
+  "token_logprob_sum": [
+    -710849.625,
+    -797311.9375,
+    -807473.5625,
+    -737893.25,
+    -748881.75
+  ],
+  "token_topk_mean_logprob": [
+    -5.950850963592529,
+    -9.100785255432129,
+    -8.950678825378418,
+    -9.664191246032715,
+    -6.164731025695801
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 176,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

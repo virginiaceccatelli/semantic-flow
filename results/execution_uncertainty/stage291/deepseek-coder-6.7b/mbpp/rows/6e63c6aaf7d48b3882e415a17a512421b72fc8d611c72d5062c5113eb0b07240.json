@@ -1,0 +1,53 @@
+{
+  "case_id": "172:1",
+  "program_id": "172",
+  "code": "def count_occurance(s):\r\n  count=0\r\n  for i in range(len(s)):\r\n    if (s[i]== 's' and s[i+1]=='t' and s[i+2]== 'd'):\r\n      count = count + 1\r\n  return count",
+  "call": "count_occurance(\"truststdsolensporsd\")",
+  "expected": "1",
+  "dataset": "mbpp",
+  "source_group": "869df40de1abb81f4c3a4c224eb47943246ce9c2889297ce0ad75ff72320330d",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_occurance(s):\r\n  count=0\r\n  for i in range(len(s)):\r\n    if (s[i]== 's' and s[i+1]=='t' and s[i+2]== 'd'):\r\n      count = count + 1\r\n  return count\n\nassert count_occurance(\"truststdsolensporsd\") ==",
+  "n_prompt_tokens": 250,
+  "raw_generation": "3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.1252187490463257,
+    -0.6241180896759033
+  ],
+  "token_entropy": [
+    2.2591800689697266,
+    1.0520247220993042
+  ],
+  "token_logprob_sum": [
+    -665909.4375,
+    -723863.6875
+  ],
+  "token_topk_mean_logprob": [
+    -4.125218868255615,
+    -6.567868232727051
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 230,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

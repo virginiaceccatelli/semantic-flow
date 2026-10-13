@@ -1,0 +1,53 @@
+{
+  "case_id": "168:1",
+  "program_id": "168",
+  "code": "def frequency(a,x): \r\n    count = 0  \r\n    for i in a: \r\n        if i == x: count += 1\r\n    return count",
+  "call": "frequency([1,2,2,3,3,3,4],3)",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "f280e1ee692ab2b5a9db77afc35a42902a7ec738097f942f7c2b97e99077f2b7",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef frequency(a,x): \r\n    count = 0  \r\n    for i in a: \r\n        if i == x: count += 1\r\n    return count\n\nassert frequency([1,2,2,3,3,3,4],3) ==",
+  "n_prompt_tokens": 216,
+  "raw_generation": "2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -0.9779346585273743,
+    -0.44306567311286926
+  ],
+  "token_entropy": [
+    1.9345955848693848,
+    1.1230108737945557
+  ],
+  "token_logprob_sum": [
+    -686154.75,
+    -708592.5625
+  ],
+  "token_topk_mean_logprob": [
+    -4.65918493270874,
+    -6.230565547943115
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 193,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

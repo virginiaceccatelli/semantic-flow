@@ -1,0 +1,63 @@
+{
+  "case_id": "477:0",
+  "program_id": "477",
+  "code": "def is_lower(string):\r\n  return (string.lower())",
+  "call": "is_lower(\"InValid\")",
+  "expected": "'invalid'",
+  "dataset": "mbpp",
+  "source_group": "60c1970d0e44839d6ded14ffe862af1f748c3ab80b36f496795bb1c05e73f77b",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef is_lower(string):\r\n  return (string.lower())\n\nassert is_lower(\"InValid\") ==",
+  "n_prompt_tokens": 181,
+  "raw_generation": " \"invalid\"\n",
+  "answer": "\"invalid\"",
+  "generated_token_ids": [
+    440,
+    21260,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'invalid'",
+  "token_logprob": [
+    -0.27825644612312317,
+    -0.07273446768522263,
+    -0.02292463555932045,
+    -0.4325258731842041
+  ],
+  "token_entropy": [
+    0.9729030132293701,
+    0.32773488759994507,
+    0.13300266861915588,
+    0.9506554007530212
+  ],
+  "token_logprob_sum": [
+    -733973.0,
+    -821769.625,
+    -703645.125,
+    -723466.0625
+  ],
+  "token_topk_mean_logprob": [
+    -5.990756511688232,
+    -8.238360404968262,
+    -8.582300186157227,
+    -7.64815092086792
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 169,
+  "read_token_ids": [
+    4683,
+    2312
+  ]
+}

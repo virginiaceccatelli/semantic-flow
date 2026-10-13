@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_469",
+  "program_id": "sample_469",
+  "code": "def f(text, position, value):\n   length = len(text)\n   index = position % (length)\n   if position < 0:\n       index = length // 2\n   new_text = list(text)\n   new_text.insert(index, value)\n   new_text.pop(length-1)\n   return ''.join(new_text)",
+  "call": "f('sduyai', 1, 'y')",
+  "expected": "'syduyi'",
+  "dataset": "cruxeval",
+  "source_group": "6ecdb5176a00757c3968df41e802f79d71e89b9832e10bb75a4c73bcd92e78f8",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, position, value):\n   length = len(text)\n   index = position % (length)\n   if position < 0:\n       index = length // 2\n   new_text = list(text)\n   new_text.insert(index, value)\n   new_text.pop(length-1)\n   return ''.join(new_text)\n\nassert f('sduyai', 1, 'y') ==",
+  "n_prompt_tokens": 257,
+  "raw_generation": " 'syduai'\n",
+  "answer": "'syduai'",
+  "generated_token_ids": [
+    651,
+    6262,
+    674,
+    2901,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'syduai'",
+  "token_logprob": [
+    -0.021139780059456825,
+    -1.3871630430221558,
+    -0.18756002187728882,
+    -0.9890997409820557,
+    -0.016370393335819244,
+    -0.12322396785020828
+  ],
+  "token_entropy": [
+    0.12961074709892273,
+    2.3471031188964844,
+    0.8584533929824829,
+    1.7139257192611694,
+    0.1045968160033226,
+    0.41313111782073975
+  ],
+  "token_logprob_sum": [
+    -797371.625,
+    -638384.8125,
+    -727916.625,
+    -724172.75,
+    -762532.125,
+    -793009.5625
+  ],
+  "token_topk_mean_logprob": [
+    -8.564889907836914,
+    -4.205913066864014,
+    -5.650060176849365,
+    -5.295349597930908,
+    -8.785120964050293,
+    -8.341974258422852
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 239,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

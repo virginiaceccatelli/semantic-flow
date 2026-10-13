@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_217",
+  "program_id": "sample_217",
+  "code": "def f(string):\n    if string.isalnum():\n        return \"ascii encoded is allowed for this language\"\n    return \"more than ASCII\"",
+  "call": "f('Str zahrnuje anglo-ameri\u00e6ske vasi piscina and kuca!')",
+  "expected": "'more than ASCII'",
+  "dataset": "cruxeval",
+  "source_group": "56bcccd7ab9dd5ce781b76c624e828b8ab1b3712f07078fb3db020acb7422369",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(string):\n    if string.isalnum():\n        return \"ascii encoded is allowed for this language\"\n    return \"more than ASCII\"\n\nassert f('Str zahrnuje anglo-ameri\u00e6ske vasi piscina and kuca!') ==",
+  "n_prompt_tokens": 222,
+  "raw_generation": " \"more than ASCII\"\n",
+  "answer": "\"more than ASCII\"",
+  "generated_token_ids": [
+    440,
+    4279,
+    849,
+    26362,
+    2536,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'more than ASCII'",
+  "token_logprob": [
+    -0.750001072883606,
+    -0.02213067188858986,
+    -0.001441036001779139,
+    -0.0008211340173147619,
+    -1.7762025890988298e-05,
+    -0.005002244841307402,
+    -0.22867432236671448
+  ],
+  "token_entropy": [
+    0.9527673721313477,
+    0.16545088589191437,
+    0.015274209901690483,
+    0.00795186311006546,
+    0.0002255514991702512,
+    0.037357039749622345,
+    0.5290873050689697
+  ],
+  "token_logprob_sum": [
+    -777377.625,
+    -692040.75,
+    -841073.125,
+    -931089.5,
+    -1145644.375,
+    -736037.875,
+    -786902.75
+  ],
+  "token_topk_mean_logprob": [
+    -6.768751621246338,
+    -7.71588134765625,
+    -9.832690238952637,
+    -11.394571304321289,
+    -16.0875186920166,
+    -9.66125202178955,
+    -9.184924125671387
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 190,
+  "read_token_ids": [
+    1,
+    2312
+  ]
+}

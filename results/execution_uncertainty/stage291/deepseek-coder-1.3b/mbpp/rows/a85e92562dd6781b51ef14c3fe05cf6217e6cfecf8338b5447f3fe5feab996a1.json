@@ -1,0 +1,78 @@
+{
+  "case_id": "474:0",
+  "program_id": "474",
+  "code": "def replace_char(str1,ch,newch):\r\n str2 = str1.replace(ch, newch)\r\n return str2",
+  "call": "replace_char(\"polygon\",'y','l')",
+  "expected": "'pollgon'",
+  "dataset": "mbpp",
+  "source_group": "766f14138f676c9fd5b94606a65887837242e7989aac97d8365f92b58d6d9709",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef replace_char(str1,ch,newch):\r\n str2 = str1.replace(ch, newch)\r\n return str2\n\nassert replace_char(\"polygon\",'y','l') ==",
+  "n_prompt_tokens": 203,
+  "raw_generation": " \"polonlgn\"\n",
+  "answer": "\"polonlgn\"",
+  "generated_token_ids": [
+    440,
+    5282,
+    249,
+    75,
+    5145,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'polonlgn'",
+  "token_logprob": [
+    -0.2704945504665375,
+    -0.7958530187606812,
+    -0.27767494320869446,
+    -0.9125720262527466,
+    -0.9234542846679688,
+    -0.11677417159080505,
+    -0.33355826139450073
+  ],
+  "token_entropy": [
+    0.723227858543396,
+    1.7716310024261475,
+    1.636278510093689,
+    2.307553291320801,
+    2.0622551441192627,
+    0.6017152070999146,
+    0.8549097180366516
+  ],
+  "token_logprob_sum": [
+    -740205.125,
+    -679660.4375,
+    -619155.875,
+    -641764.125,
+    -610420.0,
+    -663558.375,
+    -729669.875
+  ],
+  "token_topk_mean_logprob": [
+    -7.206822395324707,
+    -5.263431549072266,
+    -4.787049770355225,
+    -4.339915752410889,
+    -4.570329189300537,
+    -6.394898891448975,
+    -7.746058940887451
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 186,
+  "read_token_ids": [
+    17,
+    2312
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_209",
+  "program_id": "sample_209",
+  "code": "def f(prefix, s):\n    return str.removeprefix(prefix, s)",
+  "call": "f('hymi', 'hymifulhxhzpnyihyf')",
+  "expected": "'hymi'",
+  "dataset": "cruxeval",
+  "source_group": "c46e5570eea019d50add0d12fddf2842c2968f4e782b0b6871816de064ff3dcb",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(prefix, s):\n    return str.removeprefix(prefix, s)\n\nassert f('hymi', 'hymifulhxhzpnyihyf') ==",
+  "n_prompt_tokens": 196,
+  "raw_generation": " 'yf'\n",
+  "answer": "'yf'",
+  "generated_token_ids": [
+    651,
+    88,
+    69,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'yf'",
+  "token_logprob": [
+    -0.03125496953725815,
+    -1.1001875400543213,
+    -1.1139411926269531,
+    -0.817116916179657,
+    -0.17856213450431824
+  ],
+  "token_entropy": [
+    0.21408604085445404,
+    3.0361690521240234,
+    2.473278760910034,
+    2.021848440170288,
+    0.47075319290161133
+  ],
+  "token_logprob_sum": [
+    -735565.0,
+    -603159.4375,
+    -652289.75,
+    -633212.0,
+    -795330.6875
+  ],
+  "token_topk_mean_logprob": [
+    -7.025004863739014,
+    -3.7939374446868896,
+    -4.089502811431885,
+    -4.573366641998291,
+    -9.249655723571777
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 172,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

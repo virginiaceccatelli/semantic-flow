@@ -1,0 +1,53 @@
+{
+  "case_id": "431:1",
+  "program_id": "431",
+  "code": "def common_element(list1, list2):\r\n     result = False\r\n     for x in list1:\r\n         for y in list2:\r\n             if x == y:\r\n                 result = True\r\n                 return result",
+  "call": "common_element([1,2,3,4,5], [6,7,8,9])",
+  "expected": "None",
+  "dataset": "mbpp",
+  "source_group": "04ed3e623f74645801a3cef675af221b270093f39bd42ac1338b18ce886afbdb",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef common_element(list1, list2):\r\n     result = False\r\n     for x in list1:\r\n         for y in list2:\r\n             if x == y:\r\n                 result = True\r\n                 return result\n\nassert common_element([1,2,3,4,5], [6,7,8,9]) ==",
+  "n_prompt_tokens": 235,
+  "raw_generation": " False\n",
+  "answer": "False",
+  "generated_token_ids": [
+    14729,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "False",
+  "token_logprob": [
+    -0.022673415020108223,
+    -0.37663787603378296
+  ],
+  "token_entropy": [
+    0.14667877554893494,
+    0.944121241569519
+  ],
+  "token_logprob_sum": [
+    -759065.0,
+    -733514.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.9289231300354,
+    -6.826637268066406
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 207,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

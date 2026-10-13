@@ -1,0 +1,63 @@
+{
+  "case_id": "359:2",
+  "program_id": "359",
+  "code": "def Check_Solution(a,b,c): \r\n    if (2*b*b == 9*a*c): \r\n        return (\"Yes\"); \r\n    else: \r\n        return (\"No\");",
+  "call": "Check_Solution(1,-5,6)",
+  "expected": "'No'",
+  "dataset": "mbpp",
+  "source_group": "06512cf8860cc5a55770d067b9691575138836926410189e0ca3fcd7ca7a27e6",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef Check_Solution(a,b,c): \r\n    if (2*b*b == 9*a*c): \r\n        return (\"Yes\"); \r\n    else: \r\n        return (\"No\");\n\nassert Check_Solution(1,-5,6) ==",
+  "n_prompt_tokens": 221,
+  "raw_generation": " \"Yes\"\n",
+  "answer": "\"Yes\"",
+  "generated_token_ids": [
+    440,
+    5652,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Yes'",
+  "token_logprob": [
+    -0.3129138648509979,
+    -0.47609415650367737,
+    -0.09400324523448944,
+    -0.22980892658233643
+  ],
+  "token_entropy": [
+    0.9322920441627502,
+    0.6828969120979309,
+    0.354172945022583,
+    0.737848162651062
+  ],
+  "token_logprob_sum": [
+    -779207.0625,
+    -788685.75,
+    -722928.75,
+    -774353.375
+  ],
+  "token_topk_mean_logprob": [
+    -6.587913513183594,
+    -9.457344055175781,
+    -8.744003295898438,
+    -7.131175994873047
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 205,
+  "read_token_ids": [
+    2583,
+    2312
+  ]
+}

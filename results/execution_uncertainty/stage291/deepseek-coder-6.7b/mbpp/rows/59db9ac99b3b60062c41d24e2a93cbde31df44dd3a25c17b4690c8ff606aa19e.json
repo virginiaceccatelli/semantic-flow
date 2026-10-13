@@ -1,0 +1,73 @@
+{
+  "case_id": "171:0",
+  "program_id": "171",
+  "code": "import math\r\ndef perimeter_pentagon(a):\r\n  perimeter=(5*a)\r\n  return perimeter",
+  "call": "perimeter_pentagon(5)",
+  "expected": "25",
+  "dataset": "mbpp",
+  "source_group": "f59b1f1de313b50c65b38051aeb79515419e9d0983ba725b9803e840665fab4d",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport math\r\ndef perimeter_pentagon(a):\r\n  perimeter=(5*a)\r\n  return perimeter\n\nassert perimeter_pentagon(5) ==",
+  "n_prompt_tokens": 196,
+  "raw_generation": " (5*5)\n",
+  "answer": "(5*5)",
+  "generated_token_ids": [
+    334,
+    20,
+    9,
+    20,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "constant_expression",
+  "invalid_reason": null,
+  "parsed_answer": "25",
+  "token_logprob": [
+    -1.002360463142395,
+    -0.19081948697566986,
+    -0.33783265948295593,
+    -0.04087425395846367,
+    -0.028453337028622627,
+    -0.49720293283462524
+  ],
+  "token_entropy": [
+    2.3103435039520264,
+    0.6658540964126587,
+    0.8485370874404907,
+    0.24609209597110748,
+    0.18075209856033325,
+    1.0791263580322266
+  ],
+  "token_logprob_sum": [
+    -644405.9375,
+    -723559.625,
+    -763269.6875,
+    -774156.75,
+    -837077.1875,
+    -719829.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.058610439300537,
+    -6.5564446449279785,
+    -7.0128326416015625,
+    -7.428374767303467,
+    -7.390953063964844,
+    -6.303452968597412
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 183,
+  "read_token_ids": [
+    23073,
+    2312
+  ]
+}

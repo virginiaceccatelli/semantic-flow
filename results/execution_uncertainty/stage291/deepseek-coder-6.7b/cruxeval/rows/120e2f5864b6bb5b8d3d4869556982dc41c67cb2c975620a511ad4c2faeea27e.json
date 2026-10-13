@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_507",
+  "program_id": "sample_507",
+  "code": "def f(text, search):\n    result = text.lower()\n    return result.find(search.lower())",
+  "call": "f('car hat', 'car')",
+  "expected": "0",
+  "dataset": "cruxeval",
+  "source_group": "e9681e383129e07cbdc358fd2e94ec0375ff92a8423a46f2014f5d3abc685e37",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, search):\n    result = text.lower()\n    return result.find(search.lower())\n\nassert f('car hat', 'car') ==",
+  "n_prompt_tokens": 192,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.647882878780365,
+    -0.1222696378827095
+  ],
+  "token_entropy": [
+    1.6041914224624634,
+    0.4524455666542053
+  ],
+  "token_logprob_sum": [
+    -733909.5625,
+    -807964.125
+  ],
+  "token_topk_mean_logprob": [
+    -5.104133129119873,
+    -7.634770393371582
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 179,
+  "read_token_ids": [
+    4683,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "147:1",
+  "program_id": "147",
+  "code": "def max_path_sum(tri, m, n): \r\n\tfor i in range(m-1, -1, -1): \r\n\t\tfor j in range(i+1): \r\n\t\t\tif (tri[i+1][j] > tri[i+1][j+1]): \r\n\t\t\t\ttri[i][j] += tri[i+1][j] \r\n\t\t\telse: \r\n\t\t\t\ttri[i][j] += tri[i+1][j+1] \r\n\treturn tri[0][0]",
+  "call": "max_path_sum([[13, 0, 0], [7, 4, 0], [2, 4, 6]], 2, 2)",
+  "expected": "24",
+  "dataset": "mbpp",
+  "source_group": "1f4ce9b35da2ff546a160248707dcbf621b548d159a7a1e5793af886005a0dd1",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_path_sum(tri, m, n): \r\n\tfor i in range(m-1, -1, -1): \r\n\t\tfor j in range(i+1): \r\n\t\t\tif (tri[i+1][j] > tri[i+1][j+1]): \r\n\t\t\t\ttri[i][j] += tri[i+1][j] \r\n\t\t\telse: \r\n\t\t\t\ttri[i][j] += tri[i+1][j+1] \r\n\treturn tri[0][0]\n\nassert max_path_sum([[13, 0, 0], [7, 4, 0], [2, 4, 6]], 2, 2) ==",
+  "n_prompt_tokens": 327,
+  "raw_generation": "  15\n",
+  "answer": "15",
+  "generated_token_ids": [
+    243,
+    16,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "15",
+  "token_logprob": [
+    -1.0502506494522095,
+    -0.08746512234210968,
+    -0.45995283126831055,
+    -0.2911212146282196
+  ],
+  "token_entropy": [
+    2.4041457176208496,
+    0.41769853234291077,
+    1.3242861032485962,
+    0.8891199827194214
+  ],
+  "token_logprob_sum": [
+    -675871.75,
+    -813196.6875,
+    -776140.0,
+    -740599.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.094000339508057,
+    -8.12340259552002,
+    -7.409953594207764,
+    -6.869246006011963
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 281,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

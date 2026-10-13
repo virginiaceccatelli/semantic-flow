@@ -1,0 +1,68 @@
+{
+  "case_id": "369:1",
+  "program_id": "369",
+  "code": "def lateralsurface_cuboid(l,w,h):\r\n  LSA = 2*h*(l+w)\r\n  return LSA",
+  "call": "lateralsurface_cuboid(7,9,10)",
+  "expected": "320",
+  "dataset": "mbpp",
+  "source_group": "bbcf107ea5e83887ea5962f3af1a518dd6c448a2394775e441cf83b71954715d",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef lateralsurface_cuboid(l,w,h):\r\n  LSA = 2*h*(l+w)\r\n  return LSA\n\nassert lateralsurface_cuboid(7,9,10) ==",
+  "n_prompt_tokens": 210,
+  "raw_generation": "  100\n",
+  "answer": "100",
+  "generated_token_ids": [
+    243,
+    16,
+    15,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 1,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "100",
+  "token_logprob": [
+    -1.0563147068023682,
+    -0.9037365913391113,
+    -1.7597556114196777,
+    -1.3578029870986938,
+    -0.7904677391052246
+  ],
+  "token_entropy": [
+    2.714311122894287,
+    1.9179245233535767,
+    2.257530689239502,
+    2.045254707336426,
+    1.7702553272247314
+  ],
+  "token_logprob_sum": [
+    -601327.3125,
+    -699319.5,
+    -771838.25,
+    -757061.4375,
+    -706325.9375
+  ],
+  "token_topk_mean_logprob": [
+    -3.806314468383789,
+    -5.966236114501953,
+    -6.122256755828857,
+    -4.957803249359131,
+    -4.515468120574951
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 189,
+  "read_token_ids": [
+    9163,
+    2312
+  ]
+}

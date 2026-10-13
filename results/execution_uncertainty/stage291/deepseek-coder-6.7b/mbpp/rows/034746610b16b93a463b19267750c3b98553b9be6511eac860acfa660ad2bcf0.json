@@ -1,0 +1,63 @@
+{
+  "case_id": "291:0",
+  "program_id": "291",
+  "code": "def count_no_of_ways(n, k): \r\n\tdp = [0] * (n + 1) \r\n\ttotal = k \r\n\tmod = 1000000007\r\n\tdp[1] = k \r\n\tdp[2] = k * k\t \r\n\tfor i in range(3,n+1): \r\n\t\tdp[i] = ((k - 1) * (dp[i - 1] + dp[i - 2])) % mod \r\n\treturn dp[n]",
+  "call": "count_no_of_ways(2, 4)",
+  "expected": "16",
+  "dataset": "mbpp",
+  "source_group": "08a4f2c653eb9198766b9cda29ed510852fa38b0b060ca4fdb2a7845423b54b6",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_no_of_ways(n, k): \r\n\tdp = [0] * (n + 1) \r\n\ttotal = k \r\n\tmod = 1000000007\r\n\tdp[1] = k \r\n\tdp[2] = k * k\t \r\n\tfor i in range(3,n+1): \r\n\t\tdp[i] = ((k - 1) * (dp[i - 1] + dp[i - 2])) % mod \r\n\treturn dp[n]\n\nassert count_no_of_ways(2, 4) ==",
+  "n_prompt_tokens": 302,
+  "raw_generation": "  16\n",
+  "answer": "16",
+  "generated_token_ids": [
+    243,
+    16,
+    21,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "16",
+  "token_logprob": [
+    -0.8551309108734131,
+    -0.25805073976516724,
+    -0.031922802329063416,
+    -0.439657062292099
+  ],
+  "token_entropy": [
+    2.287618637084961,
+    0.6874566674232483,
+    0.20369787514209747,
+    0.9947299957275391
+  ],
+  "token_logprob_sum": [
+    -644172.4375,
+    -763334.25,
+    -732294.0,
+    -741737.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.180131435394287,
+    -7.520550727844238,
+    -7.416297912597656,
+    -6.364657878875732
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 284,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

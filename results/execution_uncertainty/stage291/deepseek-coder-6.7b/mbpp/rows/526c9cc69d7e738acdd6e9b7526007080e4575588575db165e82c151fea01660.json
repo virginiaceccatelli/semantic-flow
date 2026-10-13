@@ -1,0 +1,63 @@
+{
+  "case_id": "83:2",
+  "program_id": "83",
+  "code": "def get_Char(strr):  \r\n    summ = 0\r\n    for i in range(len(strr)): \r\n        summ += (ord(strr[i]) - ord('a') + 1)  \r\n    if (summ % 26 == 0): \r\n        return ord('z') \r\n    else: \r\n        summ = summ % 26\r\n        return chr(ord('a') + summ - 1)",
+  "call": "get_Char(\"ab\")",
+  "expected": "'c'",
+  "dataset": "mbpp",
+  "source_group": "831507b57bceede03a476e9aedebb92f134087adf941f0af312a2a207108fbc0",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef get_Char(strr):  \r\n    summ = 0\r\n    for i in range(len(strr)): \r\n        summ += (ord(strr[i]) - ord('a') + 1)  \r\n    if (summ % 26 == 0): \r\n        return ord('z') \r\n    else: \r\n        summ = summ % 26\r\n        return chr(ord('a') + summ - 1)\n\nassert get_Char(\"ab\") ==",
+  "n_prompt_tokens": 278,
+  "raw_generation": " 'c'\n",
+  "answer": "'c'",
+  "generated_token_ids": [
+    651,
+    66,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'c'",
+  "token_logprob": [
+    -0.5330657362937927,
+    -0.8617309331893921,
+    -0.005981520749628544,
+    -0.3971668779850006
+  ],
+  "token_entropy": [
+    1.2960419654846191,
+    1.667806625366211,
+    0.04553156718611717,
+    0.8465441465377808
+  ],
+  "token_logprob_sum": [
+    -724966.375,
+    -777165.0625,
+    -798895.5625,
+    -731753.75
+  ],
+  "token_topk_mean_logprob": [
+    -5.851815700531006,
+    -5.036731243133545,
+    -9.5997314453125,
+    -7.019042491912842
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 267,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

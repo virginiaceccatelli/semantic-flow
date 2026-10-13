@@ -1,0 +1,53 @@
+{
+  "case_id": "373:0",
+  "program_id": "373",
+  "code": "def volume_cuboid(l,w,h):\r\n  volume=l*w*h\r\n  return volume",
+  "call": "volume_cuboid(1,2,3)",
+  "expected": "6",
+  "dataset": "mbpp",
+  "source_group": "ff46c074ba32b51e5fd6e8aace7e39e6d93a072df2b65c4cc582b6f5b8ae8acc",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef volume_cuboid(l,w,h):\r\n  volume=l*w*h\r\n  return volume\n\nassert volume_cuboid(1,2,3) ==",
+  "n_prompt_tokens": 198,
+  "raw_generation": "6\n",
+  "answer": "6",
+  "generated_token_ids": [
+    21,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "6",
+  "token_logprob": [
+    -0.6968971490859985,
+    -0.33071961998939514
+  ],
+  "token_entropy": [
+    1.7267420291900635,
+    0.8802266120910645
+  ],
+  "token_logprob_sum": [
+    -653767.625,
+    -743506.625
+  ],
+  "token_topk_mean_logprob": [
+    -4.9531474113464355,
+    -6.894783020019531
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 181,
+  "read_token_ids": [
+    6530,
+    2312
+  ]
+}

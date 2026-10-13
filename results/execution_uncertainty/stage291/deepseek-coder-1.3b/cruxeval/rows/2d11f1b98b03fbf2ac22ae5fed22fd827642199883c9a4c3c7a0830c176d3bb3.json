@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_273",
+  "program_id": "sample_273",
+  "code": "def f(name):\n    new_name =''\n    name = name[::-1]\n    for i in range(len(name)):\n        n = name[i]\n        if n !='.' and  new_name.count('.')<2:\n            new_name=n+new_name\n        else:\n            break\n    return new_name",
+  "call": "f('.NET')",
+  "expected": "'NET'",
+  "dataset": "cruxeval",
+  "source_group": "b2be02ea7bdded6d19d150de0d35971d95240b7e847a0181d44d70eeb8a56a7c",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(name):\n    new_name =''\n    name = name[::-1]\n    for i in range(len(name)):\n        n = name[i]\n        if n !='.' and  new_name.count('.')<2:\n            new_name=n+new_name\n        else:\n            break\n    return new_name\n\nassert f('.NET') ==",
+  "n_prompt_tokens": 248,
+  "raw_generation": " 'T.NE'\n",
+  "answer": "'T.NE'",
+  "generated_token_ids": [
+    651,
+    51,
+    13,
+    8278,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'T.NE'",
+  "token_logprob": [
+    -0.17882823944091797,
+    -0.6988008618354797,
+    -0.7914417386054993,
+    -0.717170238494873,
+    -0.5174750089645386,
+    -0.22908641397953033
+  ],
+  "token_entropy": [
+    0.6794962882995605,
+    1.4587218761444092,
+    1.5202447175979614,
+    1.386236310005188,
+    1.1240198612213135,
+    0.5679656267166138
+  ],
+  "token_logprob_sum": [
+    -734880.375,
+    -694622.0,
+    -810901.375,
+    -783193.875,
+    -860218.5,
+    -792590.5
+  ],
+  "token_topk_mean_logprob": [
+    -6.678828716278076,
+    -5.209738731384277,
+    -5.71956729888916,
+    -5.9234209060668945,
+    -7.58642053604126,
+    -7.8056488037109375
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 239,
+  "read_token_ids": [
+    1523,
+    2312
+  ]
+}

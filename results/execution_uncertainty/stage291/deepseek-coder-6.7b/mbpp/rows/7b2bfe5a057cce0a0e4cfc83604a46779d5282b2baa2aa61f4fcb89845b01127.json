@@ -1,0 +1,78 @@
+{
+  "case_id": "112:0",
+  "program_id": "112",
+  "code": "def perimeter(diameter,height) : \r\n    return 2*(diameter+height)",
+  "call": "perimeter(2,4)",
+  "expected": "12",
+  "dataset": "mbpp",
+  "source_group": "33b4cfe82e3159f9c993af2b6110e5c56e5a0b1d4b168db897e20384f7ae0e9f",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef perimeter(diameter,height) : \r\n    return 2*(diameter+height)\n\nassert perimeter(2,4) ==",
+  "n_prompt_tokens": 188,
+  "raw_generation": " (2+4)*2\n",
+  "answer": "(2+4)*2",
+  "generated_token_ids": [
+    334,
+    17,
+    10,
+    19,
+    25901,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "constant_expression",
+  "invalid_reason": null,
+  "parsed_answer": "12",
+  "token_logprob": [
+    -1.3912028074264526,
+    -0.7667073607444763,
+    -1.1378947496414185,
+    -0.09891562908887863,
+    -0.2028091847896576,
+    -0.00774760078638792,
+    -0.7939783334732056
+  ],
+  "token_entropy": [
+    2.1937594413757324,
+    1.5577740669250488,
+    2.0118579864501953,
+    0.42113393545150757,
+    0.6757528781890869,
+    0.05660666897892952,
+    1.545593023300171
+  ],
+  "token_logprob_sum": [
+    -628747.375,
+    -661688.25,
+    -660439.125,
+    -752145.25,
+    -728638.8125,
+    -795735.5,
+    -703707.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.453702926635742,
+    -5.197957515716553,
+    -4.544144630432129,
+    -7.548916816711426,
+    -6.959059238433838,
+    -8.945247650146484,
+    -5.331478118896484
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 176,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

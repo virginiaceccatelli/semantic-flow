@@ -1,0 +1,58 @@
+{
+  "case_id": "409:2",
+  "program_id": "409",
+  "code": "def min_product_tuple(list1):\r\n    result_min = min([abs(x * y) for x, y in list1] )\r\n    return result_min",
+  "call": "min_product_tuple([(11,44), (10,15), (20,5), (12, 9)] )",
+  "expected": "100",
+  "dataset": "mbpp",
+  "source_group": "12eac3e2d8d899a6066fc28368aac2e7d6894c42ca45ad3f65be1969d84af54b",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef min_product_tuple(list1):\r\n    result_min = min([abs(x * y) for x, y in list1] )\r\n    return result_min\n\nassert min_product_tuple([(11,44), (10,15), (20,5), (12, 9)] ) ==",
+  "n_prompt_tokens": 235,
+  "raw_generation": "  5\n",
+  "answer": "5",
+  "generated_token_ids": [
+    243,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "5",
+  "token_logprob": [
+    -1.1342846155166626,
+    -1.0861873626708984,
+    -1.0327928066253662
+  ],
+  "token_entropy": [
+    2.356125831604004,
+    1.8631151914596558,
+    1.6254643201828003
+  ],
+  "token_logprob_sum": [
+    -701729.4375,
+    -795028.625,
+    -805438.8125
+  ],
+  "token_topk_mean_logprob": [
+    -3.946784257888794,
+    -6.067437648773193,
+    -5.10779333114624
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 195,
+  "read_token_ids": [
+    1513,
+    2312
+  ]
+}

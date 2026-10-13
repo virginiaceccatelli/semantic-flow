@@ -1,0 +1,63 @@
+{
+  "case_id": "410:2",
+  "program_id": "410",
+  "code": "def min_val(listval):\r\n     min_val = min(i for i in listval if isinstance(i, int))\r\n     return min_val",
+  "call": "min_val(['Python', 30, 20, 40, 50, 'version'])",
+  "expected": "20",
+  "dataset": "mbpp",
+  "source_group": "c975dbea3c35c18458c1f4963fadc7d5da922bb64541568b46cb8ea78828b3a7",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef min_val(listval):\r\n     min_val = min(i for i in listval if isinstance(i, int))\r\n     return min_val\n\nassert min_val(['Python', 30, 20, 40, 50, 'version']) ==",
+  "n_prompt_tokens": 221,
+  "raw_generation": " 'Python'\n",
+  "answer": "'Python'",
+  "generated_token_ids": [
+    651,
+    28607,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Python'",
+  "token_logprob": [
+    -0.6630674600601196,
+    -0.41135337948799133,
+    -0.007827088236808777,
+    -0.3151093125343323
+  ],
+  "token_entropy": [
+    1.832815170288086,
+    0.8157909512519836,
+    0.06353389471769333,
+    0.8119987845420837
+  ],
+  "token_logprob_sum": [
+    -699337.4375,
+    -680842.5,
+    -726224.0,
+    -715844.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.528692722320557,
+    -6.7488532066345215,
+    -8.489076614379883,
+    -7.840109348297119
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 191,
+  "read_token_ids": [
+    1284,
+    2312
+  ]
+}

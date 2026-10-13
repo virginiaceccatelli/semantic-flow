@@ -1,0 +1,53 @@
+{
+  "case_id": "51:0",
+  "program_id": "51",
+  "code": "def check_equilateral(x,y,z):\r\n  if x == y == z:\r\n\t   return True\r\n  else:\r\n     return False",
+  "call": "check_equilateral(6,8,12)",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "b7b94ab7290c008a601c727093cac3725c029783a98befcecc4de9f247c658a2",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_equilateral(x,y,z):\r\n  if x == y == z:\r\n\t   return True\r\n  else:\r\n     return False\n\nassert check_equilateral(6,8,12) ==",
+  "n_prompt_tokens": 210,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.48203128576278687,
+    -0.22251927852630615
+  ],
+  "token_entropy": [
+    0.7262222170829773,
+    0.7447552680969238
+  ],
+  "token_logprob_sum": [
+    -726926.1875,
+    -768077.625
+  ],
+  "token_topk_mean_logprob": [
+    -8.007031440734863,
+    -6.7615814208984375
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 192,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_531",
+  "program_id": "sample_531",
+  "code": "def f(text, x):\n    if text.removeprefix(x) == text:\n        return f(text[1:], x)\n    else:\n        return text",
+  "call": "f(\"Ibaskdjgblw asdl \", \"djgblw\")",
+  "expected": "'djgblw asdl '",
+  "dataset": "cruxeval",
+  "source_group": "1cf20b2c1eff44bf0506355a9f69f24c27221d6432456f2e208d133fe23b047f",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, x):\n    if text.removeprefix(x) == text:\n        return f(text[1:], x)\n    else:\n        return text\n\nassert f(\"Ibaskdjgblw asdl \", \"djgblw\") ==",
+  "n_prompt_tokens": 218,
+  "raw_generation": " \" asdl \"\n",
+  "answer": "\" asdl \"",
+  "generated_token_ids": [
+    440,
+    372,
+    7008,
+    440,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "' asdl '",
+  "token_logprob": [
+    -0.088307224214077,
+    -0.9541024565696716,
+    -0.016581345349550247,
+    -0.09389472752809525,
+    -0.28687775135040283
+  ],
+  "token_entropy": [
+    0.41862964630126953,
+    2.0752086639404297,
+    0.10980517417192459,
+    0.3886156678199768,
+    0.5991233587265015
+  ],
+  "token_logprob_sum": [
+    -755132.75,
+    -593565.75,
+    -781646.625,
+    -692410.5,
+    -789196.625
+  ],
+  "token_topk_mean_logprob": [
+    -6.9320573806762695,
+    -4.485352516174316,
+    -8.350956916809082,
+    -7.218894958496094,
+    -8.69000244140625
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 193,
+  "read_token_ids": [
+    2422,
+    2312
+  ]
+}

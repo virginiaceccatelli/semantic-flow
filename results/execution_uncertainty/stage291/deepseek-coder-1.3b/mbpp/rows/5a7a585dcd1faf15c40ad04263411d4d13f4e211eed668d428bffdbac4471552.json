@@ -1,0 +1,58 @@
+{
+  "case_id": "22:0",
+  "program_id": "22",
+  "code": "def find_first_duplicate(nums):\r\n    num_set = set()\r\n    no_duplicate = -1\r\n\r\n    for i in range(len(nums)):\r\n\r\n        if nums[i] in num_set:\r\n            return nums[i]\r\n        else:\r\n            num_set.add(nums[i])\r\n\r\n    return no_duplicate",
+  "call": "find_first_duplicate(([1, 2, 3, 4, 4, 5]))",
+  "expected": "4",
+  "dataset": "mbpp",
+  "source_group": "289ba4f5177a874a94a8e419546b4ec8c9512c32968a92226a203e62fc9c8d3c",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_first_duplicate(nums):\r\n    num_set = set()\r\n    no_duplicate = -1\r\n\r\n    for i in range(len(nums)):\r\n\r\n        if nums[i] in num_set:\r\n            return nums[i]\r\n        else:\r\n            num_set.add(nums[i])\r\n\r\n    return no_duplicate\n\nassert find_first_duplicate(([1, 2, 3, 4, 4, 5])) ==",
+  "n_prompt_tokens": 283,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.6287146806716919,
+    -0.0027215369045734406,
+    -0.2037239372730255
+  ],
+  "token_entropy": [
+    1.805715560913086,
+    0.02532234974205494,
+    0.6803291440010071
+  ],
+  "token_logprob_sum": [
+    -699872.625,
+    -783322.9375,
+    -745080.0
+  ],
+  "token_topk_mean_logprob": [
+    -4.569339752197266,
+    -9.31522274017334,
+    -7.086536407470703
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 253,
+  "read_token_ids": [
+    28376,
+    2312
+  ]
+}

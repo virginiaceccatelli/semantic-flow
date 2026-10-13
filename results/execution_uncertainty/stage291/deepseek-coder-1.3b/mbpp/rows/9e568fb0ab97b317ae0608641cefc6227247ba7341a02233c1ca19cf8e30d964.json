@@ -1,0 +1,73 @@
+{
+  "case_id": "451:1",
+  "program_id": "451",
+  "code": "import re\r\ndef remove_whitespaces(text1):\r\n  return (re.sub(r'\\s+', '',text1))",
+  "call": "remove_whitespaces(' Google    Dart ')",
+  "expected": "'GoogleDart'",
+  "dataset": "mbpp",
+  "source_group": "a4e71904b67ce3ccd4506c6b6e696e6e6cf3a29c123296939e277b4016c3a0bd",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef remove_whitespaces(text1):\r\n  return (re.sub(r'\\s+', '',text1))\n\nassert remove_whitespaces(' Google    Dart ') ==",
+  "n_prompt_tokens": 202,
+  "raw_generation": " 'GoogleDart'\n",
+  "answer": "'GoogleDart'",
+  "generated_token_ids": [
+    651,
+    14473,
+    35,
+    431,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'GoogleDart'",
+  "token_logprob": [
+    -0.06826002150774002,
+    -0.05203608050942421,
+    -0.022424926981329918,
+    -6.4490144723095e-05,
+    -0.0055051627568900585,
+    -0.446966290473938
+  ],
+  "token_entropy": [
+    0.3550972640514374,
+    0.28553012013435364,
+    0.11688393354415894,
+    0.0008606691844761372,
+    0.04518020153045654,
+    0.9527076482772827
+  ],
+  "token_logprob_sum": [
+    -760427.5,
+    -766220.125,
+    -796352.0,
+    -969272.1875,
+    -753599.3125,
+    -726200.25
+  ],
+  "token_topk_mean_logprob": [
+    -7.080760478973389,
+    -7.552036285400391,
+    -9.497034072875977,
+    -12.9688138961792,
+    -9.124255180358887,
+    -7.628216743469238
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 185,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "112:2",
+  "program_id": "112",
+  "code": "def perimeter(diameter,height) : \r\n    return 2*(diameter+height)",
+  "call": "perimeter(3,1)",
+  "expected": "8",
+  "dataset": "mbpp",
+  "source_group": "33b4cfe82e3159f9c993af2b6110e5c56e5a0b1d4b168db897e20384f7ae0e9f",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef perimeter(diameter,height) : \r\n    return 2*(diameter+height)\n\nassert perimeter(3,1) ==",
+  "n_prompt_tokens": 188,
+  "raw_generation": " (6)\n",
+  "answer": "(6)",
+  "generated_token_ids": [
+    334,
+    21,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "6",
+  "token_logprob": [
+    -0.8899845480918884,
+    -0.8204706907272339,
+    -0.18756821751594543,
+    -0.4497804641723633
+  ],
+  "token_entropy": [
+    2.166965961456299,
+    1.8240348100662231,
+    0.7548204064369202,
+    0.9599229693412781
+  ],
+  "token_logprob_sum": [
+    -635417.75,
+    -694837.75,
+    -743165.8125,
+    -717973.75
+  ],
+  "token_topk_mean_logprob": [
+    -4.196235179901123,
+    -5.323596000671387,
+    -6.212568759918213,
+    -7.2747802734375
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 176,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

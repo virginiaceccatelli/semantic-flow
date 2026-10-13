@@ -1,0 +1,78 @@
+{
+  "case_id": "321:1",
+  "program_id": "321",
+  "code": "def find_demlo(s): \r\n\tl = len(s) \r\n\tres = \"\" \r\n\tfor i in range(1,l+1): \r\n\t\tres = res + str(i) \r\n\tfor i in range(l-1,0,-1): \r\n\t\tres = res + str(i) \r\n\treturn res",
+  "call": "find_demlo(\"1111\")",
+  "expected": "'1234321'",
+  "dataset": "mbpp",
+  "source_group": "cb119cf4bb0363631f623c982ff503670fbaa7b618408c73e27f524d1a1d791a",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_demlo(s): \r\n\tl = len(s) \r\n\tres = \"\" \r\n\tfor i in range(1,l+1): \r\n\t\tres = res + str(i) \r\n\tfor i in range(l-1,0,-1): \r\n\t\tres = res + str(i) \r\n\treturn res\n\nassert find_demlo(\"1111\") ==",
+  "n_prompt_tokens": 254,
+  "raw_generation": " \"1111\"\n",
+  "answer": "\"1111\"",
+  "generated_token_ids": [
+    440,
+    16,
+    16,
+    16,
+    16,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'1111'",
+  "token_logprob": [
+    -0.056287456303834915,
+    -0.360408216714859,
+    -0.7580851316452026,
+    -0.1346152424812317,
+    -0.06922690570354462,
+    -0.9309254884719849,
+    -0.19218553602695465
+  ],
+  "token_entropy": [
+    0.26846548914909363,
+    0.8323356509208679,
+    0.9727234244346619,
+    0.42283251881599426,
+    0.2800171971321106,
+    1.19913649559021,
+    0.7057066559791565
+  ],
+  "token_logprob_sum": [
+    -782490.125,
+    -747458.875,
+    -766290.0,
+    -804992.6875,
+    -795501.0625,
+    -721226.375,
+    -759607.875
+  ],
+  "token_topk_mean_logprob": [
+    -7.7941789627075195,
+    -8.122908592224121,
+    -7.826835632324219,
+    -9.009614944458008,
+    -8.96922779083252,
+    -6.568425178527832,
+    -6.793260097503662
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 239,
+  "read_token_ids": [
+    593,
+    2312
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case_id": "23:0",
+  "program_id": "23",
+  "code": "def maximum_Sum(list1): \r\n    maxi = -100000\r\n    for x in list1: \r\n        sum = 0 \r\n        for y in x: \r\n            sum+= y      \r\n        maxi = max(sum,maxi)     \r\n    return maxi",
+  "call": "maximum_Sum([[1,2,3],[4,5,6],[10,11,12],[7,8,9]])",
+  "expected": "33",
+  "dataset": "mbpp",
+  "source_group": "11eff77e3c4c7fc2d4272814dff7dbcdbe2dc379df40e5a45669d0e73b67c193",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef maximum_Sum(list1): \r\n    maxi = -100000\r\n    for x in list1: \r\n        sum = 0 \r\n        for y in x: \r\n            sum+= y      \r\n        maxi = max(sum,maxi)     \r\n    return maxi\n\nassert maximum_Sum([[1,2,3],[4,5,6],[10,11,12],[7,8,9]]) ==",
+  "n_prompt_tokens": 270,
+  "raw_generation": "13\n",
+  "answer": "13",
+  "generated_token_ids": [
+    16,
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "13",
+  "token_logprob": [
+    -0.8220301866531372,
+    -0.896496593952179,
+    -0.766223669052124
+  ],
+  "token_entropy": [
+    2.0243635177612305,
+    1.750538945198059,
+    1.051619052886963
+  ],
+  "token_logprob_sum": [
+    -667489.0625,
+    -823647.6875,
+    -714545.0
+  ],
+  "token_topk_mean_logprob": [
+    -4.328279972076416,
+    -5.808996677398682,
+    -6.103724002838135
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 229,
+  "read_token_ids": [
+    72,
+    2312
+  ]
+}

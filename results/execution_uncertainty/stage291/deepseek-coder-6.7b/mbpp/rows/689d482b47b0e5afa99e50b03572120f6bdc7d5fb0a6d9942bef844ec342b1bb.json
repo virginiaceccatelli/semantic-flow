@@ -1,0 +1,68 @@
+{
+  "case_id": "348:2",
+  "program_id": "348",
+  "code": "def bin_coff(n, r): \r\n\tval = 1\r\n\tif (r > (n - r)): \r\n\t\tr = (n - r) \r\n\tfor i in range(0, r): \r\n\t\tval *= (n - i) \r\n\t\tval //= (i + 1) \r\n\treturn val \r\ndef find_ways(M): \r\n\tn = M // 2\r\n\ta = bin_coff(2 * n, n) \r\n\tb = a // (n + 1) \r\n\treturn (b)",
+  "call": "find_ways(8)",
+  "expected": "14",
+  "dataset": "mbpp",
+  "source_group": "e9295d2a181149848dee4d7e0bb2bf6d4ea4d628f25ba8937b649fcdaee3105b",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef bin_coff(n, r): \r\n\tval = 1\r\n\tif (r > (n - r)): \r\n\t\tr = (n - r) \r\n\tfor i in range(0, r): \r\n\t\tval *= (n - i) \r\n\t\tval //= (i + 1) \r\n\treturn val \r\ndef find_ways(M): \r\n\tn = M // 2\r\n\ta = bin_coff(2 * n, n) \r\n\tb = a // (n + 1) \r\n\treturn (b)\n\nassert find_ways(8) ==",
+  "n_prompt_tokens": 304,
+  "raw_generation": " (15)\n",
+  "answer": "(15)",
+  "generated_token_ids": [
+    334,
+    16,
+    20,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "15",
+  "token_logprob": [
+    -0.8311501741409302,
+    -1.6271835565567017,
+    -1.2055250406265259,
+    -0.04484321177005768,
+    -0.46156635880470276
+  ],
+  "token_entropy": [
+    2.1660125255584717,
+    2.0362918376922607,
+    1.8892419338226318,
+    0.2966221868991852,
+    0.80753093957901
+  ],
+  "token_logprob_sum": [
+    -657478.9375,
+    -749225.25,
+    -813554.375,
+    -813858.75,
+    -732292.75
+  ],
+  "token_topk_mean_logprob": [
+    -4.0624003410339355,
+    -5.783433437347412,
+    -5.449275493621826,
+    -6.307343482971191,
+    -7.924066066741943
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 293,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "case_id": "271:0",
+  "program_id": "271",
+  "code": "def even_Power_Sum(n): \r\n    sum = 0; \r\n    for i in range(1,n+1): \r\n        j = 2*i; \r\n        sum = sum + (j*j*j*j*j); \r\n    return sum;",
+  "call": "even_Power_Sum(2)",
+  "expected": "1056",
+  "dataset": "mbpp",
+  "source_group": "3fe843aa70059a5fc45f52a5c57ddb10766801133774066c9192808088175568",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef even_Power_Sum(n): \r\n    sum = 0; \r\n    for i in range(1,n+1): \r\n        j = 2*i; \r\n        sum = sum + (j*j*j*j*j); \r\n    return sum;\n\nassert even_Power_Sum(2) ==",
+  "n_prompt_tokens": 234,
+  "raw_generation": " (16 + 64)\n",
+  "answer": "(16 + 64)",
+  "generated_token_ids": [
+    334,
+    16,
+    21,
+    4536,
+    21,
+    19,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "constant_expression",
+  "invalid_reason": null,
+  "parsed_answer": "80",
+  "token_logprob": [
+    -0.9758384227752686,
+    -1.2606581449508667,
+    -0.8465574979782104,
+    -1.6865737438201904,
+    -1.4854605197906494,
+    -0.3834241032600403,
+    -0.19522877037525177,
+    -0.44355082511901855
+  ],
+  "token_entropy": [
+    2.263497829437256,
+    2.033172369003296,
+    2.1150014400482178,
+    2.418181896209717,
+    1.8625507354736328,
+    1.0240263938903809,
+    0.8158494234085083,
+    1.2565734386444092
+  ],
+  "token_logprob_sum": [
+    -655022.1875,
+    -714908.6875,
+    -844866.125,
+    -844729.125,
+    -771229.0,
+    -822554.8125,
+    -882195.6875,
+    -783916.1875
+  ],
+  "token_topk_mean_logprob": [
+    -3.9445884227752686,
+    -5.298158168792725,
+    -4.046557903289795,
+    -3.8240737915039062,
+    -7.516709804534912,
+    -6.152174472808838,
+    -5.851478576660156,
+    -5.431050777435303
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 221,
+  "read_token_ids": [
+    26,
+    2312
+  ]
+}

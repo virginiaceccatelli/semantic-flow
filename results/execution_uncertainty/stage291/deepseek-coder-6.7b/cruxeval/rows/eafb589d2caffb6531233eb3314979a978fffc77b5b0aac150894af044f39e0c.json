@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_520",
+  "program_id": "sample_520",
+  "code": "def f(album_sales):\n    while len(album_sales) != 1:\n        album_sales.append(album_sales.pop(0))\n    return album_sales[0]",
+  "call": "f([6])",
+  "expected": "6",
+  "dataset": "cruxeval",
+  "source_group": "7f136b816ff863ba1c0fec88f22e9ba8e0f413f2ceac3f44deffc751a403b719",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(album_sales):\n    while len(album_sales) != 1:\n        album_sales.append(album_sales.pop(0))\n    return album_sales[0]\n\nassert f([6]) ==",
+  "n_prompt_tokens": 215,
+  "raw_generation": " 'The Beatles'\n",
+  "answer": "'The Beatles'",
+  "generated_token_ids": [
+    651,
+    546,
+    27018,
+    873,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'The Beatles'",
+  "token_logprob": [
+    -1.4130796194076538,
+    -2.7275125980377197,
+    -1.2698335647583008,
+    -0.001101244823075831,
+    -0.07161740213632584,
+    -0.07806017994880676
+  ],
+  "token_entropy": [
+    2.075469493865967,
+    5.6312055587768555,
+    4.171927452087402,
+    0.011960694566369057,
+    0.4391751289367676,
+    0.30801641941070557
+  ],
+  "token_logprob_sum": [
+    -697499.5,
+    -547705.75,
+    -581435.375,
+    -806646.75,
+    -681054.75,
+    -779327.6875
+  ],
+  "token_topk_mean_logprob": [
+    -4.406829833984375,
+    -4.030637264251709,
+    -3.976083517074585,
+    -10.226101875305176,
+    -6.540367126464844,
+    -8.440560340881348
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 206,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

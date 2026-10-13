@@ -1,0 +1,63 @@
+{
+  "case_id": "132:1",
+  "program_id": "132",
+  "code": "def tup_string(tup1):\r\n  str =  ''.join(tup1)\r\n  return str",
+  "call": "tup_string(('p','y','t','h','o','n'))",
+  "expected": "'python'",
+  "dataset": "mbpp",
+  "source_group": "0cdb18a76bdb5b75a083f50026ebf14a3060bdda1f0cb9cea0a67d59885c0df4",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef tup_string(tup1):\r\n  str =  ''.join(tup1)\r\n  return str\n\nassert tup_string(('p','y','t','h','o','n')) ==",
+  "n_prompt_tokens": 204,
+  "raw_generation": " 'python'\n",
+  "answer": "'python'",
+  "generated_token_ids": [
+    651,
+    11364,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'python'",
+  "token_logprob": [
+    -0.2707201838493347,
+    -0.0024209495168179274,
+    -0.011637184768915176,
+    -0.3941689431667328
+  ],
+  "token_entropy": [
+    0.7276637554168701,
+    0.021181317046284676,
+    0.07798495143651962,
+    0.8708744645118713
+  ],
+  "token_logprob_sum": [
+    -769452.125,
+    -898222.5625,
+    -723155.25,
+    -732883.4375
+  ],
+  "token_topk_mean_logprob": [
+    -7.361344814300537,
+    -10.533671379089355,
+    -8.914761543273926,
+    -7.7660441398620605
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 181,
+  "read_token_ids": [
+    1401,
+    2312
+  ]
+}

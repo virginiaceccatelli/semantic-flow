@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_520",
+  "program_id": "sample_520",
+  "code": "def f(album_sales):\n    while len(album_sales) != 1:\n        album_sales.append(album_sales.pop(0))\n    return album_sales[0]",
+  "call": "f([6])",
+  "expected": "6",
+  "dataset": "cruxeval",
+  "source_group": "7f136b816ff863ba1c0fec88f22e9ba8e0f413f2ceac3f44deffc751a403b719",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(album_sales):\n    while len(album_sales) != 1:\n        album_sales.append(album_sales.pop(0))\n    return album_sales[0]\n\nassert f([6]) ==",
+  "n_prompt_tokens": 215,
+  "raw_generation": " [6]\n",
+  "answer": "[6]",
+  "generated_token_ids": [
+    821,
+    21,
+    60,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "[6]",
+  "token_logprob": [
+    -0.08559310436248779,
+    -0.03627404943108559,
+    -0.08132937550544739,
+    -0.0552283339202404
+  ],
+  "token_entropy": [
+    0.4935256838798523,
+    0.22983576357364655,
+    0.2894701063632965,
+    0.2428341507911682
+  ],
+  "token_logprob_sum": [
+    -742742.25,
+    -791052.75,
+    -792849.625,
+    -798615.625
+  ],
+  "token_topk_mean_logprob": [
+    -6.1855926513671875,
+    -7.398774147033691,
+    -9.356329917907715,
+    -8.505228042602539
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 206,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

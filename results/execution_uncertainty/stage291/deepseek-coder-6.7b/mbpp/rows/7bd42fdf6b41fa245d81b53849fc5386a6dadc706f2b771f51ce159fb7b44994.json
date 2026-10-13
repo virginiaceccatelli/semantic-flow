@@ -1,0 +1,58 @@
+{
+  "case_id": "244:1",
+  "program_id": "244",
+  "code": "import math  \r\ndef next_Perfect_Square(N): \r\n    nextN = math.floor(math.sqrt(N)) + 1\r\n    return nextN * nextN",
+  "call": "next_Perfect_Square(6)",
+  "expected": "9",
+  "dataset": "mbpp",
+  "source_group": "a24be247e7ec3afcadfafd2d20d773d504537ae7e35a2955d9bf43d63a03080d",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport math  \r\ndef next_Perfect_Square(N): \r\n    nextN = math.floor(math.sqrt(N)) + 1\r\n    return nextN * nextN\n\nassert next_Perfect_Square(6) ==",
+  "n_prompt_tokens": 212,
+  "raw_generation": "  9\n",
+  "answer": "9",
+  "generated_token_ids": [
+    243,
+    24,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "9",
+  "token_logprob": [
+    -1.4821600914001465,
+    -0.0623604841530323,
+    -0.43319040536880493
+  ],
+  "token_entropy": [
+    2.448225259780884,
+    0.31988370418548584,
+    1.1302216053009033
+  ],
+  "token_logprob_sum": [
+    -677384.0,
+    -776439.625,
+    -747221.625
+  ],
+  "token_topk_mean_logprob": [
+    -3.913410186767578,
+    -7.502986431121826,
+    -6.139441013336182
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 197,
+  "read_token_ids": [
+    45,
+    2312
+  ]
+}

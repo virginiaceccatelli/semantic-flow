@@ -1,0 +1,68 @@
+{
+  "case_id": "127:0",
+  "program_id": "127",
+  "code": "def multiply_int(x, y):\r\n    if y < 0:\r\n        return -multiply_int(x, -y)\r\n    elif y == 0:\r\n        return 0\r\n    elif y == 1:\r\n        return x\r\n    else:\r\n        return x + multiply_int(x, y - 1)",
+  "call": "multiply_int(10,20)",
+  "expected": "200",
+  "dataset": "mbpp",
+  "source_group": "e15845b9231049bded3edba4350d3c6ab4787523f151ab396a53cb591f7ce044",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef multiply_int(x, y):\r\n    if y < 0:\r\n        return -multiply_int(x, -y)\r\n    elif y == 0:\r\n        return 0\r\n    elif y == 1:\r\n        return x\r\n    else:\r\n        return x + multiply_int(x, y - 1)\n\nassert multiply_int(10,20) ==",
+  "n_prompt_tokens": 253,
+  "raw_generation": " -200\n",
+  "answer": "-200",
+  "generated_token_ids": [
+    567,
+    17,
+    15,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-200",
+  "token_logprob": [
+    -0.7557613253593445,
+    -0.8042832016944885,
+    -0.15785981714725494,
+    -0.061365969479084015,
+    -0.4658564031124115
+  ],
+  "token_entropy": [
+    2.186041831970215,
+    1.3456716537475586,
+    0.5979785323143005,
+    0.307766854763031,
+    1.0091365575790405
+  ],
+  "token_logprob_sum": [
+    -664137.4375,
+    -736693.375,
+    -788747.1875,
+    -785721.375,
+    -734296.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.306151866912842,
+    -6.304283142089844,
+    -6.107860088348389,
+    -7.561366558074951,
+    -6.543982028961182
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 237,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

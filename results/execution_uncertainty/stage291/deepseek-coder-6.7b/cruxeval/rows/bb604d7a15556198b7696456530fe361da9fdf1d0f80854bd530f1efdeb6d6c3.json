@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_400",
+  "program_id": "sample_400",
+  "code": "def f(multi_string):\n    cond_string = map(str.isascii, multi_string.split())\n    if True in cond_string:\n        return ', '.join(x for x in multi_string.split() if x.isascii())\n    return ''",
+  "call": "f('I am hungry! eat food.')",
+  "expected": "'I, am, hungry!, eat, food.'",
+  "dataset": "cruxeval",
+  "source_group": "b56f0ea2677e1deca752c2d3e9806f249c4acca59540a1688d9075ddbf33de93",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(multi_string):\n    cond_string = map(str.isascii, multi_string.split())\n    if True in cond_string:\n        return ', '.join(x for x in multi_string.split() if x.isascii())\n    return ''\n\nassert f('I am hungry! eat food.') ==",
+  "n_prompt_tokens": 234,
+  "raw_generation": " 'I, eat'\n",
+  "answer": "'I, eat'",
+  "generated_token_ids": [
+    651,
+    40,
+    11,
+    6541,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'I, eat'",
+  "token_logprob": [
+    -0.05842696130275726,
+    -0.647378146648407,
+    -0.014639930799603462,
+    -0.2983008027076721,
+    -0.04330829530954361,
+    -0.14650462567806244
+  ],
+  "token_entropy": [
+    0.3136705756187439,
+    1.078605055809021,
+    0.10372115671634674,
+    0.9456543326377869,
+    0.23579955101013184,
+    0.4223531484603882
+  ],
+  "token_logprob_sum": [
+    -816186.25,
+    -729370.9375,
+    -804830.375,
+    -684972.125,
+    -797632.375,
+    -797765.4375
+  ],
+  "token_topk_mean_logprob": [
+    -7.42092752456665,
+    -7.191128730773926,
+    -8.652139663696289,
+    -6.138925075531006,
+    -8.48080825805664,
+    -9.262129783630371
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 219,
+  "read_token_ids": [
+    15355,
+    2312
+  ]
+}

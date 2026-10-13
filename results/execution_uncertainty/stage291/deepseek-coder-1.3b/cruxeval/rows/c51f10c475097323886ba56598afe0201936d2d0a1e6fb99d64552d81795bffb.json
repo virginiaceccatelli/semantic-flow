@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_489",
+  "program_id": "sample_489",
+  "code": "def f(text, value):\n    return text.removeprefix(value.lower())",
+  "call": "f('coscifysu', 'cos')",
+  "expected": "'cifysu'",
+  "dataset": "cruxeval",
+  "source_group": "db91159b560ffda62e50d617625d62467e2d7c6b24cdfd9df41310f271a75e5d",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, value):\n    return text.removeprefix(value.lower())\n\nassert f('coscifysu', 'cos') ==",
+  "n_prompt_tokens": 188,
+  "raw_generation": " 'ysu'\n",
+  "answer": "'ysu'",
+  "generated_token_ids": [
+    651,
+    882,
+    84,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'ysu'",
+  "token_logprob": [
+    -0.03868764638900757,
+    -0.7685883045196533,
+    -0.06370797008275986,
+    -0.0028580077923834324,
+    -0.2112693190574646
+  ],
+  "token_entropy": [
+    0.25384262204170227,
+    2.4290578365325928,
+    0.3529359698295593,
+    0.02798718959093094,
+    0.513691782951355
+  ],
+  "token_logprob_sum": [
+    -721251.875,
+    -620240.25,
+    -691448.6875,
+    -715164.25,
+    -791021.4375
+  ],
+  "token_topk_mean_logprob": [
+    -7.054312229156494,
+    -4.1779632568359375,
+    -7.087146282196045,
+    -9.359107971191406,
+    -9.237832069396973
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 172,
+  "read_token_ids": [
+    4683,
+    2312
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "case_id": "227:0",
+  "program_id": "227",
+  "code": "def min_of_three(a,b,c): \r\n      if (a <= b) and (a <= c): \r\n        smallest = a \r\n      elif (b <= a) and (b <= c): \r\n        smallest = b \r\n      else: \r\n        smallest = c \r\n      return smallest",
+  "call": "min_of_three(10,20,0)",
+  "expected": "0",
+  "dataset": "mbpp",
+  "source_group": "9606c4f543bace0b1ee97bb1f22b74e30842cdf56f89878078201ce1646d233e",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef min_of_three(a,b,c): \r\n      if (a <= b) and (a <= c): \r\n        smallest = a \r\n      elif (b <= a) and (b <= c): \r\n        smallest = b \r\n      else: \r\n        smallest = c \r\n      return smallest\n\nassert min_of_three(10,20,0) ==",
+  "n_prompt_tokens": 250,
+  "raw_generation": "0\n",
+  "answer": "0",
+  "generated_token_ids": [
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "0",
+  "token_logprob": [
+    -0.9901992678642273,
+    -0.34191301465034485
+  ],
+  "token_entropy": [
+    1.8820686340332031,
+    0.961929976940155
+  ],
+  "token_logprob_sum": [
+    -678109.25,
+    -745539.0625
+  ],
+  "token_topk_mean_logprob": [
+    -4.6526994705200195,
+    -6.185662746429443
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 231,
+  "read_token_ids": [
+    19702,
+    2312
+  ]
+}

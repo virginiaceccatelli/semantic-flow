@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_573",
+  "program_id": "sample_573",
+  "code": "def f(string, prefix):\n    if string.startswith(prefix):\n        return string.removeprefix(prefix)\n    return string",
+  "call": "f(\"Vipra\", \"via\")",
+  "expected": "'Vipra'",
+  "dataset": "cruxeval",
+  "source_group": "a204409ffda10763da31d950be43f2618d6070ae8fe6a72bcef05c4e3a06f77f",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(string, prefix):\n    if string.startswith(prefix):\n        return string.removeprefix(prefix)\n    return string\n\nassert f(\"Vipra\", \"via\") ==",
+  "n_prompt_tokens": 199,
+  "raw_generation": " \"ra\"\n",
+  "answer": "\"ra\"",
+  "generated_token_ids": [
+    440,
+    401,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'ra'",
+  "token_logprob": [
+    -0.06821592897176743,
+    -1.0993295907974243,
+    -0.005944311618804932,
+    -0.11601080745458603
+  ],
+  "token_entropy": [
+    0.33618462085723877,
+    3.7931113243103027,
+    0.058081574738025665,
+    0.3657437860965729
+  ],
+  "token_logprob_sum": [
+    -761544.0,
+    -553422.25,
+    -701347.625,
+    -806910.625
+  ],
+  "token_topk_mean_logprob": [
+    -7.277591228485107,
+    -4.024329662322998,
+    -8.56219482421875,
+    -9.322260856628418
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 185,
+  "read_token_ids": [
+    2649,
+    2312
+  ]
+}

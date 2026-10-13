@@ -1,0 +1,63 @@
+{
+  "case_id": "356:2",
+  "program_id": "356",
+  "code": "def find_angle(a,b):\r\n c = 180 - (a + b)\r\n return c",
+  "call": "find_angle(50,40)",
+  "expected": "90",
+  "dataset": "mbpp",
+  "source_group": "2e29597107af9eefffc548292dd03167a34594858906d2b7e7d4b09f31c696d1",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_angle(a,b):\r\n c = 180 - (a + b)\r\n return c\n\nassert find_angle(50,40) ==",
+  "n_prompt_tokens": 194,
+  "raw_generation": "  30\n",
+  "answer": "30",
+  "generated_token_ids": [
+    243,
+    18,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "30",
+  "token_logprob": [
+    -1.2309149503707886,
+    -0.8918481469154358,
+    -0.0025918246246874332,
+    -0.6063499450683594
+  ],
+  "token_entropy": [
+    2.6717419624328613,
+    1.7056432962417603,
+    0.02397949807345867,
+    1.241103172302246
+  ],
+  "token_logprob_sum": [
+    -631733.1875,
+    -819573.625,
+    -870850.375,
+    -704601.0625
+  ],
+  "token_topk_mean_logprob": [
+    -3.6746652126312256,
+    -6.841848850250244,
+    -9.458842277526855,
+    -6.406350135803223
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 179,
+  "read_token_ids": [
+    258,
+    2312
+  ]
+}

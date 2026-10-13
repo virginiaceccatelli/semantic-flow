@@ -1,0 +1,58 @@
+{
+  "case_id": "499:2",
+  "program_id": "499",
+  "code": "def diameter_circle(r):\r\n  diameter=2*r\r\n  return diameter",
+  "call": "diameter_circle(15)",
+  "expected": "30",
+  "dataset": "mbpp",
+  "source_group": "3d8cf732fa24fc8d4e8e0ccf3a686aa139a2d994fc1a545d246e8ad28cf918ad",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef diameter_circle(r):\r\n  diameter=2*r\r\n  return diameter\n\nassert diameter_circle(15) ==",
+  "n_prompt_tokens": 185,
+  "raw_generation": "30\n",
+  "answer": "30",
+  "generated_token_ids": [
+    18,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "30",
+  "token_logprob": [
+    -0.45151451230049133,
+    -0.003963354509323835,
+    -0.5983799695968628
+  ],
+  "token_entropy": [
+    1.583211064338684,
+    0.0354241281747818,
+    1.1635210514068604
+  ],
+  "token_logprob_sum": [
+    -634401.25,
+    -824833.5,
+    -719606.8125
+  ],
+  "token_topk_mean_logprob": [
+    -4.676514625549316,
+    -8.788338661193848,
+    -6.357754707336426
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 173,
+  "read_token_ids": [
+    18639,
+    2312
+  ]
+}

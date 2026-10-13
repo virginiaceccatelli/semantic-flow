@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_555",
+  "program_id": "sample_555",
+  "code": "def f(text, tabstop):\n    text = text.replace('\\n', '_____')\n    text = text.replace('\\t', tabstop * ' ')\n    text = text.replace('_____', '\\n')\n    return text",
+  "call": "f(\"odes\\tcode\\twell\", 2)",
+  "expected": "'odes  code  well'",
+  "dataset": "cruxeval",
+  "source_group": "bd92a370b32d6bc4870de61b453338afc4cf3fde153e9cc5ab0bf72c572d206a",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, tabstop):\n    text = text.replace('\\n', '_____')\n    text = text.replace('\\t', tabstop * ' ')\n    text = text.replace('_____', '\\n')\n    return text\n\nassert f(\"odes\\tcode\\twell\", 2) ==",
+  "n_prompt_tokens": 229,
+  "raw_generation": " \"odes  code  well\"\n",
+  "answer": "\"odes  code  well\"",
+  "generated_token_ids": [
+    440,
+    3368,
+    207,
+    2974,
+    207,
+    1134,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'odes  code  well'",
+  "token_logprob": [
+    -0.1784643977880478,
+    -0.022999314591288567,
+    -0.7407042384147644,
+    -0.02477388083934784,
+    -0.22528216242790222,
+    -0.0049649993889033794,
+    -0.019178085029125214,
+    -0.1832069307565689
+  ],
+  "token_entropy": [
+    0.6511727571487427,
+    0.19026628136634827,
+    1.4791357517242432,
+    0.16193044185638428,
+    0.8881688714027405,
+    0.036443207412958145,
+    0.11318419128656387,
+    0.4757145047187805
+  ],
+  "token_logprob_sum": [
+    -780477.625,
+    -687947.75,
+    -689590.875,
+    -780183.0,
+    -695850.0,
+    -858323.25,
+    -764693.625,
+    -812673.0
+  ],
+  "token_topk_mean_logprob": [
+    -6.615963935852051,
+    -7.026124477386475,
+    -5.118829250335693,
+    -7.918524265289307,
+    -6.0971574783325195,
+    -10.220590591430664,
+    -9.275428771972656,
+    -8.833206176757812
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 211,
+  "read_token_ids": [
+    2422,
+    2312
+  ]
+}

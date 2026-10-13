@@ -1,0 +1,58 @@
+{
+  "case_id": "207:0",
+  "program_id": "207",
+  "code": "def find_longest_repeating_subseq(str): \r\n\tn = len(str) \r\n\tdp = [[0 for k in range(n+1)] for l in range(n+1)] \r\n\tfor i in range(1, n+1): \r\n\t\tfor j in range(1, n+1): \r\n\t\t\tif (str[i-1] == str[j-1] and i != j): \r\n\t\t\t\tdp[i][j] = 1 + dp[i-1][j-1] \r\n\t\t\telse: \r\n\t\t\t\tdp[i][j] = max(dp[i][j-1], dp[i-1][j]) \r\n\treturn dp[n][n]",
+  "call": "find_longest_repeating_subseq(\"AABEBCDD\")",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "3d11bbc37def540b45c5dc29e3678cc160a9fff492826bb08e696da40686a898",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_longest_repeating_subseq(str): \r\n\tn = len(str) \r\n\tdp = [[0 for k in range(n+1)] for l in range(n+1)] \r\n\tfor i in range(1, n+1): \r\n\t\tfor j in range(1, n+1): \r\n\t\t\tif (str[i-1] == str[j-1] and i != j): \r\n\t\t\t\tdp[i][j] = 1 + dp[i-1][j-1] \r\n\t\t\telse: \r\n\t\t\t\tdp[i][j] = max(dp[i][j-1], dp[i-1][j]) \r\n\treturn dp[n][n]\n\nassert find_longest_repeating_subseq(\"AABEBCDD\") ==",
+  "n_prompt_tokens": 355,
+  "raw_generation": "  4\n",
+  "answer": "4",
+  "generated_token_ids": [
+    243,
+    19,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "4",
+  "token_logprob": [
+    -1.1038438081741333,
+    -0.5487270355224609,
+    -0.4519675076007843
+  ],
+  "token_entropy": [
+    2.303220748901367,
+    0.9545213580131531,
+    1.100694179534912
+  ],
+  "token_logprob_sum": [
+    -678147.625,
+    -768468.25,
+    -730522.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.216343879699707,
+    -6.964352607727051,
+    -6.251966953277588
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 331,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

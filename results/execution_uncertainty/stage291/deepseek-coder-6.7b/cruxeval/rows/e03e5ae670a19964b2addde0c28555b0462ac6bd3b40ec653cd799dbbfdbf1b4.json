@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_698",
+  "program_id": "sample_698",
+  "code": "def f(text):\n    return ''.join(x for x in text if x != ')')",
+  "call": "f(('(((((((((((d))))))))).))))((((('))",
+  "expected": "'(((((((((((d.((((('",
+  "dataset": "cruxeval",
+  "source_group": "b7854dbad786f7eae231516de83670bebfe1e10249b6542ac7774eddcd296aad",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    return ''.join(x for x in text if x != ')')\n\nassert f(('(((((((((((d))))))))).))))(((((')) ==",
+  "n_prompt_tokens": 203,
+  "raw_generation": " 'd'\n",
+  "answer": "'d'",
+  "generated_token_ids": [
+    651,
+    67,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'d'",
+  "token_logprob": [
+    -0.03313501551747322,
+    -0.9475593566894531,
+    -0.11834956705570221,
+    -0.14543870091438293
+  ],
+  "token_entropy": [
+    0.19913548231124878,
+    1.3105769157409668,
+    0.6462821960449219,
+    0.41724324226379395
+  ],
+  "token_logprob_sum": [
+    -808104.0,
+    -755496.375,
+    -707386.0,
+    -784778.0625
+  ],
+  "token_topk_mean_logprob": [
+    -7.708136081695557,
+    -6.4381842613220215,
+    -5.630849361419678,
+    -8.923563957214355
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 177,
+  "read_token_ids": [
+    2462,
+    2312
+  ]
+}

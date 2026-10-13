@@ -1,0 +1,68 @@
+{
+  "case_id": "135:1",
+  "program_id": "135",
+  "code": "def hexagonal_num(n): \r\n\treturn n*(2*n - 1)",
+  "call": "hexagonal_num(5)",
+  "expected": "45",
+  "dataset": "mbpp",
+  "source_group": "e3295b14f41093e82cd5f2a870973c4e1466998ae63c50cbeb10dfb43e955be5",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef hexagonal_num(n): \r\n\treturn n*(2*n - 1)\n\nassert hexagonal_num(5) ==",
+  "n_prompt_tokens": 186,
+  "raw_generation": " f(5)\n",
+  "answer": "f(5)",
+  "generated_token_ids": [
+    267,
+    7,
+    20,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "invalid",
+  "answer_form": null,
+  "invalid_reason": "non_constant: not a constant expression: Call",
+  "parsed_answer": null,
+  "token_logprob": [
+    -1.4248549938201904,
+    -0.10312926769256592,
+    -0.1747615486383438,
+    -0.04790451377630234,
+    -0.5097172856330872
+  ],
+  "token_entropy": [
+    2.717355728149414,
+    0.6686487793922424,
+    0.806605339050293,
+    0.30601006746292114,
+    1.4710346460342407
+  ],
+  "token_logprob_sum": [
+    -635351.1875,
+    -686791.25,
+    -724544.625,
+    -735150.125,
+    -697108.9375
+  ],
+  "token_topk_mean_logprob": [
+    -3.9686050415039062,
+    -5.562504768371582,
+    -5.802886962890625,
+    -6.372905254364014,
+    -5.209717750549316
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 174,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

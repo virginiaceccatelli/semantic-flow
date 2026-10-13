@@ -1,0 +1,53 @@
+{
+  "case_id": "446:1",
+  "program_id": "446",
+  "code": "from collections import Counter \r\ndef count_Occurrence(tup, lst): \r\n    count = 0\r\n    for item in tup: \r\n        if item in lst: \r\n            count+= 1 \r\n    return count",
+  "call": "count_Occurrence((1, 2, 3, 1, 4, 6, 7, 1, 4),[1, 4, 7])",
+  "expected": "6",
+  "dataset": "mbpp",
+  "source_group": "a131e662ec66f0b07493284a44ccea4c78750f402903325db94175c03f2859c1",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nfrom collections import Counter \r\ndef count_Occurrence(tup, lst): \r\n    count = 0\r\n    for item in tup: \r\n        if item in lst: \r\n            count+= 1 \r\n    return count\n\nassert count_Occurrence((1, 2, 3, 1, 4, 6, 7, 1, 4),[1, 4, 7]) ==",
+  "n_prompt_tokens": 260,
+  "raw_generation": "3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.4411286115646362,
+    -0.5435580611228943
+  ],
+  "token_entropy": [
+    2.302213191986084,
+    1.063755750656128
+  ],
+  "token_logprob_sum": [
+    -692232.125,
+    -734548.625
+  ],
+  "token_topk_mean_logprob": [
+    -4.134878635406494,
+    -6.684182643890381
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 214,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

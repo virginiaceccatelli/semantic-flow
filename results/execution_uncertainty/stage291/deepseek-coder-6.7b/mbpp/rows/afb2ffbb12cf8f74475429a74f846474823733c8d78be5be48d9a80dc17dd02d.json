@@ -1,0 +1,53 @@
+{
+  "case_id": "115:0",
+  "program_id": "115",
+  "code": "def empty_dit(list1):\r\n empty_dit=all(not d for d in list1)\r\n return empty_dit",
+  "call": "empty_dit([{},{},{}])",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "2ff2847561ecf34c64d895592961825c59a562d49aade459db3fc677464d59c8",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef empty_dit(list1):\r\n empty_dit=all(not d for d in list1)\r\n return empty_dit\n\nassert empty_dit([{},{},{}]) ==",
+  "n_prompt_tokens": 202,
+  "raw_generation": " False\n",
+  "answer": "False",
+  "generated_token_ids": [
+    14729,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "False",
+  "token_logprob": [
+    -0.3940392732620239,
+    -0.5767922401428223
+  ],
+  "token_entropy": [
+    0.9588815569877625,
+    1.260601282119751
+  ],
+  "token_logprob_sum": [
+    -668537.5625,
+    -689061.625
+  ],
+  "token_topk_mean_logprob": [
+    -6.397164344787598,
+    -6.133042335510254
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 186,
+  "read_token_ids": [
+    260,
+    2312
+  ]
+}

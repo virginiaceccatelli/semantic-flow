@@ -1,0 +1,68 @@
+{
+  "case_id": "477:2",
+  "program_id": "477",
+  "code": "def is_lower(string):\r\n  return (string.lower())",
+  "call": "is_lower(\"SenTenCE\")",
+  "expected": "'sentence'",
+  "dataset": "mbpp",
+  "source_group": "60c1970d0e44839d6ded14ffe862af1f748c3ab80b36f496795bb1c05e73f77b",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef is_lower(string):\r\n  return (string.lower())\n\nassert is_lower(\"SenTenCE\") ==",
+  "n_prompt_tokens": 182,
+  "raw_generation": " \"sentence\"\n",
+  "answer": "\"sentence\"",
+  "generated_token_ids": [
+    440,
+    18119,
+    720,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'sentence'",
+  "token_logprob": [
+    -0.09280344843864441,
+    -0.157479926943779,
+    -0.0005578630371019244,
+    -0.017456812784075737,
+    -0.445554256439209
+  ],
+  "token_entropy": [
+    0.4654119610786438,
+    0.5431380867958069,
+    0.005206244066357613,
+    0.10778398811817169,
+    0.947782039642334
+  ],
+  "token_logprob_sum": [
+    -746903.875,
+    -905762.875,
+    -1168774.0,
+    -736370.75,
+    -724621.625
+  ],
+  "token_topk_mean_logprob": [
+    -6.805302619934082,
+    -8.860605239868164,
+    -14.009932518005371,
+    -8.954957962036133,
+    -7.767430305480957
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 169,
+  "read_token_ids": [
+    4683,
+    2312
+  ]
+}

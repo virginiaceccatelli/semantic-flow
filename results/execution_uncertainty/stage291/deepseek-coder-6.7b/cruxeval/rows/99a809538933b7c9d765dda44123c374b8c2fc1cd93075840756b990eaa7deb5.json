@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_500",
+  "program_id": "sample_500",
+  "code": "def f(text, delim):\n    return text[:text[::-1].find(delim)][::-1]",
+  "call": "f('dsj osq wi w', ' ')",
+  "expected": "'d'",
+  "dataset": "cruxeval",
+  "source_group": "3634592049eb982668b0de55437928911628c4ef63466ad10a6635f98e218951",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, delim):\n    return text[:text[::-1].find(delim)][::-1]\n\nassert f('dsj osq wi w', ' ') ==",
+  "n_prompt_tokens": 199,
+  "raw_generation": " 'dsj'\n",
+  "answer": "'dsj'",
+  "generated_token_ids": [
+    651,
+    6356,
+    73,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'dsj'",
+  "token_logprob": [
+    -0.01898300088942051,
+    -0.028014574199914932,
+    -0.002266697119921446,
+    -0.4586431384086609,
+    -0.10323753952980042
+  ],
+  "token_entropy": [
+    0.11937427520751953,
+    0.22222957015037537,
+    0.01852366141974926,
+    0.7974307537078857,
+    0.3400281071662903
+  ],
+  "token_logprob_sum": [
+    -835309.3125,
+    -665563.75,
+    -828656.625,
+    -734004.8125,
+    -804780.75
+  ],
+  "token_topk_mean_logprob": [
+    -8.96898365020752,
+    -7.1030144691467285,
+    -10.82726764678955,
+    -8.25864315032959,
+    -9.334486961364746
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 182,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

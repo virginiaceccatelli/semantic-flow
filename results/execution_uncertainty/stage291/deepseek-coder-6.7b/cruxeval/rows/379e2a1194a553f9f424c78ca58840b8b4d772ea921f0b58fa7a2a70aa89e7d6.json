@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_788",
+  "program_id": "sample_788",
+  "code": "def f(text, suffix):\n    if suffix.startswith(\"/\"):\n        return text + suffix[1:]\n    return text",
+  "call": "f('hello.txt', '/')",
+  "expected": "'hello.txt'",
+  "dataset": "cruxeval",
+  "source_group": "ee4ef0242521098c5a36e08e13f3a0373643ec8f62bd7b63889d47cc9e2cb1f7",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, suffix):\n    if suffix.startswith(\"/\"):\n        return text + suffix[1:]\n    return text\n\nassert f('hello.txt', '/') ==",
+  "n_prompt_tokens": 197,
+  "raw_generation": " 'hello.txt'\n",
+  "answer": "'hello.txt'",
+  "generated_token_ids": [
+    651,
+    31702,
+    13,
+    9313,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'hello.txt'",
+  "token_logprob": [
+    -0.031438544392585754,
+    -0.011955629102885723,
+    -0.01622871682047844,
+    -0.004976742435246706,
+    -0.13661783933639526,
+    -0.09589296579360962
+  ],
+  "token_entropy": [
+    0.17846310138702393,
+    0.09984099119901657,
+    0.09945099800825119,
+    0.041260410100221634,
+    0.43364429473876953,
+    0.3437401056289673
+  ],
+  "token_logprob_sum": [
+    -841906.0,
+    -754268.625,
+    -790818.6875,
+    -799356.75,
+    -755828.75,
+    -810117.875
+  ],
+  "token_topk_mean_logprob": [
+    -8.118939399719238,
+    -8.024455070495605,
+    -9.341229438781738,
+    -9.236226081848145,
+    -8.405367851257324,
+    -8.395892143249512
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 184,
+  "read_token_ids": [
+    2422,
+    2312
+  ]
+}

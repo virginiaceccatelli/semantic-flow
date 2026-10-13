@@ -1,0 +1,53 @@
+{
+  "case_id": "175:0",
+  "program_id": "175",
+  "code": "def is_valid_parenthese( str1):\r\n        stack, pchar = [], {\"(\": \")\", \"{\": \"}\", \"[\": \"]\"}\r\n        for parenthese in str1:\r\n            if parenthese in pchar:\r\n                stack.append(parenthese)\r\n            elif len(stack) == 0 or pchar[stack.pop()] != parenthese:\r\n                return False\r\n        return len(stack) == 0",
+  "call": "is_valid_parenthese(\"(){}[]\")",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "457da2797b1465438922e1f9875fc5a40f3b17f390635e02a6174e84939140f3",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef is_valid_parenthese( str1):\r\n        stack, pchar = [], {\"(\": \")\", \"{\": \"}\", \"[\": \"]\"}\r\n        for parenthese in str1:\r\n            if parenthese in pchar:\r\n                stack.append(parenthese)\r\n            elif len(stack) == 0 or pchar[stack.pop()] != parenthese:\r\n                return False\r\n        return len(stack) == 0\n\nassert is_valid_parenthese(\"(){}[]\") ==",
+  "n_prompt_tokens": 280,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.02525823749601841,
+    -0.2590678036212921
+  ],
+  "token_entropy": [
+    0.14409194886684418,
+    0.7895464897155762
+  ],
+  "token_logprob_sum": [
+    -787205.4375,
+    -772047.375
+  ],
+  "token_topk_mean_logprob": [
+    -8.725257873535156,
+    -6.7715678215026855
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 263,
+  "read_token_ids": [
+    15,
+    2312
+  ]
+}

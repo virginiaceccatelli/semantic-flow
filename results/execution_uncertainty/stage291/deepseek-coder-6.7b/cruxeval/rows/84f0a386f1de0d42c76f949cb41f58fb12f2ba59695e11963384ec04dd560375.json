@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_616",
+  "program_id": "sample_616",
+  "code": "def f(body):\n    ls = list(body)\n    dist = 0\n    for i in range(0, len(ls) - 1):\n        if ls[i - 2 if i - 2 >= 0 else 0] == '\\t':\n            dist += (1 + ls[i - 1].count('\\t')) * 3\n        ls[i] = '[' + ls[i] + ']'\n    return ''.join(ls).expandtabs(4 + dist)",
+  "call": "f('\\n\\ny\\n')",
+  "expected": "'[\\n][\\n][y]\\n'",
+  "dataset": "cruxeval",
+  "source_group": "b8a8260144db4674497838d25a4f05f4159604562f4a43342ef83bc239f500aa",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(body):\n    ls = list(body)\n    dist = 0\n    for i in range(0, len(ls) - 1):\n        if ls[i - 2 if i - 2 >= 0 else 0] == '\\t':\n            dist += (1 + ls[i - 1].count('\\t')) * 3\n        ls[i] = '[' + ls[i] + ']'\n    return ''.join(ls).expandtabs(4 + dist)\n\nassert f('\\n\\ny\\n') ==",
+  "n_prompt_tokens": 282,
+  "raw_generation": " '[y]'\n",
+  "answer": "'[y]'",
+  "generated_token_ids": [
+    651,
+    58,
+    88,
+    60,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'[y]'",
+  "token_logprob": [
+    -0.5086570978164673,
+    -0.525962769985199,
+    -1.0653648376464844,
+    -0.3164200782775879,
+    -0.08815333247184753,
+    -0.21179871261119843
+  ],
+  "token_entropy": [
+    0.8737999796867371,
+    1.14410400390625,
+    2.305152654647827,
+    0.9459868669509888,
+    0.4383891224861145,
+    0.5486944317817688
+  ],
+  "token_logprob_sum": [
+    -737525.625,
+    -690101.0,
+    -653972.5625,
+    -661420.5,
+    -705277.375,
+    -804269.9375
+  ],
+  "token_topk_mean_logprob": [
+    -6.433658123016357,
+    -5.650962829589844,
+    -4.221614837646484,
+    -6.4351701736450195,
+    -6.488152980804443,
+    -8.030548095703125
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 268,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_440",
+  "program_id": "sample_440",
+  "code": "def f(text):\n    if text.isdecimal():\n        return 'yes'\n    else:\n        return 'no'",
+  "call": "f(\"abc\")",
+  "expected": "'no'",
+  "dataset": "cruxeval",
+  "source_group": "d0eae6bd242c68eaab89af01ec823bc0a8ca7a90112ee7d096d1c010433476b5",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    if text.isdecimal():\n        return 'yes'\n    else:\n        return 'no'\n\nassert f(\"abc\") ==",
+  "n_prompt_tokens": 192,
+  "raw_generation": " 'no'\n",
+  "answer": "'no'",
+  "generated_token_ids": [
+    651,
+    2459,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'no'",
+  "token_logprob": [
+    -0.39569008350372314,
+    -0.20237979292869568,
+    -0.001177451922558248,
+    -0.06966296583414078
+  ],
+  "token_entropy": [
+    0.6936461925506592,
+    0.4871782064437866,
+    0.010012076236307621,
+    0.2676710784435272
+  ],
+  "token_logprob_sum": [
+    -829850.125,
+    -759829.625,
+    -805806.5,
+    -822270.875
+  ],
+  "token_topk_mean_logprob": [
+    -7.855064392089844,
+    -9.81488037109375,
+    -11.726178169250488,
+    -9.2977876663208
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 183,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

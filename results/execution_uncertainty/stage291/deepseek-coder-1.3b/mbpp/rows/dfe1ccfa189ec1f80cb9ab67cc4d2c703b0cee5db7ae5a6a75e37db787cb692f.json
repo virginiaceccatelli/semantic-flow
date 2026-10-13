@@ -1,0 +1,53 @@
+{
+  "case_id": "69:0",
+  "program_id": "69",
+  "code": "def is_sublist(l, s):\r\n\tsub_set = False\r\n\tif s == []:\r\n\t\tsub_set = True\r\n\telif s == l:\r\n\t\tsub_set = True\r\n\telif len(s) > len(l):\r\n\t\tsub_set = False\r\n\telse:\r\n\t\tfor i in range(len(l)):\r\n\t\t\tif l[i] == s[0]:\r\n\t\t\t\tn = 1\r\n\t\t\t\twhile (n < len(s)) and (l[i+n] == s[n]):\r\n\t\t\t\t\tn += 1\t\t\t\t\r\n\t\t\t\tif n == len(s):\r\n\t\t\t\t\tsub_set = True\r\n\treturn sub_set",
+  "call": "is_sublist([2,4,3,5,7],[3,7])",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "020a41d0b3bcd690cfd15382ef56fdc386db5c1b79f209a948ad9a4b8c051ffa",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef is_sublist(l, s):\r\n\tsub_set = False\r\n\tif s == []:\r\n\t\tsub_set = True\r\n\telif s == l:\r\n\t\tsub_set = True\r\n\telif len(s) > len(l):\r\n\t\tsub_set = False\r\n\telse:\r\n\t\tfor i in range(len(l)):\r\n\t\t\tif l[i] == s[0]:\r\n\t\t\t\tn = 1\r\n\t\t\t\twhile (n < len(s)) and (l[i+n] == s[n]):\r\n\t\t\t\t\tn += 1\t\t\t\t\r\n\t\t\t\tif n == len(s):\r\n\t\t\t\t\tsub_set = True\r\n\treturn sub_set\n\nassert is_sublist([2,4,3,5,7],[3,7]) ==",
+  "n_prompt_tokens": 349,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.051372602581977844,
+    -0.22839592397212982
+  ],
+  "token_entropy": [
+    0.216521218419075,
+    0.6901835203170776
+  ],
+  "token_logprob_sum": [
+    -811802.75,
+    -793366.25
+  ],
+  "token_topk_mean_logprob": [
+    -8.938872337341309,
+    -6.934645175933838
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 324,
+  "read_token_ids": [
+    1113,
+    2312
+  ]
+}

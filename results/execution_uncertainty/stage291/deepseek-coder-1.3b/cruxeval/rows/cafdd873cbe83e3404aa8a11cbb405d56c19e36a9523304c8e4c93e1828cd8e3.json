@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_661",
+  "program_id": "sample_661",
+  "code": "def f(letters, maxsplit):\n    return ''.join(letters.split()[-maxsplit:])",
+  "call": "f('elrts,SS ee', 6)",
+  "expected": "'elrts,SSee'",
+  "dataset": "cruxeval",
+  "source_group": "caf03b8c133a4e96fc55dabec8170b3316c65c1919dd1071b4fc5f52414ffb8d",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(letters, maxsplit):\n    return ''.join(letters.split()[-maxsplit:])\n\nassert f('elrts,SS ee', 6) ==",
+  "n_prompt_tokens": 197,
+  "raw_generation": " 'ee'\n",
+  "answer": "'ee'",
+  "generated_token_ids": [
+    651,
+    1626,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'ee'",
+  "token_logprob": [
+    -0.028589583933353424,
+    -0.5800250768661499,
+    -0.1984766721725464,
+    -0.2437056303024292
+  ],
+  "token_entropy": [
+    0.19228368997573853,
+    1.9937057495117188,
+    0.9369933605194092,
+    0.5564337372779846
+  ],
+  "token_logprob_sum": [
+    -777684.6875,
+    -556888.125,
+    -620823.0625,
+    -786895.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.281713962554932,
+    -5.005025386810303,
+    -5.548476696014404,
+    -8.978080749511719
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 179,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

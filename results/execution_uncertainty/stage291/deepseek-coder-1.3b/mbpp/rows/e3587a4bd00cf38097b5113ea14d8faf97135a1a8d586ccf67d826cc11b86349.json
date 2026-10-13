@@ -1,0 +1,63 @@
+{
+  "case_id": "227:2",
+  "program_id": "227",
+  "code": "def min_of_three(a,b,c): \r\n      if (a <= b) and (a <= c): \r\n        smallest = a \r\n      elif (b <= a) and (b <= c): \r\n        smallest = b \r\n      else: \r\n        smallest = c \r\n      return smallest",
+  "call": "min_of_three(-10,-20,-30)",
+  "expected": "-30",
+  "dataset": "mbpp",
+  "source_group": "9606c4f543bace0b1ee97bb1f22b74e30842cdf56f89878078201ce1646d233e",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef min_of_three(a,b,c): \r\n      if (a <= b) and (a <= c): \r\n        smallest = a \r\n      elif (b <= a) and (b <= c): \r\n        smallest = b \r\n      else: \r\n        smallest = c \r\n      return smallest\n\nassert min_of_three(-10,-20,-30) ==",
+  "n_prompt_tokens": 251,
+  "raw_generation": " -30\n",
+  "answer": "-30",
+  "generated_token_ids": [
+    567,
+    18,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-30",
+  "token_logprob": [
+    -0.012973426841199398,
+    -0.3415118455886841,
+    -0.0006812873762100935,
+    -0.3233794569969177
+  ],
+  "token_entropy": [
+    0.08898107707500458,
+    0.6956779360771179,
+    0.006729457061737776,
+    0.919940173625946
+  ],
+  "token_logprob_sum": [
+    -790138.625,
+    -803460.125,
+    -870253.875,
+    -729698.375
+  ],
+  "token_topk_mean_logprob": [
+    -8.937973976135254,
+    -10.510261535644531,
+    -11.225680351257324,
+    -6.4796295166015625
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 231,
+  "read_token_ids": [
+    19702,
+    2312
+  ]
+}

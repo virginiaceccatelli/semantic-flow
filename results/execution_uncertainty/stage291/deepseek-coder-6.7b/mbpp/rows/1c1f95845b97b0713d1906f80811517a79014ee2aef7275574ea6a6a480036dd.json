@@ -1,0 +1,63 @@
+{
+  "case_id": "377:2",
+  "program_id": "377",
+  "code": "def remove_Char(s,c) :  \r\n    counts = s.count(c) \r\n    s = list(s) \r\n    while counts :  \r\n        s.remove(c) \r\n        counts -= 1 \r\n    s = '' . join(s)   \r\n    return (s)",
+  "call": "remove_Char(\"aabbc\",'b')",
+  "expected": "'aac'",
+  "dataset": "mbpp",
+  "source_group": "cd4a60ad21c54b1aa0f16c9f7e73cc31eb6d3bf15e5d34b345f9dcc809509ecd",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef remove_Char(s,c) :  \r\n    counts = s.count(c) \r\n    s = list(s) \r\n    while counts :  \r\n        s.remove(c) \r\n        counts -= 1 \r\n    s = '' . join(s)   \r\n    return (s)\n\nassert remove_Char(\"aabbc\",'b') ==",
+  "n_prompt_tokens": 246,
+  "raw_generation": " \"aa\"\n",
+  "answer": "\"aa\"",
+  "generated_token_ids": [
+    440,
+    8209,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'aa'",
+  "token_logprob": [
+    -0.5428949594497681,
+    -0.6354442238807678,
+    -0.4131413400173187,
+    -0.5069323778152466
+  ],
+  "token_entropy": [
+    0.9826725125312805,
+    0.9514594078063965,
+    0.9824936389923096,
+    0.8386205434799194
+  ],
+  "token_logprob_sum": [
+    -764504.0625,
+    -820697.125,
+    -800703.5,
+    -730506.8125
+  ],
+  "token_topk_mean_logprob": [
+    -6.7491455078125,
+    -6.64169454574585,
+    -6.538140773773193,
+    -7.225682258605957
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 230,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

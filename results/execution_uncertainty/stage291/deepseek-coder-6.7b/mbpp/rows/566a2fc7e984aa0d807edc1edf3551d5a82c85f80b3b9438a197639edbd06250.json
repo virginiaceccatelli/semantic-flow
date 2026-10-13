@@ -1,0 +1,63 @@
+{
+  "case_id": "247:0",
+  "program_id": "247",
+  "code": "def lps(str): \r\n\tn = len(str) \r\n\tL = [[0 for x in range(n)] for x in range(n)] \r\n\tfor i in range(n): \r\n\t\tL[i][i] = 1\r\n\tfor cl in range(2, n+1): \r\n\t\tfor i in range(n-cl+1): \r\n\t\t\tj = i+cl-1\r\n\t\t\tif str[i] == str[j] and cl == 2: \r\n\t\t\t\tL[i][j] = 2\r\n\t\t\telif str[i] == str[j]: \r\n\t\t\t\tL[i][j] = L[i+1][j-1] + 2\r\n\t\t\telse: \r\n\t\t\t\tL[i][j] = max(L[i][j-1], L[i+1][j]); \r\n\treturn L[0][n-1]",
+  "call": "lps(\"TENS FOR TENS\")",
+  "expected": "5",
+  "dataset": "mbpp",
+  "source_group": "25a78ad179336b7a805f4962eeb915617923ea2867037115b8ee96033a5bc107",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef lps(str): \r\n\tn = len(str) \r\n\tL = [[0 for x in range(n)] for x in range(n)] \r\n\tfor i in range(n): \r\n\t\tL[i][i] = 1\r\n\tfor cl in range(2, n+1): \r\n\t\tfor i in range(n-cl+1): \r\n\t\t\tj = i+cl-1\r\n\t\t\tif str[i] == str[j] and cl == 2: \r\n\t\t\t\tL[i][j] = 2\r\n\t\t\telif str[i] == str[j]: \r\n\t\t\t\tL[i][j] = L[i+1][j-1] + 2\r\n\t\t\telse: \r\n\t\t\t\tL[i][j] = max(L[i][j-1], L[i+1][j]); \r\n\treturn L[0][n-1]\n\nassert lps(\"TENS FOR TENS\") ==",
+  "n_prompt_tokens": 385,
+  "raw_generation": "  10\n",
+  "answer": "10",
+  "generated_token_ids": [
+    243,
+    16,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "10",
+  "token_logprob": [
+    -1.5514289140701294,
+    -0.9609236121177673,
+    -0.6886608004570007,
+    -0.3387175500392914
+  ],
+  "token_entropy": [
+    2.7981629371643066,
+    1.8750648498535156,
+    1.6167641878128052,
+    0.9399065375328064
+  ],
+  "token_logprob_sum": [
+    -642888.375,
+    -724332.9375,
+    -762699.25,
+    -752471.3125
+  ],
+  "token_topk_mean_logprob": [
+    -3.6889290809631348,
+    -6.142173767089844,
+    -5.888660907745361,
+    -6.176217555999756
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 371,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

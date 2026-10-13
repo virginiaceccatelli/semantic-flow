@@ -1,0 +1,58 @@
+{
+  "case_id": "351:2",
+  "program_id": "351",
+  "code": "def first_Element(arr,n,k): \r\n    count_map = {}; \r\n    for i in range(0, n): \r\n        if(arr[i] in count_map.keys()): \r\n            count_map[arr[i]] += 1\r\n        else: \r\n            count_map[arr[i]] = 1\r\n        i += 1\r\n    for i in range(0, n):  \r\n        if (count_map[arr[i]] == k): \r\n            return arr[i] \r\n        i += 1 \r\n    return -1",
+  "call": "first_Element([2,3,4,3,5,7,1,2,3,5],10,2)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "6d1e0feea3b16794180bf56fcef1037693bb7c0fd21a66db499a8edd53296737",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef first_Element(arr,n,k): \r\n    count_map = {}; \r\n    for i in range(0, n): \r\n        if(arr[i] in count_map.keys()): \r\n            count_map[arr[i]] += 1\r\n        else: \r\n            count_map[arr[i]] = 1\r\n        i += 1\r\n    for i in range(0, n):  \r\n        if (count_map[arr[i]] == k): \r\n            return arr[i] \r\n        i += 1 \r\n    return -1\n\nassert first_Element([2,3,4,3,5,7,1,2,3,5],10,2) ==",
+  "n_prompt_tokens": 329,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.414285808801651,
+    -0.0057047889567911625,
+    -0.5931354761123657
+  ],
+  "token_entropy": [
+    1.545125961303711,
+    0.046514298766851425,
+    0.9794919490814209
+  ],
+  "token_logprob_sum": [
+    -670914.375,
+    -781298.875,
+    -734165.875
+  ],
+  "token_topk_mean_logprob": [
+    -4.576785564422607,
+    -9.236955642700195,
+    -6.674386024475098
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 295,
+  "read_token_ids": [
+    16,
+    2312
+  ]
+}

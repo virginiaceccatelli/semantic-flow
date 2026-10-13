@@ -1,0 +1,53 @@
+{
+  "case_id": "151:0",
+  "program_id": "151",
+  "code": "def gcd(p,q):\r\n    while q != 0:\r\n        p, q = q,p%q\r\n    return p\r\ndef is_coprime(x,y):\r\n    return gcd(x,y) == 1",
+  "call": "is_coprime(17,13)",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "1022c9153aa31ba43ca3c7e4d5f96e32f4d40dda8037d6b35cfd423f4e55e4eb",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef gcd(p,q):\r\n    while q != 0:\r\n        p, q = q,p%q\r\n    return p\r\ndef is_coprime(x,y):\r\n    return gcd(x,y) == 1\n\nassert is_coprime(17,13) ==",
+  "n_prompt_tokens": 230,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.04721156507730484,
+    -0.3311769962310791
+  ],
+  "token_entropy": [
+    0.20990128815174103,
+    0.8356381058692932
+  ],
+  "token_logprob_sum": [
+    -776390.625,
+    -757213.5625
+  ],
+  "token_topk_mean_logprob": [
+    -8.862837791442871,
+    -7.240551948547363
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 213,
+  "read_token_ids": [
+    16,
+    2312
+  ]
+}

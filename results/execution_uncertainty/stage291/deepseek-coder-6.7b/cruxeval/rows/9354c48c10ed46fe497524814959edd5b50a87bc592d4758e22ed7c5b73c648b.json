@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_60",
+  "program_id": "sample_60",
+  "code": "def f(doc):\n    for x in doc:\n        if x.isalpha():\n            return x.capitalize()\n    return '-'",
+  "call": "f('raruwa')",
+  "expected": "'R'",
+  "dataset": "cruxeval",
+  "source_group": "981f95468f2de5fcbd78be986e6e3f1a7462cde92eabf4c89e3f1e3a84250f18",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(doc):\n    for x in doc:\n        if x.isalpha():\n            return x.capitalize()\n    return '-'\n\nassert f('raruwa') ==",
+  "n_prompt_tokens": 198,
+  "raw_generation": " 'R'\n",
+  "answer": "'R'",
+  "generated_token_ids": [
+    651,
+    49,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'R'",
+  "token_logprob": [
+    -0.01176325511187315,
+    -0.03600373491644859,
+    -0.02774190343916416,
+    -0.059633657336235046
+  ],
+  "token_entropy": [
+    0.08399932086467743,
+    0.22713062167167664,
+    0.15058568120002747,
+    0.2468036562204361
+  ],
+  "token_logprob_sum": [
+    -811232.625,
+    -782749.5,
+    -769473.375,
+    -819580.1875
+  ],
+  "token_topk_mean_logprob": [
+    -8.668013572692871,
+    -6.998504161834717,
+    -9.240242004394531,
+    -8.944007873535156
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 187,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

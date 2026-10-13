@@ -1,0 +1,58 @@
+{
+  "case_id": "383:0",
+  "program_id": "383",
+  "code": "def even_bit_toggle_number(n) : \r\n    res = 0; count = 0; temp = n    \r\n    while(temp > 0 ) : \r\n        if (count % 2 == 0) : \r\n            res = res | (1 << count)      \r\n        count = count + 1\r\n        temp >>= 1 \r\n    return n ^ res",
+  "call": "even_bit_toggle_number(10)",
+  "expected": "15",
+  "dataset": "mbpp",
+  "source_group": "3b9de181567655f472a09022ec2f0dd9ca73a1efd875da881778be625cba1f33",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef even_bit_toggle_number(n) : \r\n    res = 0; count = 0; temp = n    \r\n    while(temp > 0 ) : \r\n        if (count % 2 == 0) : \r\n            res = res | (1 << count)      \r\n        count = count + 1\r\n        temp >>= 1 \r\n    return n ^ res\n\nassert even_bit_toggle_number(10) ==",
+  "n_prompt_tokens": 258,
+  "raw_generation": "  8\n",
+  "answer": "8",
+  "generated_token_ids": [
+    243,
+    23,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "8",
+  "token_logprob": [
+    -1.2156356573104858,
+    -1.0922447443008423,
+    -0.6096228361129761
+  ],
+  "token_entropy": [
+    2.2129297256469727,
+    1.8352763652801514,
+    1.056226372718811
+  ],
+  "token_logprob_sum": [
+    -664871.5625,
+    -745198.875,
+    -734821.875
+  ],
+  "token_topk_mean_logprob": [
+    -4.303135871887207,
+    -6.0359954833984375,
+    -6.147122859954834
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 242,
+  "read_token_ids": [
+    593,
+    2312
+  ]
+}

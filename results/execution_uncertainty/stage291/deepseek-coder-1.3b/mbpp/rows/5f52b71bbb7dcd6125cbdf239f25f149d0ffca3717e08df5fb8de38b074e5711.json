@@ -1,0 +1,73 @@
+{
+  "case_id": "411:0",
+  "program_id": "411",
+  "code": "import re\r\ndef snake_to_camel(word):\r\n  return ''.join(x.capitalize() or '_' for x in word.split('_'))",
+  "call": "snake_to_camel('android_tv')",
+  "expected": "'AndroidTv'",
+  "dataset": "mbpp",
+  "source_group": "b5cdcb8b051083c727abc88996edff437cf6fdcd8095d84bb0f980a00be717eb",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef snake_to_camel(word):\r\n  return ''.join(x.capitalize() or '_' for x in word.split('_'))\n\nassert snake_to_camel('android_tv') ==",
+  "n_prompt_tokens": 211,
+  "raw_generation": " 'AndroidTv'\n",
+  "answer": "'AndroidTv'",
+  "generated_token_ids": [
+    651,
+    26534,
+    51,
+    85,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'AndroidTv'",
+  "token_logprob": [
+    -0.021786876022815704,
+    -0.06487345695495605,
+    -0.07853572070598602,
+    -6.437280717364047e-06,
+    -0.006411577574908733,
+    -0.30642765760421753
+  ],
+  "token_entropy": [
+    0.12853890657424927,
+    0.2873542308807373,
+    0.3152448534965515,
+    0.000103382597444579,
+    0.04674198478460312,
+    0.8042641878128052
+  ],
+  "token_logprob_sum": [
+    -796315.0625,
+    -852584.0625,
+    -864309.625,
+    -1060947.75,
+    -792916.875,
+    -738420.375
+  ],
+  "token_topk_mean_logprob": [
+    -8.679598808288574,
+    -8.972516059875488,
+    -9.659785270690918,
+    -14.675787925720215,
+    -9.837661743164062,
+    -8.031428337097168
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 194,
+  "read_token_ids": [
+    14621,
+    2312
+  ]
+}

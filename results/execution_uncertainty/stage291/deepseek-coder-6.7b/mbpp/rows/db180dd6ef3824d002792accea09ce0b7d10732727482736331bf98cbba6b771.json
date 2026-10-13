@@ -1,0 +1,73 @@
+{
+  "case_id": "230:2",
+  "program_id": "230",
+  "code": "def replace_blank(str1,char):\r\n str2 = str1.replace(' ', char)\r\n return str2",
+  "call": "replace_blank(\"blank space\",\"-\")",
+  "expected": "'blank-space'",
+  "dataset": "mbpp",
+  "source_group": "6ebbc4692d60fa05941baa46ab4acfdb6a46da2607ca238a47578ed3d2d49d57",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef replace_blank(str1,char):\r\n str2 = str1.replace(' ', char)\r\n return str2\n\nassert replace_blank(\"blank space\",\"-\") ==",
+  "n_prompt_tokens": 195,
+  "raw_generation": " \"blank-space\"\n",
+  "answer": "\"blank-space\"",
+  "generated_token_ids": [
+    440,
+    19811,
+    12,
+    3291,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'blank-space'",
+  "token_logprob": [
+    -0.12234801054000854,
+    -0.028657933697104454,
+    -0.0024067978374660015,
+    -0.000764792668633163,
+    -0.014504823833703995,
+    -0.5080962777137756
+  ],
+  "token_entropy": [
+    0.5416861772537231,
+    0.1774922013282776,
+    0.023199457675218582,
+    0.008462127298116684,
+    0.09975763410329819,
+    0.9211459755897522
+  ],
+  "token_logprob_sum": [
+    -726140.0,
+    -761416.5625,
+    -804654.875,
+    -858505.25,
+    -761098.375,
+    -724661.75
+  ],
+  "token_topk_mean_logprob": [
+    -7.034848213195801,
+    -8.322407722473145,
+    -9.289907455444336,
+    -10.725764274597168,
+    -8.636380195617676,
+    -7.933096408843994
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 181,
+  "read_token_ids": [
+    17,
+    2312
+  ]
+}

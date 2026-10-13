@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_648",
+  "program_id": "sample_648",
+  "code": "def f(list1, list2):\n    l = list1[:]\n    while len(l) > 0:\n        if l[-1] in list2:\n            l.pop()\n        else:\n            return l[-1]\n    return 'missing'",
+  "call": "f([0, 4, 5, 6], [13, 23, -5, 0])",
+  "expected": "6",
+  "dataset": "cruxeval",
+  "source_group": "b2c92ce0dd49b67ca55a710a74ca66e31188b71a51d31913b241201f6eb0b25c",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(list1, list2):\n    l = list1[:]\n    while len(l) > 0:\n        if l[-1] in list2:\n            l.pop()\n        else:\n            return l[-1]\n    return 'missing'\n\nassert f([0, 4, 5, 6], [13, 23, -5, 0]) ==",
+  "n_prompt_tokens": 247,
+  "raw_generation": " -5\n",
+  "answer": "-5",
+  "generated_token_ids": [
+    567,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-5",
+  "token_logprob": [
+    -0.06819800287485123,
+    -0.009286778047680855,
+    -0.07877803593873978
+  ],
+  "token_entropy": [
+    0.3714889585971832,
+    0.0627632886171341,
+    0.3119550347328186
+  ],
+  "token_logprob_sum": [
+    -782892.9375,
+    -845585.25,
+    -845818.125
+  ],
+  "token_topk_mean_logprob": [
+    -6.811947822570801,
+    -10.121787071228027,
+    -8.272528648376465
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 215,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

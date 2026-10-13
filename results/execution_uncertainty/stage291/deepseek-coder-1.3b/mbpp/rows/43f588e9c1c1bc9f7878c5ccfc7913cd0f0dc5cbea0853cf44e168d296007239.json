@@ -1,0 +1,68 @@
+{
+  "case_id": "379:0",
+  "program_id": "379",
+  "code": "def surfacearea_cuboid(l,w,h):\r\n  SA = 2*(l*w + l * h + w * h)\r\n  return SA",
+  "call": "surfacearea_cuboid(1,2,3)",
+  "expected": "22",
+  "dataset": "mbpp",
+  "source_group": "de11bc7efae1aedc50a6120ff83def403291dfdb96444ab9e6a779adcfa4dc1a",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef surfacearea_cuboid(l,w,h):\r\n  SA = 2*(l*w + l * h + w * h)\r\n  return SA\n\nassert surfacearea_cuboid(1,2,3) ==",
+  "n_prompt_tokens": 209,
+  "raw_generation": " (24)\n",
+  "answer": "(24)",
+  "generated_token_ids": [
+    334,
+    17,
+    19,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "24",
+  "token_logprob": [
+    -1.199884295463562,
+    -1.0963925123214722,
+    -1.11710786819458,
+    -0.06059993803501129,
+    -0.2614031136035919
+  ],
+  "token_entropy": [
+    2.3098273277282715,
+    1.7456587553024292,
+    1.9636495113372803,
+    0.3239724636077881,
+    0.7618786692619324
+  ],
+  "token_logprob_sum": [
+    -656747.6875,
+    -705287.625,
+    -752483.625,
+    -790288.625,
+    -738409.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.153009414672852,
+    -5.360455513000488,
+    -4.573358058929443,
+    -7.213725566864014,
+    -7.6051530838012695
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 191,
+  "read_token_ids": [
+    17369,
+    2312
+  ]
+}

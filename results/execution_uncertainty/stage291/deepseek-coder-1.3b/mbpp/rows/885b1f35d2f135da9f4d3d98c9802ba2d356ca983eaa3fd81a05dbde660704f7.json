@@ -1,0 +1,58 @@
+{
+  "case_id": "52:2",
+  "program_id": "52",
+  "code": "def parallelogram_area(b,h):\r\n  area=b*h\r\n  return area",
+  "call": "parallelogram_area(8,9)",
+  "expected": "72",
+  "dataset": "mbpp",
+  "source_group": "011c1febedef987f2ab2d777ebb537d52fa679b6e3e259da4b6abfaa10e0e297",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef parallelogram_area(b,h):\r\n  area=b*h\r\n  return area\n\nassert parallelogram_area(8,9) ==",
+  "n_prompt_tokens": 194,
+  "raw_generation": "56\n",
+  "answer": "56",
+  "generated_token_ids": [
+    20,
+    21,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "56",
+  "token_logprob": [
+    -1.2851852178573608,
+    -0.010804840363562107,
+    -0.3496864140033722
+  ],
+  "token_entropy": [
+    2.529125690460205,
+    0.08513707667589188,
+    1.0080947875976562
+  ],
+  "token_logprob_sum": [
+    -620734.25,
+    -798928.875,
+    -713014.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.083622932434082,
+    -8.142054557800293,
+    -6.100858688354492
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 178,
+  "read_token_ids": [
+    3036,
+    2312
+  ]
+}

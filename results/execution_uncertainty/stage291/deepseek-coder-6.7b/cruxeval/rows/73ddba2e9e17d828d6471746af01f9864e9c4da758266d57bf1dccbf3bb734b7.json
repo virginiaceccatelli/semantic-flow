@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_267",
+  "program_id": "sample_267",
+  "code": "def f(text, space):\n    if space < 0:\n        return text\n    return text.ljust(len(text) // 2 + space)",
+  "call": "f('sowpf', -7)",
+  "expected": "'sowpf'",
+  "dataset": "cruxeval",
+  "source_group": "6273245e8eab90e8e971c491f553fe57bf25f6c35da2964153244776319a7c5d",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, space):\n    if space < 0:\n        return text\n    return text.ljust(len(text) // 2 + space)\n\nassert f('sowpf', -7) ==",
+  "n_prompt_tokens": 203,
+  "raw_generation": " 'sowpf'\n",
+  "answer": "'sowpf'",
+  "generated_token_ids": [
+    651,
+    82,
+    322,
+    26862,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'sowpf'",
+  "token_logprob": [
+    -0.018140947446227074,
+    -0.008686967194080353,
+    -0.0006474544061347842,
+    -0.006217660382390022,
+    -0.033646464347839355,
+    -0.042515162378549576
+  ],
+  "token_entropy": [
+    0.12357860803604126,
+    0.07965349406003952,
+    0.007627676706761122,
+    0.04320307448506355,
+    0.2286415994167328,
+    0.20997431874275208
+  ],
+  "token_logprob_sum": [
+    -830468.1875,
+    -684003.0,
+    -812762.125,
+    -826074.875,
+    -733314.0,
+    -821116.875
+  ],
+  "token_topk_mean_logprob": [
+    -8.318140983581543,
+    -8.183687210083008,
+    -10.310022354125977,
+    -9.887468338012695,
+    -7.027397155761719,
+    -8.48001480102539
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 189,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

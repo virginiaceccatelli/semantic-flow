@@ -1,0 +1,58 @@
+{
+  "case_id": "316:0",
+  "program_id": "316",
+  "code": "def find_last_occurrence(A, x):\r\n    (left, right) = (0, len(A) - 1)\r\n    result = -1\r\n    while left <= right:\r\n        mid = (left + right) // 2\r\n        if x == A[mid]:\r\n            result = mid\r\n            left = mid + 1\r\n        elif x < A[mid]:\r\n            right = mid - 1\r\n        else:\r\n            left = mid + 1\r\n    return result",
+  "call": "find_last_occurrence([2, 5, 5, 5, 6, 6, 8, 9, 9, 9], 5)",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "0e453a494a9a2fdaddfb4a7002c699f65f4002fbb3b434a64aa731db6f6b5281",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_last_occurrence(A, x):\r\n    (left, right) = (0, len(A) - 1)\r\n    result = -1\r\n    while left <= right:\r\n        mid = (left + right) // 2\r\n        if x == A[mid]:\r\n            result = mid\r\n            left = mid + 1\r\n        elif x < A[mid]:\r\n            right = mid - 1\r\n        else:\r\n            left = mid + 1\r\n    return result\n\nassert find_last_occurrence([2, 5, 5, 5, 6, 6, 8, 9, 9, 9], 5) ==",
+  "n_prompt_tokens": 320,
+  "raw_generation": "  3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    243,
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.5942447185516357,
+    -0.038387469947338104,
+    -0.5143910646438599
+  ],
+  "token_entropy": [
+    2.5822503566741943,
+    0.2048637419939041,
+    0.9951339960098267
+  ],
+  "token_logprob_sum": [
+    -670192.5,
+    -802196.0,
+    -753074.75
+  ],
+  "token_topk_mean_logprob": [
+    -4.037995338439941,
+    -8.754012107849121,
+    -7.248765468597412
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 275,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "case_id": "221:0",
+  "program_id": "221",
+  "code": "def first_even(nums):\r\n    first_even = next((el for el in nums if el%2==0),-1)\r\n    return first_even",
+  "call": "first_even ([1, 3, 5, 7, 4, 1, 6, 8])",
+  "expected": "4",
+  "dataset": "mbpp",
+  "source_group": "c66f7c7f545b34b19b3a55336237f21bbfb1c5fe2a10422ea2106358f7fc8366",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef first_even(nums):\r\n    first_even = next((el for el in nums if el%2==0),-1)\r\n    return first_even\n\nassert first_even ([1, 3, 5, 7, 4, 1, 6, 8]) ==",
+  "n_prompt_tokens": 225,
+  "raw_generation": "4\n",
+  "answer": "4",
+  "generated_token_ids": [
+    19,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "4",
+  "token_logprob": [
+    -0.34172701835632324,
+    -0.4131718575954437
+  ],
+  "token_entropy": [
+    1.0935336351394653,
+    1.0163729190826416
+  ],
+  "token_logprob_sum": [
+    -688640.3125,
+    -733528.75
+  ],
+  "token_topk_mean_logprob": [
+    -5.597977638244629,
+    -6.588171482086182
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 193,
+  "read_token_ids": [
+    8591,
+    2312
+  ]
+}

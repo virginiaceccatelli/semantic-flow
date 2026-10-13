@@ -1,0 +1,68 @@
+{
+  "case_id": "94:2",
+  "program_id": "94",
+  "code": "from operator import itemgetter \r\ndef index_minimum(test_list):\r\n  res = min(test_list, key = itemgetter(1))[0]\r\n  return (res)",
+  "call": "index_minimum([('Sai', 345), ('Salman', 145), ('Ayesha', 96)])",
+  "expected": "'Ayesha'",
+  "dataset": "mbpp",
+  "source_group": "39b72727a9feae3077f89665524cb82656ff71a968a57a5b74086c711edd966e",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nfrom operator import itemgetter \r\ndef index_minimum(test_list):\r\n  res = min(test_list, key = itemgetter(1))[0]\r\n  return (res)\n\nassert index_minimum([('Sai', 345), ('Salman', 145), ('Ayesha', 96)]) ==",
+  "n_prompt_tokens": 237,
+  "raw_generation": " 'Salman'\n",
+  "answer": "'Salman'",
+  "generated_token_ids": [
+    651,
+    16620,
+    1409,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Salman'",
+  "token_logprob": [
+    -0.14268924295902252,
+    -0.9435223937034607,
+    -0.00021324267436284572,
+    -0.0034973190631717443,
+    -0.5525209903717041
+  ],
+  "token_entropy": [
+    0.6349145174026489,
+    1.1391078233718872,
+    0.002379949437454343,
+    0.03116452880203724,
+    0.9379615783691406
+  ],
+  "token_logprob_sum": [
+    -763241.625,
+    -718306.25,
+    -1053819.75,
+    -749739.875,
+    -720740.375
+  ],
+  "token_topk_mean_logprob": [
+    -6.030189514160156,
+    -8.093523025512695,
+    -12.509589195251465,
+    -9.269122123718262,
+    -7.81502103805542
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

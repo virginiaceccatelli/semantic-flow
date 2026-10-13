@@ -1,0 +1,53 @@
+{
+  "case_id": "472:0",
+  "program_id": "472",
+  "code": "def check_Consecutive(l): \r\n    return sorted(l) == list(range(min(l),max(l)+1))",
+  "call": "check_Consecutive([1,2,3,4,5])",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "ca699972c2e10cccc8f598b15e1d91f58bb2c975c92e538f4e33337f5faf98fd",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_Consecutive(l): \r\n    return sorted(l) == list(range(min(l),max(l)+1))\n\nassert check_Consecutive([1,2,3,4,5]) ==",
+  "n_prompt_tokens": 208,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.010804722085595131,
+    -0.30745866894721985
+  ],
+  "token_entropy": [
+    0.07440025359392166,
+    0.8722470998764038
+  ],
+  "token_logprob_sum": [
+    -803270.5,
+    -774686.75
+  ],
+  "token_topk_mean_logprob": [
+    -9.251429557800293,
+    -7.088708400726318
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 187,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

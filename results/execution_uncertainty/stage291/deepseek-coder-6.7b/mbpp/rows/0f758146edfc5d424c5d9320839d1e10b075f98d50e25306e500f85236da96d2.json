@@ -1,0 +1,63 @@
+{
+  "case_id": "396:2",
+  "program_id": "396",
+  "code": "import re  \r\nregex = r'^[a-z]$|^([a-z]).*\\1$'\r\ndef check_char(string): \r\n\tif(re.search(regex, string)): \r\n\t\treturn \"Valid\" \r\n\telse: \r\n\t\treturn \"Invalid\"",
+  "call": "check_char(\"abcd\")",
+  "expected": "'Invalid'",
+  "dataset": "mbpp",
+  "source_group": "1d5947b6fb87ca24542e6e9d3d22f1643a9f90dbdab0744a744e8941121b8761",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re  \r\nregex = r'^[a-z]$|^([a-z]).*\\1$'\r\ndef check_char(string): \r\n\tif(re.search(regex, string)): \r\n\t\treturn \"Valid\" \r\n\telse: \r\n\t\treturn \"Invalid\"\n\nassert check_char(\"abcd\") ==",
+  "n_prompt_tokens": 236,
+  "raw_generation": " \"Valid\"\n",
+  "answer": "\"Valid\"",
+  "generated_token_ids": [
+    440,
+    9378,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'Valid'",
+  "token_logprob": [
+    -0.07252949476242065,
+    -0.4790087342262268,
+    -0.011761370114982128,
+    -0.3371760845184326
+  ],
+  "token_entropy": [
+    0.33282554149627686,
+    0.7032272219657898,
+    0.07463975250720978,
+    0.9533534646034241
+  ],
+  "token_logprob_sum": [
+    -766887.75,
+    -778763.0625,
+    -737014.875,
+    -744445.125
+  ],
+  "token_topk_mean_logprob": [
+    -7.378779888153076,
+    -8.625884056091309,
+    -9.161761283874512,
+    -6.918426513671875
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 224,
+  "read_token_ids": [
+    1,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "25:1",
+  "program_id": "25",
+  "code": "def find_Product(arr,n): \r\n    arr.sort() \r\n    prod = 1\r\n    for i in range(0,n,1): \r\n        if (arr[i - 1] != arr[i]): \r\n            prod = prod * arr[i] \r\n    return prod;",
+  "call": "find_Product([1,2,3,1,1],5)",
+  "expected": "6",
+  "dataset": "mbpp",
+  "source_group": "ab4175bd5d88c1ae04e0d22ae67f9727221bd144cee65a0f0ee475851bda1382",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_Product(arr,n): \r\n    arr.sort() \r\n    prod = 1\r\n    for i in range(0,n,1): \r\n        if (arr[i - 1] != arr[i]): \r\n            prod = prod * arr[i] \r\n    return prod;\n\nassert find_Product([1,2,3,1,1],5) ==",
+  "n_prompt_tokens": 251,
+  "raw_generation": "  12\n",
+  "answer": "12",
+  "generated_token_ids": [
+    243,
+    16,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "12",
+  "token_logprob": [
+    -1.458944320678711,
+    -1.1053580045700073,
+    -0.8965403437614441,
+    -0.6923041343688965
+  ],
+  "token_entropy": [
+    2.4068593978881836,
+    1.8555021286010742,
+    1.8656684160232544,
+    1.3999135494232178
+  ],
+  "token_logprob_sum": [
+    -673282.0,
+    -807170.1875,
+    -750413.3125,
+    -749515.125
+  ],
+  "token_topk_mean_logprob": [
+    -3.883944272994995,
+    -7.230358123779297,
+    -4.89654016494751,
+    -5.557929515838623
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 230,
+  "read_token_ids": [
+    26,
+    2312
+  ]
+}

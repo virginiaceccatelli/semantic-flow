@@ -1,0 +1,73 @@
+{
+  "case_id": "451:2",
+  "program_id": "451",
+  "code": "import re\r\ndef remove_whitespaces(text1):\r\n  return (re.sub(r'\\s+', '',text1))",
+  "call": "remove_whitespaces(' iOS    Swift ')",
+  "expected": "'iOSSwift'",
+  "dataset": "mbpp",
+  "source_group": "a4e71904b67ce3ccd4506c6b6e696e6e6cf3a29c123296939e277b4016c3a0bd",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef remove_whitespaces(text1):\r\n  return (re.sub(r'\\s+', '',text1))\n\nassert remove_whitespaces(' iOS    Swift ') ==",
+  "n_prompt_tokens": 201,
+  "raw_generation": " 'iOS Swift'\n",
+  "answer": "'iOS Swift'",
+  "generated_token_ids": [
+    651,
+    72,
+    2951,
+    29142,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'iOS Swift'",
+  "token_logprob": [
+    -0.06011927127838135,
+    -0.03494914621114731,
+    -0.3139963150024414,
+    -0.12822625041007996,
+    -0.008599157445132732,
+    -0.3934337794780731
+  ],
+  "token_entropy": [
+    0.3208669424057007,
+    0.22195526957511902,
+    0.8351354598999023,
+    0.5548444986343384,
+    0.06592513620853424,
+    0.9200633764266968
+  ],
+  "token_logprob_sum": [
+    -750056.75,
+    -703126.8125,
+    -772555.8125,
+    -712994.125,
+    -732764.5,
+    -721185.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.21636962890625,
+    -7.63494873046875,
+    -7.1663408279418945,
+    -6.4157257080078125,
+    -8.796099662780762,
+    -7.599684238433838
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 185,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_292",
+  "program_id": "sample_292",
+  "code": "def f(text):\n    new_text = [c if c.isdigit() else '*' for c in text]\n    return ''.join(new_text)",
+  "call": "f('5f83u23saa')",
+  "expected": "'5*83*23***'",
+  "dataset": "cruxeval",
+  "source_group": "4abfb385b1ea0026a44f1028c7ba367f71e9b8917afec00fe777e7aac5e19d7c",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    new_text = [c if c.isdigit() else '*' for c in text]\n    return ''.join(new_text)\n\nassert f('5f83u23saa') ==",
+  "n_prompt_tokens": 210,
+  "raw_generation": " '*********'\n",
+  "answer": "'*********'",
+  "generated_token_ids": [
+    651,
+    1504,
+    9,
+    1504,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'*********'",
+  "token_logprob": [
+    -0.00970467273145914,
+    -0.3472978174686432,
+    -1.0350003242492676,
+    -0.3728720545768738,
+    -0.334445059299469,
+    -0.20339715480804443
+  ],
+  "token_entropy": [
+    0.062427110970020294,
+    0.8237985372543335,
+    1.5101072788238525,
+    1.183430790901184,
+    0.6904178261756897,
+    0.49200060963630676
+  ],
+  "token_logprob_sum": [
+    -845466.375,
+    -909215.9375,
+    -758910.1875,
+    -759850.875,
+    -875578.5,
+    -783538.0625
+  ],
+  "token_topk_mean_logprob": [
+    -9.94095516204834,
+    -9.091048240661621,
+    -5.541250228881836,
+    -5.216622352600098,
+    -8.365694999694824,
+    -9.865897178649902
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 193,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

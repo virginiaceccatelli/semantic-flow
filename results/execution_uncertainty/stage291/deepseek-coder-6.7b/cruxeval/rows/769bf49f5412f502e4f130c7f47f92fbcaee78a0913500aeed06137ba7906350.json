@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_562",
+  "program_id": "sample_562",
+  "code": "def f(text):\n    return text.upper() == str(text)",
+  "call": "f('VTBAEPJSLGAHINS')",
+  "expected": "True",
+  "dataset": "cruxeval",
+  "source_group": "39de45008bdac34440f3d3d20dc1fe57d64b74d0928037ef806f7119372d8f8e",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    return text.upper() == str(text)\n\nassert f('VTBAEPJSLGAHINS') ==",
+  "n_prompt_tokens": 186,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.3164288401603699,
+    -0.20648856461048126
+  ],
+  "token_entropy": [
+    0.6090922951698303,
+    0.5145858526229858
+  ],
+  "token_logprob_sum": [
+    -780981.25,
+    -793888.125
+  ],
+  "token_topk_mean_logprob": [
+    -9.003929138183594,
+    -8.881487846374512
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 170,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

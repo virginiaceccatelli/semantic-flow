@@ -1,0 +1,58 @@
+{
+  "case_id": "340:1",
+  "program_id": "340",
+  "code": "def sum_three_smallest_nums(lst):\r\n\treturn sum(sorted([x for x in lst if x > 0])[:3])",
+  "call": "sum_three_smallest_nums([1,2,3,4,5])",
+  "expected": "6",
+  "dataset": "mbpp",
+  "source_group": "07a459e7482d3dd1e21219cd8cac8f8d2541446aeba1190ee95a90fea96db599",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_three_smallest_nums(lst):\r\n\treturn sum(sorted([x for x in lst if x > 0])[:3])\n\nassert sum_three_smallest_nums([1,2,3,4,5]) ==",
+  "n_prompt_tokens": 214,
+  "raw_generation": "  6\n",
+  "answer": "6",
+  "generated_token_ids": [
+    243,
+    21,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "6",
+  "token_logprob": [
+    -1.115580439567566,
+    -0.023131882771849632,
+    -0.38650596141815186
+  ],
+  "token_entropy": [
+    1.7568132877349854,
+    0.14821162819862366,
+    1.0104728937149048
+  ],
+  "token_logprob_sum": [
+    -700155.0,
+    -828836.25,
+    -740633.75
+  ],
+  "token_topk_mean_logprob": [
+    -4.984330654144287,
+    -8.310632705688477,
+    -6.502131938934326
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 189,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_566",
+  "program_id": "sample_566",
+  "code": "def f(string, code):\n    t = ''\n    try:\n        t = string.encode(code)\n        if t.endswith(b'\\n'):\n            t = t[:-1]\n        t = t.decode('UTF-8')\n        return t\n    except:\n        return t",
+  "call": "f(\"towaru\", \"UTF-8\")",
+  "expected": "'towaru'",
+  "dataset": "cruxeval",
+  "source_group": "db288eb9ef4ffd258f903c3bd16ff607a19062b44b8e546d5bdc11f01af1e3c4",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(string, code):\n    t = ''\n    try:\n        t = string.encode(code)\n        if t.endswith(b'\\n'):\n            t = t[:-1]\n        t = t.decode('UTF-8')\n        return t\n    except:\n        return t\n\nassert f(\"towaru\", \"UTF-8\") ==",
+  "n_prompt_tokens": 242,
+  "raw_generation": " \"towaru\"\n",
+  "answer": "\"towaru\"",
+  "generated_token_ids": [
+    440,
+    20058,
+    268,
+    84,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'towaru'",
+  "token_logprob": [
+    -0.28854191303253174,
+    -1.4988504648208618,
+    -0.058171346783638,
+    -0.07515762746334076,
+    -0.05362105369567871,
+    -0.07821497321128845
+  ],
+  "token_entropy": [
+    0.9931507110595703,
+    4.6348371505737305,
+    0.4100167155265808,
+    0.458837628364563,
+    0.43600085377693176,
+    0.3077986538410187
+  ],
+  "token_logprob_sum": [
+    -738092.375,
+    -494944.09375,
+    -638529.1875,
+    -626626.0,
+    -579451.9375,
+    -803640.5625
+  ],
+  "token_topk_mean_logprob": [
+    -5.726041793823242,
+    -4.223850250244141,
+    -6.3163743019104,
+    -6.343907356262207,
+    -6.778621196746826,
+    -8.434465408325195
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 226,
+  "read_token_ids": [
+    244,
+    2312
+  ]
+}

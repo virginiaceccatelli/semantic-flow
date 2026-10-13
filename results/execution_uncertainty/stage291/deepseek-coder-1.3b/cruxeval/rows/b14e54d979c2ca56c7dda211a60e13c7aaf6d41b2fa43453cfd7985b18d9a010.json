@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_501",
+  "program_id": "sample_501",
+  "code": "def f(text, char):\n    index = text.rindex(char)\n    result = list(text)\n    while index > 0:\n        result[index] = result[index-1]\n        result[index-1] = char\n        index -= 2\n    return ''.join(result)",
+  "call": "f('qpfi jzm', 'j')",
+  "expected": "'jqjfj zm'",
+  "dataset": "cruxeval",
+  "source_group": "5c0ebaddcf80efc298ebb533c8f9e3a4d092344f3be4787b7c26806723d29b59",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, char):\n    index = text.rindex(char)\n    result = list(text)\n    while index > 0:\n        result[index] = result[index-1]\n        result[index-1] = char\n        index -= 2\n    return ''.join(result)\n\nassert f('qpfi jzm', 'j') ==",
+  "n_prompt_tokens": 241,
+  "raw_generation": " 'qpfi zm'\n",
+  "answer": "'qpfi zm'",
+  "generated_token_ids": [
+    651,
+    80,
+    79,
+    10110,
+    1670,
+    76,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'qpfi zm'",
+  "token_logprob": [
+    -0.018317583948373795,
+    -0.5229782462120056,
+    -0.6404794454574585,
+    -0.762403666973114,
+    -0.7752116322517395,
+    -0.49411100149154663,
+    -0.3700939416885376,
+    -0.28531745076179504
+  ],
+  "token_entropy": [
+    0.12641869485378265,
+    1.848876953125,
+    2.0710272789001465,
+    2.5159826278686523,
+    2.0458555221557617,
+    1.7989028692245483,
+    1.249228596687317,
+    0.5891482830047607
+  ],
+  "token_logprob_sum": [
+    -777440.5,
+    -621977.8125,
+    -623958.125,
+    -583303.125,
+    -643089.5,
+    -664105.375,
+    -663550.3125,
+    -810037.5
+  ],
+  "token_topk_mean_logprob": [
+    -7.949566841125488,
+    -4.758915901184082,
+    -4.4936041831970215,
+    -4.09834098815918,
+    -4.431462287902832,
+    -4.4816107749938965,
+    -5.174781322479248,
+    -9.0415678024292
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 224,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

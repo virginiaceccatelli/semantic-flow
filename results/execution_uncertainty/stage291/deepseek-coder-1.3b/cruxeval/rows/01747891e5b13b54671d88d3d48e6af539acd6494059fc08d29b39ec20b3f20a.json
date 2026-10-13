@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_375",
+  "program_id": "sample_375",
+  "code": "def f(a, b):\n    if b in a:\n        return b.join(a.partition(a[a.index(b) + 1]))\n    else:\n        return a",
+  "call": "f('sierizam', 'iz')",
+  "expected": "'sieriizzizam'",
+  "dataset": "cruxeval",
+  "source_group": "9ea7d73d178e0482c0d94fe2c8938953940fc05f654db39993c93759c0a672aa",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(a, b):\n    if b in a:\n        return b.join(a.partition(a[a.index(b) + 1]))\n    else:\n        return a\n\nassert f('sierizam', 'iz') ==",
+  "n_prompt_tokens": 212,
+  "raw_generation": " 'sierzam'\n",
+  "answer": "'sierzam'",
+  "generated_token_ids": [
+    651,
+    82,
+    1326,
+    89,
+    302,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'sierzam'",
+  "token_logprob": [
+    -0.046817246824502945,
+    -0.3724971115589142,
+    -0.40428289771080017,
+    -1.757111668586731,
+    -0.22543136775493622,
+    -0.051092181354761124,
+    -0.06648016721010208
+  ],
+  "token_entropy": [
+    0.2786453664302826,
+    1.4780638217926025,
+    1.829711675643921,
+    3.1493420600891113,
+    1.1379263401031494,
+    0.3226102292537689,
+    0.26346421241760254
+  ],
+  "token_logprob_sum": [
+    -766294.0,
+    -595977.1875,
+    -567650.0,
+    -546665.25,
+    -635275.375,
+    -641212.0,
+    -810854.75
+  ],
+  "token_topk_mean_logprob": [
+    -6.996817111968994,
+    -5.429332733154297,
+    -4.747203350067139,
+    -3.8383615016937256,
+    -5.112931728363037,
+    -6.957342624664307,
+    -8.991480827331543
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 197,
+  "read_token_ids": [
+    245,
+    2312
+  ]
+}

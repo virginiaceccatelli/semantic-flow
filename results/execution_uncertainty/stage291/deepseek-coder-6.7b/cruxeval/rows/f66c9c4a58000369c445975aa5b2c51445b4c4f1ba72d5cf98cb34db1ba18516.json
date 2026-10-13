@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_305",
+  "program_id": "sample_305",
+  "code": "def f(text, char):\n    length = len(text)\n    index = -1\n    for i in range(length):\n        if text[i] == char:\n            index = i\n    if index == -1:\n        index = length // 2\n    new_text = list(text)\n    new_text.pop(index)\n    return ''.join(new_text)",
+  "call": "f('o horseto', 'r')",
+  "expected": "'o hoseto'",
+  "dataset": "cruxeval",
+  "source_group": "7c162577bb9ed815ac2d6a758c2e902a13af796dfa4b99cc62a6cdd79e76315a",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, char):\n    length = len(text)\n    index = -1\n    for i in range(length):\n        if text[i] == char:\n            index = i\n    if index == -1:\n        index = length // 2\n    new_text = list(text)\n    new_text.pop(index)\n    return ''.join(new_text)\n\nassert f('o horseto', 'r') ==",
+  "n_prompt_tokens": 260,
+  "raw_generation": " 'o hoseto'\n",
+  "answer": "'o hoseto'",
+  "generated_token_ids": [
+    651,
+    78,
+    286,
+    378,
+    11514,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'o hoseto'",
+  "token_logprob": [
+    -0.00880005769431591,
+    -0.33375951647758484,
+    -0.7037550806999207,
+    -1.8928030729293823,
+    -0.0627693235874176,
+    -0.008587811142206192,
+    -0.10714756697416306
+  ],
+  "token_entropy": [
+    0.06380973756313324,
+    0.9079088568687439,
+    2.0026865005493164,
+    3.224778652191162,
+    0.36691251397132874,
+    0.061567436903715134,
+    0.36686909198760986
+  ],
+  "token_logprob_sum": [
+    -821745.125,
+    -637306.75,
+    -654923.25,
+    -610428.375,
+    -738412.3125,
+    -736818.125,
+    -811851.8125
+  ],
+  "token_topk_mean_logprob": [
+    -9.040050506591797,
+    -6.1212592124938965,
+    -4.67563009262085,
+    -3.5115532875061035,
+    -6.622143745422363,
+    -9.158587455749512,
+    -8.747772216796875
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 245,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

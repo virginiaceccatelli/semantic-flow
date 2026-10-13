@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_485",
+  "program_id": "sample_485",
+  "code": "def f(tokens):\n    tokens = tokens.split()\n    if len(tokens) == 2:\n        tokens = list(reversed(tokens))\n    result = ' '.join([tokens[0].ljust(5), tokens[1].ljust(5)])\n    return result",
+  "call": "f('gsd avdropj')",
+  "expected": "'avdropj gsd  '",
+  "dataset": "cruxeval",
+  "source_group": "718c5f3b0d322f4be6a336dfe8218fbfef5edd2290cafaf2d81fed0ce6cfdc75",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(tokens):\n    tokens = tokens.split()\n    if len(tokens) == 2:\n        tokens = list(reversed(tokens))\n    result = ' '.join([tokens[0].ljust(5), tokens[1].ljust(5)])\n    return result\n\nassert f('gsd avdropj') ==",
+  "n_prompt_tokens": 236,
+  "raw_generation": " 'avdropj gsd'\n",
+  "answer": "'avdropj gsd'",
+  "generated_token_ids": [
+    651,
+    527,
+    8560,
+    73,
+    306,
+    8850,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'avdropj gsd'",
+  "token_logprob": [
+    -0.14311829209327698,
+    -1.386979579925537,
+    -0.07006216049194336,
+    -0.04618228226900101,
+    -1.2931236028671265,
+    -0.00490189203992486,
+    -0.4342397153377533,
+    -0.12708081305027008
+  ],
+  "token_entropy": [
+    0.5843256115913391,
+    3.7786331176757812,
+    0.4355725646018982,
+    0.30137696862220764,
+    2.2040634155273438,
+    0.042615003883838654,
+    1.3067059516906738,
+    0.38938063383102417
+  ],
+  "token_logprob_sum": [
+    -775217.625,
+    -532897.875,
+    -687886.125,
+    -663505.375,
+    -633952.9375,
+    -817277.625,
+    -630337.875,
+    -804305.3125
+  ],
+  "token_topk_mean_logprob": [
+    -6.486868381500244,
+    -3.7858078479766846,
+    -6.294671535491943,
+    -6.996182441711426,
+    -4.492782115936279,
+    -9.036151885986328,
+    -5.409240245819092,
+    -9.181378364562988
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 223,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

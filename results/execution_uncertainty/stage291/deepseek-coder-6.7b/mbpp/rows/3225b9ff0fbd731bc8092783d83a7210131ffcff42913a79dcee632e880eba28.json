@@ -1,0 +1,58 @@
+{
+  "case_id": "250:2",
+  "program_id": "250",
+  "code": "def count_X(tup, x): \r\n    count = 0\r\n    for ele in tup: \r\n        if (ele == x): \r\n            count = count + 1\r\n    return count",
+  "call": "count_X((10, 8, 5, 2, 10, 15, 10, 8, 5, 8, 8, 2),8)",
+  "expected": "4",
+  "dataset": "mbpp",
+  "source_group": "ad08409fc1d16c48d100461a75445ea59d10ca7c5de31118e3ef4a9558315a5d",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_X(tup, x): \r\n    count = 0\r\n    for ele in tup: \r\n        if (ele == x): \r\n            count = count + 1\r\n    return count\n\nassert count_X((10, 8, 5, 2, 10, 15, 10, 8, 5, 8, 8, 2),8) ==",
+  "n_prompt_tokens": 253,
+  "raw_generation": "  3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    243,
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -0.9787549376487732,
+    -0.7585313320159912,
+    -0.4164767265319824
+  ],
+  "token_entropy": [
+    2.03887677192688,
+    0.9829659461975098,
+    0.8993355631828308
+  ],
+  "token_logprob_sum": [
+    -647219.25,
+    -770344.5,
+    -762211.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.560005187988281,
+    -6.914781093597412,
+    -7.125852108001709
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 203,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

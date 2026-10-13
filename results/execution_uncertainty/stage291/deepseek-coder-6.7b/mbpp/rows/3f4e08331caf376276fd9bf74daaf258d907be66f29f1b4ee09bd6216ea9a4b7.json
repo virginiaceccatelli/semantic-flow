@@ -1,0 +1,53 @@
+{
+  "case_id": "92:2",
+  "program_id": "92",
+  "code": "def is_undulating(n): \r\n\tif (len(n) <= 2): \r\n\t\treturn False\r\n\tfor i in range(2, len(n)): \r\n\t\tif (n[i - 2] != n[i]): \r\n\t\t\treturn False\r\n\treturn True",
+  "call": "is_undulating(\"121\")",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "6b7af381eeb180a34bb0edb8b67ccdd5353271cc54ebe64a4aed4a004f063a46",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef is_undulating(n): \r\n\tif (len(n) <= 2): \r\n\t\treturn False\r\n\tfor i in range(2, len(n)): \r\n\t\tif (n[i - 2] != n[i]): \r\n\t\t\treturn False\r\n\treturn True\n\nassert is_undulating(\"121\") ==",
+  "n_prompt_tokens": 237,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.20691987872123718,
+    -0.2688806653022766
+  ],
+  "token_entropy": [
+    0.5197438597679138,
+    0.8356146216392517
+  ],
+  "token_logprob_sum": [
+    -759140.875,
+    -758633.875
+  ],
+  "token_topk_mean_logprob": [
+    -8.397544860839844,
+    -7.031381130218506
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 223,
+  "read_token_ids": [
+    10502,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "63:0",
+  "program_id": "63",
+  "code": "def max_difference(test_list):\r\n  temp = [abs(b - a) for a, b in test_list]\r\n  res = max(temp)\r\n  return (res)",
+  "call": "max_difference([(3, 5), (1, 7), (10, 3), (1, 2)])",
+  "expected": "7",
+  "dataset": "mbpp",
+  "source_group": "46818fba65259f139f461ef0392b59084ebe15a35f89f50c29ec6828c0eb082f",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_difference(test_list):\r\n  temp = [abs(b - a) for a, b in test_list]\r\n  res = max(temp)\r\n  return (res)\n\nassert max_difference([(3, 5), (1, 7), (10, 3), (1, 2)]) ==",
+  "n_prompt_tokens": 236,
+  "raw_generation": " (7)\n",
+  "answer": "(7)",
+  "generated_token_ids": [
+    334,
+    22,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "7",
+  "token_logprob": [
+    -0.5060086250305176,
+    -1.3390190601348877,
+    -0.21373838186264038,
+    -0.4351719319820404
+  ],
+  "token_entropy": [
+    1.6006457805633545,
+    1.8717951774597168,
+    0.6989771723747253,
+    0.8312257528305054
+  ],
+  "token_logprob_sum": [
+    -690416.25,
+    -723416.375,
+    -777996.25,
+    -731152.75
+  ],
+  "token_topk_mean_logprob": [
+    -4.693509101867676,
+    -5.710893630981445,
+    -6.801239013671875,
+    -7.9570465087890625
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

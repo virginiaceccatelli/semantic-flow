@@ -1,0 +1,73 @@
+{
+  "case_id": "366:1",
+  "program_id": "366",
+  "code": "def adjacent_num_product(list_nums):\r\n    return max(a*b for a, b in zip(list_nums, list_nums[1:]))",
+  "call": "adjacent_num_product([1,2,3,4,5])",
+  "expected": "20",
+  "dataset": "mbpp",
+  "source_group": "7db1293f563250835309d4103260ccce6d6c5f5b649844e71ee421d9e0c6eabf",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef adjacent_num_product(list_nums):\r\n    return max(a*b for a, b in zip(list_nums, list_nums[1:]))\n\nassert adjacent_num_product([1,2,3,4,5]) ==",
+  "n_prompt_tokens": 215,
+  "raw_generation": " (4*5)\n",
+  "answer": "(4*5)",
+  "generated_token_ids": [
+    334,
+    19,
+    9,
+    20,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "constant_expression",
+  "invalid_reason": null,
+  "parsed_answer": "20",
+  "token_logprob": [
+    -1.2341361045837402,
+    -1.2457536458969116,
+    -0.6590195894241333,
+    -0.03439333289861679,
+    -0.029212312772870064,
+    -0.41896721720695496
+  ],
+  "token_entropy": [
+    2.030036687850952,
+    1.8028242588043213,
+    1.293412208557129,
+    0.1696425825357437,
+    0.1662880778312683,
+    1.0252721309661865
+  ],
+  "token_logprob_sum": [
+    -691978.625,
+    -751252.875,
+    -786425.625,
+    -834175.0625,
+    -853743.75,
+    -760054.625
+  ],
+  "token_topk_mean_logprob": [
+    -4.6278862953186035,
+    -5.827003479003906,
+    -6.021519660949707,
+    -9.362518310546875,
+    -8.12296199798584,
+    -6.506466865539551
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 194,
+  "read_token_ids": [
+    25959,
+    2312
+  ]
+}

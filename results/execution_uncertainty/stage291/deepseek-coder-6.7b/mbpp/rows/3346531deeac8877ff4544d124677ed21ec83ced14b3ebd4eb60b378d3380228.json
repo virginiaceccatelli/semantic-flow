@@ -1,0 +1,63 @@
+{
+  "case_id": "461:2",
+  "program_id": "461",
+  "code": "def upper_ctr(str):\r\n    upper_ctr = 0\r\n    for i in range(len(str)):\r\n          if str[i] >= 'A' and str[i] <= 'Z': upper_ctr += 1\r\n          return upper_ctr",
+  "call": "upper_ctr('program')",
+  "expected": "0",
+  "dataset": "mbpp",
+  "source_group": "2d0f97627a82faa14db03054db2a3652479ae8bd07e4795a0577b51fa77aff35",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef upper_ctr(str):\r\n    upper_ctr = 0\r\n    for i in range(len(str)):\r\n          if str[i] >= 'A' and str[i] <= 'Z': upper_ctr += 1\r\n          return upper_ctr\n\nassert upper_ctr('program') ==",
+  "n_prompt_tokens": 225,
+  "raw_generation": " (2)\n",
+  "answer": "(2)",
+  "generated_token_ids": [
+    334,
+    17,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.278085470199585,
+    -1.228186011314392,
+    -0.10941630601882935,
+    -0.32039472460746765
+  ],
+  "token_entropy": [
+    2.6384401321411133,
+    1.7713266611099243,
+    0.46663716435432434,
+    0.8013112545013428
+  ],
+  "token_logprob_sum": [
+    -652152.25,
+    -713787.875,
+    -736906.75,
+    -717827.75
+  ],
+  "token_topk_mean_logprob": [
+    -3.8030858039855957,
+    -5.737561225891113,
+    -6.928166389465332,
+    -7.3266448974609375
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 214,
+  "read_token_ids": [
+    10609,
+    2312
+  ]
+}

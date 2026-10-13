@@ -1,0 +1,68 @@
+{
+  "case_id": "420:1",
+  "program_id": "420",
+  "code": "def cube_Sum(n): \r\n    sum = 0\r\n    for i in range(1,n + 1): \r\n        sum += (2*i)*(2*i)*(2*i) \r\n    return sum",
+  "call": "cube_Sum(3)",
+  "expected": "288",
+  "dataset": "mbpp",
+  "source_group": "bb6bd11d25c898904c1a1cad7ccde35b37311ae339c23112cec3a4e5f1c848fe",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef cube_Sum(n): \r\n    sum = 0\r\n    for i in range(1,n + 1): \r\n        sum += (2*i)*(2*i)*(2*i) \r\n    return sum\n\nassert cube_Sum(3) ==",
+  "n_prompt_tokens": 221,
+  "raw_generation": " (27)\n",
+  "answer": "(27)",
+  "generated_token_ids": [
+    334,
+    17,
+    22,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "27",
+  "token_logprob": [
+    -1.0280311107635498,
+    -1.4056848287582397,
+    -0.7314239144325256,
+    -0.7671634554862976,
+    -0.4486469030380249
+  ],
+  "token_entropy": [
+    2.2604875564575195,
+    2.0850064754486084,
+    1.8267202377319336,
+    1.5201772451400757,
+    1.1746865510940552
+  ],
+  "token_logprob_sum": [
+    -672357.375,
+    -710764.375,
+    -744468.0,
+    -745535.6875,
+    -748386.25
+  ],
+  "token_topk_mean_logprob": [
+    -4.071781158447266,
+    -4.961934566497803,
+    -4.612674236297607,
+    -5.539038181304932,
+    -6.011146545410156
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 209,
+  "read_token_ids": [
+    2545,
+    2312
+  ]
+}

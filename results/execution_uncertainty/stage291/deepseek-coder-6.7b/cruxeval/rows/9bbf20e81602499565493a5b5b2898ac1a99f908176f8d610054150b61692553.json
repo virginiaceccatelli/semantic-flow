@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_190",
+  "program_id": "sample_190",
+  "code": "def f(text):\n    short = ''\n    for c in text:\n        if(c.islower()):\n            short += c\n    return short",
+  "call": "f('980jio80jic kld094398IIl ')",
+  "expected": "'jiojickldl'",
+  "dataset": "cruxeval",
+  "source_group": "f0b6d9a3e8dc198783ce6008f29d4f81b8c9b431c126f7190c758fd33b5ed1b0",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    short = ''\n    for c in text:\n        if(c.islower()):\n            short += c\n    return short\n\nassert f('980jio80jic kld094398IIl ') ==",
+  "n_prompt_tokens": 217,
+  "raw_generation": " 'jioickl'\n",
+  "answer": "'jioickl'",
+  "generated_token_ids": [
+    651,
+    73,
+    1112,
+    278,
+    16002,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'jioickl'",
+  "token_logprob": [
+    -0.023235198110342026,
+    -0.5342240333557129,
+    -1.0417892932891846,
+    -1.5822941064834595,
+    -1.2647302150726318,
+    -0.20325611531734467,
+    -0.2557477355003357
+  ],
+  "token_entropy": [
+    0.14170901477336884,
+    1.5195682048797607,
+    2.4078688621520996,
+    2.683436393737793,
+    2.6975152492523193,
+    1.0029947757720947,
+    0.5608909130096436
+  ],
+  "token_logprob_sum": [
+    -824415.5,
+    -673085.0625,
+    -634329.375,
+    -645293.6875,
+    -623867.5,
+    -686496.375,
+    -780802.5
+  ],
+  "token_topk_mean_logprob": [
+    -8.735735893249512,
+    -5.052974224090576,
+    -4.1167893409729,
+    -3.7947938442230225,
+    -3.9459805488586426,
+    -5.240756511688232,
+    -8.808873176574707
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 189,
+  "read_token_ids": [
+    2567,
+    2312
+  ]
+}

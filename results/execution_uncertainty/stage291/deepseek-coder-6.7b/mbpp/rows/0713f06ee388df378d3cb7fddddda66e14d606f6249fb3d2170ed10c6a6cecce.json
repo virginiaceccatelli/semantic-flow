@@ -1,0 +1,53 @@
+{
+  "case_id": "295:2",
+  "program_id": "295",
+  "code": "def sum_div(number):\r\n    divisors = [1]\r\n    for i in range(2, number):\r\n        if (number % i)==0:\r\n            divisors.append(i)\r\n    return sum(divisors)",
+  "call": "sum_div(7)",
+  "expected": "1",
+  "dataset": "mbpp",
+  "source_group": "a37c1d73f29fa7663a1e75e462e576ab29f60e4edeb6143392812a471537c19b",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_div(number):\r\n    divisors = [1]\r\n    for i in range(2, number):\r\n        if (number % i)==0:\r\n            divisors.append(i)\r\n    return sum(divisors)\n\nassert sum_div(7) ==",
+  "n_prompt_tokens": 226,
+  "raw_generation": "1\n",
+  "answer": "1",
+  "generated_token_ids": [
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "1",
+  "token_logprob": [
+    -1.216611385345459,
+    -0.3916289806365967
+  ],
+  "token_entropy": [
+    2.2394354343414307,
+    1.1017024517059326
+  ],
+  "token_logprob_sum": [
+    -674332.9375,
+    -756964.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.210361480712891,
+    -5.847878932952881
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 215,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

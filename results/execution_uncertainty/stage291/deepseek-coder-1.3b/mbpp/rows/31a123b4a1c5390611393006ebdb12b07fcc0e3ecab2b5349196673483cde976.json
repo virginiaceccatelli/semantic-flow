@@ -1,0 +1,63 @@
+{
+  "case_id": "145:2",
+  "program_id": "145",
+  "code": "def max_Abs_Diff(arr,n): \r\n    minEle = arr[0] \r\n    maxEle = arr[0] \r\n    for i in range(1, n): \r\n        minEle = min(minEle,arr[i]) \r\n        maxEle = max(maxEle,arr[i]) \r\n    return (maxEle - minEle)",
+  "call": "max_Abs_Diff((3,2,1),3)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "e6fa2dc8cd0296915e2ac95b0c213070b336b668c1ad94407f30094228cf30da",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_Abs_Diff(arr,n): \r\n    minEle = arr[0] \r\n    maxEle = arr[0] \r\n    for i in range(1, n): \r\n        minEle = min(minEle,arr[i]) \r\n        maxEle = max(maxEle,arr[i]) \r\n    return (maxEle - minEle)\n\nassert max_Abs_Diff((3,2,1),3) ==",
+  "n_prompt_tokens": 270,
+  "raw_generation": " (2)\n",
+  "answer": "(2)",
+  "generated_token_ids": [
+    334,
+    17,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.4393295049667358,
+    -1.0459342002868652,
+    -0.7660496830940247,
+    -0.3143164813518524
+  ],
+  "token_entropy": [
+    2.4850964546203613,
+    1.5616028308868408,
+    1.041243314743042,
+    0.7929403781890869
+  ],
+  "token_logprob_sum": [
+    -680567.0,
+    -713605.5,
+    -755041.0,
+    -732401.25
+  ],
+  "token_topk_mean_logprob": [
+    -3.854954481124878,
+    -6.183434963226318,
+    -6.122300148010254,
+    -7.564317226409912
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 251,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

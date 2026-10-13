@@ -1,0 +1,83 @@
+{
+  "case_id": "451:2",
+  "program_id": "451",
+  "code": "import re\r\ndef remove_whitespaces(text1):\r\n  return (re.sub(r'\\s+', '',text1))",
+  "call": "remove_whitespaces(' iOS    Swift ')",
+  "expected": "'iOSSwift'",
+  "dataset": "mbpp",
+  "source_group": "a4e71904b67ce3ccd4506c6b6e696e6e6cf3a29c123296939e277b4016c3a0bd",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef remove_whitespaces(text1):\r\n  return (re.sub(r'\\s+', '',text1))\n\nassert remove_whitespaces(' iOS    Swift ') ==",
+  "n_prompt_tokens": 201,
+  "raw_generation": " 'iOSSwift'\n",
+  "answer": "'iOSSwift'",
+  "generated_token_ids": [
+    651,
+    72,
+    46,
+    2150,
+    86,
+    2267,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'iOSSwift'",
+  "token_logprob": [
+    -0.09727814048528671,
+    -0.015053951181471348,
+    -0.06104269251227379,
+    -6.544376083184034e-05,
+    -5.3881147323409095e-05,
+    -3.683499380713329e-05,
+    -0.009103813208639622,
+    -0.3838161826133728
+  ],
+  "token_entropy": [
+    0.42830026149749756,
+    0.10161688178777695,
+    0.24731069803237915,
+    0.0007942045922391117,
+    0.0007358988514170051,
+    0.00046696781646460295,
+    0.06938336789608002,
+    0.8442367315292358
+  ],
+  "token_logprob_sum": [
+    -743245.8125,
+    -761101.5,
+    -968593.3125,
+    -1122601.75,
+    -1032764.9375,
+    -1083313.125,
+    -718745.125,
+    -713147.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.687903881072998,
+    -8.7088041305542,
+    -10.582918167114258,
+    -14.2344388961792,
+    -12.853178977966309,
+    -14.759411811828613,
+    -8.777853965759277,
+    -7.877565860748291
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 185,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

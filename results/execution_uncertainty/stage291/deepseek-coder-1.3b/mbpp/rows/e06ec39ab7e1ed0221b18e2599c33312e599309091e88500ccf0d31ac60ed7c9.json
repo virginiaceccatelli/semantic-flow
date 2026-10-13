@@ -1,0 +1,53 @@
+{
+  "case_id": "216:0",
+  "program_id": "216",
+  "code": "def check_subset_list(list1, list2): \r\n    l1, l2 = list1[0], list2[0] \r\n    exist = True\r\n    for i in list2: \r\n        if i not in list1: \r\n            exist = False\r\n    return exist",
+  "call": "check_subset_list([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],[[12, 18, 23, 25, 45], [7, 11, 19, 24, 28], [1, 5, 8, 18, 15, 16]])",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "63dd73bb720faa1f4795697611c0029575e0ee3f2b4f4db5a328c2cc2d05fa24",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_subset_list(list1, list2): \r\n    l1, l2 = list1[0], list2[0] \r\n    exist = True\r\n    for i in list2: \r\n        if i not in list1: \r\n            exist = False\r\n    return exist\n\nassert check_subset_list([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],[[12, 18, 23, 25, 45], [7, 11, 19, 24, 28], [1, 5, 8, 18, 15, 16]]) ==",
+  "n_prompt_tokens": 343,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.4809739887714386,
+    -0.35749784111976624
+  ],
+  "token_entropy": [
+    0.7178025841712952,
+    0.9288297891616821
+  ],
+  "token_logprob_sum": [
+    -749231.875,
+    -744803.25
+  ],
+  "token_topk_mean_logprob": [
+    -8.055974006652832,
+    -6.988748073577881
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 225,
+  "read_token_ids": [
+    2627,
+    2312
+  ]
+}

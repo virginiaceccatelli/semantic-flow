@@ -1,0 +1,53 @@
+{
+  "case_id": "90:2",
+  "program_id": "90",
+  "code": "def len_log(list1):\r\n    max=len(list1[0])\r\n    for i in list1:\r\n        if len(i)>max:\r\n            max=len(i)\r\n    return max",
+  "call": "len_log([\"small\",\"big\",\"tall\"])",
+  "expected": "5",
+  "dataset": "mbpp",
+  "source_group": "59aa698d50881aa440b2c6efb836ab5fdf633a5331ad6a8e9bc4535b31054242",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef len_log(list1):\r\n    max=len(list1[0])\r\n    for i in list1:\r\n        if len(i)>max:\r\n            max=len(i)\r\n    return max\n\nassert len_log([\"small\",\"big\",\"tall\"]) ==",
+  "n_prompt_tokens": 225,
+  "raw_generation": "3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.3709138631820679,
+    -0.36223098635673523
+  ],
+  "token_entropy": [
+    2.2642154693603516,
+    0.9562671184539795
+  ],
+  "token_logprob_sum": [
+    -689857.25,
+    -723478.3125
+  ],
+  "token_topk_mean_logprob": [
+    -4.283413887023926,
+    -6.562231540679932
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 207,
+  "read_token_ids": [
+    3034,
+    2312
+  ]
+}

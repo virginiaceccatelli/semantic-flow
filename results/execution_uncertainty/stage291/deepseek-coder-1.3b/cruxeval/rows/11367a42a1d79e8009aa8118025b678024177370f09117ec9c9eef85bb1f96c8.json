@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_295",
+  "program_id": "sample_295",
+  "code": "def f(fruits):\n    if fruits[-1] == fruits[0]:\n        return 'no'\n    else:\n        fruits.pop(0)\n        fruits.pop()\n        fruits.pop(0)\n        fruits.pop()\n        return fruits",
+  "call": "f(['apple', 'apple', 'pear', 'banana', 'pear', 'orange', 'orange'])",
+  "expected": "['pear', 'banana', 'pear']",
+  "dataset": "cruxeval",
+  "source_group": "06569b1143feab158a18f0dd396395bf9f7384ceb472fe8fa9eb7af611d732dd",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(fruits):\n    if fruits[-1] == fruits[0]:\n        return 'no'\n    else:\n        fruits.pop(0)\n        fruits.pop()\n        fruits.pop(0)\n        fruits.pop()\n        return fruits\n\nassert f(['apple', 'apple', 'pear', 'banana', 'pear', 'orange', 'orange']) ==",
+  "n_prompt_tokens": 244,
+  "raw_generation": " ['banana', 'orange']\n",
+  "answer": "['banana', 'orange']",
+  "generated_token_ids": [
+    12036,
+    11240,
+    2298,
+    1183,
+    651,
+    30946,
+    3676,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "['banana', 'orange']",
+  "token_logprob": [
+    -0.23614583909511566,
+    -0.9520265460014343,
+    -0.00010764019680209458,
+    -0.20472964644432068,
+    -0.004982080310583115,
+    -0.22154773771762848,
+    -0.0504363477230072,
+    -0.18264341354370117
+  ],
+  "token_entropy": [
+    0.8066707849502563,
+    1.3564248085021973,
+    0.00120141776278615,
+    0.5004673600196838,
+    0.03530833125114441,
+    0.5856665372848511,
+    0.20784258842468262,
+    0.470966637134552
+  ],
+  "token_logprob_sum": [
+    -746062.0625,
+    -724655.0,
+    -1018868.5625,
+    -729884.5625,
+    -843209.5625,
+    -796499.1875,
+    -747582.125,
+    -799054.125
+  ],
+  "token_topk_mean_logprob": [
+    -6.011146068572998,
+    -6.777026653289795,
+    -14.0188570022583,
+    -9.879730224609375,
+    -10.542482376098633,
+    -8.7090482711792,
+    -9.712936401367188,
+    -9.35842514038086
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 214,
+  "read_token_ids": [
+    19605,
+    2312
+  ]
+}

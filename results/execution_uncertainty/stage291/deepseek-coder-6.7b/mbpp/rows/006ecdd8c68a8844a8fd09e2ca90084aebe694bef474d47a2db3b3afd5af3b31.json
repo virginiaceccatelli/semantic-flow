@@ -1,0 +1,73 @@
+{
+  "case_id": "420:1",
+  "program_id": "420",
+  "code": "def cube_Sum(n): \r\n    sum = 0\r\n    for i in range(1,n + 1): \r\n        sum += (2*i)*(2*i)*(2*i) \r\n    return sum",
+  "call": "cube_Sum(3)",
+  "expected": "288",
+  "dataset": "mbpp",
+  "source_group": "bb6bd11d25c898904c1a1cad7ccde35b37311ae339c23112cec3a4e5f1c848fe",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef cube_Sum(n): \r\n    sum = 0\r\n    for i in range(1,n + 1): \r\n        sum += (2*i)*(2*i)*(2*i) \r\n    return sum\n\nassert cube_Sum(3) ==",
+  "n_prompt_tokens": 221,
+  "raw_generation": "  1000\n",
+  "answer": "1000",
+  "generated_token_ids": [
+    243,
+    16,
+    15,
+    15,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 1,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "1000",
+  "token_logprob": [
+    -1.145799160003662,
+    -0.9860426187515259,
+    -0.6014444828033447,
+    -0.29956546425819397,
+    -1.0132873058319092,
+    -0.540655255317688
+  ],
+  "token_entropy": [
+    2.546515703201294,
+    1.7982800006866455,
+    1.6409924030303955,
+    0.9625145792961121,
+    1.5806026458740234,
+    1.2396385669708252
+  ],
+  "token_logprob_sum": [
+    -633290.8125,
+    -724922.5,
+    -784359.0,
+    -807754.1875,
+    -759179.0,
+    -761363.625
+  ],
+  "token_topk_mean_logprob": [
+    -3.8895492553710938,
+    -6.7079176902771,
+    -5.570194244384766,
+    -6.10269021987915,
+    -5.307037353515625,
+    -5.971905708312988
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 209,
+  "read_token_ids": [
+    2545,
+    2312
+  ]
+}

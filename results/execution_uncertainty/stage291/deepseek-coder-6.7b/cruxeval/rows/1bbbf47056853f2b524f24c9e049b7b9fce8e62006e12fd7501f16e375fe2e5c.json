@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_2",
+  "program_id": "sample_2",
+  "code": "def f(text):\n    new_text = list(text)\n    for i in '+':\n        if i in new_text:\n            new_text.remove(i)\n    return ''.join(new_text)",
+  "call": "f('hbtofdeiequ')",
+  "expected": "'hbtofdeiequ'",
+  "dataset": "cruxeval",
+  "source_group": "06cdb9cc2826a4243bccf606f731896486f6b417c7fb5eafba91adde50d3c5cc",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    new_text = list(text)\n    for i in '+':\n        if i in new_text:\n            new_text.remove(i)\n    return ''.join(new_text)\n\nassert f('hbtofdeiequ') ==",
+  "n_prompt_tokens": 221,
+  "raw_generation": " 'hbtfdeiqu'\n",
+  "answer": "'hbtfdeiqu'",
+  "generated_token_ids": [
+    651,
+    71,
+    2574,
+    69,
+    581,
+    1464,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'hbtfdeiqu'",
+  "token_logprob": [
+    -0.012964131310582161,
+    -0.35258668661117554,
+    -0.8293957710266113,
+    -0.41578447818756104,
+    -0.03957434371113777,
+    -1.3589584827423096,
+    -0.007124613504856825,
+    -0.20549480617046356
+  ],
+  "token_entropy": [
+    0.08803063631057739,
+    0.8646917343139648,
+    1.36167573928833,
+    1.0879855155944824,
+    0.2632209360599518,
+    2.0587310791015625,
+    0.05413440614938736,
+    0.5082559585571289
+  ],
+  "token_logprob_sum": [
+    -819757.625,
+    -700187.8125,
+    -708948.625,
+    -740377.875,
+    -827218.75,
+    -758656.625,
+    -769712.875,
+    -781189.5625
+  ],
+  "token_topk_mean_logprob": [
+    -8.962964057922363,
+    -6.349461555480957,
+    -5.904396057128906,
+    -5.975159645080566,
+    -6.658324718475342,
+    -4.718333721160889,
+    -9.100874900817871,
+    -8.886744499206543
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 206,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

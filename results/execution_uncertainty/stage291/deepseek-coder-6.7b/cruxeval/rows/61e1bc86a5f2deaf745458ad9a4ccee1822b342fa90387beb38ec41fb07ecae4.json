@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_747",
+  "program_id": "sample_747",
+  "code": "def f(text):\n    if text == '42.42':\n        return True\n    for i in range(3, len(text) - 3):\n        if text[i] == '.' and text[i - 3:].isdigit() and text[:i].isdigit():\n            return True\n    return False",
+  "call": "f(\"123E-10\")",
+  "expected": "False",
+  "dataset": "cruxeval",
+  "source_group": "a7f35ebba079c40dd7316859ea92c306342e73b5c786635b2e4756f4acce915b",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    if text == '42.42':\n        return True\n    for i in range(3, len(text) - 3):\n        if text[i] == '.' and text[i - 3:].isdigit() and text[:i].isdigit():\n            return True\n    return False\n\nassert f(\"123E-10\") ==",
+  "n_prompt_tokens": 246,
+  "raw_generation": " False\n",
+  "answer": "False",
+  "generated_token_ids": [
+    14729,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "False",
+  "token_logprob": [
+    -0.6350749135017395,
+    -0.09623710811138153
+  ],
+  "token_entropy": [
+    0.7134885787963867,
+    0.38506460189819336
+  ],
+  "token_logprob_sum": [
+    -794564.1875,
+    -820633.5625
+  ],
+  "token_topk_mean_logprob": [
+    -8.941325187683105,
+    -7.671237468719482
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 231,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

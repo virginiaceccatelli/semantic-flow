@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_756",
+  "program_id": "sample_756",
+  "code": "def f(text):\n    if text.isalnum() and all(i.isdigit() for i in text):\n        return 'integer'\n    return 'string'",
+  "call": "f('')",
+  "expected": "'string'",
+  "dataset": "cruxeval",
+  "source_group": "d033f89fd00634e8d5c7c61320408f170da2164ab5b1878b5e6b8112e1534b25",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    if text.isalnum() and all(i.isdigit() for i in text):\n        return 'integer'\n    return 'string'\n\nassert f('') ==",
+  "n_prompt_tokens": 201,
+  "raw_generation": " 'string'\n",
+  "answer": "'string'",
+  "generated_token_ids": [
+    651,
+    2600,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'string'",
+  "token_logprob": [
+    -0.05803513154387474,
+    -0.1313956379890442,
+    -0.0010830257087945938,
+    -0.02345355786383152
+  ],
+  "token_entropy": [
+    0.29219385981559753,
+    0.4106905460357666,
+    0.010042951442301273,
+    0.1313028782606125
+  ],
+  "token_logprob_sum": [
+    -804767.5,
+    -758644.5,
+    -787810.375,
+    -818955.625
+  ],
+  "token_topk_mean_logprob": [
+    -7.6580352783203125,
+    -8.468894958496094,
+    -11.140731811523438,
+    -8.948454856872559
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 193,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

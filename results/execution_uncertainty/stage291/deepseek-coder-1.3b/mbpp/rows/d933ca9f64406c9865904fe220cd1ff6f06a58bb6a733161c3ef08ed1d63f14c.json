@@ -1,0 +1,58 @@
+{
+  "case_id": "430:2",
+  "program_id": "430",
+  "code": "def parabola_directrix(a, b, c): \r\n  directrix=((int)(c - ((b * b) + 1) * 4 * a ))\r\n  return directrix",
+  "call": "parabola_directrix(2,4,6)",
+  "expected": "-130",
+  "dataset": "mbpp",
+  "source_group": "def4e53de79d17f0a211e6f4f9cbc06b14c53430625a7123a12504aaaeef5779",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef parabola_directrix(a, b, c): \r\n  directrix=((int)(c - ((b * b) + 1) * 4 * a ))\r\n  return directrix\n\nassert parabola_directrix(2,4,6) ==",
+  "n_prompt_tokens": 218,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.24498923122882843,
+    -1.195255994796753,
+    -0.7901079654693604
+  ],
+  "token_entropy": [
+    1.0301058292388916,
+    1.7826943397521973,
+    1.981796145439148
+  ],
+  "token_logprob_sum": [
+    -684942.8125,
+    -695786.5,
+    -701386.8125
+  ],
+  "token_topk_mean_logprob": [
+    -5.244989395141602,
+    -5.8577561378479,
+    -4.3401079177856445
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    3088,
+    2312
+  ]
+}

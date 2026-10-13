@@ -1,0 +1,63 @@
+{
+  "case_id": "438:2",
+  "program_id": "438",
+  "code": "def count_bidirectional(test_list):\r\n  res = 0\r\n  for idx in range(0, len(test_list)):\r\n    for iidx in range(idx + 1, len(test_list)):\r\n      if test_list[iidx][0] == test_list[idx][1] and test_list[idx][1] == test_list[iidx][0]:\r\n        res += 1\r\n  return (str(res))",
+  "call": "count_bidirectional([(5, 6), (1, 2), (6, 5), (9, 2), (6, 5), (2, 1)] )",
+  "expected": "'4'",
+  "dataset": "mbpp",
+  "source_group": "e08bba3270a57f3b36f86b647acabb1d67f1bfd1e07d8b6f4f45d8dc248cc50b",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_bidirectional(test_list):\r\n  res = 0\r\n  for idx in range(0, len(test_list)):\r\n    for iidx in range(idx + 1, len(test_list)):\r\n      if test_list[iidx][0] == test_list[idx][1] and test_list[idx][1] == test_list[iidx][0]:\r\n        res += 1\r\n  return (str(res))\n\nassert count_bidirectional([(5, 6), (1, 2), (6, 5), (9, 2), (6, 5), (2, 1)] ) ==",
+  "n_prompt_tokens": 311,
+  "raw_generation": " '2'\n",
+  "answer": "'2'",
+  "generated_token_ids": [
+    651,
+    17,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'2'",
+  "token_logprob": [
+    -0.6777547597885132,
+    -0.9840132594108582,
+    -0.020407821983098984,
+    -0.4958803057670593
+  ],
+  "token_entropy": [
+    1.0997713804244995,
+    1.5649986267089844,
+    0.1231674998998642,
+    0.9039856791496277
+  ],
+  "token_logprob_sum": [
+    -756617.625,
+    -786798.4375,
+    -706404.5,
+    -728478.625
+  ],
+  "token_topk_mean_logprob": [
+    -6.515254497528076,
+    -6.77151346206665,
+    -8.276657104492188,
+    -7.692755222320557
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 263,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

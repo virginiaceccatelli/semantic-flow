@@ -1,0 +1,53 @@
+{
+  "case_id": "296:0",
+  "program_id": "296",
+  "code": "def get_Inv_Count(arr,n): \r\n    inv_count = 0\r\n    for i in range(n): \r\n        for j in range(i + 1,n): \r\n            if (arr[i] > arr[j]): \r\n                inv_count += 1\r\n    return inv_count",
+  "call": "get_Inv_Count([1,20,6,4,5],5)",
+  "expected": "5",
+  "dataset": "mbpp",
+  "source_group": "f2efd1f7419d63e5504533dd2a1280ad3edacacd98908e4c81f72219c490797b",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef get_Inv_Count(arr,n): \r\n    inv_count = 0\r\n    for i in range(n): \r\n        for j in range(i + 1,n): \r\n            if (arr[i] > arr[j]): \r\n                inv_count += 1\r\n    return inv_count\n\nassert get_Inv_Count([1,20,6,4,5],5) ==",
+  "n_prompt_tokens": 254,
+  "raw_generation": "5\n",
+  "answer": "5",
+  "generated_token_ids": [
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "5",
+  "token_logprob": [
+    -1.3773696422576904,
+    -0.5258366465568542
+  ],
+  "token_entropy": [
+    2.535109758377075,
+    1.1860289573669434
+  ],
+  "token_logprob_sum": [
+    -675574.3125,
+    -728951.0625
+  ],
+  "token_topk_mean_logprob": [
+    -3.8586196899414062,
+    -6.0633368492126465
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 230,
+  "read_token_ids": [
+    4241,
+    2312
+  ]
+}

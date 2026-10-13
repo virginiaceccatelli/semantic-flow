@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_418",
+  "program_id": "sample_418",
+  "code": "def f(s, p):\n    arr = s.partition(p)\n    part_one, part_two, part_three = len(arr[0]), len(arr[1]), len(arr[2])\n    if part_one >= 2 and part_two <= 2 and part_three >= 2:\n        return (arr[0][::-1] + arr[1] + arr[2][::-1] + '#')\n    return (arr[0] + arr[1] + arr[2])",
+  "call": "f(\"qqqqq\", \"qqq\")",
+  "expected": "'qqqqq'",
+  "dataset": "cruxeval",
+  "source_group": "5b6bad6eaf63a8f10a9c5719b8ff5f4e478e70264d6f691bcfe43e25e866cbf0",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s, p):\n    arr = s.partition(p)\n    part_one, part_two, part_three = len(arr[0]), len(arr[1]), len(arr[2])\n    if part_one >= 2 and part_two <= 2 and part_three >= 2:\n        return (arr[0][::-1] + arr[1] + arr[2][::-1] + '#')\n    return (arr[0] + arr[1] + arr[2])\n\nassert f(\"qqqqq\", \"qqq\") ==",
+  "n_prompt_tokens": 287,
+  "raw_generation": " \"qqqqq#\"\n",
+  "answer": "\"qqqqq#\"",
+  "generated_token_ids": [
+    440,
+    16422,
+    16422,
+    80,
+    2,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'qqqqq#'",
+  "token_logprob": [
+    -0.15257297456264496,
+    -0.6757219433784485,
+    -0.41694846749305725,
+    -1.0486023426055908,
+    -1.053350806236267,
+    -0.35002854466438293,
+    -0.06652054935693741
+  ],
+  "token_entropy": [
+    0.627748966217041,
+    1.5706074237823486,
+    1.0621073246002197,
+    1.5682278871536255,
+    1.9329981803894043,
+    0.7762523889541626,
+    0.26378822326660156
+  ],
+  "token_logprob_sum": [
+    -760101.0,
+    -597698.75,
+    -607018.4375,
+    -609689.375,
+    -601406.25,
+    -690006.5,
+    -807107.5625
+  ],
+  "token_topk_mean_logprob": [
+    -6.477572917938232,
+    -5.394472122192383,
+    -6.066947937011719,
+    -5.51735258102417,
+    -5.10335111618042,
+    -7.50002908706665,
+    -8.916521072387695
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 272,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

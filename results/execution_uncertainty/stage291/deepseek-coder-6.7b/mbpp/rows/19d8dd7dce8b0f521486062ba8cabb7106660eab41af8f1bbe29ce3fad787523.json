@@ -1,0 +1,53 @@
+{
+  "case_id": "334:0",
+  "program_id": "334",
+  "code": "def check_Validity(a,b,c):  \r\n    if (a + b <= c) or (a + c <= b) or (b + c <= a) : \r\n        return False\r\n    else: \r\n        return True",
+  "call": "check_Validity(1,2,3)",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "c5b310a5f21902b534324039c8f4545392caeefc514a06f38f15c48328a9ed9b",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_Validity(a,b,c):  \r\n    if (a + b <= c) or (a + c <= b) or (b + c <= a) : \r\n        return False\r\n    else: \r\n        return True\n\nassert check_Validity(1,2,3) ==",
+  "n_prompt_tokens": 227,
+  "raw_generation": " False\n",
+  "answer": "False",
+  "generated_token_ids": [
+    14729,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "False",
+  "token_logprob": [
+    -0.586722731590271,
+    -0.4011242687702179
+  ],
+  "token_entropy": [
+    0.7671785950660706,
+    0.8555867671966553
+  ],
+  "token_logprob_sum": [
+    -730545.5625,
+    -753646.8125
+  ],
+  "token_topk_mean_logprob": [
+    -7.6398468017578125,
+    -6.8823747634887695
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 211,
+  "read_token_ids": [
+    10502,
+    2312
+  ]
+}

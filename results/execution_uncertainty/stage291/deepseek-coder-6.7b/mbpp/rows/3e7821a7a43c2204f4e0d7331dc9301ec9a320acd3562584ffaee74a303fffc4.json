@@ -1,0 +1,63 @@
+{
+  "case_id": "169:2",
+  "program_id": "169",
+  "code": "def get_pell(n): \r\n\tif (n <= 2): \r\n\t\treturn n \r\n\ta = 1\r\n\tb = 2\r\n\tfor i in range(3, n+1): \r\n\t\tc = 2 * b + a \r\n\t\ta = b \r\n\t\tb = c \r\n\treturn b",
+  "call": "get_pell(8)",
+  "expected": "408",
+  "dataset": "mbpp",
+  "source_group": "12171074eb143e48c136f72c2f5a30807a9025110e631074637e2cd79050fa3e",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef get_pell(n): \r\n\tif (n <= 2): \r\n\t\treturn n \r\n\ta = 1\r\n\tb = 2\r\n\tfor i in range(3, n+1): \r\n\t\tc = 2 * b + a \r\n\t\ta = b \r\n\t\tb = c \r\n\treturn b\n\nassert get_pell(8) ==",
+  "n_prompt_tokens": 246,
+  "raw_generation": "  34\n",
+  "answer": "34",
+  "generated_token_ids": [
+    243,
+    18,
+    19,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "34",
+  "token_logprob": [
+    -1.2232716083526611,
+    -0.516376256942749,
+    -0.009802302345633507,
+    -0.572085976600647
+  ],
+  "token_entropy": [
+    2.6351006031036377,
+    1.5009719133377075,
+    0.07328200340270996,
+    1.1410096883773804
+  ],
+  "token_logprob_sum": [
+    -658472.0,
+    -798431.0,
+    -873900.75,
+    -767434.125
+  ],
+  "token_topk_mean_logprob": [
+    -3.773271322250366,
+    -5.907001495361328,
+    -9.044177055358887,
+    -6.184586524963379
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 234,
+  "read_token_ids": [
+    270,
+    2312
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case_id": "318:2",
+  "program_id": "318",
+  "code": "def max_volume (s): \r\n    maxvalue = 0\r\n    i = 1\r\n    for i in range(s - 1): \r\n        j = 1\r\n        for j in range(s): \r\n            k = s - i - j \r\n            maxvalue = max(maxvalue, i * j * k)         \r\n    return maxvalue",
+  "call": "max_volume(1)",
+  "expected": "0",
+  "dataset": "mbpp",
+  "source_group": "2b48b3cea5263d78748719a5a5895ec8a56aeca6653cf1fa5b01cce1c327e360",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_volume (s): \r\n    maxvalue = 0\r\n    i = 1\r\n    for i in range(s - 1): \r\n        j = 1\r\n        for j in range(s): \r\n            k = s - i - j \r\n            maxvalue = max(maxvalue, i * j * k)         \r\n    return maxvalue\n\nassert max_volume(1) ==",
+  "n_prompt_tokens": 251,
+  "raw_generation": "  0\n",
+  "answer": "0",
+  "generated_token_ids": [
+    243,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "0",
+  "token_logprob": [
+    -1.207451343536377,
+    -0.07905454188585281,
+    -0.354998379945755
+  ],
+  "token_entropy": [
+    2.312370777130127,
+    0.3181648552417755,
+    1.0143622159957886
+  ],
+  "token_logprob_sum": [
+    -662698.875,
+    -776702.0,
+    -769164.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.25745153427124,
+    -7.8228044509887695,
+    -6.017498970031738
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 240,
+  "read_token_ids": [
+    2824,
+    2312
+  ]
+}

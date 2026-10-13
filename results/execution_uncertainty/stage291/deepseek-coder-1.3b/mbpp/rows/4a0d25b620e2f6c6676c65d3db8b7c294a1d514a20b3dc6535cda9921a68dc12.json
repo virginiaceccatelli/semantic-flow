@@ -1,0 +1,53 @@
+{
+  "case_id": "336:2",
+  "program_id": "336",
+  "code": "def check_monthnum(monthname1):\r\n  if monthname1 == \"February\":\r\n    return True\r\n  else:\r\n    return False",
+  "call": "check_monthnum(\"March\")",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "c3abc68a174f64a9a7c0ea7cbd4c38f208d8d5386faaa7d2a38729b9c34a9889",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_monthnum(monthname1):\r\n  if monthname1 == \"February\":\r\n    return True\r\n  else:\r\n    return False\n\nassert check_monthnum(\"March\") ==",
+  "n_prompt_tokens": 201,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.7010785937309265,
+    -0.2987571656703949
+  ],
+  "token_entropy": [
+    0.7548913955688477,
+    0.836012065410614
+  ],
+  "token_logprob_sum": [
+    -734731.25,
+    -752306.0
+  ],
+  "token_topk_mean_logprob": [
+    -8.063578605651855,
+    -6.964383125305176
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 189,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "case_id": "164:2",
+  "program_id": "164",
+  "code": "import math \r\ndef divSum(n): \r\n    sum = 1; \r\n    i = 2; \r\n    while(i * i <= n): \r\n        if (n % i == 0): \r\n            sum = (sum + i +math.floor(n / i)); \r\n        i += 1; \r\n    return sum; \r\ndef areEquivalent(num1,num2): \r\n    return divSum(num1) == divSum(num2);",
+  "call": "areEquivalent(23,47)",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "15832a6998661306775fdb82747ba3aa086c036a91989ea74b4702593997208d",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport math \r\ndef divSum(n): \r\n    sum = 1; \r\n    i = 2; \r\n    while(i * i <= n): \r\n        if (n % i == 0): \r\n            sum = (sum + i +math.floor(n / i)); \r\n        i += 1; \r\n    return sum; \r\ndef areEquivalent(num1,num2): \r\n    return divSum(num1) == divSum(num2);\n\nassert areEquivalent(23,47) ==",
+  "n_prompt_tokens": 285,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.2291228175163269,
+    -0.36080020666122437
+  ],
+  "token_entropy": [
+    0.6554955244064331,
+    0.9669047594070435
+  ],
+  "token_logprob_sum": [
+    -719515.0625,
+    -742814.375
+  ],
+  "token_topk_mean_logprob": [
+    -6.829123020172119,
+    -6.592050075531006
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 270,
+  "read_token_ids": [
+    477,
+    2312
+  ]
+}

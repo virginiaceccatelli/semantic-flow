@@ -1,0 +1,63 @@
+{
+  "case_id": "189:2",
+  "program_id": "189",
+  "code": "def first_Missing_Positive(arr,n): \r\n    ptr = 0\r\n    for i in range(n):\r\n        if arr[i] == 1:\r\n            ptr = 1\r\n            break\r\n    if ptr == 0:\r\n        return(1)\r\n    for i in range(n):\r\n        if arr[i] <= 0 or arr[i] > n:\r\n            arr[i] = 1\r\n    for i in range(n):\r\n        arr[(arr[i] - 1) % n] += n\r\n    for i in range(n):\r\n        if arr[i] <= n:\r\n            return(i + 1)\r\n    return(n + 1)",
+  "call": "first_Missing_Positive([0,1,2,5,-8],5)",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "ba1ed6f233ce2bc864ee4663061cc1827174b115cc3cabc12621bcbb3d87b8a0",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef first_Missing_Positive(arr,n): \r\n    ptr = 0\r\n    for i in range(n):\r\n        if arr[i] == 1:\r\n            ptr = 1\r\n            break\r\n    if ptr == 0:\r\n        return(1)\r\n    for i in range(n):\r\n        if arr[i] <= 0 or arr[i] > n:\r\n            arr[i] = 1\r\n    for i in range(n):\r\n        arr[(arr[i] - 1) % n] += n\r\n    for i in range(n):\r\n        if arr[i] <= n:\r\n            return(i + 1)\r\n    return(n + 1)\n\nassert first_Missing_Positive([0,1,2,5,-8],5) ==",
+  "n_prompt_tokens": 349,
+  "raw_generation": " (3)\n",
+  "answer": "(3)",
+  "generated_token_ids": [
+    334,
+    18,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.004673719406128,
+    -0.21966873109340668,
+    -0.021693909540772438,
+    -0.5406432747840881
+  ],
+  "token_entropy": [
+    2.248530387878418,
+    0.7423982620239258,
+    0.1557510644197464,
+    0.9330853223800659
+  ],
+  "token_logprob_sum": [
+    -653375.5625,
+    -747521.0625,
+    -762259.625,
+    -719157.0
+  ],
+  "token_topk_mean_logprob": [
+    -4.235923767089844,
+    -6.5821685791015625,
+    -7.484194278717041,
+    -7.31251859664917
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 325,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

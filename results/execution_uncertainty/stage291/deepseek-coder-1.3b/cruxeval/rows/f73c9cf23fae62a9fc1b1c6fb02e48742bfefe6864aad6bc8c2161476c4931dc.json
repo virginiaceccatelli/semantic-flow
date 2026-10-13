@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_196",
+  "program_id": "sample_196",
+  "code": "def f(text):\n    text = text.replace(' x', ' x.')\n    if text.istitle(): return 'correct'\n    text = text.replace(' x.', ' x')\n    return 'mixed'",
+  "call": "f(\"398 Is A Poor Year To Sow\")",
+  "expected": "'correct'",
+  "dataset": "cruxeval",
+  "source_group": "5be126eeb078f90a6bdf745fe9b499060a68f7a7583ef34ddcb2002ca601c93e",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    text = text.replace(' x', ' x.')\n    if text.istitle(): return 'correct'\n    text = text.replace(' x.', ' x')\n    return 'mixed'\n\nassert f(\"398 Is A Poor Year To Sow\") ==",
+  "n_prompt_tokens": 223,
+  "raw_generation": " 'correct'\n",
+  "answer": "'correct'",
+  "generated_token_ids": [
+    651,
+    21390,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'correct'",
+  "token_logprob": [
+    -0.39751195907592773,
+    -0.27559393644332886,
+    -0.0015330478781834245,
+    -0.06991343945264816
+  ],
+  "token_entropy": [
+    0.7034429311752319,
+    0.7023298740386963,
+    0.014974144287407398,
+    0.2733103930950165
+  ],
+  "token_logprob_sum": [
+    -816658.375,
+    -696326.0,
+    -758160.25,
+    -814432.6875
+  ],
+  "token_topk_mean_logprob": [
+    -7.797513008117676,
+    -7.038093566894531,
+    -10.201533317565918,
+    -9.175383567810059
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 205,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

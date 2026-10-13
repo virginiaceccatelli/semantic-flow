@@ -1,0 +1,63 @@
+{
+  "case_id": "437:0",
+  "program_id": "437",
+  "code": "def remove_odd(str1):\r\n str2 = ''\r\n for i in range(1, len(str1) + 1):\r\n    if(i % 2 == 0):\r\n        str2 = str2 + str1[i - 1]\r\n return str2",
+  "call": "remove_odd(\"python\")",
+  "expected": "'yhn'",
+  "dataset": "mbpp",
+  "source_group": "826e2c5382aca8e59531ecfdcb486fce5052016ecd717b074e3fc1df49024d1a",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef remove_odd(str1):\r\n str2 = ''\r\n for i in range(1, len(str1) + 1):\r\n    if(i % 2 == 0):\r\n        str2 = str2 + str1[i - 1]\r\n return str2\n\nassert remove_odd(\"python\") ==",
+  "n_prompt_tokens": 229,
+  "raw_generation": " \"pto\"\n",
+  "answer": "\"pto\"",
+  "generated_token_ids": [
+    440,
+    24026,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'pto'",
+  "token_logprob": [
+    -0.21505755186080933,
+    -0.16222071647644043,
+    -0.014665775932371616,
+    -0.35702186822891235
+  ],
+  "token_entropy": [
+    0.6369363069534302,
+    0.7323907613754272,
+    0.0934251993894577,
+    0.7690276503562927
+  ],
+  "token_logprob_sum": [
+    -750242.0625,
+    -805354.4375,
+    -831960.25,
+    -722540.875
+  ],
+  "token_topk_mean_logprob": [
+    -7.402557373046875,
+    -5.952846050262451,
+    -8.802165031433105,
+    -8.097647666931152
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 218,
+  "read_token_ids": [
+    17,
+    2312
+  ]
+}

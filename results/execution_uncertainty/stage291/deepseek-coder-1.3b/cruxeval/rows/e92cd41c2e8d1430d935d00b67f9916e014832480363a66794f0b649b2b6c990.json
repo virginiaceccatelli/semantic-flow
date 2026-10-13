@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_736",
+  "program_id": "sample_736",
+  "code": "def f(text, insert):\n    whitespaces = {'\\t', '\\r', '\\v', ' ', '\\f', '\\n'}\n    clean = ''\n    for char in text:\n        if char in whitespaces:\n            clean += insert\n        else:\n            clean += char\n    return clean",
+  "call": "f('pi wa', 'chi')",
+  "expected": "'pichiwa'",
+  "dataset": "cruxeval",
+  "source_group": "883b374d0276e909e07a506c60f5b69f892f70429193f634ae1073571a4fa670",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, insert):\n    whitespaces = {'\\t', '\\r', '\\v', ' ', '\\f', '\\n'}\n    clean = ''\n    for char in text:\n        if char in whitespaces:\n            clean += insert\n        else:\n            clean += char\n    return clean\n\nassert f('pi wa', 'chi') ==",
+  "n_prompt_tokens": 234,
+  "raw_generation": " 'pi chi wa'\n",
+  "answer": "'pi chi wa'",
+  "generated_token_ids": [
+    651,
+    1797,
+    494,
+    72,
+    8651,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'pi chi wa'",
+  "token_logprob": [
+    -0.037815313786268234,
+    -0.4457927346229553,
+    -0.4420965015888214,
+    -0.013033202849328518,
+    -0.08373401314020157,
+    -0.029100697487592697,
+    -0.17398691177368164
+  ],
+  "token_entropy": [
+    0.23626549541950226,
+    1.220447063446045,
+    1.8860893249511719,
+    0.10131222009658813,
+    0.49320197105407715,
+    0.21403534710407257,
+    0.4660007953643799
+  ],
+  "token_logprob_sum": [
+    -771975.375,
+    -647449.625,
+    -587515.875,
+    -712055.0625,
+    -713940.75,
+    -692933.5,
+    -828679.875
+  ],
+  "token_topk_mean_logprob": [
+    -7.292758941650391,
+    -5.7492594718933105,
+    -4.645221710205078,
+    -8.128657341003418,
+    -6.30873441696167,
+    -7.447703838348389,
+    -8.917737007141113
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 221,
+  "read_token_ids": [
+    3910,
+    2312
+  ]
+}

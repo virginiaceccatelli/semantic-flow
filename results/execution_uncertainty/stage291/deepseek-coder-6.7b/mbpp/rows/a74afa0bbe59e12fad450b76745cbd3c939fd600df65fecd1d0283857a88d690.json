@@ -1,0 +1,58 @@
+{
+  "case_id": "190:1",
+  "program_id": "190",
+  "code": "def count_Intgral_Points(x1,y1,x2,y2): \r\n    return ((y2 - y1 - 1) * (x2 - x1 - 1))",
+  "call": "count_Intgral_Points(1,2,1,2)",
+  "expected": "1",
+  "dataset": "mbpp",
+  "source_group": "e05252a9ea1d8782eaea703c0921346f2d99294f1ef899a2245bb396a10eaa51",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_Intgral_Points(x1,y1,x2,y2): \r\n    return ((y2 - y1 - 1) * (x2 - x1 - 1))\n\nassert count_Intgral_Points(1,2,1,2) ==",
+  "n_prompt_tokens": 221,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.7566051483154297,
+    -0.7407420873641968,
+    -0.6537284851074219
+  ],
+  "token_entropy": [
+    1.936975121498108,
+    1.42611563205719,
+    1.263688087463379
+  ],
+  "token_logprob_sum": [
+    -664940.5,
+    -743982.125,
+    -726533.875
+  ],
+  "token_topk_mean_logprob": [
+    -4.41285514831543,
+    -6.353241920471191,
+    -5.6787285804748535
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

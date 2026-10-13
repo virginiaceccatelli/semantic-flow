@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_61",
+  "program_id": "sample_61",
+  "code": "def f(text):\n    texts = text.split()\n    if texts:\n        xtexts = [t for t in texts if t.isascii() and t not in ('nada', '0')]\n        return max(xtexts, key=len) if xtexts else 'nada'\n    return 'nada'",
+  "call": "f(\"\")",
+  "expected": "'nada'",
+  "dataset": "cruxeval",
+  "source_group": "93e5224f2127b3d1d4323d3efd19041722425cb1ca53b98dee5e3f30cb43a511",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    texts = text.split()\n    if texts:\n        xtexts = [t for t in texts if t.isascii() and t not in ('nada', '0')]\n        return max(xtexts, key=len) if xtexts else 'nada'\n    return 'nada'\n\nassert f(\"\") ==",
+  "n_prompt_tokens": 240,
+  "raw_generation": " 'nada'\n",
+  "answer": "'nada'",
+  "generated_token_ids": [
+    651,
+    77,
+    1062,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'nada'",
+  "token_logprob": [
+    -0.5576422214508057,
+    -0.008895175531506538,
+    -0.00012158608296886086,
+    -0.0021906918846070766,
+    -0.014488374814391136
+  ],
+  "token_entropy": [
+    0.9721385836601257,
+    0.08076438307762146,
+    0.0014745901571586728,
+    0.019248560070991516,
+    0.09659497439861298
+  ],
+  "token_logprob_sum": [
+    -764615.875,
+    -681892.25,
+    -936590.0625,
+    -742395.1875,
+    -824445.0
+  ],
+  "token_topk_mean_logprob": [
+    -7.420141696929932,
+    -8.749519348144531,
+    -12.79387092590332,
+    -10.286566734313965,
+    -8.576988220214844
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 232,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "case_id": "167:1",
+  "program_id": "167",
+  "code": "def next_Power_Of_2(n): \r\n    count = 0; \r\n    if (n and not(n & (n - 1))): \r\n        return n   \r\n    while( n != 0): \r\n        n >>= 1\r\n        count += 1\r\n    return 1 << count;",
+  "call": "next_Power_Of_2(5)",
+  "expected": "8",
+  "dataset": "mbpp",
+  "source_group": "4fb5bdca2dd58039fed395cff9279f8187d5007db9496237fe20a0b307905ee8",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef next_Power_Of_2(n): \r\n    count = 0; \r\n    if (n and not(n & (n - 1))): \r\n        return n   \r\n    while( n != 0): \r\n        n >>= 1\r\n        count += 1\r\n    return 1 << count;\n\nassert next_Power_Of_2(5) ==",
+  "n_prompt_tokens": 246,
+  "raw_generation": "  8\n",
+  "answer": "8",
+  "generated_token_ids": [
+    243,
+    23,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "8",
+  "token_logprob": [
+    -1.2609014511108398,
+    -0.026545420289039612,
+    -0.3678809702396393
+  ],
+  "token_entropy": [
+    2.217963218688965,
+    0.15355829894542694,
+    0.9401711225509644
+  ],
+  "token_logprob_sum": [
+    -666769.0,
+    -817142.125,
+    -751409.875
+  ],
+  "token_topk_mean_logprob": [
+    -4.310901641845703,
+    -8.545295715332031,
+    -6.302255153656006
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 231,
+  "read_token_ids": [
+    26,
+    2312
+  ]
+}

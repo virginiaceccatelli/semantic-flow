@@ -1,0 +1,58 @@
+{
+  "case_id": "166:1",
+  "program_id": "166",
+  "code": "def find_even_Pair(A,N): \r\n    evenPair = 0\r\n    for i in range(0,N): \r\n        for j in range(i+1,N): \r\n            if ((A[i] ^ A[j]) % 2 == 0): \r\n                evenPair+=1\r\n    return evenPair;",
+  "call": "find_even_Pair([7,2,8,1,0,5,11],7)",
+  "expected": "9",
+  "dataset": "mbpp",
+  "source_group": "3d9aaeb2cb86900f00a1dc819d9689d6b2c9c530bc7090195439cf79e74256ff",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_even_Pair(A,N): \r\n    evenPair = 0\r\n    for i in range(0,N): \r\n        for j in range(i+1,N): \r\n            if ((A[i] ^ A[j]) % 2 == 0): \r\n                evenPair+=1\r\n    return evenPair;\n\nassert find_even_Pair([7,2,8,1,0,5,11],7) ==",
+  "n_prompt_tokens": 264,
+  "raw_generation": "  5\n",
+  "answer": "5",
+  "generated_token_ids": [
+    243,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "5",
+  "token_logprob": [
+    -1.0480493307113647,
+    -1.7823456525802612,
+    -0.683627188205719
+  ],
+  "token_entropy": [
+    2.4393484592437744,
+    2.175910711288452,
+    0.9574491381645203
+  ],
+  "token_logprob_sum": [
+    -661782.125,
+    -756639.6875,
+    -743770.6875
+  ],
+  "token_topk_mean_logprob": [
+    -3.8667991161346436,
+    -6.197970867156982,
+    -6.5773773193359375
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 236,
+  "read_token_ids": [
+    26,
+    2312
+  ]
+}

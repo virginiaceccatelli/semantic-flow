@@ -1,0 +1,63 @@
+{
+  "case_id": "355:0",
+  "program_id": "355",
+  "code": "def count_Rectangles(radius):  \r\n    rectangles = 0 \r\n    diameter = 2 * radius \r\n    diameterSquare = diameter * diameter \r\n    for a in range(1, 2 * radius):  \r\n        for b in range(1, 2 * radius): \r\n            diagnalLengthSquare = (a * a +  b * b)  \r\n            if (diagnalLengthSquare <= diameterSquare) : \r\n                rectangles += 1\r\n    return rectangles",
+  "call": "count_Rectangles(2)",
+  "expected": "8",
+  "dataset": "mbpp",
+  "source_group": "f38c83871a29234a5cc31caf76c55b75c875b1ba24b0d7bc3fb7afca0085a7a7",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_Rectangles(radius):  \r\n    rectangles = 0 \r\n    diameter = 2 * radius \r\n    diameterSquare = diameter * diameter \r\n    for a in range(1, 2 * radius):  \r\n        for b in range(1, 2 * radius): \r\n            diagnalLengthSquare = (a * a +  b * b)  \r\n            if (diagnalLengthSquare <= diameterSquare) : \r\n                rectangles += 1\r\n    return rectangles\n\nassert count_Rectangles(2) ==",
+  "n_prompt_tokens": 284,
+  "raw_generation": "  12\n",
+  "answer": "12",
+  "generated_token_ids": [
+    243,
+    16,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "12",
+  "token_logprob": [
+    -0.8239933252334595,
+    -1.5951579809188843,
+    -1.0929243564605713,
+    -0.407737672328949
+  ],
+  "token_entropy": [
+    2.1684210300445557,
+    2.1601016521453857,
+    2.0100557804107666,
+    1.3089033365249634
+  ],
+  "token_logprob_sum": [
+    -666162.0,
+    -763239.0,
+    -801080.5625,
+    -766776.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.04274320602417,
+    -6.088907718658447,
+    -4.961674213409424,
+    -4.845237731933594
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 272,
+  "read_token_ids": [
+    22876,
+    2312
+  ]
+}

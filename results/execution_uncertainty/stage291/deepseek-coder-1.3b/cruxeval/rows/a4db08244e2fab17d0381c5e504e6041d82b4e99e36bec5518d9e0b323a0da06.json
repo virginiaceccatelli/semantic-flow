@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_211",
+  "program_id": "sample_211",
+  "code": "def f(s):\n    count = 0\n    for c in s:\n        if s.rindex(c) != s.index(c):\n            count+=1\n    return count",
+  "call": "f(\"abca dea ead\")",
+  "expected": "10",
+  "dataset": "cruxeval",
+  "source_group": "d751967141ad739bc46d7e91fda86040267aed7fc14d3c5a2db7db9b0bb4732e",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s):\n    count = 0\n    for c in s:\n        if s.rindex(c) != s.index(c):\n            count+=1\n    return count\n\nassert f(\"abca dea ead\") ==",
+  "n_prompt_tokens": 212,
+  "raw_generation": "  2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    243,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -1.0728521347045898,
+    -0.9682508707046509,
+    -0.2244427651166916
+  ],
+  "token_entropy": [
+    2.30865478515625,
+    1.3929702043533325,
+    0.6171797513961792
+  ],
+  "token_logprob_sum": [
+    -661314.3125,
+    -749392.875,
+    -763364.0
+  ],
+  "token_topk_mean_logprob": [
+    -4.218164920806885,
+    -7.918251037597656,
+    -7.474442958831787
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 198,
+  "read_token_ids": [
+    1683,
+    2312
+  ]
+}

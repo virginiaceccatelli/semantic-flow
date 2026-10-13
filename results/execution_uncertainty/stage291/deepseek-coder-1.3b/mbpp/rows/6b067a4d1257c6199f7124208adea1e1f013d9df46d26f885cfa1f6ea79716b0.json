@@ -1,0 +1,53 @@
+{
+  "case_id": "79:0",
+  "program_id": "79",
+  "code": "def word_len(s): \r\n    s = s.split(' ')   \r\n    for word in s:    \r\n        if len(word)%2!=0: \r\n            return True  \r\n        else:\r\n          return False",
+  "call": "word_len(\"Hadoop\")",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "661e3bcdfb753be18f55ff4d50ada01404b7f293acecf0e79d0bfdf6ec26fee9",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef word_len(s): \r\n    s = s.split(' ')   \r\n    for word in s:    \r\n        if len(word)%2!=0: \r\n            return True  \r\n        else:\r\n          return False\n\nassert word_len(\"Hadoop\") ==",
+  "n_prompt_tokens": 225,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.7156957983970642,
+    -0.25399860739707947
+  ],
+  "token_entropy": [
+    0.8381557464599609,
+    0.952028751373291
+  ],
+  "token_logprob_sum": [
+    -709818.3125,
+    -731934.375
+  ],
+  "token_topk_mean_logprob": [
+    -7.2281951904296875,
+    -5.696186065673828
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 213,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

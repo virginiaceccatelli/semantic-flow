@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_605",
+  "program_id": "sample_605",
+  "code": "def f(nums):\n    nums.clear()\n    return \"quack\"",
+  "call": "f([2, 5, 1, 7, 9, 3])",
+  "expected": "'quack'",
+  "dataset": "cruxeval",
+  "source_group": "3620adb94b2306a8cce606323b4eff2f695e5eafd710bf5a916d704367c14768",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(nums):\n    nums.clear()\n    return \"quack\"\n\nassert f([2, 5, 1, 7, 9, 3]) ==",
+  "n_prompt_tokens": 197,
+  "raw_generation": " \"quack\"\n",
+  "answer": "\"quack\"",
+  "generated_token_ids": [
+    440,
+    328,
+    500,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'quack'",
+  "token_logprob": [
+    -0.09850175678730011,
+    -0.0011380392825230956,
+    -7.116541382856667e-05,
+    -0.023923655971884727,
+    -0.25628453493118286
+  ],
+  "token_entropy": [
+    0.3667088449001312,
+    0.014424988999962807,
+    0.0009245465626008809,
+    0.11686016619205475,
+    0.755564272403717
+  ],
+  "token_logprob_sum": [
+    -819127.25,
+    -789295.0,
+    -1038547.0,
+    -757752.1875,
+    -786457.5625
+  ],
+  "token_topk_mean_logprob": [
+    -7.567251682281494,
+    -10.266763687133789,
+    -12.762572288513184,
+    -10.327049255371094,
+    -7.781285285949707
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 173,
+  "read_token_ids": [
+    1,
+    2312
+  ]
+}

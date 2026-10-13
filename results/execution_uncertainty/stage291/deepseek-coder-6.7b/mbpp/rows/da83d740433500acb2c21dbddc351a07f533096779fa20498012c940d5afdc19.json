@@ -1,0 +1,63 @@
+{
+  "case_id": "412:0",
+  "program_id": "412",
+  "code": "def remove_odd(l):\r\n    for i in l:\r\n        if i % 2 != 0:\r\n            l.remove(i)\r\n    return l",
+  "call": "remove_odd([1,2,3])",
+  "expected": "[2]",
+  "dataset": "mbpp",
+  "source_group": "39db6263a7f2f384e9fa8aa3443a5814ec632aa8207ee7933a513fc10812618b",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef remove_odd(l):\r\n    for i in l:\r\n        if i % 2 != 0:\r\n            l.remove(i)\r\n    return l\n\nassert remove_odd([1,2,3]) ==",
+  "n_prompt_tokens": 209,
+  "raw_generation": " [2]\n",
+  "answer": "[2]",
+  "generated_token_ids": [
+    821,
+    17,
+    60,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "[2]",
+  "token_logprob": [
+    -0.03374304994940758,
+    -0.012089078314602375,
+    -0.04835757985711098,
+    -0.3627360463142395
+  ],
+  "token_entropy": [
+    0.1791500300168991,
+    0.0752938985824585,
+    0.21981732547283173,
+    0.8684086799621582
+  ],
+  "token_logprob_sum": [
+    -803065.75,
+    -885538.0,
+    -903752.875,
+    -759036.0
+  ],
+  "token_topk_mean_logprob": [
+    -8.264993667602539,
+    -9.737089157104492,
+    -9.673357963562012,
+    -7.362735748291016
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 194,
+  "read_token_ids": [
+    284,
+    2312
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_558",
+  "program_id": "sample_558",
+  "code": "def f(nums, mos):\n    for num in mos:\n        nums.pop(nums.index(num))\n    nums.sort()\n    for num in mos:\n        nums += [num]\n    for i in range(len(nums)-1):\n        if nums[i] > nums[i+1]:\n            return False\n    return True",
+  "call": "f([3, 1, 2, 1, 4, 1], [1])",
+  "expected": "False",
+  "dataset": "cruxeval",
+  "source_group": "16510dfb45877dba9e022608b09849e225b738cc8fce91932c0a290a6f29aa1a",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(nums, mos):\n    for num in mos:\n        nums.pop(nums.index(num))\n    nums.sort()\n    for num in mos:\n        nums += [num]\n    for i in range(len(nums)-1):\n        if nums[i] > nums[i+1]:\n            return False\n    return True\n\nassert f([3, 1, 2, 1, 4, 1], [1]) ==",
+  "n_prompt_tokens": 269,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.43328407406806946,
+    -0.15417160093784332
+  ],
+  "token_entropy": [
+    0.6804792284965515,
+    0.4731581509113312
+  ],
+  "token_logprob_sum": [
+    -777885.5625,
+    -796912.75
+  ],
+  "token_topk_mean_logprob": [
+    -8.895784378051758,
+    -7.997921943664551
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 242,
+  "read_token_ids": [
+    10502,
+    2312
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "case_id": "sample_697",
+  "program_id": "sample_697",
+  "code": "def f(s, sep):\n    sep_index = s.find(sep)\n    prefix = s[:sep_index]\n    middle = s[sep_index:sep_index + len(sep)]\n    right_str = s[sep_index + len(sep):]\n    return prefix, middle, right_str",
+  "call": "f(\"not it\", \"\")",
+  "expected": "('', '', 'not it')",
+  "dataset": "cruxeval",
+  "source_group": "f4e71c4117e78b9d59de51350e11d937808cd1ba8b933a8d3962298f13e1f34f",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s, sep):\n    sep_index = s.find(sep)\n    prefix = s[:sep_index]\n    middle = s[sep_index:sep_index + len(sep)]\n    right_str = s[sep_index + len(sep):]\n    return prefix, middle, right_str\n\nassert f(\"not it\", \"\") ==",
+  "n_prompt_tokens": 239,
+  "raw_generation": " (\"not it\", \"\", \"\")\n",
+  "answer": "(\"not it\", \"\", \"\")",
+  "generated_token_ids": [
+    8507,
+    1263,
+    359,
+    950,
+    22579,
+    440,
+    2456,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "('not it', '', '')",
+  "token_logprob": [
+    -0.31773465871810913,
+    -0.36673200130462646,
+    -0.6337489485740662,
+    -0.018226636573672295,
+    -0.4028730094432831,
+    -0.0032256022095680237,
+    -0.025133276358246803,
+    -0.11639362573623657
+  ],
+  "token_entropy": [
+    0.7686233520507812,
+    0.9144219160079956,
+    1.1506428718566895,
+    0.12903130054473877,
+    0.7447184324264526,
+    0.02902570739388466,
+    0.17189881205558777,
+    0.36739271879196167
+  ],
+  "token_logprob_sum": [
+    -764587.75,
+    -692332.0,
+    -643846.125,
+    -702869.3125,
+    -761503.75,
+    -847628.125,
+    -692626.0,
+    -802696.125
+  ],
+  "token_topk_mean_logprob": [
+    -6.786485195159912,
+    -6.6829423904418945,
+    -6.3587493896484375,
+    -8.13072681427002,
+    -6.877873420715332,
+    -9.259475708007812,
+    -8.12513256072998,
+    -9.439831733703613
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 227,
+  "read_token_ids": [
+    2006,
+    2312
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "case_id": "15:1",
+  "program_id": "15",
+  "code": "import re\r\ndef split_lowerstring(text):\r\n return (re.findall('[a-z][^a-z]*', text))",
+  "call": "split_lowerstring(\"Python\")",
+  "expected": "['y', 't', 'h', 'o', 'n']",
+  "dataset": "mbpp",
+  "source_group": "047e9aa3fb25ec722fecaa92decc3652a8f872624909f07c234867fb431409d2",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef split_lowerstring(text):\r\n return (re.findall('[a-z][^a-z]*', text))\n\nassert split_lowerstring(\"Python\") ==",
+  "n_prompt_tokens": 200,
+  "raw_generation": " ['Python']\n",
+  "answer": "['Python']",
+  "generated_token_ids": [
+    12036,
+    28607,
+    3676,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "['Python']",
+  "token_logprob": [
+    -0.5726357698440552,
+    -0.7312094569206238,
+    -0.03925872966647148,
+    -0.22418422996997833
+  ],
+  "token_entropy": [
+    0.9581977725028992,
+    1.2232089042663574,
+    0.20553545653820038,
+    0.6538098454475403
+  ],
+  "token_logprob_sum": [
+    -718762.625,
+    -745539.25,
+    -747704.5,
+    -760717.9375
+  ],
+  "token_topk_mean_logprob": [
+    -6.219510555267334,
+    -7.015585422515869,
+    -8.89238452911377,
+    -7.7210588455200195
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 188,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "case_id": "476:1",
+  "program_id": "476",
+  "code": "def big_sum(nums):\r\n      sum= max(nums)+min(nums)\r\n      return sum",
+  "call": "big_sum([-1,2,3,4])",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "1026d85535e592c35af7522a960377f6c483aedd911d26b7e25a3267669c5471",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef big_sum(nums):\r\n      sum= max(nums)+min(nums)\r\n      return sum\n\nassert big_sum([-1,2,3,4]) ==",
+  "n_prompt_tokens": 200,
+  "raw_generation": " -1+4\n",
+  "answer": "-1+4",
+  "generated_token_ids": [
+    567,
+    16,
+    10,
+    19,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "constant_expression",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.0100111961364746,
+    -0.20916683971881866,
+    -0.8030058741569519,
+    -0.2991211414337158,
+    -0.590023934841156
+  ],
+  "token_entropy": [
+    2.451662540435791,
+    0.7514380812644958,
+    1.5660712718963623,
+    0.957054853439331,
+    1.6748183965682983
+  ],
+  "token_logprob_sum": [
+    -634224.0,
+    -729084.75,
+    -722654.75,
+    -704975.625,
+    -734005.875
+  ],
+  "token_topk_mean_logprob": [
+    -3.8475112915039062,
+    -6.834167003631592,
+    -5.271756172180176,
+    -6.199120998382568,
+    -4.8212738037109375
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 182,
+  "read_token_ids": [
+    2545,
+    2312
+  ]
+}

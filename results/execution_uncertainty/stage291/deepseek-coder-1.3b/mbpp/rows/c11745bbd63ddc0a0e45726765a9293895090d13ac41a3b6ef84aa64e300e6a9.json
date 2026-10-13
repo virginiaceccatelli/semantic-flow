@@ -1,0 +1,53 @@
+{
+  "case_id": "58:1",
+  "program_id": "58",
+  "code": "def opposite_Signs(x,y): \r\n    return ((x ^ y) < 0);",
+  "call": "opposite_Signs(3,2)",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "2c408457fad1b4d49f0f590be60115d9581991b310c5c258fb351e00c991f6ed",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef opposite_Signs(x,y): \r\n    return ((x ^ y) < 0);\n\nassert opposite_Signs(3,2) ==",
+  "n_prompt_tokens": 190,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.4059809148311615,
+    -0.21305204927921295
+  ],
+  "token_entropy": [
+    0.769376277923584,
+    0.7660658359527588
+  ],
+  "token_logprob_sum": [
+    -683376.25,
+    -718193.875
+  ],
+  "token_topk_mean_logprob": [
+    -6.968481540679932,
+    -6.638052463531494
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 176,
+  "read_token_ids": [
+    477,
+    2312
+  ]
+}

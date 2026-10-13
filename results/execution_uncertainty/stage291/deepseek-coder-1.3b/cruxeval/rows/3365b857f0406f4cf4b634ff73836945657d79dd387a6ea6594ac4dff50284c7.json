@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_346",
+  "program_id": "sample_346",
+  "code": "def f(filename):\n    suffix = filename.split('.')[-1]\n    f2 = filename + suffix[::-1]\n    return f2.endswith(suffix)",
+  "call": "f('docs.doc')",
+  "expected": "False",
+  "dataset": "cruxeval",
+  "source_group": "215aa9b7e53db68194c2b37e07f32cf3843db7df37fd6b6c5c9bc9885cd8d4c2",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(filename):\n    suffix = filename.split('.')[-1]\n    f2 = filename + suffix[::-1]\n    return f2.endswith(suffix)\n\nassert f('docs.doc') ==",
+  "n_prompt_tokens": 207,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.39286327362060547,
+    -0.12119369953870773
+  ],
+  "token_entropy": [
+    0.6730113625526428,
+    0.3999471068382263
+  ],
+  "token_logprob_sum": [
+    -765825.875,
+    -815799.4375
+  ],
+  "token_topk_mean_logprob": [
+    -8.355363845825195,
+    -8.56494426727295
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 196,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

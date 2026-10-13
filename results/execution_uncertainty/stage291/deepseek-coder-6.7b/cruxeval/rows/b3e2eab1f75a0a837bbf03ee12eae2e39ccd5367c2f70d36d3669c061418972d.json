@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_337",
+  "program_id": "sample_337",
+  "code": "def f(txt):\n    d = []\n    for c in txt:\n        if c.isdigit():\n            continue\n        if c.islower():\n            d.append(c.upper())\n        elif c.isupper():\n            d.append(c.lower())\n    return ''.join(d)",
+  "call": "f(\"5ll6\")",
+  "expected": "'LL'",
+  "dataset": "cruxeval",
+  "source_group": "711e6abafb23a221df48682aa9f323283e8afb48ecfe483068e7d0635b7ca505",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(txt):\n    d = []\n    for c in txt:\n        if c.isdigit():\n            continue\n        if c.islower():\n            d.append(c.upper())\n        elif c.isupper():\n            d.append(c.lower())\n    return ''.join(d)\n\nassert f(\"5ll6\") ==",
+  "n_prompt_tokens": 238,
+  "raw_generation": " \"5LL6\"\n",
+  "answer": "\"5LL6\"",
+  "generated_token_ids": [
+    440,
+    20,
+    2360,
+    21,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'5LL6'",
+  "token_logprob": [
+    -0.15601623058319092,
+    -0.8699936270713806,
+    -0.3598385155200958,
+    -0.07334350049495697,
+    -0.010067753493785858,
+    -0.18393845856189728
+  ],
+  "token_entropy": [
+    0.4811025857925415,
+    2.321134090423584,
+    1.0739779472351074,
+    0.281283974647522,
+    0.06516461074352264,
+    0.4803106486797333
+  ],
+  "token_logprob_sum": [
+    -836887.75,
+    -625322.875,
+    -671951.5,
+    -743186.375,
+    -757308.25,
+    -806387.125
+  ],
+  "token_topk_mean_logprob": [
+    -8.081016540527344,
+    -4.329368591308594,
+    -6.316089153289795,
+    -8.54834270477295,
+    -9.428817749023438,
+    -8.880813598632812
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 227,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

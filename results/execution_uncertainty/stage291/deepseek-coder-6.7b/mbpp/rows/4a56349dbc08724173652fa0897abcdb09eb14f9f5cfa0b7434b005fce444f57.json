@@ -1,0 +1,73 @@
+{
+  "case_id": "504:1",
+  "program_id": "504",
+  "code": "def sum_Of_Series(n): \r\n    sum = 0\r\n    for i in range(1,n + 1): \r\n        sum += i * i*i       \r\n    return sum",
+  "call": "sum_Of_Series(2)",
+  "expected": "9",
+  "dataset": "mbpp",
+  "source_group": "f82ed9c68958bb0a7717b8c05cb5402a0391f0c241d155bb5d35809044521117",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef sum_Of_Series(n): \r\n    sum = 0\r\n    for i in range(1,n + 1): \r\n        sum += i * i*i       \r\n    return sum\n\nassert sum_Of_Series(2) ==",
+  "n_prompt_tokens": 213,
+  "raw_generation": " (1 + 8)\n",
+  "answer": "(1 + 8)",
+  "generated_token_ids": [
+    334,
+    16,
+    4536,
+    23,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "constant_expression",
+  "invalid_reason": null,
+  "parsed_answer": "9",
+  "token_logprob": [
+    -1.253981590270996,
+    -0.8040003776550293,
+    -0.7457460761070251,
+    -0.2832247316837311,
+    -0.03383651748299599,
+    -0.4655779004096985
+  ],
+  "token_entropy": [
+    2.1627261638641357,
+    1.713384985923767,
+    1.7518014907836914,
+    0.7988986968994141,
+    0.20704467594623566,
+    1.2487362623214722
+  ],
+  "token_logprob_sum": [
+    -670829.0,
+    -730741.625,
+    -796435.875,
+    -823840.0,
+    -881425.0,
+    -758443.25
+  ],
+  "token_topk_mean_logprob": [
+    -4.366481781005859,
+    -5.216500759124756,
+    -4.658246040344238,
+    -8.49572467803955,
+    -7.565086364746094,
+    -5.509328365325928
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    2545,
+    2312
+  ]
+}

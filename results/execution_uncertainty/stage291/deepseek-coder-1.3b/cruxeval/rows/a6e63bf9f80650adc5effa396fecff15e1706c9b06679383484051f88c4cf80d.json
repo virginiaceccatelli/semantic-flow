@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_659",
+  "program_id": "sample_659",
+  "code": "def f(bots):\n    clean = []\n    for username in bots:\n        if not username.isupper():\n            clean.append(username[:2] + username[-3:])\n    return len(clean)",
+  "call": "f(['yR?TAJhIW?n', 'o11BgEFDfoe', 'KnHdn2vdEd', 'wvwruuqfhXbGis'])",
+  "expected": "4",
+  "dataset": "cruxeval",
+  "source_group": "a93285b42fa112cfc13a2b652926716b0081c30ae737efeb18dd09b91d094eb8",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(bots):\n    clean = []\n    for username in bots:\n        if not username.isupper():\n            clean.append(username[:2] + username[-3:])\n    return len(clean)\n\nassert f(['yR?TAJhIW?n', 'o11BgEFDfoe', 'KnHdn2vdEd', 'wvwruuqfhXbGis']) ==",
+  "n_prompt_tokens": 255,
+  "raw_generation": "  3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    243,
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.2548044919967651,
+    -1.0678730010986328,
+    -0.27748122811317444
+  ],
+  "token_entropy": [
+    2.5037074089050293,
+    1.7980109453201294,
+    0.6282663345336914
+  ],
+  "token_logprob_sum": [
+    -671082.625,
+    -752344.25,
+    -775476.8125
+  ],
+  "token_topk_mean_logprob": [
+    -3.9437694549560547,
+    -6.692872524261475,
+    -7.187051296234131
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 204,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

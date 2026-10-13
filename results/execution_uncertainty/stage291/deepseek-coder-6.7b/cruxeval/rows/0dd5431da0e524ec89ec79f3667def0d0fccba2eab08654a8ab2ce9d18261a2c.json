@@ -1,0 +1,53 @@
+{
+  "case_id": "sample_476",
+  "program_id": "sample_476",
+  "code": "def f(a, split_on):\n    t = a.split()\n    a = []\n    for i in t:\n        for j in i:\n            a.append(j)\n    if split_on in a:\n        return True\n    else:\n        return False",
+  "call": "f(\"booty boot-boot bootclass\", 'k')",
+  "expected": "False",
+  "dataset": "cruxeval",
+  "source_group": "916d0d1509dc26f2dc915f892c951e49c00686e0b945c67a8fffbcb2ee1767b9",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(a, split_on):\n    t = a.split()\n    a = []\n    for i in t:\n        for j in i:\n            a.append(j)\n    if split_on in a:\n        return True\n    else:\n        return False\n\nassert f(\"booty boot-boot bootclass\", 'k') ==",
+  "n_prompt_tokens": 236,
+  "raw_generation": " False\n",
+  "answer": "False",
+  "generated_token_ids": [
+    14729,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "False",
+  "token_logprob": [
+    -0.1329462081193924,
+    -0.20929178595542908
+  ],
+  "token_entropy": [
+    0.41697630286216736,
+    0.5339101552963257
+  ],
+  "token_logprob_sum": [
+    -753628.625,
+    -773714.125
+  ],
+  "token_topk_mean_logprob": [
+    -7.99544620513916,
+    -8.209291458129883
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 218,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}

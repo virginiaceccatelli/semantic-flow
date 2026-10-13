@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_547",
+  "program_id": "sample_547",
+  "code": "def f(letters):\n    letters_only = letters.strip(\"., !?*\")\n    return \"....\".join(letters_only.split(\" \"))",
+  "call": "f(\"h,e,l,l,o,wo,r,ld,\")",
+  "expected": "'h,e,l,l,o,wo,r,ld'",
+  "dataset": "cruxeval",
+  "source_group": "01e71e9d6489a51f042373108056858f7c8cf37103e8a9ea68eaa089dc269972",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(letters):\n    letters_only = letters.strip(\"., !?*\")\n    return \"....\".join(letters_only.split(\" \"))\n\nassert f(\"h,e,l,l,o,wo,r,ld,\") ==",
+  "n_prompt_tokens": 215,
+  "raw_generation": " \"hello\"\n",
+  "answer": "\"hello\"",
+  "generated_token_ids": [
+    440,
+    31702,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'hello'",
+  "token_logprob": [
+    -0.19338174164295197,
+    -0.8382992744445801,
+    -0.6856687664985657,
+    -0.24201487004756927
+  ],
+  "token_entropy": [
+    0.5529277920722961,
+    1.861274242401123,
+    1.262510061264038,
+    0.5454574823379517
+  ],
+  "token_logprob_sum": [
+    -785377.3125,
+    -690077.375,
+    -697730.4375,
+    -786505.5625
+  ],
+  "token_topk_mean_logprob": [
+    -7.1683807373046875,
+    -4.54323148727417,
+    -5.391919136047363,
+    -9.208030700683594
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 191,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

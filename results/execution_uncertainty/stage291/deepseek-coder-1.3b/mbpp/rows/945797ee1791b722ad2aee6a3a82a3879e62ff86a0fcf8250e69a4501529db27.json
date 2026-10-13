@@ -1,0 +1,73 @@
+{
+  "case_id": "415:2",
+  "program_id": "415",
+  "code": "def max_Product(arr): \r\n    arr_len = len(arr) \r\n    if (arr_len < 2): \r\n        return (\"No pairs exists\")           \r\n    x = arr[0]; y = arr[1]      \r\n    for i in range(0,arr_len): \r\n        for j in range(i + 1,arr_len): \r\n            if (arr[i] * arr[j] > x * y): \r\n                x = arr[i]; y = arr[j] \r\n    return x,y",
+  "call": "max_Product([1,2,3])",
+  "expected": "(2, 3)",
+  "dataset": "mbpp",
+  "source_group": "621c00926080f51e4b42115305b9c6d2f5b358ec7e74695277d42a77bccf34ce",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_Product(arr): \r\n    arr_len = len(arr) \r\n    if (arr_len < 2): \r\n        return (\"No pairs exists\")           \r\n    x = arr[0]; y = arr[1]      \r\n    for i in range(0,arr_len): \r\n        for j in range(i + 1,arr_len): \r\n            if (arr[i] * arr[j] > x * y): \r\n                x = arr[i]; y = arr[j] \r\n    return x,y\n\nassert max_Product([1,2,3]) ==",
+  "n_prompt_tokens": 301,
+  "raw_generation": " (1,2)\n",
+  "answer": "(1,2)",
+  "generated_token_ids": [
+    334,
+    16,
+    11,
+    17,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "(1, 2)",
+  "token_logprob": [
+    -0.06372340768575668,
+    -0.5839535593986511,
+    -0.010584408417344093,
+    -0.6771729588508606,
+    -0.009582002647221088,
+    -0.23148213326931
+  ],
+  "token_entropy": [
+    0.35831066966056824,
+    1.0154101848602295,
+    0.0794081762433052,
+    1.0944279432296753,
+    0.07222519814968109,
+    0.7113742828369141
+  ],
+  "token_logprob_sum": [
+    -759689.375,
+    -810197.75,
+    -809408.875,
+    -784332.25,
+    -814360.125,
+    -738723.3125
+  ],
+  "token_topk_mean_logprob": [
+    -6.588723659515381,
+    -7.933953762054443,
+    -8.429335594177246,
+    -8.214673042297363,
+    -8.759581565856934,
+    -7.187732219696045
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 286,
+  "read_token_ids": [
+    88,
+    2312
+  ]
+}

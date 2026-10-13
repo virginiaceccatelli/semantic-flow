@@ -1,0 +1,58 @@
+{
+  "case_id": "sample_496",
+  "program_id": "sample_496",
+  "code": "def f(text, value):\n    if isinstance(value, str):\n        return text.count(value) + text.count(value.lower())\n    return text.count(value)",
+  "call": "f('eftw{\u044c\u0422\u0441k_1', '\\\\')",
+  "expected": "0",
+  "dataset": "cruxeval",
+  "source_group": "b404835e7392eb869eaaa88f9ad53ef63278944215b86c4b0491b5c2e222de26",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, value):\n    if isinstance(value, str):\n        return text.count(value) + text.count(value.lower())\n    return text.count(value)\n\nassert f('eftw{\u044c\u0422\u0441k_1', '\\\\') ==",
+  "n_prompt_tokens": 218,
+  "raw_generation": " -1\n",
+  "answer": "-1",
+  "generated_token_ids": [
+    567,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-1",
+  "token_logprob": [
+    -0.8410872220993042,
+    -0.04406623914837837,
+    -0.1284029334783554
+  ],
+  "token_entropy": [
+    2.3441452980041504,
+    0.24652090668678284,
+    0.5506313443183899
+  ],
+  "token_logprob_sum": [
+    -685530.4375,
+    -769469.0625,
+    -796203.9375
+  ],
+  "token_topk_mean_logprob": [
+    -4.028587341308594,
+    -8.11906623840332,
+    -6.609652996063232
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 197,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

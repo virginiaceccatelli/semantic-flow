@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_276",
+  "program_id": "sample_276",
+  "code": "def f(a):\n    if len(a) >= 2 and a[0] > 0 and a[1] > 0:\n        a.reverse()\n        return a\n    a.append(0)\n    return a",
+  "call": "f([])",
+  "expected": "[0]",
+  "dataset": "cruxeval",
+  "source_group": "b0aeb58b5fcb1fdc48a5960fb668c5afd06bb412d4f96b560917813607ab9751",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(a):\n    if len(a) >= 2 and a[0] > 0 and a[1] > 0:\n        a.reverse()\n        return a\n    a.append(0)\n    return a\n\nassert f([]) ==",
+  "n_prompt_tokens": 214,
+  "raw_generation": " [0]\n",
+  "answer": "[0]",
+  "generated_token_ids": [
+    821,
+    15,
+    60,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "[0]",
+  "token_logprob": [
+    -0.00791295524686575,
+    -0.0011132716899737716,
+    -0.009118461050093174,
+    -0.02410835213959217
+  ],
+  "token_entropy": [
+    0.05517464131116867,
+    0.010734857991337776,
+    0.05901634693145752,
+    0.14250169694423676
+  ],
+  "token_logprob_sum": [
+    -848718.6875,
+    -895650.125,
+    -951235.5,
+    -844017.3125
+  ],
+  "token_topk_mean_logprob": [
+    -9.35791301727295,
+    -10.476112365722656,
+    -11.359118461608887,
+    -8.430357933044434
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 205,
+  "read_token_ids": [
+    245,
+    2312
+  ]
+}

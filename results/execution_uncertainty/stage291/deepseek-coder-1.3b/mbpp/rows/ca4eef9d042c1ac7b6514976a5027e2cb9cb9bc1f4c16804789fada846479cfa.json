@@ -1,0 +1,53 @@
+{
+  "case_id": "452:2",
+  "program_id": "452",
+  "code": "def loss_amount(actual_cost,sale_amount): \r\n  if(sale_amount > actual_cost):\r\n    amount = sale_amount - actual_cost\r\n    return amount\r\n  else:\r\n    return None",
+  "call": "loss_amount(2000,5000)",
+  "expected": "3000",
+  "dataset": "mbpp",
+  "source_group": "a53d1916feba5929450965d3ccad4acd97cc9a646d998d9199ec95ebb743c845",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef loss_amount(actual_cost,sale_amount): \r\n  if(sale_amount > actual_cost):\r\n    amount = sale_amount - actual_cost\r\n    return amount\r\n  else:\r\n    return None\n\nassert loss_amount(2000,5000) ==",
+  "n_prompt_tokens": 228,
+  "raw_generation": " None\n",
+  "answer": "None",
+  "generated_token_ids": [
+    7747,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "None",
+  "token_logprob": [
+    -0.38765260577201843,
+    -0.2968207895755768
+  ],
+  "token_entropy": [
+    1.3861942291259766,
+    0.863699197769165
+  ],
+  "token_logprob_sum": [
+    -672031.8125,
+    -713550.625
+  ],
+  "token_topk_mean_logprob": [
+    -4.937652587890625,
+    -6.884320259094238
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 209,
+  "read_token_ids": [
+    7747,
+    2312
+  ]
+}

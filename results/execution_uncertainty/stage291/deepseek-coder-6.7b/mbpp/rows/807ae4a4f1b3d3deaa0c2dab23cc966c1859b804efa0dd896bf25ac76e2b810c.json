@@ -1,0 +1,53 @@
+{
+  "case_id": "329:2",
+  "program_id": "329",
+  "code": "def neg_count(list):\r\n  neg_count= 0\r\n  for num in list: \r\n    if num <= 0: \r\n      neg_count += 1\r\n  return neg_count",
+  "call": "neg_count([1,2,-3,-10,20])",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "6f5c8516b5c3a7b816da65fd6cc1a543709bc4a34e5d8b6831c37733fc5065cc",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef neg_count(list):\r\n  neg_count= 0\r\n  for num in list: \r\n    if num <= 0: \r\n      neg_count += 1\r\n  return neg_count\n\nassert neg_count([1,2,-3,-10,20]) ==",
+  "n_prompt_tokens": 222,
+  "raw_generation": "2\n",
+  "answer": "2",
+  "generated_token_ids": [
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "2",
+  "token_logprob": [
+    -0.8830924034118652,
+    -0.5252903699874878
+  ],
+  "token_entropy": [
+    1.492836594581604,
+    1.1344062089920044
+  ],
+  "token_logprob_sum": [
+    -710436.875,
+    -747015.6875
+  ],
+  "token_topk_mean_logprob": [
+    -5.2455925941467285,
+    -6.487790107727051
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 201,
+  "read_token_ids": [
+    4241,
+    2312
+  ]
+}

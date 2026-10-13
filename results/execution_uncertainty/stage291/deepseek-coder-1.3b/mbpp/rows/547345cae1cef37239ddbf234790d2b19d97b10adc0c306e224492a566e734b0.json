@@ -1,0 +1,58 @@
+{
+  "case_id": "42:0",
+  "program_id": "42",
+  "code": "def find_Sum(arr,n): \r\n    return sum([x for x in arr if arr.count(x) > 1])",
+  "call": "find_Sum([1,2,3,1,1,4,5,6],8)",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "339c6b830fdd1e759059554c93e35279faf80cf5ce8c7f56712d1afc096ad2d0",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_Sum(arr,n): \r\n    return sum([x for x in arr if arr.count(x) > 1])\n\nassert find_Sum([1,2,3,1,1,4,5,6],8) ==",
+  "n_prompt_tokens": 211,
+  "raw_generation": "11\n",
+  "answer": "11",
+  "generated_token_ids": [
+    16,
+    16,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 0,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "11",
+  "token_logprob": [
+    -2.0454139709472656,
+    -1.6611465215682983,
+    -0.48012518882751465
+  ],
+  "token_entropy": [
+    2.9700658321380615,
+    2.4247729778289795,
+    1.136192798614502
+  ],
+  "token_logprob_sum": [
+    -678972.5,
+    -713730.6875,
+    -715879.875
+  ],
+  "token_topk_mean_logprob": [
+    -3.3829140663146973,
+    -4.173646450042725,
+    -6.142625331878662
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 184,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

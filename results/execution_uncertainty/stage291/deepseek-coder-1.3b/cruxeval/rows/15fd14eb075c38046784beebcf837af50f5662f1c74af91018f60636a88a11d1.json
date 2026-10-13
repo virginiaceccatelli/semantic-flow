@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_378",
+  "program_id": "sample_378",
+  "code": "def f(dic, key):\n    dic = dict(dic)\n    v = dic.pop(key, 0)\n    if v == 0:\n        return 'No such key!'\n    while len(dic) > 0:\n        dic[dic.popitem()[1]] = dic.popitem()[0]\n    return int(dic.popitem()[0])",
+  "call": "f(dict(did=0), 'u')",
+  "expected": "'No such key!'",
+  "dataset": "cruxeval",
+  "source_group": "631c4caa4fab7f97dadcd39dbe02f51f97e371d7aaddffdb0ab5ac9e0e1fc115",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(dic, key):\n    dic = dict(dic)\n    v = dic.pop(key, 0)\n    if v == 0:\n        return 'No such key!'\n    while len(dic) > 0:\n        dic[dic.popitem()[1]] = dic.popitem()[0]\n    return int(dic.popitem()[0])\n\nassert f(dict(did=0), 'u') ==",
+  "n_prompt_tokens": 256,
+  "raw_generation": " 'No such key!'\n",
+  "answer": "'No such key!'",
+  "generated_token_ids": [
+    651,
+    3221,
+    1109,
+    2119,
+    13837,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'No such key!'",
+  "token_logprob": [
+    -0.15369154512882233,
+    -0.060179997235536575,
+    -0.0005021026590839028,
+    -0.0005108005134388804,
+    -0.003203738247975707,
+    -0.12504079937934875
+  ],
+  "token_entropy": [
+    0.7525618076324463,
+    0.4346478581428528,
+    0.0058515737764537334,
+    0.0066076316870749,
+    0.025765903294086456,
+    0.3937992453575134
+  ],
+  "token_logprob_sum": [
+    -746549.9375,
+    -686135.8125,
+    -898766.0625,
+    -804497.25,
+    -814317.3125,
+    -801835.875
+  ],
+  "token_topk_mean_logprob": [
+    -5.52869176864624,
+    -6.5922112464904785,
+    -11.100502014160156,
+    -10.719261169433594,
+    -10.137578010559082,
+    -8.850041389465332
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 240,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

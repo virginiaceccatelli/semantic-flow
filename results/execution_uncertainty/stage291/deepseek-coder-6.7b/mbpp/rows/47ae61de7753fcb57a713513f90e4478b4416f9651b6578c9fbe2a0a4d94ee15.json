@@ -1,0 +1,63 @@
+{
+  "case_id": "458:0",
+  "program_id": "458",
+  "code": "def rectangle_area(l,b):\r\n  area=l*b\r\n  return area",
+  "call": "rectangle_area(10,20)",
+  "expected": "200",
+  "dataset": "mbpp",
+  "source_group": "a9d650ff0a4c4cacc1a3d5de1c7b65ebe633052d91746eb60d28c7b666ea51e3",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef rectangle_area(l,b):\r\n  area=l*b\r\n  return area\n\nassert rectangle_area(10,20) ==",
+  "n_prompt_tokens": 190,
+  "raw_generation": "200\n",
+  "answer": "200",
+  "generated_token_ids": [
+    17,
+    15,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "200",
+  "token_logprob": [
+    -0.357887864112854,
+    -0.0015630420530214906,
+    -0.003068265039473772,
+    -0.5013686418533325
+  ],
+  "token_entropy": [
+    1.1299885511398315,
+    0.015905072912573814,
+    0.02703886106610298,
+    1.0207675695419312
+  ],
+  "token_logprob_sum": [
+    -684298.75,
+    -796623.875,
+    -835136.0625,
+    -729189.625
+  ],
+  "token_topk_mean_logprob": [
+    -5.507888317108154,
+    -9.48593807220459,
+    -9.559318542480469,
+    -6.604493618011475
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 175,
+  "read_token_ids": [
+    3036,
+    2312
+  ]
+}

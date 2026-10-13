@@ -1,0 +1,63 @@
+{
+  "case_id": "375:2",
+  "program_id": "375",
+  "code": "def round_num(n,m):\r\n    a = (n //m) * m\r\n    b = a + m\r\n    return (b if n - a > b - n else a)",
+  "call": "round_num(219,2)",
+  "expected": "218",
+  "dataset": "mbpp",
+  "source_group": "10bae1d404c246f4bafddcc02fb70657a6f355a39af7876c69154e0efd7df971",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef round_num(n,m):\r\n    a = (n //m) * m\r\n    b = a + m\r\n    return (b if n - a > b - n else a)\n\nassert round_num(219,2) ==",
+  "n_prompt_tokens": 214,
+  "raw_generation": "220\n",
+  "answer": "220",
+  "generated_token_ids": [
+    17,
+    17,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "220",
+  "token_logprob": [
+    -1.1359128952026367,
+    -0.4893566966056824,
+    -0.041259367018938065,
+    -0.3316214382648468
+  ],
+  "token_entropy": [
+    2.1291658878326416,
+    1.1117781400680542,
+    0.2349110245704651,
+    0.9039621949195862
+  ],
+  "token_logprob_sum": [
+    -683269.875,
+    -829900.5,
+    -800468.125,
+    -732180.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.442162990570068,
+    -6.845607280731201,
+    -7.491260051727295,
+    -6.342558860778809
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 199,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

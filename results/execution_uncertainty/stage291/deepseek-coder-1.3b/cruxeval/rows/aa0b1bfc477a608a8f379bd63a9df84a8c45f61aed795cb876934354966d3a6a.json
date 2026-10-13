@@ -1,0 +1,63 @@
+{
+  "case_id": "sample_637",
+  "program_id": "sample_637",
+  "code": "def f(text):\n    text = text.split(' ')\n    for t in text:\n        if not t.isnumeric():\n            return 'no'\n    return 'yes'",
+  "call": "f('03625163633 d')",
+  "expected": "'no'",
+  "dataset": "cruxeval",
+  "source_group": "337de43543ce2bf31cf7e265f8e941fb2b22971f2e09757fa6dba024cdb093eb",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    text = text.split(' ')\n    for t in text:\n        if not t.isnumeric():\n            return 'no'\n    return 'yes'\n\nassert f('03625163633 d') ==",
+  "n_prompt_tokens": 217,
+  "raw_generation": " 'yes'\n",
+  "answer": "'yes'",
+  "generated_token_ids": [
+    651,
+    8714,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'yes'",
+  "token_logprob": [
+    -0.011362249031662941,
+    -0.38898736238479614,
+    -0.0008942657150328159,
+    -0.14832234382629395
+  ],
+  "token_entropy": [
+    0.08495683968067169,
+    0.651995062828064,
+    0.008847459219396114,
+    0.4230051338672638
+  ],
+  "token_logprob_sum": [
+    -837790.75,
+    -725818.25,
+    -786757.0625,
+    -806499.5625
+  ],
+  "token_topk_mean_logprob": [
+    -8.517611503601074,
+    -9.03898811340332,
+    -11.250894546508789,
+    -9.358477592468262
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 197,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

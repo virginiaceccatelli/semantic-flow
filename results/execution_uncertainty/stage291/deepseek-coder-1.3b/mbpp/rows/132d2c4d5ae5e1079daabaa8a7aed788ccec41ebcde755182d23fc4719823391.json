@@ -1,0 +1,78 @@
+{
+  "case_id": "466:0",
+  "program_id": "466",
+  "code": "def find_peak_util(arr, low, high, n): \r\n\tmid = low + (high - low)/2\r\n\tmid = int(mid) \r\n\tif ((mid == 0 or arr[mid - 1] <= arr[mid]) and\r\n\t\t(mid == n - 1 or arr[mid + 1] <= arr[mid])): \r\n\t\treturn mid \r\n\telif (mid > 0 and arr[mid - 1] > arr[mid]): \r\n\t\treturn find_peak_util(arr, low, (mid - 1), n) \r\n\telse: \r\n\t\treturn find_peak_util(arr, (mid + 1), high, n) \r\ndef find_peak(arr, n): \r\n\treturn find_peak_util(arr, 0, n - 1, n)",
+  "call": "find_peak([1, 3, 20, 4, 1, 0], 6)",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "e687bdff668773bc7e9c5fb477001e6ed1158367a488c6963328b95145404ffb",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_peak_util(arr, low, high, n): \r\n\tmid = low + (high - low)/2\r\n\tmid = int(mid) \r\n\tif ((mid == 0 or arr[mid - 1] <= arr[mid]) and\r\n\t\t(mid == n - 1 or arr[mid + 1] <= arr[mid])): \r\n\t\treturn mid \r\n\telif (mid > 0 and arr[mid - 1] > arr[mid]): \r\n\t\treturn find_peak_util(arr, low, (mid - 1), n) \r\n\telse: \r\n\t\treturn find_peak_util(arr, (mid + 1), high, n) \r\ndef find_peak(arr, n): \r\n\treturn find_peak_util(arr, 0, n - 1, n)\n\nassert find_peak([1, 3, 20, 4, 1, 0], 6) ==",
+  "n_prompt_tokens": 380,
+  "raw_generation": " [3, 5]\n",
+  "answer": "[3, 5]",
+  "generated_token_ids": [
+    821,
+    18,
+    11,
+    207,
+    20,
+    60,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "[3, 5]",
+  "token_logprob": [
+    -1.0099828243255615,
+    -0.9371224045753479,
+    -0.06428708136081696,
+    -0.029887644574046135,
+    -0.9480148553848267,
+    -0.03132937476038933,
+    -0.24960072338581085
+  ],
+  "token_entropy": [
+    2.4757237434387207,
+    1.6804074048995972,
+    0.25084930658340454,
+    0.21024978160858154,
+    1.697596549987793,
+    0.1694946587085724,
+    0.7809193134307861
+  ],
+  "token_logprob_sum": [
+    -665215.875,
+    -713243.625,
+    -744590.875,
+    -760944.5,
+    -724225.75,
+    -755561.25,
+    -742235.5
+  ],
+  "token_topk_mean_logprob": [
+    -4.0278544425964355,
+    -6.237122535705566,
+    -8.889286994934082,
+    -6.867387294769287,
+    -7.173015117645264,
+    -8.443829536437988,
+    -7.349600315093994
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 350,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

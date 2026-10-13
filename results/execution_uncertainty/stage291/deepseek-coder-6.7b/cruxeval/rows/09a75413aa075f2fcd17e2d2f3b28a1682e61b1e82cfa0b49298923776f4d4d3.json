@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_603",
+  "program_id": "sample_603",
+  "code": "def f(sentences):\n    if all([sentence.isdecimal() for sentence in sentences.split('.')]):\n        return 'oscillating' \n    else:\n        return 'not oscillating'",
+  "call": "f('not numbers')",
+  "expected": "'not oscillating'",
+  "dataset": "cruxeval",
+  "source_group": "6e53c1c031ce5ab3cab83f712c7db45fd961c849367ce08b09cc045fc2a62a97",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(sentences):\n    if all([sentence.isdecimal() for sentence in sentences.split('.')]):\n        return 'oscillating' \n    else:\n        return 'not oscillating'\n\nassert f('not numbers') ==",
+  "n_prompt_tokens": 212,
+  "raw_generation": " 'not oscillating'\n",
+  "answer": "'not oscillating'",
+  "generated_token_ids": [
+    651,
+    1263,
+    11276,
+    1128,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'not oscillating'",
+  "token_logprob": [
+    -0.015323059633374214,
+    -0.0806068629026413,
+    -0.0008095800876617432,
+    -0.00013386306818574667,
+    -0.006305679678916931,
+    -0.09548715502023697
+  ],
+  "token_entropy": [
+    0.09177862107753754,
+    0.29022282361984253,
+    0.00816437043249607,
+    0.001449891715310514,
+    0.044240690767765045,
+    0.37488773465156555
+  ],
+  "token_logprob_sum": [
+    -819834.625,
+    -743231.9375,
+    -854111.1875,
+    -1010350.25,
+    -762644.25,
+    -791257.875
+  ],
+  "token_topk_mean_logprob": [
+    -9.277823448181152,
+    -9.636856079101562,
+    -11.207060813903809,
+    -13.534509658813477,
+    -9.618805885314941,
+    -7.945487976074219
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 202,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

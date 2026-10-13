@@ -1,0 +1,53 @@
+{
+  "case_id": "216:1",
+  "program_id": "216",
+  "code": "def check_subset_list(list1, list2): \r\n    l1, l2 = list1[0], list2[0] \r\n    exist = True\r\n    for i in list2: \r\n        if i not in list1: \r\n            exist = False\r\n    return exist",
+  "call": "check_subset_list([[2, 3, 1], [4, 5], [6, 8]],[[4, 5], [6, 8]])",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "63dd73bb720faa1f4795697611c0029575e0ee3f2b4f4db5a328c2cc2d05fa24",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_subset_list(list1, list2): \r\n    l1, l2 = list1[0], list2[0] \r\n    exist = True\r\n    for i in list2: \r\n        if i not in list1: \r\n            exist = False\r\n    return exist\n\nassert check_subset_list([[2, 3, 1], [4, 5], [6, 8]],[[4, 5], [6, 8]]) ==",
+  "n_prompt_tokens": 271,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.10730841755867004,
+    -0.2944740355014801
+  ],
+  "token_entropy": [
+    0.3700600862503052,
+    0.8530762195587158
+  ],
+  "token_logprob_sum": [
+    -763122.0,
+    -743268.125
+  ],
+  "token_topk_mean_logprob": [
+    -8.344809532165527,
+    -6.963223457336426
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 225,
+  "read_token_ids": [
+    2627,
+    2312
+  ]
+}

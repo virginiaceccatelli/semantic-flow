@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_701",
+  "program_id": "sample_701",
+  "code": "def f(stg, tabs):\n    for tab in tabs:\n        stg = stg.rstrip(tab)\n    return stg",
+  "call": "f('31849 let it!31849 pass!', ('3','1','8',' ','1','9','2','d'))",
+  "expected": "'31849 let it!31849 pass!'",
+  "dataset": "cruxeval",
+  "source_group": "c8a31870a387f35aa4eeff354281761178784b31a09132676f99af7d9c2ca18c",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(stg, tabs):\n    for tab in tabs:\n        stg = stg.rstrip(tab)\n    return stg\n\nassert f('31849 let it!31849 pass!', ('3','1','8',' ','1','9','2','d')) ==",
+  "n_prompt_tokens": 226,
+  "raw_generation": " 'let it!'\n",
+  "answer": "'let it!'",
+  "generated_token_ids": [
+    651,
+    1160,
+    359,
+    13837,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'let it!'",
+  "token_logprob": [
+    -0.048380296677351,
+    -0.5845059752464294,
+    -0.01908101513981819,
+    -0.1318502426147461,
+    -0.2850644290447235
+  ],
+  "token_entropy": [
+    0.2683488130569458,
+    1.4068125486373901,
+    0.13162390887737274,
+    0.5320566892623901,
+    0.5886566638946533
+  ],
+  "token_logprob_sum": [
+    -796192.25,
+    -624433.3125,
+    -734555.1875,
+    -681407.75,
+    -794057.625
+  ],
+  "token_topk_mean_logprob": [
+    -7.610879421234131,
+    -4.959506511688232,
+    -7.919081211090088,
+    -6.5943498611450195,
+    -8.703814506530762
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 186,
+  "read_token_ids": [
+    70,
+    2312
+  ]
+}

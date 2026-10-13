@@ -1,0 +1,68 @@
+{
+  "case_id": "306:0",
+  "program_id": "306",
+  "code": "def max_sum_increasing_subseq(a, n, index, k):\r\n\tdp = [[0 for i in range(n)] \r\n\t\t\tfor i in range(n)]\r\n\tfor i in range(n):\r\n\t\tif a[i] > a[0]:\r\n\t\t\tdp[0][i] = a[i] + a[0]\r\n\t\telse:\r\n\t\t\tdp[0][i] = a[i]\r\n\tfor i in range(1, n):\r\n\t\tfor j in range(n):\r\n\t\t\tif a[j] > a[i] and j > i:\r\n\t\t\t\tif dp[i - 1][i] + a[j] > dp[i - 1][j]:\r\n\t\t\t\t\tdp[i][j] = dp[i - 1][i] + a[j]\r\n\t\t\t\telse:\r\n\t\t\t\t\tdp[i][j] = dp[i - 1][j]\r\n\t\t\telse:\r\n\t\t\t\tdp[i][j] = dp[i - 1][j]\r\n\treturn dp[index][k]",
+  "call": "max_sum_increasing_subseq([1, 101, 2, 3, 100, 4, 5 ], 7, 4, 6)",
+  "expected": "11",
+  "dataset": "mbpp",
+  "source_group": "6aab3256da796bf6f2abd4fdb40afb25e0d24caa7323f0e8d2069c2c49ac1219",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef max_sum_increasing_subseq(a, n, index, k):\r\n\tdp = [[0 for i in range(n)] \r\n\t\t\tfor i in range(n)]\r\n\tfor i in range(n):\r\n\t\tif a[i] > a[0]:\r\n\t\t\tdp[0][i] = a[i] + a[0]\r\n\t\telse:\r\n\t\t\tdp[0][i] = a[i]\r\n\tfor i in range(1, n):\r\n\t\tfor j in range(n):\r\n\t\t\tif a[j] > a[i] and j > i:\r\n\t\t\t\tif dp[i - 1][i] + a[j] > dp[i - 1][j]:\r\n\t\t\t\t\tdp[i][j] = dp[i - 1][i] + a[j]\r\n\t\t\t\telse:\r\n\t\t\t\t\tdp[i][j] = dp[i - 1][j]\r\n\t\t\telse:\r\n\t\t\t\tdp[i][j] = dp[i - 1][j]\r\n\treturn dp[index][k]\n\nassert max_sum_increasing_subseq([1, 101, 2, 3, 100, 4, 5 ], 7, 4, 6) ==",
+  "n_prompt_tokens": 464,
+  "raw_generation": "  106\n",
+  "answer": "106",
+  "generated_token_ids": [
+    243,
+    16,
+    15,
+    21,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 1,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "106",
+  "token_logprob": [
+    -1.2420462369918823,
+    -0.5275395512580872,
+    -0.498344361782074,
+    -0.3256263732910156,
+    -0.4587656259536743
+  ],
+  "token_entropy": [
+    2.6103899478912354,
+    1.3053843975067139,
+    1.3056315183639526,
+    1.167905330657959,
+    1.0845595598220825
+  ],
+  "token_logprob_sum": [
+    -669334.875,
+    -789441.8125,
+    -787570.125,
+    -785340.0625,
+    -732514.1875
+  ],
+  "token_topk_mean_logprob": [
+    -3.893662691116333,
+    -7.202538967132568,
+    -6.108109951019287,
+    -6.7443766593933105,
+    -6.026612281799316
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 416,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

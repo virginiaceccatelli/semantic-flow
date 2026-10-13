@@ -1,0 +1,58 @@
+{
+  "case_id": "30:0",
+  "program_id": "30",
+  "code": "def check_Equality(s): \r\n    return (ord(s[0]) == ord(s[len(s) - 1])); \r\ndef count_Substring_With_Equal_Ends(s): \r\n    result = 0; \r\n    n = len(s); \r\n    for i in range(n): \r\n        for j in range(1,n-i+1):  \r\n            if (check_Equality(s[i:i+j])): \r\n                result+=1; \r\n    return result;",
+  "call": "count_Substring_With_Equal_Ends(\"abc\")",
+  "expected": "3",
+  "dataset": "mbpp",
+  "source_group": "dc88ccbebb25b16871aba27baf3011b89ef6c31d815399cbdc7fd194bf95158c",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_Equality(s): \r\n    return (ord(s[0]) == ord(s[len(s) - 1])); \r\ndef count_Substring_With_Equal_Ends(s): \r\n    result = 0; \r\n    n = len(s); \r\n    for i in range(n): \r\n        for j in range(1,n-i+1):  \r\n            if (check_Equality(s[i:i+j])): \r\n                result+=1; \r\n    return result;\n\nassert count_Substring_With_Equal_Ends(\"abc\") ==",
+  "n_prompt_tokens": 306,
+  "raw_generation": "  3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    243,
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.3759983777999878,
+    -0.5997809171676636,
+    -0.2578287720680237
+  ],
+  "token_entropy": [
+    2.3601887226104736,
+    1.2582329511642456,
+    0.9452940225601196
+  ],
+  "token_logprob_sum": [
+    -674356.25,
+    -770505.3125,
+    -735734.6875
+  ],
+  "token_topk_mean_logprob": [
+    -4.207248687744141,
+    -7.249781131744385,
+    -5.995328903198242
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 287,
+  "read_token_ids": [
+    26,
+    2312
+  ]
+}

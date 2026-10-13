@@ -1,0 +1,63 @@
+{
+  "case_id": "419:0",
+  "program_id": "419",
+  "code": "def round_and_sum(list1):\r\n  lenght=len(list1)\r\n  round_and_sum=sum(list(map(round,list1))* lenght)\r\n  return round_and_sum",
+  "call": "round_and_sum([22.4, 4.0, -16.22, -9.10, 11.00, -12.22, 14.20, -5.20, 17.50])",
+  "expected": "243",
+  "dataset": "mbpp",
+  "source_group": "7b84f196795f31eddf3fb09c81139559440e1354d9ef829af9507e7729cdaceb",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef round_and_sum(list1):\r\n  lenght=len(list1)\r\n  round_and_sum=sum(list(map(round,list1))* lenght)\r\n  return round_and_sum\n\nassert round_and_sum([22.4, 4.0, -16.22, -9.10, 11.00, -12.22, 14.20, -5.20, 17.50]) ==",
+  "n_prompt_tokens": 277,
+  "raw_generation": " -45\n",
+  "answer": "-45",
+  "generated_token_ids": [
+    567,
+    19,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-45",
+  "token_logprob": [
+    -0.7850660085678101,
+    -1.1221041679382324,
+    -1.1886098384857178,
+    -1.102907419204712
+  ],
+  "token_entropy": [
+    2.343907356262207,
+    1.8994969129562378,
+    2.283874273300171,
+    1.8763172626495361
+  ],
+  "token_logprob_sum": [
+    -669249.125,
+    -704244.625,
+    -748578.1875,
+    -729941.125
+  ],
+  "token_topk_mean_logprob": [
+    -3.835066318511963,
+    -5.740854740142822,
+    -4.6667351722717285,
+    -4.5029072761535645
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 209,
+  "read_token_ids": [
+    1828,
+    2312
+  ]
+}

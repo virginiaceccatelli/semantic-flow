@@ -1,0 +1,78 @@
+{
+  "case_id": "sample_672",
+  "program_id": "sample_672",
+  "code": "def f(text, position, value):\n    length = len(text)\n    index = (position % (length + 2)) - 1\n    if index >= length or index < 0:\n        return text\n    text[index] = value\n    return ''.join(text)",
+  "call": "f(\"1zd\", 0, 'm')",
+  "expected": "'1zd'",
+  "dataset": "cruxeval",
+  "source_group": "23a654060dd27dcb8c69629f16f0ecf2d96c116a9df1eb961a7066d2d1b1068b",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, position, value):\n    length = len(text)\n    index = (position % (length + 2)) - 1\n    if index >= length or index < 0:\n        return text\n    text[index] = value\n    return ''.join(text)\n\nassert f(\"1zd\", 0, 'm') ==",
+  "n_prompt_tokens": 234,
+  "raw_generation": " \"1mzd\"\n",
+  "answer": "\"1mzd\"",
+  "generated_token_ids": [
+    440,
+    16,
+    76,
+    89,
+    67,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'1mzd'",
+  "token_logprob": [
+    -0.3976086378097534,
+    -0.7712091207504272,
+    -0.9688530564308167,
+    -0.11299356818199158,
+    -0.12172537297010422,
+    -0.031214989721775055,
+    -0.08467423170804977
+  ],
+  "token_entropy": [
+    0.7137513756752014,
+    1.511702537536621,
+    2.491292953491211,
+    0.5577795505523682,
+    0.4883439540863037,
+    0.1845085769891739,
+    0.3123830258846283
+  ],
+  "token_logprob_sum": [
+    -789553.5,
+    -645074.125,
+    -627504.5,
+    -682531.5,
+    -747225.0,
+    -738292.5,
+    -822104.75
+  ],
+  "token_topk_mean_logprob": [
+    -7.266358852386475,
+    -5.3774590492248535,
+    -4.4626030921936035,
+    -6.26416540145874,
+    -7.5186004638671875,
+    -7.828090190887451,
+    -8.765924453735352
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 217,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_241",
+  "program_id": "sample_241",
+  "code": "def f(postcode):\n    return postcode[postcode.index('C'):]",
+  "call": "f('ED20 CW')",
+  "expected": "'CW'",
+  "dataset": "cruxeval",
+  "source_group": "a8ce8b8f18892a7a451ea16a85a3417384083865f567989c1b0f5bfb7eecc7e2",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(postcode):\n    return postcode[postcode.index('C'):]\n\nassert f('ED20 CW') ==",
+  "n_prompt_tokens": 187,
+  "raw_generation": " 'CW'\n",
+  "answer": "'CW'",
+  "generated_token_ids": [
+    651,
+    34,
+    54,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'CW'",
+  "token_logprob": [
+    -0.013789977878332138,
+    -0.7578629851341248,
+    -0.000779205875005573,
+    -0.004376832861453295,
+    -0.1469908058643341
+  ],
+  "token_entropy": [
+    0.09361764788627625,
+    1.7571299076080322,
+    0.00874440185725689,
+    0.032966941595077515,
+    0.4263073801994324
+  ],
+  "token_logprob_sum": [
+    -784457.5,
+    -669228.0625,
+    -828507.125,
+    -776286.3125,
+    -797738.25
+  ],
+  "token_topk_mean_logprob": [
+    -8.638790130615234,
+    -5.0547380447387695,
+    -10.244529724121094,
+    -9.960626602172852,
+    -9.131365776062012
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 174,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "case_id": "130:2",
+  "program_id": "130",
+  "code": "from collections import defaultdict\r\ndef max_occurrences(nums):\r\n    dict = defaultdict(int)\r\n    for i in nums:\r\n        dict[i] += 1\r\n    result = max(dict.items(), key=lambda x: x[1]) \r\n    return result",
+  "call": "max_occurrences([10,20,20,30,40,90,80,50,30,20,50,10])",
+  "expected": "(20, 3)",
+  "dataset": "mbpp",
+  "source_group": "44e51d87666b88d967a533f3c4a8d62abd9cbbfac90608e1fa161548c3d0f734",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nfrom collections import defaultdict\r\ndef max_occurrences(nums):\r\n    dict = defaultdict(int)\r\n    for i in nums:\r\n        dict[i] += 1\r\n    result = max(dict.items(), key=lambda x: x[1]) \r\n    return result\n\nassert max_occurrences([10,20,20,30,40,90,80,50,30,20,50,10]) ==",
+  "n_prompt_tokens": 273,
+  "raw_generation": " (20, 3)\n",
+  "answer": "(20, 3)",
+  "generated_token_ids": [
+    334,
+    17,
+    15,
+    11,
+    207,
+    18,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "(20, 3)",
+  "token_logprob": [
+    -0.09047956764698029,
+    -0.5081273913383484,
+    -0.002152032917365432,
+    -0.0036485311575233936,
+    -0.23630096018314362,
+    -0.8232560157775879,
+    -0.006680890452116728,
+    -0.34195077419281006
+  ],
+  "token_entropy": [
+    0.3671516478061676,
+    1.1641454696655273,
+    0.016643738374114037,
+    0.03130012005567551,
+    0.801861584186554,
+    1.136686086654663,
+    0.04841068387031555,
+    0.8275724053382874
+  ],
+  "token_logprob_sum": [
+    -805508.125,
+    -799937.0,
+    -902264.5,
+    -830100.375,
+    -806507.0,
+    -830118.5625,
+    -800162.75,
+    -724696.3125
+  ],
+  "token_topk_mean_logprob": [
+    -7.596339702606201,
+    -6.764377117156982,
+    -11.027153015136719,
+    -9.741148948669434,
+    -7.648801326751709,
+    -9.679506301879883,
+    -9.167617797851562,
+    -7.9169511795043945
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 225,
+  "read_token_ids": [
+    1228,
+    2312
+  ]
+}

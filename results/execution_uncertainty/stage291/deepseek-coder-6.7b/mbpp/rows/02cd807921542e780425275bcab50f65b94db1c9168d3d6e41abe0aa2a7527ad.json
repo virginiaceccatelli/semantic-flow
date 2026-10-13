@@ -1,0 +1,58 @@
+{
+  "case_id": "371:0",
+  "program_id": "371",
+  "code": "def smallest_missing(A, left_element, right_element):\r\n    if left_element > right_element:\r\n        return left_element\r\n    mid = left_element + (right_element - left_element) // 2\r\n    if A[mid] == mid:\r\n        return smallest_missing(A, mid + 1, right_element)\r\n    else:\r\n        return smallest_missing(A, left_element, mid - 1)",
+  "call": "smallest_missing([0, 1, 2, 3, 4, 5, 6], 0, 6)",
+  "expected": "7",
+  "dataset": "mbpp",
+  "source_group": "5c1ad9b0ccd805b3dd620684efa90bbb381720f4a593d2d36ca62604b68a66f1",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef smallest_missing(A, left_element, right_element):\r\n    if left_element > right_element:\r\n        return left_element\r\n    mid = left_element + (right_element - left_element) // 2\r\n    if A[mid] == mid:\r\n        return smallest_missing(A, mid + 1, right_element)\r\n    else:\r\n        return smallest_missing(A, left_element, mid - 1)\n\nassert smallest_missing([0, 1, 2, 3, 4, 5, 6], 0, 6) ==",
+  "n_prompt_tokens": 300,
+  "raw_generation": "  7\n",
+  "answer": "7",
+  "generated_token_ids": [
+    243,
+    22,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "7",
+  "token_logprob": [
+    -1.0703134536743164,
+    -0.0267405416816473,
+    -0.5976289510726929
+  ],
+  "token_entropy": [
+    2.404634475708008,
+    0.17667259275913239,
+    1.0567988157272339
+  ],
+  "token_logprob_sum": [
+    -663169.375,
+    -816639.4375,
+    -777799.125
+  ],
+  "token_topk_mean_logprob": [
+    -4.145313262939453,
+    -8.445489883422852,
+    -7.425754070281982
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 264,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

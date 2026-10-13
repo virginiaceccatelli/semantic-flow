@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_80",
+  "program_id": "sample_80",
+  "code": "def f(s):\n    return ''.join(reversed(s.rstrip()))",
+  "call": "f('ab        ')",
+  "expected": "'ba'",
+  "dataset": "cruxeval",
+  "source_group": "ca191c427e5c57430ebbf7e566a6f9850af653a1ed0feade6f709109f3221033",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s):\n    return ''.join(reversed(s.rstrip()))\n\nassert f('ab        ') ==",
+  "n_prompt_tokens": 185,
+  "raw_generation": " 'b        '\n",
+  "answer": "'b        '",
+  "generated_token_ids": [
+    651,
+    65,
+    436,
+    651,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'b        '",
+  "token_logprob": [
+    -0.011820511892437935,
+    -0.7574039697647095,
+    -1.185951828956604,
+    -0.492850124835968,
+    -0.20902882516384125
+  ],
+  "token_entropy": [
+    0.09020806849002838,
+    2.447324752807617,
+    2.4506444931030273,
+    0.7692247629165649,
+    0.5318114161491394
+  ],
+  "token_logprob_sum": [
+    -814091.1875,
+    -634088.9375,
+    -634859.25,
+    -809343.75,
+    -795964.25
+  ],
+  "token_topk_mean_logprob": [
+    -8.182329177856445,
+    -3.959747314453125,
+    -4.042201995849609,
+    -7.7803497314453125,
+    -8.209029197692871
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 174,
+  "read_token_ids": [
+    23411,
+    2312
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "case_id": "33:2",
+  "program_id": "33",
+  "code": "def decimal_To_Binary(N): \r\n    B_Number = 0\r\n    cnt = 0\r\n    while (N != 0): \r\n        rem = N % 2\r\n        c = pow(10,cnt)  \r\n        B_Number += rem*c  \r\n        N //= 2 \r\n        cnt += 1\r\n    return B_Number",
+  "call": "decimal_To_Binary(20)",
+  "expected": "10100",
+  "dataset": "mbpp",
+  "source_group": "c392e11503fda30b63dd635d56cf708bb81a979cfbacb2268693556c85e7dd6b",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef decimal_To_Binary(N): \r\n    B_Number = 0\r\n    cnt = 0\r\n    while (N != 0): \r\n        rem = N % 2\r\n        c = pow(10,cnt)  \r\n        B_Number += rem*c  \r\n        N //= 2 \r\n        cnt += 1\r\n    return B_Number\n\nassert decimal_To_Binary(20) ==",
+  "n_prompt_tokens": 259,
+  "raw_generation": "  10100\n",
+  "answer": "10100",
+  "generated_token_ids": [
+    243,
+    16,
+    15,
+    16,
+    15,
+    15,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 1,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "10100",
+  "token_logprob": [
+    -1.3590549230575562,
+    -0.03256111592054367,
+    -0.011049393564462662,
+    -0.008958976715803146,
+    -0.005542862229049206,
+    -0.01019449345767498,
+    -0.6016873717308044
+  ],
+  "token_entropy": [
+    2.5405478477478027,
+    0.19749072194099426,
+    0.08297459781169891,
+    0.061224695295095444,
+    0.041938234120607376,
+    0.0702206939458847,
+    1.1320408582687378
+  ],
+  "token_logprob_sum": [
+    -661465.625,
+    -791595.125,
+    -835505.25,
+    -814926.4375,
+    -834986.5625,
+    -805077.5,
+    -739775.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.002805233001709,
+    -7.863811016082764,
+    -8.286048889160156,
+    -9.33708381652832,
+    -10.05866813659668,
+    -9.603944778442383,
+    -6.126687526702881
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 245,
+  "read_token_ids": [
+    7932,
+    2312
+  ]
+}

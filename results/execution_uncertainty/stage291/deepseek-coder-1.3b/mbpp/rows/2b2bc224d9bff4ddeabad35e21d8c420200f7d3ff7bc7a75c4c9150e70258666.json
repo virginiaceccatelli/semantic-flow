@@ -1,0 +1,63 @@
+{
+  "case_id": "315:0",
+  "program_id": "315",
+  "code": "def find_Max_Len_Even(str): \r\n    n = len(str) \r\n    i = 0\r\n    currlen = 0\r\n    maxlen = 0\r\n    st = -1\r\n    while (i < n): \r\n        if (str[i] == ' '): \r\n            if (currlen % 2 == 0): \r\n                if (maxlen < currlen): \r\n                    maxlen = currlen \r\n                    st = i - currlen \r\n            currlen = 0 \r\n        else : \r\n            currlen += 1\r\n        i += 1\r\n    if (currlen % 2 == 0): \r\n        if (maxlen < currlen): \r\n            maxlen = currlen \r\n            st = i - currlen \r\n    if (st == -1): \r\n        return \"-1\" \r\n    return str[st: st + maxlen]",
+  "call": "find_Max_Len_Even(\"python language\")",
+  "expected": "'language'",
+  "dataset": "mbpp",
+  "source_group": "b61aba98b7ae88be49027c96494066e107c7bb804573caba347e6a117baaa564",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef find_Max_Len_Even(str): \r\n    n = len(str) \r\n    i = 0\r\n    currlen = 0\r\n    maxlen = 0\r\n    st = -1\r\n    while (i < n): \r\n        if (str[i] == ' '): \r\n            if (currlen % 2 == 0): \r\n                if (maxlen < currlen): \r\n                    maxlen = currlen \r\n                    st = i - currlen \r\n            currlen = 0 \r\n        else : \r\n            currlen += 1\r\n        i += 1\r\n    if (currlen % 2 == 0): \r\n        if (maxlen < currlen): \r\n            maxlen = currlen \r\n            st = i - currlen \r\n    if (st == -1): \r\n        return \"-1\" \r\n    return str[st: st + maxlen]\n\nassert find_Max_Len_Even(\"python language\") ==",
+  "n_prompt_tokens": 402,
+  "raw_generation": " \"python\"\n",
+  "answer": "\"python\"",
+  "generated_token_ids": [
+    440,
+    11364,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'python'",
+  "token_logprob": [
+    -0.1649920642375946,
+    -1.6902494430541992,
+    -0.254543662071228,
+    -0.36338379979133606
+  ],
+  "token_entropy": [
+    0.5979949235916138,
+    4.073594570159912,
+    1.1176408529281616,
+    0.9351530075073242
+  ],
+  "token_logprob_sum": [
+    -765631.4375,
+    -544474.875,
+    -577843.125,
+    -741161.75
+  ],
+  "token_topk_mean_logprob": [
+    -6.671241760253906,
+    -3.8621246814727783,
+    -5.679543972015381,
+    -7.2008843421936035
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 386,
+  "read_token_ids": [
+    60,
+    2312
+  ]
+}

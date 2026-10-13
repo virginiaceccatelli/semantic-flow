@@ -1,0 +1,68 @@
+{
+  "case_id": "330:1",
+  "program_id": "330",
+  "code": "import re\r\ndef find_char(text):\r\n  return (re.findall(r\"\\b\\w{3,5}\\b\", text))",
+  "call": "find_char('Certain service are subject to change MSR')",
+  "expected": "['are', 'MSR']",
+  "dataset": "mbpp",
+  "source_group": "b2d9f4194f72d4aca4716b872dbbbdeafd2e081d2374def170410e235b63298a",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport re\r\ndef find_char(text):\r\n  return (re.findall(r\"\\b\\w{3,5}\\b\", text))\n\nassert find_char('Certain service are subject to change MSR') ==",
+  "n_prompt_tokens": 208,
+  "raw_generation": " ['MSR']\n",
+  "answer": "['MSR']",
+  "generated_token_ids": [
+    12036,
+    4941,
+    49,
+    3676,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "['MSR']",
+  "token_logprob": [
+    -0.1029299944639206,
+    -0.9623061418533325,
+    -0.004128861241042614,
+    -0.07009950280189514,
+    -0.43182823061943054
+  ],
+  "token_entropy": [
+    0.5555018186569214,
+    2.2606635093688965,
+    0.03652471303939819,
+    0.33663761615753174,
+    0.9256492853164673
+  ],
+  "token_logprob_sum": [
+    -710315.875,
+    -608368.625,
+    -832266.75,
+    -707847.625,
+    -712771.375
+  ],
+  "token_topk_mean_logprob": [
+    -5.887304782867432,
+    -4.724806308746338,
+    -9.179129600524902,
+    -7.657600402832031,
+    -7.8443284034729
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 189,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

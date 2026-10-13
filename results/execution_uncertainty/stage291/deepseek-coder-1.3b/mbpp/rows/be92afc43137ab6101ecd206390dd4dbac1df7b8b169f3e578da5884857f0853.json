@@ -1,0 +1,83 @@
+{
+  "case_id": "499:2",
+  "program_id": "499",
+  "code": "def diameter_circle(r):\r\n  diameter=2*r\r\n  return diameter",
+  "call": "diameter_circle(15)",
+  "expected": "30",
+  "dataset": "mbpp",
+  "source_group": "3d8cf732fa24fc8d4e8e0ccf3a686aa139a2d994fc1a545d246e8ad28cf918ad",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef diameter_circle(r):\r\n  diameter=2*r\r\n  return diameter\n\nassert diameter_circle(15) ==",
+  "n_prompt_tokens": 185,
+  "raw_generation": " diameter_circle(15)\n",
+  "answer": "diameter_circle(15)",
+  "generated_token_ids": [
+    18639,
+    62,
+    15687,
+    7,
+    16,
+    20,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "invalid",
+  "answer_form": null,
+  "invalid_reason": "no_single_value",
+  "parsed_answer": null,
+  "token_logprob": [
+    -0.8076558709144592,
+    -0.10032347589731216,
+    -0.006997483782470226,
+    -0.04637327045202255,
+    -0.6466072797775269,
+    -0.778144121170044,
+    -0.04915188252925873,
+    -0.9320598840713501
+  ],
+  "token_entropy": [
+    2.2019152641296387,
+    0.5361573696136475,
+    0.0738663524389267,
+    0.3150056004524231,
+    1.6418683528900146,
+    1.7058111429214478,
+    0.3220391571521759,
+    1.7735517024993896
+  ],
+  "token_logprob_sum": [
+    -638994.375,
+    -687258.25,
+    -774614.9375,
+    -712615.875,
+    -709844.0,
+    -725405.6875,
+    -693007.0,
+    -676217.5625
+  ],
+  "token_topk_mean_logprob": [
+    -4.184999942779541,
+    -6.086163520812988,
+    -8.406997680664062,
+    -6.324888706207275,
+    -5.421607494354248,
+    -6.003143787384033,
+    -6.449151515960693,
+    -5.132059574127197
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 173,
+  "read_token_ids": [
+    18639,
+    2312
+  ]
+}

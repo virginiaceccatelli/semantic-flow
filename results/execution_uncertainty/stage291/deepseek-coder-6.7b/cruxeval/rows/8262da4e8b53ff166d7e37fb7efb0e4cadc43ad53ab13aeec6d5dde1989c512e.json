@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_703",
+  "program_id": "sample_703",
+  "code": "def f(text, char):\n    count = text.count(char*2)\n    return text[count:]",
+  "call": "f('vzzv2sg', 'z')",
+  "expected": "'zzv2sg'",
+  "dataset": "cruxeval",
+  "source_group": "38b80fc15644b902e3c6c6eb38f9364502f8abb9a90d573ea731564d215e88dd",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text, char):\n    count = text.count(char*2)\n    return text[count:]\n\nassert f('vzzv2sg', 'z') ==",
+  "n_prompt_tokens": 195,
+  "raw_generation": " '2sg'\n",
+  "answer": "'2sg'",
+  "generated_token_ids": [
+    651,
+    17,
+    7648,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'2sg'",
+  "token_logprob": [
+    -0.04202926531434059,
+    -0.569567084312439,
+    -0.025881417095661163,
+    -0.01079163234680891,
+    -0.11590475589036942
+  ],
+  "token_entropy": [
+    0.21367739140987396,
+    1.313331961631775,
+    0.15126071870326996,
+    0.07170888036489487,
+    0.3652309775352478
+  ],
+  "token_logprob_sum": [
+    -834739.0,
+    -726016.75,
+    -840353.0,
+    -809995.5,
+    -827108.0625
+  ],
+  "token_topk_mean_logprob": [
+    -8.36077880859375,
+    -6.269566535949707,
+    -8.825881958007812,
+    -9.535792350769043,
+    -9.437779426574707
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 179,
+  "read_token_ids": [
+    28442,
+    2312
+  ]
+}

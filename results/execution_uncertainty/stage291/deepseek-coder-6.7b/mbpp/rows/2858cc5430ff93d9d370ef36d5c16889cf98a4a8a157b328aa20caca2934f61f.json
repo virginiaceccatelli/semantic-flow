@@ -1,0 +1,53 @@
+{
+  "case_id": "77:2",
+  "program_id": "77",
+  "code": "def is_Diff(n): \r\n    return (n % 11 == 0)",
+  "call": "is_Diff(1212)",
+  "expected": "False",
+  "dataset": "mbpp",
+  "source_group": "faff1b76d5c4db368d4d6ed489c7631818084dd132eb8306f8569d6bf586a922",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef is_Diff(n): \r\n    return (n % 11 == 0)\n\nassert is_Diff(1212) ==",
+  "n_prompt_tokens": 188,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.4410909116268158,
+    -0.42265400290489197
+  ],
+  "token_entropy": [
+    0.7396306991577148,
+    1.0381934642791748
+  ],
+  "token_logprob_sum": [
+    -719073.8125,
+    -732125.1875
+  ],
+  "token_topk_mean_logprob": [
+    -7.412965297698975,
+    -6.672654628753662
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 174,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

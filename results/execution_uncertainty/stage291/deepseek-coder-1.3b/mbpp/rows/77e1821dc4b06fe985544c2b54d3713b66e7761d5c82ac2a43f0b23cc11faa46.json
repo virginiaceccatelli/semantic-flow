@@ -1,0 +1,53 @@
+{
+  "case_id": "303:0",
+  "program_id": "303",
+  "code": "import sys \r\ndef solve(a,n):   \r\n    mx = -sys.maxsize - 1\r\n    for j in range(1,n):  \r\n        if (mx > a[j]):  \r\n            return False  \r\n        mx = max(mx,a[j - 1])    \r\n    return True",
+  "call": "solve([1,0,2],3)",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "75e19e9c7da69fc276121bbfc4d5cba5129309fd46076f3c60a4e56de6dd1a58",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nimport sys \r\ndef solve(a,n):   \r\n    mx = -sys.maxsize - 1\r\n    for j in range(1,n):  \r\n        if (mx > a[j]):  \r\n            return False  \r\n        mx = max(mx,a[j - 1])    \r\n    return True\n\nassert solve([1,0,2],3) ==",
+  "n_prompt_tokens": 250,
+  "raw_generation": " True\n",
+  "answer": "True",
+  "generated_token_ids": [
+    10502,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": true,
+  "strict_correct": true,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "True",
+  "token_logprob": [
+    -0.5851225852966309,
+    -0.24534215033054352
+  ],
+  "token_entropy": [
+    0.7582594156265259,
+    0.791538655757904
+  ],
+  "token_logprob_sum": [
+    -721596.3125,
+    -751241.5625
+  ],
+  "token_topk_mean_logprob": [
+    -7.635122776031494,
+    -6.5086236000061035
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 235,
+  "read_token_ids": [
+    10502,
+    2312
+  ]
+}

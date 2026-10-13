@@ -1,0 +1,68 @@
+{
+  "case_id": "sample_98",
+  "program_id": "sample_98",
+  "code": "def f(s):\n    return sum([s.istitle() for s in s.split()])",
+  "call": "f('SOME OF THIS Is uknowN!')",
+  "expected": "1",
+  "dataset": "cruxeval",
+  "source_group": "86e884fe8551de3e04cf132712d2d5b8258b31ef2eb2962ab43557a8a1ef2ffa",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(s):\n    return sum([s.istitle() for s in s.split()])\n\nassert f('SOME OF THIS Is uknowN!') ==",
+  "n_prompt_tokens": 193,
+  "raw_generation": " 'SOME'\n",
+  "answer": "'SOME'",
+  "generated_token_ids": [
+    651,
+    50,
+    11115,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 5,
+  "answer_first_offset": 0,
+  "answer_last_offset": 3,
+  "terminator_offset": 4,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'SOME'",
+  "token_logprob": [
+    -0.7044411897659302,
+    -1.9014462232589722,
+    -0.7050912380218506,
+    -0.6493147611618042,
+    -0.2619277238845825
+  ],
+  "token_entropy": [
+    2.168631076812744,
+    4.300909996032715,
+    2.7290024757385254,
+    2.1374123096466064,
+    0.5996864438056946
+  ],
+  "token_logprob_sum": [
+    -687812.375,
+    -574452.3125,
+    -552009.875,
+    -570247.75,
+    -798767.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.0645976066589355,
+    -3.638946533203125,
+    -4.808216571807861,
+    -4.499314785003662,
+    -8.199427604675293
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 176,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

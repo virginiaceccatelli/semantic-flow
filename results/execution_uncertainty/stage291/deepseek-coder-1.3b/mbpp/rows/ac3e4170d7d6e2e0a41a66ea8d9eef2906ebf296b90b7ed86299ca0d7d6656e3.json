@@ -1,0 +1,78 @@
+{
+  "case_id": "264:2",
+  "program_id": "264",
+  "code": "def dog_age(h_age):\r\n if h_age < 0:\r\n \texit()\r\n elif h_age <= 2:\r\n\t d_age = h_age * 10.5\r\n else:\r\n\t d_age = 21 + (h_age - 2)*4\r\n return d_age",
+  "call": "dog_age(24)",
+  "expected": "109",
+  "dataset": "mbpp",
+  "source_group": "f8f1937cba8566d656e0bb62ae4bf44f6f835d00e59c01cfdd383ace8939b065",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef dog_age(h_age):\r\n if h_age < 0:\r\n \texit()\r\n elif h_age <= 2:\r\n\t d_age = h_age * 10.5\r\n else:\r\n\t d_age = 21 + (h_age - 2)*4\r\n return d_age\n\nassert dog_age(24) ==",
+  "n_prompt_tokens": 243,
+  "raw_generation": " '24.0'\n",
+  "answer": "'24.0'",
+  "generated_token_ids": [
+    651,
+    17,
+    19,
+    13,
+    15,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 7,
+  "answer_first_offset": 0,
+  "answer_last_offset": 5,
+  "terminator_offset": 6,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'24.0'",
+  "token_logprob": [
+    -1.159837007522583,
+    -1.1290556192398071,
+    -0.6428660154342651,
+    -0.6848440170288086,
+    -0.22329384088516235,
+    -0.24309042096138,
+    -0.2227707803249359
+  ],
+  "token_entropy": [
+    2.677321672439575,
+    3.319178342819214,
+    1.6691243648529053,
+    1.9816639423370361,
+    0.748193085193634,
+    1.230019211769104,
+    0.7269091606140137
+  ],
+  "token_logprob_sum": [
+    -641935.3125,
+    -602927.25,
+    -654592.5,
+    -604933.0,
+    -679718.625,
+    -601082.75,
+    -722710.0
+  ],
+  "token_topk_mean_logprob": [
+    -3.991086721420288,
+    -3.8103058338165283,
+    -6.242866516113281,
+    -4.734844207763672,
+    -7.635794162750244,
+    -5.430591106414795,
+    -7.251774787902832
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 231,
+  "read_token_ids": [
+    490,
+    2312
+  ]
+}

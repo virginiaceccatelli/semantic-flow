@@ -1,0 +1,63 @@
+{
+  "case_id": "409:0",
+  "program_id": "409",
+  "code": "def min_product_tuple(list1):\r\n    result_min = min([abs(x * y) for x, y in list1] )\r\n    return result_min",
+  "call": "min_product_tuple([(2, 7), (2, 6), (1, 8), (4, 9)] )",
+  "expected": "8",
+  "dataset": "mbpp",
+  "source_group": "12eac3e2d8d899a6066fc28368aac2e7d6894c42ca45ad3f65be1969d84af54b",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef min_product_tuple(list1):\r\n    result_min = min([abs(x * y) for x, y in list1] )\r\n    return result_min\n\nassert min_product_tuple([(2, 7), (2, 6), (1, 8), (4, 9)] ) ==",
+  "n_prompt_tokens": 232,
+  "raw_generation": " -12\n",
+  "answer": "-12",
+  "generated_token_ids": [
+    567,
+    16,
+    17,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "-12",
+  "token_logprob": [
+    -0.7447917461395264,
+    -0.9958697557449341,
+    -1.6215063333511353,
+    -0.3948304355144501
+  ],
+  "token_entropy": [
+    1.9135624170303345,
+    1.8931187391281128,
+    2.3404414653778076,
+    1.1761531829833984
+  ],
+  "token_logprob_sum": [
+    -690461.25,
+    -686946.5,
+    -737601.75,
+    -728988.375
+  ],
+  "token_topk_mean_logprob": [
+    -4.551042079925537,
+    -6.1833696365356445,
+    -4.246506690979004,
+    -5.313580513000488
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 195,
+  "read_token_ids": [
+    1513,
+    2312
+  ]
+}

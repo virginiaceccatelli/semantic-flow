@@ -1,0 +1,83 @@
+{
+  "case_id": "219:0",
+  "program_id": "219",
+  "code": "\r\ndef extract_min_max(test_tup, K):\r\n  res = []\r\n  test_tup = list(test_tup)\r\n  temp = sorted(test_tup)\r\n  for idx, val in enumerate(temp):\r\n    if idx < K or idx >= len(temp) - K:\r\n      res.append(val)\r\n  res = tuple(res)\r\n  return (res)",
+  "call": "extract_min_max((5, 20, 3, 7, 6, 8), 2)",
+  "expected": "(3, 5, 8, 20)",
+  "dataset": "mbpp",
+  "source_group": "61781fbbd969a27eab0aaa3985c9ef50114729c48ea8e86429b4a7dc050fdbd2",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\n\r\ndef extract_min_max(test_tup, K):\r\n  res = []\r\n  test_tup = list(test_tup)\r\n  temp = sorted(test_tup)\r\n  for idx, val in enumerate(temp):\r\n    if idx < K or idx >= len(temp) - K:\r\n      res.append(val)\r\n  res = tuple(res)\r\n  return (res)\n\nassert extract_min_max((5, 20, 3, 7, 6, 8), 2) ==",
+  "n_prompt_tokens": 289,
+  "raw_generation": " (3, 20)\n",
+  "answer": "(3, 20)",
+  "generated_token_ids": [
+    334,
+    18,
+    11,
+    207,
+    17,
+    15,
+    8,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 8,
+  "answer_first_offset": 0,
+  "answer_last_offset": 6,
+  "terminator_offset": 7,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "(3, 20)",
+  "token_logprob": [
+    -0.01052873209118843,
+    -0.522720217704773,
+    -0.01176537573337555,
+    -0.025422001257538795,
+    -0.9157760739326477,
+    -0.000263894529780373,
+    -0.009713645093142986,
+    -0.3805907666683197
+  ],
+  "token_entropy": [
+    0.08359300345182419,
+    1.2222254276275635,
+    0.0758541077375412,
+    0.14861121773719788,
+    1.3053646087646484,
+    0.0028780156280845404,
+    0.06910142302513123,
+    0.9034416675567627
+  ],
+  "token_logprob_sum": [
+    -793284.625,
+    -804169.125,
+    -791428.625,
+    -837318.0625,
+    -832256.4375,
+    -950203.75,
+    -828826.25,
+    -716559.75
+  ],
+  "token_topk_mean_logprob": [
+    -8.273028373718262,
+    -7.333657741546631,
+    -9.73676586151123,
+    -8.812922477722168,
+    -9.522026062011719,
+    -12.531514167785645,
+    -9.403464317321777,
+    -7.780591011047363
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 257,
+  "read_token_ids": [
+    8,
+    2312
+  ]
+}

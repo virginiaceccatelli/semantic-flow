@@ -1,0 +1,58 @@
+{
+  "case_id": "258:2",
+  "program_id": "258",
+  "code": "def count_odd(array_nums):\r\n   count_odd = len(list(filter(lambda x: (x%2 != 0) , array_nums)))\r\n   return count_odd",
+  "call": "count_odd([1, 2, 4, 8, 9])",
+  "expected": "2",
+  "dataset": "mbpp",
+  "source_group": "8f681f9ec80a950a15623fb865c31625acf9bf947fbc806bf24c010c0c490f59",
+  "has_branch": false,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef count_odd(array_nums):\r\n   count_odd = len(list(filter(lambda x: (x%2 != 0) , array_nums)))\r\n   return count_odd\n\nassert count_odd([1, 2, 4, 8, 9]) ==",
+  "n_prompt_tokens": 223,
+  "raw_generation": "  3\n",
+  "answer": "3",
+  "generated_token_ids": [
+    243,
+    18,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 3,
+  "answer_first_offset": 1,
+  "answer_last_offset": 1,
+  "terminator_offset": 2,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "3",
+  "token_logprob": [
+    -1.23020601272583,
+    -0.6945504546165466,
+    -0.3760581910610199
+  ],
+  "token_entropy": [
+    2.6984822750091553,
+    1.3074465990066528,
+    0.959562361240387
+  ],
+  "token_logprob_sum": [
+    -647442.75,
+    -745240.125,
+    -730085.4375
+  ],
+  "token_topk_mean_logprob": [
+    -3.855206251144409,
+    -7.5195512771606445,
+    -6.844809055328369
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 200,
+  "read_token_ids": [
+    16809,
+    2312
+  ]
+}

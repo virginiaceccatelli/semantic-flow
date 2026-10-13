@@ -1,0 +1,63 @@
+{
+  "case_id": "103:2",
+  "program_id": "103",
+  "code": "def eulerian_num(n, m): \r\n\tif (m >= n or n == 0): \r\n\t\treturn 0 \r\n\tif (m == 0): \r\n\t\treturn 1 \r\n\treturn ((n - m) * eulerian_num(n - 1, m - 1) +(m + 1) * eulerian_num(n - 1, m))",
+  "call": "eulerian_num(5, 3)",
+  "expected": "26",
+  "dataset": "mbpp",
+  "source_group": "f4a14eb7230067eb2bed2b72155de773667fb4454211f1c7745f0c073cf120ac",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef eulerian_num(n, m): \r\n\tif (m >= n or n == 0): \r\n\t\treturn 0 \r\n\tif (m == 0): \r\n\t\treturn 1 \r\n\treturn ((n - m) * eulerian_num(n - 1, m - 1) +(m + 1) * eulerian_num(n - 1, m))\n\nassert eulerian_num(5, 3) ==",
+  "n_prompt_tokens": 262,
+  "raw_generation": "  15\n",
+  "answer": "15",
+  "generated_token_ids": [
+    243,
+    16,
+    20,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 1,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "15",
+  "token_logprob": [
+    -1.172762393951416,
+    -0.254396915435791,
+    -0.7062410712242126,
+    -0.5499130487442017
+  ],
+  "token_entropy": [
+    2.1717350482940674,
+    0.9941901564598083,
+    1.5948561429977417,
+    1.4351797103881836
+  ],
+  "token_logprob_sum": [
+    -667686.375,
+    -760985.375,
+    -777868.9375,
+    -746066.75
+  ],
+  "token_topk_mean_logprob": [
+    -4.166512489318848,
+    -6.310646057128906,
+    -5.221866130828857,
+    -5.149913311004639
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 246,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

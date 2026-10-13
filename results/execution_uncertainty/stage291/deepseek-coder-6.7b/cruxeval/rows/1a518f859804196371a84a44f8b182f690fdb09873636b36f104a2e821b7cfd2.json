@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_201",
+  "program_id": "sample_201",
+  "code": "def f(text):\n    chars = []\n    for c in text:\n        if c.isdigit():\n            chars.append(c)\n    return ''.join(chars[::-1])",
+  "call": "f('--4yrw 251-//4 6p')",
+  "expected": "'641524'",
+  "dataset": "cruxeval",
+  "source_group": "bf5ada29803aadd4bd740c4bdf144d4ad5375106b7c54e541c2309472becff56",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    chars = []\n    for c in text:\n        if c.isdigit():\n            chars.append(c)\n    return ''.join(chars[::-1])\n\nassert f('--4yrw 251-//4 6p') ==",
+  "n_prompt_tokens": 225,
+  "raw_generation": " '152'\n",
+  "answer": "'152'",
+  "generated_token_ids": [
+    651,
+    16,
+    20,
+    17,
+    6,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'152'",
+  "token_logprob": [
+    -0.008279169909656048,
+    -0.7833912968635559,
+    -0.6340433955192566,
+    -0.006272391881793737,
+    -0.2344571202993393,
+    -0.2045019268989563
+  ],
+  "token_entropy": [
+    0.06036009639501572,
+    1.426770567893982,
+    0.7042043805122375,
+    0.044702690094709396,
+    0.6994937062263489,
+    0.4997314214706421
+  ],
+  "token_logprob_sum": [
+    -856989.5,
+    -786594.125,
+    -920854.5,
+    -967687.625,
+    -870057.25,
+    -806470.5
+  ],
+  "token_topk_mean_logprob": [
+    -9.54577922821045,
+    -7.658390998840332,
+    -10.077794075012207,
+    -10.612523078918457,
+    -7.446957588195801,
+    -9.460752487182617
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 203,
+  "read_token_ids": [
+    5589,
+    2312
+  ]
+}

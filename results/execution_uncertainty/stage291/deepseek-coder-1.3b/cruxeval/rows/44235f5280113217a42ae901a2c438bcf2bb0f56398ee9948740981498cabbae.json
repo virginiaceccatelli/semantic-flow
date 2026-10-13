@@ -1,0 +1,73 @@
+{
+  "case_id": "sample_376",
+  "program_id": "sample_376",
+  "code": "def f(text):\n    for i in range(len(text)):\n        if text[0:i].startswith(\"two\"):\n            return text[i:]\n    return 'no'",
+  "call": "f(\"2two programmers\")",
+  "expected": "'no'",
+  "dataset": "cruxeval",
+  "source_group": "b91799161c26510d18b4528852c03ffd3a90974acef2dcd924bd0ae10a7dfe25",
+  "has_branch": true,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef f(text):\n    for i in range(len(text)):\n        if text[0:i].startswith(\"two\"):\n            return text[i:]\n    return 'no'\n\nassert f(\"2two programmers\") ==",
+  "n_prompt_tokens": 211,
+  "raw_generation": " \"two programmers\"\n",
+  "answer": "\"two programmers\"",
+  "generated_token_ids": [
+    440,
+    9502,
+    2031,
+    19311,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 6,
+  "answer_first_offset": 0,
+  "answer_last_offset": 4,
+  "terminator_offset": 5,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'two programmers'",
+  "token_logprob": [
+    -0.7099584341049194,
+    -0.5664061903953552,
+    -0.08503474295139313,
+    -0.00319446949288249,
+    -0.004875082056969404,
+    -0.0443279929459095
+  ],
+  "token_entropy": [
+    0.8056341409683228,
+    2.3141238689422607,
+    0.3319023847579956,
+    0.024189403280615807,
+    0.04058114066720009,
+    0.1979096531867981
+  ],
+  "token_logprob_sum": [
+    -795260.8125,
+    -607972.875,
+    -700434.375,
+    -866878.625,
+    -735811.25,
+    -818470.75
+  ],
+  "token_topk_mean_logprob": [
+    -7.447457790374756,
+    -4.135156154632568,
+    -8.085034370422363,
+    -11.060812950134277,
+    -9.108000755310059,
+    -9.334953308105469
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 199,
+  "read_token_ids": [
+    6,
+    2312
+  ]
+}

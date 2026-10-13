@@ -1,0 +1,63 @@
+{
+  "case_id": "326:1",
+  "program_id": "326",
+  "code": "from collections import defaultdict \r\n\r\ndef most_occurrences(test_list):\r\n  temp = defaultdict(int)\r\n  for sub in test_list:\r\n    for wrd in sub.split():\r\n      temp[wrd] += 1\r\n  res = max(temp, key=temp.get)\r\n  return (str(res))",
+  "call": "most_occurrences([\"Its been a great year\", \"this year is so worse\", \"this year is okay\"] )",
+  "expected": "'year'",
+  "dataset": "mbpp",
+  "source_group": "255869a5b515e5b6f2fbab0dedd4eb1366dddfc059c5b4dbbc90af07c473b296",
+  "has_branch": false,
+  "has_loop": true,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\nfrom collections import defaultdict \r\n\r\ndef most_occurrences(test_list):\r\n  temp = defaultdict(int)\r\n  for sub in test_list:\r\n    for wrd in sub.split():\r\n      temp[wrd] += 1\r\n  res = max(temp, key=temp.get)\r\n  return (str(res))\n\nassert most_occurrences([\"Its been a great year\", \"this year is so worse\", \"this year is okay\"] ) ==",
+  "n_prompt_tokens": 273,
+  "raw_generation": " \"this\"\n",
+  "answer": "\"this\"",
+  "generated_token_ids": [
+    440,
+    1563,
+    1,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 4,
+  "answer_first_offset": 0,
+  "answer_last_offset": 2,
+  "terminator_offset": 3,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "'this'",
+  "token_logprob": [
+    -0.5781176090240479,
+    -1.2792118787765503,
+    -0.04322826862335205,
+    -0.3478827178478241
+  ],
+  "token_entropy": [
+    1.1228864192962646,
+    2.9726130962371826,
+    0.22189611196517944,
+    0.8527209758758545
+  ],
+  "token_logprob_sum": [
+    -719802.125,
+    -624776.25,
+    -784236.25,
+    -730267.875
+  ],
+  "token_topk_mean_logprob": [
+    -5.9781174659729,
+    -3.7698371410369873,
+    -8.386978149414062,
+    -7.722882270812988
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 240,
+  "read_token_ids": [
+    1435,
+    2312
+  ]
+}

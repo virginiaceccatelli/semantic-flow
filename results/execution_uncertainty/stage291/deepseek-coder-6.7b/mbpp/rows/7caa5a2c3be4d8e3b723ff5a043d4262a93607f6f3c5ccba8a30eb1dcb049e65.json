@@ -1,0 +1,53 @@
+{
+  "case_id": "405:2",
+  "program_id": "405",
+  "code": "def check_tuplex(tuplex,tuple1): \r\n  if tuple1 in tuplex:\r\n    return True\r\n  else:\r\n     return False",
+  "call": "check_tuplex((\"w\", 3, \"r\", \"e\", \"s\", \"o\", \"u\", \"r\", \"c\",\"e\"),3)",
+  "expected": "True",
+  "dataset": "mbpp",
+  "source_group": "6a24d2afb67a7a5f32abb55728e10591681e97aa340cae8559cfb2f4848d323b",
+  "has_branch": true,
+  "has_loop": false,
+  "prompt": "# Python execution: each assertion is completed with the exact value the call\n# returns, written as a single Python literal.\n\ndef f(items, k):\n    return [x * k for x in items if x % 2 == 0]\n\nassert f([1, 2, 3, 4], 3) == [6, 12]\n\n\ndef f(text):\n    return text.strip().title(), len(text)\n\nassert f('  big cat ') == ('Big Cat', 10)\n\n\ndef f(n):\n    return n > 3 and n % 2 == 1\n\nassert f(4) == False\n\n\ndef check_tuplex(tuplex,tuple1): \r\n  if tuple1 in tuplex:\r\n    return True\r\n  else:\r\n     return False\n\nassert check_tuplex((\"w\", 3, \"r\", \"e\", \"s\", \"o\", \"u\", \"r\", \"c\",\"e\"),3) ==",
+  "n_prompt_tokens": 237,
+  "raw_generation": " False\n",
+  "answer": "False",
+  "generated_token_ids": [
+    14729,
+    185
+  ],
+  "stop_reason": "newline",
+  "n_generated_tokens": 2,
+  "answer_first_offset": 0,
+  "answer_last_offset": 0,
+  "terminator_offset": 1,
+  "correct": false,
+  "strict_correct": false,
+  "answer_status": "parsed",
+  "answer_form": "literal",
+  "invalid_reason": null,
+  "parsed_answer": "False",
+  "token_logprob": [
+    -0.6394575834274292,
+    -0.4710320234298706
+  ],
+  "token_entropy": [
+    1.0485624074935913,
+    1.016476035118103
+  ],
+  "token_logprob_sum": [
+    -671679.3125,
+    -713679.9375
+  ],
+  "token_topk_mean_logprob": [
+    -5.939457893371582,
+    -6.733532905578613
+  ],
+  "vocab_size": 32256,
+  "status": "ok",
+  "code_end_index": 195,
+  "read_token_ids": [
+    14729,
+    2312
+  ]
+}
