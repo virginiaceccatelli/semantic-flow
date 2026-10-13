@@ -297,3 +297,61 @@ grids). `*.npz` files are git-ignored, so run `analyze` where the runs live or
 copy `readout.npz` along with the other files.
 
 Tests: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest tests/test_execution_uncertainty_sweep.py -q`.
+
+# Stage 292: the published U-Space pipeline with reasoning models
+
+Stage 291 found no U-Space signal beyond entropy in base code models answering
+directly. The paper reads the state at the end of a reasoning trace, so stage 292
+runs the **upstream pipeline itself** (s2labres/U-Space at the pinned commit in
+`third_party/u-space/COMMIT`, cloned to `third_party/u-space-pipeline/`) on the same
+execution-verified CRUXEval and MBPP calls.
+
+## What is upstream and what is added
+
+Upstream steps 01–07 run unmodified: item sampling, vLLM generation with the
+paper's sampling settings and token budgets, labelling at the end-of-thinking
+token (truncated, marker-less and answer-less traces excluded), teacher-forced
+forward pass, basis at the paper's readout block, all methods, Tables 1–2. The
+model entries in `configs/uspace_reasoning.yaml` are verbatim copies of upstream's
+(Qwen3.5-4B from `smoke.yaml`; Magistral, Qwen3.5-27B, Gemma-4-31B from
+`reproduce.yaml`). `src/execution_uncertainty/reasoning.py` supplies the only three
+per-benchmark hooks the steps use:
+
+- **Items:** the stage-290 prepared cases (every call; `items.n` exceeds both pools).
+- **Prompt:** CRUXEval's official chain-of-thought output prompt
+  (`make_cot_output_prompt`, cruxeval commit 190faf16), verbatim; identical to the
+  official function on all 726 CRUXEval calls. MBPP uses the same template with its
+  own call.
+- **Grading:** CRUXEval's extraction rule on the post-thinking text (last
+  `[ANSWER]` block, then after the first `==`; otherwise the last assertion line;
+  otherwise no answer, which upstream excludes), graded by the stage-291 grader.
+
+Both repositories name their package `src`; `reasoning.bootstrap` imports this
+repository's adapters first, re-registers them under `semflow_src.*`, and then lets
+`src` resolve to the upstream checkout (verified at the pinned commit).
+
+`reasoning_analysis.py` adds, from upstream's saved end-of-thinking states:
+
+- `controls` (after step 05): 32 random-word bases at the readout block with the
+  published construction; asserts that the main basis reproduces upstream's step-05
+  basis and that the recomputed A_cone matches upstream's scores.
+- `analyze`: per model × benchmark × seed, the upstream methods table; U-Lens against
+  its own entropy factor (mean entropy over the thinking block) with a group
+  bootstrap; A_cone raw and entropy-matched, each against the random-word null;
+  end-of-thinking corners with a likelihood-ratio test beyond entropy and length
+  (also against the null), a held-out worst-corner test on hashed source-group
+  halves, and per-category AUROC on both halves.
+
+## Commands (cluster)
+
+```bash
+bash jobs/uspace_reasoning.sh setup                         # clone + .venv-uspace (vLLM 0.23, torch 2.11)
+MODEL=qwen4b bash jobs/uspace_reasoning.sh download         # weights + published J-lens
+MODEL=qwen4b SEEDS=42 bash jobs/uspace_reasoning.sh run     # GPU: steps 01–06 + controls
+MODELS=qwen4b SEEDS=42 bash jobs/uspace_reasoning.sh tables # upstream Tables 1–2
+bash jobs/uspace_reasoning.sh analyze                       # repository venv, CPU
+```
+
+Outputs: `results/uspace_reasoning/{items,labels,forward,uspace,scores,controls,tables,analysis}`;
+`traces/` and `*.npz` are git-ignored. Tests:
+`USPACE_PIPELINE=<checkout> python -m pytest tests/test_uspace_reasoning.py -q`.

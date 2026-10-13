@@ -98,10 +98,10 @@ def control_terms(tokenizer, terms, n_controls, seed=0):
     counts = {c: {s: sum(w in used for w in terms[c][s]) for s in ("anchors", "poles")} for c in terms}
     excluded = set(used.values())
     pool = []
-    for tid in range(len(tokenizer.get_vocab())):
-        text = tokenizer.decode([tid], clean_up_tokenization_spaces=False)
-        word = text[1:] if text.startswith(" ") else None
-        if word and re.fullmatch(r"[a-z]{4,}", word) and tid not in excluded and \
+    for tid in sorted(set(tokenizer.get_vocab().values())):
+        # Some decoders drop the leading space of a lone token; the round trip decides.
+        word = tokenizer.decode([tid], clean_up_tokenization_spaces=False).strip()
+        if re.fullmatch(r"[a-z]{4,}", word) and tid not in excluded and \
                 tokenizer.encode(" " + word, add_special_tokens=False) == [tid]:
             pool.append(word)
     need = sum(n for c in counts.values() for n in c.values())
