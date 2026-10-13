@@ -9,6 +9,7 @@ See docs/EXECUTION_UNCERTAINTY.md, section "Stage 292".
 """
 import argparse
 import logging
+import os
 from pathlib import Path
 import runpy
 import sys
@@ -56,6 +57,10 @@ def main():
         if name not in STEPS:
             raise SystemExit(f"Unknown step {name}; choose from {STEPS}")
         rest = filtered_config(rest)
+        # vLLM forks its engine core by default; if CUDA is already initialised in the
+        # parent (torch 2.11 / vLLM 0.23 on Qwen3.5) the forked child cannot use it.
+        # Spawn only changes process start-up, not generation.
+        os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
         from src.execution_uncertainty import reasoning
         upstream = reasoning.bootstrap()
         script = upstream / "pipeline" / f"{name}.py"
