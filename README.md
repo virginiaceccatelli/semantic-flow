@@ -250,6 +250,10 @@ make lens         MODEL=deepseek-coder-1.3b LENS_HALVES=--halves
 
 Read [docs/PIPELINE.md](docs/PIPELINE.md) before running the full model suite.
 
+For execution prediction on MBPP/CRUXEval with frozen U-Space scores and
+top-token readouts (no fine-tuning), see
+[stage 290 cluster instructions](docs/EXECUTION_UNCERTAINTY.md).
+
 ## Models in the active claim
 
 | Model | Active role |
