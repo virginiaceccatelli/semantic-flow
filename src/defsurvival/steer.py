@@ -80,7 +80,6 @@ def steer(prepared, evaluation, output, lens_dir=None, n_prompts=40, coefficient
     import jlens
     import torch
 
-    from src.models.hooks import HookManager
     from src.models.loader import ModelConfig, ModelLoader
     from src.workspace_lens.fitting import load_lens
     from src.workspace_lens.readout import place_lens_jacobians, top_tokens
@@ -110,7 +109,8 @@ def steer(prepared, evaluation, output, lens_dir=None, n_prompts=40, coefficient
         lens_model = jlens.from_hf(model, tokenizer)  # For its final-norm + unembedding only.
         model_device = model.get_input_embeddings().weight.device
         place_lens_jacobians({"j-lens": lens}, sorted({d["layer"] for d in info.values()}), model_device)
-        blocks = HookManager(model)._get_decoder_layers()
+        blocks = lens_model.layers  # The same modules the lens's activation hooks read.
+        assert len(blocks) == cfg.n_layers
         decode = lambda ids: tokenizer.decode([int(i) for i in ids], skip_special_tokens=True)  # noqa: E731
 
         def read(state, layer):
