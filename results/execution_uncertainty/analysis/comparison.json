@@ -1,0 +1,1273 @@
+{
+  "bootstrap": {
+    "replicates": 2000,
+    "seed": 42,
+    "unit": "exact-source group",
+    "interval": "percentile 95%"
+  },
+  "runs": {
+    "deepseek-coder-1.3b/cruxeval": {
+      "n": 726,
+      "groups": 726,
+      "correct": 204,
+      "accuracy": 0.2809917355371901,
+      "macro": 0.2809917355371901,
+      "macro_ci": [
+        0.2493112947658402,
+        0.31270661157024776
+      ],
+      "invalid": 56,
+      "parsed_wrong": 466,
+      "sensitivity": {
+        "counts": {
+          "answer_encoded_as_string": 2
+        },
+        "examples": {
+          "answer_encoded_as_string": [
+            {
+              "case_id": "sample_98",
+              "answer": "'1'",
+              "expected": "1"
+            },
+            {
+              "case_id": "sample_216",
+              "answer": "\"2\"",
+              "expected": "2"
+            }
+          ]
+        }
+      },
+      "metrics": {
+        "n_cases": 726,
+        "n_evaluated": 726,
+        "n_context_excluded": 0,
+        "n_source_groups": 726,
+        "accuracy": 0.2809917355371901,
+        "program_macro_accuracy": 0.2809917355371901,
+        "invalid_answers": 56,
+        "uncertainty": {
+          "ulens_score": {
+            "n": 726,
+            "error_auroc": 0.6361937495304635,
+            "coverage": 0.800275482093664,
+            "error_rate_at_80pct_target_coverage": 0.6833046471600689
+          },
+          "a_cone": {
+            "n": 726,
+            "error_auroc": 0.42668657501314705,
+            "coverage": 0.800275482093664,
+            "error_rate_at_80pct_target_coverage": 0.7314974182444062
+          },
+          "mean_answer_entropy": {
+            "n": 726,
+            "error_auroc": 0.639518067763504,
+            "coverage": 0.800275482093664,
+            "error_rate_at_80pct_target_coverage": 0.6815834767641996
+          },
+          "mean_answer_nll": {
+            "n": 726,
+            "error_auroc": 0.6579332882578318,
+            "coverage": 0.800275482093664,
+            "error_rate_at_80pct_target_coverage": 0.693631669535284
+          }
+        }
+      },
+      "auroc_common": {
+        "ulens_score": {
+          "auc": 0.6361937495304635,
+          "ci": [
+            0.5940983374143155,
+            0.6797825799056749
+          ]
+        },
+        "a_cone": {
+          "auc": 0.426686575013147,
+          "ci": [
+            0.38006652518153566,
+            0.47156245024391646
+          ]
+        },
+        "mean_answer_entropy": {
+          "auc": 0.6395180677635038,
+          "ci": [
+            0.5978433552729392,
+            0.682790382746269
+          ]
+        }
+      },
+      "ulens_minus_entropy": {
+        "delta": -0.0033243182330403576,
+        "ci": [
+          -0.0063858330193443,
+          -0.00017729106098843017
+        ]
+      },
+      "ulens_entropy_spearman": 0.9980931093674233,
+      "parsed_only_auc": {
+        "ulens_score": 0.6493414962551545,
+        "a_cone": 0.4309728183118741,
+        "mean_answer_entropy": 0.652286880417403
+      },
+      "length_auc": 0.6633986928104575,
+      "within_type_length_auc": {
+        "ulens_score": {
+          "auc": 0.7505364806866953,
+          "eligible": 655
+        },
+        "a_cone": {
+          "auc": 0.43894849785407725,
+          "eligible": 655
+        },
+        "mean_answer_entropy": {
+          "auc": 0.7521459227467812,
+          "eligible": 655
+        }
+      },
+      "input_sha256": {
+        "config.json": "88c77d6398fc132219cad1a944365230377de55cc98553118b03611da245f77f",
+        "predictions.jsonl": "3ff587047b99a319e161d2eaa49c18f8e260bc5dd368f87740896daeab3ec24a",
+        "gates.json": "a7e35cd232d1fab09f9b07eece0be15070499bfbe9d0b3029e510e1878d134db"
+      },
+      "categories": {
+        "ambiguity": {
+          "error_auc": 0.3590639320862445,
+          "median": 0.053218329325318336
+        },
+        "incompleteness": {
+          "error_auc": 0.5643640598001652,
+          "median": -0.07175552472472191
+        },
+        "conflicting_evidence": {
+          "error_auc": 0.5986496131019458,
+          "median": -0.02753558289259672
+        },
+        "general_uncertainty": {
+          "error_auc": 0.46303808879873787,
+          "median": -0.006699116667732596
+        }
+      },
+      "lens_top1": {
+        "top_jlens_tokens": [
+          [
+            [
+              2220,
+              " `"
+            ],
+            433
+          ],
+          [
+            [
+              32014,
+              "<\uff5cend\u2581of\u2581sentence\uff5c>"
+            ],
+            110
+          ],
+          [
+            [
+              6236,
+              " ``"
+            ],
+            57
+          ],
+          [
+            [
+              440,
+              " \""
+            ],
+            33
+          ],
+          [
+            [
+              1585,
+              " --"
+            ],
+            25
+          ],
+          [
+            [
+              185,
+              "\n"
+            ],
+            24
+          ],
+          [
+            [
+              1368,
+              " because"
+            ],
+            24
+          ],
+          [
+            [
+              11181,
+              " somewhere"
+            ],
+            9
+          ],
+          [
+            [
+              8528,
+              " +="
+            ],
+            8
+          ],
+          [
+            [
+              1866,
+              " something"
+            ],
+            1
+          ]
+        ],
+        "top_uspace_tokens": [
+          [
+            [
+              10047,
+              "\ufffd"
+            ],
+            454
+          ],
+          [
+            [
+              12394,
+              " \ufffd"
+            ],
+            272
+          ]
+        ]
+      },
+      "subsets": {
+        "branch=False,loop=False": {
+          "n": 190,
+          "accuracy": 0.29473684210526313
+        },
+        "branch=True,loop=False": {
+          "n": 126,
+          "accuracy": 0.4126984126984127
+        },
+        "branch=False,loop=True": {
+          "n": 176,
+          "accuracy": 0.19318181818181818
+        },
+        "branch=True,loop=True": {
+          "n": 234,
+          "accuracy": 0.26495726495726496
+        }
+      },
+      "per_program_outcomes": {
+        "all_wrong": 522,
+        "all_correct": 204
+      }
+    },
+    "deepseek-coder-1.3b/mbpp": {
+      "n": 1345,
+      "groups": 448,
+      "correct": 426,
+      "accuracy": 0.316728624535316,
+      "macro": 0.3158482142857143,
+      "macro_ci": [
+        0.28272879464285716,
+        0.3471168154761904
+      ],
+      "invalid": 147,
+      "parsed_wrong": 772,
+      "sensitivity": {
+        "counts": {
+          "correct_constant_expression": 13,
+          "answer_encoded_as_string": 15,
+          "literal_with_assertion_message": 4
+        },
+        "examples": {
+          "correct_constant_expression": [
+            {
+              "case_id": "25:0",
+              "answer": "(1*1*2*3)",
+              "expected": "6"
+            },
+            {
+              "case_id": "25:1",
+              "answer": "(1*2*3*1*1)",
+              "expected": "6"
+            },
+            {
+              "case_id": "35:0",
+              "answer": "(4 * (4 + 1))",
+              "expected": "20"
+            },
+            {
+              "case_id": "35:1",
+              "answer": "(5 * (5 + 1))",
+              "expected": "30"
+            },
+            {
+              "case_id": "48:2",
+              "answer": "(31 | 1 << 1)",
+              "expected": "31"
+            },
+            {
+              "case_id": "65:2",
+              "answer": "(10+20+30+40+50+60)",
+              "expected": "210"
+            },
+            {
+              "case_id": "205:0",
+              "answer": "(~7, ~8, ~9, ~1, ~10, ~7)",
+              "expected": "(-8, -9, -10, -2, -11, -8)"
+            },
+            {
+              "case_id": "205:1",
+              "answer": "(~2, ~4, ~5, ~6, ~1, ~7)",
+              "expected": "(-3, -5, -6, -7, -2, -8)"
+            }
+          ],
+          "answer_encoded_as_string": [
+            {
+              "case_id": "33:0",
+              "answer": "\"1010\"",
+              "expected": "1010"
+            },
+            {
+              "case_id": "33:1",
+              "answer": "'1'",
+              "expected": "1"
+            },
+            {
+              "case_id": "33:2",
+              "answer": "\"10100\"",
+              "expected": "10100"
+            },
+            {
+              "case_id": "57:1",
+              "answer": "\"6541\"",
+              "expected": "6541"
+            },
+            {
+              "case_id": "100:0",
+              "answer": "'101'",
+              "expected": "101"
+            },
+            {
+              "case_id": "100:2",
+              "answer": "\"121\"",
+              "expected": "121"
+            },
+            {
+              "case_id": "109:2",
+              "answer": "\"2\"",
+              "expected": "2"
+            },
+            {
+              "case_id": "146:0",
+              "answer": "\"112\"",
+              "expected": "112"
+            }
+          ],
+          "literal_with_assertion_message": [
+            {
+              "case_id": "72:0",
+              "answer": "True, \"Should be True\"",
+              "expected": "True"
+            },
+            {
+              "case_id": "218:0",
+              "answer": "1, \"Wrong answer\"",
+              "expected": "1"
+            },
+            {
+              "case_id": "336:2",
+              "answer": "False, \"The function should return False for March\"",
+              "expected": "False"
+            },
+            {
+              "case_id": "355:2",
+              "answer": "0, \"Should be 0\"",
+              "expected": "0"
+            }
+          ]
+        }
+      },
+      "metrics": {
+        "n_cases": 1345,
+        "n_evaluated": 1345,
+        "n_context_excluded": 0,
+        "n_source_groups": 448,
+        "accuracy": 0.316728624535316,
+        "program_macro_accuracy": 0.3158482142857143,
+        "invalid_answers": 147,
+        "uncertainty": {
+          "ulens_score": {
+            "n": 1345,
+            "error_auroc": 0.6400711122009533,
+            "coverage": 0.8,
+            "error_rate_at_80pct_target_coverage": 0.6589219330855018
+          },
+          "a_cone": {
+            "n": 1345,
+            "error_auroc": 0.4991698467920326,
+            "coverage": 0.8,
+            "error_rate_at_80pct_target_coverage": 0.6775092936802974
+          },
+          "mean_answer_entropy": {
+            "n": 1345,
+            "error_auroc": 0.6424926052506552,
+            "coverage": 0.8,
+            "error_rate_at_80pct_target_coverage": 0.654275092936803
+          },
+          "mean_answer_nll": {
+            "n": 1345,
+            "error_auroc": 0.6306329088057543,
+            "coverage": 0.8,
+            "error_rate_at_80pct_target_coverage": 0.6617100371747212
+          }
+        }
+      },
+      "auroc_common": {
+        "ulens_score": {
+          "auc": 0.6400711122009533,
+          "ci": [
+            0.5993779618797359,
+            0.6797547567260009
+          ]
+        },
+        "a_cone": {
+          "auc": 0.4991698467920326,
+          "ci": [
+            0.4575646553690974,
+            0.5419793549799352
+          ]
+        },
+        "mean_answer_entropy": {
+          "auc": 0.6424926052506552,
+          "ci": [
+            0.6019875901012174,
+            0.6818415938107152
+          ]
+        }
+      },
+      "ulens_minus_entropy": {
+        "delta": -0.0024214930497019616,
+        "ci": [
+          -0.005997411302288105,
+          0.001059008408682674
+        ]
+      },
+      "ulens_entropy_spearman": 0.9955383626302586,
+      "parsed_only_auc": {
+        "ulens_score": 0.6507273346469143,
+        "a_cone": 0.48393599941618626,
+        "mean_answer_entropy": 0.6544248218151743
+      },
+      "length_auc": 0.626342932458735,
+      "within_type_length_auc": {
+        "ulens_score": {
+          "auc": 0.6451297112090064,
+          "eligible": 1205
+        },
+        "a_cone": {
+          "auc": 0.46558981889378365,
+          "eligible": 1205
+        },
+        "mean_answer_entropy": {
+          "auc": 0.6561918746940774,
+          "eligible": 1205
+        }
+      },
+      "input_sha256": {
+        "config.json": "5cc68a5e0346b9778db41e58faaf012cf1e8b72e58eca4c9a91e0df8e14c09b5",
+        "predictions.jsonl": "0129ddf924b9df5219ffe7f177a8c609168712c76a3a819986ae2a8d6a6cbe15",
+        "gates.json": "939cfb21874a3f18ad00669a6486b28f29f87ba81ad0f668e9982b6e34fbb728"
+      },
+      "categories": {
+        "ambiguity": {
+          "error_auc": 0.5158418775255815,
+          "median": 0.05610441416501999
+        },
+        "incompleteness": {
+          "error_auc": 0.4928887799046729,
+          "median": -0.06828135251998901
+        },
+        "conflicting_evidence": {
+          "error_auc": 0.4360552141284413,
+          "median": -0.023565026000142097
+        },
+        "general_uncertainty": {
+          "error_auc": 0.5250016603064159,
+          "median": -0.002135152230039239
+        }
+      },
+      "lens_top1": {
+        "top_jlens_tokens": [
+          [
+            [
+              32014,
+              "<\uff5cend\u2581of\u2581sentence\uff5c>"
+            ],
+            388
+          ],
+          [
+            [
+              2220,
+              " `"
+            ],
+            291
+          ],
+          [
+            [
+              1585,
+              " --"
+            ],
+            236
+          ],
+          [
+            [
+              185,
+              "\n"
+            ],
+            175
+          ],
+          [
+            [
+              8528,
+              " +="
+            ],
+            80
+          ],
+          [
+            [
+              19423,
+              " TODO"
+            ],
+            78
+          ],
+          [
+            [
+              1368,
+              " because"
+            ],
+            45
+          ],
+          [
+            [
+              12394,
+              " \ufffd"
+            ],
+            28
+          ],
+          [
+            [
+              440,
+              " \""
+            ],
+            12
+          ],
+          [
+            [
+              16352,
+              " elsewhere"
+            ],
+            6
+          ]
+        ],
+        "top_uspace_tokens": [
+          [
+            [
+              12394,
+              " \ufffd"
+            ],
+            832
+          ],
+          [
+            [
+              10047,
+              "\ufffd"
+            ],
+            513
+          ]
+        ]
+      },
+      "subsets": {
+        "branch=False,loop=False": {
+          "n": 306,
+          "accuracy": 0.31699346405228757
+        },
+        "branch=True,loop=False": {
+          "n": 189,
+          "accuracy": 0.43386243386243384
+        },
+        "branch=False,loop=True": {
+          "n": 368,
+          "accuracy": 0.25
+        },
+        "branch=True,loop=True": {
+          "n": 482,
+          "accuracy": 0.3215767634854772
+        }
+      },
+      "per_program_outcomes": {
+        "all_wrong": 212,
+        "mixed": 185,
+        "all_correct": 51
+      }
+    },
+    "deepseek-coder-6.7b/cruxeval": {
+      "n": 726,
+      "groups": 726,
+      "correct": 245,
+      "accuracy": 0.33746556473829203,
+      "macro": 0.33746556473829203,
+      "macro_ci": [
+        0.30303030303030304,
+        0.37052341597796146
+      ],
+      "invalid": 55,
+      "parsed_wrong": 426,
+      "sensitivity": {
+        "counts": {
+          "answer_encoded_as_string": 2
+        },
+        "examples": {
+          "answer_encoded_as_string": [
+            {
+              "case_id": "sample_404",
+              "answer": "'6'",
+              "expected": "6"
+            },
+            {
+              "case_id": "sample_725",
+              "answer": "\"5\"",
+              "expected": "5"
+            }
+          ]
+        }
+      },
+      "metrics": {
+        "n_cases": 726,
+        "n_evaluated": 726,
+        "n_context_excluded": 0,
+        "n_source_groups": 726,
+        "accuracy": 0.33746556473829203,
+        "program_macro_accuracy": 0.33746556473829203,
+        "invalid_answers": 55,
+        "uncertainty": {
+          "ulens_score": {
+            "n": 724,
+            "error_auroc": 0.685612031869115,
+            "coverage": 0.7997237569060773,
+            "error_rate_at_80pct_target_coverage": 0.6183074265975821
+          },
+          "a_cone": {
+            "n": 726,
+            "error_auroc": 0.43360346217489076,
+            "coverage": 0.800275482093664,
+            "error_rate_at_80pct_target_coverage": 0.6764199655765921
+          },
+          "mean_answer_entropy": {
+            "n": 724,
+            "error_auroc": 0.6882280260747305,
+            "coverage": 0.7997237569060773,
+            "error_rate_at_80pct_target_coverage": 0.616580310880829
+          },
+          "mean_answer_nll": {
+            "n": 724,
+            "error_auroc": 0.7163222700353629,
+            "coverage": 0.7997237569060773,
+            "error_rate_at_80pct_target_coverage": 0.6096718480138169
+          }
+        }
+      },
+      "auroc_common": {
+        "ulens_score": {
+          "auc": 0.6856120318691151,
+          "ci": [
+            0.6452110740958674,
+            0.7228767194811977
+          ]
+        },
+        "a_cone": {
+          "auc": 0.43471518043543095,
+          "ci": [
+            0.3927678857328296,
+            0.4758977318269008
+          ]
+        },
+        "mean_answer_entropy": {
+          "auc": 0.6882280260747305,
+          "ci": [
+            0.647189332341751,
+            0.7259547526718995
+          ]
+        }
+      },
+      "ulens_minus_entropy": {
+        "delta": -0.002615994205615424,
+        "ci": [
+          -0.0058074282720417345,
+          0.0005609228948169857
+        ]
+      },
+      "ulens_entropy_spearman": 0.9974292040609987,
+      "parsed_only_auc": {
+        "ulens_score": 0.684286672415445,
+        "a_cone": 0.4400210788540768,
+        "mean_answer_entropy": 0.686681996742359
+      },
+      "length_auc": 0.6285417285417285,
+      "within_type_length_auc": {
+        "ulens_score": {
+          "auc": 0.8049741905208823,
+          "eligible": 652
+        },
+        "a_cone": {
+          "auc": 0.4727358047864852,
+          "eligible": 652
+        },
+        "mean_answer_entropy": {
+          "auc": 0.8055373064289066,
+          "eligible": 652
+        }
+      },
+      "input_sha256": {
+        "config.json": "df567f90ea0cf48aece74732e537d7e8184693f0f54bba8a8294eae43c1fef6d",
+        "predictions.jsonl": "2781ca2e64ac526c401b1ea3f35692c3be70da9a5194b7accc5c79d5434c225e",
+        "gates.json": "985d64ae712f7659124d7b292bfef8d63a1c31d05f5fcf6b724f7663874d060b"
+      },
+      "categories": {
+        "ambiguity": {
+          "error_auc": 0.46548432262717976,
+          "median": 0.006438680924475193
+        },
+        "incompleteness": {
+          "error_auc": 0.5477618906190335,
+          "median": 0.01560626970604062
+        },
+        "conflicting_evidence": {
+          "error_auc": 0.4010352581781153,
+          "median": -0.020405370742082596
+        },
+        "general_uncertainty": {
+          "error_auc": 0.5506385506385506,
+          "median": 0.019240195862948895
+        }
+      },
+      "lens_top1": {
+        "top_jlens_tokens": [
+          [
+            [
+              572,
+              " *"
+            ],
+            554
+          ],
+          [
+            [
+              185,
+              "\n"
+            ],
+            65
+          ],
+          [
+            [
+              4052,
+              " expected"
+            ],
+            60
+          ],
+          [
+            [
+              32014,
+              "<\uff5cend\u2581of\u2581sentence\uff5c>"
+            ],
+            28
+          ],
+          [
+            [
+              19476,
+              " (["
+            ],
+            15
+          ],
+          [
+            [
+              821,
+              " ["
+            ],
+            2
+          ],
+          [
+            [
+              23691,
+              " defaults"
+            ],
+            2
+          ]
+        ],
+        "top_uspace_tokens": [
+          [
+            [
+              22231,
+              " mysterious"
+            ],
+            463
+          ],
+          [
+            [
+              16503,
+              " weird"
+            ],
+            179
+          ],
+          [
+            [
+              18971,
+              " mystery"
+            ],
+            58
+          ],
+          [
+            [
+              10796,
+              " surprise"
+            ],
+            21
+          ],
+          [
+            [
+              12933,
+              " suspect"
+            ],
+            2
+          ],
+          [
+            [
+              9220,
+              " **"
+            ],
+            1
+          ],
+          [
+            [
+              9277,
+              " colour"
+            ],
+            1
+          ],
+          [
+            [
+              12394,
+              " \ufffd"
+            ],
+            1
+          ]
+        ]
+      },
+      "subsets": {
+        "branch=False,loop=False": {
+          "n": 190,
+          "accuracy": 0.4
+        },
+        "branch=True,loop=False": {
+          "n": 126,
+          "accuracy": 0.36507936507936506
+        },
+        "branch=False,loop=True": {
+          "n": 176,
+          "accuracy": 0.26136363636363635
+        },
+        "branch=True,loop=True": {
+          "n": 234,
+          "accuracy": 0.32905982905982906
+        }
+      },
+      "per_program_outcomes": {
+        "all_wrong": 481,
+        "all_correct": 245
+      }
+    },
+    "deepseek-coder-6.7b/mbpp": {
+      "n": 1345,
+      "groups": 448,
+      "correct": 605,
+      "accuracy": 0.44981412639405205,
+      "macro": 0.4486607142857143,
+      "macro_ci": [
+        0.4118024553571428,
+        0.48474702380952384
+      ],
+      "invalid": 228,
+      "parsed_wrong": 512,
+      "sensitivity": {
+        "counts": {
+          "answer_encoded_as_string": 15,
+          "correct_constant_expression": 51,
+          "literal_with_assertion_message": 5
+        },
+        "examples": {
+          "answer_encoded_as_string": [
+            {
+              "case_id": "17:0",
+              "answer": "\"40\"",
+              "expected": "40"
+            },
+            {
+              "case_id": "33:0",
+              "answer": "'1010'",
+              "expected": "1010"
+            },
+            {
+              "case_id": "33:1",
+              "answer": "\"1\"",
+              "expected": "1"
+            },
+            {
+              "case_id": "33:2",
+              "answer": "\"10100\"",
+              "expected": "10100"
+            },
+            {
+              "case_id": "57:1",
+              "answer": "\"6541\"",
+              "expected": "6541"
+            },
+            {
+              "case_id": "57:2",
+              "answer": "\"9321\"",
+              "expected": "9321"
+            },
+            {
+              "case_id": "86:1",
+              "answer": "\"7\"",
+              "expected": "7"
+            },
+            {
+              "case_id": "172:0",
+              "answer": "\"3\"",
+              "expected": "3"
+            }
+          ],
+          "correct_constant_expression": [
+            {
+              "case_id": "17:2",
+              "answer": "(4*4)",
+              "expected": "16"
+            },
+            {
+              "case_id": "35:1",
+              "answer": "(5*(5 + 1))",
+              "expected": "30"
+            },
+            {
+              "case_id": "47:2",
+              "answer": "(1*2)%10",
+              "expected": "2"
+            },
+            {
+              "case_id": "59:0",
+              "answer": "(3 * 5 * 5 - 2 * 5)",
+              "expected": "65"
+            },
+            {
+              "case_id": "59:1",
+              "answer": "(3 * 10 * 10 - 2 * 10)",
+              "expected": "280"
+            },
+            {
+              "case_id": "59:2",
+              "answer": "(3 * 15 * 15 - 2 * 15)",
+              "expected": "645"
+            },
+            {
+              "case_id": "65:1",
+              "answer": "(7 + 10 + (15 + 14) + (19 + 41))",
+              "expected": "106"
+            },
+            {
+              "case_id": "65:2",
+              "answer": "(10 + 20 + (30 + 40) + (50 + 60))",
+              "expected": "210"
+            }
+          ],
+          "literal_with_assertion_message": [
+            {
+              "case_id": "46:0",
+              "answer": "True, \"Failed on distinct\"",
+              "expected": "True"
+            },
+            {
+              "case_id": "46:2",
+              "answer": "True, \"test_distinct([1,2,3]) should return True\"",
+              "expected": "True"
+            },
+            {
+              "case_id": "210:0",
+              "answer": "True, \"Test 1 failed\"",
+              "expected": "True"
+            },
+            {
+              "case_id": "325:2",
+              "answer": "1, \"1^2 + 1^2\"",
+              "expected": "1"
+            },
+            {
+              "case_id": "327:1",
+              "answer": "True, \"Failed on 6,6,12\"",
+              "expected": "True"
+            }
+          ]
+        }
+      },
+      "metrics": {
+        "n_cases": 1345,
+        "n_evaluated": 1345,
+        "n_context_excluded": 0,
+        "n_source_groups": 448,
+        "accuracy": 0.44981412639405205,
+        "program_macro_accuracy": 0.44866071428571425,
+        "invalid_answers": 228,
+        "uncertainty": {
+          "ulens_score": {
+            "n": 1344,
+            "error_auroc": 0.6371844909918474,
+            "coverage": 0.7998511904761905,
+            "error_rate_at_80pct_target_coverage": 0.5386046511627907
+          },
+          "a_cone": {
+            "n": 1345,
+            "error_auroc": 0.50282778646415,
+            "coverage": 0.8,
+            "error_rate_at_80pct_target_coverage": 0.5566914498141264
+          },
+          "mean_answer_entropy": {
+            "n": 1344,
+            "error_auroc": 0.6346481172905087,
+            "coverage": 0.8005952380952381,
+            "error_rate_at_80pct_target_coverage": 0.5371747211895911
+          },
+          "mean_answer_nll": {
+            "n": 1344,
+            "error_auroc": 0.6528120421834286,
+            "coverage": 0.7998511904761905,
+            "error_rate_at_80pct_target_coverage": 0.5376744186046511
+          }
+        }
+      },
+      "auroc_common": {
+        "ulens_score": {
+          "auc": 0.6371844909918474,
+          "ci": [
+            0.5965708925953908,
+            0.6799841580946377
+          ]
+        },
+        "a_cone": {
+          "auc": 0.5028662812154017,
+          "ci": [
+            0.46176458230883916,
+            0.5457556641155907
+          ]
+        },
+        "mean_answer_entropy": {
+          "auc": 0.6346481172905087,
+          "ci": [
+            0.5939348009195596,
+            0.6779364978362096
+          ]
+        }
+      },
+      "ulens_minus_entropy": {
+        "delta": 0.0025363737013386345,
+        "ci": [
+          0.00019074726793910928,
+          0.004990519473878686
+        ]
+      },
+      "ulens_entropy_spearman": 0.9983575216501432,
+      "parsed_only_auc": {
+        "ulens_score": 0.6574702995867768,
+        "a_cone": 0.5027634297520661,
+        "mean_answer_entropy": 0.6550942665289257
+      },
+      "length_auc": 0.6446191646191646,
+      "within_type_length_auc": {
+        "ulens_score": {
+          "auc": 0.7573331956207395,
+          "eligible": 1105
+        },
+        "a_cone": {
+          "auc": 0.47743234868828754,
+          "eligible": 1105
+        },
+        "mean_answer_entropy": {
+          "auc": 0.7588824623011774,
+          "eligible": 1105
+        }
+      },
+      "input_sha256": {
+        "config.json": "e8d6a7f91e019131ffab40c5e7915cf42ae19f6ec2e667fb1012913e9ccaf8c6",
+        "predictions.jsonl": "5e2abc343c1075863be5d82a79c01888ffc9df3c1786cfbb836b550f391042c3",
+        "gates.json": "8c1e7418c6e8f45db9a6c3903bd21d6c1907f139387919b28a704f2ff8f053f5"
+      },
+      "categories": {
+        "ambiguity": {
+          "error_auc": 0.5960486933214206,
+          "median": 0.015485220588743687
+        },
+        "incompleteness": {
+          "error_auc": 0.5039691757873576,
+          "median": 0.006301926448941231
+        },
+        "conflicting_evidence": {
+          "error_auc": 0.4768461023006478,
+          "median": -0.02462439052760601
+        },
+        "general_uncertainty": {
+          "error_auc": 0.484654902836721,
+          "median": 0.022176578640937805
+        }
+      },
+      "lens_top1": {
+        "top_jlens_tokens": [
+          [
+            [
+              572,
+              " *"
+            ],
+            520
+          ],
+          [
+            [
+              19476,
+              " (["
+            ],
+            348
+          ],
+          [
+            [
+              32014,
+              "<\uff5cend\u2581of\u2581sentence\uff5c>"
+            ],
+            230
+          ],
+          [
+            [
+              185,
+              "\n"
+            ],
+            229
+          ],
+          [
+            [
+              4052,
+              " expected"
+            ],
+            13
+          ],
+          [
+            [
+              821,
+              " ["
+            ],
+            4
+          ],
+          [
+            [
+              2220,
+              " `"
+            ],
+            1
+          ]
+        ],
+        "top_uspace_tokens": [
+          [
+            [
+              16503,
+              " weird"
+            ],
+            1253
+          ],
+          [
+            [
+              10796,
+              " surprise"
+            ],
+            39
+          ],
+          [
+            [
+              12394,
+              " \ufffd"
+            ],
+            32
+          ],
+          [
+            [
+              22231,
+              " mysterious"
+            ],
+            17
+          ],
+          [
+            [
+              9220,
+              " **"
+            ],
+            3
+          ],
+          [
+            [
+              12933,
+              " suspect"
+            ],
+            1
+          ]
+        ]
+      },
+      "subsets": {
+        "branch=False,loop=False": {
+          "n": 306,
+          "accuracy": 0.4477124183006536
+        },
+        "branch=True,loop=False": {
+          "n": 189,
+          "accuracy": 0.5343915343915344
+        },
+        "branch=False,loop=True": {
+          "n": 368,
+          "accuracy": 0.45108695652173914
+        },
+        "branch=True,loop=True": {
+          "n": 482,
+          "accuracy": 0.4170124481327801
+        }
+      },
+      "per_program_outcomes": {
+        "all_wrong": 156,
+        "all_correct": 104,
+        "mixed": 188
+      }
+    }
+  },
+  "paired": {
+    "cruxeval": {
+      "macro_delta": 0.05647382920110193,
+      "ci": [
+        0.026170798898071626,
+        0.08677685950413223
+      ],
+      "fixed": 84,
+      "regressed": 43,
+      "both_correct": 161,
+      "both_wrong": 438
+    },
+    "mbpp": {
+      "macro_delta": 0.1328125,
+      "ci": [
+        0.1015625,
+        0.16331845238095236
+      ],
+      "fixed": 265,
+      "regressed": 86,
+      "both_correct": 340,
+      "both_wrong": 654
+    }
+  }
+}

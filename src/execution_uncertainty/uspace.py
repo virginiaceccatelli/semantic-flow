@@ -13,8 +13,8 @@ def unit(x):
     return x / (np.linalg.norm(x, axis=-1, keepdims=True) + 1e-9)
 
 
-def build_basis(tokenizer, unembedding, gain, jacobian, terms):
-    """Pull word covectors back with J, contrast centroids, then symmetric Lowdin."""
+def term_token_ids(tokenizer, terms):
+    """First single-token spelling (leading space, then bare) of every term word."""
     if len(terms) != 4:
         raise ValueError("The published U-Space construction requires four categories")
     ids = {}
@@ -27,12 +27,27 @@ def build_basis(tokenizer, unembedding, gain, jacobian, terms):
                 if len(tokens) == 1:
                     ids[word] = int(tokens[0])
                     break
-    order = sorted(set(ids.values()))
-    if not order:
+    if not ids:
         raise ValueError("No single-token uncertainty anchors in this tokenizer")
+    return ids
+
+
+def build_basis(tokenizer, unembedding, gain, jacobian, terms):
+    """Pull word covectors back with J, contrast centroids, then symmetric Lowdin."""
+    ids = term_token_ids(tokenizer, terms)
+    order = sorted(set(ids.values()))
     if min(order) < 0 or max(order) >= len(unembedding):
         raise ValueError("Anchor token IDs do not fit the model vocabulary")
     vectors = unit((np.asarray(unembedding[order], np.float32) * gain) @ jacobian)
+    return basis_from_vectors(dict(zip(order, vectors)), ids, terms)
+
+
+def basis_from_vectors(vectors_by_id, ids, terms):
+    """Contrast anchor/pole centroids of pulled-back unit covectors, then symmetric Lowdin.
+
+    ``vectors_by_id`` maps token ID -> unit(W_U[id] * gain @ J) at the readout block."""
+    order = sorted(set(ids.values()))
+    vectors = np.stack([np.asarray(vectors_by_id[t], np.float32) for t in order])
     lookup = {tid: i for i, tid in enumerate(order)}
     contrasts, used = [], {}
     for name, sides in terms.items():
@@ -62,6 +77,47 @@ def read_state(state, basis, categories):
     return {"a_cone": cone, "category_cosines": dict(zip(categories, map(float, z))),
             "category_normalized": dict(zip(categories, map(float, zhat))),
             "uspace_projection_norm": float(np.linalg.norm(z))}
+
+
+def cone(z):
+    """Published A_cone from coordinates z = U.T @ unit(h), vectorised over leading axes."""
+    z = np.asarray(z, np.float64)
+    zhat = z / (np.linalg.norm(z, axis=-1, keepdims=True) + 1e-30)
+    return np.linalg.norm(np.logaddexp(0, np.sqrt(z.shape[-1]) * zhat), axis=-1)
+
+
+def control_terms(tokenizer, terms, n_controls, seed=0):
+    """Label-free null bases: the same construction with random vocabulary words.
+
+    Each control keeps every category's anchor and pole counts (after single-token
+    filtering) but draws the words from single-token lowercase alphabetic words that
+    are not in any U-Space list. A control answers whether *uncertainty* words, rather
+    than any four word contrasts, carry the measured signal."""
+    import re
+    used = term_token_ids(tokenizer, terms)
+    counts = {c: {s: sum(w in used for w in terms[c][s]) for s in ("anchors", "poles")} for c in terms}
+    excluded = set(used.values())
+    pool = []
+    for tid in range(len(tokenizer.get_vocab())):
+        text = tokenizer.decode([tid], clean_up_tokenization_spaces=False)
+        word = text[1:] if text.startswith(" ") else None
+        if word and re.fullmatch(r"[a-z]{4,}", word) and tid not in excluded and \
+                tokenizer.encode(" " + word, add_special_tokens=False) == [tid]:
+            pool.append(word)
+    need = sum(n for c in counts.values() for n in c.values())
+    if len(pool) < need:
+        raise ValueError(f"Only {len(pool)} control words available, need {need}")
+    rng = np.random.default_rng(seed)
+    controls = []
+    for _ in range(n_controls):
+        words = list(rng.choice(pool, size=need, replace=False))
+        control = {}
+        for c in terms:
+            control[c] = {}
+            for s in ("anchors", "poles"):
+                control[c][s] = [str(words.pop()) for _ in range(counts[c][s])]
+        controls.append(control)
+    return controls
 
 
 def top_tokens(logits, tokenizer, k):

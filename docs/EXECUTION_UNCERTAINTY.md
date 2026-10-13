@@ -196,3 +196,104 @@ Tests cover execution verification/exclusions, non-executing type-strict answer
 grading, published-formula equivalence, causal token positions, predictive-entropy
 alignment, and an offline tiny-model end-to-end run with resumption. They do not
 substitute for the first cluster smoke run on DeepSeek-Coder and its fitted lens.
+
+# Stage 291: fixed answer protocol and the paper's U-Lens protocol
+
+Stage 290 is kept unchanged as the original baseline. Stage 291 reuses its
+prepared, execution-verified cases and changes three things: the answer protocol,
+the readout (every lens block and several positions, stored once), and an analysis
+that applies the published U-Lens protocol without choosing anything on the labels
+it is evaluated on.
+
+## Answer protocol (`src/execution_uncertainty/answers.py`)
+
+- **Prompt `fewshot_assert_v1`:** a two-line instruction, three hand-written
+  demonstrations (not from either benchmark; a list, a tuple and a bool answer),
+  then the benchmark code and `assert <call> ==`. No expected answer is present.
+- **Stopping:** greedy decoding stops at EOS or at the first newline after which
+  the answer is not an unclosed bracket or string, so multi-line list literals are
+  complete. The budget is 160 new tokens (stage 290: 64, which truncated long lists).
+- **Grading = what Python compares in `assert <call> == <generation>`**, the
+  benchmarks' own pass criterion: an assertion message is ignored, a restated call
+  (`== f(x) == 3`) reduces to its value, constant expressions (`4 * 4`) are
+  evaluated by a whitelisted AST interpreter with size limits, and equality is
+  Python `==`. Names, attributes and calls are never evaluated, so `== f(0)` or
+  `== int('100', 2)` are invalid and model text is never executed. `answer_form`
+  records `literal`, `constant_expression`, `+assertion_message`, `+restated_call`;
+  `strict_correct` keeps the stage-290 type-strict verdict.
+
+Regrading the stage-290 generations with this grader (CPU, `rescore`) changes
+accuracy from 31.67% to 33.23% (1.3B MBPP), 44.98% to 49.37% (6.7B MBPP), and by
+one answer on each CRUXEval run; no previously correct answer is lost.
+
+## What the GPU pass stores (`sweep.py`)
+
+For every fitted J-lens block (1.3B: 0–21, 6.7B: 0–29; the identity target layer
+is excluded) the published U-Space basis is built at that block, plus
+`--n-controls` (default 32) **random-word control bases**: the same construction,
+same per-category anchor/pole counts, words drawn from single-token lowercase
+vocabulary words outside every U-Space list. One teacher-forced pass over prompt
+and generation records `z = U_b.T @ unit(h)`:
+
+- for the main basis, at the code end, the prompt end and every generated token;
+- for main and control bases, at the summary slots `code_end`, `prompt_end`,
+  `answer_first`, `answer_last`, `terminator`, and `path_mean` (mean normalised
+  coordinates over the generated tokens up to the terminator).
+
+The same pass gives the upstream token statistics (log p, entropy, vocabulary
+log-p sum, mean top-20 log p). Raw residuals are not stored.
+
+## Analysis (`analysis.py`)
+
+1. **Primary, fixed in advance.** Block `round(2L/3) − 1`, which reproduces the
+   paper's readout blocks for all of its models (Gemma 39/60, Qwen 42/64,
+   Magistral 26/40): **block 15** for 1.3B and **block 20** for 6.7B. Position:
+   the **terminator** (answer-ending newline token or EOS), the analogue of the
+   end-of-thinking delimiter. U-Lens = A_cone(terminator) × mean token entropy over
+   the generation up to and including the terminator, as upstream `ulens.py`.
+   Truncated generations are excluded from uncertainty metrics, as upstream
+   excludes truncated traces, but count as wrong for accuracy. All upstream
+   baselines are reported (generation length, MSP, max entropy, mean NLL,
+   Self-Certainty, DeepConf, predictive entropy) with AUROC, AUPRC and AURC, raw and
+   length-matched. Two additions: A_cone **entropy-matched** AUROC (does the cone
+   carry information entropy does not?) and the random-word null.
+2. **Held-out sweep.** Source groups are split by hash into select/test halves.
+   The block × position with the best length-matched U-Lens AUROC (and,
+   separately, entropy-matched A_cone AUROC) is chosen on select and reported once
+   on test. Each control basis goes through the same selection, so the null is
+   fair to the selection step. Cross-dataset transfer (select on MBPP, test on
+   CRUXEval and back) is also reported.
+3. **Categories ("why").** Each answer's corner is the argmax of its `path_mean`
+   coordinates at the primary block (the corner its path favours). Reported: error
+   rate per corner, Cramér's V against correctness compared with the random-word
+   null, and a held-out test (the worst corner on select, one-sided Fisher test on
+   test), plus each category coordinate's AUROC on both halves.
+
+The full exploratory grid is saved as `grid_<model>_<dataset>.json` for
+inspection; it is not used for any headline claim.
+
+## Commands
+
+```bash
+# GPU allocation, one model at a time (memory note: never co-reside 1.3B and 6.7B).
+MODEL=deepseek-coder-1.3b bash jobs/execution_uncertainty_sweep.sh evaluate
+MODEL=deepseek-coder-6.7b bash jobs/execution_uncertainty_sweep.sh evaluate
+# CPU, after the runs you want exist:
+bash jobs/execution_uncertainty_sweep.sh analyze
+# Smoke run first (10 calls, separate output):
+.venv/bin/python scripts/291_execution_uncertainty_sweep.py evaluate \
+  --prepared results/execution_uncertainty/prepared/cruxeval \
+  --output results/execution_uncertainty/stage291_smoke \
+  --model deepseek-coder-1.3b --limit 10
+# CPU: regrade stage-290 predictions with the stage-291 grader
+python scripts/291_execution_uncertainty_sweep.py rescore \
+  results/execution_uncertainty/deepseek-coder-*/block6-prompt_end/*/predictions.jsonl
+```
+
+Outputs go to `results/execution_uncertainty/stage291/<model>/<dataset>/`
+(`predictions.jsonl`, `readout.npz`, `basis.json`, `bases.npz`, `config.json`,
+`rows/`, `gates.json`) and `.../stage291/analysis/` (`report.md`, `summary.json`,
+grids). `*.npz` files are git-ignored, so run `analyze` where the runs live or
+copy `readout.npz` along with the other files.
+
+Tests: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest tests/test_execution_uncertainty_sweep.py -q`.
