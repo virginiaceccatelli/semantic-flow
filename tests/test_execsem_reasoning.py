@@ -265,3 +265,7 @@ def test_end_to_end_freeze_and_analysis(tmp_path, cases):
     t = m["tokens"]["cruxeval"]
     assert t["n_wrong_claims"] > 0 and "combined" in t
     assert "Counterfactual pairs" in (report / "report.md").read_text()
+
+
+def test_claims_skip_numbers_that_are_not_python_literals():
+    assert [c["value"] for c in find("x = 05, then x = 5 and x = 007.", {"x": ["5"]})] == ["5"]

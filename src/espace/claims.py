@@ -42,7 +42,10 @@ def _literal(rest):
         return None
     if re.match(r"\s*[-+*/%]\s*[\w(]", rest[m.end():]):      # an expression, not a value
         return None
-    return ast.literal_eval(m.group(0)), m.end()
+    try:                                     # e.g. "05" (a time, a padded index) is no literal
+        return ast.literal_eval(m.group(0)), m.end()
+    except (ValueError, SyntaxError):
+        return None
 
 
 def _known(reprs):
