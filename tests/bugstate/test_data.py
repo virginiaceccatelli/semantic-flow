@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from src.bugstate.data import RUNNER, candidate_pairs, canonical_literal, context, prompt, stable_records
 from src.bugstate.trace_runner import literal
@@ -32,6 +33,19 @@ def capture(code, directory, number):
 
 
 class DataTests(unittest.TestCase):
+    def test_python39_stdlib_fallback(self):
+        with patch.object(sys, 'stdlib_module_names', None, create=True):
+            self.test_context_keeps_line_numbers_and_helpers()
+            code = 'import json\nimport sys\ndef f(x):\n    return json.dumps(x), sys.maxsize\n'
+            ns = {}
+            exec(context(code, 'f'), ns)
+            self.assertEqual(ns['f'](3), ('3', sys.maxsize))
+            with tempfile.TemporaryDirectory() as tmp:
+                Path(tmp, 'bugstate_external.py').write_text('raise RuntimeError("must not import")\n')
+                with patch.object(sys, 'path', [tmp] + sys.path):
+                    with self.assertRaises(ValueError):
+                        context('import bugstate_external\ndef f(x):\n    return bugstate_external.f(x)\n', 'f')
+
     def test_existing_unittest_command_fails_then_passes(self):
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)

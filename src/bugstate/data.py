@@ -5,16 +5,34 @@ import ast
 import builtins
 import difflib
 import hashlib
+from functools import lru_cache
 import json
 import os
 from pathlib import Path
+import pkgutil
 import re
 import shlex
 import signal
 import subprocess
 import sys
+import sysconfig
 
 RUNNER = Path(__file__).with_name('trace_runner.py').resolve()
+
+
+@lru_cache(maxsize=1)
+def legacy_stdlib_modules():
+    """Python 3.9 fallback: inspect only stdlib directories, never sys.path.
+
+    Include extension modules (e.g. math) as well as pure Python packages.
+    iter_modules does not import the modules or recurse into site-packages.
+    """
+    roots = {sysconfig.get_path('stdlib'), sysconfig.get_path('platstdlib'),
+             sysconfig.get_config_var('DESTSHARED')}
+    roots = sorted(str(p) for p in roots if p and Path(p).is_dir())
+    return frozenset(sys.builtin_module_names) | frozenset(
+        m.name for m in pkgutil.iter_modules(roots)
+    )
 
 
 def read_jsonl(path):
@@ -62,6 +80,9 @@ def context(code, name):
     Only literal globals, undecorated functions, and stdlib imports are allowed.
     A subsequent isolated replay verifies that this context is sufficient.
     """
+    stdlib_names = getattr(sys, 'stdlib_module_names', None)
+    if stdlib_names is None:
+        stdlib_names = legacy_stdlib_modules()
     tree = ast.parse(code)
     definitions = {}
     for n in tree.body:
@@ -78,7 +99,7 @@ def context(code, name):
                     definitions[t.id] = n
         elif isinstance(n, (ast.Import, ast.ImportFrom)):
             modules = [a.name.split('.')[0] for a in n.names] if isinstance(n, ast.Import) else [(n.module or '').split('.')[0]]
-            if getattr(n, 'level', 0) or any(m not in sys.stdlib_module_names for m in modules):
+            if getattr(n, 'level', 0) or any(m not in stdlib_names for m in modules):
                 continue
             for a in n.names:
                 definitions[a.asname or (a.name.split('.')[0] if isinstance(n, ast.Import) else a.name)] = n
